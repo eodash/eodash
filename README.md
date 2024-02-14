@@ -24,6 +24,3 @@ npm run preview
     ├── public             # Statically served directory
     └── README.md
 
-## Customize and Deploy your own Dashboard
-Check out the [configuration and deployment template](https://github.com/eodash/config-template) to learn more.
-
