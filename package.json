@@ -1,0 +1,52 @@
+{
+  "name": "eodash",
+  "version": "5.0.0-alpha",
+  "private": true,
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "check":"vue-tsc --noEmit --skipLibCheck && eslint .",
+    "check:lint": "eslint .",
+    "check:types": "vue-tsc --noEmit --skipLibCheck",
+    "preview": "vite preview",
+    "lint": "eslint . --fix",
+    "docs:generate": "typedoc --plugin typedoc-plugin-markdown core/store/Types.ts --tsconfig tsconfig.json --out docs --readme none"
+  },
+  "dependencies": {
+    "@eox/itemfilter": "^0.12.1",
+    "@eox/layout": "^0.1.0",
+    "@eox/map": "^1.1.0",
+    "@eox/stacinfo": "^0.3.0",
+    "@mdi/font": "7.0.96",
+    "animated-details": "gist:2912bb049fa906671807415eb0e87188",
+    "axios": "^1.6.2",
+    "core-js": "^3.29.0",
+    "pinia": "^2.0.0",
+    "roboto-fontface": "*",
+    "vue": "^3.2.0",
+    "vue-router": "^4.0.0",
+    "vue3-grid-layout-next": "^1.0.6",
+    "vuetify": "^3.5.1",
+    "webfontloader": "^1.6.28"
+  },
+  "devDependencies": {
+    "@babel/types": "^7.21.4",
+    "@types/node": "^18.15.0",
+    "@types/openlayers": "^4.6.23",
+    "@types/webfontloader": "^1.6.38",
+    "@vitejs/plugin-vue": "^4.0.0",
+    "@vue/eslint-config-typescript": "^11.0.0",
+    "eslint": "^8.56.0",
+    "eslint-plugin-vue": "^9.19.2",
+    "sass": "^1.60.0",
+    "stac-ts": "^1.0.3",
+    "typedoc": "^0.25.7",
+    "typedoc-plugin-markdown": "^3.17.1",
+    "typescript": "^5.0.0",
+    "unplugin-fonts": "^1.0.3",
+    "vite": "^4.2.0",
+    "vite-plugin-vuetify": "^1.0.0",
+    "vue-eslint-parser": "^9.3.2",
+    "vue-tsc": "^1.2.0"
+  }
+}

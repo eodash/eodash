@@ -1,0 +1,58 @@
+<template>
+  <v-main>
+    <eox-layout :gap="eodashConfig.template.gap ?? 2">
+      <eox-layout-item class="bg-widget" x="0" y="0" h="12" w="12">
+        <component :is="bgWidget.component" v-bind="bgWidget.props" />
+      </eox-layout-item>
+      <eox-layout-item v-for="(config, idx) in widgetsConfig" ref="itemEls" :key="idx" class="custom-widget"
+        :x="config.layout.x" :y="config.layout.y" :h="config.layout.h" :w="config.layout.w">
+
+        <v-btn position="absolute" variant="tonal" :style="slideBtns[idx].style" class="slide-btn"
+          @click="slideInOut(idx)">
+          <v-icon :icon="slideBtns[idx].active ? slideBtns[idx].icon.in : slideBtns[idx].icon.out" />
+        </v-btn>
+        <component :key="importedWidgets[idx].value.id" :is="importedWidgets[idx].value.component"
+          v-bind="importedWidgets[idx].value.props" />
+
+      </eox-layout-item>
+    </eox-layout>
+  </v-main>
+</template>
+<script setup >
+import { eodashConfigKey } from '@/store/Keys';
+import { inject } from 'vue';
+import { useDefineWidgets } from '@/composables/DefineWidgets'
+import { useSlidePanels } from '@/composables'
+import { ref } from 'vue';
+import '@eox/layout'
+
+const eodashConfig = /** @type {EodashConfig} */ (inject(eodashConfigKey))
+
+const [bgWidget] = useDefineWidgets([eodashConfig.template?.background])
+
+const widgetsConfig = eodashConfig.template?.widgets
+
+const importedWidgets = useDefineWidgets(widgetsConfig)
+/**
+ * Layout items template ref
+ * @type {import('vue').Ref<HTMLElement[]>}
+ */
+const itemEls = ref([])
+
+const { slideBtns, slideInOut } = useSlidePanels(itemEls, widgetsConfig)
+</script>
+<style scoped>
+eox-layout-item {
+  background: rgb(var(--v-theme-surface))
+}
+
+.bg-widget {
+  z-index: 0;
+}
+
+.custom-widget {
+  position: relative;
+  overflow: visible;
+  z-index: 1;
+}
+</style>

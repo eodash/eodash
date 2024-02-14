@@ -1,0 +1,54 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "outDir": "dist",
+    "target": "esnext",
+    "allowJs": true,
+    "checkJs": true,
+    "skipLibCheck": true,
+    "useDefineForClassFields": true,
+    "allowSyntheticDefaultImports": true,
+    "composite": true,
+    "declarationMap": true,
+    "module": "esnext",
+    "moduleResolution": "node",
+    "strict": true,
+    "jsx": "preserve",
+    "sourceMap": false,
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "lib": ["esnext", "dom"],
+    "types": [
+      "vuetify"
+    ],
+    "paths": {
+      "@/*": ["core/*"],
+      "^/*": ["widgets/*"]
+    }
+  },
+  "exclude": [
+    "node_modules",
+    "dist"
+  ],
+  "include": [
+    "core/**/*.ts",
+    "core/**/*.js",
+    "core/**/*.umd.cjs",
+    "core/**/*.d.ts",
+    "core/**/*.tsx",
+    "core/**/*.vue",
+    "landing/**/*.ts",
+    "landing/**/*.js",
+    "landing/**/*.umd.cjs",
+    "landing/**/*.d.ts",
+    "landing/**/*.tsx",
+    "landing/**/*.vue",
+    "widgets/**/*.vue",
+    "widgets/**/*.ts",
+    "widgets/**/*.js",
+    "widgets/**/*.d.ts",
+    "widgets/**/*.tsx",
+    "public/config.js",
+    "vite.config.js"
+   ]
+}

@@ -1,0 +1,65 @@
+[eodash-v5](../README.md) / EodashStore
+
+# Interface: EodashStore
+
+## Table of contents
+
+### Properties
+
+- [actions](EodashStore.md#actions)
+- [stac](EodashStore.md#stac)
+- [states](EodashStore.md#states)
+
+## Properties
+
+### actions
+
+• **actions**: `Object`
+
+#### Type declaration
+
+| Name | Type |
+| :------ | :------ |
+| `loadFont` | (`family?`: `string`, `link?`: `string`) => `Promise`\<`string`\> |
+
+#### Defined in
+
+[core/store/Types.ts:355](https://github.com/EOX-A/eodash-v5/blob/06b9523/core/store/Types.ts#L355)
+
+___
+
+### stac
+
+• **stac**: `Object`
+
+Pinia store definition used to navigate the root STAC catalog.
+
+#### Type declaration
+
+| Name | Type |
+| :------ | :------ |
+| `useSTAcStore` | `StoreDefinition`\<``"stac"``, `_UnwrapAll`\<`Pick`\<\{ `loadSTAC`: (`url`: `string`) => `Promise`\<`void`\> ; `loadSelectedSTAC`: (`relativePath`: `string`) => `Promise`\<`void`\> ; `selectedStac`: `Ref`\<``null`` \| \{ `description`: `string` ; `id`: `string` ; `links`: \{ `href`: `string` ; `rel`: `string` ; `title?`: `string` ; `type?`: `string`  }[] ; `stac_extensions?`: `string`[] ; `stac_version`: ``"1.0.0"`` ; `title?`: `string` ; `type`: ``"Catalog"``  }\> ; `stac`: `Ref`\<``null`` \| \{ `description`: `string` ; `id`: `string` ; `links`: \{ `href`: `string` ; `rel`: `string` ; `title?`: `string` ; `type?`: `string`  }[] ; `stac_extensions?`: `string`[] ; `stac_version`: ``"1.0.0"`` ; `title?`: `string` ; `type`: ``"Catalog"``  } \| \{ `assets?`: \{ `[k: string]`: `StacAsset`;  } ; `description`: `string` ; `extent`: \{ `spatial`: \{ `bbox`: [`number`[], ...number[][]]  } ; `temporal`: \{ `interval`: [[``null`` \| `string`, ``null`` \| `string`], ...[null \| string, null \| string][]]  }  } ; `id`: `string` ; `keywords?`: `string`[] ; `license`: `string` ; `links`: \{ `href`: `string` ; `rel`: `string` ; `title?`: `string` ; `type?`: `string`  }[] ; `providers?`: \{ `description?`: `string` ; `name`: `string` ; `roles?`: `StacRoles`[] ; `url?`: `string`  }[] ; `stac_extensions?`: `string`[] ; `stac_version`: ``"1.0.0"`` ; `summaries?`: `Summaries` ; `title?`: `string` ; `type`: ``"Collection"``  } \| \{ `assets`: \{ `[k: string]`: `StacAsset`;  } ; `bbox?`: `number`[] ; `collection?`: `string` ; `geometry`: ``null`` \| \{ `bbox?`: `number`[] ; `coordinates`: `number`[] ; `type`: ``"Point"``  } \| \{ `bbox?`: `number`[] ; `coordinates`: `number`[][] ; `type`: ``"LineString"``  } \| \{ `bbox?`: `number`[] ; `coordinates`: `number`[][][] ; `type`: ``"Polygon"``  } \| \{ `bbox?`: `number`[] ; `coordinates`: `number`[][] ; `type`: ``"MultiPoint"``  } \| \{ `bbox?`: `number`[] ; `coordinates`: `number`[][][] ; `type`: ``"MultiLineString"``  } \| \{ `bbox?`: `number`[] ; `coordinates`: `number`[][][][] ; `type`: ``"MultiPolygon"``  } \| \{ `bbox?`: `number`[] ; `geometries`: (\{ `bbox?`: `number`[] ; `coordinates`: `number`[] ; `type`: ``"Point"``  } \| \{ `bbox?`: `number`[] ; `coordinates`: `number`[][] ; `type`: ``"LineString"``  } \| \{ `bbox?`: `number`[] ; `coordinates`: `number`[][][] ; `type`: ``"Polygon"``  } \| \{ `bbox?`: `number`[] ; `coordinates`: `number`[][] ; `type`: ``"MultiPoint"``  } \| \{ `bbox?`: `number`[] ; `coordinates`: `number`[][][] ; `type`: ``"MultiLineString"``  } \| \{ `bbox?`: `number`[] ; `coordinates`: `number`[][][][] ; `type`: ``"MultiPolygon"``  })[] ; `type`: ``"GeometryCollection"``  } ; `id`: `string` ; `links`: \{ `href`: `string` ; `rel`: `string` ; `title?`: `string` ; `type?`: `string`  }[] ; `properties`: \{ `constellation?`: `string` ; `created?`: ``null`` \| `string` ; `datetime`: `string` & \{ `[k: string]`: `unknown`;  } ; `description?`: `string` ; `end_datetime?`: ``null`` \| `string` ; `gsd?`: `number` ; `instruments?`: `string`[] ; `license?`: `string` ; `mission?`: `string` ; `platform?`: `string` ; `providers?`: \{ `description?`: `string` ; `name`: `string` ; `roles?`: `StacRoles`[] ; `url?`: `string`  }[] ; `start_datetime?`: ``null`` \| `string` ; `title?`: `string` ; `updated?`: ``null`` \| `string`  } \| \{ `constellation?`: `string` ; `created?`: ``null`` \| `string` ; `datetime?`: ``null`` \| `string` ; `description?`: `string` ; `end_datetime?`: ``null`` \| `string` ; `gsd?`: `number` ; `instruments?`: `string`[] ; `license?`: `string` ; `mission?`: `string` ; `platform?`: `string` ; `providers?`: \{ `description?`: `string` ; `name`: `string` ; `roles?`: `StacRoles`[] ; `url?`: `string`  }[] ; `start_datetime?`: ``null`` \| `string` ; `title?`: `string` ; `updated?`: ``null`` \| `string`  } ; `stac_extensions?`: `string`[] ; `stac_version`: ``"1.0.0"`` ; `type`: ``"Feature"``  }\>  }, ``"stac"`` \| ``"selectedStac"``\>\>, `Pick`\<\{ `loadSTAC`: (`url`: `string`) => `Promise`\<`void`\> ; `loadSelectedSTAC`: (`relativePath`: `string`) => `Promise`\<`void`\> ; `selectedStac`: `Ref`\<``null`` \| \{ `description`: `string` ; `id`: `string` ; `links`: \{ `href`: `string` ; `rel`: `string` ; `title?`: `string` ; `type?`: `string`  }[] ; `stac_extensions?`: `string`[] ; `stac_version`: ``"1.0.0"`` ; `title?`: `string` ; `type`: ``"Catalog"``  }\> ; `stac`: `Ref`\<``null`` \| \{ `description`: `string` ; `id`: `string` ; `links`: \{ `href`: `string` ; `rel`: `string` ; `title?`: `string` ; `type?`: `string`  }[] ; `stac_extensions?`: `string`[] ; `stac_version`: ``"1.0.0"`` ; `title?`: `string` ; `type`: ``"Catalog"``  } \| \{ `assets?`: \{ `[k: string]`: `StacAsset`;  } ; `description`: `string` ; `extent`: \{ `spatial`: \{ `bbox`: [`number`[], ...number[][]]  } ; `temporal`: \{ `interval`: [[``null`` \| `string`, ``null`` \| `string`], ...[null \| string, null \| string][]]  }  } ; `id`: `string` ; `keywords?`: `string`[] ; `license`: `string` ; `links`: \{ `href`: `string` ; `rel`: `string` ; `title?`: `string` ; `type?`: `string`  }[] ; `providers?`: \{ `description?`: `string` ; `name`: `string` ; `roles?`: `StacRoles`[] ; `url?`: `string`  }[] ; `stac_extensions?`: `string`[] ; `stac_version`: ``"1.0.0"`` ; `summaries?`: `Summaries` ; `title?`: `string` ; `type`: ``"Collection"``  } \| \{ `assets`: \{ `[k: string]`: `StacAsset`;  } ; `bbox?`: `number`[] ; `collection?`: `string` ; `geometry`: ``null`` \| \{ `bbox?`: `number`[] ; `coordinates`: `number`[] ; `type`: ``"Point"``  } \| \{ `bbox?`: `number`[] ; `coordinates`: `number`[][] ; `type`: ``"LineString"``  } \| \{ `bbox?`: `number`[] ; `coordinates`: `number`[][][] ; `type`: ``"Polygon"``  } \| \{ `bbox?`: `number`[] ; `coordinates`: `number`[][] ; `type`: ``"MultiPoint"``  } \| \{ `bbox?`: `number`[] ; `coordinates`: `number`[][][] ; `type`: ``"MultiLineString"``  } \| \{ `bbox?`: `number`[] ; `coordinates`: `number`[][][][] ; `type`: ``"MultiPolygon"``  } \| \{ `bbox?`: `number`[] ; `geometries`: (\{ `bbox?`: `number`[] ; `coordinates`: `number`[] ; `type`: ``"Point"``  } \| \{ `bbox?`: `number`[] ; `coordinates`: `number`[][] ; `type`: ``"LineString"``  } \| \{ `bbox?`: `number`[] ; `coordinates`: `number`[][][] ; `type`: ``"Polygon"``  } \| \{ `bbox?`: `number`[] ; `coordinates`: `number`[][] ; `type`: ``"MultiPoint"``  } \| \{ `bbox?`: `number`[] ; `coordinates`: `number`[][][] ; `type`: ``"MultiLineString"``  } \| \{ `bbox?`: `number`[] ; `coordinates`: `number`[][][][] ; `type`: ``"MultiPolygon"``  })[] ; `type`: ``"GeometryCollection"``  } ; `id`: `string` ; `links`: \{ `href`: `string` ; `rel`: `string` ; `title?`: `string` ; `type?`: `string`  }[] ; `properties`: \{ `constellation?`: `string` ; `created?`: ``null`` \| `string` ; `datetime`: `string` & \{ `[k: string]`: `unknown`;  } ; `description?`: `string` ; `end_datetime?`: ``null`` \| `string` ; `gsd?`: `number` ; `instruments?`: `string`[] ; `license?`: `string` ; `mission?`: `string` ; `platform?`: `string` ; `providers?`: \{ `description?`: `string` ; `name`: `string` ; `roles?`: `StacRoles`[] ; `url?`: `string`  }[] ; `start_datetime?`: ``null`` \| `string` ; `title?`: `string` ; `updated?`: ``null`` \| `string`  } \| \{ `constellation?`: `string` ; `created?`: ``null`` \| `string` ; `datetime?`: ``null`` \| `string` ; `description?`: `string` ; `end_datetime?`: ``null`` \| `string` ; `gsd?`: `number` ; `instruments?`: `string`[] ; `license?`: `string` ; `mission?`: `string` ; `platform?`: `string` ; `providers?`: \{ `description?`: `string` ; `name`: `string` ; `roles?`: `StacRoles`[] ; `url?`: `string`  }[] ; `start_datetime?`: ``null`` \| `string` ; `title?`: `string` ; `updated?`: ``null`` \| `string`  } ; `stac_extensions?`: `string`[] ; `stac_version`: ``"1.0.0"`` ; `type`: ``"Feature"``  }\>  }, `never`\>, `Pick`\<\{ `loadSTAC`: (`url`: `string`) => `Promise`\<`void`\> ; `loadSelectedSTAC`: (`relativePath`: `string`) => `Promise`\<`void`\> ; `selectedStac`: `Ref`\<``null`` \| \{ `description`: `string` ; `id`: `string` ; `links`: \{ `href`: `string` ; `rel`: `string` ; `title?`: `string` ; `type?`: `string`  }[] ; `stac_extensions?`: `string`[] ; `stac_version`: ``"1.0.0"`` ; `title?`: `string` ; `type`: ``"Catalog"``  }\> ; `stac`: `Ref`\<``null`` \| \{ `description`: `string` ; `id`: `string` ; `links`: \{ `href`: `string` ; `rel`: `string` ; `title?`: `string` ; `type?`: `string`  }[] ; `stac_extensions?`: `string`[] ; `stac_version`: ``"1.0.0"`` ; `title?`: `string` ; `type`: ``"Catalog"``  } \| \{ `assets?`: \{ `[k: string]`: `StacAsset`;  } ; `description`: `string` ; `extent`: \{ `spatial`: \{ `bbox`: [`number`[], ...number[][]]  } ; `temporal`: \{ `interval`: [[``null`` \| `string`, ``null`` \| `string`], ...[null \| string, null \| string][]]  }  } ; `id`: `string` ; `keywords?`: `string`[] ; `license`: `string` ; `links`: \{ `href`: `string` ; `rel`: `string` ; `title?`: `string` ; `type?`: `string`  }[] ; `providers?`: \{ `description?`: `string` ; `name`: `string` ; `roles?`: `StacRoles`[] ; `url?`: `string`  }[] ; `stac_extensions?`: `string`[] ; `stac_version`: ``"1.0.0"`` ; `summaries?`: `Summaries` ; `title?`: `string` ; `type`: ``"Collection"``  } \| \{ `assets`: \{ `[k: string]`: `StacAsset`;  } ; `bbox?`: `number`[] ; `collection?`: `string` ; `geometry`: ``null`` \| \{ `bbox?`: `number`[] ; `coordinates`: `number`[] ; `type`: ``"Point"``  } \| \{ `bbox?`: `number`[] ; `coordinates`: `number`[][] ; `type`: ``"LineString"``  } \| \{ `bbox?`: `number`[] ; `coordinates`: `number`[][][] ; `type`: ``"Polygon"``  } \| \{ `bbox?`: `number`[] ; `coordinates`: `number`[][] ; `type`: ``"MultiPoint"``  } \| \{ `bbox?`: `number`[] ; `coordinates`: `number`[][][] ; `type`: ``"MultiLineString"``  } \| \{ `bbox?`: `number`[] ; `coordinates`: `number`[][][][] ; `type`: ``"MultiPolygon"``  } \| \{ `bbox?`: `number`[] ; `geometries`: (\{ `bbox?`: `number`[] ; `coordinates`: `number`[] ; `type`: ``"Point"``  } \| \{ `bbox?`: `number`[] ; `coordinates`: `number`[][] ; `type`: ``"LineString"``  } \| \{ `bbox?`: `number`[] ; `coordinates`: `number`[][][] ; `type`: ``"Polygon"``  } \| \{ `bbox?`: `number`[] ; `coordinates`: `number`[][] ; `type`: ``"MultiPoint"``  } \| \{ `bbox?`: `number`[] ; `coordinates`: `number`[][][] ; `type`: ``"MultiLineString"``  } \| \{ `bbox?`: `number`[] ; `coordinates`: `number`[][][][] ; `type`: ``"MultiPolygon"``  })[] ; `type`: ``"GeometryCollection"``  } ; `id`: `string` ; `links`: \{ `href`: `string` ; `rel`: `string` ; `title?`: `string` ; `type?`: `string`  }[] ; `properties`: \{ `constellation?`: `string` ; `created?`: ``null`` \| `string` ; `datetime`: `string` & \{ `[k: string]`: `unknown`;  } ; `description?`: `string` ; `end_datetime?`: ``null`` \| `string` ; `gsd?`: `number` ; `instruments?`: `string`[] ; `license?`: `string` ; `mission?`: `string` ; `platform?`: `string` ; `providers?`: \{ `description?`: `string` ; `name`: `string` ; `roles?`: `StacRoles`[] ; `url?`: `string`  }[] ; `start_datetime?`: ``null`` \| `string` ; `title?`: `string` ; `updated?`: ``null`` \| `string`  } \| \{ `constellation?`: `string` ; `created?`: ``null`` \| `string` ; `datetime?`: ``null`` \| `string` ; `description?`: `string` ; `end_datetime?`: ``null`` \| `string` ; `gsd?`: `number` ; `instruments?`: `string`[] ; `license?`: `string` ; `mission?`: `string` ; `platform?`: `string` ; `providers?`: \{ `description?`: `string` ; `name`: `string` ; `roles?`: `StacRoles`[] ; `url?`: `string`  }[] ; `start_datetime?`: ``null`` \| `string` ; `title?`: `string` ; `updated?`: ``null`` \| `string`  } ; `stac_extensions?`: `string`[] ; `stac_version`: ``"1.0.0"`` ; `type`: ``"Feature"``  }\>  }, ``"loadSTAC"`` \| ``"loadSelectedSTAC"``\>\> |
+
+#### Defined in
+
+[core/store/Types.ts:361](https://github.com/EOX-A/eodash-v5/blob/06b9523/core/store/Types.ts#L361)
+
+___
+
+### states
+
+• **states**: `Object`
+
+Stateful Reactive variables
+
+#### Type declaration
+
+| Name | Type | Description |
+| :------ | :------ | :------ |
+| `currentUrl` | `Ref`\<`string`\> | Currently selected STAC endpoint |
+| `hasWMS` | `Ref`\<`boolean`\> | Indicates if the the current selected STAC contains a WMS type link. |
+| `mapInstance` | `Ref`\<``null`` \| `Map`\> | OpenLayers map instance |
+
+#### Defined in
+
+[core/store/Types.ts:340](https://github.com/EOX-A/eodash-v5/blob/06b9523/core/store/Types.ts#L340)
