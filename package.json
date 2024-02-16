@@ -1,4 +1,8 @@
 {
+  "name": "eodash",
+  "version": "5.0.0-alpha",
+  "private": true,
+  "type": "module",
   "name": "@eodash/eodash",
   "version": "5.0.0-alpha.1.12",
   "type": "module",
