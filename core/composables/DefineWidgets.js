@@ -52,8 +52,8 @@ export const useDefineWidgets = (widgetConfigs) => {
     if ('defineWidget' in (config ?? {})) {
       const { selectedStac } = storeToRefs(useSTAcStore())
       watch(selectedStac, (updatedStac) => {
-        const definedConfig = /** @type {FunctionalWidget} */
-          (config)?.defineWidget(updatedStac)
+        const definedConfig = reactive(/** @type {FunctionalWidget} */
+          (config)?.defineWidget(updatedStac))
         definedWidget.value = definedWidget.value.id === definedConfig.id ?
           definedWidget.value : getWidgetDefinition(definedConfig);
       }, { immediate: true })

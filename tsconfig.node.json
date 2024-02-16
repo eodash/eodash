@@ -1,0 +1,13 @@
+{
+    "compilerOptions": {
+        "composite": true,
+        "module": "esnext",
+        "checkJs": true,
+        "allowJs": true,
+        "moduleResolution": "node"
+    },
+    "include": [
+        "bin/*.js",
+        "vite.config.js"
+    ]
+}

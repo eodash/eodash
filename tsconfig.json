@@ -19,6 +19,7 @@
     "esModuleInterop": true,
     "lib": ["esnext", "dom"],
     "types": [
+      "node",
       "vuetify"
     ],
     "paths": {
