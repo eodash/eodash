@@ -36,6 +36,10 @@ const modulesMap = {
   '@eox/itemfilter': async () => await import('@eox/itemfilter'),
   '@eox/stacinfo': async () => await import('@eox/stacinfo'),
   '@eox/map': async () => await import('@eox/map'),
+  '@eox/chart': async () => await import('@eox/chart'),
+  '@eox/jsonform': async () => await import('@eox/jsonform'),
+  '@eox/layercontrol': async () => await import('@eox/layercontrol'),
+  '@eox/timecontrol': async () => await import('@eox/timecontrol')
 };
 
 const getWebComponent = async () => props.link in modulesMap ?

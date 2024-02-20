@@ -17,3 +17,15 @@ declare module '@eox/stacinfo' {
 declare module '@eox/map' {
   export const EOxMap: CustomElementConstructor
 }
+declare module '@eox/chart' {
+  export const EOxMap: CustomElementConstructor
+}
+declare module '@eox/layercontrol' {
+  export const EOxMap: CustomElementConstructor
+}
+declare module '@eox/timecontrol' {
+  export const EOxMap: CustomElementConstructor
+}
+declare module '@eox/jsonform' {
+  export const EOxMap: CustomElementConstructor
+}

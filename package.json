@@ -14,10 +14,14 @@
     "docs:generate": "typedoc --plugin typedoc-plugin-markdown core/store/Types.ts --tsconfig tsconfig.json --out docs --readme none"
   },
   "dependencies": {
+    "@eox/chart": "^2.0.0-beta2",
+    "@eox/drawtools": "^0.6.1",
     "@eox/itemfilter": "^0.12.1",
+    "@eox/layercontrol": "^0.15.1",
     "@eox/layout": "^0.1.0",
     "@eox/map": "^1.1.0",
     "@eox/stacinfo": "^0.3.0",
+    "@eox/timecontrol": "^0.3.0",
     "@mdi/font": "7.0.96",
     "animated-details": "gist:2912bb049fa906671807415eb0e87188",
     "axios": "^1.6.2",
