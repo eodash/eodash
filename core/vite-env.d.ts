@@ -15,3 +15,15 @@ declare module 'user:config' {
   const eodash: import("@/types").Eodash | Promise<import("@/types").Eodash>;
   export default eodash
 }
+declare module '@eox/chart' {
+  export const EOxMap: CustomElementConstructor
+}
+declare module '@eox/layercontrol' {
+  export const EOxMap: CustomElementConstructor
+}
+declare module '@eox/timecontrol' {
+  export const EOxMap: CustomElementConstructor
+}
+declare module '@eox/jsonform' {
+  export const EOxMap: CustomElementConstructor
+}
