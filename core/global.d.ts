@@ -1,5 +1,4 @@
 import { useSTAcStore } from "@/store/stac"
-import modulesMap from '@/modulesMap';
 import { ThemeDefinition } from "vuetify/lib/framework.mjs";
 import { Ref } from "vue";
 import type { Map } from 'ol'
