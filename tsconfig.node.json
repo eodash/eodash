@@ -4,10 +4,15 @@
         "module": "esnext",
         "checkJs": true,
         "allowJs": true,
-        "moduleResolution": "node"
+        "moduleResolution": "node",
+        "outDir": "dist"
     },
     "include": [
-        "bin/*.js",
+        "bin/**/*.js",
         "vite.config.js"
+    ],
+    "exclude": [
+        "node_modules",
+        "dist"
     ]
 }
