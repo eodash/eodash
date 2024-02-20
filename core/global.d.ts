@@ -15,7 +15,7 @@ declare global {
     /** Web component definition file URL*/
     link: string
     /** Indicates if the widget is a node module */
-    node_module?: false
+    // node_module?: false
     /** Exported Constructor, needs to be provided if the web component is not registered by the `link` provided */
     constructorProp?: string
     /** Custom tag name */
@@ -36,35 +36,35 @@ declare global {
     onUnmounted?: (el: Element, store: ReturnType<typeof useSTAcStore>, router: Router) => (Promise<void> | void)
   }
 
-  /**
-   * Specification of web components imported as a node_module.
-   */
-  export interface NodeModuleWebComponentProps {
-    /** Type of `modulesMap` key. Defined in `/core/modulesMap.ts`*/
-    link: keyof typeof modulesMap;
-    /** Indicates if the widget is a node module */
-    node_module: true;
-    /** Exported Constructor, needs to be provided if the web component is not registered */
-    constructorProp?: string
-    /** Custom tag name */
-    tagName: `${string}-${string}`
-    /** Object defining all the properties and attributes of the web component */
-    properties?: Record<string, any>
-    /**
-     * Function that is triggered when the web component is mounted in the DOM.
-     * @param el - web component
-     * @param store - return value of the core STAC pinia store in `/core/store/stac.ts`
-     */
-    onMounted?: (el: Element, store: ReturnType<typeof useSTAcStore>, router: Router) => (Promise<void> | void)
-    /**
-     * Function that is triggered when the web component is unmounted from the DOM.
-     * @param el - web component
-     * @param store - return value of the core STAC pinia store in `/core/store/stac.ts`
-     */
-    onUnmounted?: (el: Element, store: ReturnType<typeof useSTAcStore>, router: Router) => (Promise<void> | void)
-  }
+  // /**
+  //  * Specification of web components imported as a node_module.
+  //  */
+  // export interface NodeModuleWebComponentProps {
+  //   /** Type of `modulesMap` key. Defined in `/core/modulesMap.ts`*/
+  //   link: keyof typeof modulesMap;
+  //   /** Indicates if the widget is a node module */
+  //   node_module: true;
+  //   /** Exported Constructor, needs to be provided if the web component is not registered */
+  //   constructorProp?: string
+  //   /** Custom tag name */
+  //   tagName: `${string}-${string}`
+  //   /** Object defining all the properties and attributes of the web component */
+  //   properties?: Record<string, any>
+  //   /**
+  //    * Function that is triggered when the web component is mounted in the DOM.
+  //    * @param el - web component
+  //    * @param store - return value of the core STAC pinia store in `/core/store/stac.ts`
+  //    */
+  //   onMounted?: (el: Element, store: ReturnType<typeof useSTAcStore>, router: Router) => (Promise<void> | void)
+  //   /**
+  //    * Function that is triggered when the web component is unmounted from the DOM.
+  //    * @param el - web component
+  //    * @param store - return value of the core STAC pinia store in `/core/store/stac.ts`
+  //    */
+  //   onUnmounted?: (el: Element, store: ReturnType<typeof useSTAcStore>, router: Router) => (Promise<void> | void)
+  // }
   /** @ignore */
-  export type DynamicWebComponentProps = ExternalWebComponentProps | NodeModuleWebComponentProps
+  export type DynamicWebComponentProps = ExternalWebComponentProps // ExternalWebComponentProps | NodeModuleWebComponentProps
 
   /** @ignore */
   export interface WidgetsContainerProps {
@@ -108,7 +108,7 @@ declare global {
        */
       h: number
     }
-    widget: ExternalWebComponentProps | NodeModuleWebComponentProps
+    widget: ExternalWebComponentProps // | NodeModuleWebComponentProps
     /**
      * Widget type
      */
