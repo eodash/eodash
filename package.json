@@ -48,7 +48,8 @@
     "vue": "^3.2.0",
     "vue-router": "^4.0.0",
     "vuetify": "^3.5.1",
-    "webfontloader": "^1.6.28"
+    "webfontloader": "^1.6.28",
+    "ws": "^8.16.0"
   },
   "devDependencies": {
     "@babel/types": "^7.21.4",
