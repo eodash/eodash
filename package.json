@@ -3,14 +3,10 @@
   "version": "5.0.0-alpha",
   "private": true,
   "type": "module",
-  "module": "./dist/index.html",
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "browser": "./dist/index.html",
-  "exports": {
-    ".": {
-      "import": "./dist/index.html"
-    }
-  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -43,11 +39,11 @@
     "vue": "^3.2.0",
     "vue-router": "^4.0.0",
     "vuetify": "^3.5.1",
-    "webfontloader": "^1.6.28"
+    "webfontloader": "^1.6.28",
+    "ws": "^8.16.0"
   },
   "devDependencies": {
     "@babel/types": "^7.21.4",
-    "@types/node": "^18.15.0",
     "@types/openlayers": "^4.6.23",
     "@types/webfontloader": "^1.6.38",
     "@vitejs/plugin-vue": "^4.0.0",

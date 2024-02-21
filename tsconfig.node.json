@@ -11,8 +11,4 @@
         "bin/**/*.js",
         "vite.config.js"
     ],
-    "exclude": [
-        "node_modules",
-        "dist"
-    ]
 }

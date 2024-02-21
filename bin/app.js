@@ -4,12 +4,15 @@ import { fileURLToPath } from 'url';
 import { preview } from 'vite'
 import express from "express";
 import chokidar from "chokidar"
-import fs from "fs/promises";
+import { copyFile, cp, readFile, writeFile } from "fs/promises";
+import { WebSocketServer } from 'ws';
+
 
 // global paths
 global.__appPath = fileURLToPath(new URL("../", import.meta.url));
 global.__execPath = fileURLToPath(new URL(process.cwd(), import.meta.url));
 global.__configPath = __execPath + "/config.js";
+
 
 (async () => {
   if (process.argv.includes('dev')) {
@@ -25,46 +28,86 @@ async function update() {
   // 1. copy public
   const publicPath = __execPath + "/public"
   const distPath = __appPath + "dist"
-  await copyFolders(publicPath, distPath)
+  await cp(publicPath, distPath, { recursive: true }).catch(err => {
+    console.error(err)
+  })
   // 2. copy config
   const appConfigPath = __appPath + "dist/config.js";
-  await copyFile(__configPath, appConfigPath)
+  await copyFile(__configPath, appConfigPath).catch(err => {
+    console.error(err)
+  });
 }
 
+const wsClientScript = `<script type="module">
+const client = new WebSocket("ws://localhost:3333/");
+client.onerror = function (e) {
+  console.error('WebSocket Client Error', e);
+};
+client.onopen = function () {
+  console.info('client connected');
+};
+client.onclose = function () {
+  console.info('client closed');
+};
+client.onmessage = function (evt) {
+  if (evt.data === 'reload') {
+    window.location.reload()
+  }
+};
+</script>`
 
 async function dev() {
+  // copy files to app
   await update();
-  var app = startDevServer()
-  // watch config and public folders
+  // inject ws client for dev
+  await injectInHTML(wsClientScript)
+  // create static server
+  const server = express();
+  server.use(express.static(__appPath + "dist"));
+  server.listen(3000, () => {
+    console.info(`server is running on http://localhost:3000`);
+  })
+  server.all("*", (req, res) => {
+    // handle query
+    const params = new URLSearchParams(req.query).toString()
+    // redirect to the app
+    res.redirect(`${params.length ? '/?' + params : '/'}`)
+  })
+  // create files watcher
   const watcher = chokidar.watch(__execPath + '/**/**.js', {
-    ignored: ["**/node_modules/**", __execPath + "/app/**"],
-    persistent: true
+    ignored: ["**/node_modules/**", __execPath + "/app/**", __appPath + '**/**.**'],
+    depth: 2
   });
+
+  // create ws server for reloading
+  const wsServer = new WebSocketServer({ port: 3333 });
+
+  let websocket = null
+  wsServer.on('connection', (ws) => {
+    websocket = ws
+  });
+
+  // reload on change
   watcher.on('change', async (path) => {
     if (path === __configPath) {
       await update()
-      app.close(() => {
-        app = startDevServer()
-      })
+      websocket.send('reload')
+      console.info(`updated config.js ✨`)
     }
-    console.info(`File ${path} has changed`)
   })
 }
 
-function startDevServer() {
-  const server = express();
-  server.use(express.static(__appPath + "dist"));
-  const app = server.listen(3000, () => {
-    console.info(`Server is running on http://localhost:3000`);
-  });
-  server.all("*", (_, res) => {
-    res.redirect("/")
-  })
-  return app
-}
+
+
 async function buildApp() {
   await update()
-  await copyFolders(__appPath + 'dist', __execPath + '/app')
+  // remove injected script before copying to exec path
+  await injectInHTML(wsClientScript, true)
+  await cp(__appPath + 'dist', __execPath + '/app', { recursive: true }).catch(err => {
+    console.error(err)
+  })
+  console.info(`built successfully`)
+
 }
 
 async function previewApp() {
@@ -85,18 +128,28 @@ async function previewApp() {
 }
 
 
-// utils
-async function copyFolders(from, to) {
-  await fs.cp(from, to, { recursive: true }, (err) => {
-    if (err) throw err;
-    console.info(`copied files from ${from} to ${to}`);
-  });
-}
-
-async function copyFile(from, to) {
-  await fs.copyFile(from, to).then(() => {
-    console.info(`${from} was copied to ${to}`);
+async function injectInHTML(injected, remove) {
+  const htmlPath = __appPath + 'dist/index.html'
+  const updatedHtml = await readFile(htmlPath, 'utf8').then(data => {
+    let html = ''
+    if (remove) {
+      html = data.replace(injected, '')
+    } else {
+      if (!data.includes(injected)) {
+        const splitHtml = data.split("\n")
+        splitHtml.splice(splitHtml.indexOf("</body>"), 0, injected);
+        html = splitHtml.join("\n")
+      }
+    }
+    return html
   }).catch(err => {
-    console.error(err)
-  });
+    throw err
+  })
+
+  if (updatedHtml.length) {
+    await writeFile(htmlPath, updatedHtml).then(() => {
+    }).catch(err => {
+      if (err) throw err;
+    });
+  }
 }
