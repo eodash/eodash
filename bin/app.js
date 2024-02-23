@@ -3,15 +3,15 @@
 import { fileURLToPath } from 'url';
 import { preview } from 'vite'
 import express from "express";
-import chokidar from "chokidar"
+import * as chokidar from "chokidar"
 import { copyFile, cp, readFile, writeFile } from "fs/promises";
 import { WebSocketServer } from 'ws';
 
 
 // global paths
-global.__appPath = fileURLToPath(new URL("../", import.meta.url));
-global.__execPath = fileURLToPath(new URL(process.cwd(), import.meta.url));
-global.__configPath = __execPath + "/config.js";
+const __appPath = fileURLToPath(new URL("../", import.meta.url));
+const __execPath = fileURLToPath(new URL(process.cwd(), import.meta.url));
+const __configPath = __execPath + "/config.js";
 
 
 (async () => {
@@ -64,15 +64,18 @@ async function dev() {
   // create static server
   const server = express();
   server.use(express.static(__appPath + "dist"));
+
   server.listen(3000, () => {
     console.info(`server is running on http://localhost:3000`);
   })
+
   server.all("*", (req, res) => {
     // handle query
     const params = new URLSearchParams(req.query).toString()
     // redirect to the app
     res.redirect(`${params.length ? '/?' + params : '/'}`)
   })
+
   // create files watcher
   const watcher = chokidar.watch(__execPath + '/**/**.js', {
     ignored: ["**/node_modules/**", __execPath + "/app/**", __appPath + '**/**.**'],
@@ -107,15 +110,11 @@ async function buildApp() {
     console.error(err)
   })
   console.info(`built successfully`)
-
 }
 
 async function previewApp() {
   const previewServer = await preview({
     root: __execPath,
-    server: {
-      watch: __configPath,
-    },
     preview: {
       port: 8080,
       open: true,
@@ -147,9 +146,8 @@ async function injectInHTML(injected, remove) {
   })
 
   if (updatedHtml.length) {
-    await writeFile(htmlPath, updatedHtml).then(() => {
-    }).catch(err => {
-      if (err) throw err;
+    await writeFile(htmlPath, updatedHtml).catch(err => {
+      throw err;
     });
   }
 }
