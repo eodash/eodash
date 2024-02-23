@@ -16,14 +16,14 @@ declare module 'user:config' {
   export default eodash
 }
 declare module '@eox/chart' {
-  export const EOxMap: CustomElementConstructor
+  export const EOxChart: CustomElementConstructor
 }
 declare module '@eox/layercontrol' {
-  export const EOxMap: CustomElementConstructor
+  export const EOxLayerControl: CustomElementConstructor
 }
 declare module '@eox/timecontrol' {
-  export const EOxMap: CustomElementConstructor
+  export const EOxTimeControl: CustomElementConstructor
 }
 declare module '@eox/jsonform' {
-  export const EOxMap: CustomElementConstructor
+  export const EOxJSONForm: CustomElementConstructor
 }

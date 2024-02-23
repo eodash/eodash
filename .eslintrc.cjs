@@ -29,15 +29,6 @@ module.exports = {
       "rules": {
         "no-unused-vars": ["warn", { "argsIgnorePattern": "^_" }]
       }
-    },
-    {
-      "files": ["bin/**/**.js"],
-      "globals": {
-        "__execPath": "readonly",
-        "__appPath": "readonly",
-        "__configPath": "readonly",
-        "__nodeModsMapPath": "readonly"
-      },
     }
   ]
 }
