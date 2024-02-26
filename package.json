@@ -11,6 +11,7 @@
     "preview": "vite preview",
     "lint": "eslint . --fix",
     "cypress": "cypress open",
+    "test": "cypress run --component",
     "docs:generate": "typedoc --plugin typedoc-plugin-markdown core/store/Types.ts --tsconfig tsconfig.json --out docs --readme none"
   },
   "dependencies": {

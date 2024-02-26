@@ -3,7 +3,7 @@ import { eodashConfigKey } from '@/store/Keys'
 
 describe('<Footer />', () => {
   beforeEach(() => {
-    cy.mount(Footer)
+    cy.vMount(Footer)
   })
 
   it('render component and footer title', () => {

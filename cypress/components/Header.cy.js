@@ -3,12 +3,12 @@ import { eodashConfigKey } from '@/store/Keys'
 
 describe('<Header />', () => {
   beforeEach(() => {
-
-    cy.mount(Header)
+    cy.vMount(Header)
   })
 
 
   it('render component and app title', () => {
+    //@ts-ignore
     cy.get("@vue").then(({ options }) => {
       const appTitle = /** @type {EodashConfig }*/
         (options.global.provide[eodashConfigKey]).brand.name

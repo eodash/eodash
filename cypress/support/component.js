@@ -1,20 +1,17 @@
 //@ts-nocheck
 
-import { Suspense, defineComponent, h } from 'vue'
+import { mount } from 'cypress/vue'
+import { Suspense, h } from 'vue'
 import './commands'
 import { routes } from '@/plugins/router'
-
-
-import { mount } from 'cypress/vue'
 import { createWebHistory, createRouter } from 'vue-router';
 import { VApp } from 'vuetify/components'
-
 import { createVuetify } from 'vuetify';
 import eodashConfig from '@/eodashConfig';
 import { eodashConfigKey } from '@/store/Keys';
 
 
-export const mountComponent = (component, options = {}) => {
+export const vMountComponent = (component, options = {}) => {
   options.global = options.global || {}
   options.global.plugins = options.global.plugins || []
 
@@ -44,10 +41,12 @@ export const mountComponent = (component, options = {}) => {
     [eodashConfigKey]: eodashConfig
   }
 
-  return mount({ render: () => h(Suspense, [h(VApp, [h(component, { ...(options.props ?? {}) })])]) }, options).then((comp) => {
-    return cy.wrap({ wrapper: comp.wrapper.getComponent(component), options }).as('vue')
+  return mount({ render: () => h(Suspense, [h(VApp, [h(component, { ...(options.props ?? {}) })])]) }, options).then((app) => {
+    return cy.wrap({ wrapper: app.wrapper.getComponent(component), options }).as('vue')
   })
 }
-Cypress.Commands.add('mount', mountComponent);
+
+Cypress.Commands.add('vMount', vMountComponent);
+Cypress.Commands.add('mount', mount);
 // Example use:
 // cy.mount(MyComponent)
