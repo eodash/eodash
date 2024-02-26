@@ -3,14 +3,117 @@ import { ThemeDefinition } from "vuetify/lib/framework.mjs";
 import { Ref } from "vue";
 import type { Map } from 'ol'
 import type { Router } from "vue-router";
+import { StacCatalog, StacCollection, StacItem } from "stac-ts";
 
 
+/**
+ * Eodash configuration specification.
+ */
+interface EodashConfig_2 {
+  /**
+   * Configuration ID that defines the route of the dashboard.
+   * Rendered dashboard can be accessed on route `/dashboard/config-id`
+   */
+  id: string;
+  /**
+   * Root STAC catalog endpoint
+   **/
+  stacEndpoint: StacEndpoint
+  /**
+  * Renderes to navigation buttons on the app header.
+  **/
+  routes?: Array<{
+    /**
+     * button title
+     **/
+    title: string,
+    /**
+     * external URL or inner path to navigate to.
+     **/
+    to: ExternalURL | InternalRoute
+  }>
+  /**
+   * Brand specifications.
+   */
+  brand: {
+    /**
+     * Automatically fetches the specified font family from google fonts. if the `link` property is specified
+     * the font family will be fetched from the provided source instead.
+     */
+    font?: {
+      /**
+       * Link to stylesheet that defines font-face.
+       */
+      link?: string;
+      /**
+       * Font family. Use FVD notation to include families https://github.com/typekit/fvd
+       */
+      family: string
+    }
+    /**
+     *  Title that will be shown in the app header
+     */
+    name: string;
+    /**
+     * Alias that will be shown in the app footer if specified.
+     */
+    shortName?: string
+    /**
+     * brand logo
+     */
+    logo?: string;
+    /**
+     * Dashboard theme as a custom vuetifyJs theme.
+     */
+    theme?: ThemeDefinition
+  }
+  /**
+   * Rendered widgets configuration
+   */
+  template: TemplateConfig
+}
+/////////
+
+/// eodash store types
+
+interface EodashStore_2 {
+  /**
+   * Stateful Reactive variables
+   */
+  states: {
+    /**
+     * Currently selected STAC endpoint
+     */
+    currentUrl: Ref<string>
+    /**
+     * Indicates if the the current selected STAC contains a WMS type link.
+     */
+    hasWMS: Ref<boolean>
+    /**
+    * OpenLayers map instance
+    */
+    mapInstance: Ref<Map | null>
+  }
+  // consider removing the actions ?
+  actions: {
+    loadFont: (family?: string, link?: string) => Promise<string>;
+  };
+  /**
+   *  Pinia store definition used to navigate the root STAC catalog.
+   */
+  stac: {
+    useSTAcStore: typeof useSTAcStore
+  }
+}
+///////
 declare global {
+  type EodashConfig = EodashConfig_2;
+  type EodashStore = EodashStore_2;
 
   /**
    * Specification of web components imported from an external URL
    */
-  export interface ExternalWebComponentProps {
+  interface ExternalWebComponentProps {
     /** Web component definition file URL*/
     link: string
     /** Indicates if the widget is a node module */
@@ -63,10 +166,10 @@ declare global {
   //   onUnmounted?: (el: Element, store: ReturnType<typeof useSTAcStore>, router: Router) => (Promise<void> | void)
   // }
   /** @ignore */
-  export type DynamicWebComponentProps = ExternalWebComponentProps // ExternalWebComponentProps | NodeModuleWebComponentProps
+  type DynamicWebComponentProps = ExternalWebComponentProps // ExternalWebComponentProps | NodeModuleWebComponentProps
 
   /** @ignore */
-  export interface WidgetsContainerProps {
+  interface WidgetsContainerProps {
     widgets: Omit<WidgetConfig, 'layout'>[]
   }
 
@@ -77,7 +180,7 @@ declare global {
    * Installed node_module web components import should be mapped in `/core/modulesMap.ts`,
    * then setting `widget.link`:`(import-map-key)` and `node_module`:`true`
    */
-  export interface WebComponentConfig {
+  interface WebComponentConfig {
     /**
    * Unique Identifier, triggers rerender when using `defineWidget`
    **/
@@ -118,7 +221,7 @@ declare global {
    * Widget type: `internal` specification.
    * Internal widgets are Vue components inside the `/widgets` directory.
    */
-  export interface InternalComponentConfig {
+  interface InternalComponentConfig {
     /**
     * Unique Identifier, triggers rerender when using `defineWidget`
     **/
@@ -168,7 +271,7 @@ declare global {
    * Widget type: `iframe` specification.
    * Renders an external HTML file as a widget.
    */
-  export interface IFrameConfig {
+  interface IFrameConfig {
     /**
      * Unique Identifier, triggers rerender when using `defineWidget`
      **/
@@ -209,7 +312,7 @@ declare global {
     */
     type: 'iframe'
   }
-  export interface FunctionalWidget {
+  interface FunctionalWidget {
     /**
      * Provides a functional definition of the widget,
      * gets triggered whenever a stac object is selected.
@@ -235,17 +338,17 @@ declare global {
       h: number
     }
   }
-  export type StaticWidget = WebComponentConfig | InternalComponentConfig | IFrameConfig
-  export type WidgetConfig = StaticWidget | FunctionalWidget
+  type StaticWidget = WebComponentConfig | InternalComponentConfig | IFrameConfig
+  type WidgetConfig = StaticWidget | FunctionalWidget
 
 
-  export type BackgroundWidgetConfig = Omit<WebComponentConfig, 'layout' | 'title'> | Omit<InternalComponentConfig, 'layout' | 'title'> | Omit<IFrameConfig, 'layout' | 'title'> | Omit<FunctionalWidget, 'layout'>
+  type BackgroundWidgetConfig = Omit<WebComponentConfig, 'layout' | 'title'> | Omit<InternalComponentConfig, 'layout' | 'title'> | Omit<IFrameConfig, 'layout' | 'title'> | Omit<FunctionalWidget, 'layout'>
   /**
    * Dashboard rendered widgets configuration specification.
    * 3 types of widgets are supported: `"iframe"`, `"internal"`, and `"web-component"`.
    * A specific configuration should be provided based on the type of the widget.
    */
-  export interface TemplateConfig {
+  interface TemplateConfig {
     /**
      * Gap between widgets
      */
@@ -265,110 +368,6 @@ declare global {
   type InternalRoute = `/${string}`
   type StacEndpoint = `${'https://' | 'http://'}${string}/catalog.json`
 
-  /**
-   * Eodash configuration specification.
-   */
-  export interface EodashConfig {
-    /**
-     * Configuration ID that defines the route of the dashboard.
-     * Rendered dashboard can be accessed on route `/dashboard/config-id`
-     */
-    id: string;
-    /**
-     * Root STAC catalog endpoint
-     **/
-    stacEndpoint: StacEndpoint
-    /**
-    * Renderes to navigation buttons on the app header.
-    **/
-    routes?: Array<{
-      /**
-       * button title
-       **/
-      title: string,
-      /**
-       * external URL or inner path to navigate to.
-       **/
-      to: ExternalURL | InternalRoute
-    }>
-    /**
-     * Brand specifications.
-     */
-    brand: {
-      /**
-       * Automatically fetches the specified font family from google fonts. if the `link` property is specified
-       * the font family will be fetched from the provided source instead.
-       */
-      font?: {
-        /**
-         * Link to stylesheet that defines font-face.
-         */
-        link?: string;
-        /**
-         * Font family. Use FVD notation to include families https://github.com/typekit/fvd
-         */
-        family: string
-      }
-      /**
-       *  Title that will be shown in the app header
-       */
-      name: string;
-      /**
-       * Alias that will be shown in the app footer if specified.
-       */
-      shortName?: string
-      /**
-       * brand logo
-       */
-      logo?: string;
-      /**
-       * Dashboard theme as a custom vuetifyJs theme.
-       */
-      theme?: ThemeDefinition
-    }
-    /**
-     * Rendered widgets configuration
-     */
-    template: TemplateConfig
-  }
-  /////////
-
-  /// eodash store types
-
-
-  interface Window {
-    eodashStore: EodashStore
-  }
-
-
-  export interface EodashStore {
-    /**
-     * Stateful Reactive variables
-     */
-    states: {
-      /**
-       * Currently selected STAC endpoint
-       */
-      currentUrl: Ref<string>
-      /**
-       * Indicates if the the current selected STAC contains a WMS type link.
-       */
-      hasWMS: Ref<boolean>
-      /**
-      * OpenLayers map instance
-      */
-      mapInstance: Ref<Map | null>
-    }
-    // consider removing the actions ?
-    actions: {
-      loadFont: (family?: string, link?: string) => Promise<string>;
-    };
-    /**
-     *  Pinia store definition used to navigate the root STAC catalog.
-     */
-    stac: {
-      useSTAcStore: typeof useSTAcStore
-    }
-  }
-  ///////
 }
+export { EodashConfig_2 as EodashConfig }
+export { EodashStore_2 as EodashStore }
