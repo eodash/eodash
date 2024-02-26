@@ -13,7 +13,15 @@ let handleMoveEnd = null;
 const eodashConfig = reactive({
   id: 'demo',
   stacEndpoint: 'https://eurodatacube.github.io/eodash-catalog/RACE/catalog.json',
-  routes: [],
+  routes: [
+    {
+      title: "demo 1",
+      to: '/about'
+    },
+    {
+      title: "demo 2",
+      to: 'https://google.com'
+    }],
   brand: {
     name: 'Demo',
     font: {
