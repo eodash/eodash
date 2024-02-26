@@ -5,11 +5,12 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "check":"vue-tsc --noEmit --skipLibCheck && eslint .",
+    "check": "vue-tsc --noEmit --skipLibCheck && eslint .",
     "check:lint": "eslint .",
     "check:types": "vue-tsc --noEmit --skipLibCheck",
     "preview": "vite preview",
     "lint": "eslint . --fix",
+    "cypress": "cypress open",
     "docs:generate": "typedoc --plugin typedoc-plugin-markdown core/store/Types.ts --tsconfig tsconfig.json --out docs --readme none"
   },
   "dependencies": {
@@ -36,6 +37,7 @@
     "@types/webfontloader": "^1.6.38",
     "@vitejs/plugin-vue": "^4.0.0",
     "@vue/eslint-config-typescript": "^11.0.0",
+    "cypress": "^13.6.6",
     "eslint": "^8.56.0",
     "eslint-plugin-vue": "^9.19.2",
     "sass": "^1.60.0",

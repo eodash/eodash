@@ -17,13 +17,20 @@
     "sourceMap": false,
     "resolveJsonModule": true,
     "esModuleInterop": true,
-    "lib": ["esnext", "dom"],
+    "lib": [
+      "esnext",
+      "dom"
+    ],
     "types": [
       "vuetify"
     ],
     "paths": {
-      "@/*": ["core/*"],
-      "^/*": ["widgets/*"]
+      "@/*": [
+        "core/*"
+      ],
+      "^/*": [
+        "widgets/*"
+      ]
     }
   },
   "exclude": [
@@ -49,6 +56,12 @@
     "widgets/**/*.d.ts",
     "widgets/**/*.tsx",
     "public/config.js",
-    "vite.config.js"
-   ]
+    "vite.config.js",
+    "cypress/**/*.ts",
+    "cypress/**/*.js",
+    "cypress/**/*.umd.cjs",
+    "cypress/**/*.d.ts",
+    "cypress/**/*.tsx",
+    "cypress/**/*.vue",
+  ]
 }
