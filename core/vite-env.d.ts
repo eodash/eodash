@@ -6,7 +6,7 @@ declare module '*.vue' {
   export default component
 }
 declare interface Window {
-  eodashStore: import('@/types').EodashStore
+  eodashStore: EodashStore
 }
 declare module '@eox/itemfilter' {
   export const EOxItemFilter: CustomElementConstructor

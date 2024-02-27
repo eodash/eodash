@@ -45,5 +45,5 @@
     "widgets/**/*.d.ts",
     "widgets/**/*.tsx",
     "public/config.js"
-, "core/types.ts"   ]
+    ]
 }

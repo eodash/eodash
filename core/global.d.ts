@@ -1,115 +1,8 @@
 import { useSTAcStore } from "@/store/stac"
-import { ThemeDefinition } from "vuetify/lib/framework.mjs";
-import { Ref } from "vue";
-import type { Map } from 'ol'
 import type { Router } from "vue-router";
-import { StacCatalog, StacCollection, StacItem } from "stac-ts";
+import type { StacCatalog, StacCollection, StacItem } from "stac-ts";
 
-
-/**
- * Eodash configuration specification.
- */
-interface EodashConfig_2 {
-  /**
-   * Configuration ID that defines the route of the dashboard.
-   * Rendered dashboard can be accessed on route `/dashboard/config-id`
-   */
-  id: string;
-  /**
-   * Root STAC catalog endpoint
-   **/
-  stacEndpoint: StacEndpoint
-  /**
-  * Renderes to navigation buttons on the app header.
-  **/
-  routes?: Array<{
-    /**
-     * button title
-     **/
-    title: string,
-    /**
-     * external URL or inner path to navigate to.
-     **/
-    to: ExternalURL | InternalRoute
-  }>
-  /**
-   * Brand specifications.
-   */
-  brand: {
-    /**
-     * Automatically fetches the specified font family from google fonts. if the `link` property is specified
-     * the font family will be fetched from the provided source instead.
-     */
-    font?: {
-      /**
-       * Link to stylesheet that defines font-face.
-       */
-      link?: string;
-      /**
-       * Font family. Use FVD notation to include families https://github.com/typekit/fvd
-       */
-      family: string
-    }
-    /**
-     *  Title that will be shown in the app header
-     */
-    name: string;
-    /**
-     * Alias that will be shown in the app footer if specified.
-     */
-    shortName?: string
-    /**
-     * brand logo
-     */
-    logo?: string;
-    /**
-     * Dashboard theme as a custom vuetifyJs theme.
-     */
-    theme?: ThemeDefinition
-  }
-  /**
-   * Rendered widgets configuration
-   */
-  template: TemplateConfig
-}
-/////////
-
-/// eodash store types
-
-interface EodashStore_2 {
-  /**
-   * Stateful Reactive variables
-   */
-  states: {
-    /**
-     * Currently selected STAC endpoint
-     */
-    currentUrl: Ref<string>
-    /**
-     * Indicates if the the current selected STAC contains a WMS type link.
-     */
-    hasWMS: Ref<boolean>
-    /**
-    * OpenLayers map instance
-    */
-    mapInstance: Ref<Map | null>
-  }
-  // consider removing the actions ?
-  actions: {
-    loadFont: (family?: string, link?: string) => Promise<string>;
-  };
-  /**
-   *  Pinia store definition used to navigate the root STAC catalog.
-   */
-  stac: {
-    useSTAcStore: typeof useSTAcStore
-  }
-}
-///////
 declare global {
-  type EodashConfig = EodashConfig_2;
-  type EodashStore = EodashStore_2;
-
   /**
    * Specification of web components imported from an external URL
    */
@@ -368,6 +261,101 @@ declare global {
   type InternalRoute = `/${string}`
   type StacEndpoint = `${'https://' | 'http://'}${string}/catalog.json`
 
+
+
+  /**
+   * Eodash configuration specification.
+   */
+  interface EodashConfig {
+    /**
+     * Configuration ID that defines the route of the dashboard.
+     * Rendered dashboard can be accessed on route `/dashboard/config-id`
+     */
+    id: string;
+    /**
+     * Root STAC catalog endpoint
+     **/
+    stacEndpoint: StacEndpoint
+    /**
+    * Renderes to navigation buttons on the app header.
+    **/
+    routes?: Array<{
+      /**
+       * button title
+       **/
+      title: string,
+      /**
+       * external URL or inner path to navigate to.
+       **/
+      to: ExternalURL | InternalRoute
+    }>
+    /**
+     * Brand specifications.
+     */
+    brand: {
+      /**
+       * Automatically fetches the specified font family from google fonts. if the `link` property is specified
+       * the font family will be fetched from the provided source instead.
+       */
+      font?: {
+        /**
+         * Link to stylesheet that defines font-face.
+         */
+        link?: string;
+        /**
+         * Font family. Use FVD notation to include families https://github.com/typekit/fvd
+         */
+        family: string
+      }
+      /**
+       *  Title that will be shown in the app header
+       */
+      name: string;
+      /**
+       * Alias that will be shown in the app footer if specified.
+       */
+      shortName?: string
+      /**
+       * brand logo
+       */
+      logo?: string;
+      /**
+       * Dashboard theme as a custom vuetifyJs theme.
+       */
+      theme?: ThemeDefinition
+    }
+    /**
+     * Rendered widgets configuration
+     */
+    template: TemplateConfig
+  }
+  /////////
+
+  /// eodash store types
+  interface EodashStore {
+    /**
+     * Stateful Reactive variables
+     */
+    states: {
+      /**
+       * Currently selected STAC endpoint
+       */
+      currentUrl: Ref<string>
+      /**
+      * OpenLayers map instance
+      */
+      mapInstance: Ref<Map | null>
+    }
+    // consider removing the actions ?
+    actions: {
+      loadFont: (family?: string, link?: string) => Promise<string>;
+    };
+    /**
+     *  Pinia store definition used to navigate the root STAC catalog.
+     */
+    stac: {
+      useSTAcStore: typeof useSTAcStore
+    }
+  }
+  ///////
 }
-export { EodashConfig_2 as EodashConfig }
-export { EodashStore_2 as EodashStore }

@@ -27,7 +27,7 @@ export default defineConfig({
   build: {
     outDir: 'dist/types',
     lib: {
-      entry: 'core/types.ts',
+      entry: 'core/eodash-d.ts',
       fileName: 'eodash',
       name: 'eodash',
       formats: ['es']
