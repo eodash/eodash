@@ -6,7 +6,6 @@ export default defineConfig({
       framework: "vue",
       bundler: "vite",
     },
-    port: 3791,
-    fileServerFolder: './cypress/public'
+    port: 3791
   },
 });

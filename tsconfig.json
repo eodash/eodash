@@ -8,8 +8,6 @@
     "skipLibCheck": true,
     "useDefineForClassFields": true,
     "allowSyntheticDefaultImports": true,
-    "composite": true,
-    "declarationMap": true,
     "module": "esnext",
     "moduleResolution": "node",
     "strict": true,
@@ -22,7 +20,8 @@
       "dom"
     ],
     "types": [
-      "vuetify"
+      "vuetify",
+      "cypress"
     ],
     "paths": {
       "@/*": [
@@ -59,7 +58,7 @@
     "vite.config.js",
     "cypress/**/*.ts",
     "cypress/**/*.js",
-    "cypress/**/*.umd.cjs",
+    "cypress/**/*.jsx",
     "cypress/**/*.d.ts",
     "cypress/**/*.tsx",
     "cypress/**/*.vue",
