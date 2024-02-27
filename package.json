@@ -3,13 +3,14 @@
   "version": "5.0.0-alpha",
   "private": true,
   "type": "module",
+  "types": "dist/types/index.d.ts",
   "files": [
     "dist"
   ],
   "browser": "./dist/index.html",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build && vite build -c vite-lib.config.js",
     "check": "vue-tsc --noEmit --skipLibCheck && eslint .",
     "check:lint": "eslint .",
     "check:types": "vue-tsc --noEmit --skipLibCheck",
@@ -56,6 +57,7 @@
     "typedoc-plugin-markdown": "^3.17.1",
     "typescript": "^5.0.0",
     "unplugin-fonts": "^1.0.3",
+    "vite-plugin-dts": "^3.7.3",
     "vite-plugin-vuetify": "^1.0.0",
     "vue-eslint-parser": "^9.3.2",
     "vue-tsc": "^1.2.0"

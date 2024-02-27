@@ -1,16 +1,12 @@
 import { useSTAcStore } from "@/store/stac"
-import { ThemeDefinition } from "vuetify/lib/framework.mjs";
-import { Ref } from "vue";
-import type { Map } from 'ol'
 import type { Router } from "vue-router";
-
+import type { StacCatalog, StacCollection, StacItem } from "stac-ts";
 
 declare global {
-
   /**
    * Specification of web components imported from an external URL
    */
-  export interface ExternalWebComponentProps {
+  interface ExternalWebComponentProps {
     /** Web component definition file URL*/
     link: string
     /** Indicates if the widget is a node module */
@@ -63,10 +59,10 @@ declare global {
   //   onUnmounted?: (el: Element, store: ReturnType<typeof useSTAcStore>, router: Router) => (Promise<void> | void)
   // }
   /** @ignore */
-  export type DynamicWebComponentProps = ExternalWebComponentProps // ExternalWebComponentProps | NodeModuleWebComponentProps
+  type DynamicWebComponentProps = ExternalWebComponentProps // ExternalWebComponentProps | NodeModuleWebComponentProps
 
   /** @ignore */
-  export interface WidgetsContainerProps {
+  interface WidgetsContainerProps {
     widgets: Omit<WidgetConfig, 'layout'>[]
   }
 
@@ -77,7 +73,7 @@ declare global {
    * Installed node_module web components import should be mapped in `/core/modulesMap.ts`,
    * then setting `widget.link`:`(import-map-key)` and `node_module`:`true`
    */
-  export interface WebComponentConfig {
+  interface WebComponentConfig {
     /**
    * Unique Identifier, triggers rerender when using `defineWidget`
    **/
@@ -118,7 +114,7 @@ declare global {
    * Widget type: `internal` specification.
    * Internal widgets are Vue components inside the `/widgets` directory.
    */
-  export interface InternalComponentConfig {
+  interface InternalComponentConfig {
     /**
     * Unique Identifier, triggers rerender when using `defineWidget`
     **/
@@ -168,7 +164,7 @@ declare global {
    * Widget type: `iframe` specification.
    * Renders an external HTML file as a widget.
    */
-  export interface IFrameConfig {
+  interface IFrameConfig {
     /**
      * Unique Identifier, triggers rerender when using `defineWidget`
      **/
@@ -209,7 +205,7 @@ declare global {
     */
     type: 'iframe'
   }
-  export interface FunctionalWidget {
+  interface FunctionalWidget {
     /**
      * Provides a functional definition of the widget,
      * gets triggered whenever a stac object is selected.
@@ -235,17 +231,17 @@ declare global {
       h: number
     }
   }
-  export type StaticWidget = WebComponentConfig | InternalComponentConfig | IFrameConfig
-  export type WidgetConfig = StaticWidget | FunctionalWidget
+  type StaticWidget = WebComponentConfig | InternalComponentConfig | IFrameConfig
+  type WidgetConfig = StaticWidget | FunctionalWidget
 
 
-  export type BackgroundWidgetConfig = Omit<WebComponentConfig, 'layout' | 'title'> | Omit<InternalComponentConfig, 'layout' | 'title'> | Omit<IFrameConfig, 'layout' | 'title'> | Omit<FunctionalWidget, 'layout'>
+  type BackgroundWidgetConfig = Omit<WebComponentConfig, 'layout' | 'title'> | Omit<InternalComponentConfig, 'layout' | 'title'> | Omit<IFrameConfig, 'layout' | 'title'> | Omit<FunctionalWidget, 'layout'>
   /**
    * Dashboard rendered widgets configuration specification.
    * 3 types of widgets are supported: `"iframe"`, `"internal"`, and `"web-component"`.
    * A specific configuration should be provided based on the type of the widget.
    */
-  export interface TemplateConfig {
+  interface TemplateConfig {
     /**
      * Gap between widgets
      */
@@ -265,10 +261,12 @@ declare global {
   type InternalRoute = `/${string}`
   type StacEndpoint = `${'https://' | 'http://'}${string}/catalog.json`
 
+
+
   /**
    * Eodash configuration specification.
    */
-  export interface EodashConfig {
+  interface EodashConfig {
     /**
      * Configuration ID that defines the route of the dashboard.
      * Rendered dashboard can be accessed on route `/dashboard/config-id`
@@ -334,14 +332,7 @@ declare global {
   /////////
 
   /// eodash store types
-
-
-  interface Window {
-    eodashStore: EodashStore
-  }
-
-
-  export interface EodashStore {
+  interface EodashStore {
     /**
      * Stateful Reactive variables
      */
@@ -350,10 +341,6 @@ declare global {
        * Currently selected STAC endpoint
        */
       currentUrl: Ref<string>
-      /**
-       * Indicates if the the current selected STAC contains a WMS type link.
-       */
-      hasWMS: Ref<boolean>
       /**
       * OpenLayers map instance
       */

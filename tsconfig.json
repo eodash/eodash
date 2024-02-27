@@ -27,7 +27,7 @@
       "^/*": ["widgets/*"]
     }
   },
-  "references": [{ "path": "./tsconfig.node.json" }],
+  "references": [{ "path": "tsconfig.node.json" }],
   "exclude": [
     "node_modules",
     "dist"
@@ -45,5 +45,5 @@
     "widgets/**/*.d.ts",
     "widgets/**/*.tsx",
     "public/config.js"
-   ]
+    ]
 }
