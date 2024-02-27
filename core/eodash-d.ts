@@ -81,10 +81,6 @@ export interface EodashStore {
      */
     currentUrl: Ref<string>
     /**
-     * Indicates if the the current selected STAC contains a WMS type link.
-     */
-    hasWMS: Ref<boolean>
-    /**
     * OpenLayers map instance
     */
     mapInstance: Ref<Map | null>
