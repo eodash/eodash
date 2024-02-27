@@ -4,7 +4,7 @@ import IframeWrapper from '@/components/IframeWrapper.vue'
 
 describe('<IframeWrapper />', () => {
 
-  it('renders external html', () => {
+  it('renders html', () => {
     cy.fixture('../fixtures/hello-world.html').then(/** @param {string} html */(html) => {
       const url = URL.createObjectURL(new Blob([html], { type: "text/html" })).toString()
       cy.mount(IframeWrapper, {
