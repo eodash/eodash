@@ -4,7 +4,7 @@ on:
     branches:
       - "main"
 jobs:
-  check-linting:
+  run-test:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
