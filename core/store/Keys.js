@@ -1,6 +1,6 @@
 /**
  *  `eodashConfig` injection key.
- * @type {Symbol}
+ * @type {unique symbol}
  * @see {@link "@/plugins/index.js"}
  */
 export const eodashConfigKey = Symbol("eodashConfig");

@@ -1,6 +1,6 @@
 <template>
   <v-app-bar color="primary">
-    <v-app-bar-title class="cursor-pointer">{{ title }}</v-app-bar-title>
+    <v-app-bar-title @click="push('/')" class="cursor-pointer">{{ title }}</v-app-bar-title>
     <v-toolbar-items v-if="eodashConfig.routes">
       <v-btn v-for="route in eodashConfig.routes" :key="route.to" variant="text" @click="navigateTo(route.to)">
         {{ route.title }}

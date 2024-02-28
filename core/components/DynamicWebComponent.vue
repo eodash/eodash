@@ -53,8 +53,9 @@ if (!defined && props.constructorProp) {
 const store = useSTAcStore()
 
 /**
- * @template {HTMLElement} CE
- * @type {import('vue').Ref<CE|null>}
+ *  @typedef {HTMLElement &
+ * Record<string|number|symbol,unknown>} CustomElement
+ * @type {import('vue').Ref<CustomElement|null>}
  */
 const elementRef = ref(null)
 const router = useRouter()
@@ -62,14 +63,18 @@ const router = useRouter()
 whenMounted(() => {
   if (props.onMounted && elementRef.value) {
     /** @type {DynamicWebComponentProps} */
-    (props).onMounted(elementRef.value, store, router)
+    (props).onMounted(elementRef.value, store, router)?.catch(err => {
+      console.error(err)
+    })
   }
 })
 
 whenUnMounted(() => {
   if (props.onUnmounted && elementRef.value) {
     /** @type {DynamicWebComponentProps}  */
-    (props).onUnmounted(elementRef.value, store, router)
+    (props).onUnmounted(elementRef.value, store, router)?.catch(err => {
+      console.error(err)
+    })
   }
 })
 </script>
