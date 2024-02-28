@@ -20,17 +20,13 @@ describe('<Header />', () => {
   it('render configured routes btns', () => {
     //@ts-expect-error
     cy.get('@vue').then(({ options }) => {
-      const routeNames = options.global.provide[eodashConfigKey].routes.map(
-        /** @param {{ title:string; to:string }} r */
-        r => r.title)
-      cy.get('.v-toolbar-items').children().each(btn => {
-        const idx = routeNames.indexOf(btn.text())
-        if (idx !== -1) {
-          routeNames.splice(idx, 1)
-        } else {
-          throw new Error("cant find route")
-        }
-      })
+      const routeNames = /** @type {{ title:string; to:string }[]}*/(options.global.provide[eodashConfigKey].routes)
+        .map(r => r.title)
+      let i = 0
+      while (i < routeNames.length) {
+        cy.get(`.v-toolbar-items > :nth-child(${i + 1})`).contains(routeNames[i])
+        i++
+      }
     })
   })
 })
