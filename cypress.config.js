@@ -6,6 +6,7 @@ export default defineConfig({
       framework: "vue",
       bundler: "vite",
     },
-    port: 3791
+    port: 3791,
+    watchForFileChanges: false
   },
 });

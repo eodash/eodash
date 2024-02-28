@@ -96,7 +96,7 @@ export const mockedEodashConfig = (() => {
         {
           id: Symbol(),
           title: 'Tools',
-          layout: { "x": 0, "y": 0, "w": 3, "h": 12 },
+          layout: { "x": 0, "y": 0, "w": 4, "h": 10 },
           widget: {
             link: 'https://cdn.skypack.dev/@eox/itemfilter',
             properties: {
@@ -143,7 +143,7 @@ export const mockedEodashConfig = (() => {
         {
           id: Symbol(),
           title: 'Information',
-          layout: { "x": 9, "y": 0, "w": 3, "h": 12 },
+          layout: { "x": 9, "y": 4, "w": 3, "h": 8 },
           widget: {
             link: '@eox/stacinfo',
             node_module: true,
