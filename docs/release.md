@@ -1,9 +1,9 @@
 ## Release
-To update `@a-behairi/eodash` login to your npm account.
+To update `@eodash/eodash` login to your npm account.
 ```bash
 npm login
 ```
-update package.json name to `@a-behairi/eodash` and the version to the desired version update and run :
+update package.json name to `@eodash/eodash` and the version to the desired version update and run :
 
 ```bash
 npm install
