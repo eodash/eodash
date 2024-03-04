@@ -1,7 +1,6 @@
 {
   "name": "eodash",
   "version": "5.0.0-alpha",
-  "private": true,
   "type": "module",
   "types": "dist/types/index.d.ts",
   "files": [
