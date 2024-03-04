@@ -8,7 +8,7 @@ const storesImport = /**@type {EodashStoreImports} */(import.meta.glob('../store
 /**
  * @type {EodashStore}
  */
-const store = await (async () => {
+const store = (() => {
   const stores = /** @type {EodashStore}*/({});
   for (const [filePath, importedstore] of Object.entries(storesImport)) {
     const storeType = filePath.split('/').at(-1)?.slice(0, -3).toLowerCase() ?? ''
