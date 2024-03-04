@@ -4,7 +4,6 @@
   </span>
 </template>
 <script async setup>
-import modulesMap from '@/modulesMap';
 import { useSTAcStore } from '@/store/stac';
 import {
   onUnmounted as whenUnMounted,
@@ -18,7 +17,6 @@ const props = defineProps({
     type: String,
     required: true
   },
-  node_module: Boolean,
   constructorProp: String,
   tagName: {
     type: String,
@@ -34,7 +32,17 @@ const props = defineProps({
   onUnmounted: Function
 })
 
-const getWebComponent = async () => props.node_module ?
+const modulesMap = {
+  '@eox/itemfilter': async () => await import('@eox/itemfilter'),
+  '@eox/stacinfo': async () => await import('@eox/stacinfo'),
+  '@eox/map': async () => await import('@eox/map'),
+  '@eox/chart': async () => await import('@eox/chart'),
+  '@eox/jsonform': async () => await import('@eox/jsonform'),
+  '@eox/layercontrol': async () => await import('@eox/layercontrol'),
+  '@eox/timecontrol': async () => await import('@eox/timecontrol')
+};
+
+const getWebComponent = async () => props.link in modulesMap ?
   await modulesMap[/** @type {keyof typeof modulesMap} */(props.link)]()
   : await import( /* @vite-ignore */props.link)
 

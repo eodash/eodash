@@ -113,7 +113,6 @@ const eodashConfig = reactive({
         layout: { "x": 9, "y": 0, "w": 3, "h": 12 },
         widget: {
           link: '@eox/stacinfo',
-          node_module: true,
           properties: {
             for: currentUrl,
             allowHtml: "true",
