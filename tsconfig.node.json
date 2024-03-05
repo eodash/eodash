@@ -5,6 +5,7 @@
         "checkJs": true,
         "allowJs": true,
         "moduleResolution": "node",
+        "allowSyntheticDefaultImports": true,
         "outDir": "dist"
     },
     "include": [

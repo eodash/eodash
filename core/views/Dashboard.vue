@@ -3,6 +3,7 @@
   <TemplateComponent :style="`height: calc(100dvh - ${mainRect['top'] + mainRect['bottom']}px)`" />
   <FooterComponent />
 </template>
+
 <script setup>
 import { useEodashRuntimeConfig } from "@/composables/DefineConfig";
 import { useUpdateTheme } from "@/composables";
@@ -34,7 +35,13 @@ const { mainRect } = useLayout()
 onUnmounted(() => {
   theme.global.name.value = 'light'
 })
+if (import.meta.hot) {
+  import.meta.hot.on('config:update', () => {
+    window.location.reload()
+  })
+}
 </script>
+
 <style scoped lang="scss">
 * {
   font-family: v-bind('fontFamily');
