@@ -2,7 +2,7 @@
   "name": "eodash",
   "version": "5.0.0-alpha",
   "type": "module",
-  "types": "dist/types/index.d.ts",
+  "types": "core/types.d.ts",
   "files": [
     "core",
     "bin",

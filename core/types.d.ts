@@ -359,3 +359,4 @@ declare global {
   }
   ///////
 }
+export type { EodashConfig, EodashStore }
