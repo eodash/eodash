@@ -1,10 +1,11 @@
 #!/usr/bin/env node
 
 import { build, createServer, preview } from "vite"
-import { execPath, appPath } from "./utils.js";
+import { execPath, appPath, buildTargetPath } from "./utils.js";
 import { writeFile, rm, cp } from "fs/promises";
 import { update } from "./update.js";
 import { indexHtml, serverConfig } from "./serverConfig.js";
+import path from "path";
 
 
 
@@ -16,18 +17,17 @@ export const createDevServer = async () => {
 }
 
 export const buildApp = async () => {
-  await update()
-  const htmlPath = appPath + 'index.html'
+  const htmlPath = path.join(appPath, '/index.html')
   await writeFile(htmlPath, indexHtml).then(async () => {
+    await update()
     await build(serverConfig({ mode: 'production', command: 'build' }))
     await rm(htmlPath).catch(() => {
       console.error('failed to remove index.html')
     })
-  }).catch(() => {
-    console.error('failed to create production entry point')
   })
+
   if (appPath.includes('node_modules')) {
-    await cp(appPath + 'dist', execPath + '/app', { recursive: true }).then(() => {
+    await cp(appPath + 'dist', buildTargetPath, { recursive: true }).then(() => {
       console.info('dashboard built successfully')
     }).catch((e) => {
       console.error(e)
@@ -44,7 +44,7 @@ export async function previewApp() {
       open: true,
     },
     build: {
-      outDir: 'app'
+      outDir: buildTargetPath
     }
   })
   previewServer.printUrls()

@@ -48,7 +48,7 @@ export const serverConfig = defineConfig(({ mode, command }) => {
         autoImport: true,
       }),
       {
-        name: "inject-html",
+        name: "inject-files",
         configureServer: mode === "development" ? configureServer : undefined
       }
     ],
@@ -74,6 +74,7 @@ export const serverConfig = defineConfig(({ mode, command }) => {
       noDiscovery: true,
     } : {},
     build: {
+      outDir: 'dist',
       rollupOptions: {
         input: fileURLToPath(new URL(command === 'build' ? '../index.html' : '../core/main.js', import.meta.url)),
       },
