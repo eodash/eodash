@@ -9,7 +9,6 @@ import { indexHtml, serverConfig } from "./serverConfig.js";
 
 
 export const createDevServer = async () => {
-  await update()
   const server = await createServer(serverConfig({ mode: 'development', command: 'serve' }))
   await server.listen()
   server.printUrls()

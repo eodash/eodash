@@ -7,9 +7,10 @@ import vuetify, { transformAssetUrls } from 'vite-plugin-vuetify';
 
 // Utilities
 import { fileURLToPath, URL } from 'url';
-import { configPath, appPath, dotEodashPath } from "./utils.js";
+import { configPath, appPath, dotEodashPath, execPath } from "./utils.js";
 import { readFile } from "fs/promises";
-import { update } from "./update.js";
+import { existsSync } from "fs";
+import path from "path";
 
 
 export const indexHtml = `
@@ -25,7 +26,7 @@ export const indexHtml = `
 
 <body>
   <div id="app"></div>
-  <script type="module" src="/@fs/${appPath}/core/main.js"></script>
+  <script type="module" src="${path.resolve(`/@fs/${appPath}/core/main.js`)}"></script>
 </body>
 </html>`
 
@@ -48,10 +49,7 @@ export const serverConfig = defineConfig(({ mode, command }) => {
       }),
       {
         name: "inject-html",
-        configureServer: mode === "development" ? configureServer : undefined,
-        transformIndexHtml: command === "build" ? () => {
-          return indexHtml
-        } : undefined
+        configureServer: mode === "development" ? configureServer : undefined
       }
     ],
     define: { 'process.env': {} },
@@ -69,7 +67,7 @@ export const serverConfig = defineConfig(({ mode, command }) => {
       },
       open: '/'
     },
-    publicDir: appPath + '/public',
+    publicDir: execPath + '/public',
     root: fileURLToPath(new URL('..', import.meta.url)),
     optimizeDeps: mode === "development" ? {
       include: ["webfontloader", "vuetify", "vue", "pinia"],
@@ -90,20 +88,27 @@ export const serverConfig = defineConfig(({ mode, command }) => {
  * @type {import("vite").ServerHook}
  */
 async function configureServer(server) {
-  await readFile(configPath).then(() => {
+  if (existsSync(configPath)) {
     server.watcher.add(configPath)
-  }).catch(() => {
-    console.error('no config file was found')
-  })
+  }
 
   server.watcher.on('change', async (path) => {
     if (path == configPath) {
-      update()
       server.hot.send('config:update')
     }
   })
   return () => {
     server.middlewares.use(async (req, res, next) => {
+      if (req.originalUrl === '/@fs/config.js' && existsSync(configPath)) {
+        await readFile(configPath).then(config => {
+          res.statusCode = 200
+          res.setHeader('Content-Type', 'text/javascript')
+          res.write(config)
+          res.end()
+        }).catch()
+        return
+      }
+
       const url = req.url
       if (url?.endsWith('.html')) {
         res.statusCode = 200
