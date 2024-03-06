@@ -24,6 +24,7 @@ export const buildApp = async () => {
     await rm(htmlPath).catch(() => {
       console.error('failed to remove index.html')
     })
+    await rm(path.join(appPath, './public'), { recursive: true }).catch()
   })
 
   if (appPath.includes('node_modules')) {

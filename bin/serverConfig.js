@@ -67,12 +67,12 @@ export const serverConfig = defineConfig(({ mode, command }) => {
       },
       open: '/'
     },
-    publicDir: execPath + '/public',
     root: fileURLToPath(new URL('..', import.meta.url)),
     optimizeDeps: mode === "development" ? {
       include: ["webfontloader", "vuetify", "vue", "pinia"],
       noDiscovery: true,
     } : {},
+    publicDir: command === 'build' ? path.join(appPath, './public') : path.join(execPath, '/public'),
     build: {
       outDir: 'dist',
       rollupOptions: {
