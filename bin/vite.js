@@ -7,7 +7,7 @@ import vuetify, { transformAssetUrls } from 'vite-plugin-vuetify';
 
 // Utilities
 import { fileURLToPath, URL } from 'url';
-import { execPath, configPath, appPath } from "./utils.js";
+import { execPath, configPath, appPath, dotEodashPath } from "./utils.js";
 import { readFile, writeFile, rm, cp } from "fs/promises";
 import { update } from "./update.js";
 
@@ -32,6 +32,7 @@ const indexHtml = `
 const serverConfig = defineConfig(({ mode, command }) => {
   return {
     base: '',
+    cacheDir: dotEodashPath + '/cache',
     plugins: [
       vue({
         template: {
