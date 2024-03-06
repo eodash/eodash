@@ -48,17 +48,10 @@ const serverConfig = defineConfig(({ mode, command }) => {
       {
         name: "inject-html",
         configureServer: mode === "development" ? configureServer : undefined,
-        transformIndexHtml: command === "build" ? {
-          order: "pre",
-          handler: () => {
-            return indexHtml
-          }
+        transformIndexHtml: command === "build" ? () => {
+          return indexHtml
         } : undefined
-      },
-      ({
-        name: 'build-html',
-
-      })
+      }
     ],
     define: { 'process.env': {} },
     resolve: {
