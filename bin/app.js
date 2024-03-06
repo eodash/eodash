@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { buildApp, createDevServer, previewApp } from './vite.js'
+import { buildApp, createDevServer, previewApp } from './cli.js'
 
 const command = process.argv?.[2];
 (async () => {
