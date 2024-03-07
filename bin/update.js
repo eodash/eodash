@@ -4,12 +4,16 @@ import { existsSync } from "fs";
 import path from "path";
 
 export async function update() {
-  await cp(path.join(execPath, "/public"), path.join(appPath, "/public"), { recursive: true }).catch(err => {
-    console.error(err)
-  })
-  if (existsSync(runtimeConfigPath)) {
-    await cp(runtimeConfigPath, path.join(appPath, '/public/config.js')).catch((e) => {
-      console.error(e)
+  const execPublicPath = path.join(execPath, "/public"),
+    appPublicPath = path.join(appPath, "/public")
+  if (execPublicPath !== appPublicPath) {
+    await cp(execPublicPath, appPublicPath, { recursive: true }).catch(err => {
+      console.error(err)
     })
+    if (existsSync(runtimeConfigPath)) {
+      await cp(runtimeConfigPath, path.join(appPath, '/public/config.js')).catch((e) => {
+        console.error(e)
+      })
+    }
   }
 }
