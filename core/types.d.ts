@@ -5,13 +5,11 @@ import { defineCompiletimeConfig } from "./composables/DefineConfig";
 
 declare global {
   /**
-   * Specification of web components imported from an external URL
+   * Web Component configuration
    */
-  interface ExternalWebComponentProps {
+  interface WebComponentProps<T extends ExecutionTime = "compiletime"> {
     /** Web component definition file URL*/
-    link: string
-    /** Indicates if the widget is a node module */
-    // node_module?: false
+    link: T extends 'runtime' ? string : (string | (() => Promise));
     /** Exported Constructor, needs to be provided if the web component is not registered by the `link` provided */
     constructorProp?: string
     /** Custom tag name */
@@ -23,44 +21,15 @@ declare global {
      * @param el - web component
      * @param store - return value of the core STAC pinia store in `/core/store/stac.ts`
      */
-    onMounted?: (el: Element, store: ReturnType<typeof useSTAcStore>, router: Router) => (Promise<void> | void)
+    onMounted?: (el: Element | null, store: ReturnType<typeof useSTAcStore>, router: Router) => (Promise<void> | void)
     /**
      * Function that is triggered when the web component is unmounted from the DOM.
      * @param el - web component
      * @param store - return value of the core STAC pinia store in `/core/store/stac.ts`
      */
-    onUnmounted?: (el: Element, store: ReturnType<typeof useSTAcStore>, router: Router) => (Promise<void> | void)
+    onUnmounted?: (el: Element | null, store: ReturnType<typeof useSTAcStore>, router: Router) => (Promise<void> | void)
   }
 
-  // /**
-  //  * Specification of web components imported as a node_module.
-  //  */
-  // export interface NodeModuleWebComponentProps {
-  //   /** Type of `modulesMap` key. Defined in `/core/modulesMap.ts`*/
-  //   link: keyof typeof modulesMap;
-  //   /** Indicates if the widget is a node module */
-  //   node_module: true;
-  //   /** Exported Constructor, needs to be provided if the web component is not registered */
-  //   constructorProp?: string
-  //   /** Custom tag name */
-  //   tagName: `${string}-${string}`
-  //   /** Object defining all the properties and attributes of the web component */
-  //   properties?: Record<string, any>
-  //   /**
-  //    * Function that is triggered when the web component is mounted in the DOM.
-  //    * @param el - web component
-  //    * @param store - return value of the core STAC pinia store in `/core/store/stac.ts`
-  //    */
-  //   onMounted?: (el: Element, store: ReturnType<typeof useSTAcStore>, router: Router) => (Promise<void> | void)
-  //   /**
-  //    * Function that is triggered when the web component is unmounted from the DOM.
-  //    * @param el - web component
-  //    * @param store - return value of the core STAC pinia store in `/core/store/stac.ts`
-  //    */
-  //   onUnmounted?: (el: Element, store: ReturnType<typeof useSTAcStore>, router: Router) => (Promise<void> | void)
-  // }
-  /** @ignore */
-  type DynamicWebComponentProps = ExternalWebComponentProps // ExternalWebComponentProps | NodeModuleWebComponentProps
 
   /** @ignore */
   interface WidgetsContainerProps {
@@ -74,7 +43,7 @@ declare global {
    * Installed node_module web components import should be mapped in `/core/modulesMap.ts`,
    * then setting `widget.link`:`(import-map-key)` and `node_module`:`true`
    */
-  interface WebComponentConfig {
+  interface WebComponentConfig<T extends ExecutionTime = "compiletime"> {
     /**
    * Unique Identifier, triggers rerender when using `defineWidget`
    **/
@@ -104,7 +73,7 @@ declare global {
        */
       h: number
     }
-    widget: ExternalWebComponentProps // | NodeModuleWebComponentProps
+    widget: WebComponentProps<T> // | NodeModuleWebComponentProps
     /**
      * Widget type
      */
@@ -206,13 +175,13 @@ declare global {
     */
     type: 'iframe'
   }
-  interface FunctionalWidget {
+  interface FunctionalWidget<T extends ExecutionTime = "compiletime"> {
     /**
      * Provides a functional definition of the widget,
      * gets triggered whenever a stac object is selected.
      * @param selectedSTAC - currently selected stac object
      */
-    defineWidget: (selectedSTAC: StacCatalog | StacCollection | StacItem | null) => Omit<StaticWidget, 'layout'>
+    defineWidget: (selectedSTAC: StacCatalog | StacCollection | StacItem | null) => Omit<StaticWidget<T>, 'layout'>
     layout: {
       /**
        *  Horizontal start position. Integer (1 - 12)
@@ -232,8 +201,8 @@ declare global {
       h: number
     }
   }
-  type StaticWidget = WebComponentConfig | InternalComponentConfig | IFrameConfig
-  type WidgetConfig = StaticWidget | FunctionalWidget
+  type StaticWidget<T extends ExecutionTime = "compiletime"> = WebComponentConfig<T> | InternalComponentConfig | IFrameConfig
+  type WidgetConfig<T extends ExecutionTime = "compiletime"> = StaticWidget<T> | FunctionalWidget<T>
 
 
   type BackgroundWidgetConfig = Omit<WebComponentConfig, 'layout' | 'title'> | Omit<InternalComponentConfig, 'layout' | 'title'> | Omit<IFrameConfig, 'layout' | 'title'> | Omit<FunctionalWidget, 'layout'>
@@ -242,7 +211,7 @@ declare global {
    * 3 types of widgets are supported: `"iframe"`, `"internal"`, and `"web-component"`.
    * A specific configuration should be provided based on the type of the widget.
    */
-  interface TemplateConfig {
+  interface TemplateConfig<T extends ExecutionTime = "compiletime"> {
     /**
      * Gap between widgets
      */
@@ -255,19 +224,19 @@ declare global {
     /**
      * Array of widgets that will be rendered as dashboard panels.
      */
-    widgets: WidgetConfig[]
+    widgets: WidgetConfig<T>[]
   }
 
   type ExternalURL = `${'https://' | 'http://'}${string}`;
   type InternalRoute = `/${string}`
   type StacEndpoint = `${'https://' | 'http://'}${string}/catalog.json`
 
-
+  type ExecutionTime = "runtime" | "compiletime";
 
   /**
    * Eodash configuration specification.
    */
-  interface EodashConfig {
+  interface EodashConfig<T extends ExecutionTime = "compiletime"> {
     /**
      * Configuration ID that defines the route of the dashboard.
      * Rendered dashboard can be accessed on route `/dashboard/config-id`
@@ -328,7 +297,7 @@ declare global {
     /**
      * Rendered widgets configuration
      */
-    template: TemplateConfig
+    template: TemplateConfig<T>
   }
   /////////
 

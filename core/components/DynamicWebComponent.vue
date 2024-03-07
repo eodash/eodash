@@ -3,6 +3,7 @@
     <component :is="tagName" v-bind="properties" ref="elementRef" />
   </span>
 </template>
+
 <script async setup>
 import { useSTAcStore } from '@/store/stac';
 import {
@@ -12,9 +13,9 @@ import {
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 
-const props = defineProps({
+const props =   /** @type {WebComponentProps}  */(defineProps({
   link: {
-    type: String,
+    type: [String, Function],
     required: true
   },
   constructorProp: String,
@@ -30,21 +31,11 @@ const props = defineProps({
   },
   onMounted: Function,
   onUnmounted: Function
-})
+}))
 
-const modulesMap = {
-  '@eox/itemfilter': async () => await import('@eox/itemfilter'),
-  '@eox/stacinfo': async () => await import('@eox/stacinfo'),
-  '@eox/map': async () => await import('@eox/map'),
-  '@eox/chart': async () => await import('@eox/chart'),
-  '@eox/jsonform': async () => await import('@eox/jsonform'),
-  '@eox/layercontrol': async () => await import('@eox/layercontrol'),
-  '@eox/timecontrol': async () => await import('@eox/timecontrol')
-};
 
-const getWebComponent = async () => props.link in modulesMap ?
-  await modulesMap[/** @type {keyof typeof modulesMap} */(props.link)]()
-  : await import( /* @vite-ignore */props.link)
+const getWebComponent = async () => typeof props.link === 'string' ?
+  await import( /* @vite-ignore */props.link) : await props.link()
 
 const imported = await getWebComponent().catch(e => {
   console.error(e)
@@ -68,16 +59,10 @@ const elementRef = ref(null)
 const router = useRouter()
 
 whenMounted(() => {
-  if (props.onMounted && elementRef.value) {
-    /** @type {DynamicWebComponentProps} */
-    (props).onMounted(elementRef.value, store, router)
-  }
+  props.onMounted?.(elementRef.value, store, router)
 })
 
 whenUnMounted(() => {
-  if (props.onUnmounted && elementRef.value) {
-    /** @type {DynamicWebComponentProps}  */
-    (props).onUnmounted(elementRef.value, store, router)
-  }
+  props.onUnmounted?.(elementRef.value, store, router)
 })
 </script>

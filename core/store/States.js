@@ -7,6 +7,6 @@ export const currentUrl = ref('');
 
 /**
  * ol map object. Updated by the config file.
- * @type {import("vue").Ref<import('ol').Map | null>}
+ * @type {import("vue").Ref<import('openlayers').Map | null>}
  */
 export const mapInstance = ref(null);
