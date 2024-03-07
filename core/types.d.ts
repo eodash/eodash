@@ -73,7 +73,7 @@ declare global {
        */
       h: number
     }
-    widget: WebComponentProps<T> // | NodeModuleWebComponentProps
+    widget: WebComponentProps<T>
     /**
      * Widget type
      */
@@ -205,7 +205,7 @@ declare global {
   type WidgetConfig<T extends ExecutionTime = "compiletime"> = StaticWidget<T> | FunctionalWidget<T>
 
 
-  type BackgroundWidgetConfig = Omit<WebComponentConfig, 'layout' | 'title'> | Omit<InternalComponentConfig, 'layout' | 'title'> | Omit<IFrameConfig, 'layout' | 'title'> | Omit<FunctionalWidget, 'layout'>
+  type BackgroundWidgetConfig<T extends ExecutionTime = "compiletime"> = Omit<WebComponentConfig<T>, 'layout' | 'title'> | Omit<InternalComponentConfig, 'layout' | 'title'> | Omit<IFrameConfig, 'layout' | 'title'> | Omit<FunctionalWidget, 'layout'>
   /**
    * Dashboard rendered widgets configuration specification.
    * 3 types of widgets are supported: `"iframe"`, `"internal"`, and `"web-component"`.
@@ -220,7 +220,7 @@ declare global {
      * Widget rendered as the dashboard background.
      * Has the same specifications of [WidgetConfig](../readme#widgetconfig) without the `title` and  `layout` properties
      */
-    background?: BackgroundWidgetConfig
+    background?: BackgroundWidgetConfig<T>
     /**
      * Array of widgets that will be rendered as dashboard panels.
      */
