@@ -1,17 +1,17 @@
 #!/usr/bin/env node
 
-import { defineConfig, searchForWorkspaceRoot } from "vite"
-// Plugins
+
+
 import vue from '@vitejs/plugin-vue';
 import vuetify, { transformAssetUrls } from 'vite-plugin-vuetify';
-
-// Utilities
+import virtual, { updateVirtualModule } from 'vite-plugin-virtual'
 import { fileURLToPath, URL } from 'url';
-import { configPath, appPath, dotEodashPath, execPath } from "./utils.js";
+import { execPath, runtimeConfigPath, appPath, dotEodashPath, compiletimeConfigPath } from "./utils.js";
 import { readFile } from "fs/promises";
-import { existsSync } from "fs";
+import { defineConfig, searchForWorkspaceRoot } from "vite"
+import { getUserModules } from './utils.js';
+import { existsSync } from 'fs';
 import path from "path";
-
 
 export const indexHtml = `
 <!DOCTYPE html>
@@ -26,11 +26,15 @@ export const indexHtml = `
 
 <body>
   <div id="app"></div>
-  <script type="module" src="${path.resolve(`/@fs/${appPath}/core/main.js`)}"></script>
+  <script type="module" src="${path.resolve(`/@fs/${appPath}/core/render.js`)}"></script>
 </body>
 </html>`
 
-export const serverConfig = defineConfig(({ mode, command }) => {
+/**
+ * @type {import('vite').Plugin | null}
+ */
+let virtualPlugin = null;
+export const serverConfig = /** @type {import('vite').UserConfigFnPromise}*/(defineConfig(async ({ mode, command }) => {
   return {
     base: '',
     cacheDir: dotEodashPath + '/cache',
@@ -47,10 +51,11 @@ export const serverConfig = defineConfig(({ mode, command }) => {
       vuetify({
         autoImport: true,
       }),
-      {
-        name: "inject-files",
-        configureServer: mode === "development" ? configureServer : undefined
-      }
+      (mode === "development" && {
+        name: "inject-html",
+        configureServer
+      }),
+      virtualPlugin = virtual(await getUserModules())
     ],
     define: { 'process.env': {} },
     resolve: {
@@ -81,7 +86,7 @@ export const serverConfig = defineConfig(({ mode, command }) => {
       target: "esnext"
     }
   }
-});
+}));
 
 
 
@@ -89,32 +94,33 @@ export const serverConfig = defineConfig(({ mode, command }) => {
  * @type {import("vite").ServerHook}
  */
 async function configureServer(server) {
-  if (existsSync(configPath)) {
-    server.watcher.add(configPath)
-  }
+  server.watcher.add([compiletimeConfigPath, runtimeConfigPath])
 
   server.watcher.on('change', async (path) => {
-    if (path == configPath) {
-      server.hot.send('config:update')
+    if (path == runtimeConfigPath) {
+      server.hot.send('reload')
+    } else if (!path.includes('node_modules') && path.includes('.eodash')) {
+      updateVirtualModule(virtualPlugin, 'user:config',
+        await getUserModules().then(modules => modules['user:config']))
     }
   })
+
   return () => {
     server.middlewares.use(async (req, res, next) => {
-      if (req.originalUrl === '/@fs/config.js' && existsSync(configPath)) {
-        await readFile(configPath).then(config => {
+      if (req.originalUrl === '/@fs/config.js' && existsSync(runtimeConfigPath)) {
+        await readFile(runtimeConfigPath).then(runtimeConfig => {
           res.statusCode = 200
           res.setHeader('Content-Type', 'text/javascript')
-          res.write(config)
+          res.write(runtimeConfig)
           res.end()
-        }).catch()
+        })
         return
       }
 
-      const url = req.url
-      if (url?.endsWith('.html')) {
+      if (req.url?.endsWith('.html')) {
         res.statusCode = 200
         res.setHeader('Content-Type', 'text/html')
-        const html = await server.transformIndexHtml(url, indexHtml, req.originalUrl)
+        const html = await server.transformIndexHtml(req.url, indexHtml, req.originalUrl)
         res.end(html)
         return
       }

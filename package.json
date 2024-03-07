@@ -1,14 +1,20 @@
 {
   "name": "eodash",
-  "version": "5.0.0-alpha",
+  "version": "5.0.0-alpha.1",
   "type": "module",
-  "types": "core/types.d.ts",
+  "types": "./core/types.d.ts",
   "files": [
     "core",
     "bin",
     "widgets"
   ],
-  "browser": "./dist/index.html",
+  "exports": {
+    ".": {
+      "types": "./core/types.d.ts",
+      "default": "./core/main.js"
+    }
+  },
+  "browser": "./core/main.js",
   "scripts": {
     "dev": "npx eodash dev",
     "build": "npx eodash build",
@@ -37,6 +43,7 @@
     "pinia": "^2.0.0",
     "roboto-fontface": "*",
     "vite": "^5.1.5",
+    "vite-plugin-virtual": "^0.3.0",
     "vite-plugin-vuetify": "^2.0.0",
     "vue": "^3.2.0",
     "vue-router": "^4.0.0",

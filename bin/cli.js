@@ -6,11 +6,12 @@ import { writeFile, rm, cp } from "fs/promises";
 import { update } from "./update.js";
 import { indexHtml, serverConfig } from "./serverConfig.js";
 import path from "path";
+import { existsSync } from "fs";
 
 
 
 export const createDevServer = async () => {
-  const server = await createServer(serverConfig({ mode: 'development', command: 'serve' }))
+  const server = await createServer(await serverConfig({ mode: 'development', command: 'serve' }))
   await server.listen()
   server.printUrls()
   server.bindCLIShortcuts({ print: true })
@@ -20,11 +21,16 @@ export const buildApp = async () => {
   const htmlPath = path.join(appPath, '/index.html')
   await writeFile(htmlPath, indexHtml).then(async () => {
     await update()
-    await build(serverConfig({ mode: 'production', command: 'build' }))
+    await build(await serverConfig({ mode: 'production', command: 'build' }))
     await rm(htmlPath).catch(() => {
       console.error('failed to remove index.html')
     })
-    await rm(path.join(appPath, './public'), { recursive: true }).catch()
+    const appPublicPath = path.join(appPath, './public')
+    if (appPath.includes('node_modules') && existsSync(appPublicPath)) {
+      await rm(appPublicPath, { recursive: true }).catch((e) => {
+        console.error(e)
+      })
+    }
   })
 
   if (appPath.includes('node_modules')) {

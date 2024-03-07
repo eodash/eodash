@@ -1,6 +1,7 @@
 import { useSTAcStore } from "@/store/stac"
 import type { Router } from "vue-router";
 import type { StacCatalog, StacCollection, StacItem } from "stac-ts";
+import { defineCompiletimeConfig } from "./composables/DefineConfig";
 
 declare global {
   /**
@@ -360,3 +361,4 @@ declare global {
   ///////
 }
 export type { EodashConfig, EodashStore }
+export declare const defineConfig: typeof defineCompiletimeConfig
