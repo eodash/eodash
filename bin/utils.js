@@ -4,14 +4,19 @@ import { readFile } from 'fs/promises';
 import { existsSync } from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { searchForWorkspaceRoot } from 'vite';
 
 // global paths
-export const appPath = fileURLToPath(new URL("..", import.meta.url));
-export const execPath = fileURLToPath(new URL(process.cwd(), import.meta.url));
-export const dotEodashPath = path.join(execPath, "/.eodash");
-export const runtimeConfigPath = path.join(dotEodashPath, "./config.runtime.js");
-export const compiletimeConfigPath = path.join(dotEodashPath, "/config.js");
-export const buildTargetPath = path.join(dotEodashPath, '/dist')
+export const appPath = fileURLToPath(new URL("..", import.meta.url)),
+  appPublicPath = path.join(appPath, './public'),
+  rootPath = searchForWorkspaceRoot(process.cwd()),
+  rootPublicPath = path.join(rootPath, './public'),
+  srcPath = path.join(rootPath, "/src"),
+  runtimeConfigPath = path.join(srcPath, "./config.runtime.js"),
+  compiletimeConfigPath = path.join(srcPath, "/config.js"),
+  dotEodashPath = path.join(rootPath, "/.eodash"),
+  buildTargetPath = path.join(dotEodashPath, '/dist'),
+  cachePath = path.join(dotEodashPath, 'cache');
 
 
 

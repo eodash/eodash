@@ -1,13 +1,11 @@
 import { cp } from "fs/promises";
-import { execPath, appPath, runtimeConfigPath } from "./utils.js";
+import { rootPublicPath, appPath, runtimeConfigPath, appPublicPath } from "./utils.js";
 import { existsSync } from "fs";
 import path from "path";
 
 export async function update() {
-  const execPublicPath = path.join(execPath, "/public"),
-    appPublicPath = path.join(appPath, "/public")
-  if (execPublicPath !== appPublicPath) {
-    await cp(execPublicPath, appPublicPath, { recursive: true }).catch(err => {
+  if (rootPublicPath !== appPublicPath) {
+    await cp(rootPublicPath, appPublicPath, { recursive: true }).catch(err => {
       console.error(err)
     })
     if (existsSync(runtimeConfigPath)) {

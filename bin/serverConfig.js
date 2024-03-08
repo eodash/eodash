@@ -6,7 +6,11 @@ import vue from '@vitejs/plugin-vue';
 import vuetify, { transformAssetUrls } from 'vite-plugin-vuetify';
 import virtual, { updateVirtualModule } from 'vite-plugin-virtual'
 import { fileURLToPath, URL } from 'url';
-import { execPath, runtimeConfigPath, appPath, dotEodashPath, compiletimeConfigPath } from "./utils.js";
+import {
+  runtimeConfigPath,
+  appPath, compiletimeConfigPath,
+  appPublicPath, cachePath, rootPublicPath
+} from "./utils.js";
 import { readFile } from "fs/promises";
 import { defineConfig, searchForWorkspaceRoot } from "vite"
 import { getUserModules } from './utils.js';
@@ -37,7 +41,7 @@ let virtualPlugin = null;
 export const serverConfig = /** @type {import('vite').UserConfigFnPromise}*/(defineConfig(async ({ mode, command }) => {
   return {
     base: '',
-    cacheDir: dotEodashPath + '/cache',
+    cacheDir: cachePath,
     plugins: [
       vue({
         template: {
@@ -77,7 +81,7 @@ export const serverConfig = /** @type {import('vite').UserConfigFnPromise}*/(def
       include: ["webfontloader", "vuetify", "vue", "pinia"],
       noDiscovery: true,
     } : {},
-    publicDir: command === 'build' ? path.join(appPath, './public') : path.join(execPath, '/public'),
+    publicDir: command === 'build' ? appPublicPath : rootPublicPath,
     build: {
       outDir: 'dist',
       rollupOptions: {
