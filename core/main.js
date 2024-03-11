@@ -1,15 +1,4 @@
 // Plugins
-import { registerPlugins } from '@/plugins';
+import { defineCompiletimeConfig } from '@/composables/DefineConfig';
 
-// Components
-import App from './App.vue';
-
-// Composables
-import { createApp } from 'vue';
-
-
-const app = createApp(App);
-
-registerPlugins(app);
-
-app.mount('#app');
+export { defineCompiletimeConfig as defineConfig }

@@ -2,13 +2,19 @@
   "name": "@eodash/eodash",
   "version": "5.0.0-alpha.1.6",
   "type": "module",
-  "types": "core/types.d.ts",
+  "types": "./core/types.d.ts",
   "files": [
     "core",
     "bin",
     "widgets"
   ],
-  "browser": "./dist/index.html",
+  "exports": {
+    ".": {
+      "types": "./core/types.d.ts",
+      "default": "./core/main.js"
+    }
+  },
+  "browser": "./core/main.js",
   "scripts": {
     "dev": "npx eodash dev",
     "build": "npx eodash build",
@@ -20,15 +26,8 @@
     "docs:generate": "typedoc --plugin typedoc-plugin-markdown core/store/Types.ts --tsconfig tsconfig.json --out docs --readme none"
   },
   "dependencies": {
-    "@eox/chart": "^2.0.0-beta2",
-    "@eox/drawtools": "^0.6.1",
-    "@eox/itemfilter": "^0.12.1",
-    "@eox/jsonform": "^0.2.1",
-    "@eox/layercontrol": "^0.15.1",
     "@eox/layout": "^0.1.0",
-    "@eox/map": "^1.1.0",
     "@eox/stacinfo": "^0.3.0",
-    "@eox/timecontrol": "^0.3.0",
     "@mdi/font": "7.0.96",
     "@vitejs/plugin-vue": "^5.0.0",
     "animated-details": "gist:2912bb049fa906671807415eb0e87188",
@@ -37,6 +36,7 @@
     "pinia": "^2.0.0",
     "roboto-fontface": "*",
     "vite": "^5.1.5",
+    "vite-plugin-virtual": "^0.3.0",
     "vite-plugin-vuetify": "^2.0.0",
     "vue": "^3.2.0",
     "vue-router": "^4.0.0",
