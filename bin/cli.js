@@ -17,11 +17,17 @@ export const createDevServer = async () => {
   server.bindCLIShortcuts({ print: true })
 }
 
-export const buildApp = async () => {
+export const buildApp = async (baseFlag) => {
   const htmlPath = path.join(appPath, '/index.html')
   await writeFile(htmlPath, indexHtml).then(async () => {
     await update()
-    await build(await serverConfig({ mode: 'production', command: 'build' }))
+
+    const config = await serverConfig({ mode: 'production', command: 'build' });
+    if (baseFlag !== null) {
+      config.base = baseFlag
+    }
+    await build(config)
+
     await rm(htmlPath).catch(() => {
       console.error('failed to remove index.html')
     })
