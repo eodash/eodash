@@ -7,7 +7,6 @@ const command = process.argv?.[2];
   const baseFlag = (  
     process.argv.indexOf('--base') > -1 ? process.argv[process.argv.indexOf('--base')+1] : null
   );
-  console.log(baseFlag)
   switch (command) {
     case "dev":
       await createDevServer();

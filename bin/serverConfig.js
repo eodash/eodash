@@ -65,7 +65,6 @@ export const serverConfig = defineConfig(({ mode, command }) => {
       fs: {
         allow: [searchForWorkspaceRoot(process.cwd())]
       },
-      open: '/'
     },
     root: fileURLToPath(new URL('..', import.meta.url)),
     optimizeDeps: mode === "development" ? {

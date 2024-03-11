@@ -31,8 +31,8 @@ export const buildApp = async (baseFlag) => {
     })
     await rm(path.join(appPath, './public'), { recursive: true }).catch()
     try {
-      if (!existsSync('./public')) {
-        mkdirSync('./public');
+      if (!existsSync(path.join(appPath, './public'))) {
+        mkdirSync(path.join(appPath, './public'));
       }
     } catch (err) {
       console.error(err);
