@@ -29,3 +29,7 @@ declare module '@eox/timecontrol' {
 declare module '@eox/jsonform' {
   export const EOxJSONForm: CustomElementConstructor
 }
+declare module 'user:config' {
+  const config: EodashConfig;
+  export default config
+}
