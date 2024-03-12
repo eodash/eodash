@@ -9,7 +9,8 @@ import { fileURLToPath, URL } from 'url';
 import {
   runtimeConfigPath,
   appPath, compiletimeConfigPath,
-  appPublicPath, cachePath, rootPublicPath
+  appPublicPath, cachePath, rootPublicPath,
+  userConfig
 } from "./utils.js";
 import { readFile } from "fs/promises";
 import { defineConfig, searchForWorkspaceRoot } from "vite"
@@ -40,7 +41,7 @@ export const indexHtml = `
 let virtualPlugin = null;
 export const serverConfig = /** @type {import('vite').UserConfigFnPromise}*/(defineConfig(async ({ mode, command }) => {
   return {
-    base: '',
+    base: userConfig.base ?? '',
     cacheDir: cachePath,
     plugins: [
       vue({
@@ -70,7 +71,8 @@ export const serverConfig = /** @type {import('vite').UserConfigFnPromise}*/(def
       extensions: ['.js', '.json', '.jsx', '.mjs', '.ts', '.tsx', '.vue'],
     },
     server: {
-      port: 3000,
+      port: userConfig.port ?? 3000,
+      open: userConfig.open,
       fs: {
         allow: [searchForWorkspaceRoot(process.cwd())]
       },
@@ -80,7 +82,7 @@ export const serverConfig = /** @type {import('vite').UserConfigFnPromise}*/(def
       include: ["webfontloader", "vuetify", "vue", "pinia"],
       noDiscovery: true,
     } : {},
-    publicDir: command === 'build' ? appPublicPath : rootPublicPath,
+    publicDir: userConfig.publicDir === false ? false : command === 'build' ? appPublicPath : rootPublicPath,
     build: {
       outDir: 'dist',
       rollupOptions: {

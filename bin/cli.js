@@ -7,6 +7,7 @@ import { update } from "./update.js";
 import { indexHtml, serverConfig } from "./serverConfig.js";
 import path from "path";
 import { existsSync } from "fs";
+import { userConfig } from "./utils.js";
 
 
 
@@ -17,17 +18,12 @@ export const createDevServer = async () => {
   server.bindCLIShortcuts({ print: true })
 }
 
-export const buildApp = async (baseFlag) => {
+export const buildApp = async () => {
   const htmlPath = path.join(appPath, '/index.html')
   await writeFile(htmlPath, indexHtml).then(async () => {
     await update()
-
     const config = await serverConfig({ mode: 'production', command: 'build' });
-    if (baseFlag !== null) {
-      config.base = baseFlag
-    }
     await build(config)
-
     await rm(htmlPath).catch(() => {
       console.error('failed to remove index.html')
     })
@@ -52,8 +48,8 @@ export async function previewApp() {
   const previewServer = await preview({
     root: rootPath,
     preview: {
-      port: 8080,
-      open: true,
+      port: userConfig.port ?? 8080,
+      open: userConfig.open,
     },
     build: {
       outDir: buildTargetPath
