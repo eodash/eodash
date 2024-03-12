@@ -82,6 +82,7 @@ export const serverConfig = /** @type {import('vite').UserConfigFnPromise}*/(def
       include: ["webfontloader", "vuetify", "vue", "pinia"],
       noDiscovery: true,
     } : {},
+    /** @type {string|false} */
     publicDir: userConfig.publicDir === false ? false : command === 'build' ? appPublicPath : rootPublicPath,
     build: {
       outDir: 'dist',
