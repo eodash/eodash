@@ -35,11 +35,11 @@ const { mainRect } = useLayout()
 onUnmounted(() => {
   theme.global.name.value = 'light'
 })
-if (import.meta.hot) {
-  import.meta.hot.on('config:update', () => {
-    window.location.reload()
-  })
-}
+
+import.meta.hot?.on('reload', () => {
+  window.location.reload()
+})
+
 </script>
 
 <style scoped lang="scss">
