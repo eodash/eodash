@@ -1,9 +1,8 @@
 import { useSTAcStore } from "./store/stac"
 import type { Router } from "vue-router";
 import type { StacCatalog, StacCollection, StacItem } from "stac-ts";
-import { defineCompiletimeConfig } from "./composables/DefineConfig";
 import type { Ref } from "vue"
-import type { ThemeDefinition } from "vuetify/lib/framework.mjs";
+import type { ThemeDefinition } from "vuetify/lib/index.mjs";
 import type { Map } from "openlayers";
 /**
  * Web Component configuration

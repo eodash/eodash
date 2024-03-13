@@ -28,7 +28,7 @@ export const useEodashRuntimeConfig = async () => {
     )
   } catch {
     try {
-      assignConfig((await import("user:config")).default)
+      assignConfig(await import("user:config").then(async m => await m['default']))
     } catch {
       console.error('no dashboard configuration assigned')
     }
