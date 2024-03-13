@@ -37,9 +37,9 @@ const props =   /** @type {import("@/types").WebComponentProps}  */(defineProps(
 const getWebComponent = async () => typeof props.link === 'string' ?
   await import( /* @vite-ignore */props.link) : await props.link()
 
-const imported = await getWebComponent().catch(e => {
+const imported = !customElements.get(props.tagName) ? await getWebComponent().catch(e => {
   console.error(e)
-})
+}) : null
 
 const defined = customElements.get(props.tagName)
 
