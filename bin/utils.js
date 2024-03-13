@@ -28,9 +28,6 @@ cli.version(pkg.version, '-v, --version', 'output the current version')
 
 
 export const userConfig = cli.opts()
-console.log(userConfig);
-// process.exit(0)
-// global paths
 export const appPath = fileURLToPath(new URL("..", import.meta.url)),
   appPublicPath = path.join(appPath, './public'),
   rootPath = searchForWorkspaceRoot(process.cwd()),
