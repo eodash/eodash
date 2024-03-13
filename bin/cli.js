@@ -2,7 +2,7 @@
 
 import { build, createServer, preview } from "vite"
 import { rootPath, appPath, buildTargetPath, appPublicPath } from "./utils.js";
-import { writeFile, rm, cp } from "fs/promises";
+import { writeFile, rm } from "fs/promises";
 import { update } from "./update.js";
 import { indexHtml, serverConfig } from "./serverConfig.js";
 import path from "path";
@@ -37,14 +37,6 @@ export const buildApp = async (baseFlag) => {
       })
     }
   })
-
-  if (appPath.includes('node_modules')) {
-    await cp(path.join(appPath, 'dist'), buildTargetPath, { recursive: true }).then(() => {
-      console.info('dashboard built successfully')
-    }).catch((e) => {
-      console.error(e)
-    })
-  }
 }
 
 

@@ -9,7 +9,8 @@ import { fileURLToPath, URL } from 'url';
 import {
   runtimeConfigPath,
   appPath, compiletimeConfigPath,
-  appPublicPath, cachePath, rootPublicPath
+  appPublicPath, cachePath, rootPublicPath,
+  buildTargetPath
 } from "./utils.js";
 import { readFile } from "fs/promises";
 import { defineConfig, searchForWorkspaceRoot } from "vite"
@@ -82,7 +83,8 @@ export const serverConfig = /** @type {import('vite').UserConfigFnPromise}*/(def
     } : {},
     publicDir: command === 'build' ? appPublicPath : rootPublicPath,
     build: {
-      outDir: 'dist',
+      outDir: buildTargetPath,
+      emptyOutDir: true,
       rollupOptions: {
         input: fileURLToPath(new URL(command === 'build' ? '../index.html' : '../core/main.js', import.meta.url)),
       },
@@ -102,7 +104,7 @@ async function configureServer(server) {
   server.watcher.on('change', async (path) => {
     if (path == runtimeConfigPath) {
       server.hot.send('reload')
-    } else if (!path.includes('node_modules') && path.includes('.eodash')) {
+    } else if (path === compiletimeConfigPath) {
       updateVirtualModule(virtualPlugin, 'user:config',
         await getUserModules().then(modules => modules['user:config']))
     }
