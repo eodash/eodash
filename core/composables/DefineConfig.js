@@ -37,8 +37,9 @@ export const useEodashRuntimeConfig = async () => {
 }
 
 /**
- * @param {(store:import("@/types").EodashStore)=>import("@/types").EodashConfig} configCallback
+ * @param {(store:import("@/types").EodashStore)=> import("@/types").EodashConfig
+ * | Promise<import("@/types").EodashConfig>}  configCallback
  */
-export const defineCompiletimeConfig = (configCallback) => {
-  return configCallback(store)
+export const defineCompiletimeConfig = async (configCallback) => {
+  return await configCallback(store)
 }
