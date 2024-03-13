@@ -1,56 +1,35 @@
 #!/usr/bin/env node
 
 import { readFile } from 'fs/promises';
-import { existsSync } from 'fs';
+import { existsSync, readFileSync } from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { searchForWorkspaceRoot } from 'vite';
+import { Command } from 'commander';
+const cli = new Command('eodash')
 
-const getFlag = (flag, defaultVal) => {
-  const flagIdx = process.argv.indexOf(flag)
-  let val = flagIdx !== -1 ? process.argv[flagIdx + 1] : (defaultVal ?? null)
-  if (/^(true|false|\d+)$/.test(val)) {
-    val = JSON.parse(val)
-  }
-  return val
-}
+const pkg = JSON.parse(
+  readFileSync(
+    fileURLToPath(new URL('../package.json', import.meta.url))
+    , 'utf-8')
+);
 
-export const userConfig = {
-  /** statically served files path
-   * @type {string | false}
-   */
-  publicDir: getFlag('--publicDir'),
-  /** output folder
-   * @type {string}
-    */
-  outDir: getFlag('--outDir'),
-  /** file exporting `defineConfig`
-   * @type {string}
-   */
-  entryPoint: getFlag('--entryPoint'),
-  /** base public path
-   * @type {string}
-    */
-  base: getFlag('--base'),
-  /** cache folder
-   * @type {string}
-   */
-  cacheDir: getFlag('--cacheDir'),
-  /** runtime eodash configuration file
-   * @type {string}
-   */
-  runtimeFile: getFlag('--runtime'),
-  /**
-   * Open default browser when the server starts
-   * @type {boolean}
-   */
-  open: process.argv.includes('--open'),
-  /** serving  port
-   * @type {number}
-   */
-  port: getFlag('--port')
-}
+cli.version(pkg.version, '-v, --version', 'output the current version')
+  .option('--publicDir <path>', 'path to statically served assets folder')
+  .option('--no-publicDir', 'stop serving static assets')
+  .option('--outDir <path>', 'minified output folder')
+  .option('-e, --entryPoint <path>', 'file exporting `defineConfig`')
+  .option('-c, --cacheDir <path>', 'cache folder')
+  .option('-r, --runtime <path>', 'file exporting eodash runtime config')
+  .option('-b, --base <path>', 'base public path')
+  .option('-p, --port <port>', 'serving  port')
+  .option('-o, --open', 'open default browser when the server starts')
+  .parse(process.argv)
 
+
+export const userConfig = cli.opts()
+console.log(userConfig);
+// process.exit(0)
 // global paths
 export const appPath = fileURLToPath(new URL("..", import.meta.url)),
   appPublicPath = path.join(appPath, './public'),

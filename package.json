@@ -32,17 +32,18 @@
     "@vitejs/plugin-vue": "^5.0.0",
     "animated-details": "gist:2912bb049fa906671807415eb0e87188",
     "axios": "^1.6.2",
+    "commander": "^12.0.0",
     "core-js": "^3.29.0",
     "pinia": "^2.0.0",
     "roboto-fontface": "*",
+    "sass": "^1.60.0",
     "vite": "^5.1.5",
     "vite-plugin-virtual": "^0.3.0",
     "vite-plugin-vuetify": "^2.0.0",
     "vue": "^3.2.0",
     "vue-router": "^4.0.0",
     "vuetify": "^3.5.1",
-    "webfontloader": "^1.6.28",
-    "sass": "^1.60.0"
+    "webfontloader": "^1.6.28"
   },
   "devDependencies": {
     "@babel/types": "^7.21.4",
