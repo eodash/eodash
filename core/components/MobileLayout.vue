@@ -6,7 +6,8 @@
     <v-row no-gutters class="d-flex justify-center align-end">
       <v-col v-for="(importedWidget, idx) in importedWidgets" :key="idx" :cols="cols"
         class="flex-column fill-height fill-width elevation-1 align-start ma-0 justify-center">
-        <span class="d-flex pa-2 justify-center ma-0 panel-header align-center fill-width" @click="handleSelection(idx)">
+        <span class="d-flex pa-2 justify-center ma-0 panel-header align-center fill-width"
+          @click="handleSelection(idx)">
           {{ importedWidget.value.title }}
         </span>
         <div v-show="activeIdx === idx" class="overlay align-self-end overflow-auto pa-2">
@@ -24,7 +25,7 @@ import { inject } from 'vue';
 import { useDefineWidgets } from '@/composables/DefineWidgets'
 import { ref } from 'vue';
 
-const eodashConfig = /** @type {EodashConfig} */(inject(eodashConfigKey));
+const eodashConfig = /** @type {import("@/types").EodashConfig} */(inject(eodashConfigKey));
 
 //import widgets
 const widgetsConfig = eodashConfig.template.widgets
@@ -74,6 +75,4 @@ const handleSelection = (idx) => {
 .close-btn {
   justify-self: end;
 }
-
-//
 </style>

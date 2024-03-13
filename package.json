@@ -42,6 +42,7 @@
     "vue-router": "^4.0.0",
     "vuetify": "^3.5.1",
     "webfontloader": "^1.6.28",
+    "stac-ts": "^1.0.3",
     "sass": "^1.60.0"
   },
   "devDependencies": {
@@ -51,7 +52,6 @@
     "@vue/eslint-config-typescript": "^11.0.0",
     "eslint": "^8.56.0",
     "eslint-plugin-vue": "^9.19.2",
-    "stac-ts": "^1.0.3",
     "typedoc": "^0.25.7",
     "typedoc-plugin-markdown": "^3.17.1",
     "typescript": "^5.0.0",

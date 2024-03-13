@@ -14,7 +14,7 @@ import { eodashConfigKey } from '@/store/Keys';
 import { inject } from 'vue';
 import { useRouter } from 'vue-router';
 
-const eodashConfig = /** @type {EodashConfig} */(inject(eodashConfigKey))
+const eodashConfig = /** @type {import("@/types").EodashConfig} */(inject(eodashConfigKey))
 
 const title = eodashConfig.brand?.name
 

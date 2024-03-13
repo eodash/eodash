@@ -6,16 +6,16 @@ import store from '@/store'
  * Sets user defined configuration on runtime.
  * Consumes `/config.js` file from the base URL, and assign it to `eodashConfig`
  * @async
- * @returns {Promise<EodashConfig>}
+ * @returns {Promise<import("@/types").EodashConfig>}
  * @see {@linkplain '@/eodashConfig.js'}
  */
 export const useEodashRuntimeConfig = async () => {
-  const eodashConfig = /** @type {EodashConfig} */(inject(eodashConfigKey))
+  const eodashConfig = /** @type {import("@/types").EodashConfig} */(inject(eodashConfigKey))
   /**
-   * @param {EodashConfig} updatedConfig
+   * @param {import("@/types").EodashConfig} updatedConfig
    */
   const assignConfig = (updatedConfig) => {
-    /** @type {(keyof EodashConfig)[]} */(Object.keys(eodashConfig))
+    /** @type {(keyof import("@/types").EodashConfig)[]} */(Object.keys(eodashConfig))
       .forEach((key) => {
         //@ts-expect-error
         eodashConfig[key] = updatedConfig[key]
@@ -37,7 +37,7 @@ export const useEodashRuntimeConfig = async () => {
 }
 
 /**
- * @param {(store:EodashStore)=>EodashConfig} configCallback
+ * @param {(store:import("@/types").EodashStore)=>import("@/types").EodashConfig} configCallback
  */
 export const defineCompiletimeConfig = (configCallback) => {
   return configCallback(store)

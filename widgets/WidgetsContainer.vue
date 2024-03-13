@@ -16,7 +16,7 @@ import 'animated-details'
 
 const props = defineProps({
   widgets: {
-    /** @type {import('vue').PropType<Omit<WidgetConfig,'layout'>[]>} */
+    /** @type {import('vue').PropType<Omit<import("@/types").WidgetConfig,'layout'>[]>} */
     type: Array,
     required: true,
   }

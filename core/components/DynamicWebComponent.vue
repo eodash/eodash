@@ -13,7 +13,7 @@ import {
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 
-const props =   /** @type {WebComponentProps}  */(defineProps({
+const props =   /** @type {import("@/types").WebComponentProps}  */(defineProps({
   link: {
     type: [String, Function],
     required: true
