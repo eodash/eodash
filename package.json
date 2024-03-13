@@ -34,7 +34,6 @@
     "axios": "^1.6.2",
     "core-js": "^3.29.0",
     "pinia": "^2.0.0",
-    "roboto-fontface": "*",
     "vite": "^5.1.5",
     "vite-plugin-virtual": "^0.3.0",
     "vite-plugin-vuetify": "^2.0.0",
