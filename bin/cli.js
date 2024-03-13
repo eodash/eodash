@@ -1,13 +1,14 @@
 #!/usr/bin/env node
 
 import { build, createServer, preview } from "vite"
-import { rootPath, appPath, buildTargetPath, appPublicPath } from "./utils.js";
-import { writeFile, rm } from "fs/promises";
-import { update } from "./update.js";
+import {
+  rootPath, appPath, buildTargetPath,
+  appPublicPath, rootPublicPath, runtimeConfigPath
+} from "./utils.js";
+import { writeFile, rm, cp } from "fs/promises";
 import { indexHtml, serverConfig } from "./serverConfig.js";
 import path from "path";
 import { existsSync } from "fs";
-
 
 
 export const createDevServer = async () => {
@@ -20,7 +21,16 @@ export const createDevServer = async () => {
 export const buildApp = async (baseFlag) => {
   const htmlPath = path.join(appPath, '/index.html')
   await writeFile(htmlPath, indexHtml).then(async () => {
-    await update()
+    if (rootPublicPath !== appPublicPath) {
+      await cp(rootPublicPath, appPublicPath, { recursive: true }).catch(err => {
+        console.error(err)
+      })
+      if (existsSync(runtimeConfigPath)) {
+        await cp(runtimeConfigPath, path.join(appPath, '/public/config.js')).catch((e) => {
+          console.error(e)
+        })
+      }
+    }
 
     const config = await serverConfig({ mode: 'production', command: 'build' });
     if (baseFlag !== null) {

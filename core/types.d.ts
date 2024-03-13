@@ -8,7 +8,7 @@ import { defineCompiletimeConfig } from "./composables/DefineConfig";
  */
 export interface WebComponentProps<T extends ExecutionTime = "compiletime"> {
   /** Web component definition file URL*/
-  link: T extends 'runtime' ? string : (string | (() => Promise));
+  link: T extends 'runtime' ? string : (string | (() => Promise<unknown>));
   /** Exported Constructor, needs to be provided if the web component is not registered by the `link` provided */
   constructorProp?: string
   /** Custom tag name */
