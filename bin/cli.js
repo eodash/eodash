@@ -53,9 +53,10 @@ export async function previewApp() {
     preview: {
       port: userConfig.port ?? 8080,
       open: userConfig.open,
+      host: userConfig.host
     },
     build: {
-      outDir: buildTargetPath
+      outDir: buildTargetPath,
     }
   })
   previewServer.printUrls()

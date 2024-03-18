@@ -24,6 +24,7 @@ cli.version(pkg.version, '-v, --version', 'output the current version')
   .option('-b, --base <path>', 'base public path')
   .option('-p, --port <port>', 'serving  port')
   .option('-o, --open', 'open default browser when the server starts')
+  .option('--host [IP address]', 'specify which IP addresses the server should listen on')
   .parse(process.argv)
 
 
