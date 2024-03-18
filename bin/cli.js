@@ -1,13 +1,15 @@
 #!/usr/bin/env node
 
 import { build, createServer, preview } from "vite"
-import { rootPath, appPath, buildTargetPath, appPublicPath } from "./utils.js";
+import {
+  rootPath, appPath, buildTargetPath,
+  appPublicPath, userConfig,
+} from "./utils.js";
 import { writeFile, rm, cp } from "fs/promises";
 import { update } from "./update.js";
 import { indexHtml, serverConfig } from "./serverConfig.js";
 import path from "path";
 import { existsSync } from "fs";
-import { userConfig } from "./utils.js";
 
 
 
@@ -47,6 +49,7 @@ export const buildApp = async () => {
 export async function previewApp() {
   const previewServer = await preview({
     root: rootPath,
+    base: userConfig.base ?? '',
     preview: {
       port: userConfig.port ?? 8080,
       open: userConfig.open,
