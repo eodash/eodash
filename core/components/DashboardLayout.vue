@@ -18,7 +18,7 @@
     </eox-layout>
   </v-main>
 </template>
-<script setup >
+<script setup>
 import { eodashConfigKey } from '@/store/Keys';
 import { inject } from 'vue';
 import { useDefineWidgets } from '@/composables/DefineWidgets'
@@ -26,7 +26,7 @@ import { useSlidePanels } from '@/composables'
 import { ref } from 'vue';
 import '@eox/layout'
 
-const eodashConfig = /** @type {EodashConfig} */ (inject(eodashConfigKey))
+const eodashConfig = /** @type {import("@/types").EodashConfig} */ (inject(eodashConfigKey))
 
 const [bgWidget] = useDefineWidgets([eodashConfig.template?.background])
 

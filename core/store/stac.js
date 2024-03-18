@@ -20,12 +20,12 @@ export const useSTAcStore = defineStore('stac', () => {
   const selectedStac = ref(null);
 
 
-  const eodashConfig = /** @type {EodashConfig} */(inject(eodashConfigKey));
+  const eodashConfig = /** @type {import("@/types").EodashConfig} */(inject(eodashConfigKey));
 
   /**
    * fetches root stac catalog and assign it to `stac`
    * @async
-   * @param {StacEndpoint} [url = eodashConfig.stacEndpoint]
+   * @param {import("@/types").StacEndpoint} [url = eodashConfig.stacEndpoint]
    * @returns {Promise<void>}
    * @see {@link stac}
    */

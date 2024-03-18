@@ -8,7 +8,7 @@ let handleMoveEnd = null;
 /**
  * Reactive Edoash Config Object. provided globally in the app,
  * and used as an intermediate object to make user defined configurations reactive.
- * @type {EodashConfig}
+ * @type {import("./types").EodashConfig}
  */
 const eodashConfig = reactive({
   id: 'demo',

@@ -13,7 +13,7 @@ import {
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 
-const props =   /** @type {WebComponentProps}  */(defineProps({
+const props =   /** @type {import("@/types").WebComponentProps}  */(defineProps({
   link: {
     type: [String, Function],
     required: true
@@ -37,9 +37,9 @@ const props =   /** @type {WebComponentProps}  */(defineProps({
 const getWebComponent = async () => typeof props.link === 'string' ?
   await import( /* @vite-ignore */props.link) : await props.link()
 
-const imported = await getWebComponent().catch(e => {
+const imported = !customElements.get(props.tagName) ? await getWebComponent().catch(e => {
   console.error(e)
-})
+}) : null
 
 const defined = customElements.get(props.tagName)
 

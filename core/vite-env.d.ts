@@ -6,30 +6,12 @@ declare module '*.vue' {
   export default component
 }
 declare interface Window {
-  eodashStore: EodashStore
-}
-declare module '@eox/itemfilter' {
-  export const EOxItemFilter: CustomElementConstructor
+  eodashStore: import("@/types").EodashStore
 }
 declare module '@eox/stacinfo' {
   export const EOxStacInfo: CustomElementConstructor
 }
-declare module '@eox/map' {
-  export const EOxMap: CustomElementConstructor
-}
-declare module '@eox/chart' {
-  export const EOxChart: CustomElementConstructor
-}
-declare module '@eox/layercontrol' {
-  export const EOxLayerControl: CustomElementConstructor
-}
-declare module '@eox/timecontrol' {
-  export const EOxTimeControl: CustomElementConstructor
-}
-declare module '@eox/jsonform' {
-  export const EOxJSONForm: CustomElementConstructor
-}
 declare module 'user:config' {
-  const config: EodashConfig;
+  const config: import("@/types").EodashConfig | Promise<import("@/types").EodashConfig>;
   export default config
 }
