@@ -4,6 +4,7 @@ import { build, createServer, preview } from "vite"
 import {
   rootPath, appPath, buildTargetPath,
   appPublicPath, userConfig,
+  runtimeConfigPath,
 } from "./utils.js";
 import { writeFile, rm, cp } from "fs/promises";
 import { update } from "./update.js";
@@ -26,6 +27,12 @@ export const buildApp = async () => {
     await update()
     const config = await serverConfig({ mode: 'production', command: 'build' });
     await build(config)
+    if (config.publicDir === false && existsSync(runtimeConfigPath)) {
+      await cp(runtimeConfigPath, path.join(buildTargetPath, 'config.js'),
+        { recursive: true }).catch(err => {
+          console.error(err);
+        })
+    }
     await rm(htmlPath).catch(() => {
       console.error('failed to remove index.html')
     })
