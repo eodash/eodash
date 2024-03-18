@@ -9,7 +9,7 @@ import { fileURLToPath, URL } from 'url';
 import {
   runtimeConfigPath,
   appPath, compiletimeConfigPath,
-  appPublicPath, cachePath, rootPublicPath,
+  cachePath, publicPath,
   buildTargetPath
 } from "./utils.js";
 import { readFile } from "fs/promises";
@@ -81,7 +81,7 @@ export const serverConfig = /** @type {import('vite').UserConfigFnPromise}*/(def
       include: ["webfontloader", "vuetify", "vue", "pinia"],
       noDiscovery: true,
     } : {},
-    publicDir: command === 'build' ? appPublicPath : rootPublicPath,
+    publicDir: publicPath,
     build: {
       outDir: buildTargetPath,
       emptyOutDir: true,

@@ -3,7 +3,7 @@
 import { build, createServer, preview } from "vite"
 import {
   rootPath, appPath, buildTargetPath,
-  appPublicPath, rootPublicPath, runtimeConfigPath
+  runtimeConfigPath
 } from "./utils.js";
 import { writeFile, rm, cp } from "fs/promises";
 import { indexHtml, serverConfig } from "./serverConfig.js";
@@ -21,16 +21,6 @@ export const createDevServer = async () => {
 export const buildApp = async (baseFlag) => {
   const htmlPath = path.join(appPath, '/index.html')
   await writeFile(htmlPath, indexHtml).then(async () => {
-    if (rootPublicPath !== appPublicPath) {
-      await cp(rootPublicPath, appPublicPath, { recursive: true }).catch(err => {
-        console.error(err)
-      })
-      if (existsSync(runtimeConfigPath)) {
-        await cp(runtimeConfigPath, path.join(appPath, '/public/config.js')).catch((e) => {
-          console.error(e)
-        })
-      }
-    }
 
     const config = await serverConfig({ mode: 'production', command: 'build' });
     if (baseFlag !== null) {
@@ -38,14 +28,16 @@ export const buildApp = async (baseFlag) => {
     }
     await build(config)
 
+    if (existsSync(runtimeConfigPath)) {
+      await cp(runtimeConfigPath, path.join(buildTargetPath, 'config.js'),
+        { recursive: true }).catch((e) => {
+          console.error(e)
+        })
+    }
+
     await rm(htmlPath).catch(() => {
       console.error('failed to remove index.html')
     })
-    if (appPath.includes('node_modules') && existsSync(appPublicPath)) {
-      await rm(appPublicPath, { recursive: true }).catch((e) => {
-        console.error(e)
-      })
-    }
   })
 }
 

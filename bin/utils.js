@@ -8,9 +8,8 @@ import { searchForWorkspaceRoot } from 'vite';
 
 // global paths
 export const appPath = fileURLToPath(new URL("..", import.meta.url)),
-  appPublicPath = path.join(appPath, './public'),
   rootPath = searchForWorkspaceRoot(process.cwd()),
-  rootPublicPath = path.join(rootPath, './public'),
+  publicPath = path.join(rootPath, './public'),
   srcPath = path.join(rootPath, "/src"),
   runtimeConfigPath = path.join(srcPath, "./config.runtime.js"),
   compiletimeConfigPath = path.join(srcPath, "/config.js"),
