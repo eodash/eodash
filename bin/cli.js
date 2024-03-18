@@ -3,7 +3,7 @@
 import { build, createServer, preview } from "vite"
 import {
   rootPath, appPath, buildTargetPath,
-  runtimeConfigPath
+  userConfig, runtimeConfigPath,
 } from "./utils.js";
 import { writeFile, rm, cp } from "fs/promises";
 import { indexHtml, serverConfig } from "./serverConfig.js";
@@ -18,14 +18,10 @@ export const createDevServer = async () => {
   server.bindCLIShortcuts({ print: true })
 }
 
-export const buildApp = async (baseFlag) => {
+export const buildApp = async () => {
   const htmlPath = path.join(appPath, '/index.html')
   await writeFile(htmlPath, indexHtml).then(async () => {
-
     const config = await serverConfig({ mode: 'production', command: 'build' });
-    if (baseFlag !== null) {
-      config.base = baseFlag
-    }
     await build(config)
 
     if (existsSync(runtimeConfigPath)) {
@@ -45,12 +41,14 @@ export const buildApp = async (baseFlag) => {
 export async function previewApp() {
   const previewServer = await preview({
     root: rootPath,
+    base: userConfig.base ?? '',
     preview: {
-      port: 8080,
-      open: true,
+      port: userConfig.port ?? 8080,
+      open: userConfig.open,
+      host: userConfig.host
     },
     build: {
-      outDir: buildTargetPath
+      outDir: buildTargetPath,
     }
   })
   previewServer.printUrls()

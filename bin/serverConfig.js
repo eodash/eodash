@@ -1,7 +1,5 @@
 #!/usr/bin/env node
 
-
-
 import vue from '@vitejs/plugin-vue';
 import vuetify, { transformAssetUrls } from 'vite-plugin-vuetify';
 import virtual, { updateVirtualModule } from 'vite-plugin-virtual'
@@ -9,7 +7,7 @@ import { fileURLToPath, URL } from 'url';
 import {
   runtimeConfigPath,
   appPath, compiletimeConfigPath,
-  cachePath, publicPath,
+  cachePath, publicPath, userConfig,
   buildTargetPath
 } from "./utils.js";
 import { readFile } from "fs/promises";
@@ -41,7 +39,7 @@ export const indexHtml = `
 let virtualPlugin = null;
 export const serverConfig = /** @type {import('vite').UserConfigFnPromise}*/(defineConfig(async ({ mode, command }) => {
   return {
-    base: '',
+    base: userConfig.base ?? '',
     cacheDir: cachePath,
     plugins: [
       vue({
@@ -71,17 +69,20 @@ export const serverConfig = /** @type {import('vite').UserConfigFnPromise}*/(def
       extensions: ['.js', '.json', '.jsx', '.mjs', '.ts', '.tsx', '.vue'],
     },
     server: {
-      port: 3000,
+      port: userConfig.port ?? 3000,
+      open: userConfig.open,
       fs: {
         allow: [searchForWorkspaceRoot(process.cwd())]
       },
+      host: userConfig.host
     },
     root: fileURLToPath(new URL('..', import.meta.url)),
     optimizeDeps: mode === "development" ? {
       include: ["webfontloader", "vuetify", "vue", "pinia"],
       noDiscovery: true,
     } : {},
-    publicDir: publicPath,
+    /** @type {string|false} */
+    publicDir: userConfig.publicDir === false ? false : publicPath,
     build: {
       outDir: buildTargetPath,
       emptyOutDir: true,

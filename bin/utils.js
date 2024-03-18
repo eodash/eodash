@@ -1,22 +1,43 @@
 #!/usr/bin/env node
 
 import { readFile } from 'fs/promises';
-import { existsSync } from 'fs';
+import { existsSync, readFileSync } from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { searchForWorkspaceRoot } from 'vite';
+import { Command } from 'commander';
+const cli = new Command('eodash')
 
-// global paths
+const pkg = JSON.parse(
+  readFileSync(
+    fileURLToPath(new URL('../package.json', import.meta.url))
+    , 'utf-8')
+);
+
+cli.version(pkg.version, '-v, --version', 'output the current version')
+  .option('--publicDir <path>', 'path to statically served assets folder')
+  .option('--no-publicDir', 'stop serving static assets')
+  .option('--outDir <path>', 'minified output folder')
+  .option('-e, --entryPoint <path>', 'file exporting `defineConfig`')
+  .option('-c, --cacheDir <path>', 'cache folder')
+  .option('-r, --runtime <path>', 'file exporting eodash runtime config')
+  .option('-b, --base <path>', 'base public path')
+  .option('-p, --port <port>', 'serving  port')
+  .option('-o, --open', 'open default browser when the server starts')
+  .option('--host [IP address]', 'specify which IP addresses the server should listen on')
+  .parse(process.argv)
+
+
+export const userConfig = cli.opts()
 export const appPath = fileURLToPath(new URL("..", import.meta.url)),
   rootPath = searchForWorkspaceRoot(process.cwd()),
-  publicPath = path.join(rootPath, './public'),
+  publicPath = userConfig.publicDir ? path.resolve(rootPath, userConfig.publicDir) : path.join(rootPath, './public'),
   srcPath = path.join(rootPath, "/src"),
-  runtimeConfigPath = path.join(srcPath, "./config.runtime.js"),
-  compiletimeConfigPath = path.join(srcPath, "/config.js"),
+  runtimeConfigPath = userConfig.runtime ? path.resolve(rootPath, userConfig.runtime) : path.join(srcPath, "./config.runtime.js"),
+  compiletimeConfigPath = userConfig.entryPoint ? path.resolve(rootPath, userConfig.entryPoint) : path.join(srcPath, "/config.js"),
   dotEodashPath = path.join(rootPath, "/.eodash"),
-  buildTargetPath = path.join(dotEodashPath, '/dist'),
-  cachePath = path.join(dotEodashPath, 'cache');
-
+  buildTargetPath = userConfig.outDir ? path.resolve(rootPath, userConfig.outDir) : path.join(dotEodashPath, '/dist'),
+  cachePath = userConfig.cacheDir ? path.resolve(rootPath, userConfig.cacheDir) : path.join(dotEodashPath, 'cache');
 
 
 export const getUserModules = async () => {

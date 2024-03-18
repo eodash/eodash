@@ -1,6 +1,6 @@
 {
   "name": "@eodash/eodash",
-  "version": "5.0.0-alpha.1.8",
+  "version": "5.0.0-alpha.1.9",
   "type": "module",
   "types": "./core/types.d.ts",
   "files": [
@@ -32,6 +32,7 @@
     "@vitejs/plugin-vue": "^5.0.0",
     "animated-details": "gist:2912bb049fa906671807415eb0e87188",
     "axios": "^1.6.2",
+    "commander": "^12.0.0",
     "core-js": "^3.29.0",
     "pinia": "^2.0.0",
     "sass": "^1.60.0",
