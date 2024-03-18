@@ -30,9 +30,8 @@ cli.version(pkg.version, '-v, --version', 'output the current version')
 
 export const userConfig = cli.opts()
 export const appPath = fileURLToPath(new URL("..", import.meta.url)),
-  appPublicPath = path.join(appPath, './public'),
   rootPath = searchForWorkspaceRoot(process.cwd()),
-  rootPublicPath = userConfig.publicDir ? path.resolve(rootPath, userConfig.publicDir) : path.join(rootPath, './public'),
+  publicPath = userConfig.publicDir ? path.resolve(rootPath, userConfig.publicDir) : path.join(rootPath, './public'),
   srcPath = path.join(rootPath, "/src"),
   runtimeConfigPath = userConfig.runtime ? path.resolve(rootPath, userConfig.runtime) : path.join(srcPath, "./config.runtime.js"),
   compiletimeConfigPath = userConfig.entryPoint ? path.resolve(rootPath, userConfig.entryPoint) : path.join(srcPath, "/config.js"),

@@ -3,15 +3,12 @@
 import { build, createServer, preview } from "vite"
 import {
   rootPath, appPath, buildTargetPath,
-  appPublicPath, userConfig,
-  runtimeConfigPath,
+  userConfig, runtimeConfigPath,
 } from "./utils.js";
 import { writeFile, rm, cp } from "fs/promises";
-import { update } from "./update.js";
 import { indexHtml, serverConfig } from "./serverConfig.js";
 import path from "path";
 import { existsSync } from "fs";
-
 
 
 export const createDevServer = async () => {
@@ -24,32 +21,20 @@ export const createDevServer = async () => {
 export const buildApp = async () => {
   const htmlPath = path.join(appPath, '/index.html')
   await writeFile(htmlPath, indexHtml).then(async () => {
-    await update()
     const config = await serverConfig({ mode: 'production', command: 'build' });
     await build(config)
-    if (config.publicDir === false && existsSync(runtimeConfigPath)) {
+
+    if (existsSync(runtimeConfigPath)) {
       await cp(runtimeConfigPath, path.join(buildTargetPath, 'config.js'),
-        { recursive: true }).catch(err => {
-          console.error(err);
+        { recursive: true }).catch((e) => {
+          console.error(e)
         })
     }
+
     await rm(htmlPath).catch(() => {
       console.error('failed to remove index.html')
     })
-    if (appPath.includes('node_modules') && existsSync(appPublicPath)) {
-      await rm(appPublicPath, { recursive: true }).catch((e) => {
-        console.error(e)
-      })
-    }
   })
-
-  if (appPath.includes('node_modules')) {
-    await cp(path.join(appPath, 'dist'), buildTargetPath, { recursive: true }).then(() => {
-      console.info('dashboard built successfully')
-    }).catch((e) => {
-      console.error(e)
-    })
-  }
 }
 
 

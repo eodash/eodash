@@ -40,7 +40,7 @@ export const useAbsoluteUrl = (rel = '', base = eodashConfig.stacEndpoint) => {
 /**
  * Adds slide in and out functionality to Elements
  * @param {import('vue').Ref<HTMLElement[]|null>} elements - elements to add the functionality to
- * @param {WidgetConfig[]} configs
+ * @param {import("@/types").WidgetConfig[]} configs
  */
 export const useSlidePanels = (elements, configs) => {
 
