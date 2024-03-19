@@ -79,11 +79,11 @@ async function getUserConfig(options, command) {
     port: Number(options.port ?? config?.[command]?.port),
     host: options.host ?? config?.[/**@type {"dev"|"preview"} */(command)]?.host,
     open: options.open ?? config?.[/**@type {"dev"|"preview"} */(command)]?.open,
-    cacheDir: options.cacheDir ?? config.cacheDir,
-    entryPoint: options.entryPoint ?? config.entryPoint,
-    outDir: options.outDir ?? config.outDir,
-    publicDir: options.publicDir ?? config.publicDir,
-    runtime: options.runtime ?? config.runtime
+    cacheDir: options.cacheDir ?? config?.cacheDir,
+    entryPoint: options.entryPoint ?? config?.entryPoint,
+    outDir: options.outDir ?? config?.outDir,
+    publicDir: options.publicDir ?? config?.publicDir,
+    runtime: options.runtime ?? config?.runtime
   }
 }
 
