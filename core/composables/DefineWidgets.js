@@ -27,7 +27,7 @@ const internalWidgets = import.meta.glob('^/**/*.vue')
 
 /**
  * Composable that converts widgets Configurations to defined imported widgets
- * @param { (import("@/types").WidgetConfig | import("@/types").BackgroundWidgetConfig | undefined)[] |
+ * @param { (import("@/types").Widget | import("@/types").BackgroundWidget | undefined)[] |
  * import("@/types").WidgetsContainerProps['widgets'] | undefined} widgetConfigs
  * @returns {Array<ReactiveDefinedWidget>}
  **/
@@ -84,10 +84,10 @@ const getWidgetDefinition = (config) => {
   switch (config?.type) {
     case 'internal':
       importedWidget.component = defineAsyncComponent({
-        loader: internalWidgets[`/widgets/${/** @type {import("@/types").InternalComponentConfig} **/(config)?.widget.name}.vue`],
+        loader: internalWidgets[`/widgets/${/** @type {import("@/types").InternalComponentWidget} **/(config)?.widget.name}.vue`],
         suspensible: true
       })
-      importedWidget.props = reactive(/** @type {import("@/types").InternalComponentConfig} **/(config)?.widget.props ?? {})
+      importedWidget.props = reactive(/** @type {import("@/types").InternalComponentWidget} **/(config)?.widget.props ?? {})
 
       break;
 

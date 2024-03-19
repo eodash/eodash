@@ -20,7 +20,7 @@ npm run preview
     .
     ├── core               # Main source code that hosts the microfrontends and renders the dashboard
     ├── docs               # Documentation files
-    ├── widgets            # Internal Vue widgets that can be imported in the configuration
+    ├── widgets            # Vue componenets as internal widgets.
     ├── public             # Statically served directory
     └── README.md
 

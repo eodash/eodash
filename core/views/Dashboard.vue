@@ -5,7 +5,7 @@
 </template>
 
 <script setup>
-import { useEodashRuntimeConfig } from "@/composables/DefineConfig";
+import { useEodashRuntime } from "@/composables/DefineEodash";
 import { useUpdateTheme } from "@/composables";
 import { useSTAcStore } from '@/store/stac';
 import { defineAsyncComponent } from "vue";
@@ -14,7 +14,7 @@ import { loadFont } from '@/store/Actions'
 import { onUnmounted } from "vue";
 
 
-const eodashConfig = await useEodashRuntimeConfig()
+const eodashConfig = await useEodashRuntime()
 
 const theme = useUpdateTheme('dashboardTheme', eodashConfig.brand?.theme)
 theme.global.name.value = 'dashboardTheme'
@@ -47,3 +47,4 @@ import.meta.hot?.on('reload', () => {
   font-family: v-bind('fontFamily');
 }
 </style>
+@/composables/DefineEodash

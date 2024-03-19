@@ -12,6 +12,6 @@ declare module '@eox/stacinfo' {
   export const EOxStacInfo: CustomElementConstructor
 }
 declare module 'user:config' {
-  const config: import("@/types").EodashConfig | Promise<import("@/types").EodashConfig>;
-  export default config
+  const eodash: import("@/types").Eodash | Promise<import("@/types").Eodash>;
+  export default eodash
 }

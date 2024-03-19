@@ -1,22 +1,22 @@
 <template>
   <v-app-bar color="primary">
     <v-app-bar-title class="cursor-pointer">{{ title }}</v-app-bar-title>
-    <v-toolbar-items v-if="eodashConfig.routes">
-      <v-btn v-for="route in eodashConfig.routes" :key="route.to" variant="text" @click="navigateTo(route.to)">
+    <v-toolbar-items v-if="eodash.routes">
+      <v-btn v-for="route in eodash.routes" :key="route.to" variant="text" @click="navigateTo(route.to)">
         {{ route.title }}
       </v-btn>
     </v-toolbar-items>
-    <v-img class="mx-12 logo" :src="eodashConfig.brand?.logo" />
+    <v-img class="mx-12 logo" :src="eodash.brand?.logo" />
   </v-app-bar>
 </template>
 <script setup>
-import { eodashConfigKey } from '@/store/Keys';
+import { eodashKey } from '@/store/Keys';
 import { inject } from 'vue';
 import { useRouter } from 'vue-router';
 
-const eodashConfig = /** @type {import("@/types").EodashConfig} */(inject(eodashConfigKey))
+const eodash = /** @type {import("@/types").Eodash} */(inject(eodashKey))
 
-const title = eodashConfig.brand?.name
+const title = eodash.brand?.name
 
 const { push } = useRouter()
 

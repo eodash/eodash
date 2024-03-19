@@ -1,6 +1,6 @@
 <template>
   <v-main>
-    <eox-layout :gap="eodashConfig.template.gap ?? 2">
+    <eox-layout :gap="eodash.template.gap ?? 2">
       <eox-layout-item class="bg-widget" x="0" y="0" h="12" w="12">
         <component :is="bgWidget.component" v-bind="bgWidget.props" />
       </eox-layout-item>
@@ -19,18 +19,18 @@
   </v-main>
 </template>
 <script setup>
-import { eodashConfigKey } from '@/store/Keys';
+import { eodashKey } from '@/store/Keys';
 import { inject } from 'vue';
 import { useDefineWidgets } from '@/composables/DefineWidgets'
 import { useSlidePanels } from '@/composables'
 import { ref } from 'vue';
 import '@eox/layout'
 
-const eodashConfig = /** @type {import("@/types").EodashConfig} */ (inject(eodashConfigKey))
+const eodash = /** @type {import("@/types").Eodash} */ (inject(eodashKey))
 
-const [bgWidget] = useDefineWidgets([eodashConfig.template?.background])
+const [bgWidget] = useDefineWidgets([eodash.template?.background])
 
-const widgetsConfig = eodashConfig.template?.widgets
+const widgetsConfig = eodash.template?.widgets
 
 const importedWidgets = useDefineWidgets(widgetsConfig)
 /**

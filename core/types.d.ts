@@ -33,17 +33,17 @@ export interface WebComponentProps<T extends ExecutionTime = "compiletime"> {
 
 /** @ignore */
 export interface WidgetsContainerProps {
-  widgets: Omit<WidgetConfig, 'layout'>[]
+  widgets: Omit<Widget, 'layout'>[]
 }
 
-// eodash config types:
+// eodash types:
 /**
  * Widget type: `web-component` specification. The web component definition is imported using the `widget.link` property either from
  * an external endpoint, or an installed node_module.
  * Installed node_module web components import should be mapped in `/core/modulesMap.ts`,
  * then setting `widget.link`:`(import-map-key)` and `node_module`:`true`
  */
-export interface WebComponentConfig<T extends ExecutionTime = "compiletime"> {
+export interface WebComponentWidget<T extends ExecutionTime = "compiletime"> {
   /**
  * Unique Identifier, triggers rerender when using `defineWidget`
  **/
@@ -84,7 +84,7 @@ export interface WebComponentConfig<T extends ExecutionTime = "compiletime"> {
  * Widget type: `internal` specification.
  * Internal widgets are Vue components inside the `/widgets` directory.
  */
-export interface InternalComponentConfig {
+export interface InternalComponentWidget {
   /**
   * Unique Identifier, triggers rerender when using `defineWidget`
   **/
@@ -134,7 +134,7 @@ export interface InternalComponentConfig {
  * Widget type: `iframe` specification.
  * Renders an external HTML file as a widget.
  */
-export interface IFrameConfig {
+export interface IFrameWidget {
   /**
    * Unique Identifier, triggers rerender when using `defineWidget`
    **/
@@ -201,30 +201,30 @@ export interface FunctionalWidget<T extends ExecutionTime = "compiletime"> {
     h: number
   }
 }
-export type StaticWidget<T extends ExecutionTime = "compiletime"> = WebComponentConfig<T> | InternalComponentConfig | IFrameConfig
-export type WidgetConfig<T extends ExecutionTime = "compiletime"> = StaticWidget<T> | FunctionalWidget<T>
+export type StaticWidget<T extends ExecutionTime = "compiletime"> = WebComponentWidget<T> | InternalComponentWidget | IFrameWidget
+export type Widget<T extends ExecutionTime = "compiletime"> = StaticWidget<T> | FunctionalWidget<T>
 
 
-export type BackgroundWidgetConfig<T extends ExecutionTime = "compiletime"> = Omit<WebComponentConfig<T>, 'layout' | 'title'> | Omit<InternalComponentConfig, 'layout' | 'title'> | Omit<IFrameConfig, 'layout' | 'title'> | Omit<FunctionalWidget, 'layout'>
+export type BackgroundWidget<T extends ExecutionTime = "compiletime"> = Omit<WebComponentWidget<T>, 'layout' | 'title'> | Omit<InternalComponentWidget, 'layout' | 'title'> | Omit<IFrameWidget, 'layout' | 'title'> | Omit<FunctionalWidget, 'layout'>
 /**
- * Dashboard rendered widgets configuration specification.
+ * Dashboard rendered widgets  specification.
  * 3 types of widgets are supported: `"iframe"`, `"internal"`, and `"web-component"`.
- * A specific configuration should be provided based on the type of the widget.
+ * A specific object should be provided based on the type of the widget.
  */
-export interface TemplateConfig<T extends ExecutionTime = "compiletime"> {
+export interface Template<T extends ExecutionTime = "compiletime"> {
   /**
    * Gap between widgets
    */
   gap?: number;
   /**
    * Widget rendered as the dashboard background.
-   * Has the same specifications of [WidgetConfig](../readme#widgetconfig) without the `title` and  `layout` properties
+   * Has the same specifications of [Widget](../readme#widget) without the `title` and  `layout` properties
    */
-  background?: BackgroundWidgetConfig<T>
+  background?: BackgroundWidget<T>
   /**
    * Array of widgets that will be rendered as dashboard panels.
    */
-  widgets: WidgetConfig<T>[]
+  widgets: Widget<T>[]
 }
 
 export type ExternalURL = `${'https://' | 'http://'}${string}`;
@@ -234,12 +234,11 @@ export type StacEndpoint = `${'https://' | 'http://'}${string}/catalog.json`
 export type ExecutionTime = "runtime" | "compiletime";
 
 /**
- * Eodash configuration specification.
+ * Eodash instance specification.
  */
-export interface EodashConfig<T extends ExecutionTime = "compiletime"> {
+export interface Eodash<T extends ExecutionTime = "compiletime"> {
   /**
-   * Configuration ID that defines the route of the dashboard.
-   * Rendered dashboard can be accessed on route `/dashboard/config-id`
+   * Instance ID.
    */
   id: string;
   /**
@@ -295,9 +294,9 @@ export interface EodashConfig<T extends ExecutionTime = "compiletime"> {
     theme?: ThemeDefinition
   }
   /**
-   * Rendered widgets configuration
+   * Template configuration
    */
-  template: TemplateConfig<T>
+  template: Template<T>
 }
 /////////
 
@@ -328,7 +327,7 @@ export interface EodashStore {
   }
 }
 ///////
-export interface EodashCLiConfig {
+export interface EodashConfig {
   dev?: {
     port?: string | number
     host?: string | boolean
@@ -347,4 +346,4 @@ export interface EodashCLiConfig {
   runtime?: string
 }
 
-export declare const defineConfig: (configCallback: (store: EodashStore) => EodashConfig | Promise<EodashConfig>) => EodashConfig
+export declare const createEodash: (configCallback: (store: EodashStore) => Eodash | Promise<Eodash>) => Eodash
