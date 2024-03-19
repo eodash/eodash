@@ -5,6 +5,7 @@
         "checkJs": true,
         "allowJs": true,
         "moduleResolution": "node",
+        "target": "ESNext",
         "allowSyntheticDefaultImports": true,
         "outDir": "dist"
     },

@@ -69,6 +69,9 @@ export const serverConfig = /** @type {import('vite').UserConfigFnPromise}*/(def
       extensions: ['.js', '.json', '.jsx', '.mjs', '.ts', '.tsx', '.vue'],
     },
     server: {
+      warmup: {
+        clientFiles: [path.join(appPath, "core/**")]
+      },
       port: userConfig.port ?? 3000,
       open: userConfig.open,
       fs: {
