@@ -328,4 +328,23 @@ export interface EodashStore {
   }
 }
 ///////
+export interface EodashCLiConfig {
+  dev?: {
+    port?: string | number
+    host?: string | boolean
+    open?: boolean
+  }
+  preview?: {
+    port?: string | number
+    host?: string | boolean
+    open?: boolean
+  }
+  base?: string;
+  outDir?: string;
+  publicDir?: string | false;
+  cacheDir?: string
+  entryPoint?: string
+  runtime?: string
+}
+
 export declare const defineConfig: (configCallback: (store: EodashStore) => EodashConfig | Promise<EodashConfig>) => EodashConfig
