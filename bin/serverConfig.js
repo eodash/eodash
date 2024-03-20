@@ -8,7 +8,8 @@ import {
   appPath, entryPath,
   cachePath, publicPath, userConfig,
   buildTargetPath,
-  logger
+  logger,
+  rootPath
 } from "./utils.js";
 import { readFile } from "fs/promises";
 import { defineConfig, searchForWorkspaceRoot } from "vite"
@@ -107,7 +108,7 @@ async function configureServer(server) {
     if (msg.includes('core')) {
       const removedPath = msg.split('/')[0].split(" ")
       removedPath.pop()
-      const updatedMsg = removedPath.join(" ") + " " + updatedPath
+      const updatedMsg = removedPath.join(" ") + " " + updatedPath.replace(rootPath, "")
 
       return loggerInfo(updatedMsg, options)
     }
