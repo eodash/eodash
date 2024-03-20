@@ -12,6 +12,7 @@ import { defineAsyncComponent } from "vue";
 import { useDisplay, useLayout } from "vuetify/lib/framework.mjs";
 import { loadFont } from '@/store/Actions'
 
+
 const eodashConfig = await useEodashRuntime()
 
 const theme = useUpdateTheme('dashboardTheme', eodashConfig.brand?.theme)
