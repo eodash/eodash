@@ -31,11 +31,6 @@ const TemplateComponent = smAndDown.value ?
 const HeaderComponent = defineAsyncComponent(() => import(`@/components/Header.vue`))
 const FooterComponent = defineAsyncComponent(() => import(`@/components/Footer.vue`))
 const { mainRect } = useLayout()
-
-onUnmounted(() => {
-  theme.global.name.value = 'light'
-})
-
 </script>
 
 <style scoped lang="scss">

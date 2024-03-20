@@ -100,10 +100,12 @@ async function configureServer(server) {
   server.watcher.add([entryPath, runtimeConfigPath])
 
   server.watcher.on('change', async (path) => {
-    server.hot.send({
-      type: 'full-reload',
-      path: path
-    })
+    if (path === runtimeConfigPath) {
+      server.hot.send({
+        type: 'full-reload',
+        path: path
+      })
+    }
   })
 
   return () => {
