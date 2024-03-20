@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 
-import { readFile } from 'fs/promises';
 import { existsSync, readFileSync } from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -85,16 +84,4 @@ async function getUserConfig(options, command) {
     publicDir: options.publicDir ?? config?.publicDir,
     runtime: options.runtime ?? config?.runtime
   }
-}
-
-export const getUserModules = async () => {
-  /** @type {Record<string,string>} */
-  let userModules = {}
-  const indexJs = await readFile(entryPath, 'utf-8').catch(() => {
-    if (!existsSync(runtimeConfigPath)) {
-      console.error(new Error("no eodash configuration found"))
-    }
-  })
-  userModules['user:config'] = typeof indexJs === 'string' ? indexJs : ''
-  return userModules
 }

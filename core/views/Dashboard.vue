@@ -36,10 +36,6 @@ onUnmounted(() => {
   theme.global.name.value = 'light'
 })
 
-import.meta.hot?.on('reload', () => {
-  window.location.reload()
-})
-
 </script>
 
 <style scoped lang="scss">
@@ -47,4 +43,3 @@ import.meta.hot?.on('reload', () => {
   font-family: v-bind('fontFamily');
 }
 </style>
-@/composables/DefineEodash
