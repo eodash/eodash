@@ -2,7 +2,7 @@ import { defineStore } from 'pinia';
 import { inject, ref } from 'vue';
 import axios from 'axios';
 import { useAbsoluteUrl } from '@/composables/index';
-import { eodashConfigKey } from '@/store/Keys';
+import { eodashKey } from '@/store/Keys';
 
 export const useSTAcStore = defineStore('stac', () => {
   /**
@@ -20,16 +20,16 @@ export const useSTAcStore = defineStore('stac', () => {
   const selectedStac = ref(null);
 
 
-  const eodashConfig = /** @type {import("@/types").EodashConfig} */(inject(eodashConfigKey));
+  const eodash = /** @type {import("@/types").Eodash} */(inject(eodashKey));
 
   /**
    * fetches root stac catalog and assign it to `stac`
    * @async
-   * @param {import("@/types").StacEndpoint} [url = eodashConfig.stacEndpoint]
+   * @param {import("@/types").StacEndpoint} [url = eodash.stacEndpoint]
    * @returns {Promise<void>}
    * @see {@link stac}
    */
-  async function loadSTAC(url = eodashConfig.stacEndpoint) {
+  async function loadSTAC(url = eodash.stacEndpoint) {
     await axios.get(url).then(resp => {
       const links = /** @type {import('stac-ts').StacCatalog} */(resp.data).links.map(link => {
         if (!link.title) {

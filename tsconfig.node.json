@@ -5,11 +5,11 @@
         "checkJs": true,
         "allowJs": true,
         "moduleResolution": "node",
+        "target": "ESNext",
         "allowSyntheticDefaultImports": true,
         "outDir": "dist"
     },
     "include": [
-        "bin/**/*.js",
-        "vite.config.js"
+        "bin/**/*.js"
     ],
 }

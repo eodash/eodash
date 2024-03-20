@@ -6,7 +6,7 @@ import virtual, { updateVirtualModule } from 'vite-plugin-virtual'
 import { fileURLToPath, URL } from 'url';
 import {
   runtimeConfigPath,
-  appPath, compiletimeConfigPath,
+  appPath, entryPath,
   cachePath, publicPath, userConfig,
   buildTargetPath
 } from "./utils.js";
@@ -69,6 +69,9 @@ export const serverConfig = /** @type {import('vite').UserConfigFnPromise}*/(def
       extensions: ['.js', '.json', '.jsx', '.mjs', '.ts', '.tsx', '.vue'],
     },
     server: {
+      warmup: {
+        clientFiles: [path.join(appPath, "core/**")]
+      },
       port: userConfig.port ?? 3000,
       open: userConfig.open,
       fs: {
@@ -100,12 +103,12 @@ export const serverConfig = /** @type {import('vite').UserConfigFnPromise}*/(def
  * @type {import("vite").ServerHook}
  */
 async function configureServer(server) {
-  server.watcher.add([compiletimeConfigPath, runtimeConfigPath])
+  server.watcher.add([entryPath, runtimeConfigPath])
 
   server.watcher.on('change', async (path) => {
     if (path == runtimeConfigPath) {
       server.hot.send('reload')
-    } else if (path === compiletimeConfigPath) {
+    } else if (path === entryPath) {
       updateVirtualModule(virtualPlugin, 'user:config',
         await getUserModules().then(modules => modules['user:config']))
     }

@@ -1,4 +1,4 @@
 // Plugins
-import { defineCompiletimeConfig } from '@/composables/DefineConfig';
+export { createEodash } from '@/composables/DefineEodash';
 
-export { defineCompiletimeConfig as defineConfig }
+

@@ -20,17 +20,17 @@
   </v-main>
 </template>
 <script setup>
-import { eodashConfigKey } from '@/store/Keys';
+import { eodashKey } from '@/store/Keys';
 import { inject } from 'vue';
 import { useDefineWidgets } from '@/composables/DefineWidgets'
 import { ref } from 'vue';
 
-const eodashConfig = /** @type {import("@/types").EodashConfig} */(inject(eodashConfigKey));
+const eodash = /** @type {import("@/types").Eodash} */(inject(eodashKey));
 
 //import widgets
-const widgetsConfig = eodashConfig.template.widgets
+const widgetsConfig = eodash.template.widgets
 const importedWidgets = useDefineWidgets(widgetsConfig)
-const [bgWidget] = useDefineWidgets([eodashConfig.template?.background])
+const [bgWidget] = useDefineWidgets([eodash.template?.background])
 
 
 
