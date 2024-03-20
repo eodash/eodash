@@ -51,8 +51,8 @@ export const userConfig = await getUserConfig(cli.opts(), process.argv?.[2])
 export const appPath = fileURLToPath(new URL("..", import.meta.url)),
   publicPath = userConfig.publicDir ? path.resolve(rootPath, userConfig.publicDir) : path.join(rootPath, './public'),
   srcPath = path.join(rootPath, "/src"),
-  runtimeConfigPath = userConfig.runtime ? path.resolve(rootPath, userConfig.runtime) : path.join(srcPath, "./config.runtime.js"),
-  compiletimeConfigPath = userConfig.entryPoint ? path.resolve(rootPath, userConfig.entryPoint) : path.join(srcPath, "/config.js"),
+  runtimeConfigPath = userConfig.runtime ? path.resolve(rootPath, userConfig.runtime) : path.join(srcPath, "./runtime.js"),
+  entryPath = userConfig.entryPoint ? path.resolve(rootPath, userConfig.entryPoint) : path.join(srcPath, "/main.js"),
   dotEodashPath = path.join(rootPath, "/.eodash"),
   buildTargetPath = userConfig.outDir ? path.resolve(rootPath, userConfig.outDir) : path.join(dotEodashPath, '/dist'),
   cachePath = userConfig.cacheDir ? path.resolve(rootPath, userConfig.cacheDir) : path.join(dotEodashPath, 'cache');
@@ -64,7 +64,7 @@ export const appPath = fileURLToPath(new URL("..", import.meta.url)),
  */
 async function getUserConfig(options, command) {
   let eodashCLiConfigFile = options.config ? path.resolve(rootPath, options.config) : path.join(rootPath, 'eodash.config.js');
-  /** @type {import("../core/types").EodashCLiConfig} */
+  /** @type {import("../core/types").EodashConfig} */
   let config = {};
   if (existsSync(eodashCLiConfigFile)) {
     config = await import(eodashCLiConfigFile).then(config => config.default).catch(err => {
@@ -79,18 +79,18 @@ async function getUserConfig(options, command) {
     port: Number(options.port ?? config?.[command]?.port),
     host: options.host ?? config?.[/**@type {"dev"|"preview"} */(command)]?.host,
     open: options.open ?? config?.[/**@type {"dev"|"preview"} */(command)]?.open,
-    cacheDir: options.cacheDir ?? config.cacheDir,
-    entryPoint: options.entryPoint ?? config.entryPoint,
-    outDir: options.outDir ?? config.outDir,
-    publicDir: options.publicDir ?? config.publicDir,
-    runtime: options.runtime ?? config.runtime
+    cacheDir: options.cacheDir ?? config?.cacheDir,
+    entryPoint: options.entryPoint ?? config?.entryPoint,
+    outDir: options.outDir ?? config?.outDir,
+    publicDir: options.publicDir ?? config?.publicDir,
+    runtime: options.runtime ?? config?.runtime
   }
 }
 
 export const getUserModules = async () => {
   /** @type {Record<string,string>} */
   let userModules = {}
-  const indexJs = await readFile(compiletimeConfigPath, 'utf-8').catch(() => {
+  const indexJs = await readFile(entryPath, 'utf-8').catch(() => {
     if (!existsSync(runtimeConfigPath)) {
       console.error(new Error("no eodash configuration found"))
     }

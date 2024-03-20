@@ -6,11 +6,11 @@ import { currentUrl, mapInstance } from './store/States';
 let handleMoveEnd = null;
 
 /**
- * Reactive Edoash Config Object. provided globally in the app,
- * and used as an intermediate object to make user defined configurations reactive.
- * @type {import("./types").EodashConfig}
+ * Reactive Edoash Instance Object. provided globally in the app,
+ * and used as an intermediate object to make user defined instances config reactive.
+ * @type {import("./types").Eodash}
  */
-const eodashConfig = reactive({
+const eodash = reactive({
   id: 'demo',
   stacEndpoint: 'https://eurodatacube.github.io/eodash-catalog/RACE/catalog.json',
   routes: [],
@@ -133,4 +133,4 @@ const eodashConfig = reactive({
 });
 
 
-export default eodashConfig;
+export default eodash;

@@ -3,7 +3,7 @@
 
 import { reactive } from "vue"
 import { currentUrl } from "@/store/States"
-import eodashConfig from "@/eodashConfig"
+import eodashConfig from "@/eodash"
 import { useTheme } from "vuetify/lib/framework.mjs"
 
 
@@ -40,7 +40,7 @@ export const useAbsoluteUrl = (rel = '', base = eodashConfig.stacEndpoint) => {
 /**
  * Adds slide in and out functionality to Elements
  * @param {import('vue').Ref<HTMLElement[]|null>} elements - elements to add the functionality to
- * @param {import("@/types").WidgetConfig[]} configs
+ * @param {import("@/types").Widget[]} configs
  */
 export const useSlidePanels = (elements, configs) => {
 

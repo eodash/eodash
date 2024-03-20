@@ -8,8 +8,8 @@
 import vuetify from './vuetify';
 import router from './router';
 import { createPinia } from 'pinia';
-import eodashConfig from '@/eodashConfig';
-import { eodashConfigKey } from '@/store/Keys';
+import eodash from '@/eodash';
+import { eodashKey } from '@/store/Keys';
 import store from '../store';
 
 export const pinia = createPinia();
@@ -23,5 +23,5 @@ export function registerPlugins(app) {
   app.use(vuetify)
     .use(router)
     .use(pinia)
-    .provide(eodashConfigKey, eodashConfig);
+    .provide(eodashKey, eodash);
 }

@@ -10,7 +10,6 @@
         "outDir": "dist"
     },
     "include": [
-        "bin/**/*.js",
-        "vite.config.js"
+        "bin/**/*.js"
     ],
 }
