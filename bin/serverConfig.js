@@ -7,7 +7,8 @@ import {
   runtimeConfigPath,
   appPath, entryPath,
   cachePath, publicPath, userConfig,
-  buildTargetPath
+  buildTargetPath,
+  logger
 } from "./utils.js";
 import { readFile } from "fs/promises";
 import { defineConfig, searchForWorkspaceRoot } from "vite"
@@ -53,6 +54,7 @@ export const serverConfig = /** @type {import('vite').UserConfigFnPromise}*/(def
         configureServer
       })
     ],
+    customLogger: logger,
     define: { 'process.env': {} },
     resolve: {
       alias: {
@@ -99,7 +101,21 @@ export const serverConfig = /** @type {import('vite').UserConfigFnPromise}*/(def
 async function configureServer(server) {
   server.watcher.add([entryPath, runtimeConfigPath])
 
+  let updatedPath = ''
+  const loggerInfo = logger.info
+  logger.info = (msg, options) => {
+    if (msg.includes('core')) {
+      const removedPath = msg.split('/')[0].split(" ")
+      removedPath.pop()
+      const updatedMsg = removedPath.join(" ") + " " + updatedPath
+
+      return loggerInfo(updatedMsg, options)
+    }
+    return loggerInfo(msg, options)
+  }
+
   server.watcher.on('change', async (path) => {
+    updatedPath = path
     if (path === runtimeConfigPath) {
       server.hot.send({
         type: 'full-reload',

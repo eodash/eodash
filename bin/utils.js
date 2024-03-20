@@ -3,7 +3,7 @@
 import { existsSync, readFileSync } from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { searchForWorkspaceRoot } from 'vite';
+import { searchForWorkspaceRoot, createLogger } from 'vite';
 import { Command } from 'commander';
 
 export const rootPath = searchForWorkspaceRoot(process.cwd());
@@ -56,6 +56,8 @@ export const appPath = fileURLToPath(new URL("..", import.meta.url)),
   buildTargetPath = userConfig.outDir ? path.resolve(rootPath, userConfig.outDir) : path.join(dotEodashPath, '/dist'),
   cachePath = userConfig.cacheDir ? path.resolve(rootPath, userConfig.cacheDir) : path.join(dotEodashPath, 'cache');
 
+
+export const logger = createLogger()
 
 /**
  * @param {Options} options

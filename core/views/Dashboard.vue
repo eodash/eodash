@@ -11,8 +11,6 @@ import { useSTAcStore } from '@/store/stac';
 import { defineAsyncComponent } from "vue";
 import { useDisplay, useLayout } from "vuetify/lib/framework.mjs";
 import { loadFont } from '@/store/Actions'
-import { onUnmounted } from "vue";
-
 
 const eodashConfig = await useEodashRuntime()
 
