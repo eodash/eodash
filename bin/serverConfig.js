@@ -9,7 +9,8 @@ import {
   cachePath, publicPath, userConfig,
   buildTargetPath,
   logger,
-  rootPath
+  rootPath,
+  internalWidgetsPath
 } from "./utils.js";
 import { readFile } from "fs/promises";
 import { defineConfig, searchForWorkspaceRoot } from "vite"
@@ -61,7 +62,8 @@ export const serverConfig = /** @type {import('vite').UserConfigFnPromise}*/(def
       alias: {
         '@': fileURLToPath(new URL('../core', import.meta.url)),
         '^': fileURLToPath(new URL('../widgets', import.meta.url)),
-        "user:config": entryPath
+        "user:config": entryPath,
+        "user:widgets": internalWidgetsPath
       },
       extensions: ['.js', '.json', '.jsx', '.mjs', '.ts', '.tsx', '.vue'],
     },

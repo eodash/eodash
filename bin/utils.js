@@ -54,6 +54,7 @@ export const appPath = fileURLToPath(new URL("..", import.meta.url)),
   srcPath = path.join(rootPath, "/src"),
   runtimeConfigPath = userConfig.runtime ? path.resolve(rootPath, userConfig.runtime) : path.join(srcPath, "./runtime.js"),
   entryPath = userConfig.entryPoint ? path.resolve(rootPath, userConfig.entryPoint) : path.join(srcPath, "/main.js"),
+  internalWidgetsPath = userConfig.widgets ? path.resolve(rootPath, userConfig.widgets) : path.join(srcPath, "widgets"),
   dotEodashPath = path.join(rootPath, "/.eodash"),
   buildTargetPath = userConfig.outDir ? path.resolve(rootPath, userConfig.outDir) : path.join(dotEodashPath, '/dist'),
   cachePath = userConfig.cacheDir ? path.resolve(rootPath, userConfig.cacheDir) : path.join(dotEodashPath, 'cache');

@@ -347,4 +347,4 @@ export interface EodashConfig {
   widgets?: string
 }
 
-export declare const createEodash: (configCallback: (store: EodashStore) => Eodash | Promise<Eodash>) => Eodash
+export declare const createEodash: (configCallback: (store: EodashStore) => Eodash | Promise<Eodash>) => Promise<Eodash>
