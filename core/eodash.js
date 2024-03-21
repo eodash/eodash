@@ -25,7 +25,8 @@ const eodash = reactive({
         secondary: '#00417044',
         surface: "#f0f0f0f0",
       }
-    }
+    },
+    meta: {}
   },
   template: {
     background: {

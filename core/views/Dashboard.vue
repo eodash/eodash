@@ -11,15 +11,17 @@ import { useSTAcStore } from '@/store/stac';
 import { defineAsyncComponent } from "vue";
 import { useDisplay, useLayout } from "vuetify/lib/framework.mjs";
 import { loadFont } from '@/store/Actions'
+import { useSeoMeta } from "@unhead/vue"
 import { onUnmounted } from "vue";
 
 
-const eodashConfig = await useEodashRuntime()
 
-const theme = useUpdateTheme('dashboardTheme', eodashConfig.brand?.theme)
+const eodash = await useEodashRuntime()
+
+const theme = useUpdateTheme('dashboardTheme', eodash.brand?.theme)
 theme.global.name.value = 'dashboardTheme'
 
-const fontFamily = await loadFont(eodashConfig.brand?.font?.family, eodashConfig.brand?.font?.link)
+const fontFamily = await loadFont(eodash.brand?.font?.family, eodash.brand?.font?.link)
 
 const { loadSTAC } = useSTAcStore()
 await loadSTAC()
@@ -40,6 +42,7 @@ import.meta.hot?.on('reload', () => {
   window.location.reload()
 })
 
+useSeoMeta(eodash.brand.meta ?? {})
 </script>
 
 <style scoped lang="scss">
@@ -47,4 +50,3 @@ import.meta.hot?.on('reload', () => {
   font-family: v-bind('fontFamily');
 }
 </style>
-@/composables/DefineEodash
