@@ -102,7 +102,7 @@ export const serverConfig = /** @type {import('vite').UserConfigFnPromise}*/(def
  * @type {import("vite").ServerHook}
  */
 async function configureServer(server) {
-  server.watcher.add([entryPath, runtimeConfigPath])
+  server.watcher.add([entryPath, runtimeConfigPath, path.join(internalWidgetsPath, "**/*.vue")])
 
   let updatedPath = ''
   const loggerInfo = logger.info
