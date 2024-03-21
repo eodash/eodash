@@ -348,3 +348,4 @@ export interface EodashConfig {
 }
 
 export declare const createEodash: (configCallback: (store: EodashStore) => Eodash | Promise<Eodash>) => Promise<Eodash>
+export declare const store: EodashStore
