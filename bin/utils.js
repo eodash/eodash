@@ -1,10 +1,9 @@
 #!/usr/bin/env node
 
-import { readFile } from 'fs/promises';
 import { existsSync, readFileSync } from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { searchForWorkspaceRoot } from 'vite';
+import { searchForWorkspaceRoot, createLogger } from 'vite';
 import { Command } from 'commander';
 
 export const rootPath = searchForWorkspaceRoot(process.cwd());
@@ -58,6 +57,8 @@ export const appPath = fileURLToPath(new URL("..", import.meta.url)),
   cachePath = userConfig.cacheDir ? path.resolve(rootPath, userConfig.cacheDir) : path.join(dotEodashPath, 'cache');
 
 
+export const logger = createLogger()
+
 /**
  * @param {Options} options
  * @param {string | undefined} command
@@ -85,16 +86,4 @@ async function getUserConfig(options, command) {
     publicDir: options.publicDir ?? config?.publicDir,
     runtime: options.runtime ?? config?.runtime
   }
-}
-
-export const getUserModules = async () => {
-  /** @type {Record<string,string>} */
-  let userModules = {}
-  const indexJs = await readFile(entryPath, 'utf-8').catch(() => {
-    if (!existsSync(runtimeConfigPath)) {
-      console.error(new Error("no eodash configuration found"))
-    }
-  })
-  userModules['user:config'] = typeof indexJs === 'string' ? indexJs : ''
-  return userModules
 }

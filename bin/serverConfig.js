@@ -2,17 +2,17 @@
 
 import vue from '@vitejs/plugin-vue';
 import vuetify, { transformAssetUrls } from 'vite-plugin-vuetify';
-import virtual, { updateVirtualModule } from 'vite-plugin-virtual'
 import { fileURLToPath, URL } from 'url';
 import {
   runtimeConfigPath,
   appPath, entryPath,
   cachePath, publicPath, userConfig,
-  buildTargetPath
+  buildTargetPath,
+  logger,
+  rootPath
 } from "./utils.js";
 import { readFile } from "fs/promises";
 import { defineConfig, searchForWorkspaceRoot } from "vite"
-import { getUserModules } from './utils.js';
 import { existsSync } from 'fs';
 import path from "path";
 
@@ -33,10 +33,6 @@ export const indexHtml = `
 </body>
 </html>`
 
-/**
- * @type {import('vite').Plugin | null}
- */
-let virtualPlugin = null;
 export const serverConfig = /** @type {import('vite').UserConfigFnPromise}*/(defineConfig(async ({ mode, command }) => {
   return {
     base: userConfig.base ?? '',
@@ -57,14 +53,15 @@ export const serverConfig = /** @type {import('vite').UserConfigFnPromise}*/(def
       (mode === "development" && {
         name: "inject-html",
         configureServer
-      }),
-      virtualPlugin = virtual(await getUserModules())
+      })
     ],
+    customLogger: logger,
     define: { 'process.env': {} },
     resolve: {
       alias: {
         '@': fileURLToPath(new URL('../core', import.meta.url)),
         '^': fileURLToPath(new URL('../widgets', import.meta.url)),
+        "user:config": entryPath
       },
       extensions: ['.js', '.json', '.jsx', '.mjs', '.ts', '.tsx', '.vue'],
     },
@@ -105,24 +102,40 @@ export const serverConfig = /** @type {import('vite').UserConfigFnPromise}*/(def
 async function configureServer(server) {
   server.watcher.add([entryPath, runtimeConfigPath])
 
+  let updatedPath = ''
+  const loggerInfo = logger.info
+  logger.info = (msg, options) => {
+    if (msg.includes('core')) {
+      const removedPath = msg.split('/')[0].split(" ")
+      removedPath.pop()
+      const updatedMsg = removedPath.join(" ") + " " + updatedPath.replace(rootPath, "")
+
+      return loggerInfo(updatedMsg, options)
+    }
+    return loggerInfo(msg, options)
+  }
+
   server.watcher.on('change', async (path) => {
-    if (path == runtimeConfigPath) {
-      server.hot.send('reload')
-    } else if (path === entryPath) {
-      updateVirtualModule(virtualPlugin, 'user:config',
-        await getUserModules().then(modules => modules['user:config']))
+    updatedPath = path
+    if (path === runtimeConfigPath) {
+      server.hot.send({
+        type: 'full-reload',
+        path: path
+      })
     }
   })
 
   return () => {
     server.middlewares.use(async (req, res, next) => {
-      if (req.originalUrl === '/@fs/config.js' && existsSync(runtimeConfigPath)) {
-        await readFile(runtimeConfigPath).then(runtimeConfig => {
-          res.statusCode = 200
-          res.setHeader('Content-Type', 'text/javascript')
-          res.write(runtimeConfig)
-          res.end()
-        })
+      if (req.originalUrl === '/@fs/config.js') {
+        res.statusCode = 200
+        res.setHeader('Content-Type', 'text/javascript')
+        if (existsSync(runtimeConfigPath)) {
+          await readFile(runtimeConfigPath).then(runtimeConfig => {
+            res.write(runtimeConfig)
+          })
+        }
+        res.end()
         return
       }
 

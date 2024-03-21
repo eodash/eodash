@@ -11,7 +11,6 @@ import { useSTAcStore } from '@/store/stac';
 import { defineAsyncComponent } from "vue";
 import { useDisplay, useLayout } from "vuetify/lib/framework.mjs";
 import { loadFont } from '@/store/Actions'
-import { onUnmounted } from "vue";
 
 
 const eodashConfig = await useEodashRuntime()
@@ -31,15 +30,6 @@ const TemplateComponent = smAndDown.value ?
 const HeaderComponent = defineAsyncComponent(() => import(`@/components/Header.vue`))
 const FooterComponent = defineAsyncComponent(() => import(`@/components/Footer.vue`))
 const { mainRect } = useLayout()
-
-onUnmounted(() => {
-  theme.global.name.value = 'light'
-})
-
-import.meta.hot?.on('reload', () => {
-  window.location.reload()
-})
-
 </script>
 
 <style scoped lang="scss">
@@ -47,4 +37,3 @@ import.meta.hot?.on('reload', () => {
   font-family: v-bind('fontFamily');
 }
 </style>
-@/composables/DefineEodash

@@ -1,6 +1,6 @@
 {
   "name": "@eodash/eodash",
-  "version": "5.0.0-alpha.1.11",
+  "version": "5.0.0-alpha.1.12",
   "type": "module",
   "types": "./core/types.d.ts",
   "files": [
@@ -16,7 +16,7 @@
   },
   "browser": "./core/main.js",
   "scripts": {
-    "dev": "npx eodash dev",
+    "dev": "npx eodash dev --entryPoint core/eodash.js",
     "build": "npx eodash build",
     "check": "vue-tsc --noEmit --skipLibCheck && eslint .",
     "check:lint": "eslint .",
@@ -38,7 +38,6 @@
     "sass": "^1.60.0",
     "stac-ts": "^1.0.3",
     "vite": "^5.1.5",
-    "vite-plugin-virtual": "^0.3.0",
     "vite-plugin-vuetify": "^2.0.0",
     "vue": "^3.2.0",
     "vue-router": "^4.0.0",
