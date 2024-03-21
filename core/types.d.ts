@@ -344,6 +344,7 @@ export interface EodashConfig {
   cacheDir?: string
   entryPoint?: string
   runtime?: string
+  widgets?: string
 }
 
 export declare const createEodash: (configCallback: (store: EodashStore) => Eodash | Promise<Eodash>) => Eodash

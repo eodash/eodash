@@ -21,6 +21,7 @@ const pkg = JSON.parse(
  * @property {string | false} publicDir
  * @property {string} outDir
  * @property {string} entryPoint
+ * @property {string} widgets
  * @property {string} cacheDir
  * @property {string} runtime
  * @property {string} base
@@ -33,7 +34,8 @@ cli.version(pkg.version, '-v, --version', 'output the current version')
   .option('--publicDir <path>', 'path to statically served assets folder')
   .option('--no-publicDir', 'stop serving static assets')
   .option('--outDir <path>', 'minified output folder')
-  .option('-e, --entryPoint <path>', 'file exporting `defineConfig`')
+  .option('-e, --entryPoint <path>', 'file exporting `createEodash`')
+  .option('-w, --widgets <path>', 'folder that contains vue components as internal widgets')
   .option('--cacheDir <path>', 'cache folder')
   .option('-r, --runtime <path>', 'file exporting eodash client runtime config')
   .option('-b, --base <path>', 'base public path')
@@ -84,6 +86,7 @@ async function getUserConfig(options, command) {
     entryPoint: options.entryPoint ?? config?.entryPoint,
     outDir: options.outDir ?? config?.outDir,
     publicDir: options.publicDir ?? config?.publicDir,
-    runtime: options.runtime ?? config?.runtime
+    runtime: options.runtime ?? config?.runtime,
+    widgets: options.widgets ?? config?.widgets
   }
 }
