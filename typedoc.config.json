@@ -1,9 +1,10 @@
 {
     "$schema": "https://typedoc.org/schema.json",
-    "entryPoints": ["./core/eodash-d.ts","./core/global.d.ts"],
-    "out": "docs/.generated",
+    "entryPoints": ["core/types.d.ts"],
+    "docsRoot":"./docs",
+    "out": "docs/api",
     "tsconfig": "tsconfig.json",
-    "plugin": ["typedoc-plugin-vue","typedoc-plugin-markdown"],
+    "plugin": ["typedoc-plugin-vue","typedoc-plugin-markdown","typedoc-vitepress-theme"],
     "readme": "none",
     "excludeExternals": true,
     "entryPointStrategy": "resolve"
