@@ -12,8 +12,6 @@ import { defineAsyncComponent } from "vue";
 import { useDisplay, useLayout } from "vuetify/lib/framework.mjs";
 import { loadFont } from '@/store/Actions'
 import { useSeoMeta } from "@unhead/vue"
-import { onUnmounted } from "vue";
-
 
 
 const eodash = await useEodashRuntime()
@@ -33,14 +31,6 @@ const TemplateComponent = smAndDown.value ?
 const HeaderComponent = defineAsyncComponent(() => import(`@/components/Header.vue`))
 const FooterComponent = defineAsyncComponent(() => import(`@/components/Footer.vue`))
 const { mainRect } = useLayout()
-
-onUnmounted(() => {
-  theme.global.name.value = 'light'
-})
-
-import.meta.hot?.on('reload', () => {
-  window.location.reload()
-})
 
 useSeoMeta(eodash.brand.meta ?? {})
 </script>
