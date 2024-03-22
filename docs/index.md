@@ -4,15 +4,15 @@ layout: home
 
 hero:
   name: "Eodash"
-  text: "A VitePress Site"
+  text: "Earth Observation Dashboard"
   tagline: My great project tagline
   actions:
     - theme: brand
       text: Get Started
       link: /get-started
-    # - theme: alt
-    #   text: API Examples
-    #   link: /api-examples
+    - theme: alt
+      text: API
+      link: /api
 
 features:
   - title: Feature A

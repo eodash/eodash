@@ -17,28 +17,26 @@
   "browser": "./core/main.js",
   "scripts": {
     "dev": "npx eodash dev --entryPoint core/eodash.js",
-    "build": "npx eodash build",
+    "build": "npx eodash build --entryPoint core/eodash.js",
     "check": "vue-tsc --noEmit --skipLibCheck && eslint .",
     "check:lint": "eslint .",
     "check:types": "vue-tsc --noEmit --skipLibCheck",
     "preview": "vite preview",
     "lint": "eslint . --fix",
     "docs:generate": "typedoc --options typedoc.config.json",
-    "docs:dev": "npm run docs:generate && vitepress dev docs",
+    "docs:dev": "vitepress dev docs",
     "docs:build": "npm run docs:generate && vitepress build docs",
     "docs:preview": "vitepress preview docs"
   },
   "dependencies": {
     "@eox/layout": "^0.1.0",
     "@eox/stacinfo": "^0.3.0",
-    "@eox/timecontrol": "^0.3.0",
     "@mdi/font": "7.0.96",
     "@vitejs/plugin-vue": "^5.0.0",
     "animated-details": "gist:2912bb049fa906671807415eb0e87188",
     "axios": "^1.6.2",
     "commander": "^12.0.0",
     "core-js": "^3.29.0",
-    "express": "^4.18.2",
     "pinia": "^2.0.0",
     "sass": "^1.60.0",
     "stac-ts": "^1.0.3",
@@ -47,8 +45,7 @@
     "vue": "^3.2.0",
     "vue-router": "^4.0.0",
     "vuetify": "^3.5.1",
-    "webfontloader": "^1.6.28",
-    "ws": "^8.16.0"
+    "webfontloader": "^1.6.28"
   },
   "devDependencies": {
     "@babel/types": "^7.21.4",
