@@ -80,7 +80,7 @@ export const serverConfig = /** @type {import('vite').UserConfigFnPromise}*/(def
     },
     root: fileURLToPath(new URL('..', import.meta.url)),
     optimizeDeps: mode === "development" ? {
-      include: ["webfontloader", "vuetify", "vue", "pinia"],
+      include: ["webfontloader", "vuetify", "vue", "pinia", "stac-js", "urijs"],
       noDiscovery: true,
     } : {},
     /** @type {string|false} */
