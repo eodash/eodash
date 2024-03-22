@@ -10,4 +10,4 @@
 
 ## Source
 
-[core/types.d.ts:208](https://github.com/eodash/eodash/blob/b4a2d86/core/types.d.ts#L208)
+[core/types.d.ts:211](https://github.com/eodash/eodash/blob/700e395/core/types.d.ts#L211)

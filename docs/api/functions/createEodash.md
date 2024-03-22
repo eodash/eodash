@@ -4,6 +4,9 @@
 
 > **createEodash**(`configCallback`): [`Eodash`](../interfaces/Eodash.md)\<`"compiletime"`\>
 
+project entry point should export this function as a default
+to instantiate eodash
+
 ## Parameters
 
 • **configCallback**
@@ -14,4 +17,4 @@
 
 ## Source
 
-[core/types.d.ts:349](https://github.com/eodash/eodash/blob/b4a2d86/core/types.d.ts#L349)
+[core/types.d.ts:384](https://github.com/eodash/eodash/blob/700e395/core/types.d.ts#L384)

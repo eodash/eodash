@@ -2,8 +2,8 @@
 
 # Interface: InternalComponentWidget
 
-Widget type: `internal` specification.
-Internal widgets are Vue components inside the `/widgets` directory.
+Widget type: `internal` API.
+Internal widgets are Vue components provided by eodash.
 
 ## Properties
 
@@ -11,11 +11,9 @@ Internal widgets are Vue components inside the `/widgets` directory.
 
 > **id**: `string` \| `number` \| `symbol`
 
-Unique Identifier, triggers rerender when using `defineWidget`
-
 #### Source
 
-[core/types.d.ts:91](https://github.com/eodash/eodash/blob/b4a2d86/core/types.d.ts#L91)
+[core/types.d.ts:93](https://github.com/eodash/eodash/blob/700e395/core/types.d.ts#L93)
 
 ***
 
@@ -29,29 +27,29 @@ Widget position and size.
 
 > **h**: `number`
 
-Height. Integer (1 - 12)
+Height. Integer between 1 and 12
 
 #### w
 
 > **w**: `number`
 
-Width. Integer (1 - 12)
+Width. Integer between 1 and 12
 
 #### x
 
 > **x**: `number`
 
-Horizontal start position. Integer (1 - 12)
+Horizontal start position. Integer between 1 and 12
 
 #### y
 
 > **y**: `number`
 
-Vertical start position. Integer (1 - 12)
+Vertical start position. Integer between 1 and 12
 
 #### Source
 
-[core/types.d.ts:99](https://github.com/eodash/eodash/blob/b4a2d86/core/types.d.ts#L99)
+[core/types.d.ts:98](https://github.com/eodash/eodash/blob/700e395/core/types.d.ts#L98)
 
 ***
 
@@ -59,11 +57,9 @@ Vertical start position. Integer (1 - 12)
 
 > **title**: `string`
 
-Widget title
-
 #### Source
 
-[core/types.d.ts:95](https://github.com/eodash/eodash/blob/b4a2d86/core/types.d.ts#L95)
+[core/types.d.ts:94](https://github.com/eodash/eodash/blob/700e395/core/types.d.ts#L94)
 
 ***
 
@@ -71,11 +67,9 @@ Widget title
 
 > **type**: `"internal"`
 
-Widget type.
-
 #### Source
 
-[core/types.d.ts:130](https://github.com/eodash/eodash/blob/b4a2d86/core/types.d.ts#L130)
+[core/types.d.ts:127](https://github.com/eodash/eodash/blob/700e395/core/types.d.ts#L127)
 
 ***
 
@@ -87,7 +81,8 @@ Widget type.
 
 > **name**: `string`
 
-Internal Vue Component file name without the extention .vue
+Internal Vue Components inside the [widgets](https://github.com/eodash/eodash/tree/main/widgets) folder can be referenced
+using their name without the extention .vue
 
 #### props?
 
@@ -97,4 +92,4 @@ Specified Vue component props
 
 #### Source
 
-[core/types.d.ts:117](https://github.com/eodash/eodash/blob/b4a2d86/core/types.d.ts#L117)
+[core/types.d.ts:116](https://github.com/eodash/eodash/blob/700e395/core/types.d.ts#L116)

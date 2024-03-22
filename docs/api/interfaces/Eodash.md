@@ -2,7 +2,7 @@
 
 # Interface: Eodash\<T\>
 
-Eodash instance specification.
+Eodash instance API
 
 ## Type parameters
 
@@ -20,14 +20,14 @@ Brand specifications.
 
 > **`optional`** **font**: `Object`
 
-Automatically fetches the specified font family from google fonts. if the `link` property is specified
+Automatically fetches the specified font family from google fonts. if the [link](#font-link) property is specified
 the font family will be fetched from the provided source instead.
 
 #### font.family
 
 > **family**: `string`
 
-Font family. Use FVD notation to include families https://github.com/typekit/fvd
+Font family. Use FVD notation to include families. see https://github.com/typekit/fvd
 
 #### font.link?
 
@@ -61,7 +61,7 @@ Dashboard theme as a custom vuetifyJs theme.
 
 #### Source
 
-[core/types.d.ts:264](https://github.com/eodash/eodash/blob/b4a2d86/core/types.d.ts#L264)
+[core/types.d.ts:268](https://github.com/eodash/eodash/blob/700e395/core/types.d.ts#L268)
 
 ***
 
@@ -73,7 +73,7 @@ Instance ID.
 
 #### Source
 
-[core/types.d.ts:243](https://github.com/eodash/eodash/blob/b4a2d86/core/types.d.ts#L243)
+[core/types.d.ts:253](https://github.com/eodash/eodash/blob/700e395/core/types.d.ts#L253)
 
 ***
 
@@ -85,7 +85,7 @@ Renderes to navigation buttons on the app header.
 
 #### Source
 
-[core/types.d.ts:251](https://github.com/eodash/eodash/blob/b4a2d86/core/types.d.ts#L251)
+[core/types.d.ts:261](https://github.com/eodash/eodash/blob/700e395/core/types.d.ts#L261)
 
 ***
 
@@ -97,7 +97,7 @@ Root STAC catalog endpoint
 
 #### Source
 
-[core/types.d.ts:247](https://github.com/eodash/eodash/blob/b4a2d86/core/types.d.ts#L247)
+[core/types.d.ts:257](https://github.com/eodash/eodash/blob/700e395/core/types.d.ts#L257)
 
 ***
 
@@ -109,4 +109,4 @@ Template configuration
 
 #### Source
 
-[core/types.d.ts:299](https://github.com/eodash/eodash/blob/b4a2d86/core/types.d.ts#L299)
+[core/types.d.ts:303](https://github.com/eodash/eodash/blob/700e395/core/types.d.ts#L303)

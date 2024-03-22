@@ -2,8 +2,6 @@
 
 # Interface: WebComponentProps\<T\>
 
-Web Component configuration
-
 ## Type parameters
 
 • **T** extends [`ExecutionTime`](../type-aliases/ExecutionTime.md) = `"compiletime"`
@@ -14,11 +12,12 @@ Web Component configuration
 
 > **`optional`** **constructorProp**: `string`
 
-Exported Constructor, needs to be provided if the web component is not registered by the `link` provided
+Exported Constructor, needs to be provided if the web component is not registered in by the
+[link](#link) provided
 
 #### Source
 
-[core/types.d.ts:14](https://github.com/eodash/eodash/blob/b4a2d86/core/types.d.ts#L14)
+[core/types.d.ts:30](https://github.com/eodash/eodash/blob/700e395/core/types.d.ts#L30)
 
 ***
 
@@ -26,11 +25,23 @@ Exported Constructor, needs to be provided if the web component is not registere
 
 > **link**: `T` extends `"runtime"` ? `string` : `string` \| () => `Promise`\<`unknown`\>
 
-Web component definition file URL
+Imports web component file, either using a URL or an import funtion.
+
+#### Example
+
+importing `eox-itemfilter` web component, after installing `@eox/itemfilter` it can be
+referenced:
+```js
+link: async() => import("@eox/itemfilter")
+```
+
+::: warning
+import maps are not available in runtime config
+:::
 
 #### Source
 
-[core/types.d.ts:12](https://github.com/eodash/eodash/blob/b4a2d86/core/types.d.ts#L12)
+[core/types.d.ts:25](https://github.com/eodash/eodash/blob/700e395/core/types.d.ts#L25)
 
 ***
 
@@ -38,7 +49,7 @@ Web component definition file URL
 
 > **`optional`** **onMounted**: (`el`, `store`, `router`) => `void` \| `Promise`\<`void`\>
 
-Function that is triggered when the web component is mounted in the DOM.
+Triggered when the web component is mounted in the DOM.
 
 #### Parameters
 
@@ -58,7 +69,7 @@ return value of the core STAC pinia store in `/core/store/stac.ts`
 
 #### Source
 
-[core/types.d.ts:24](https://github.com/eodash/eodash/blob/b4a2d86/core/types.d.ts#L24)
+[core/types.d.ts:39](https://github.com/eodash/eodash/blob/700e395/core/types.d.ts#L39)
 
 ***
 
@@ -66,7 +77,7 @@ return value of the core STAC pinia store in `/core/store/stac.ts`
 
 > **`optional`** **onUnmounted**: (`el`, `store`, `router`) => `void` \| `Promise`\<`void`\>
 
-Function that is triggered when the web component is unmounted from the DOM.
+Triggered when the web component is unmounted from the DOM.
 
 #### Parameters
 
@@ -86,7 +97,7 @@ return value of the core STAC pinia store in `/core/store/stac.ts`
 
 #### Source
 
-[core/types.d.ts:30](https://github.com/eodash/eodash/blob/b4a2d86/core/types.d.ts#L30)
+[core/types.d.ts:45](https://github.com/eodash/eodash/blob/700e395/core/types.d.ts#L45)
 
 ***
 
@@ -98,7 +109,7 @@ Object defining all the properties and attributes of the web component
 
 #### Source
 
-[core/types.d.ts:18](https://github.com/eodash/eodash/blob/b4a2d86/core/types.d.ts#L18)
+[core/types.d.ts:33](https://github.com/eodash/eodash/blob/700e395/core/types.d.ts#L33)
 
 ***
 
@@ -106,8 +117,6 @@ Object defining all the properties and attributes of the web component
 
 > **tagName**: ```${string}-${string}```
 
-Custom tag name
-
 #### Source
 
-[core/types.d.ts:16](https://github.com/eodash/eodash/blob/b4a2d86/core/types.d.ts#L16)
+[core/types.d.ts:31](https://github.com/eodash/eodash/blob/700e395/core/types.d.ts#L31)

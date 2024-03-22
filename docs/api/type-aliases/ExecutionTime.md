@@ -6,4 +6,4 @@
 
 ## Source
 
-[core/types.d.ts:234](https://github.com/eodash/eodash/blob/b4a2d86/core/types.d.ts#L234)
+[core/types.d.ts:243](https://github.com/eodash/eodash/blob/700e395/core/types.d.ts#L243)

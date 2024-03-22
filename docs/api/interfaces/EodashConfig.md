@@ -2,15 +2,19 @@
 
 # Interface: EodashConfig
 
+Eodash server, build and setup configuration
+
 ## Properties
 
 ### base?
 
 > **`optional`** **base**: `string`
 
+base public path
+
 #### Source
 
-[core/types.d.ts:341](https://github.com/eodash/eodash/blob/b4a2d86/core/types.d.ts#L341)
+[core/types.d.ts:358](https://github.com/eodash/eodash/blob/700e395/core/types.d.ts#L358)
 
 ***
 
@@ -18,9 +22,11 @@
 
 > **`optional`** **cacheDir**: `string`
 
+cache folder
+
 #### Source
 
-[core/types.d.ts:344](https://github.com/eodash/eodash/blob/b4a2d86/core/types.d.ts#L344)
+[core/types.d.ts:370](https://github.com/eodash/eodash/blob/700e395/core/types.d.ts#L370)
 
 ***
 
@@ -36,13 +42,17 @@
 
 > **`optional`** **open**: `boolean`
 
+open default browser when the server starts
+
 #### port?
 
 > **`optional`** **port**: `string` \| `number`
 
+serving  port
+
 #### Source
 
-[core/types.d.ts:331](https://github.com/eodash/eodash/blob/b4a2d86/core/types.d.ts#L331)
+[core/types.d.ts:341](https://github.com/eodash/eodash/blob/700e395/core/types.d.ts#L341)
 
 ***
 
@@ -50,9 +60,11 @@
 
 > **`optional`** **entryPoint**: `string`
 
+specifies main entry file, exporting `createEodash`
+
 #### Source
 
-[core/types.d.ts:345](https://github.com/eodash/eodash/blob/b4a2d86/core/types.d.ts#L345)
+[core/types.d.ts:372](https://github.com/eodash/eodash/blob/700e395/core/types.d.ts#L372)
 
 ***
 
@@ -60,9 +72,11 @@
 
 > **`optional`** **outDir**: `string`
 
+build target folder path
+
 #### Source
 
-[core/types.d.ts:342](https://github.com/eodash/eodash/blob/b4a2d86/core/types.d.ts#L342)
+[core/types.d.ts:362](https://github.com/eodash/eodash/blob/700e395/core/types.d.ts#L362)
 
 ***
 
@@ -78,13 +92,17 @@
 
 > **`optional`** **open**: `boolean`
 
+open default browser when the server starts
+
 #### port?
 
 > **`optional`** **port**: `string` \| `number`
 
+serving  port
+
 #### Source
 
-[core/types.d.ts:336](https://github.com/eodash/eodash/blob/b4a2d86/core/types.d.ts#L336)
+[core/types.d.ts:348](https://github.com/eodash/eodash/blob/700e395/core/types.d.ts#L348)
 
 ***
 
@@ -92,9 +110,12 @@
 
 > **`optional`** **publicDir**: `string` \| `false`
 
+path to statically served assets folder, can be set to `false`
+ to disable serving assets statically
+
 #### Source
 
-[core/types.d.ts:343](https://github.com/eodash/eodash/blob/b4a2d86/core/types.d.ts#L343)
+[core/types.d.ts:366](https://github.com/eodash/eodash/blob/700e395/core/types.d.ts#L366)
 
 ***
 
@@ -102,6 +123,8 @@
 
 > **`optional`** **runtime**: `string`
 
+file exporting eodash client runtime config
+
 #### Source
 
-[core/types.d.ts:346](https://github.com/eodash/eodash/blob/b4a2d86/core/types.d.ts#L346)
+[core/types.d.ts:376](https://github.com/eodash/eodash/blob/700e395/core/types.d.ts#L376)

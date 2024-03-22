@@ -7,5 +7,7 @@
     "plugin": ["typedoc-plugin-vue","typedoc-plugin-markdown","typedoc-vitepress-theme"],
     "readme": "none",
     "excludeExternals": true,
-    "entryPointStrategy": "resolve"
+    "entryPointStrategy": "resolve",
+    "categorizeByGroup":true
+    
 }

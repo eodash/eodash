@@ -27,7 +27,7 @@ currently selected stac object
 
 #### Source
 
-[core/types.d.ts:184](https://github.com/eodash/eodash/blob/b4a2d86/core/types.d.ts#L184)
+[core/types.d.ts:178](https://github.com/eodash/eodash/blob/700e395/core/types.d.ts#L178)
 
 ***
 
@@ -39,26 +39,26 @@ currently selected stac object
 
 > **h**: `number`
 
-Height. Integer (1 - 12)
+Height. Integer between 1 and 12
 
 #### w
 
 > **w**: `number`
 
-Width. Integer (1 - 12)
+Width. Integer between 1 and 12
 
 #### x
 
 > **x**: `number`
 
-Horizontal start position. Integer (1 - 12)
+Horizontal start position. Integer between 1 and 12
 
 #### y
 
 > **y**: `number`
 
-Vertical start position. Integer (1 - 12)
+Vertical start position. Integer between 1 and 12
 
 #### Source
 
-[core/types.d.ts:185](https://github.com/eodash/eodash/blob/b4a2d86/core/types.d.ts#L185)
+[core/types.d.ts:179](https://github.com/eodash/eodash/blob/700e395/core/types.d.ts#L179)

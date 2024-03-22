@@ -21,7 +21,7 @@ Has the same specifications of [Widget](../readme#widget) without the `title` an
 
 #### Source
 
-[core/types.d.ts:223](https://github.com/eodash/eodash/blob/b4a2d86/core/types.d.ts#L223)
+[core/types.d.ts:227](https://github.com/eodash/eodash/blob/700e395/core/types.d.ts#L227)
 
 ***
 
@@ -33,7 +33,7 @@ Gap between widgets
 
 #### Source
 
-[core/types.d.ts:218](https://github.com/eodash/eodash/blob/b4a2d86/core/types.d.ts#L218)
+[core/types.d.ts:222](https://github.com/eodash/eodash/blob/700e395/core/types.d.ts#L222)
 
 ***
 
@@ -45,4 +45,4 @@ Array of widgets that will be rendered as dashboard panels.
 
 #### Source
 
-[core/types.d.ts:227](https://github.com/eodash/eodash/blob/b4a2d86/core/types.d.ts#L227)
+[core/types.d.ts:231](https://github.com/eodash/eodash/blob/700e395/core/types.d.ts#L231)

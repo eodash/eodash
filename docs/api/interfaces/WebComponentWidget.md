@@ -2,10 +2,7 @@
 
 # Interface: WebComponentWidget\<T\>
 
-Widget type: `web-component` specification. The web component definition is imported using the `widget.link` property either from
-an external endpoint, or an installed node_module.
-Installed node_module web components import should be mapped in `/core/modulesMap.ts`,
-then setting `widget.link`:`(import-map-key)` and `node_module`:`true`
+Widget type: `web-component` API
 
 ## Type parameters
 
@@ -17,11 +14,9 @@ then setting `widget.link`:`(import-map-key)` and `node_module`:`true`
 
 > **id**: `string` \| `number` \| `symbol`
 
-Unique Identifier, triggers rerender when using `defineWidget`
-
 #### Source
 
-[core/types.d.ts:50](https://github.com/eodash/eodash/blob/b4a2d86/core/types.d.ts#L50)
+[core/types.d.ts:60](https://github.com/eodash/eodash/blob/700e395/core/types.d.ts#L60)
 
 ***
 
@@ -35,29 +30,29 @@ Widget position and size.
 
 > **h**: `number`
 
-Height. Integer (1 - 12)
+Height. Integer between 1 and 12
 
 #### w
 
 > **w**: `number`
 
-Width. Integer (1 - 12)
+Width. Integer between 1 and 12
 
 #### x
 
 > **x**: `number`
 
-Horizontal start position. Integer (1 - 12)
+Horizontal start position. Integer between 1 and 12
 
 #### y
 
 > **y**: `number`
 
-Vertical start position. Integer (1 - 12)
+Vertical start position. Integer between 1 and 12
 
 #### Source
 
-[core/types.d.ts:58](https://github.com/eodash/eodash/blob/b4a2d86/core/types.d.ts#L58)
+[core/types.d.ts:65](https://github.com/eodash/eodash/blob/700e395/core/types.d.ts#L65)
 
 ***
 
@@ -65,11 +60,9 @@ Vertical start position. Integer (1 - 12)
 
 > **title**: `string`
 
-Widget title
-
 #### Source
 
-[core/types.d.ts:54](https://github.com/eodash/eodash/blob/b4a2d86/core/types.d.ts#L54)
+[core/types.d.ts:61](https://github.com/eodash/eodash/blob/700e395/core/types.d.ts#L61)
 
 ***
 
@@ -77,11 +70,9 @@ Widget title
 
 > **type**: `"web-component"`
 
-Widget type
-
 #### Source
 
-[core/types.d.ts:80](https://github.com/eodash/eodash/blob/b4a2d86/core/types.d.ts#L80)
+[core/types.d.ts:84](https://github.com/eodash/eodash/blob/700e395/core/types.d.ts#L84)
 
 ***
 
@@ -91,4 +82,4 @@ Widget type
 
 #### Source
 
-[core/types.d.ts:76](https://github.com/eodash/eodash/blob/b4a2d86/core/types.d.ts#L76)
+[core/types.d.ts:83](https://github.com/eodash/eodash/blob/700e395/core/types.d.ts#L83)

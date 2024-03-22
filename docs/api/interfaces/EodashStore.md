@@ -24,7 +24,7 @@
 
 #### Source
 
-[core/types.d.ts:319](https://github.com/eodash/eodash/blob/b4a2d86/core/types.d.ts#L319)
+[core/types.d.ts:325](https://github.com/eodash/eodash/blob/700e395/core/types.d.ts#L325)
 
 ***
 
@@ -40,7 +40,7 @@ Pinia store definition used to navigate the root STAC catalog.
 
 #### Source
 
-[core/types.d.ts:325](https://github.com/eodash/eodash/blob/b4a2d86/core/types.d.ts#L325)
+[core/types.d.ts:331](https://github.com/eodash/eodash/blob/700e395/core/types.d.ts#L331)
 
 ***
 
@@ -64,4 +64,4 @@ OpenLayers map instance
 
 #### Source
 
-[core/types.d.ts:308](https://github.com/eodash/eodash/blob/b4a2d86/core/types.d.ts#L308)
+[core/types.d.ts:315](https://github.com/eodash/eodash/blob/700e395/core/types.d.ts#L315)
