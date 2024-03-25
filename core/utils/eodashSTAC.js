@@ -22,6 +22,12 @@ export class EodashCollection {
   createLayersJson = async (item = null) => {
     let stacItem;
     if (item instanceof Date) {
+      // if collectionStac not yet initialized we do it here
+      if (!this.#collectionStac) {
+        const response = await fetch(this.#collectionUrl);
+        const stac = await response.json();
+        this.#collectionStac = new Collection(stac);
+      }
       stacItem = this.getItems().sort((a, b) => {
         //@ts-expect-error
         const distanceA = Math.abs(new Date(a.datetime) - item);

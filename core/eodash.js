@@ -1,5 +1,5 @@
 import { reactive } from "vue";
-import { currentUrl } from './store/States';
+import { currentUrl, datetime } from './store/States';
 
 /**
  * Reactive Edoash Instance Object. provided globally in the app,
@@ -32,6 +32,36 @@ const eodash = reactive({
       }
     },
     widgets: [
+      {
+        id: Symbol(),
+        title:"date picker",
+        layout: { "x": 5, "y": 7, "w": 2, "h": 5 },
+        type: "web-component",
+        widget: {
+          link:async ()=>{await import("@web-comp/core");await import("@web-comp/date-picker")},
+          properties:{
+            style:"position:relative",
+            class:"d-flex align-center justify-center",
+            switch:"date-picker-switch",
+            id:"picker"
+          },
+          tagName: "wc-date-picker",
+          onMounted: async function (el, store, router) {
+            if (router.currentRoute.value.query["datetime"]) {
+              el?.setAttribute("start", router.currentRoute.value.query["datetime"]);
+            }
+            el?.addEventListener("date-click", (evt) => {
+              datetime.value = evt.detail["date-selected"].toISOString();
+              /** @param {any} evt  */
+              router.push({
+                query: {
+                  datetime: `${evt.detail["date-selected"].toISOString()}`
+                }
+              });
+            });
+          }
+        },
+      },
       {
         id: Symbol(),
         title: 'Tools',

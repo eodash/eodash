@@ -10,3 +10,8 @@ export const currentUrl = ref('');
  * @type {import("vue").Ref<import('openlayers').Map | null>}
  */
 export const mapInstance = ref(null);
+
+/**
+ * currently selected datetime
+ */
+export const datetime = ref(null);

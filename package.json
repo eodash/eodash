@@ -31,6 +31,8 @@
     "@eox/stacinfo": "^0.3.0",
     "@mdi/font": "7.0.96",
     "@vitejs/plugin-vue": "^5.0.0",
+    "@web-comp/core": "^1.0.2",
+    "@web-comp/date-picker": "^1.0.8",
     "animated-details": "gist:2912bb049fa906671807415eb0e87188",
     "axios": "^1.6.2",
     "commander": "^12.0.0",
