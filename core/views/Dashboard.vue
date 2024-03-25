@@ -10,7 +10,7 @@ import { useUpdateTheme } from "@/composables";
 import { useSTAcStore } from '@/store/stac';
 import { defineAsyncComponent } from "vue";
 import { useDisplay, useLayout } from "vuetify/lib/framework.mjs";
-import { loadFont } from '@/store/Actions'
+import { loadFont } from '@/utils'
 
 
 const eodashConfig = await useEodashRuntime()

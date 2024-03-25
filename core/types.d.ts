@@ -315,10 +315,7 @@ export interface EodashStore {
     */
     mapInstance: Ref<Map | null>
   }
-  // consider removing the actions ?
-  actions: {
-    loadFont: (family?: string, link?: string) => Promise<string>;
-  };
+  actions: {};
   /**
    *  Pinia store definition used to navigate the root STAC catalog.
    */
