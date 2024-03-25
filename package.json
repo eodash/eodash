@@ -17,13 +17,16 @@
   "browser": "./core/main.js",
   "scripts": {
     "dev": "npx eodash dev --entryPoint core/eodash.js",
-    "build": "npx eodash build",
+    "build": "npx eodash build --entryPoint core/eodash.js",
     "check": "vue-tsc --noEmit --skipLibCheck && eslint .",
     "check:lint": "eslint .",
     "check:types": "vue-tsc --noEmit --skipLibCheck",
     "preview": "vite preview",
     "lint": "eslint . --fix",
-    "docs:generate": "typedoc --plugin typedoc-plugin-markdown core/store/Types.ts --tsconfig tsconfig.json --out docs --readme none"
+    "docs:generate": "typedoc --options typedoc.config.json",
+    "docs:dev": "vitepress dev docs",
+    "docs:build": "npm run docs:generate && vitepress build docs",
+    "docs:preview": "vitepress preview docs"
   },
   "dependencies": {
     "@eox/layout": "^0.1.0",
@@ -52,10 +55,12 @@
     "eslint": "^8.56.0",
     "eslint-plugin-vue": "^9.19.2",
     "typedoc": "^0.25.7",
-    "typedoc-plugin-markdown": "^3.17.1",
+    "typedoc-plugin-markdown": "^4.0.0-next.54",
+    "typedoc-plugin-vue": "^1.1.0",
+    "typedoc-vitepress-theme": "^1.0.0-next.0",
     "typescript": "^5.0.0",
     "unplugin-fonts": "^1.0.3",
-    "vite-plugin-dts": "^3.7.3",
+    "vitepress": "^1.0.0",
     "vue-eslint-parser": "^9.3.2",
     "vue-tsc": "^1.2.0"
   },
