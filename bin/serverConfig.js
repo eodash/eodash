@@ -129,13 +129,15 @@ async function configureServer(server) {
 
   return () => {
     server.middlewares.use(async (req, res, next) => {
-      if (req.originalUrl === '/@fs/config.js' && existsSync(runtimeConfigPath)) {
-        await readFile(runtimeConfigPath).then(runtimeConfig => {
-          res.statusCode = 200
-          res.setHeader('Content-Type', 'text/javascript')
-          res.write(runtimeConfig)
-          res.end()
-        })
+      if (req.originalUrl === '/@fs/config.js') {
+        res.statusCode = 200
+        res.setHeader('Content-Type', 'text/javascript')
+        if (existsSync(runtimeConfigPath)) {
+          await readFile(runtimeConfigPath).then(runtimeConfig => {
+            res.write(runtimeConfig)
+          })
+        }
+        res.end()
         return
       }
 
