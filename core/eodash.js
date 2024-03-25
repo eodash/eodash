@@ -1,6 +1,5 @@
 import { reactive } from "vue";
 import { currentUrl } from './store/States';
-import { MapWidget } from "^/MapWidget";
 
 /**
  * Reactive Edoash Instance Object. provided globally in the app,
@@ -25,7 +24,13 @@ const eodash = reactive({
     }
   },
   template: {
-    background: MapWidget,
+    background: {
+      id: Symbol(),
+      type: "internal",
+      widget: {
+        name: 'EodashMap'
+      }
+    },
     widgets: [
       {
         id: Symbol(),
