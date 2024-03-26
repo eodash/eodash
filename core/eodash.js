@@ -1,9 +1,5 @@
 import { reactive } from "vue";
-import { currentUrl, mapInstance } from './store/States';
-/**
- * @type {Function | null}
- */
-let handleMoveEnd = null;
+import { currentUrl } from './store/States';
 
 /**
  * Reactive Edoash Instance Object. provided globally in the app,
@@ -30,34 +26,10 @@ const eodash = reactive({
   template: {
     background: {
       id: Symbol(),
+      type: "internal",
       widget: {
-        link: 'https://cdn.skypack.dev/@eox/map',
-        properties: {
-          class: "fill-height fill-width overflow-none",
-          center: [15, 48],
-          layers: [{ type: "Tile", source: { type: "OSM" } }],
-        },
-        tagName: 'eox-map',
-        onMounted(el, _, router) {
-           /** @type {any} */(el).zoom = router.currentRoute.value.query['z'];
-
-          mapInstance.value =  /** @type {any} */(el).map;
-
-          mapInstance.value?.on('moveend', handleMoveEnd =
-          /** @param {any} evt  */(evt) => {
-              router.push({
-                query: {
-                  z: `${evt.map.getView().getZoom()}`
-                }
-              });
-            });
-        },
-        onUnmounted(_el, _store, _router) {
-          //@ts-expect-error
-          mapInstance.value?.un('moveend', handleMoveEnd);
-        }
-      },
-      type: 'web-component'
+        name: 'EodashMap'
+      }
     },
     widgets: [
       {

@@ -314,11 +314,16 @@ export interface EodashStore {
     * OpenLayers map instance
     */
     mapInstance: Ref<Map | null>
+    /**
+    * currently selected datetime
+    */
+    datetime: Ref<string>
+    /**
+     * Currently selected indicator
+     */
+    indicator: Ref<string>
   }
-  // consider removing the actions ?
-  actions: {
-    loadFont: (family?: string, link?: string) => Promise<string>;
-  };
+  actions: {};
   /**
    *  Pinia store definition used to navigate the root STAC catalog.
    */
