@@ -6,7 +6,7 @@
 
 <script setup>
 import { useEodashRuntime } from "@/composables/DefineEodash";
-import { useUpdateTheme } from "@/composables";
+import { useRouteParams, useUpdateTheme } from "@/composables";
 import { useSTAcStore } from '@/store/stac';
 import { defineAsyncComponent } from "vue";
 import { useDisplay, useLayout } from "vuetify/lib/framework.mjs";
@@ -14,6 +14,8 @@ import { loadFont } from '@/utils'
 
 
 const eodashConfig = await useEodashRuntime()
+
+useRouteParams()
 
 const theme = useUpdateTheme('dashboardTheme', eodashConfig.brand?.theme)
 theme.global.name.value = 'dashboardTheme'
@@ -33,6 +35,10 @@ const { mainRect } = useLayout()
 </script>
 
 <style scoped lang="scss">
+html {
+  overflow: hidden;
+}
+
 * {
   font-family: v-bind('fontFamily');
 }

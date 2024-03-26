@@ -314,6 +314,14 @@ export interface EodashStore {
     * OpenLayers map instance
     */
     mapInstance: Ref<Map | null>
+    /**
+    * currently selected datetime
+    */
+    datetime: Ref<string>
+    /**
+     * Currently selected indicator
+     */
+    indicator: Ref<string>
   }
   actions: {};
   /**

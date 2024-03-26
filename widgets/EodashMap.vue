@@ -26,29 +26,18 @@ let handleMoveEnd;
 
 /** @type {import("@/types").WebComponentProps["onMounted"]} */
 const onMounted = (el, store, router) => {
-  datetime.value = router.currentRoute.value.query["datetime"];
+  datetime.value = /** @type {string} */ (router.currentRoute.value.query["datetime"] ?? "");
   mapInstance.value =  /** @type {any} */(el).map;
 
   const { selectedStac } = storeToRefs(store)
-  watch(datetime, async (updatedTime) => {
-    if (selectedStac.value) {
-      const parentCollUrl = toAbsolute(selectedStac.value.links[1].href, eodashConfig.stacEndpoint);
-      const childCollUrl = toAbsolute(selectedStac.value.links[1].href, parentCollUrl);
-      const eodash = new EodashCollection(childCollUrl);
-      if (updatedTime) {
-        /** @type {any} */(el).layers = await eodash.createLayersJson(new Date(updatedTime));
-      } else {
-        /** @type {any} */(el).layers = await eodash.createLayersJson();
-      }
-    }
-  }, { immediate: true })
-  watch(selectedStac, async (updatedStac) => {
+
+  watch([selectedStac, datetime], async ([updatedStac, updatedTime]) => {
     if (updatedStac) {
       const parentCollUrl = toAbsolute(updatedStac.links[1].href, eodashConfig.stacEndpoint);
       const childCollUrl = toAbsolute(updatedStac.links[1].href, parentCollUrl);
       const eodash = new EodashCollection(childCollUrl);
-      if (datetime) {
-        /** @type {any} */(el).layers = await eodash.createLayersJson(new Date(datetime.value));
+      if (updatedTime) {
+        /** @type {any} */(el).layers = await eodash.createLayersJson(new Date(updatedTime));
       } else {
         /** @type {any} */(el).layers = await eodash.createLayersJson();
       }
