@@ -24,6 +24,7 @@ export class EodashCollection {
     if (item instanceof Date) {
       // if collectionStac not yet initialized we do it here
       if (!this.#collectionStac) {
+        //@ts-expect-error
         const response = await fetch(this.#collectionUrl);
         const stac = await response.json();
         this.#collectionStac = new Collection(stac);
