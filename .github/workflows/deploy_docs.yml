@@ -1,0 +1,22 @@
+# .github/workflows/deploy_docs.yml
+name: Deploy docs for main branch
+on:
+  push:
+    branches:
+      - main
+jobs:
+  deploy-preview:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pages: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v3
+      - run: |
+          npm install
+          npm run docs:build -- --base /${{ github.event.repository.name }}/
+      - uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: ./docs/.vitepress/dist/
+          branch: gh-pages

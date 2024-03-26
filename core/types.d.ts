@@ -10,7 +10,7 @@ import type { Map } from "openlayers";
  */
 export interface WebComponentProps<T extends ExecutionTime = "compiletime"> {
   /**
-   * Imports web component file, either using a URL or an import funtion.
+   * Imports web component file, either using a URL or an import function.
    * @example
    * importing `eox-itemfilter` web component, after installing `@eox/itemfilter` it can be
    * referenced:
@@ -222,7 +222,7 @@ export interface Template<T extends ExecutionTime = "compiletime"> {
   gap?: number;
   /**
    * Widget rendered as the dashboard background.
-   * Has the same specifications of [Widget](../readme#widget) without the `title` and  `layout` properties
+   * Has the same specifications of Widget without the `title` and  `layout` properties
    */
   background?: BackgroundWidget<T>
   /**
