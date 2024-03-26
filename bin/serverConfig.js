@@ -9,7 +9,8 @@ import {
   cachePath, publicPath, userConfig,
   buildTargetPath,
   logger,
-  rootPath
+  rootPath,
+  internalWidgetsPath
 } from "./utils.js";
 import { readFile } from "fs/promises";
 import { defineConfig, searchForWorkspaceRoot } from "vite"
@@ -61,7 +62,8 @@ export const serverConfig = /** @type {import('vite').UserConfigFnPromise}*/(def
       alias: {
         '@': fileURLToPath(new URL('../core', import.meta.url)),
         '^': fileURLToPath(new URL('../widgets', import.meta.url)),
-        "user:config": entryPath
+        "user:config": entryPath,
+        "user:widgets": internalWidgetsPath
       },
       extensions: ['.js', '.json', '.jsx', '.mjs', '.ts', '.tsx', '.vue'],
     },
@@ -78,7 +80,7 @@ export const serverConfig = /** @type {import('vite').UserConfigFnPromise}*/(def
     },
     root: fileURLToPath(new URL('..', import.meta.url)),
     optimizeDeps: mode === "development" ? {
-      include: ["webfontloader", "vuetify", "vue", "pinia"],
+      include: ["webfontloader", "vuetify", "vue", "pinia", "stac-js", "urijs"],
       noDiscovery: true,
     } : {},
     /** @type {string|false} */
@@ -100,7 +102,7 @@ export const serverConfig = /** @type {import('vite').UserConfigFnPromise}*/(def
  * @type {import("vite").ServerHook}
  */
 async function configureServer(server) {
-  server.watcher.add([entryPath, runtimeConfigPath])
+  server.watcher.add([entryPath, runtimeConfigPath, path.join(internalWidgetsPath, "**/*.vue")])
 
   let updatedPath = ''
   const loggerInfo = logger.info

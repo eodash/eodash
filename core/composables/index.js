@@ -2,10 +2,11 @@
 // setup functions or vue composition api components
 
 import { reactive } from "vue"
-import { currentUrl } from "@/store/States"
+import { currentUrl, datetime, mapInstance, indicator } from "@/store/States"
 import eodashConfig from "@/eodash"
 import { useTheme } from "vuetify/lib/framework.mjs"
-
+import { useRouter } from "vue-router"
+import { onMounted, onUnmounted, watch } from "vue"
 
 /**
  * Creates an absolute URL from a relative link and assignes it to `currentUrl`
@@ -144,4 +145,51 @@ export const useUpdateTheme = (themeName, themeDefinition = {}) => {
     }
   })
   return theme
+}
+
+
+/**
+ * Composable that initiates route query params to store
+ * STAC related values
+ */
+export const useRouteParams = () => {
+  const router = useRouter()
+  /**
+   * @type {import("openlayers").EventsListenerFunctionType}
+   */
+  const handleMoveEnd = (evt) => {
+    const map = /** @type {import("openlayers").Map | undefined} */ (/** @type {*} */ (evt).map)
+    const [x, y] = map?.getView().getCenter() ?? [0, 0]
+    const z = map?.getView().getZoom()
+    const currentQuery = router.currentRoute.value.query
+    router.push({
+      query: {
+        ...currentQuery,
+        x, y, z
+      }
+    })
+
+  }
+  onMounted(() => {
+    watch([datetime, mapInstance, currentUrl, indicator], ([updatedDate, updatedMap, updatedUrl, updatedIndicator]) => {
+      const [x, y] = updatedMap?.getView().getCenter() ?? [0, 0]
+      const currentQuery = router.currentRoute.value.query
+      router.push({
+        query: {
+          ...currentQuery,
+          indicator: updatedIndicator,
+          x,
+          y,
+          z: updatedMap?.getView().getZoom(),
+          datetime: updatedDate,
+          url: updatedUrl,
+        }
+      })
+      updatedMap?.on("moveend", handleMoveEnd)
+    })
+  })
+
+  onUnmounted(() => {
+    mapInstance.value?.un("moveend", handleMoveEnd)
+  })
 }

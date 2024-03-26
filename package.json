@@ -1,6 +1,6 @@
 {
   "name": "@eodash/eodash",
-  "version": "5.0.0-alpha.1.13",
+  "version": "5.0.0-alpha.1.14",
   "type": "module",
   "types": "./core/types.d.ts",
   "files": [
@@ -30,16 +30,20 @@
   },
   "dependencies": {
     "@eox/layout": "^0.1.0",
+    "@eox/map": "^1.4.0",
     "@eox/stacinfo": "^0.3.0",
     "@mdi/font": "7.0.96",
     "@unhead/vue": "^1.8.20",
     "@vitejs/plugin-vue": "^5.0.0",
+    "@web-comp/core": "^1.0.2",
+    "@web-comp/date-picker": "^1.0.8",
     "animated-details": "gist:2912bb049fa906671807415eb0e87188",
     "axios": "^1.6.2",
     "commander": "^12.0.0",
     "core-js": "^3.29.0",
     "pinia": "^2.0.0",
     "sass": "^1.60.0",
+    "stac-js": "^0.0.9",
     "stac-ts": "^1.0.3",
     "vite": "^5.1.5",
     "vite-plugin-vuetify": "^2.0.0",

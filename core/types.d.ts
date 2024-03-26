@@ -323,10 +323,16 @@ export interface EodashStore {
     * OpenLayers map instance
     */
     mapInstance: Ref<Map | null>
+    /**
+    * currently selected datetime
+    */
+    datetime: Ref<string>
+    /**
+     * Currently selected indicator
+     */
+    indicator: Ref<string>
   }
-  actions: {
-    loadFont: (family?: string, link?: string) => Promise<string>;
-  };
+  actions: {};
   /**
    *  Pinia store definition used to navigate the root STAC catalog.
    */
@@ -376,6 +382,7 @@ export interface EodashConfig {
    * file exporting eodash client runtime config
    */
   runtime?: string
+  widgets?: string
 }
 /**
  * project entry point should export this function as a default
@@ -383,4 +390,5 @@ export interface EodashConfig {
  *
  * @param  configCallback
  */
-export declare const createEodash: (configCallback: (store: EodashStore) => Eodash | Promise<Eodash>) => Eodash
+export declare const createEodash: (configCallback: (store: EodashStore) => Eodash | Promise<Eodash>) => Promise<Eodash>
+export declare const store: EodashStore
