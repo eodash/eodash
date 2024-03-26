@@ -296,6 +296,8 @@ export interface Eodash<T extends ExecutionTime = "compiletime"> {
      * Dashboard theme as a custom vuetifyJs theme.
      */
     theme?: ThemeDefinition
+
+    meta?: import("@unhead/vue").UseSeoMetaInput
   }
   /**
    * Template configuration
