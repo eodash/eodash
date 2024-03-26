@@ -3,6 +3,7 @@ import { inject, ref } from 'vue';
 import axios from 'axios';
 import { useAbsoluteUrl } from '@/composables/index';
 import { eodashKey } from '@/store/Keys';
+import { assignIndicator } from '@/utils';
 
 export const useSTAcStore = defineStore('stac', () => {
   /**
@@ -14,7 +15,7 @@ export const useSTAcStore = defineStore('stac', () => {
   /**
    * selected STAC object.
    * @type {import('vue').Ref<import('stac-ts').StacCatalog |
-   * import('stac-ts').StacCollection |import('stac-ts').StacItem
+   *  import('stac-ts').StacCollection |import('stac-ts').StacItem
    * | null>}
    */
   const selectedStac = ref(null);
@@ -54,6 +55,7 @@ export const useSTAcStore = defineStore('stac', () => {
 
     await axios.get(absoluteUrl.value).then(resp => {
       selectedStac.value = resp.data;
+      assignIndicator(selectedStac.value)
     }).catch(err => console.error(err));
   }
 

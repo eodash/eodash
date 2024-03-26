@@ -1,3 +1,5 @@
+import { indicator } from '@/store/States';
+
 /**
  * loads font in the app using `webfontloader`
  * @param {string} [family="Roboto"]
@@ -26,3 +28,21 @@ export const loadFont = async (family = "Roboto", link) => {
   }
   return family;
 };
+
+
+/**
+ * @param {import('stac-ts').StacCatalog | import('stac-ts').StacCollection | import('stac-ts').StacItem | null} selectedSTAC
+ * @see {@link indicator}
+ */
+export const assignIndicator = (selectedSTAC) => {
+  const code = /** @type {string | undefined} */ (selectedSTAC?.code);
+  const subcode = /** @type {string | string[] | undefined} */ (selectedSTAC?.subcode);
+
+  if (selectedSTAC?.code || selectedSTAC?.subcode) {
+    indicator.value = code ? code :
+      Array.isArray(subcode) ? subcode[0] : subcode ?? ""
+  } else {
+    indicator.value = ""
+  }
+  console.log(indicator.value,/** @type {string} */(selectedSTAC?.code)),/** @type {string[]} */(selectedSTAC?.subcode)
+}

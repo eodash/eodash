@@ -14,4 +14,9 @@ export const mapInstance = ref(null);
 /**
  * currently selected datetime
  */
-export const datetime = ref(null);
+export const datetime = ref(new Date().toISOString());
+
+/**
+ * Currently selected indicator
+ */
+export const indicator = ref("")
