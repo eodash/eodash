@@ -3,8 +3,8 @@ import typedocSidebar from '../api/typedoc-sidebar.json';
 
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
-  title: "Eodash",
-  description: "Earth Observation Dashboard",
+  title: "eodash",
+  description: "Earth Observation Ecosystem",
   themeConfig: {
     // https://vitepress.dev/reference/default-theme-config
     nav: [
@@ -17,7 +17,7 @@ export default defineConfig({
       {
         text: 'Introduction',
         items: [
-          { text: 'What is Eodash', link: '/what-is-eodash' },
+          { text: 'What is eodash', link: '/what-is-eodash' },
           { text: 'Get Started', link: '/get-started' }
         ]
       },
