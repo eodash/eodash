@@ -3,9 +3,9 @@
 layout: home
 
 hero:
-  name: "Eodash"
-  text: "Earth Observation Dashboard"
-  tagline: My great project tagline
+  name: "eodash"
+  text: "Earth Observation Ecosystem"
+  tagline: Publish and integrate EO data in a dashboard application through this flexible and customizable ecosystem
   actions:
     - theme: brand
       text: Get Started
@@ -15,11 +15,9 @@ hero:
       link: /api
 
 features:
-  - title: Feature A
-    details: Lorem ipsum dolor sit amet, consectetur adipiscing elit
-  - title: Feature B
-    details: Lorem ipsum dolor sit amet, consectetur adipiscing elit
-  - title: Feature C
-    details: Lorem ipsum dolor sit amet, consectetur adipiscing elit
+  - title: For developers
+    details: Create your customized environment with a user facing dashboard integrating your data sources and widgets
+  - title: For end-users
+    details: Configure an earth observation dashboard catering to the requirements of your community
 ---
 
