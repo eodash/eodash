@@ -1,19 +1,18 @@
 <template>
   <span class="fill-height fill-width align-center justify-center">
     <div v-if="inline" class="fill-height fill-width">
-      <!-- <p class="text-subtitle-1 ma-1 pa-2">currently selected date is {{ currentDate }}</p> -->
-      <v-text-field base-color="primary" density="comfortable" type="date" bg-color="surface" color="primary"
-        validate-on="input" min="1980-01-01" :max="new Date().toISOString().split(`T`)[0]" label="Select Date"
-        :value="currentDate" v-model="currentDate" />
-    </div>
 
-    <v-date-picker v-else v-model="currentDate" color="primary" elevation="0" bg-color="surface" location="center"
-      class="overflow-auto fill-height fill-width" :max="new Date()" position="relative"
-      show-adjacent-months></v-date-picker>
+      <v-text-field base-color="primary" class="fill-height fill-width pa-2 align-center" type="date" bg-color="surface"
+        color="primary" density="comfortable" min="1980-01-01" :max="new Date().toISOString().split(`T`)[0]"
+        label="Select Date" v-model="currentDate" variant="plain" hide-details />
+    </div>
+    <v-date-picker v-else ref="datePicker" :width="width" :height="height" hide-header v-model="currentDate"
+      color="primary" bg-color="surface" location="center" class="overflow-auto fill-height fill-width" min="1980-01-01"
+      :max="new Date()" position="relative" show-adjacent-months></v-date-picker>
   </span>
 </template>
 <script setup>
-import { computed } from "vue";
+import { computed, ref, onMounted } from "vue";
 import { datetime } from "@/store/States"
 
 const props = defineProps(["inline"])
@@ -28,5 +27,20 @@ const currentDate = computed({
     }
     datetime.value = /** @type {Date} */ (updatedDate).toISOString()
   }
+})
+/**
+ * @type {import("vue").Ref<import("vuetify/components").VDatePicker
+ * | import("vuetify/components").VTextField | null>}
+ **/
+const datePicker = ref(null)
+/** @type {import("vue").Ref<string|undefined>} */
+const width = ref()
+/** @type {import("vue").Ref<string|undefined>} */
+const height = ref()
+onMounted(() => {
+  /** @type {HTMLElement} */
+  const parentEl = datePicker.value?.$el.parentElement?.parentElement
+  width.value = parentEl?.clientWidth ? parentEl?.clientWidth + "px" : undefined
+  height.value = parentEl?.clientHeight ? parentEl?.clientHeight + "px" : undefined
 })
 </script>
