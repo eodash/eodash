@@ -2,7 +2,7 @@
   <v-footer ref="footer" :height="mdAndDown ? '48px' : 'auto'" color="secondary" app
     class="d-flex justify-space-between">
     <p class="pt-0 footer-text">
-      Phasellus feugiat arcu sapien, et iaculis ipsum elementum sit amet. Mauris cursus commodo interdum.
+      {{ eodash.brand.footerText ?? "" }}
     </p>
     <div class="footer-text">
       {{ new Date().getFullYear() }} — <strong>{{ title }}</strong>

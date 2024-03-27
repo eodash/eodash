@@ -22,7 +22,8 @@ const eodash = reactive({
         surface: "#f0f0f0f0",
       }
     },
-    meta: {}
+    meta: {},
+    footerText: "Demo"
   },
   template: {
     background: {

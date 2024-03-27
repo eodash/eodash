@@ -312,8 +312,14 @@ export interface Eodash<T extends ExecutionTime = "compiletime"> {
      * Dashboard theme as a custom vuetifyJs theme.
      */
     theme?: ThemeDefinition
-
-    meta?: import("@unhead/vue").UseSeoMetaInput
+    /**
+     * meta tags configuration, using unhead's [useSeoMeta](https://unhead.unjs.io/usage/composables/use-seo-meta)
+     */
+    meta?: import("@unhead/vue").UseSeoMetaInput;
+    /**
+     * Text applied to the footer.
+     */
+    footerText?: string;
   }
   /**
    * Template configuration
