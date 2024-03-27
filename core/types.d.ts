@@ -48,7 +48,7 @@ export interface WebComponentProps<T extends ExecutionTime = "compiletime"> {
 
 /** @ignore */
 export interface WidgetsContainerProps {
-  widgets: Omit<Widget, 'layout'>[]
+  widgets: Omit<Widget, 'layout' | 'slidable'>[]
 }
 
 // eodash types:
@@ -79,7 +79,11 @@ export interface WebComponentWidget<T extends ExecutionTime = "compiletime"> {
      *  Height. Integer between 1 and 12
      */
     h: number
-  }
+  },
+  /**
+ * Enable/Disable widget sliding.
+ */
+  slidable?: boolean
   widget: WebComponentProps<T>
   type: 'web-component'
 }
@@ -113,6 +117,10 @@ export interface InternalComponentWidget {
      */
     h: number
   }
+  /**
+   * Enable/Disable widget sliding.
+   */
+  slidable?: boolean
   widget: {
     /**
      * Internal Vue Components inside the [widgets](https://github.com/eodash/eodash/tree/main/widgets) folder can be referenced
@@ -158,6 +166,10 @@ export interface IFrameWidget {
      */
     h: number
   }
+  /**
+  * Enable/Disable widget sliding.
+  */
+  slidable?: boolean;
   widget: {
     /**
      * The URL of the page to embed
@@ -175,7 +187,7 @@ export interface FunctionalWidget<T extends ExecutionTime = "compiletime"> {
    * gets triggered whenever a stac object is selected.
    * @param selectedSTAC - currently selected stac object
    */
-  defineWidget: (selectedSTAC: StacCatalog | StacCollection | StacItem | null) => Omit<StaticWidget<T>, 'layout'>
+  defineWidget: (selectedSTAC: StacCatalog | StacCollection | StacItem | null) => Omit<StaticWidget<T>, 'layout' | 'slidable'>
   layout: {
     /**
      *  Horizontal start position. Integer between 1 and 12
@@ -194,6 +206,10 @@ export interface FunctionalWidget<T extends ExecutionTime = "compiletime"> {
      */
     h: number
   }
+  /**
+  * Enable/Disable widget sliding.
+  */
+  slidable?: boolean
 }
 /**
  * @group Eodash
@@ -208,7 +224,7 @@ export type Widget<T extends ExecutionTime = "compiletime"> = StaticWidget<T> | 
 /**
  * @group Eodash
  */
-export type BackgroundWidget<T extends ExecutionTime = "compiletime"> = Omit<WebComponentWidget<T>, 'layout' | 'title'> | Omit<InternalComponentWidget, 'layout' | 'title'> | Omit<IFrameWidget, 'layout' | 'title'> | Omit<FunctionalWidget, 'layout'>
+export type BackgroundWidget<T extends ExecutionTime = "compiletime"> = Omit<WebComponentWidget<T>, 'layout' | 'title' | 'slidable'> | Omit<InternalComponentWidget, 'layout' | 'title' | 'slidable'> | Omit<IFrameWidget, 'layout' | 'title' | 'slidable'> | Omit<FunctionalWidget<T>, 'layout' | 'slidable'>
 /**
  * Dashboard rendered widgets  specification.
  * 3 types of widgets are supported: `"iframe"`, `"internal"`, and `"web-component"`.

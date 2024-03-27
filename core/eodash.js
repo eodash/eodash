@@ -35,6 +35,7 @@ const eodash = reactive({
     widgets: [
       {
         id: Symbol(),
+        slidable: false,
         title: 'Tools',
         layout: { "x": 0, "y": 0, "w": 3, "h": 12 },
         widget: {
