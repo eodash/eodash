@@ -130,7 +130,7 @@ export interface InternalComponentWidget {
     /**
      * Specified Vue component props
      */
-    props?: Record<string, unknown>
+    properties?: Record<string, unknown>
   }
   type: 'internal'
 }
