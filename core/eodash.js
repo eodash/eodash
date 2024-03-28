@@ -23,7 +23,7 @@ const eodash = reactive({
       }
     },
     meta: {},
-    footerText: "Demo"
+    footerText: "Lorem ipsum dolor sit amet, consectetur adipiscing elit."
   },
   template: {
     background: {
