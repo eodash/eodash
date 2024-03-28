@@ -1,5 +1,6 @@
 <template>
   <HeaderComponent />
+  <IntroDialog v-if="eodash.template.intro" />
   <TemplateComponent :style="`height: calc(100dvh - ${mainRect['top'] + mainRect['bottom']}px)`" />
   <FooterComponent />
 </template>
@@ -32,6 +33,9 @@ const TemplateComponent = smAndDown.value ?
 
 const HeaderComponent = defineAsyncComponent(() => import(`@/components/Header.vue`))
 const FooterComponent = defineAsyncComponent(() => import(`@/components/Footer.vue`))
+
+const IntroDialog = (eodash.template.intro && defineAsyncComponent(() => import("@/components/IntroDialog.vue")))
+
 const { mainRect } = useLayout()
 
 useSeoMeta(eodash.brand.meta ?? {})
