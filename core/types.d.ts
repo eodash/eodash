@@ -221,8 +221,7 @@ export interface Template<T extends ExecutionTime = "compiletime"> {
    */
   gap?: number;
   /**
-   * renders markdown into an introduction dialog that
-   * apears once the dashboard is loaded.
+   * renders markdown into a dialog that apears once the page is loaded.
    * Powered by [eox-storytelling](https://eox-a.github.io/EOxElements/?path=/docs/elements-eox-storytelling--docs)
    */
   intro?: {
