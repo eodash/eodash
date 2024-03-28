@@ -123,8 +123,8 @@ export interface InternalComponentWidget {
   slidable?: boolean
   widget: {
     /**
-     * Internal Vue Components inside the [widgets](https://github.com/eodash/eodash/tree/main/widgets) folder can be referenced
-     * using their name without the extention .vue
+     * Internal Vue Components inside the [widgets](https://github.com/eodash/eodash/tree/main/widgets) folder. Referenced
+     * using their name without the .vue extention
      */
     name: string;
     /**
@@ -184,8 +184,8 @@ export interface IFrameWidget {
 export interface FunctionalWidget<T extends ExecutionTime = "compiletime"> {
   /**
    * Provides a functional definition of the widget,
-   * gets triggered whenever a stac object is selected.
-   * @param selectedSTAC - currently selected stac object
+   * gets triggered whenever a STAC object is selected.
+   * @param selectedSTAC - Currently selected STAC object
    */
   defineWidget: (selectedSTAC: StacCatalog | StacCollection | StacItem | null) => Omit<StaticWidget<T>, 'layout' | 'slidable'>
   layout: {
@@ -238,7 +238,8 @@ export interface Template<T extends ExecutionTime = "compiletime"> {
   gap?: number;
   /**
    * Widget rendered as the dashboard background.
-   * Has the same specifications of Widget without the `title` and  `layout` properties
+   * Has the same specifications of `Widget` without the `title` and  `layout` properties
+   * @see {@link Widget}
    */
   background?: BackgroundWidget<T>
   /**
@@ -254,6 +255,7 @@ export type InternalRoute = `/${string}`
 export type StacEndpoint = `${'https://' | 'http://'}${string}/catalog.json`
 
 /**
+ * @ignore
  * @group Eodash
  */
 export type ExecutionTime = "runtime" | "compiletime";
@@ -272,7 +274,7 @@ export interface Eodash<T extends ExecutionTime = "compiletime"> {
    **/
   stacEndpoint: StacEndpoint
   /**
-  * Renderes to navigation buttons on the app header.
+  * Renders navigation buttons on the app header.
   **/
   routes?: Array<{
     title: string,
@@ -288,7 +290,7 @@ export interface Eodash<T extends ExecutionTime = "compiletime"> {
      */
     font?: {
       /**
-       * Link to stylesheet that defines font-face.
+       * Link to stylesheet that defines font-face. Could be either a relative or absolute URL.
        */
       link?: string;
       /**
@@ -305,11 +307,11 @@ export interface Eodash<T extends ExecutionTime = "compiletime"> {
      */
     shortName?: string
     /**
-     * brand logo
+     * Brand logo
      */
     logo?: string;
     /**
-     * Dashboard theme as a custom vuetifyJs theme.
+     * Dashboard theme as a custom [vuetifyJs theme](https://vuetifyjs.com/en/features/theme/).
      */
     theme?: ThemeDefinition
     /**
@@ -364,7 +366,7 @@ export interface EodashStore {
 }
 ///////
 /**
- * Eodash server, build and setup configuration
+ * Extending [Vite's](https://vitejs.dev/) config to configure eodash's server, build and setup.
  * @group EodashConfig
  */
 export interface EodashConfig {
@@ -383,31 +385,32 @@ export interface EodashConfig {
     open?: boolean
   }
   /**
-   * base public path
+   * Base public path
    */
   base?: string;
   /**
-   * build target folder path
+   * Build target folder path
    */
   outDir?: string;
-  /** path to statically served assets folder, can be set to `false`
-   *  to disable serving assets statically
+  /**
+   * Path to statically served assets folder, can be set to `false`
+   * to disable serving assets statically
    **/
   publicDir?: string | false;
   /**
-   * cache folder
+   * Cache folder
    */
   cacheDir?: string
-  /** specifies main entry file, exporting `createEodash`*/
+  /** Specifies main entry file, exporting `createEodash`*/
   entryPoint?: string
   /**
-   * file exporting eodash client runtime config
+   * File exporting eodash client runtime config
    */
   runtime?: string
   widgets?: string
 }
 /**
- * project entry point should export this function as a default
+ * the project's entry point should export this function as a default
  * to instantiate eodash
  *
  * @param  configCallback
