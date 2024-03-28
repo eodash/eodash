@@ -44,5 +44,4 @@ export const assignIndicator = (selectedSTAC) => {
   } else {
     indicator.value = ""
   }
-  console.log(indicator.value,/** @type {string} */(selectedSTAC?.code)),/** @type {string[]} */(selectedSTAC?.subcode)
 }

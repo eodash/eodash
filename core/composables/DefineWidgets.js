@@ -94,7 +94,7 @@ const getWidgetDefinition = (config) => {
         loader: internalWidgets[/** @type {import("@/types").InternalComponentWidget} **/(config)?.widget.name],
         suspensible: true
       })
-      importedWidget.props = reactive(/** @type {import("@/types").InternalComponentWidget} **/(config)?.widget.props ?? {})
+      importedWidget.props = reactive(/** @type {import("@/types").InternalComponentWidget} **/(config)?.widget.properties ?? {})
 
       break;
 
