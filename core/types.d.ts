@@ -221,6 +221,18 @@ export interface Template<T extends ExecutionTime = "compiletime"> {
    */
   gap?: number;
   /**
+   * renders markdown into a dialog that apears once the page is loaded.
+   * Powered by [eox-storytelling](https://eox-a.github.io/EOxElements/?path=/docs/elements-eox-storytelling--docs)
+   */
+  intro?: {
+    markdown?: string
+    unstyled?: boolean
+    markdownUrl?: ExternalURL
+    showNav?: boolean,
+    nav?: Array
+    fullscreen?: boolean
+  }
+  /**
    * Widget rendered as the dashboard background.
    * Has the same specifications of Widget without the `title` and  `layout` properties
    */
