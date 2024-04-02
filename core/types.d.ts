@@ -48,7 +48,7 @@ export interface WebComponentProps<T extends ExecutionTime = "compiletime"> {
 
 /** @ignore */
 export interface WidgetsContainerProps {
-  widgets: Omit<Widget, 'layout'>[]
+  widgets: Omit<Widget, 'layout' | 'slidable'>[]
 }
 
 // eodash types:
@@ -79,7 +79,11 @@ export interface WebComponentWidget<T extends ExecutionTime = "compiletime"> {
      *  Height. Integer between 1 and 12
      */
     h: number
-  }
+  },
+  /**
+ * Enable/Disable widget sliding.
+ */
+  slidable?: boolean
   widget: WebComponentProps<T>
   type: 'web-component'
 }
@@ -113,16 +117,20 @@ export interface InternalComponentWidget {
      */
     h: number
   }
+  /**
+   * Enable/Disable widget sliding.
+   */
+  slidable?: boolean
   widget: {
     /**
-     * Internal Vue Components inside the [widgets](https://github.com/eodash/eodash/tree/main/widgets) folder can be referenced
-     * using their name without the extention .vue
+     * Internal Vue Components inside the [widgets](https://github.com/eodash/eodash/tree/main/widgets) folder. Referenced
+     * using their name without the .vue extention
      */
     name: string;
     /**
      * Specified Vue component props
      */
-    props?: Record<string, unknown>
+    properties?: Record<string, unknown>
   }
   type: 'internal'
 }
@@ -158,6 +166,10 @@ export interface IFrameWidget {
      */
     h: number
   }
+  /**
+  * Enable/Disable widget sliding.
+  */
+  slidable?: boolean;
   widget: {
     /**
      * The URL of the page to embed
@@ -172,10 +184,10 @@ export interface IFrameWidget {
 export interface FunctionalWidget<T extends ExecutionTime = "compiletime"> {
   /**
    * Provides a functional definition of the widget,
-   * gets triggered whenever a stac object is selected.
-   * @param selectedSTAC - currently selected stac object
+   * gets triggered whenever a STAC object is selected.
+   * @param selectedSTAC - Currently selected STAC object
    */
-  defineWidget: (selectedSTAC: StacCatalog | StacCollection | StacItem | null) => Omit<StaticWidget<T>, 'layout'>
+  defineWidget: (selectedSTAC: StacCatalog | StacCollection | StacItem | null) => Omit<StaticWidget<T>, 'layout' | 'slidable'>
   layout: {
     /**
      *  Horizontal start position. Integer between 1 and 12
@@ -194,6 +206,10 @@ export interface FunctionalWidget<T extends ExecutionTime = "compiletime"> {
      */
     h: number
   }
+  /**
+  * Enable/Disable widget sliding.
+  */
+  slidable?: boolean
 }
 /**
  * @group Eodash
@@ -208,7 +224,7 @@ export type Widget<T extends ExecutionTime = "compiletime"> = StaticWidget<T> | 
 /**
  * @group Eodash
  */
-export type BackgroundWidget<T extends ExecutionTime = "compiletime"> = Omit<WebComponentWidget<T>, 'layout' | 'title'> | Omit<InternalComponentWidget, 'layout' | 'title'> | Omit<IFrameWidget, 'layout' | 'title'> | Omit<FunctionalWidget, 'layout'>
+export type BackgroundWidget<T extends ExecutionTime = "compiletime"> = Omit<WebComponentWidget<T>, 'layout' | 'title' | 'slidable'> | Omit<InternalComponentWidget, 'layout' | 'title' | 'slidable'> | Omit<IFrameWidget, 'layout' | 'title' | 'slidable'> | Omit<FunctionalWidget<T>, 'layout' | 'slidable'>
 /**
  * Dashboard rendered widgets  specification.
  * 3 types of widgets are supported: `"iframe"`, `"internal"`, and `"web-component"`.
@@ -234,7 +250,8 @@ export interface Template<T extends ExecutionTime = "compiletime"> {
   }
   /**
    * Widget rendered as the dashboard background.
-   * Has the same specifications of Widget without the `title` and  `layout` properties
+   * Has the same specifications of `Widget` without the `title` and  `layout` properties
+   * @see {@link Widget}
    */
   background?: BackgroundWidget<T>
   /**
@@ -250,6 +267,7 @@ export type InternalRoute = `/${string}`
 export type StacEndpoint = `${'https://' | 'http://'}${string}/catalog.json`
 
 /**
+ * @ignore
  * @group Eodash
  */
 export type ExecutionTime = "runtime" | "compiletime";
@@ -268,7 +286,7 @@ export interface Eodash<T extends ExecutionTime = "compiletime"> {
    **/
   stacEndpoint: StacEndpoint
   /**
-  * Renderes to navigation buttons on the app header.
+  * Renders navigation buttons on the app header.
   **/
   routes?: Array<{
     title: string,
@@ -284,7 +302,7 @@ export interface Eodash<T extends ExecutionTime = "compiletime"> {
      */
     font?: {
       /**
-       * Link to stylesheet that defines font-face.
+       * Link to stylesheet that defines font-face. Could be either a relative or absolute URL.
        */
       link?: string;
       /**
@@ -301,15 +319,21 @@ export interface Eodash<T extends ExecutionTime = "compiletime"> {
      */
     shortName?: string
     /**
-     * brand logo
+     * Brand logo
      */
     logo?: string;
     /**
-     * Dashboard theme as a custom vuetifyJs theme.
+     * Dashboard theme as a custom [vuetifyJs theme](https://vuetifyjs.com/en/features/theme/).
      */
     theme?: ThemeDefinition
-
-    meta?: import("@unhead/vue").UseSeoMetaInput
+    /**
+     * meta tags configuration, using unhead's [useSeoMeta](https://unhead.unjs.io/usage/composables/use-seo-meta)
+     */
+    meta?: import("@unhead/vue").UseSeoMetaInput;
+    /**
+     * Text applied to the footer.
+     */
+    footerText?: string;
   }
   /**
    * Template configuration
@@ -354,7 +378,7 @@ export interface EodashStore {
 }
 ///////
 /**
- * Eodash server, build and setup configuration
+ * Extending [Vite's](https://vitejs.dev/) config to configure eodash's server, build and setup.
  * @group EodashConfig
  */
 export interface EodashConfig {
@@ -373,31 +397,32 @@ export interface EodashConfig {
     open?: boolean
   }
   /**
-   * base public path
+   * Base public path
    */
   base?: string;
   /**
-   * build target folder path
+   * Build target folder path
    */
   outDir?: string;
-  /** path to statically served assets folder, can be set to `false`
-   *  to disable serving assets statically
+  /**
+   * Path to statically served assets folder, can be set to `false`
+   * to disable serving assets statically
    **/
   publicDir?: string | false;
   /**
-   * cache folder
+   * Cache folder
    */
   cacheDir?: string
-  /** specifies main entry file, exporting `createEodash`*/
+  /** Specifies main entry file, exporting `createEodash`*/
   entryPoint?: string
   /**
-   * file exporting eodash client runtime config
+   * File exporting eodash client runtime config
    */
   runtime?: string
   widgets?: string
 }
 /**
- * project entry point should export this function as a default
+ * the project's entry point should export this function as a default
  * to instantiate eodash
  *
  * @param  configCallback

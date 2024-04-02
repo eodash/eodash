@@ -22,7 +22,8 @@ const eodash = reactive({
         surface: "#f0f0f0f0",
       }
     },
-    meta: {}
+    meta: {},
+    footerText: "Lorem ipsum dolor sit amet, consectetur adipiscing elit."
   },
   template: {
     intro: {
@@ -52,6 +53,7 @@ It is a long established fact that a reader will be distracted by the readable c
     widgets: [
       {
         id: Symbol(),
+        slidable: false,
         title: 'Tools',
         layout: { "x": 0, "y": 0, "w": 3, "h": 12 },
         widget: {
