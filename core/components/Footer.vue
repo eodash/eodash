@@ -25,7 +25,6 @@ import { useDisplay } from 'vuetify/lib/framework.mjs';
 const footer = ref(null)
 const eodash = /** @type {import("@/types").Eodash} */(inject(eodashKey))
 
-const title = eodash.brand?.shortName ?? eodash.brand?.name
 const { mdAndDown } = useDisplay()
 </script>
 <style scoped lang='scss'>
