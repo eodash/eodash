@@ -1,9 +1,9 @@
 <template>
-  <v-dialog absolute :fullscreen="fullscreen" v-model="dialog">
+  <v-dialog absolute :fullscreen="fullscreen" scroll-strategy="none" v-model="dialog">
     <v-card>
-      <v-card-action>
+      <v-card-actions>
         <v-btn icon variant="text" @click="dialog = false">&#x2715;</v-btn>
-      </v-card-action>
+      </v-card-actions>
       <eox-storytelling v-bind="storyProps" />
     </v-card>
   </v-dialog>
