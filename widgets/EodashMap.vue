@@ -33,7 +33,7 @@ const onMounted = (el, store, router) => {
 
   watch([selectedStac, datetime], async ([updatedStac, updatedTime]) => {
     if (updatedStac) {
-      const parentCollUrl = toAbsolute(updatedStac.links[1].href, eodashConfig.stacEndpoint);
+      const parentCollUrl = toAbsolute(`./${updatedStac.id}/collection.json`, eodashConfig.stacEndpoint);
       const childCollUrl = toAbsolute(updatedStac.links[1].href, parentCollUrl);
       const eodash = new EodashCollection(childCollUrl);
       if (updatedTime) {

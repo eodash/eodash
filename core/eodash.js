@@ -8,7 +8,7 @@ import { currentUrl } from './store/States';
  */
 const eodash = reactive({
   id: 'demo',
-  stacEndpoint: 'https://eurodatacube.github.io/eodash-catalog/RACE/catalog.json',
+  stacEndpoint: 'https://esa-eodash.github.io/RACE-catalog/RACE/catalog.json',
   routes: [],
   brand: {
     name: 'Demo',
@@ -23,7 +23,7 @@ const eodash = reactive({
       }
     },
     meta: {},
-    footerText: "Lorem ipsum dolor sit amet, consectetur adipiscing elit."
+    footerText: "Demo configuration of eodash client"
   },
   template: {
     background: {
