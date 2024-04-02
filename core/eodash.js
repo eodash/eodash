@@ -84,6 +84,19 @@ const eodash = reactive({
       },
       {
         id: Symbol(),
+        type: "internal",
+        title: "datepicker",
+        layout: { x: 5, y: 11, w: 2, h: 1 },
+        slidable: false,
+        widget: {
+          name: 'EodashDatePicker',
+          properties: {
+            inline: true,
+          },
+        }
+      },
+      {
+        id: Symbol(),
         title: 'Information',
         layout: { "x": 9, "y": 0, "w": 3, "h": 12 },
         widget: {
