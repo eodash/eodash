@@ -1,5 +1,6 @@
 <template>
-  <v-footer ref="footer" :height="mdAndDown ? '48px' : 'auto'" color="secondary" app class="d-flex justify-space-between">
+  <v-footer ref="footer" :height="mdAndDown ? '48px' : 'auto'" color="secondary" app
+    class="d-flex justify-space-between">
     <p class="pt-0 footer-text">
       Phasellus feugiat arcu sapien, et iaculis ipsum elementum sit amet. Mauris cursus commodo interdum.
     </p>
@@ -9,7 +10,7 @@
   </v-footer>
 </template>
 <script setup>
-import { eodashConfigKey } from '@/store/Keys';
+import { eodashKey } from '@/store/Keys';
 import { ref } from 'vue';
 import { inject } from 'vue';
 import { useDisplay } from 'vuetify/lib/framework.mjs';
@@ -19,9 +20,9 @@ import { useDisplay } from 'vuetify/lib/framework.mjs';
  * @type {import('vue').Ref<import('vuetify/lib/components/index.mjs').VFooter | null>}
  */
 const footer = ref(null)
-const eodashConfig = /** @type {EodashConfig} */(inject(eodashConfigKey))
+const eodash = /** @type {import("@/types").Eodash} */(inject(eodashKey))
 
-const title = eodashConfig.brand?.shortName ?? eodashConfig.brand?.name
+const title = eodash.brand?.shortName ?? eodash.brand?.name
 const { mdAndDown } = useDisplay()
 </script>
 <style scoped lang='scss'>

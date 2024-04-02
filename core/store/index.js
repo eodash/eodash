@@ -1,15 +1,9 @@
 //export all actions, states, and pinia stores
-/**
- * @template {keyof EodashStore} [K = keyof EodashStore]
-* @typedef {Record<K,EodashStore[K]>} EodashStoreImports
-*/
 
-const storesImport = /**@type {EodashStoreImports} */(import.meta.glob('../store/**.js', { eager: true }))
-/**
- * @type {EodashStore}
- */
-const store = await (async () => {
-  const stores = /** @type {EodashStore}*/({});
+const storesImport = import.meta.glob('../store/**.js', { eager: true })
+
+const store = /** @type {import("@/types").EodashStore} */((() => {
+  const stores = {}
   for (const [filePath, importedstore] of Object.entries(storesImport)) {
     const storeType = filePath.split('/').at(-1)?.slice(0, -3).toLowerCase() ?? ''
     if (!['keys'].includes(storeType)) {
@@ -18,6 +12,6 @@ const store = await (async () => {
     }
   }
   return stores;
-})();
+})());
 
 export default store;

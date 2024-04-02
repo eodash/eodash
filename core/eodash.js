@@ -1,16 +1,12 @@
 import { reactive } from "vue";
-import { currentUrl, mapInstance } from './store/States';
-/**
- * @type {Function | null}
- */
-let handleMoveEnd = null;
+import { currentUrl } from './store/States';
 
 /**
- * Reactive Edoash Config Object. provided globally in the app,
- * and used as an intermediate object to make user defined configurations reactive.
- * @type {EodashConfig}
+ * Reactive Edoash Instance Object. provided globally in the app,
+ * and used as an intermediate object to make user defined instances config reactive.
+ * @type {import("./types").Eodash}
  */
-const eodashConfig = reactive({
+const eodash = reactive({
   id: 'demo',
   stacEndpoint: 'https://eurodatacube.github.io/eodash-catalog/RACE/catalog.json',
   routes: [
@@ -33,39 +29,16 @@ const eodashConfig = reactive({
         secondary: '#00417044',
         surface: "#f0f0f0f0",
       }
-    }
+    },
+    meta: {}
   },
   template: {
     background: {
       id: Symbol(),
+      type: "internal",
       widget: {
-        link: 'https://cdn.skypack.dev/@eox/map',
-        properties: {
-          class: "fill-height fill-width overflow-none",
-          center: [15, 48],
-          layers: [{ type: "Tile", source: { type: "OSM" } }],
-        },
-        tagName: 'eox-map',
-        onMounted(el, _, router) {
-           /** @type {any} */(el).zoom = router.currentRoute.value.query['z'];
-
-          mapInstance.value =  /** @type {any} */(el).map;
-
-          mapInstance.value?.on('moveend', handleMoveEnd =
-          /** @param {any} evt  */(evt) => {
-              router.push({
-                query: {
-                  z: `${evt.map.getView().getZoom()}`
-                }
-              });
-            });
-        },
-        onUnmounted(_el, _store, _router) {
-          //@ts-expect-error
-          mapInstance.value?.un('moveend', handleMoveEnd);
-        }
-      },
-      type: 'web-component'
+        name: 'EodashMap'
+      }
     },
     widgets: [
       {
@@ -120,8 +93,7 @@ const eodashConfig = reactive({
         title: 'Information',
         layout: { "x": 9, "y": 0, "w": 3, "h": 12 },
         widget: {
-          link: '@eox/stacinfo',
-          node_module: true,
+          link: async () => await import('@eox/stacinfo'),
           properties: {
             for: currentUrl,
             allowHtml: "true",
@@ -142,4 +114,4 @@ const eodashConfig = reactive({
 });
 
 
-export default eodashConfig;
+export default eodash;

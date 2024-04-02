@@ -1,6 +1,3 @@
-# Eodash v5
-This is an experimental repository for the reformation of [Eodash](https://github.com/eurodatacube/eodash) to a microfrontend application that utilizes external STAC files to render earth observation data using configured widgets.
-
 ## Get Started
 Install all the required dependecies after cloning or downloading the repository using Node v18 or higher:
 ```bash
@@ -23,10 +20,7 @@ npm run preview
     .
     ├── core               # Main source code that hosts the microfrontends and renders the dashboard
     ├── docs               # Documentation files
-    ├── widgets            # Internal Vue widgets that can be imported in the configuration
+    ├── widgets            # Vue componenets as internal widgets.
     ├── public             # Statically served directory
     └── README.md
-
-## Customize and Deploy your own Dashboard
-Check out the [configuration and deployment template](https://github.com/eodash/config-template) to learn more.
 

@@ -3,22 +3,25 @@
   <TemplateComponent :style="`height: calc(100dvh - ${mainRect['top'] + mainRect['bottom']}px)`" />
   <FooterComponent />
 </template>
+
 <script setup>
-import { useEodashRuntimeConfig } from "@/composables/DefineConfig";
-import { useUpdateTheme } from "@/composables";
+import { useEodashRuntime } from "@/composables/DefineEodash";
+import { useRouteParams, useUpdateTheme } from "@/composables";
 import { useSTAcStore } from '@/store/stac';
 import { defineAsyncComponent } from "vue";
 import { useDisplay, useLayout } from "vuetify/lib/framework.mjs";
-import { loadFont } from '@/store/Actions'
-import { onUnmounted } from "vue";
+import { loadFont } from '@/utils'
+import { useSeoMeta } from "@unhead/vue"
 
 
-const eodashConfig = await useEodashRuntimeConfig()
+const eodash = await useEodashRuntime()
 
-const theme = useUpdateTheme('dashboardTheme', eodashConfig.brand?.theme)
+useRouteParams()
+
+const theme = useUpdateTheme('dashboardTheme', eodash.brand?.theme)
 theme.global.name.value = 'dashboardTheme'
 
-const fontFamily = await loadFont(eodashConfig.brand?.font?.family, eodashConfig.brand?.font?.link)
+const fontFamily = await loadFont(eodash.brand?.font?.family, eodash.brand?.font?.link)
 
 const { loadSTAC } = useSTAcStore()
 await loadSTAC()
@@ -31,11 +34,14 @@ const HeaderComponent = defineAsyncComponent(() => import(`@/components/Header.v
 const FooterComponent = defineAsyncComponent(() => import(`@/components/Footer.vue`))
 const { mainRect } = useLayout()
 
-onUnmounted(() => {
-  theme.global.name.value = 'light'
-})
+useSeoMeta(eodash.brand.meta ?? {})
 </script>
+
 <style scoped lang="scss">
+html {
+  overflow: hidden;
+}
+
 * {
   font-family: v-bind('fontFamily');
 }

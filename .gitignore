@@ -2,7 +2,7 @@
 node_modules
 /dist
 tsconfig.tsbuildinfo
-
+.eodash
 # local env files
 .env.local
 .env.*.local
@@ -26,3 +26,9 @@ pnpm-debug.log*
 # Cypress 
 cypress/downloads
 cypress/screenshots
+
+# docs
+docs/.vitepress/cache
+docs/.generated
+docs/.vitepress/dist
+docs/api

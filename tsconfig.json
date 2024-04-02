@@ -20,6 +20,7 @@
       "dom"
     ],
     "types": [
+      "node",
       "vuetify",
       "cypress"
     ],
@@ -32,6 +33,11 @@
       ]
     }
   },
+  "references": [
+    {
+      "path": "tsconfig.node.json"
+    }
+  ],
   "exclude": [
     "node_modules",
     "dist"
@@ -43,12 +49,6 @@
     "core/**/*.d.ts",
     "core/**/*.tsx",
     "core/**/*.vue",
-    "landing/**/*.ts",
-    "landing/**/*.js",
-    "landing/**/*.umd.cjs",
-    "landing/**/*.d.ts",
-    "landing/**/*.tsx",
-    "landing/**/*.vue",
     "widgets/**/*.vue",
     "widgets/**/*.ts",
     "widgets/**/*.js",

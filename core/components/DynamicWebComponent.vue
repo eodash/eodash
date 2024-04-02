@@ -3,8 +3,8 @@
     <component :is="tagName" v-bind="properties" ref="elementRef" />
   </span>
 </template>
+
 <script async setup>
-import modulesMap from '@/modulesMap';
 import { useSTAcStore } from '@/store/stac';
 import {
   onUnmounted as whenUnMounted,
@@ -13,12 +13,11 @@ import {
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 
-const props = defineProps({
+const props =   /** @type {import("@/types").WebComponentProps}  */(defineProps({
   link: {
-    type: String,
+    type: [String, Function],
     required: true
   },
-  node_module: Boolean,
   constructorProp: String,
   tagName: {
     type: String,
@@ -32,15 +31,15 @@ const props = defineProps({
   },
   onMounted: Function,
   onUnmounted: Function
-})
+}))
 
-const getWebComponent = async () => props.node_module ?
-  await modulesMap[/** @type {keyof typeof modulesMap} */(props.link)]()
-  : await import( /* @vite-ignore */props.link)
 
-const imported = await getWebComponent().catch(e => {
+const getWebComponent = async () => typeof props.link === 'string' ?
+  await import( /* @vite-ignore */props.link) : await props.link()
+
+const imported = !customElements.get(props.tagName) ? await getWebComponent().catch(e => {
   console.error(e)
-})
+}) : null
 
 const defined = customElements.get(props.tagName)
 
@@ -61,20 +60,10 @@ const elementRef = ref(null)
 const router = useRouter()
 
 whenMounted(() => {
-  if (props.onMounted && elementRef.value) {
-    /** @type {DynamicWebComponentProps} */
-    (props).onMounted(elementRef.value, store, router)?.catch(err => {
-      console.error(err)
-    })
-  }
+  props.onMounted?.(elementRef.value, store, router)
 })
 
 whenUnMounted(() => {
-  if (props.onUnmounted && elementRef.value) {
-    /** @type {DynamicWebComponentProps}  */
-    (props).onUnmounted(elementRef.value, store, router)?.catch(err => {
-      console.error(err)
-    })
-  }
+  props.onUnmounted?.(elementRef.value, store, router)
 })
 </script>
