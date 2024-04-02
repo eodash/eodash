@@ -43,6 +43,7 @@ const { slideBtns, slideInOut } = useSlidePanels(itemEls, widgetsConfig)
 </script>
 <style scoped>
 eox-layout-item {
+  border-radius: 0px;
   background: rgb(var(--v-theme-surface))
 }
 
