@@ -9,5 +9,4 @@
     "excludeExternals": true,
     "entryPointStrategy": "resolve",
     "categorizeByGroup":true
-    
 }

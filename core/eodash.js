@@ -22,7 +22,8 @@ const eodash = reactive({
         surface: "#f0f0f0f0",
       }
     },
-    meta: {}
+    meta: {},
+    footerText: "Lorem ipsum dolor sit amet, consectetur adipiscing elit."
   },
   template: {
     background: {
@@ -35,6 +36,7 @@ const eodash = reactive({
     widgets: [
       {
         id: Symbol(),
+        slidable: false,
         title: 'Tools',
         layout: { "x": 0, "y": 0, "w": 3, "h": 12 },
         widget: {

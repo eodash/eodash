@@ -7,8 +7,8 @@
       <eox-layout-item v-for="(config, idx) in widgetsConfig" ref="itemEls" :key="idx" class="custom-widget"
         :x="config.layout.x" :y="config.layout.y" :h="config.layout.h" :w="config.layout.w">
 
-        <v-btn position="absolute" variant="tonal" :style="slideBtns[idx].style" class="slide-btn"
-          @click="slideInOut(idx)">
+        <v-btn v-if="slideBtns[idx].enabled" position="absolute" variant="tonal" :style="slideBtns[idx].style"
+          class="slide-btn" @click="slideInOut(idx)">
           <v-icon :icon="slideBtns[idx].active ? slideBtns[idx].icon.in : slideBtns[idx].icon.out" />
         </v-btn>
         <component :key="importedWidgets[idx].value.id" :is="importedWidgets[idx].value.component"
@@ -43,6 +43,7 @@ const { slideBtns, slideInOut } = useSlidePanels(itemEls, widgetsConfig)
 </script>
 <style scoped>
 eox-layout-item {
+  border-radius: 0px;
   background: rgb(var(--v-theme-surface))
 }
 
