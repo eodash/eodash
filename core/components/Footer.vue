@@ -5,7 +5,10 @@
       {{ eodash.brand.footerText ?? "" }}
     </p>
     <div class="footer-text">
-      {{ new Date().getFullYear() }} — <strong>{{ title }}</strong>
+      <a href="https://github.com/eodash/eodash" target="_blank">eodash</a> by
+      <a href="https://eox.at" target="_blank">
+        <img src="/EOX_Logo_white.svg" height="11px">
+      </a>
     </div>
   </v-footer>
 </template>
@@ -28,5 +31,8 @@ const { mdAndDown } = useDisplay()
 <style scoped lang='scss'>
 .footer-text {
   font-size: 0.8rem;
+}
+.footer-text a {
+  color: white;
 }
 </style>
