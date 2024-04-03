@@ -3,12 +3,12 @@
     <div v-if="inline" class="fill-height fill-width">
 
       <v-text-field base-color="primary" class="fill-height fill-width pa-2 align-center" type="date" bg-color="surface"
-        color="primary" density="comfortable" :rules="[isDate]" :min="minDate" :max="maxDate" label="Select Date"
+        color="primary" density="comfortable" :rules="[isDate]" label="Select Date"
         v-model="currentDate" variant="plain" hide-details />
     </div>
     <v-date-picker v-else ref="datePicker" :width="width" :height="height" hide-header v-model="currentDate"
-      color="primary" bg-color="surface" location="center" class="overflow-auto fill-height fill-width" :min="minDate"
-      :max="maxDate" position="relative" show-adjacent-months></v-date-picker>
+      color="primary" bg-color="surface" location="center" class="overflow-auto fill-height fill-width" 
+      position="relative" show-adjacent-months></v-date-picker>
   </span>
 </template>
 <script setup>

@@ -42,16 +42,17 @@ export class EodashCollection {
       this.#collectionStac = new Collection(stac);
     }
 
-    if(stac.endpointtype === "GeoDB") {
+    if(stac && stac.endpointtype === "GeoDB") {
       // Special handling of point based data
       const allFeatures = generateFeatures(stac.links);
       layersJson.unshift({
         type: "Vector",
         properties: {
-          id: "features",
+          id: stac.id,
         },
         source: {
           type: "Vector",
+          // @ts-ignore
           url: "data:," + encodeURIComponent(JSON.stringify(allFeatures)),
           format: "GeoJSON",
         },
@@ -117,7 +118,7 @@ export class EodashCollection {
         displayFootprint: false,
         data: item,
         properties: {
-          id: "stacBasedLayer",
+          id: item.id,
         },
       };
     } else {
@@ -130,7 +131,7 @@ export class EodashCollection {
           format: 'GeoJSON',
         },
         properties: {
-          id: "fallbackLayer",
+          id: item.id,
         },
       };
     }
