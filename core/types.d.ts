@@ -231,23 +231,31 @@ export type BackgroundWidget<T extends ExecutionTime = "compiletime"> = Omit<Web
  * A specific object should be provided based on the type of the widget.
  * @group Eodash
  */
+
+
+/**
+ * renders markdown into a dialog that apears once the page is loaded.
+ * Powered by [eox-storytelling](https://eox-a.github.io/EOxElements/?path=/docs/elements-eox-storytelling--docs)
+ * @group Eodash
+ **/
+export interface MarkdownDialog {
+  markdown?: string
+  unstyled?: boolean
+  markdownUrl?: `${'https://' | 'http://'}${string}`;
+  showNav?: boolean,
+  nav?: Array
+  fullscreen?: boolean
+}
+
 export interface Template<T extends ExecutionTime = "compiletime"> {
   /**
    * Gap between widgets
    */
   gap?: number;
   /**
-   * renders markdown into a dialog that apears once the page is loaded.
-   * Powered by [eox-storytelling](https://eox-a.github.io/EOxElements/?path=/docs/elements-eox-storytelling--docs)
+   * Shows Dialog that will be shown on the `/privacy-policy` route.
    */
-  intro?: {
-    markdown?: string
-    unstyled?: boolean
-    markdownUrl?: ExternalURL
-    showNav?: boolean,
-    nav?: Array
-    fullscreen?: boolean
-  }
+  privacyPolicy?: MarkdownDialog
   /**
    * Widget rendered as the dashboard background.
    * Has the same specifications of `Widget` without the `title` and  `layout` properties
@@ -259,10 +267,8 @@ export interface Template<T extends ExecutionTime = "compiletime"> {
    */
   widgets: Widget<T>[]
 }
-/** @ignore */
-export type ExternalURL = `${'https://' | 'http://'}${string}`;
-/** @ignore */
-export type InternalRoute = `/${string}`
+
+
 /** @ignore */
 export type StacEndpoint = `${'https://' | 'http://'}${string}/catalog.json`
 
@@ -271,6 +277,26 @@ export type StacEndpoint = `${'https://' | 'http://'}${string}/catalog.json`
  * @group Eodash
  */
 export type ExecutionTime = "runtime" | "compiletime";
+
+/**
+ * Renders buttons that redirects users to
+ * external websites
+ * @group Eodash
+ */
+export interface ExternalRoute {
+  to: `${'https://' | 'http://'}${string}`;
+  title: string
+}
+
+/**
+ * Renders an internal route button that shows
+ * a dialog from the configured markdown.
+ * @group Eodash
+ */
+export type InternalRoute = {
+  to: `/${string}`,
+  title: string,
+} & MarkdownDialog
 
 /**
  * Eodash instance API
@@ -288,10 +314,7 @@ export interface Eodash<T extends ExecutionTime = "compiletime"> {
   /**
   * Renders navigation buttons on the app header.
   **/
-  routes?: Array<{
-    title: string,
-    to: ExternalURL | InternalRoute
-  }>
+  routes?: Array<InternalRoute | ExternalRoute>
   /**
    * Brand specifications.
    */

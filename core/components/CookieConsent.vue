@@ -1,9 +1,8 @@
 <template>
   <span>
-
     <Transition mode="in-out" :duration="1">
-      <v-alert v-if="show" class="banner" variant="elevated" position="fixed" color="background" icon="mdi-cookie"
-        prominent>
+      <v-alert v-if="show" absolute class="banner" width="100%" variant="elevated" position="absolute"
+        :style="{ bottom: mainRect['bottom'] + 'px', zIndex: 10 }" color="background" icon="mdi-cookie" prominent>
         <v-row>
           <v-col>
             <p class="text-center">
@@ -31,6 +30,7 @@
 <script setup>
 import { useCookies } from 'vue3-cookies'
 import { ref } from 'vue'
+import { useLayout } from "vuetify"
 
 const show = ref(false)
 const { cookies } = useCookies()
@@ -48,12 +48,6 @@ const ignoreCookies = () => {
   show.value = false
 }
 
+const { mainRect } = useLayout()
+
 </script>
-<style scoped lang='scss'>
-.banner {
-  left: 0;
-  bottom: 0;
-  width: 100%;
-  z-index: 10000;
-}
-</style>

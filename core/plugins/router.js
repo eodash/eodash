@@ -6,15 +6,11 @@ const routes = [
     redirect: '/dashboard'
   },
   {
-    path: '/dashboard',
+    path: '/:dashboard',
     name: 'Dashboard',
     component: () => import('@/views/Dashboard.vue'),
   },
-  {
-    path: '/privacy-policy',
-    name: 'PrivacyPolicy',
-    component: () => import('@/views/Dashboard.vue'),
-  }
+
 ];
 
 const router = createRouter({

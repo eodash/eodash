@@ -1,6 +1,6 @@
 <template>
   <HeaderComponent />
-  <IntroDialog v-if="eodash.template.intro" />
+  <Dialog />
   <TemplateComponent :style="`height: calc(100dvh - ${mainRect['top'] + mainRect['bottom']}px)`" />
   <CookiesBanner />
   <FooterComponent />
@@ -9,6 +9,7 @@
 <script setup>
 import { useEodashRuntime } from "@/composables/DefineEodash";
 import CookiesBanner from "@/components/CookieConsent.vue"
+import Dialog from "@/components/Dialog.vue";
 import { useRouteParams, useUpdateTheme } from "@/composables";
 import { useSTAcStore } from '@/store/stac';
 import { defineAsyncComponent } from "vue";
@@ -35,8 +36,6 @@ const TemplateComponent = smAndDown.value ?
 
 const HeaderComponent = defineAsyncComponent(() => import(`@/components/Header.vue`))
 const FooterComponent = defineAsyncComponent(() => import(`@/components/Footer.vue`))
-
-const IntroDialog = (eodash.template.intro && defineAsyncComponent(() => import("@/components/IntroDialog.vue")))
 
 const { mainRect } = useLayout()
 

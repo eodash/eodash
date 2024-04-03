@@ -1,5 +1,4 @@
 import { indicator } from '@/store/States';
-
 /**
  * loads font in the app using `webfontloader`
  * @param {string} [family="Roboto"]
@@ -44,4 +43,13 @@ export const assignIndicator = (selectedSTAC) => {
   } else {
     indicator.value = ""
   }
+}
+
+/**
+ *  InternalRoute type guard
+ * @param {import("@/types").InternalRoute | import("@/types").ExternalRoute| undefined} val
+ * @returns {val is import("@/types").InternalRoute}
+ */
+export function isInternalRoute(val) {
+  return val?.to.startsWith('/') ?? false
 }
