@@ -3,7 +3,8 @@
     @update:modelValue="handleCloseDialog" v-model="dialog">
     <v-card class="ma-2 pa-2">
       <v-card-actions>
-        <v-btn icon variant="text" @click="closeDialog">&#x2715;</v-btn>
+        <v-btn icon variant="text" position="fixed" style="right: 8px;" class="pa-2"
+          @click="closeDialog">&#x2715;</v-btn>
       </v-card-actions>
       <eox-storytelling v-bind="storyProps" />
     </v-card>

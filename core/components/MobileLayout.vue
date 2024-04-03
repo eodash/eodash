@@ -5,7 +5,8 @@
 
     <div v-show="activeIdx === idx" class="overlay pa-2" :style="{ bottom: tabsBottom }"
       v-for="(importedWidget, idx) in importedWidgets" :key="idx">
-      <v-btn icon variant="text" class="close-btn" @click="activeIdx = -1">&#x2715;</v-btn>
+      <v-btn icon position="fixed" style="right: 8px; z-index: 100;" variant="text" class="pa-2"
+        @click="activeIdx = -1">&#x2715;</v-btn>
       <component :key="importedWidget.value.id" :is="importedWidget.value.component" v-show="activeIdx === idx"
         v-bind="importedWidget.value.props" />
     </div>
@@ -54,7 +55,7 @@ onMounted(() => {
 }
 
 .close-btn {
-  position: relative;
+  position: absolute;
   height: 1rem;
   font-size: 0.8rem;
 }
