@@ -2,11 +2,13 @@
   <HeaderComponent />
   <IntroDialog v-if="eodash.template.intro" />
   <TemplateComponent :style="`height: calc(100dvh - ${mainRect['top'] + mainRect['bottom']}px)`" />
+  <CookiesBanner />
   <FooterComponent />
 </template>
 
 <script setup>
 import { useEodashRuntime } from "@/composables/DefineEodash";
+import CookiesBanner from "@/components/CookieConsent.vue"
 import { useRouteParams, useUpdateTheme } from "@/composables";
 import { useSTAcStore } from '@/store/stac';
 import { defineAsyncComponent } from "vue";
