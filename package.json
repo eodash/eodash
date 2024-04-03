@@ -50,6 +50,7 @@
     "vite-plugin-vuetify": "^2.0.0",
     "vue": "^3.2.0",
     "vue-router": "^4.0.0",
+    "vue3-cookies": "^1.0.6",
     "vuetify": "^3.5.1",
     "webfontloader": "^1.6.28"
   },
