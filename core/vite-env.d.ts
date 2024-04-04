@@ -14,6 +14,9 @@ declare module '@eox/stacinfo' {
 declare module '@eox/map' {
   export const EOxMap: CustomElementConstructor
 }
+declare module '@eox/itemfilter' {
+  export const EOxItemFilter: CustomElementConstructor
+}
 declare module 'user:config' {
   const eodash: import("@/types").Eodash | Promise<import("@/types").Eodash>;
   export default eodash

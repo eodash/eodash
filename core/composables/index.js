@@ -48,10 +48,10 @@ export const useSlidePanels = (elements, configs) => {
     m.layout.x == 0
       ? "left"
       : m.layout.x == 12 - m.layout.w
-      ? "right"
-      : m.layout.y < 6
-      ? "up"
-      : "down"
+        ? "right"
+        : m.layout.y < 6
+          ? "up"
+          : "down"
   );
 
   /**
@@ -123,17 +123,15 @@ export const useSlidePanels = (elements, configs) => {
           parentStyle.transform = "translateX(100%)";
           break;
         case "up":
-          parentStyle.transform = `translateY(-${
-            (configs[idx].layout.y / configs[idx].layout.h) * 100 + 100
-          }%)`;
+          parentStyle.transform = `translateY(-${(configs[idx].layout.y / configs[idx].layout.h) * 100 + 100
+            }%)`;
           break;
         case "down":
-          parentStyle.transform = `translateY(${
-            (Math.max(0, 12 - configs[idx].layout.y - configs[idx].layout.h) /
-              configs[idx].layout.h) *
-              100 +
+          parentStyle.transform = `translateY(${(Math.max(0, 12 - configs[idx].layout.y - configs[idx].layout.h) /
+            configs[idx].layout.h) *
+            100 +
             100
-          }%)`;
+            }%)`;
           break;
 
         default:
@@ -210,7 +208,7 @@ export const useRouteParams = () => {
     }
     watch(
       [datetime, mapInstance, currentUrl, indicator],
-      ([updatedDate, updatedMap, updatedUrl, updatedIndicator]) => {
+      ([updatedDate, updatedMap, _updatedUrl, updatedIndicator]) => {
         const [x, y] = updatedMap?.getView().getCenter() ?? [0, 0];
         // lets reduce unnecessary accuracy
         const currentQuery = router.currentRoute.value.query;

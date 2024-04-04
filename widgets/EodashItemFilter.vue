@@ -1,18 +1,10 @@
 <template>
-  <DynamicWebComponent
-    :link="link"
-    tag-name="eox-itemfilter"
-    :properties="properties"
-    :on-mounted="onMounted"
-  />
+  <DynamicWebComponent :link="link" tag-name="eox-itemfilter" :properties="properties" :on-mounted="onMounted" />
 </template>
 <script setup>
-import { inject, watch } from "vue";
-import { eodashKey } from "@/store/Keys";
 import DynamicWebComponent from "@/components/DynamicWebComponent.vue";
 
 const link = () => import("@eox/itemfilter");
-const eodashConfig = /** @type {import("@/types").Eodash} */ inject(eodashKey);
 
 const properties = {
   config: {
@@ -36,23 +28,24 @@ const properties = {
   },
 };
 
-/** @type {import("@/types").WebComponentProps["onMounted"]} */
+/** @type {import("../core/types").WebComponentProps["onMounted"]}*/
 const onMounted = (el, store, router) => {
   /**
    * @typedef {object} Item
    * @property {string} href
    * */
   /** @type {any} */ (el).apply(
-    // Only list child elements in list
-    store?.stac.filter((item) => item.rel === "child")
-  );
+  // Only list child elements in list
+  store.stac?.filter((item) => item.rel === "child")
+);
   // Check if indicator is selected
   const { query } = router.currentRoute.value;
   if ("indicator" in query) {
-    const match = store?.stac.find((item) => item.id === query.indicator);
+    const match = store.stac?.find((item) => item.id === query.indicator);
     if (match) {
-        (el).selectedResult = match;
-        store.loadSelectedSTAC(match.href);
+      //@ts-expect-error
+      (el).selectedResult = match;
+      store.loadSelectedSTAC(match.href);
     }
   }
   /** @type {any} */ (el).config.onSelect =

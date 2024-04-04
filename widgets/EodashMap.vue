@@ -1,11 +1,6 @@
 <template>
-  <DynamicWebComponent
-    :link="link"
-    tag-name="eox-map"
-    :properties="properties"
-    :on-mounted="onMounted"
-    :on-unmounted="onUnmounted"
-  />
+  <DynamicWebComponent :link="link" tag-name="eox-map" :properties="properties" :on-mounted="onMounted"
+    :on-unmounted="onUnmounted" />
 </template>
 <script setup>
 import { inject, watch } from "vue";
@@ -40,7 +35,7 @@ const link = () => import("@eox/map");
 let handleMoveEnd;
 
 /** @type {import("@/types").WebComponentProps["onMounted"]} */
-const onMounted = (el, store, router) => {
+const onMounted = (el, store, _router) => {
   mapInstance.value = /** @type {any} */ (el).map;
 
   const { selectedStac } = storeToRefs(store);
@@ -60,8 +55,8 @@ const onMounted = (el, store, router) => {
         const eodash = new EodashCollection(childCollUrl);
         if (updatedTime) {
           /** @type {any} */ (el).layers = await eodash.createLayersJson(
-            new Date(updatedTime)
-          );
+          new Date(updatedTime)
+        );
         } else {
           /** @type {any} */ (el).layers = await eodash.createLayersJson();
         }
