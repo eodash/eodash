@@ -237,6 +237,10 @@ export interface Template<T extends ExecutionTime = "compiletime"> {
    */
   gap?: number;
   /**
+   * loading widget
+   */
+  loading?: BackgroundWidget<T>
+  /**
    * Widget rendered as the dashboard background.
    * Has the same specifications of `Widget` without the `title` and  `layout` properties
    * @see {@link Widget}

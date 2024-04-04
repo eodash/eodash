@@ -26,6 +26,20 @@ const eodash = reactive({
     footerText: "Lorem ipsum dolor sit amet, consectetur adipiscing elit."
   },
   template: {
+    loading: {
+      id: Symbol(),
+      type: "web-component",
+      widget: {
+        link: "https://cdn.jsdelivr.net/npm/ldrs/dist/auto/grid.js",
+        tagName: "l-grid",
+        properties: {
+          class: "align-self-center justify-self-center",
+          size: "120",
+          speed: "1.5",
+          color: "#004170"
+        }
+      }
+    },
     background: {
       id: Symbol(),
       type: "internal",
