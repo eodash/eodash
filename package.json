@@ -25,10 +25,10 @@
     "lint": "eslint . --fix",
     "cypress": "cypress open --component",
     "test": "cypress run --component",
-    "docs:dev": "vitepress dev docs",
+    "docs:dev": "vitepress dev docs --port 3333",
     "docs:build": "npm run docs:generate && vitepress build docs",
     "docs:preview": "vitepress preview docs",
-    "docs:generate": "typedoc --plugin typedoc-plugin-markdown core/store/Types.ts --tsconfig tsconfig.json --out docs --readme none"
+    "docs:generate": "typedoc --options typedoc.config.json"
   },
   "dependencies": {
     "@eox/layout": "^0.1.0",
