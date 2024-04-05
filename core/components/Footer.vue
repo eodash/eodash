@@ -5,7 +5,7 @@
       {{ eodash.brand.footerText ?? "" }}
     </p>
     <div class="footer-text">
-      {{ new Date().getFullYear() }} — <strong>{{ title }}</strong>
+      {{ new Date().getFullYear() }} — <strong>{{ eodash.brand?.name }}</strong>
     </div>
   </v-footer>
 </template>
@@ -22,7 +22,6 @@ import { useDisplay } from 'vuetify/lib/framework.mjs';
 const footer = ref(null)
 const eodash = /** @type {import("@/types").Eodash} */(inject(eodashKey))
 
-const title = eodash.brand?.shortName ?? eodash.brand?.name
 const { mdAndDown } = useDisplay()
 </script>
 <style scoped lang='scss'>

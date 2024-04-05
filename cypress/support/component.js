@@ -1,9 +1,11 @@
+
 import { mount } from 'cypress/vue'
 import { Suspense, h } from 'vue'
 import './commands';
 import { VApp } from 'vuetify/components'
-import { mockedEodashConfig, registerPlugins } from './utils';
-import { eodashConfigKey } from '@/store/Keys';
+import { registerPlugins } from './utils';
+import { eodashKey } from '@/store/Keys';
+import eodash from '@/eodash';
 
 /**
  * @param {import('vue').DefineComponent<{},{},any> | Element} OriginalComponent
@@ -27,13 +29,14 @@ export const vMountComponent = (OriginalComponent, options = {}) => {
 
   // Add plugins
   options.global.plugins.push({
-    install(app) {
-      registerPlugins(app, options.vuetify, options.pinia, options.router)
+    async install(app) {
+      await registerPlugins(app, options.vuetify, options.pinia, options.router)
     },
   })
 
   options.global.provide = {
-    [eodashConfigKey]: mockedEodashConfig,
+    //@ts-ignore
+    [eodashKey]: eodash,
   }
 
   return mount(

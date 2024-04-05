@@ -303,10 +303,6 @@ export interface Eodash<T extends ExecutionTime = "compiletime"> {
      */
     name: string;
     /**
-     * Alias that will be shown in the app footer if specified.
-     */
-    shortName?: string
-    /**
      * Brand logo
      */
     logo?: string;

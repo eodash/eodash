@@ -9,15 +9,7 @@ import { currentUrl } from './store/States';
 const eodash = reactive({
   id: 'demo',
   stacEndpoint: 'https://eurodatacube.github.io/eodash-catalog/RACE/catalog.json',
-  routes: [
-    {
-      title: "demo 1",
-      to: '/about'
-    },
-    {
-      title: "demo 2",
-      to: 'https://google.com'
-    }],
+  routes: [],
   brand: {
     name: 'Demo',
     font: {

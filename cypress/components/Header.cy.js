@@ -1,5 +1,5 @@
 import Header from '@/components/Header.vue'
-import { eodashConfigKey } from '@/store/Keys'
+import { eodashKey } from '@/store/Keys'
 
 describe('<Header />', () => {
   beforeEach(() => {
@@ -10,8 +10,8 @@ describe('<Header />', () => {
   it('render component and app title', () => {
     //@ts-ignore
     cy.get("@vue").then(({ options }) => {
-      const appTitle = /** @type {EodashConfig }*/
-        (options.global.provide[eodashConfigKey]).brand.name
+      const appTitle = /** @type {import('@/types').Eodash }*/
+        (options.global.provide[eodashKey]).brand.name
       cy.get('.cursor-pointer').should('have.text', appTitle)
     })
   })
@@ -20,7 +20,7 @@ describe('<Header />', () => {
   it('render configured routes btns', () => {
     //@ts-expect-error
     cy.get('@vue').then(({ options }) => {
-      const routeNames = /** @type {{ title:string; to:string }[]}*/(options.global.provide[eodashConfigKey].routes)
+      const routeNames = /** @type {{ title:string; to:string }[]}*/(options.global.provide[eodashKey].routes)
         .map(r => r.title)
       let i = 0
       while (i < routeNames.length) {

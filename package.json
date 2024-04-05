@@ -23,7 +23,7 @@
     "check:types": "vue-tsc --noEmit --skipLibCheck",
     "preview": "vite preview",
     "lint": "eslint . --fix",
-    "cypress": "cypress open --component",
+    "cypress": "cypress open --component ",
     "test": "cypress run --component",
     "docs:dev": "vitepress dev docs --port 3333",
     "docs:build": "npm run docs:generate && vitepress build docs",
@@ -56,7 +56,8 @@
   },
   "devDependencies": {
     "@babel/types": "^7.21.4",
-    "@types/node": "^18.15.0",
+    "@pinia/testing": "^0.1.3",
+    "@types/node": "latest",
     "@types/openlayers": "^4.6.23",
     "@types/webfontloader": "^1.6.38",
     "@vue/eslint-config-typescript": "^11.0.0",
