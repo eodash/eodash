@@ -1,10 +1,3 @@
-import { useSTAcStore } from "./store/stac"
-import type { Router } from "vue-router";
-import type { StacCatalog, StacCollection, StacItem } from "stac-ts";
-import type { Ref } from "vue"
-import type { ThemeDefinition } from "vuetify/lib/index.mjs";
-import type { Map } from "openlayers";
-
 /**
  * @group Eodash
  */
@@ -36,13 +29,13 @@ export interface WebComponentProps<T extends ExecutionTime = "compiletime"> {
    * @param el - web component
    * @param store - return value of the core STAC pinia store in `/core/store/stac.ts`
    */
-  onMounted?: (el: Element | null, store: ReturnType<typeof useSTAcStore>, router: Router) => (Promise<void> | void)
+  onMounted?: (el: Element | null, store: ReturnType<typeof import("./store/stac").useSTAcStore>, router: import("vue-router").Router) => (Promise<void> | void)
   /**
    * Triggered when the web component is unmounted from the DOM.
    * @param el - web component
    * @param store - return value of the core STAC pinia store in `/core/store/stac.ts`
    */
-  onUnmounted?: (el: Element | null, store: ReturnType<typeof useSTAcStore>, router: Router) => (Promise<void> | void)
+  onUnmounted?: (el: Element | null, store: ReturnType<typeof import("./store/stac").useSTAcStore>, router: import("vue-router").Router) => (Promise<void> | void)
 }
 
 
@@ -187,7 +180,9 @@ export interface FunctionalWidget<T extends ExecutionTime = "compiletime"> {
    * gets triggered whenever a STAC object is selected.
    * @param selectedSTAC - Currently selected STAC object
    */
-  defineWidget: (selectedSTAC: StacCatalog | StacCollection | StacItem | null) => Omit<StaticWidget<T>, 'layout' | 'slidable'>
+  defineWidget: (selectedSTAC: import("stac-ts").StacCatalog |
+    import("stac-ts").StacCollection | import("stac-ts").StacItem
+    | null) => Omit<StaticWidget<T>, 'layout' | 'slidable'>
   layout: {
     /**
      *  Horizontal start position. Integer between 1 and 12
@@ -303,17 +298,13 @@ export interface Eodash<T extends ExecutionTime = "compiletime"> {
      */
     name: string;
     /**
-     * Alias that will be shown in the app footer if specified.
-     */
-    shortName?: string
-    /**
      * Brand logo
      */
     logo?: string;
     /**
      * Dashboard theme as a custom [vuetifyJs theme](https://vuetifyjs.com/en/features/theme/).
      */
-    theme?: ThemeDefinition
+    theme?: import("vuetify/lib/index.mjs").ThemeDefinition
     /**
      * meta tags configuration, using unhead's [useSeoMeta](https://unhead.unjs.io/usage/composables/use-seo-meta)
      */
@@ -342,26 +333,26 @@ export interface EodashStore {
     /**
      * Currently selected STAC endpoint
      */
-    currentUrl: Ref<string>
+    currentUrl: import("vue").Ref<string>
     /**
     * OpenLayers map instance
     */
-    mapInstance: Ref<Map | null>
+    mapInstance: import("vue").Ref<import("openlayers").Map | null>
     /**
     * currently selected datetime
     */
-    datetime: Ref<string>
+    datetime: import("vue").Ref<string>
     /**
      * Currently selected indicator
      */
-    indicator: Ref<string>
+    indicator: import("vue").Ref<string>
   }
   actions: {};
   /**
    *  Pinia store definition used to navigate the root STAC catalog.
    */
   stac: {
-    useSTAcStore: typeof useSTAcStore
+    useSTAcStore: typeof import("./store/stac").useSTAcStore
   }
 }
 ///////
