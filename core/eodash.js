@@ -26,6 +26,21 @@ const eodash = reactive({
     footerText: "Demo configuration of eodash client",
   },
   template: {
+    loading: {
+      id: Symbol(),
+      type: "web-component",
+      widget: {
+        //https://uiball.com/ldrs/
+        link: "https://cdn.jsdelivr.net/npm/ldrs/dist/auto/mirage.js",
+        tagName: "l-mirage",
+        properties: {
+          class: "align-self-center justify-self-center",
+          size: "120",
+          speed: "2.5",
+          color: "#004170"
+        }
+      }
+    },
     background: {
       id: Symbol(),
       type: "internal",
