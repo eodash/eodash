@@ -30,12 +30,13 @@ const eodash = reactive({
       id: Symbol(),
       type: "web-component",
       widget: {
-        link: "https://cdn.jsdelivr.net/npm/ldrs/dist/auto/grid.js",
-        tagName: "l-grid",
+        //https://uiball.com/ldrs/
+        link: "https://cdn.jsdelivr.net/npm/ldrs/dist/auto/mirage.js",
+        tagName: "l-mirage",
         properties: {
           class: "align-self-center justify-self-center",
           size: "120",
-          speed: "1.5",
+          speed: "2.5",
           color: "#004170"
         }
       }
