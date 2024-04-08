@@ -43,7 +43,7 @@ export async function previewApp() {
     root: rootPath,
     base: userConfig.base ?? '',
     preview: {
-      port: userConfig.port ?? 8080,
+      port: isNaN(userConfig.port) ? 8080 : userConfig.port,
       open: userConfig.open,
       host: userConfig.host
     },
