@@ -55,12 +55,11 @@
     "widgets/**/*.d.ts",
     "widgets/**/*.tsx",
     "public/config.js",
-    "vite.config.js",
-    "cypress/**/*.ts",
-    "cypress/**/*.js",
-    "cypress/**/*.jsx",
-    "cypress/**/*.d.ts",
-    "cypress/**/*.tsx",
-    "cypress/**/*.vue",
+    "tests/cypress/**/*.ts",
+    "tests/cypress/**/*.js",
+    "tests/cypress/**/*.jsx",
+    "tests/cypress/**/*.d.ts",
+    "tests/cypress/**/*.tsx",
+    "tests/cypress/**/*.vue",
   ]
 }

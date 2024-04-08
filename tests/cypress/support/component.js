@@ -35,7 +35,7 @@ export const vMountComponent = (OriginalComponent, options = {}) => {
   })
 
   options.global.provide = {
-    //@ts-ignore
+    //@ts-expect-error
     [eodashKey]: eodash,
   }
 
@@ -50,7 +50,6 @@ export const vMountComponent = (OriginalComponent, options = {}) => {
       )
     }, options)
     .then((app) => {
-      //@ts-ignore
       return cy.wrap({ wrapper: app.wrapper.getComponent(OriginalComponent), options }).as('vue')
     })
 }

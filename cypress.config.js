@@ -42,5 +42,10 @@ export default defineConfig({
     },
     port: 3791,
     watchForFileChanges: false,
+    supportFile: "./tests/cypress/support/component.js",
+    indexHtmlFile: "./tests/cypress/support/component-index.html",
+    fixturesFolder: "./tests/cypress/fixtures",
+    screenshotsFolder: "./tests/cypress/screenshots",
+    downloadsFolder: "./tests/cypress/screenshots",
   }
 })

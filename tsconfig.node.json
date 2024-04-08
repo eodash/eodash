@@ -11,6 +11,7 @@
     },
     "include": [
         "bin/**/*.js",
+        "tests/cli/**/*.js",
         "cypress.config.js"
     ],
 }

@@ -24,8 +24,8 @@ pnpm-debug.log*
 *.sw?
 
 # Cypress 
-cypress/downloads
-cypress/screenshots
+tests/cypress/downloads
+tests/cypress/screenshots
 
 # docs
 docs/.vitepress/cache
