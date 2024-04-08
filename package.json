@@ -26,7 +26,7 @@
     "cypress": "cypress open --component ",
     "vitest": "vitest",
     "test": "npm run test:client && npm run test:cli",
-    "test:cli": "vitest run tests/cli",
+    "test:cli": "vitest run  tests/cli --isolate  --pool=forks",
     "test:client": "cypress run --component",
     "docs:dev": "vitepress dev docs --port 3333",
     "docs:build": "npm run docs:generate && vitepress build docs",
