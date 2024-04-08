@@ -1,5 +1,5 @@
 import { reactive } from "vue";
-import { currentUrl } from './store/States';
+import { currentUrl } from "./store/States";
 
 /**
  * Reactive Edoash Instance Object. provided globally in the app,
@@ -7,105 +7,95 @@ import { currentUrl } from './store/States';
  * @type {import("./types").Eodash}
  */
 const eodash = reactive({
-  id: 'demo',
-  stacEndpoint: 'https://eurodatacube.github.io/eodash-catalog/RACE/catalog.json',
+  id: "demo",
+  stacEndpoint: "https://esa-eodash.github.io/RACE-catalog/RACE/catalog.json",
   routes: [],
   brand: {
-    name: 'Demo',
+    name: "Demo",
     font: {
-      family: 'Poppins'
+      family: "Poppins",
     },
     theme: {
       colors: {
-        primary: '#004170',
-        secondary: '#00417044',
+        primary: "#004170",
+        secondary: "#00417044",
         surface: "#f0f0f0f0",
-      }
+      },
     },
     meta: {},
-    footerText: "Lorem ipsum dolor sit amet, consectetur adipiscing elit."
+    footerText: "Demo configuration of eodash client",
   },
   template: {
+    loading: {
+      id: Symbol(),
+      type: "web-component",
+      widget: {
+        //https://uiball.com/ldrs/
+        link: "https://cdn.jsdelivr.net/npm/ldrs/dist/auto/mirage.js",
+        tagName: "l-mirage",
+        properties: {
+          class: "align-self-center justify-self-center",
+          size: "120",
+          speed: "2.5",
+          color: "#004170"
+        }
+      }
+    },
     background: {
       id: Symbol(),
       type: "internal",
       widget: {
-        name: 'EodashMap'
-      }
+        name: "EodashMap",
+      },
     },
     widgets: [
       {
         id: Symbol(),
+        type: "internal",
+        title: "itemfilter",
+        layout: { x: 0, y: 0, w: 3, h: 12 },
         slidable: false,
-        title: 'Tools',
-        layout: { "x": 0, "y": 0, "w": 3, "h": 12 },
         widget: {
-          link: 'https://cdn.skypack.dev/@eox/itemfilter',
-          properties: {
-            config: {
-              titleProperty: "title",
-              filterProperties: [
-                {
-                  keys: ["title", "themes"],
-                  title: "Search",
-                  type: "text",
-                  expanded: true,
-                },
-                {
-                  key: "themes",
-                  title: "Theme",
-                  type: "multiselect",
-                  featured: true
-                },
-              ],
-              aggregateResults: "themes",
-              enableHighlighting: true,
-            }
-          },
-          onMounted: async function (el, store, _) {
-            /**
-            * @typedef {object} Item
-            * @property {string} href
-            * */
-
-            /** @type {any} */(el).apply(store?.stac);
-            /** @type {any} */(el).config.onSelect =
-              /**
-               * @param {Item} item
-               * */
-              async (item) => {
-                console.log(item);
-                await store.loadSelectedSTAC(item.href);
-              };
-          },
-          tagName: 'eox-itemfilter'
+          name: "EodashItemFilter",
         },
-        type: 'web-component'
       },
       {
         id: Symbol(),
-        title: 'Information',
-        layout: { "x": 9, "y": 0, "w": 3, "h": 12 },
+        type: "internal",
+        title: "datepicker",
+        layout: { x: 5, y: 11, w: 2, h: 1 },
+        slidable: false,
         widget: {
-          link: async () => await import('@eox/stacinfo'),
+          name: "EodashDatePicker",
+          properties: {
+            inline: true,
+          },
+        },
+      },
+      {
+        id: Symbol(),
+        title: "Information",
+        layout: { x: 9, y: 0, w: 3, h: 12 },
+        widget: {
+          link: async () => await import("@eox/stacinfo"),
           properties: {
             for: currentUrl,
             allowHtml: "true",
-            styleOverride: "#properties li > .value {font-weight: normal !important;}",
+            styleOverride:
+              "#properties li > .value {font-weight: normal !important;}",
             header: "[]",
 
             subheader: "[]",
             properties: '["description"]',
             featured: "[]",
-            footer: "[]"
+            footer: "[]",
           },
-          tagName: 'eox-stacinfo'
+          tagName: "eox-stacinfo",
         },
-        type: 'web-component'
+        type: "web-component",
       },
-    ]
-  }
+    ],
+  },
 });
-
 
 export default eodash;

@@ -1,5 +1,6 @@
 import { Collection, Item } from 'stac-js';
 import { toAbsolute } from 'stac-js/src/http.js';
+import { generateFeatures } from './helpers'
 
 export class EodashCollection {
   /** @type {string | undefined} */
@@ -20,33 +21,7 @@ export class EodashCollection {
    * @async
    */
   createLayersJson = async (item = null) => {
-    let stacItem;
-    if (item instanceof Date) {
-      // if collectionStac not yet initialized we do it here
-      if (!this.#collectionStac) {
-        //@ts-expect-error
-        const response = await fetch(this.#collectionUrl);
-        const stac = await response.json();
-        this.#collectionStac = new Collection(stac);
-      }
-      stacItem = this.getItems().sort((a, b) => {
-        //@ts-expect-error
-        const distanceA = Math.abs(new Date(a.datetime) - item);
-        //@ts-expect-error
-        const distanceB = Math.abs(new Date(b.datetime) - item);
-        return distanceA - distanceB;
-      })[0];
-      this.selectedItem = stacItem;
-    } else {
-      stacItem = item;
-    }
-    const response = await fetch(
-      stacItem
-        ? toAbsolute(stacItem.href, this.#collectionUrl)
-        : this.#collectionUrl
-    );
-    const stac = await response.json();
-
+    let stacItem, stac;
     // TODO get auxiliary layers from collection
     let layersJson = [
       {
@@ -59,21 +34,73 @@ export class EodashCollection {
         },
       },
     ];
-
-    if (!stacItem) {
-      // no specific item was requested; render last item
+    // Load collectionstac if not yet initialized
+    if (!this.#collectionStac) {
+      //@ts-expect-error
+      const response = await fetch(this.#collectionUrl);
+      stac = await response.json();
       this.#collectionStac = new Collection(stac);
-      const items = this.getItems();
-      this.selectedItem = items[items.length - 1];
-      layersJson = await this.createLayersJson(this.selectedItem);
+    }
+
+    if(stac && stac.endpointtype === "GeoDB") {
+      // Special handling of point based data
+      const allFeatures = generateFeatures(stac.links);
+      layersJson.unshift({
+        type: "Vector",
+        properties: {
+          id: stac.id,
+        },
+        source: {
+          type: "Vector",
+          // @ts-ignore
+          url: "data:," + encodeURIComponent(JSON.stringify(allFeatures)),
+          format: "GeoJSON",
+        },
+        style: {
+          "circle-radius": 5,
+          "circle-fill-color": "#00417077",
+          "circle-stroke-color": "#004170",
+          "fill-color": "#00417077",
+          "stroke-color": "#004170",
+        }
+      });
       return layersJson;
     } else {
-      // specific item was requested
-      const item = new Item(stac);
-      this.selectedItem = item;
-      //@ts-expect-error
-      layersJson.unshift(this.buildJson(item));
-      return layersJson;
+      if (item instanceof Date) {
+        // if collectionStac not yet initialized we do it here
+        stacItem = this.getItems().sort((a, b) => {
+          //@ts-expect-error
+          const distanceA = Math.abs(new Date(a.datetime) - item);
+          //@ts-expect-error
+          const distanceB = Math.abs(new Date(b.datetime) - item);
+          return distanceA - distanceB;
+        })[0];
+        this.selectedItem = stacItem;
+      } else {
+        stacItem = item;
+      }
+      const response = await fetch(
+        stacItem
+          ? toAbsolute(stacItem.href, this.#collectionUrl)
+          : this.#collectionUrl
+      );
+      stac = await response.json();
+      
+      if (!stacItem) {
+        // no specific item was requested; render last item
+        this.#collectionStac = new Collection(stac);
+        const items = this.getItems();
+        this.selectedItem = items[items.length - 1];
+        layersJson = await this.createLayersJson(this.selectedItem);
+        return layersJson;
+      } else {
+        // specific item was requested
+        const item = new Item(stac);
+        this.selectedItem = item;
+        //@ts-expect-error
+        layersJson.unshift(this.buildJson(item));
+        return layersJson;
+      }
     }
   }
 
@@ -83,12 +110,16 @@ export class EodashCollection {
   buildJson(item) {
     let json;
     // TODO implement other types, such as COG
-    if (/** @type {import('stac-ts').StacLink[]} */(item.links).find((l) => l.rel === 'wms' || l.rel === 'wmts')) {
+    if (/** @type {import('stac-ts').StacLink[]} */(item.links)
+      .find((l) => l.rel === 'wms' || l.rel === 'wmts' || l.rel === 'xyz')) {
       json = {
         type: 'STAC',
         displayWebMapLink: true,
         displayFootprint: false,
         data: item,
+        properties: {
+          id: item.id,
+        },
       };
     } else {
       // fall back to rendering the feature
@@ -98,6 +129,9 @@ export class EodashCollection {
           type: 'Vector',
           url: 'data:,' + encodeURIComponent(JSON.stringify(item.geometry)),
           format: 'GeoJSON',
+        },
+        properties: {
+          id: item.id,
         },
       };
     }
