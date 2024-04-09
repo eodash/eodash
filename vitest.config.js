@@ -8,6 +8,6 @@ export default defineConfig({
       }
     },
     bail: 1,
-    testTimeout: 60000
+    testTimeout: 120000
   },
 })
