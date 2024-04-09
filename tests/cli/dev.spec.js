@@ -59,7 +59,7 @@ describe("test dev command", () => {
     await rm(testPublic, { recursive: true })
   })
 
-  it.only("test --runtime flag", async () => {
+  it("test --runtime flag", async () => {
     const runtimeFile = fileURLToPath(new URL("../../testRuntime.js", import.meta.url));
     await writeFile(runtimeFile, `export default ${JSON.stringify(mockedEodash)}`)
 
