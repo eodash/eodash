@@ -265,10 +265,6 @@ export type ExecutionTime = "runtime" | "compiletime";
  */
 export interface Eodash<T extends ExecutionTime = "compiletime"> {
   /**
-   * Instance ID.
-   */
-  id: string;
-  /**
    * Root STAC catalog endpoint
    **/
   stacEndpoint: StacEndpoint

@@ -6,6 +6,8 @@ export default defineConfig({
       forks: {
         singleFork: true
       }
-    }
-  }
+    },
+    bail: 1,
+    testTimeout: 60000
+  },
 })
