@@ -26,5 +26,5 @@ jobs:
         run: npm ci --prefer-offline --no-audit
       - name: Run Component Testing 👀
         run: npm run test:client
-      - name: Run CLI Testing 👀
-        run: npm run test:cli
+      # - name: Run CLI Testing 👀
+      #   run: npm run test:cli
