@@ -27,7 +27,7 @@ const currentDate = computed({
     }
     //@ts-expect-error
     if (updatedDate instanceof Date && !isNaN(updatedDate)) {
-      datetime.value = updatedDate.toISOString()
+      datetime.value = new Date(updatedDate.getTime() - updatedDate.getTimezoneOffset() * 60000).toISOString()
     } else {
       datetime.value = new Date().toISOString()
     }
