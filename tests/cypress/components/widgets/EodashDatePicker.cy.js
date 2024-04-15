@@ -4,7 +4,7 @@ import EodashDatePicker from "^/EodashDatePicker.vue"
 describe("<EodashDatePicker/>", () => {
   const day = Math.floor(Math.random() * (30 - 1 + 1) + 1)
   const month = new Date().getMonth() + 1
-  const randomDate = `${new Date().getFullYear()}-${month < 10 ? `0${month}` : month}-${day}`
+  const randomDate = `${new Date().getFullYear()}-${month < 10 ? `0${month}` : month}-${day < 10 ? `0${day}` : day}`
   describe('primary date picker', () => {
     beforeEach(() => {
       cy.vMount(EodashDatePicker)
