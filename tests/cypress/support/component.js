@@ -17,11 +17,6 @@ import eodash from '@/eodash';
  */
 export const vMountComponent = (OriginalComponent, options = {}) => {
   options.global = options.global ?? {}
-  options.global.mocks = options.global.mocks ?? {
-    "$router": {
-      push: cy.spy().as('routerPush')
-    }
-  }
   options.global.plugins = options.global.plugins ?? []
 
   const props = options.props ?? {}
@@ -30,7 +25,7 @@ export const vMountComponent = (OriginalComponent, options = {}) => {
   // Add plugins
   options.global.plugins.push({
     async install(app) {
-      await registerPlugins(app, options.vuetify, options.pinia, options.router)
+      await registerPlugins(app, options)
     },
   })
 

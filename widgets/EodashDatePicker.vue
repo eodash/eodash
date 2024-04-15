@@ -2,8 +2,9 @@
   <span class="fill-height fill-width align-center justify-center">
     <div v-if="inline" class="fill-height fill-width">
 
-      <v-text-field base-color="primary" class="fill-height fill-width pa-2 align-center" type="date" bg-color="surface"
-        color="primary" density="comfortable" label="Select Date" v-model="currentDate" variant="plain" hide-details />
+      <v-text-field ref="inlineDatePicker" base-color="primary" class="fill-height fill-width pa-2 align-center"
+        type="date" bg-color="surface" color="primary" density="comfortable" label="Select Date" v-model="currentDate"
+        variant="plain" hide-details />
     </div>
     <v-date-picker v-else ref="datePicker" :width="width" :height="height" hide-header v-model="currentDate"
       color="primary" bg-color="surface" location="center" class="overflow-auto fill-height fill-width"
@@ -38,6 +39,10 @@ const currentDate = computed({
  * @type {import("vue").Ref<import("vuetify/components").VDatePicker | null>}
  **/
 const datePicker = ref(null)
+/**
+ * @type {import("vue").Ref<import("vuetify/components").VTextField | null>}
+ **/
+const inlineDatePicker = ref(null)
 /** @type {import("vue").Ref<string|undefined>} */
 const width = ref()
 /** @type {import("vue").Ref<string|undefined>} */

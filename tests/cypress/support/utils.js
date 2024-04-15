@@ -2,27 +2,31 @@ import { createVuetify } from 'vuetify';
 import { createWebHistory, createRouter } from 'vue-router'
 import { routes } from '@/plugins/router'
 import { createTestingPinia } from "@pinia/testing"
-
 /**
  * @param {import("vue").App} app
- * @param {import('vuetify/lib/framework.mjs').VuetifyOptions} vuetifyOptions
- * @param {import("@pinia/testing").TestingOptions | undefined} piniaOptions
- * @param {import('vue-router').Router | undefined} customRouter
+ * @param {Parameters<typeof import('cypress/vue').mount >['1'] & {
+ * vuetify?:import('vuetify/lib/framework.mjs').VuetifyOptions;
+ * pinia?:import('@pinia/testing').TestingOptions;
+ * router?:import('vue-router').Router
+ * } } options
  *
  */
-export const registerPlugins = async (app, vuetifyOptions = {}, piniaOptions = { createSpy: cy.stub() }, customRouter) => {
-  const router = customRouter ? customRouter : createRouter({
+export const registerPlugins = async (app, options) => {
+
+  options.router = options.router ?? createRouter({
     routes,
     history: createWebHistory(process.env.BASE_URL)
   })
-  app.use(router)
+  app.use(options.router)
 
-  const vuetify = createVuetify(vuetifyOptions)
+  options.vuetify = options.vuetify ?? {}
+  const vuetify = createVuetify(options.vuetify)
   app.use(vuetify)
 
-  const pinia = createTestingPinia(piniaOptions)
+  options.pinia = options.pinia ?? { createSpy: cy.stub() }
+  const pinia = createTestingPinia(options.pinia)
   app.use(pinia)
 
-  router.push('/dashboard')
-  await router.isReady()
+  options.router.push('/dashboard')
+  await options.router.isReady()
 }

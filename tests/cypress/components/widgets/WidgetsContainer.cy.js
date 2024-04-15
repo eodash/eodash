@@ -1,4 +1,3 @@
-//@ts-nocheck
 import WidgetsContainer from '^/WidgetsContainer.vue'
 
 describe('<WidgetsContainer />', () => {
@@ -8,8 +7,7 @@ describe('<WidgetsContainer />', () => {
       title: 'Tools',
       type: 'web-component',
       widget: {
-        link: '@eox/itemfilter',
-        node_module: true,
+        link: () => import('@eox/itemfilter'),
         properties: {
           config: {
             titleProperty: "title",
@@ -38,8 +36,7 @@ describe('<WidgetsContainer />', () => {
       title: 'Map',
       type: "web-component",
       widget: {
-        link: '@eox/map',
-        node_module: true,
+        link: () => import('@eox/map'),
         properties: {
           class: "fill-height fill-width overflow-none",
           center: [15, 48],
@@ -52,6 +49,7 @@ describe('<WidgetsContainer />', () => {
 
   beforeEach(() => {
     cy.vMount(WidgetsContainer, {
+      //@ts-ignore
       props: {
         widgets
       },
