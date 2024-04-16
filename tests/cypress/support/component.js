@@ -11,7 +11,7 @@ import eodash from '@/eodash';
  * @param {import('vue').DefineComponent<{},{},any> | Element} OriginalComponent
  * @param {Parameters<typeof mount >['1'] & {
  * vuetify?:import('vuetify/lib/framework.mjs').VuetifyOptions;
- * pinia?:import('@pinia/testing').TestingOptions;
+ * pinia?:import('@pinia/testing').TestingPinia | import("pinia").Pinia;
  * router?:import('vue-router').Router
  * } } options
  */
