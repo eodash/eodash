@@ -17,7 +17,7 @@ describe('<DynamicWebComponent />', () => {
         }
       }
     })
-    cy.get("l-mirage").should("exist")
+    cy.get("l-mirage", { timeout: 10000 }).should("exist")
   })
 
   it('renders successfully from import map', () => {
@@ -33,6 +33,6 @@ describe('<DynamicWebComponent />', () => {
         },
       }
     })
-    cy.get("eox-stacinfo").should("exist")
+    cy.get("eox-stacinfo", { timeout: 10000 }).should("exist")
   })
 })

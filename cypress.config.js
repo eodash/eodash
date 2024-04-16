@@ -34,6 +34,9 @@ export default defineConfig({
           },
           extensions: ['.js', '.json', '.jsx', '.mjs', '.ts', '.tsx', '.vue'],
         },
+        optimizeDeps: {
+          exclude: ['vuetify'],
+        },
         build: {
           outDir: './.eodash/dist',
           target: "esnext"
