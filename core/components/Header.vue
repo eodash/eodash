@@ -27,7 +27,7 @@ const navigateTo = (to) => {
   if (to.toLowerCase().startsWith('http')) {
     window.open(to, '_self')
   } else {
-    push(to)
+    push(`/dashboard${to}`)
   }
 }
 </script>

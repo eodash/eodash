@@ -6,7 +6,7 @@ const routes = [
     redirect: '/dashboard'
   },
   {
-    path: '/:dashboard',
+    path: '/dashboard/:dialog?',
     name: 'Dashboard',
     component: () => import('@/views/Dashboard.vue'),
   },

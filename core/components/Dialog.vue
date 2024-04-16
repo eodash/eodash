@@ -47,7 +47,7 @@ const { currentRoute, push } = useRouter()
 /** @param {boolean} modelValue */
 const handleCloseDialog = (modelValue) => {
   if (modelValue === false) {
-    push("/")
+    push("/dashboard")
   }
 }
 
@@ -57,14 +57,14 @@ const closeDialog = () => {
 }
 
 watch(currentRoute, (updatedRoute) => {
-  if (updatedRoute.path === '/privacy-policy') {
+  if (updatedRoute.path === '/dashboard/privacy-policy') {
     fullscreen.value = eodash.template.privacyPolicy?.fullscreen ?? false
     storyProps.value = getStorytellingProps(eodash.template.privacyPolicy)
     dialog.value = true
     return
   }
 
-  const match = eodash.routes?.find(route => route.to === updatedRoute.path)
+  const match = eodash.routes?.find(route => route.to === updatedRoute.path.split("/dashboard")[1])
   if (match && isInternalRoute(match)) {
     fullscreen.value = match.fullscreen ?? false
     storyProps.value = getStorytellingProps(match)

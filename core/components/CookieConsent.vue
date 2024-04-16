@@ -8,7 +8,7 @@
             <p class="text-center">
               We use cookies which are essential for you to access our website and/or to provide you with our services
               and allow us to measure and improve the performance of our website. <RouterLink class="cursor"
-                to="/privacy-policy">Learn
+                to="/dashboard/privacy-policy">Learn
                 more</RouterLink>.
             </p>
           </v-col>
