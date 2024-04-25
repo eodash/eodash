@@ -39,15 +39,15 @@ const onMounted = (el, store, router) => {
   store.stac?.filter((item) => item.rel === "child")
 );
   // Check if indicator is selected
-  const { query } = router.currentRoute.value;
-  if ("indicator" in query) {
-    const match = store.stac?.find((item) => item.id === query.indicator);
-    if (match) {
-      //@ts-expect-error
-      (el).selectedResult = match;
-      store.loadSelectedSTAC(match.href);
-    }
-  }
+  // const { query } = router.currentRoute.value;
+  // if ("indicator" in query) {
+  //   const match = store.stac?.find((item) => item.id === query.indicator);
+  //   if (match) {
+  //     //@ts-expect-error
+  //     (el).selectedResult = match;
+  //     store.loadSelectedSTAC(match.href);
+  //   }
+  // }
   /** @type {any} */ (el).config.onSelect =
     /**
      * @param {Item} item

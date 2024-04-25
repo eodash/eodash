@@ -283,6 +283,8 @@ export interface Eodash<T extends ExecutionTime = "compiletime"> {
    * Brand specifications.
    */
   brand: {
+    /** Removes the dashboard layout */
+    noLayout: boolean
     /**
      * Automatically fetches the specified font family from google fonts. if the [link](#font-link) property is specified
      * the font family will be fetched from the provided source instead.
@@ -403,6 +405,8 @@ export interface EodashConfig {
    */
   runtime?: string
   widgets?: string
+  /** builds eodash as a web component library */
+  lib?: boolean
 }
 /**
  * the project's entry point should export this function as a default

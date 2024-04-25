@@ -3,7 +3,8 @@
 
     <component :is="bgWidget.component" v-bind="bgWidget.props"></component>
 
-    <div v-show="activeIdx === idx" class="overlay pa-2" :style="{ bottom: tabsBottom }"
+    <div v-show="activeIdx === idx" class="overlay pa-2"
+      :style="`bottom: ${tabsBottom}; position: absolute;width: 100%;left: 0;top: 64px;z-index: 1; background: rgb(var(--v-theme-surface))`"
       v-for="(importedWidget, idx) in importedWidgets" :key="idx">
       <v-btn icon variant="text" class="close-btn" @click="activeIdx = -1">&#x2715;</v-btn>
       <component :key="importedWidget.value.id" :is="importedWidget.value.component" v-show="activeIdx === idx"

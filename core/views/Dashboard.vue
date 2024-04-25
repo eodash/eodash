@@ -1,12 +1,15 @@
 <template>
-  <HeaderComponent />
-  <TemplateComponent :style="`height: calc(100dvh - ${mainRect['top'] + mainRect['bottom']}px)`" />
-  <FooterComponent />
+  <HeaderComponent v-if="!eodash.brand.noLayout" />
+  <Suspense>
+    <TemplateComponent
+      :style="`height: ${eodash.brand.noLayout ? '90dvh' : 'calc(100dvh - ' + mainRect['top'] + mainRect['bottom'] + 'px)'}`" />
+  </Suspense>
+  <FooterComponent v-if="!eodash.brand.noLayout" />
 </template>
 
 <script setup>
 import { useEodashRuntime } from "@/composables/DefineEodash";
-import { useRouteParams, useUpdateTheme } from "@/composables";
+import { useUpdateTheme } from "@/composables";
 import { useSTAcStore } from '@/store/stac';
 import { defineAsyncComponent } from "vue";
 import { useDisplay, useLayout } from "vuetify/lib/framework.mjs";
@@ -16,7 +19,7 @@ import { useSeoMeta } from "@unhead/vue"
 
 const eodash = await useEodashRuntime()
 
-useRouteParams()
+// useRouteParams()
 
 const theme = useUpdateTheme('dashboardTheme', eodash.brand?.theme)
 theme.global.name.value = 'dashboardTheme'
@@ -37,7 +40,7 @@ const { mainRect } = useLayout()
 useSeoMeta(eodash.brand.meta ?? {})
 </script>
 
-<style scoped lang="scss">
+<style scoped lang="css">
 html {
   overflow: hidden;
 }

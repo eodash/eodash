@@ -21,7 +21,7 @@
     "check": "vue-tsc --noEmit --skipLibCheck && eslint .",
     "check:lint": "eslint .",
     "check:types": "vue-tsc --noEmit --skipLibCheck",
-    "preview": "vite preview",
+    "preview": "npx eodash preview -p 8080",
     "lint": "eslint . --fix",
     "docs:generate": "typedoc --options typedoc.config.json",
     "docs:dev": "vitepress dev docs --port 3333",

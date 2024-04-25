@@ -5,7 +5,7 @@ import { reactive } from "vue";
 import { currentUrl, datetime, mapInstance, indicator } from "@/store/States";
 import eodashConfig from "@/eodash";
 import { useTheme } from "vuetify/lib/framework.mjs";
-import { useRouter } from "vue-router";
+// import { useRouter } from "vue-router";
 import { onMounted, onUnmounted, watch } from "vue";
 
 /**
@@ -175,60 +175,60 @@ export const useUpdateTheme = (themeName, themeDefinition = {}) => {
  * Composable that initiates route query params to store
  * STAC related values
  */
-export const useRouteParams = () => {
-  const router = useRouter();
-  /**
-   * @type {import("openlayers").EventsListenerFunctionType}
-   */
-  const handleMoveEnd = (evt) => {
-    const map = /** @type {import("openlayers").Map | undefined} */ (
-      /** @type {*} */ (evt).map
-    );
-    const [x, y] = map?.getView().getCenter() ?? [0, 0];
-    const z = map?.getView().getZoom();
-    const currentQuery = router.currentRoute.value.query;
-    router.push({
-      query: {
-        ...currentQuery,
-        x: x.toFixed(4),
-        y: y.toFixed(4),
-        z: z?.toFixed(4),
-      },
-    });
-  };
-  onMounted(() => {
-    // Set datetime based on kvp
-    if (
-      "datetime" in router.currentRoute.value.query &&
-      router.currentRoute.value.query["datetime"] !== ""
-    ) {
-      // @ts-ignore
-      datetime.value =
-        /** @type {string} */ router.currentRoute.value.query["datetime"];
-    }
-    watch(
-      [datetime, mapInstance, currentUrl, indicator],
-      ([updatedDate, updatedMap, _updatedUrl, updatedIndicator]) => {
-        const [x, y] = updatedMap?.getView().getCenter() ?? [0, 0];
-        // lets reduce unnecessary accuracy
-        const currentQuery = router.currentRoute.value.query;
-        router.push({
-          query: {
-            ...currentQuery,
-            indicator: updatedIndicator,
-            x: x.toFixed(4),
-            y: y.toFixed(4),
-            z: updatedMap?.getView().getZoom().toFixed(),
-            datetime: updatedDate,
-            // url: updatedUrl,
-          },
-        });
-        updatedMap?.on("moveend", handleMoveEnd);
-      }
-    );
-  });
+// export const useRouteParams = () => {
+//   const router = useRouter();
+//   /**
+//    * @type {import("openlayers").EventsListenerFunctionType}
+//    */
+//   const handleMoveEnd = (evt) => {
+//     const map = /** @type {import("openlayers").Map | undefined} */ (
+//       /** @type {*} */ (evt).map
+//     );
+//     const [x, y] = map?.getView().getCenter() ?? [0, 0];
+//     const z = map?.getView().getZoom();
+//     const currentQuery = router.currentRoute.value.query;
+//     router.push({
+//       query: {
+//         ...currentQuery,
+//         x: x.toFixed(4),
+//         y: y.toFixed(4),
+//         z: z?.toFixed(4),
+//       },
+//     });
+//   };
+//   onMounted(() => {
+//     // Set datetime based on kvp
+//     if (
+//       "datetime" in router.currentRoute.value.query &&
+//       router.currentRoute.value.query["datetime"] !== ""
+//     ) {
+//       // @ts-ignore
+//       datetime.value =
+//         /** @type {string} */ router.currentRoute.value.query["datetime"];
+//     }
+//     watch(
+//       [datetime, mapInstance, currentUrl, indicator],
+//       ([updatedDate, updatedMap, _updatedUrl, updatedIndicator]) => {
+//         const [x, y] = updatedMap?.getView().getCenter() ?? [0, 0];
+//         // lets reduce unnecessary accuracy
+//         const currentQuery = router.currentRoute.value.query;
+//         router.push({
+//           query: {
+//             ...currentQuery,
+//             indicator: updatedIndicator,
+//             x: x.toFixed(4),
+//             y: y.toFixed(4),
+//             z: updatedMap?.getView().getZoom().toFixed(),
+//             datetime: updatedDate,
+//             // url: updatedUrl,
+//           },
+//         });
+//         updatedMap?.on("moveend", handleMoveEnd);
+//       }
+//     );
+//   });
 
-  onUnmounted(() => {
-    mapInstance.value?.un("moveend", handleMoveEnd);
-  });
-};
+//   onUnmounted(() => {
+//     mapInstance.value?.un("moveend", handleMoveEnd);
+//   });
+// };

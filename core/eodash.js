@@ -11,6 +11,7 @@ const eodash = reactive({
   stacEndpoint: "https://esa-eodash.github.io/RACE-catalog/RACE/catalog.json",
   routes: [],
   brand: {
+    noLayout: true,
     name: "Demo",
     font: {
       family: "Poppins",
@@ -63,7 +64,9 @@ const eodash = reactive({
         id: Symbol(),
         type: "internal",
         title: "datepicker",
+        // layout: { x: 3, y: 8, w: 6, h: 5 },
         layout: { x: 5, y: 11, w: 2, h: 1 },
+        // slidable: true,
         slidable: false,
         widget: {
           name: "EodashDatePicker",

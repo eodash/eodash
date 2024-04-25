@@ -29,17 +29,22 @@ export const indexHtml = `
 </head>
 
 <body>
-  <div id="app"></div>
-  <script type="module" src="${path.resolve(`/@fs/${appPath}/core/render.js`)}"></script>
+${userConfig.lib ? `<eo-dash/>
+<script type="module" src="${path.resolve(`/@fs/${appPath}`, `core/asWebComponent.js`)}"></script>
+`: ` <div id="app"/>
+<script type="module" src="${path.resolve(`/@fs/${appPath}`, `core/render.js`)}"></script>
+`}
 </body>
 </html>`
 
+//@ts-expect-error
 export const serverConfig = /** @type {import('vite').UserConfigFnPromise}*/(defineConfig(async ({ mode, command }) => {
   return {
     base: userConfig.base ?? '',
     cacheDir: cachePath,
     plugins: [
       vue({
+        customElement: true,
         template: {
           transformAssetUrls,
           compilerOptions: {
@@ -86,11 +91,17 @@ export const serverConfig = /** @type {import('vite').UserConfigFnPromise}*/(def
     /** @type {string|false} */
     publicDir: userConfig.publicDir === false ? false : publicPath,
     build: {
+      lib: (mode === 'lib' && command === 'build') && {
+        entry: path.join(appPath, "core/asWebComponent.js"),
+        fileName: "eo-dash",
+        formats: ["es"],
+        name: "@eodash/eodash"
+      },
       outDir: buildTargetPath,
       emptyOutDir: true,
-      rollupOptions: {
-        input: fileURLToPath(new URL(command === 'build' ? '../index.html' : '../core/main.js', import.meta.url)),
-      },
+      rollupOptions: command == 'build' ? {
+        input: fileURLToPath(new URL(mode === 'lib' ? '../core/asWebComponent.js' : '../index.html', import.meta.url)),
+      } : undefined,
       target: "esnext"
     }
   }

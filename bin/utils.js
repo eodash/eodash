@@ -29,6 +29,7 @@ const pkg = JSON.parse(
  * @property {boolean} open
  * @property {boolean | string} host
  * @property {string} config
+ * @property {boolean} lib
  */
 cli.version(pkg.version, '-v, --version', 'output the current version')
   .option('--publicDir <path>', 'path to statically served assets folder')
@@ -43,6 +44,8 @@ cli.version(pkg.version, '-v, --version', 'output the current version')
   .option('-o, --open', 'open default browser when the server starts')
   .option('-c, --config <path>', 'path to eodash server and build configuration file')
   .option('--host [IP address]', 'specify which IP addresses the server should listen on')
+  .option('-l, --lib', 'builds eodash as a web component library')
+  .option('--no-lib', 'builds eodash as a Vue application')
   .option('--no-host', 'do not expose server to the network')
   .parse(process.argv)
 
@@ -88,6 +91,7 @@ async function getUserConfig(options, command) {
     outDir: options.outDir ?? config?.outDir,
     publicDir: options.publicDir ?? config?.publicDir,
     runtime: options.runtime ?? config?.runtime,
-    widgets: options.widgets ?? config?.widgets
+    widgets: options.widgets ?? config?.widgets,
+    lib: options.lib ?? config?.lib
   }
 }

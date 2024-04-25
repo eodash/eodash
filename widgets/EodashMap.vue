@@ -10,7 +10,7 @@ import { eodashKey } from "@/store/Keys";
 import { mapInstance, datetime } from "@/store/States";
 import DynamicWebComponent from "@/components/DynamicWebComponent.vue";
 import { storeToRefs } from "pinia";
-import { useRouter } from "vue-router";
+// import { useRouter } from "vue-router";
 import "@eox/map/dist/eox-map-advanced-layers-and-sources.js";
 
 const eodashConfig = /** @type {import("@/types").Eodash} */ inject(eodashKey);
@@ -20,15 +20,15 @@ const properties = {
   center: [15, 48],
   layers: [{ type: "Tile", source: { type: "OSM" } }],
 };
-const router = useRouter();
-const { query } = router.currentRoute.value;
-if ("x" in query && "y" in query) {
-  properties.center = [Number(query.x), Number(query.y)];
-}
-if ("z" in query) {
-  // @ts-ignore
-  properties.zoom = query.z;
-}
+// const router = useRouter();
+// const { query } = router.currentRoute.value;
+// if ("x" in query && "y" in query) {
+//   properties.center = [Number(query.x), Number(query.y)];
+// }
+// if ("z" in query) {
+//   // @ts-ignore
+//   properties.zoom = query.z;
+// }
 const link = () => import("@eox/map");
 
 /** @type {import("openlayers").EventsListenerFunctionType}*/

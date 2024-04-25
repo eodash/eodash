@@ -19,9 +19,9 @@ export const createDevServer = async () => {
 }
 
 export const buildApp = async () => {
-  const htmlPath = path.join(appPath, '/index.html')
-  await writeFile(htmlPath, indexHtml).then(async () => {
-    const config = await serverConfig({ mode: 'production', command: 'build' });
+  /** @param {"production"|"lib"} mode  */
+  const viteBuild = async (mode) => {
+    const config = await serverConfig({ mode, command: 'build' });
     await build(config)
 
     if (existsSync(runtimeConfigPath)) {
@@ -30,11 +30,18 @@ export const buildApp = async () => {
           console.error(e)
         })
     }
-
-    await rm(htmlPath).catch(() => {
-      console.error('failed to remove index.html')
+  }
+  if (userConfig.lib) {
+    await viteBuild("lib")
+  } else {
+    const htmlPath = path.join(appPath, '/index.html')
+    await writeFile(htmlPath, indexHtml).then(async () => {
+      await viteBuild("production")
+      await rm(htmlPath).catch(() => {
+        console.error('failed to remove index.html')
+      })
     })
-  })
+  }
 }
 
 

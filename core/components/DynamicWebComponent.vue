@@ -11,7 +11,7 @@ import {
   onMounted as whenMounted
 } from 'vue';
 import { ref } from 'vue';
-import { useRouter } from 'vue-router';
+// import { useRouter } from 'vue-router';
 
 const props =   /** @type {import("@/types").WebComponentProps}  */(defineProps({
   link: {
@@ -56,13 +56,15 @@ const store = useSTAcStore()
  * @type {import('vue').Ref<CE|null>}
  */
 const elementRef = ref(null)
-const router = useRouter()
+// const router = useRouter()
 
 whenMounted(() => {
-  props.onMounted?.(elementRef.value, store, router)
+  //@ts-expect-error
+  props.onMounted?.(elementRef.value, store, {})
 })
 
 whenUnMounted(() => {
-  props.onUnmounted?.(elementRef.value, store, router)
+  //@ts-expect-error
+  props.onUnmounted?.(elementRef.value, store, {})
 })
 </script>
