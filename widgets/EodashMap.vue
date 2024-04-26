@@ -7,7 +7,7 @@ import { inject, watch } from "vue";
 import { toAbsolute } from "stac-js/src/http.js";
 import { EodashCollection } from "@/utils/eodashSTAC";
 import { eodashKey } from "@/store/Keys";
-import { mapInstance, datetime } from "@/store/States";
+import { mapInstance, datetime, mapPosition } from "@/store/States";
 import DynamicWebComponent from "@/components/DynamicWebComponent.vue";
 import { storeToRefs } from "pinia";
 // import { useRouter } from "vue-router";
@@ -20,6 +20,12 @@ const properties = {
   center: [15, 48],
   layers: [{ type: "Tile", source: { type: "OSM" } }],
 };
+// Check if selected indicator was already set in store
+if(mapPosition && mapPosition.value && mapPosition.value.length === 3) {
+  // TODO: do further checks for invalid values?
+  properties.center = [mapPosition.value[0], mapPosition.value[1]];
+  properties.zoom = mapPosition.value[2];
+}
 // const router = useRouter();
 // const { query } = router.currentRoute.value;
 // if ("x" in query && "y" in query) {
@@ -32,11 +38,23 @@ const properties = {
 const link = () => import("@eox/map");
 
 /** @type {import("openlayers").EventsListenerFunctionType}*/
-let handleMoveEnd;
+const handleMoveEnd = (evt) => {
+  const map = /** @type {import("openlayers").Map | undefined} */ (
+    /** @type {*} */ (evt).map
+  );
+  const [x, y] = map?.getView().getCenter() ?? [0, 0];
+  const z = map?.getView().getZoom();
+  if (!Number.isNaN(x) && !Number.isNaN(y) && !Number.isNaN(z)) {
+    mapPosition.value = [x, y, z];
+  }
+};
 
 /** @type {import("@/types").WebComponentProps["onMounted"]} */
 const onMounted = (el, store, _router) => {
-  mapInstance.value = /** @type {any} */ (el).map;
+  // mapInstance.value = /** @type {any} */ (el).map;
+
+  /** @type {any} */
+  (el)?.map?.on("moveend", handleMoveEnd);
 
   const { selectedStac } = storeToRefs(store);
 
@@ -66,7 +84,8 @@ const onMounted = (el, store, _router) => {
   );
 };
 /** @type {import("@/types").WebComponentProps["onUnmounted"]} */
-const onUnmounted = (_el, _store, _router) => {
-  mapInstance.value?.un("moveend", handleMoveEnd);
+const onUnmounted = (el, _store, _router) => {
+  /** @type {any} */
+  (el)?.map?.un("moveend", handleMoveEnd);
 };
 </script>

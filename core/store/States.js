@@ -20,3 +20,8 @@ export const datetime = ref(new Date().toISOString());
  * Currently selected indicator
  */
 export const indicator = ref("")
+
+/**
+ * Current map position
+ */
+export const mapPosition = ref([])

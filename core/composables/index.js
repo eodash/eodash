@@ -2,7 +2,7 @@
 // setup functions or vue composition api components
 
 import { reactive } from "vue";
-import { currentUrl, datetime, mapInstance, indicator } from "@/store/States";
+import { currentUrl, datetime, mapInstance, indicator, mapPosition } from "@/store/States";
 import eodashConfig from "@/eodash";
 import { useTheme } from "vuetify/lib/framework.mjs";
 // import { useRouter } from "vue-router";
@@ -169,6 +169,54 @@ export const useUpdateTheme = (themeName, themeDefinition = {}) => {
     }
   });
   return theme;
+};
+
+/**
+ * Composable that syncs store and  URLSearchParameters
+ */
+
+export const useURLSearchParametersSync = () => {
+  onMounted(() => {
+    // Analyze currently set url params when first loaded and set them in the store
+    if ('URLSearchParams' in window) {
+      const searchParams = new URLSearchParams(window.location.search);
+      let x, y, z;
+      searchParams.forEach((value, key) => {
+        if (key === "indicator") {
+          indicator.value = value;
+        }
+        if (key === "x") {
+          x = value;
+        }
+        if (key === "y") {
+          y = value;
+        }
+        if (key === "z") {
+          z = value;
+        }
+      })
+      if (x !== undefined && y !== undefined && z !== undefined) {
+        mapPosition.value = [x, y, z];
+      }
+    }
+    watch(
+      [indicator, mapPosition],
+      ([updatedIndicator, updatedMapPosition]) => {
+        if ('URLSearchParams' in window) {
+          const searchParams = new URLSearchParams(window.location.search);
+          if (updatedIndicator !== "") {
+            searchParams.set("indicator", updatedIndicator);
+          }
+          if (updatedMapPosition && updatedMapPosition.length === 3) {
+            searchParams.set("x", updatedMapPosition[0].toFixed(4));
+            searchParams.set("y", updatedMapPosition[1].toFixed(4));
+            searchParams.set("z", updatedMapPosition[2].toFixed(4));
+          }
+          const newRelativePathQuery = window.location.pathname + '?' + searchParams.toString();
+          history.pushState(null, '', newRelativePathQuery);
+        }
+      })
+  });
 };
 
 /**

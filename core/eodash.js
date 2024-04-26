@@ -14,13 +14,13 @@ const eodash = reactive({
     noLayout: true,
     name: "Demo",
     font: {
-      family: "Poppins",
+      family: "Roboto",
     },
     theme: {
       colors: {
-        primary: "#004170",
-        secondary: "#00417044",
-        surface: "#f0f0f0f0",
+        primary: "#fff",
+        secondary: "#fff",
+        surface: "#fff",
       },
     },
     meta: {},
