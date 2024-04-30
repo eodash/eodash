@@ -16,8 +16,9 @@ import { useDisplay, useLayout } from "vuetify/lib/framework.mjs";
 import { loadFont } from '@/utils'
 import { useSeoMeta } from "@unhead/vue"
 
+const props = defineProps(['config'])
 
-const eodash = await useEodashRuntime()
+const eodash = await useEodashRuntime(props.config)
 
 // useRouteParams()
 

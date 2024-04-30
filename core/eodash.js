@@ -6,12 +6,12 @@ import { currentUrl } from "./store/States";
  * and used as an intermediate object to make user defined instances config reactive.
  * @type {import("./types").Eodash}
  */
-const eodash = reactive({
+export const eodash = reactive({
   id: "demo",
   stacEndpoint: "https://esa-eodash.github.io/RACE-catalog/RACE/catalog.json",
   routes: [],
   brand: {
-    noLayout: true,
+    noLayout: false,
     name: "Demo",
     font: {
       family: "Poppins",

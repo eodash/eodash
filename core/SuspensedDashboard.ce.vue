@@ -1,15 +1,20 @@
 <template>
   <v-app>
     <Suspense>
-      <Dashboard />
+      <Dashboard :config="config" />
     </Suspense>
   </v-app>
 </template>
 <script setup>
 import Dashboard from './views/Dashboard.vue';
-import { createApp, getCurrentInstance, nextTick, onMounted } from "vue"
+import { createApp, getCurrentInstance, onMounted } from "vue"
 import { registerPlugins } from '@/plugins';
 
+defineProps({
+  config: {
+    type: String,
+  }
+})
 const app = createApp({})
 registerPlugins(app)
 
@@ -18,8 +23,12 @@ const inst = getCurrentInstance()
 Object.assign(inst.appContext, app._context)
 //@ts-expect-error
 Object.assign(inst.provides, app._context.provides)
+
 onMounted(async () => {
-  // await nextTick(() => {
+  setStylesFromHead()
+})
+
+function setStylesFromHead() {
   setTimeout(() => {
     const eodashComponent = document.querySelector('eo-dash')
     const styleSheet = new CSSStyleSheet()
@@ -41,8 +50,5 @@ onMounted(async () => {
     styleSheet.replaceSync(stylesStr.replaceAll(":root", ":host"))
     eodashComponent?.shadowRoot?.adoptedStyleSheets.push(styleSheet)
   }, 1000);
-  // })
-})
-
-//
+}
 </script>
