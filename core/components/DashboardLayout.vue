@@ -20,7 +20,7 @@
   </v-main>
 </template>
 <script setup>
-import { eodashKey } from '@/store/Keys';
+import { eodashKey } from '@/utils/keys';
 import { inject } from 'vue';
 import { useDefineWidgets } from '@/composables/DefineWidgets'
 import { useSlidePanels } from '@/composables'

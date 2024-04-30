@@ -23,5 +23,6 @@ export const indicator = ref("")
 
 /**
  * Current map position
+ * @type {import("vue").Ref<(number|undefined)[]>}
  */
 export const mapPosition = ref([])

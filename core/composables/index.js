@@ -3,19 +3,19 @@
 
 import { reactive } from "vue";
 import { currentUrl, datetime, mapInstance, indicator, mapPosition } from "@/store/States";
-import eodashConfig from "@/eodash";
+import eodash from "@/eodash";
 import { useTheme } from "vuetify/lib/framework.mjs";
 // import { useRouter } from "vue-router";
-import { onMounted, onUnmounted, watch } from "vue";
+import { onMounted, watch } from "vue";
 
 /**
  * Creates an absolute URL from a relative link and assignes it to `currentUrl`
  * @param {string} [rel = '']
- * @param {string} [base = eodashConfig.stacEndpoint] - base URL, default value is the root stac catalog
+ * @param {string} [base = eodash.stacEndpoint] - base URL, default value is the root stac catalog
  * @returns {import('vue').Ref<string>} - returns `currentUrl`
  * @see {@link '@/store/States.js'}
  */
-export const useAbsoluteUrl = (rel = "", base = eodashConfig.stacEndpoint) => {
+export const useAbsoluteUrl = (rel = "", base = eodash.stacEndpoint) => {
   if (!rel || rel.includes("http")) {
     currentUrl.value = base;
     return currentUrl;
@@ -208,9 +208,9 @@ export const useURLSearchParametersSync = () => {
             searchParams.set("indicator", updatedIndicator);
           }
           if (updatedMapPosition && updatedMapPosition.length === 3) {
-            searchParams.set("x", updatedMapPosition[0].toFixed(4));
-            searchParams.set("y", updatedMapPosition[1].toFixed(4));
-            searchParams.set("z", updatedMapPosition[2].toFixed(4));
+            searchParams.set("x", updatedMapPosition[0]?.toFixed(4) ?? '');
+            searchParams.set("y", updatedMapPosition[1]?.toFixed(4) ?? '');
+            searchParams.set("z", updatedMapPosition[2]?.toFixed(4) ?? '');
           }
           const newRelativePathQuery = window.location.pathname + '?' + searchParams.toString();
           history.pushState(null, '', newRelativePathQuery);
@@ -218,65 +218,3 @@ export const useURLSearchParametersSync = () => {
       })
   });
 };
-
-/**
- * Composable that initiates route query params to store
- * STAC related values
- */
-// export const useRouteParams = () => {
-//   const router = useRouter();
-//   /**
-//    * @type {import("openlayers").EventsListenerFunctionType}
-//    */
-//   const handleMoveEnd = (evt) => {
-//     const map = /** @type {import("openlayers").Map | undefined} */ (
-//       /** @type {*} */ (evt).map
-//     );
-//     const [x, y] = map?.getView().getCenter() ?? [0, 0];
-//     const z = map?.getView().getZoom();
-//     const currentQuery = router.currentRoute.value.query;
-//     router.push({
-//       query: {
-//         ...currentQuery,
-//         x: x.toFixed(4),
-//         y: y.toFixed(4),
-//         z: z?.toFixed(4),
-//       },
-//     });
-//   };
-//   onMounted(() => {
-//     // Set datetime based on kvp
-//     if (
-//       "datetime" in router.currentRoute.value.query &&
-//       router.currentRoute.value.query["datetime"] !== ""
-//     ) {
-//       // @ts-ignore
-//       datetime.value =
-//         /** @type {string} */ router.currentRoute.value.query["datetime"];
-//     }
-//     watch(
-//       [datetime, mapInstance, currentUrl, indicator],
-//       ([updatedDate, updatedMap, _updatedUrl, updatedIndicator]) => {
-//         const [x, y] = updatedMap?.getView().getCenter() ?? [0, 0];
-//         // lets reduce unnecessary accuracy
-//         const currentQuery = router.currentRoute.value.query;
-//         router.push({
-//           query: {
-//             ...currentQuery,
-//             indicator: updatedIndicator,
-//             x: x.toFixed(4),
-//             y: y.toFixed(4),
-//             z: updatedMap?.getView().getZoom().toFixed(),
-//             datetime: updatedDate,
-//             // url: updatedUrl,
-//           },
-//         });
-//         updatedMap?.on("moveend", handleMoveEnd);
-//       }
-//     );
-//   });
-
-//   onUnmounted(() => {
-//     mapInstance.value?.un("moveend", handleMoveEnd);
-//   });
-// };

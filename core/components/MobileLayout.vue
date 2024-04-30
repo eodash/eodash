@@ -8,7 +8,7 @@
       width: '100%', left: 0, top: mainRect.top + 'px', zIndex: 1, background: 'rgb(var(--v-theme-surface))'
     }">
       <v-btn icon variant="text" style="height: 5%;position: relative;" @click="activeIdx = -1">&#x2715;</v-btn>
-      <component style="height: 91% !important;" :key="importedWidget.value.id" :is="importedWidget.value.component"
+      <component style="height: 94% !important;" :key="importedWidget.value.id" :is="importedWidget.value.component"
         v-show="activeIdx === idx" v-bind="importedWidget.value.props" />
     </div>
 

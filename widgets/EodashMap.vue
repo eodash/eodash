@@ -6,35 +6,27 @@
 import { inject, watch } from "vue";
 import { toAbsolute } from "stac-js/src/http.js";
 import { EodashCollection } from "@/utils/eodashSTAC";
-import { eodashKey } from "@/store/Keys";
+import { eodashKey } from "@/utils/keys";
 import { mapInstance, datetime, mapPosition } from "@/store/States";
 import DynamicWebComponent from "@/components/DynamicWebComponent.vue";
 import { storeToRefs } from "pinia";
-// import { useRouter } from "vue-router";
 import "@eox/map/dist/eox-map-advanced-layers-and-sources.js";
 
 const eodashConfig = /** @type {import("@/types").Eodash} */ inject(eodashKey);
 
+/** @type {Record<string,unknown>} */
 const properties = {
   class: "fill-height fill-width overflow-none",
   center: [15, 48],
   layers: [{ type: "Tile", source: { type: "OSM" } }],
 };
 // Check if selected indicator was already set in store
-if(mapPosition && mapPosition.value && mapPosition.value.length === 3) {
+if (mapPosition && mapPosition.value && mapPosition.value.length === 3) {
   // TODO: do further checks for invalid values?
-  properties.center = [mapPosition.value[0], mapPosition.value[1]];
+  properties.center = [mapPosition.value?.[0], mapPosition.value[1]];
   properties.zoom = mapPosition.value[2];
 }
-// const router = useRouter();
-// const { query } = router.currentRoute.value;
-// if ("x" in query && "y" in query) {
-//   properties.center = [Number(query.x), Number(query.y)];
-// }
-// if ("z" in query) {
-//   // @ts-ignore
-//   properties.zoom = query.z;
-// }
+
 const link = () => import("@eox/map");
 
 /** @type {import("openlayers").EventsListenerFunctionType}*/
@@ -50,8 +42,8 @@ const handleMoveEnd = (evt) => {
 };
 
 /** @type {import("@/types").WebComponentProps["onMounted"]} */
-const onMounted = (el, store, _router) => {
-  // mapInstance.value = /** @type {any} */ (el).map;
+const onMounted = (el, store) => {
+  mapInstance.value = /** @type {any} */ (el).map;
 
   /** @type {any} */
   (el)?.map?.on("moveend", handleMoveEnd);
@@ -83,8 +75,9 @@ const onMounted = (el, store, _router) => {
     { immediate: true }
   );
 };
+
 /** @type {import("@/types").WebComponentProps["onUnmounted"]} */
-const onUnmounted = (el, _store, _router) => {
+const onUnmounted = (el, _store) => {
   /** @type {any} */
   (el)?.map?.un("moveend", handleMoveEnd);
 };

@@ -7,4 +7,6 @@ export function register() {
   customElements.define('eo-dash', Eodash)
 }
 
+export { default as store } from '@/store'
+
 register()

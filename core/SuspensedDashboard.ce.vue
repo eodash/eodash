@@ -24,7 +24,7 @@ Object.assign(inst.appContext, app._context)
 //@ts-expect-error
 Object.assign(inst.provides, app._context.provides)
 
-onMounted(async () => {
+onMounted(() => {
   setStylesFromHead()
 })
 
@@ -43,7 +43,6 @@ function setStylesFromHead() {
 
       if (child.tagName == 'LINK' && child.getAttribute('rel') === 'stylesheet') {
         eodashComponent?.shadowRoot?.appendChild(child.cloneNode(true))
-        // child.remove()
       }
     })
 

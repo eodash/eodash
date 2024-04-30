@@ -30,17 +30,17 @@ const properties = {
 };
 
 /** @type {import("../core/types").WebComponentProps["onMounted"]}*/
-const onMounted = (el, store, router) => {
+const onMounted = (el, store) => {
   /**
    * @typedef {object} Item
    * @property {string} href
    * */
   /** @type {any} */ (el).apply(
-    // Only list child elements in list
-    store.stac?.filter((item) => item.rel === "child")
-  );
+  // Only list child elements in list
+  store.stac?.filter((item) => item.rel === "child")
+);
   // Check if selected indicator was already set in store
-  if(indicator && indicator.value !== "") {
+  if (indicator && indicator.value !== "") {
     const match = store.stac?.find((item) => item.id === indicator.value);
     if (match) {
       //@ts-expect-error

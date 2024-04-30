@@ -1,5 +1,5 @@
 import store from "@/store";
-import { eodashKey } from "@/store/Keys";
+import { eodashKey } from "@/utils/keys";
 import { inject } from "vue";
 
 
@@ -22,8 +22,7 @@ export const useEodashRuntime = async (runtimeConfig) => {
   }
 
   if (runtimeConfig) {
-    assignInstance((await import( /* @vite-ignore */new URL(runtimeConfig, import.meta.url).href)).default)
-    console.log(new URL(runtimeConfig, import.meta.url).href);
+    assignInstance((await import( /* @vite-ignore */new URL(runtimeConfig, import.meta.url).href)).default);
     return eodash
   }
 

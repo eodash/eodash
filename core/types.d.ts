@@ -284,7 +284,7 @@ export interface Eodash<T extends ExecutionTime = "compiletime"> {
    */
   brand: {
     /** Removes the dashboard layout */
-    noLayout: boolean
+    noLayout?: boolean
     /**
      * Automatically fetches the specified font family from google fonts. if the [link](#font-link) property is specified
      * the font family will be fetched from the provided source instead.

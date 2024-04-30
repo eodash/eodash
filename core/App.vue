@@ -1,7 +1,5 @@
 <template>
   <v-app>
-    <!--   <RouterView v-slot="{ Component }">
-      <template v-if="Component"> -->
     <Suspense>
       <!-- main content -->
       <Dashboard />
@@ -20,14 +18,12 @@
         </v-row>
       </template>
     </Suspense>
-    <!-- </template>
-    </RouterView> -->
   </v-app>
 </template>
 
 <script setup>
 import { inject } from 'vue';
-import { eodashKey } from './store/Keys';
+import { eodashKey } from './utils/keys';
 import { useDefineWidgets } from './composables/DefineWidgets';
 import Dashboard from './views/Dashboard.vue';
 

@@ -13,7 +13,7 @@
   </v-footer>
 </template>
 <script setup>
-import { eodashKey } from '@/store/Keys';
+import { eodashKey } from '@/utils/keys';
 import { ref } from 'vue';
 import { inject } from 'vue';
 import { useDisplay } from 'vuetify/lib/framework.mjs';

@@ -14,7 +14,11 @@
 import { computed, ref, onMounted } from "vue";
 import { datetime } from "@/store/States"
 
-const props = defineProps(["inline"])
+const props = defineProps({
+  inline: {
+    type: Boolean
+  }
+})
 
 const currentDate = computed({
   get() {
