@@ -9,7 +9,7 @@
 
 <script setup>
 import { useEodashRuntime } from "@/composables/DefineEodash";
-import { useUpdateTheme } from "@/composables";
+import { useURLSearchParametersSync, useUpdateTheme } from "@/composables";
 import { useSTAcStore } from '@/store/stac';
 import { defineAsyncComponent } from "vue";
 import { useDisplay, useLayout } from "vuetify/lib/framework.mjs";
@@ -21,6 +21,7 @@ const props = defineProps(['config'])
 const eodash = await useEodashRuntime(props.config)
 
 // useRouteParams()
+useURLSearchParametersSync();
 
 const theme = useUpdateTheme('dashboardTheme', eodash.brand?.theme)
 theme.global.name.value = 'dashboardTheme'
