@@ -7,7 +7,7 @@ import { inject, watch } from "vue";
 import { toAbsolute } from "stac-js/src/http.js";
 import { EodashCollection } from "@/utils/eodashSTAC";
 import { eodashKey } from "@/utils/keys";
-import { mapInstance, datetime, mapPosition } from "@/store/States";
+import { datetime, mapPosition } from "@/store/States";
 import DynamicWebComponent from "@/components/DynamicWebComponent.vue";
 import { storeToRefs } from "pinia";
 import "@eox/map/dist/eox-map-advanced-layers-and-sources.js";
@@ -43,8 +43,6 @@ const handleMoveEnd = (evt) => {
 
 /** @type {import("@/types").WebComponentProps["onMounted"]} */
 const onMounted = (el, store) => {
-  mapInstance.value = /** @type {any} */ (el).map;
-
   /** @type {any} */
   (el)?.map?.on("moveend", handleMoveEnd);
 

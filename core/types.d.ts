@@ -273,13 +273,6 @@ export interface Eodash<T extends ExecutionTime = "compiletime"> {
    **/
   stacEndpoint: StacEndpoint
   /**
-  * Renders navigation buttons on the app header.
-  **/
-  routes?: Array<{
-    title: string,
-    to: ExternalURL | InternalRoute
-  }>
-  /**
    * Brand specifications.
    */
   brand: {
@@ -312,10 +305,6 @@ export interface Eodash<T extends ExecutionTime = "compiletime"> {
      */
     theme?: import("vuetify/lib/index.mjs").ThemeDefinition
     /**
-     * meta tags configuration, using unhead's [useSeoMeta](https://unhead.unjs.io/usage/composables/use-seo-meta)
-     */
-    meta?: import("@unhead/vue").UseSeoMetaInput;
-    /**
      * Text applied to the footer.
      */
     footerText?: string;
@@ -340,10 +329,6 @@ export interface EodashStore {
      * Currently selected STAC endpoint
      */
     currentUrl: import("vue").Ref<string>
-    /**
-    * OpenLayers map instance
-    */
-    mapInstance: import("vue").Ref<import("openlayers").Map | null>
     /**
     * currently selected datetime
     */

@@ -9,7 +9,6 @@ import { currentUrl } from "./store/States";
 export const eodash = reactive({
   id: "demo",
   stacEndpoint: "https://esa-eodash.github.io/RACE-catalog/RACE/catalog.json",
-  routes: [],
   brand: {
     noLayout: false,
     name: "Demo",
@@ -23,7 +22,6 @@ export const eodash = reactive({
         surface: "#fff",
       },
     },
-    meta: {},
     footerText: "Demo configuration of eodash client",
   },
   template: {
