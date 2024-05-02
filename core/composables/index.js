@@ -5,7 +5,6 @@ import { reactive } from "vue";
 import { currentUrl, datetime, mapInstance, indicator, mapPosition } from "@/store/States";
 import eodash from "@/eodash";
 import { useTheme } from "vuetify/lib/framework.mjs";
-// import { useRouter } from "vue-router";
 import { onMounted, watch } from "vue";
 
 /**

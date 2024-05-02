@@ -29,13 +29,13 @@ export interface WebComponentProps<T extends ExecutionTime = "compiletime"> {
    * @param el - web component
    * @param store - return value of the core STAC pinia store in `/core/store/stac.ts`
    */
-  onMounted?: (el: Element | null, store: ReturnType<typeof import("./store/stac").useSTAcStore>, router: import("vue-router").Router) => (Promise<void> | void)
+  onMounted?: (el: Element | null, store: ReturnType<typeof import("./store/stac").useSTAcStore>) => (Promise<void> | void)
   /**
    * Triggered when the web component is unmounted from the DOM.
    * @param el - web component
    * @param store - return value of the core STAC pinia store in `/core/store/stac.ts`
    */
-  onUnmounted?: (el: Element | null, store: ReturnType<typeof import("./store/stac").useSTAcStore>, router: import("vue-router").Router) => (Promise<void> | void)
+  onUnmounted?: (el: Element | null, store: ReturnType<typeof import("./store/stac").useSTAcStore>) => (Promise<void> | void)
 }
 
 

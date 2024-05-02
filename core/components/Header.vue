@@ -6,7 +6,7 @@
         {{ route.title }}
       </v-btn>
     </v-toolbar-items>
-    <v-img class="mx-12 logo" style="max-width: 140px;" :src="eodash.brand?.logo" />
+    <v-img class="mx-12" style="max-width: 140px;" :src="eodash.brand?.logo" />
   </v-app-bar>
 </template>
 <script setup>
@@ -17,8 +17,6 @@ const eodash = /** @type {import("@/types").Eodash} */(inject(eodashKey))
 
 const title = eodash.brand?.name
 
-// const { push } = useRouter()
-
 /**
  * @param {string} to
  */
@@ -26,8 +24,3 @@ const navigateTo = (to) => {
   window.open(to, '_self')
 }
 </script>
-<style scoped lang='scss'>
-.logo {
-  max-width: 140px;
-}
-</style>
