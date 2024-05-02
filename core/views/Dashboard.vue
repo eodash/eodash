@@ -3,6 +3,11 @@
   <Suspense>
     <TemplateComponent @vue:mounted="onTemplateMount?.()"
       :style="`height: ${eodash.brand.noLayout ? '90dvh' : 'calc(100dvh - ' + mainRect['top'] + mainRect['bottom'] + 'px)'}`" />
+    <template #fallback>
+      <div v-if="onTemplateMount" style="height: 100dvh; display: flex; align-items: center; justify-content: center;">
+        <Loading />
+      </div>
+    </template>
   </Suspense>
   <FooterComponent v-if="!eodash.brand.noLayout" />
 </template>
@@ -14,6 +19,7 @@ import { useSTAcStore } from '@/store/stac';
 import { defineAsyncComponent, onMounted } from "vue";
 import { useDisplay, useLayout } from "vuetify/lib/framework.mjs";
 import { loadFont } from '@/utils'
+import Loading from "@/components/Loading.vue";
 
 const props = defineProps({
   config: {

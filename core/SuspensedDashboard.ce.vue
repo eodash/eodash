@@ -1,15 +1,21 @@
 <template>
   <v-app>
     <Suspense>
-      <Dashboard :on-template-mount="onTemplateMount" :config="config" />
+      <Dashboard :on-template-mount="setStylesFromHead" :config="config" />
+      <template #fallback>
+        <div style="height: 100dvh; display: flex; align-items: center; justify-content: center;">
+          <Loading />
+        </div>
+      </template>
     </Suspense>
   </v-app>
 </template>
 <script setup>
-import Dashboard from './views/Dashboard.vue';
+import Dashboard from '@/views/Dashboard.vue';
 import { createApp, getCurrentInstance } from "vue"
 import { registerPlugins } from '@/plugins';
-import { eodashKey } from './utils/keys';
+import { eodashKey } from '@/utils/keys';
+import Loading from '@/components/Loading.vue';
 
 defineProps({
   config: {
@@ -24,10 +30,6 @@ const inst = getCurrentInstance()
 Object.assign(inst.appContext, app._context)
 //@ts-expect-error
 Object.assign(inst.provides, app._context.provides)
-
-const onTemplateMount = () => {
-  setStylesFromHead()
-}
 
 function setStylesFromHead() {
   const eodashComponent = document.querySelector('eo-dash')
