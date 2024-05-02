@@ -9,6 +9,7 @@
 import Dashboard from './views/Dashboard.vue';
 import { createApp, getCurrentInstance } from "vue"
 import { registerPlugins } from '@/plugins';
+import { eodashKey } from './utils/keys';
 
 defineProps({
   config: {
@@ -43,8 +44,13 @@ function setStylesFromHead() {
     if (child.tagName == 'LINK' && child.getAttribute('rel') === 'stylesheet') {
       eodashComponent?.shadowRoot?.appendChild(child.cloneNode(true))
     }
-  })
+  });
 
+  stylesStr += `\n * {
+    font-family:${
+      //@ts-expect-error
+      /** @type {import("@/types").Eodash} */ (inst.provides[eodashKey])?.brand.font?.family ?? 'Roboto'}
+  }`
   styleSheet.replaceSync(stylesStr.replaceAll(":root", ":host"))
   eodashComponent?.shadowRoot?.adoptedStyleSheets.push(styleSheet)
 }
