@@ -8,8 +8,6 @@
     "skipLibCheck": true,
     "useDefineForClassFields": true,
     "allowSyntheticDefaultImports": true,
-    "composite": true,
-    "declarationMap": true,
     "module": "esnext",
     "moduleResolution": "node",
     "strict": true,
@@ -17,17 +15,29 @@
     "sourceMap": false,
     "resolveJsonModule": true,
     "esModuleInterop": true,
-    "lib": ["esnext", "dom"],
+    "lib": [
+      "esnext",
+      "dom"
+    ],
     "types": [
       "node",
-      "vuetify"
+      "vuetify",
+      "cypress"
     ],
     "paths": {
-      "@/*": ["core/*"],
-      "^/*": ["widgets/*"]
+      "@/*": [
+        "core/*"
+      ],
+      "^/*": [
+        "widgets/*"
+      ]
     }
   },
-  "references": [{ "path": "tsconfig.node.json" }],
+  "references": [
+    {
+      "path": "tsconfig.node.json"
+    }
+  ],
   "exclude": [
     "node_modules",
     "dist"
@@ -44,6 +54,12 @@
     "widgets/**/*.js",
     "widgets/**/*.d.ts",
     "widgets/**/*.tsx",
-    "public/config.js"
-    ]
+    "public/config.js",
+    "tests/cypress/**/*.ts",
+    "tests/cypress/**/*.js",
+    "tests/cypress/**/*.jsx",
+    "tests/cypress/**/*.d.ts",
+    "tests/cypress/**/*.tsx",
+    "tests/cypress/**/*.vue",
+  ]
 }

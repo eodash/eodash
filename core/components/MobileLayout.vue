@@ -1,7 +1,7 @@
 <template>
   <v-main class="overflow-hidden" style="height: 91dvh;">
 
-    <component :is="bgWidget.component" v-bind="bgWidget.props"></component>
+    <component id="bg-widget" :is="bgWidget.component" v-bind="bgWidget.props"></component>
 
     <div v-show="activeIdx === idx" class="overlay pa-2" :style="{ bottom: tabsBottom }"
       v-for="(importedWidget, idx) in importedWidgets" :key="idx">

@@ -52,8 +52,9 @@ if (!defined && props.constructorProp) {
 const store = useSTAcStore()
 
 /**
- * @template {HTMLElement} CE
- * @type {import('vue').Ref<CE|null>}
+ *  @typedef {HTMLElement &
+ * Record<string|number|symbol,unknown>} CustomElement
+ * @type {import('vue').Ref<CustomElement|null>}
  */
 const elementRef = ref(null)
 const router = useRouter()
