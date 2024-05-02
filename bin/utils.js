@@ -45,7 +45,7 @@ cli.version(pkg.version, '-v, --version', 'output the current version')
   .option('-c, --config <path>', 'path to eodash server and build configuration file')
   .option('--host [IP address]', 'specify which IP addresses the server should listen on')
   .option('-l, --lib', 'builds eodash as a web component library')
-  .option('--no-lib', 'builds eodash as a Vue application')
+  .option('--no-lib', 'builds eodash as an SPA')
   .option('--no-host', 'do not expose server to the network')
   .parse(process.argv)
 

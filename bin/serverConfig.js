@@ -44,7 +44,7 @@ export const serverConfig = /** @type {import('vite').UserConfigFnPromise}*/(def
     cacheDir: cachePath,
     plugins: [
       vue({
-        customElement: true,
+        customElement: userConfig.lib,
         template: {
           transformAssetUrls,
           compilerOptions: {
