@@ -1,7 +1,7 @@
 <template>
   <HeaderComponent v-if="!eodash.brand.noLayout" />
   <Suspense>
-    <TemplateComponent
+    <TemplateComponent @vue:mounted="onTemplateMount?.()"
       :style="`height: ${eodash.brand.noLayout ? '90dvh' : 'calc(100dvh - ' + mainRect['top'] + mainRect['bottom'] + 'px)'}`" />
   </Suspense>
   <FooterComponent v-if="!eodash.brand.noLayout" />
@@ -11,16 +11,21 @@
 import { useEodashRuntime } from "@/composables/DefineEodash";
 import { useURLSearchParametersSync, useUpdateTheme } from "@/composables";
 import { useSTAcStore } from '@/store/stac';
-import { defineAsyncComponent } from "vue";
+import { defineAsyncComponent, onMounted } from "vue";
 import { useDisplay, useLayout } from "vuetify/lib/framework.mjs";
 import { loadFont } from '@/utils'
-import { useSeoMeta } from "@unhead/vue"
 
-const props = defineProps(['config'])
+const props = defineProps({
+  config: {
+    type: String
+  },
+  onTemplateMount: {
+    type: Function
+  }
+})
 
 const eodash = await useEodashRuntime(props.config)
 
-// useRouteParams()
 useURLSearchParametersSync();
 
 const theme = useUpdateTheme('dashboardTheme', eodash.brand?.theme)
@@ -30,6 +35,7 @@ const fontFamily = await loadFont(eodash.brand?.font?.family, eodash.brand?.font
 
 const { loadSTAC } = useSTAcStore()
 await loadSTAC()
+
 const { smAndDown } = useDisplay()
 const TemplateComponent = smAndDown.value ?
   defineAsyncComponent(() => import(`@/components/MobileLayout.vue`)) :
@@ -39,15 +45,9 @@ const HeaderComponent = defineAsyncComponent(() => import(`@/components/Header.v
 const FooterComponent = defineAsyncComponent(() => import(`@/components/Footer.vue`))
 const { mainRect } = useLayout()
 
-useSeoMeta(eodash.brand.meta ?? {})
+onMounted(() => {
+  const htmlTag = /** @type {HTMLElement}  */(document.querySelector('html'))
+  htmlTag.style.overflow = 'hidden';
+})
+
 </script>
-
-<style scoped lang="css">
-html {
-  overflow: hidden;
-}
-
-* {
-  font-family: v-bind('fontFamily');
-}
-</style>
