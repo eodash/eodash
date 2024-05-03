@@ -11,11 +11,4 @@ import { inject } from 'vue';
 const eodash = /** @type {import("@/types").Eodash} */(inject(eodashKey))
 
 const title = eodash.brand?.name
-
-/**
- * @param {string} to
- */
-const navigateTo = (to) => {
-  window.open(to, '_self')
-}
 </script>

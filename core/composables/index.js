@@ -2,7 +2,7 @@
 // setup functions or vue composition api components
 
 import { reactive } from "vue";
-import { currentUrl, datetime, indicator, mapPosition } from "@/store/States";
+import { currentUrl, indicator, mapPosition } from "@/store/States";
 import eodash from "@/eodash";
 import { useTheme } from "vuetify/lib/framework.mjs";
 import { onMounted, watch } from "vue";
