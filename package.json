@@ -6,18 +6,29 @@
   "files": [
     "core",
     "bin",
-    "widgets"
+    "widgets",
+    "dist"
   ],
   "exports": {
     ".": {
       "types": "./core/types.d.ts",
       "default": "./core/main.js"
-    }
+    },
+    "./config": {
+      "types": "./bin/types.d.ts",
+      "default": "./bin/main.js"
+    },
+    "./webcomponent": {
+      "types": "./core/asWebComponent.d.ts",
+      "default": "./dist/eo-dash.js"
+    },
+    "./webcomponent.css": "./dist/style.css"
   },
   "browser": "./core/main.js",
   "scripts": {
     "dev": "npx eodash dev --entryPoint core/eodash.js",
     "build": "npx eodash build --entryPoint core/eodash.js",
+    "build:lib": "npx eodash build --entryPoint core/eodash.js --lib --outDir dist",
     "check": "vue-tsc --noEmit --skipLibCheck && eslint .",
     "check:lint": "eslint .",
     "check:types": "vue-tsc --noEmit --skipLibCheck",
