@@ -45,9 +45,13 @@ export const useEodashRuntime = async (runtimeConfig) => {
 }
 
 /**
- * @param {(store:import("@/types").EodashStore)=> import("@/types").Eodash
- * | Promise<import("@/types").Eodash>}  configCallback
+ * @param {((store:import("@/types").EodashStore)=> import("@/types").Eodash
+ * | Promise<import("@/types").Eodash>) | import("@/types").Eodash}  config
  */
-export const createEodash = async (configCallback) => {
-  return await configCallback(store)
+export const createEodash = async (config) => {
+  if (config instanceof Function) {
+    return await config(store)
+  } else {
+    return config
+  }
 }
