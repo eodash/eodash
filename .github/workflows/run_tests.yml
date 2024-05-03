@@ -1,0 +1,30 @@
+name: Run Tests
+on:
+  pull_request:
+    branches:
+      - "main"
+      
+  workflow_dispatch:
+  
+jobs:
+  run-test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        node: [20]
+    steps:
+      - name: Checkout 🛎
+        uses: actions/checkout@v4
+      - name: Setup node env 🏗
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          check-latest: true
+          cache: "npm"
+      - name: Install dependencies 👨🏻‍💻
+        run: npm ci --prefer-offline --no-audit
+      - name: Run Component Testing 👀
+        run: npm run test:client
+      # - name: Run CLI Testing 👀
+      #   run: npm run test:cli

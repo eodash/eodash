@@ -246,10 +246,7 @@ export interface Template<T extends ExecutionTime = "compiletime"> {
    */
   widgets: Widget<T>[]
 }
-/** @ignore */
-export type ExternalURL = `${'https://' | 'http://'}${string}`;
-/** @ignore */
-export type InternalRoute = `/${string}`
+
 /** @ignore */
 export type StacEndpoint = `${'https://' | 'http://'}${string}/catalog.json`
 
@@ -267,7 +264,7 @@ export interface Eodash<T extends ExecutionTime = "compiletime"> {
   /**
    * Instance ID.
    */
-  id: string;
+  id?: string;
   /**
    * Root STAC catalog endpoint
    **/

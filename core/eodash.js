@@ -10,7 +10,7 @@ export const eodash = reactive({
   id: "demo",
   stacEndpoint: "https://esa-eodash.github.io/RACE-catalog/RACE/catalog.json",
   brand: {
-    noLayout: false,
+    noLayout: true,
     name: "Demo",
     font: {
       family: "Roboto",

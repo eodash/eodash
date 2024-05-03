@@ -23,6 +23,10 @@ pnpm-debug.log*
 *.sln
 *.sw?
 
+# Cypress 
+tests/cypress/downloads
+tests/cypress/screenshots
+
 # docs
 docs/.vitepress/cache
 docs/.generated

@@ -37,7 +37,7 @@ useURLSearchParametersSync();
 const theme = useUpdateTheme('dashboardTheme', eodash.brand?.theme)
 theme.global.name.value = 'dashboardTheme'
 
-const fontFamily = await loadFont(eodash.brand?.font?.family, eodash.brand?.font?.link)
+await loadFont(eodash.brand?.font?.family, eodash.brand?.font?.link)
 
 const { loadSTAC } = useSTAcStore()
 await loadSTAC()

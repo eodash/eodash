@@ -3,7 +3,7 @@
     <eox-layout :gap="eodash.template.gap ?? 2">
       <eox-layout-item style="z-index: 0;" x="0" y="0" h="12" w="12">
         <Suspense>
-          <component :is="bgWidget.component" v-bind="bgWidget.props" />
+          <component id="bg-widget" :is="bgWidget.component" v-bind="bgWidget.props" />
           <template #fallback>
             <Loading />
           </template>

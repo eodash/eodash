@@ -1,12 +1,13 @@
 <template>
   <v-main class="overflow-hidden" style="height: 91dvh;">
 
-    <component :is="bgWidget.component" v-bind="bgWidget.props"></component>
+    <component id="bg-widget" :is="bgWidget.component" v-bind="bgWidget.props"></component>
 
-    <div v-show="activeIdx === idx" class="pa-2" v-for="(importedWidget, idx) in importedWidgets" :key="idx" :style="{
-      bottom: tabsHeightFromBtm, position: 'absolute', overflow: 'hidden',
-      width: '100%', left: 0, top: mainRect.top + 'px', zIndex: 1, background: 'rgb(var(--v-theme-surface))'
-    }">
+    <div v-show="activeIdx === idx" id="overlay" class="pa-2" v-for="(importedWidget, idx) in importedWidgets"
+      :key="idx" :style="{
+        bottom: tabsHeightFromBtm, position: 'absolute', overflow: 'hidden',
+        width: '100%', left: 0, top: mainRect.top + 'px', zIndex: 1, background: 'rgb(var(--v-theme-surface))'
+      }">
       <v-btn icon variant="text" style="height: 5%;position: relative;" @click="activeIdx = -1">&#x2715;</v-btn>
       <component style="height: 94% !important;" :key="importedWidget.value.id" :is="importedWidget.value.component"
         v-show="activeIdx === idx" v-bind="importedWidget.value.props" />
