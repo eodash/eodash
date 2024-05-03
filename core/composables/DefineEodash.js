@@ -45,8 +45,8 @@ export const useEodashRuntime = async (runtimeConfig) => {
 }
 
 /**
- * @param {((store:import("@/types").EodashStore)=> import("@/types").Eodash
- * | Promise<import("@/types").Eodash>) | import("@/types").Eodash}  config
+ * @param {((store:import("@/types").EodashStore)=> Promise<import("@/types").Eodash>)
+ * | import("@/types").Eodash}  config
  */
 export const createEodash = async (config) => {
   if (config instanceof Function) {

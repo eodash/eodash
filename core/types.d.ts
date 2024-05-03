@@ -347,8 +347,9 @@ export interface EodashStore {
 /**
  * the project's entry point should export this function as a default
  * to instantiate eodash
- *
+ * @group Eodash
  * @param  configCallback
  */
 export declare const createEodash: typeof import("./composables/DefineEodash").createEodash
+/** @group EodashStore */
 export declare const store: EodashStore

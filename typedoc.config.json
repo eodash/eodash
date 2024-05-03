@@ -1,12 +1,28 @@
 {
     "$schema": "https://typedoc.org/schema.json",
-    "entryPoints": ["core/types.d.ts"],
-    "docsRoot":"./docs",
+    "entryPoints": [
+        "bin/types.d.ts",
+        "core/types.d.ts",
+        "core/asWebComponent.d.ts"
+    ],
+    "sortEntryPoints": false,
+    "docsRoot": "./docs",
     "out": "docs/api",
     "tsconfig": "tsconfig.json",
-    "plugin": ["typedoc-plugin-vue","typedoc-plugin-markdown","typedoc-vitepress-theme"],
+    "plugin": [
+        "typedoc-plugin-vue",
+        "typedoc-plugin-markdown",
+        "typedoc-vitepress-theme"
+    ],
     "readme": "none",
     "excludeExternals": true,
-    "entryPointStrategy": "resolve",
-    "categorizeByGroup":true
+    "categorizeByGroup": true,
+    "defaultCategory": "Eodash",
+    "navigationLeaves": [
+        "bin/types",
+        "core/types",
+        "core/asWebComponent"
+    ],
+    "jsDocCompatibility": true,
+    "useTsLinkResolution": true,
 }

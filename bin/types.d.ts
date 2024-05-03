@@ -1,6 +1,6 @@
 /**
  * Extending [Vite's](https://vitejs.dev/) config to configure eodash's server, build and setup.
- * @group EodashConfig
+ * @group CLI
  */
 export interface EodashConfig {
   dev?: {
@@ -44,5 +44,9 @@ export interface EodashConfig {
   /** builds eodash as a web component library */
   lib?: boolean
 }
-
+/**
+ *  helper function that provides intellisense
+ *  without the need for JSDOC for `eodash.config.js`:
+ * @group CLI
+ */
 export declare const definConfig: (config: EodashConfig) => EodashConfig
