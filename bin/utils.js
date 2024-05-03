@@ -71,10 +71,16 @@ export const logger = createLogger()
  */
 async function getUserConfig(options, command) {
   let eodashCLiConfigFile = options.config ? path.resolve(rootPath, options.config) : path.join(rootPath, 'eodash.config.js');
-  /** @type {import("../core/types").EodashConfig} */
+  /** @type {import("./types").EodashConfig} */
   let config = {};
   if (existsSync(eodashCLiConfigFile)) {
-    config = await import(eodashCLiConfigFile).then(config => config.default).catch(err => {
+    config = await import(eodashCLiConfigFile).then(config => {
+      if (config.default instanceof Function) {
+        return config.default()
+      } else {
+        return config.default
+      }
+    }).catch(err => {
       console.error(err);
     })
   } else {
