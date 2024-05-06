@@ -1,5 +1,5 @@
 import MobileLayout from '@/components/MobileLayout.vue'
-import { eodashKey } from '@/store/Keys'
+import { eodashKey } from '@/utils/keys'
 
 describe('<MobileLayout />', () => {
   beforeEach(() => {
@@ -9,6 +9,7 @@ describe('<MobileLayout />', () => {
           "EodashDatePicker": true,
           "EodashItemFilter": true,
           "EodashMap": true,
+          "DynamicWebComponent": true
         }
       }
     })
@@ -33,8 +34,8 @@ describe('<MobileLayout />', () => {
     cy.get("#bg-widget").should("exist")
   })
 
-  it("close open tab", () => {
-    cy.get(".overlay > .v-btn").then(els => {
+  it("close opened tab", () => {
+    cy.get("#overlay > .v-btn").then(els => {
       els[0].click()
     })
     cy.get(".v-slide-group-item--active").should('not.exist')
@@ -45,9 +46,9 @@ describe('<MobileLayout />', () => {
     cy.get("@vue").then(({ options }) => {
       const lastIdx =  /** @type {import('@/types').Eodash} */
         (options.global.provide[eodashKey]).template.widgets.length - 1
-      cy.get(`button[value=${lastIdx}]`).click()
+      cy.get(`.v-slide-group__content button[value=${lastIdx}]`).click({ force: true })
 
-      cy.get(".overlay").should("exist")
+      cy.get("#overlay").should("exist")
     })
   })
 

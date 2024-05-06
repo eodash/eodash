@@ -29,13 +29,13 @@ export interface WebComponentProps<T extends ExecutionTime = "compiletime"> {
    * @param el - web component
    * @param store - return value of the core STAC pinia store in `/core/store/stac.ts`
    */
-  onMounted?: (el: Element | null, store: ReturnType<typeof import("./store/stac").useSTAcStore>, router: import("vue-router").Router) => (Promise<void> | void)
+  onMounted?: (el: Element | null, store: ReturnType<typeof import("./store/stac").useSTAcStore>) => (Promise<void> | void)
   /**
    * Triggered when the web component is unmounted from the DOM.
    * @param el - web component
    * @param store - return value of the core STAC pinia store in `/core/store/stac.ts`
    */
-  onUnmounted?: (el: Element | null, store: ReturnType<typeof import("./store/stac").useSTAcStore>, router: import("vue-router").Router) => (Promise<void> | void)
+  onUnmounted?: (el: Element | null, store: ReturnType<typeof import("./store/stac").useSTAcStore>) => (Promise<void> | void)
 }
 
 
@@ -246,10 +246,7 @@ export interface Template<T extends ExecutionTime = "compiletime"> {
    */
   widgets: Widget<T>[]
 }
-/** @ignore */
-export type ExternalURL = `${'https://' | 'http://'}${string}`;
-/** @ignore */
-export type InternalRoute = `/${string}`
+
 /** @ignore */
 export type StacEndpoint = `${'https://' | 'http://'}${string}/catalog.json`
 
@@ -265,20 +262,19 @@ export type ExecutionTime = "runtime" | "compiletime";
  */
 export interface Eodash<T extends ExecutionTime = "compiletime"> {
   /**
+   * Instance ID.
+   */
+  id?: string;
+  /**
    * Root STAC catalog endpoint
    **/
   stacEndpoint: StacEndpoint
   /**
-  * Renders navigation buttons on the app header.
-  **/
-  routes?: Array<{
-    title: string,
-    to: ExternalURL | InternalRoute
-  }>
-  /**
    * Brand specifications.
    */
   brand: {
+    /** Removes the dashboard layout */
+    noLayout?: boolean
     /**
      * Automatically fetches the specified font family from google fonts. if the [link](#font-link) property is specified
      * the font family will be fetched from the provided source instead.
@@ -306,10 +302,6 @@ export interface Eodash<T extends ExecutionTime = "compiletime"> {
      */
     theme?: import("vuetify/lib/index.mjs").ThemeDefinition
     /**
-     * meta tags configuration, using unhead's [useSeoMeta](https://unhead.unjs.io/usage/composables/use-seo-meta)
-     */
-    meta?: import("@unhead/vue").UseSeoMetaInput;
-    /**
      * Text applied to the footer.
      */
     footerText?: string;
@@ -335,10 +327,6 @@ export interface EodashStore {
      */
     currentUrl: import("vue").Ref<string>
     /**
-    * OpenLayers map instance
-    */
-    mapInstance: import("vue").Ref<import("openlayers").Map | null>
-    /**
     * currently selected datetime
     */
     datetime: import("vue").Ref<string>
@@ -357,54 +345,11 @@ export interface EodashStore {
 }
 ///////
 /**
- * Extending [Vite's](https://vitejs.dev/) config to configure eodash's server, build and setup.
- * @group EodashConfig
- */
-export interface EodashConfig {
-  dev?: {
-    /** serving  port */
-    port?: string | number
-    host?: string | boolean
-    /** open default browser when the server starts */
-    open?: boolean
-  }
-  preview?: {
-    /** serving  port */
-    port?: string | number
-    host?: string | boolean
-    /** open default browser when the server starts */
-    open?: boolean
-  }
-  /**
-   * Base public path
-   */
-  base?: string;
-  /**
-   * Build target folder path
-   */
-  outDir?: string;
-  /**
-   * Path to statically served assets folder, can be set to `false`
-   * to disable serving assets statically
-   **/
-  publicDir?: string | false;
-  /**
-   * Cache folder
-   */
-  cacheDir?: string
-  /** Specifies main entry file, exporting `createEodash`*/
-  entryPoint?: string
-  /**
-   * File exporting eodash client runtime config
-   */
-  runtime?: string
-  widgets?: string
-}
-/**
  * the project's entry point should export this function as a default
  * to instantiate eodash
- *
+ * @group Eodash
  * @param  configCallback
  */
-export declare const createEodash: (configCallback: (store: EodashStore) => Eodash | Promise<Eodash>) => Promise<Eodash>
+export declare const createEodash: typeof import("./composables/DefineEodash").createEodash
+/** @group EodashStore */
 export declare const store: EodashStore

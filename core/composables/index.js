@@ -2,20 +2,19 @@
 // setup functions or vue composition api components
 
 import { reactive } from "vue";
-import { currentUrl, datetime, mapInstance, indicator } from "@/store/States";
-import eodashConfig from "@/eodash";
+import { currentUrl, indicator, mapPosition } from "@/store/States";
+import eodash from "@/eodash";
 import { useTheme } from "vuetify/lib/framework.mjs";
-import { useRouter } from "vue-router";
-import { onMounted, onUnmounted, watch } from "vue";
+import { onMounted, watch } from "vue";
 
 /**
  * Creates an absolute URL from a relative link and assignes it to `currentUrl`
  * @param {string} [rel = '']
- * @param {string} [base = eodashConfig.stacEndpoint] - base URL, default value is the root stac catalog
+ * @param {string} [base = eodash.stacEndpoint] - base URL, default value is the root stac catalog
  * @returns {import('vue').Ref<string>} - returns `currentUrl`
  * @see {@link '@/store/States.js'}
  */
-export const useAbsoluteUrl = (rel = "", base = eodashConfig.stacEndpoint) => {
+export const useAbsoluteUrl = (rel = "", base = eodash.stacEndpoint) => {
   if (!rel || rel.includes("http")) {
     currentUrl.value = base;
     return currentUrl;
@@ -172,63 +171,49 @@ export const useUpdateTheme = (themeName, themeDefinition = {}) => {
 };
 
 /**
- * Composable that initiates route query params to store
- * STAC related values
+ * Composable that syncs store and  URLSearchParameters
  */
-export const useRouteParams = () => {
-  const router = useRouter();
-  /**
-   * @type {import("openlayers").EventsListenerFunctionType}
-   */
-  const handleMoveEnd = (evt) => {
-    const map = /** @type {import("openlayers").Map | undefined} */ (
-      /** @type {*} */ (evt).map
-    );
-    const [x, y] = map?.getView().getCenter() ?? [0, 0];
-    const z = map?.getView().getZoom();
-    const currentQuery = router.currentRoute.value.query;
-    router.push({
-      query: {
-        ...currentQuery,
-        x: x.toFixed(4),
-        y: y.toFixed(4),
-        z: z?.toFixed(4),
-      },
-    });
-  };
+
+export const useURLSearchParametersSync = () => {
   onMounted(() => {
-    // Set datetime based on kvp
-    if (
-      "datetime" in router.currentRoute.value.query &&
-      router.currentRoute.value.query["datetime"] !== ""
-    ) {
-      // @ts-ignore
-      datetime.value =
-        /** @type {string} */ router.currentRoute.value.query["datetime"];
+    // Analyze currently set url params when first loaded and set them in the store
+    if ('URLSearchParams' in window) {
+      const searchParams = new URLSearchParams(window.location.search);
+      let x, y, z;
+      searchParams.forEach((value, key) => {
+        if (key === "indicator") {
+          indicator.value = value;
+        }
+        if (key === "x") {
+          x = value;
+        }
+        if (key === "y") {
+          y = value;
+        }
+        if (key === "z") {
+          z = value;
+        }
+      })
+      if (x !== undefined && y !== undefined && z !== undefined) {
+        mapPosition.value = [x, y, z];
+      }
     }
     watch(
-      [datetime, mapInstance, currentUrl, indicator],
-      ([updatedDate, updatedMap, _updatedUrl, updatedIndicator]) => {
-        const [x, y] = updatedMap?.getView().getCenter() ?? [0, 0];
-        // lets reduce unnecessary accuracy
-        const currentQuery = router.currentRoute.value.query;
-        router.push({
-          query: {
-            ...currentQuery,
-            indicator: updatedIndicator,
-            x: x.toFixed(4),
-            y: y.toFixed(4),
-            z: updatedMap?.getView().getZoom().toFixed(),
-            datetime: updatedDate,
-            // url: updatedUrl,
-          },
-        });
-        updatedMap?.on("moveend", handleMoveEnd);
-      }
-    );
-  });
-
-  onUnmounted(() => {
-    mapInstance.value?.un("moveend", handleMoveEnd);
+      [indicator, mapPosition],
+      ([updatedIndicator, updatedMapPosition]) => {
+        if ('URLSearchParams' in window) {
+          const searchParams = new URLSearchParams(window.location.search);
+          if (updatedIndicator !== "") {
+            searchParams.set("indicator", updatedIndicator);
+          }
+          if (updatedMapPosition && updatedMapPosition.length === 3) {
+            searchParams.set("x", updatedMapPosition[0]?.toFixed(4) ?? '');
+            searchParams.set("y", updatedMapPosition[1]?.toFixed(4) ?? '');
+            searchParams.set("z", updatedMapPosition[2]?.toFixed(4) ?? '');
+          }
+          const newRelativePathQuery = window.location.pathname + '?' + searchParams.toString();
+          history.pushState(null, '', newRelativePathQuery);
+        }
+      })
   });
 };

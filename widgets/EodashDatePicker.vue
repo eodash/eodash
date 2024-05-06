@@ -15,7 +15,11 @@
 import { computed, ref, onMounted } from "vue";
 import { datetime } from "@/store/States"
 
-const props = defineProps(["inline"])
+const props = defineProps({
+  inline: {
+    type: Boolean
+  }
+})
 
 const currentDate = computed({
   get() {
@@ -39,10 +43,6 @@ const currentDate = computed({
  * @type {import("vue").Ref<import("vuetify/components").VDatePicker | null>}
  **/
 const datePicker = ref(null)
-/**
- * @type {import("vue").Ref<import("vuetify/components").VTextField | null>}
- **/
-const inlineDatePicker = ref(null)
 /** @type {import("vue").Ref<string|undefined>} */
 const width = ref()
 /** @type {import("vue").Ref<string|undefined>} */

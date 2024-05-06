@@ -10,9 +10,10 @@ import 'vuetify/styles';
 
 
 import { createVuetify } from 'vuetify';
+// import {} from "vuetify"
 
 // https://vuetifyjs.com/en/introduction/why-vuetify/#feature-guides
-export default createVuetify({
+const vuetify = createVuetify({
   theme: {
     themes: {
       dashboardTheme: {},
@@ -24,4 +25,6 @@ export default createVuetify({
       },
     },
   },
-});
+})
+
+export default vuetify

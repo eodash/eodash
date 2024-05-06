@@ -49,6 +49,5 @@ export const mockedEodash = {
   stacEndpoint: "https://esa-eodash.github.io/RACE-catalog/RACE/catalog.json",
   template: {
     widgets: []
-  },
-  routes: []
+  }
 }

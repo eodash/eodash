@@ -1,5 +1,5 @@
 import Footer from '@/components/Footer.vue'
-import { eodashKey } from '@/store/Keys'
+import { eodashKey } from '@/utils/keys'
 
 describe('<Footer />', () => {
   beforeEach(() => {
@@ -8,9 +8,9 @@ describe('<Footer />', () => {
 
   it('render component and footer title', () => {
     //@ts-expect-error
-    cy.get("@vue").then(({ options }) => {
+    cy.get("@vue").then(({ options, wrapper }) => {
       const footerText =/** @type {import('@/types').Eodash} */ (options.global.provide[eodashKey]).brand.footerText ?? ""
-      cy.get('.footer-text').should('include.text', footerText)
+      expect(wrapper.wrapperElement).to.include.text(footerText)
     })
   })
 })

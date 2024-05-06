@@ -11,6 +11,7 @@
     },
     "include": [
         "bin/**/*.js",
+        "bin/**/*.d.ts",
         "tests/cli/**/*.js",
         "tests/cli/**/*.spec.js",
         "tests/cli/**/*.test.js",

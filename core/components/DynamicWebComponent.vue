@@ -11,7 +11,6 @@ import {
   onMounted as whenMounted
 } from 'vue';
 import { ref } from 'vue';
-import { useRouter } from 'vue-router';
 
 const props =   /** @type {import("@/types").WebComponentProps}  */(defineProps({
   link: {
@@ -57,13 +56,13 @@ const store = useSTAcStore()
  * @type {import('vue').Ref<CustomElement|null>}
  */
 const elementRef = ref(null)
-const router = useRouter()
+
 
 whenMounted(() => {
-  props.onMounted?.(elementRef.value, store, router)
+  props.onMounted?.(elementRef.value, store)
 })
 
 whenUnMounted(() => {
-  props.onUnmounted?.(elementRef.value, store, router)
+  props.onUnmounted?.(elementRef.value, store)
 })
 </script>

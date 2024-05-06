@@ -1,5 +1,5 @@
 import DashboardLayout from '@/components/DashboardLayout.vue'
-import { eodashKey } from '@/store/Keys'
+import { eodashKey } from '@/utils/keys'
 
 describe('<DashboardLayout />', () => {
   /** @type {import('@/types').Widget[]|null} */
@@ -51,7 +51,7 @@ describe('<DashboardLayout />', () => {
   })
 
   it('renders background widget', () => {
-    cy.get('.bg-widget').should('exist')
+    cy.get('#bg-widget').should('exist')
   })
 
 })

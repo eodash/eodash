@@ -4,7 +4,7 @@ import { Suspense, h } from 'vue'
 import './commands';
 import { VApp } from 'vuetify/components'
 import { registerPlugins } from './utils';
-import { eodashKey } from '@/store/Keys';
+import { eodashKey } from '@/utils/keys';
 import eodash from '@/eodash';
 
 /**
@@ -12,7 +12,6 @@ import eodash from '@/eodash';
  * @param {Parameters<typeof mount >['1'] & {
  * vuetify?:import('vuetify/lib/framework.mjs').VuetifyOptions;
  * pinia?:import('@pinia/testing').TestingPinia | import("pinia").Pinia;
- * router?:import('vue-router').Router
  * } } options
  */
 export const vMountComponent = (OriginalComponent, options = {}) => {

@@ -2,7 +2,7 @@ import { defineStore } from 'pinia';
 import { inject, ref } from 'vue';
 import axios from 'axios';
 import { useAbsoluteUrl } from '@/composables/index';
-import { eodashKey } from '@/store/Keys';
+import { eodashKey } from '@/utils/keys';
 import { indicator } from '@/store/States';
 
 export const useSTAcStore = defineStore('stac', () => {

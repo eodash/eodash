@@ -31,6 +31,11 @@ describe("test build and preview commands", () => {
       build = spawnSync('npx', ['eodash', "build", "--entryPoint", "core/eodash.js"])
       expect(existsSync('.eodash/dist/index.html')).toBeTruthy()
     })
+    it("test building as a web component using --lib flag", () => {
+      build = spawnSync('npx', ['eodash', "build", "--entryPoint", "core/eodash.js", "--lib"])
+      expect(existsSync('.eodash/dist/eo-dash.js')).toBeTruthy()
+      expect(existsSync('.eodash/dist/style.css')).toBeTruthy()
+    })
 
     it("test --base flag", async () => {
       const base = "/base"

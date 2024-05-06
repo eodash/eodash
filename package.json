@@ -1,23 +1,34 @@
 {
   "name": "@eodash/eodash",
-  "version": "5.0.0-alpha.1.15",
+  "version": "5.0.0-alpha.2",
   "type": "module",
   "types": "./core/types.d.ts",
   "files": [
     "core",
     "bin",
-    "widgets"
+    "widgets",
+    "dist"
   ],
   "exports": {
     ".": {
       "types": "./core/types.d.ts",
       "default": "./core/main.js"
-    }
+    },
+    "./config": {
+      "types": "./bin/types.d.ts",
+      "default": "./bin/main.js"
+    },
+    "./webcomponent": {
+      "types": "./core/asWebComponent.d.ts",
+      "default": "./dist/eo-dash.js"
+    },
+    "./webcomponent.css": "./dist/style.css"
   },
   "browser": "./core/main.js",
   "scripts": {
     "dev": "npx eodash dev --entryPoint core/eodash.js",
     "build": "npx eodash build --entryPoint core/eodash.js",
+    "build:lib": "npx eodash build --entryPoint core/eodash.js --lib --outDir dist",
     "check": "vue-tsc --noEmit --skipLibCheck && eslint .",
     "check:lint": "eslint .",
     "check:types": "vue-tsc --noEmit --skipLibCheck",
@@ -39,7 +50,6 @@
     "@eox/map": "^1.4.0",
     "@eox/stacinfo": "^0.3.0",
     "@mdi/font": "7.0.96",
-    "@unhead/vue": "^1.8.20",
     "@vitejs/plugin-vue": "^5.0.0",
     "animated-details": "gist:2912bb049fa906671807415eb0e87188",
     "axios": "^1.6.2",
@@ -52,7 +62,6 @@
     "vite": "^5.1.5",
     "vite-plugin-vuetify": "^2.0.0",
     "vue": "^3.2.0",
-    "vue-router": "^4.0.0",
     "vuetify": "^3.5.1",
     "webfontloader": "^1.6.28"
   },
