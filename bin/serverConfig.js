@@ -29,7 +29,7 @@ export const indexHtml = `
 </head>
 
 <body>
-${userConfig.lib ? `<eo-dash/>
+${userConfig.lib ? `<eo-dash style="height:100dvh;"/>
 <script type="module" src="${path.resolve(`/@fs/${appPath}`, `core/asWebComponent.js`)}"></script>
 `: ` <div id="app"/>
 <script type="module" src="${path.resolve(`/@fs/${appPath}`, `core/render.js`)}"></script>
