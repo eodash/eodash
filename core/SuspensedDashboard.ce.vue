@@ -43,7 +43,7 @@ function setStylesFromHead() {
       return
     }
 
-    if (child.tagName == 'LINK' && child.getAttribute('rel') === 'stylesheet') {
+    if (child.tagName == 'LINK' && child.getAttribute('rel')?.includes('stylesheet')) {
       eodashComponent?.shadowRoot?.appendChild(child.cloneNode(true))
     }
   });
