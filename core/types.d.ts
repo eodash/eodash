@@ -350,6 +350,7 @@ export interface EodashStore {
  * @group Eodash
  * @param  configCallback
  */
-export declare const createEodash: typeof import("./composables/DefineEodash").createEodash
+export declare const createEodash: (config: ((store: EodashStore) => Eodash | Promise<Eodash>) | Eodash) => Eodash | Promise<Eodash>
+
 /** @group EodashStore */
 export declare const store: EodashStore
