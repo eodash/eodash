@@ -176,8 +176,9 @@ export interface IFrameWidget {
  */
 export interface FunctionalWidget<T extends ExecutionTime = "compiletime"> {
   /**
-   * Provides a functional definition of the widget,
-   * gets triggered whenever a STAC object is selected.
+   * Provides a functional definition of widgets,
+   * gets triggered whenever a STAC object is selected, and only renders the returned configuration
+   * if the `id` doesn't match the currently rendered `id`
    * @param selectedSTAC - Currently selected STAC object
    */
   defineWidget: (selectedSTAC: import("stac-ts").StacCatalog |
@@ -348,8 +349,8 @@ export interface EodashStore {
  * the project's entry point should export this function as a default
  * to instantiate eodash
  * @group Eodash
- * @param  configCallback
+ * @param config
  */
-export declare const createEodash: typeof import("./composables/DefineEodash").createEodash
+export declare const createEodash: (config: ((store: EodashStore) => Promise<Eodash>) | Eodash) => Promise<Eodash>
 /** @group EodashStore */
 export declare const store: EodashStore
