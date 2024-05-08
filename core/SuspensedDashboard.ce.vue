@@ -43,7 +43,7 @@ function setStylesFromHead() {
       return
     }
 
-    if (child.tagName == 'LINK' && child.getAttribute('rel') === 'stylesheet') {
+    if (child.tagName == 'LINK' && child.getAttribute('rel')?.includes('stylesheet')) {
       eodashComponent?.shadowRoot?.appendChild(child.cloneNode(true))
     }
   });
@@ -52,7 +52,13 @@ function setStylesFromHead() {
     font-family:${
       //@ts-expect-error
       /** @type {import("@/types").Eodash} */ (inst.provides[eodashKey])?.brand.font?.family ?? 'Roboto'}
-  }`
+  }
+${//@ts-expect-error
+  /** @type {import("@/types").Eodash} */ (inst.provides[eodashKey]).brand.noLayout ?
+      `div.v-application__wrap {
+  min-height: fit-content;
+}`: ""}
+  `
   styleSheet.replaceSync(stylesStr.replaceAll(":root", ":host"))
   eodashComponent?.shadowRoot?.adoptedStyleSheets.push(styleSheet)
 }
