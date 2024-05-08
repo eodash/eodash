@@ -63,7 +63,7 @@ export const appPath = fileURLToPath(new URL("..", import.meta.url)),
   cachePath = userConfig.cacheDir ? path.resolve(rootPath, userConfig.cacheDir) : path.join(dotEodashPath, 'cache');
 
 
-export const logger = createLogger()
+export const logger = createLogger(undefined, { prefix: '[eodash]' })
 
 /**
  * @param {Options} options
