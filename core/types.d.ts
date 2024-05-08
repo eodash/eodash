@@ -351,6 +351,7 @@ export interface EodashStore {
  * @group Eodash
  * @param config
  */
-export declare const createEodash: (config: ((store: EodashStore) => Promise<Eodash>) | Eodash) => Promise<Eodash>
+export declare const createEodash: (config: ((store: EodashStore) => Eodash | Promise<Eodash>) | Eodash) => Eodash | Promise<Eodash>
+
 /** @group EodashStore */
 export declare const store: EodashStore

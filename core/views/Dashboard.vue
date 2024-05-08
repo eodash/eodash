@@ -2,7 +2,7 @@
   <HeaderComponent v-if="!eodash.brand.noLayout" />
   <Suspense>
     <TemplateComponent @vue:mounted="onTemplateMount?.()"
-      :style="`height: ${eodash.brand.noLayout ? '90dvh' : 'calc(100dvh - ' + mainRect['top'] + mainRect['bottom'] + 'px)'}`" />
+      :style="`height: ${eodash.brand.noLayout ? (onTemplateMount ? '100%' : '90dvh') : 'calc(100dvh - ' + mainRect['top'] + mainRect['bottom'] + 'px)'}`" />
     <template #fallback>
       <div v-if="onTemplateMount" style="height: 100dvh; display: flex; align-items: center; justify-content: center;">
         <Loading />
