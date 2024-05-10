@@ -1,7 +1,7 @@
 # Get Started
 
 ## Prerequisites
-* Node.js version 20 or higher.
+* Node.js version 18 or higher.
 * Terminal for accessing eodash via its command line interface (CLI).
 * VSCode is recommended, along with the official Vue extension.
 
