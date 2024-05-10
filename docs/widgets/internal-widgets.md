@@ -55,6 +55,7 @@ You can assign internal widgets on a folder of your choice by assigning the fold
 All eodash's dependencies are accessible inside your created vue components without the need to reinstall them. Eodash uses the following dependencies.
 <script server>
 import pkg from "../../package.json" with { type: "json" };
+const dependencies = Object.keys(pkg.dependencies).filter(dep => !['commander',"vite-plugin-vuetify","@vitejs/plugin-vue"].includes(dep));
 </script>
 
 
@@ -63,7 +64,7 @@ import pkg from "../../package.json" with { type: "json" };
     <th>Package</th>
     <th>Version</th>
   </tr>
-  <tr v-for="dependency in Object.keys(pkg.dependencies)" >
+  <tr v-for="dependency in dependencies" >
     <td>{{dependency}}</td>
     <td>{{ pkg.dependencies[dependency]}}</td>
   </tr>
@@ -73,7 +74,7 @@ import pkg from "../../package.json" with { type: "json" };
 ```vue
 // src/widgets/List.vue
 <template>
-    <v-card class="mx-auto d-flex flex-column overflow-auto fill-height" color="transparent">
+    <v-card class="mx-auto d-flex flex-column fill-height" color="transparent">
         <v-list lines="one" class="overflow-auto">
             <v-list-item v-for="(link, idx) in stac" :key="idx" @click="getSelected(idx)" :title="link.title">
             </v-list-item>

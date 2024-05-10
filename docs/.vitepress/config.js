@@ -31,19 +31,18 @@ export default defineConfig({
       {
         text: 'Guide',
         items: [
-          { text: 'Branding', link: '/branding' },
-          { text: 'CLI', link: '/cli' },
-          { text: 'Eodash Store', link: '/eodash-store' },
-          { text: 'Runtime Configuration', link: '/runtime-configuration' },
-          { text: 'SPA vs Web Component', link: '/spa-vs-webcomponent' },
+          { text: 'Instantiating Eodash', link: '/instantiation' },
           {
             text: 'Widgets', link: '/widgets/',
             items: [
-              { text: 'Web Components', link: '/widgets/webcomponent-widgets' },
+              { text: 'Web Component Widgets', link: '/widgets/webcomponent-widgets' },
               { text: 'Internal Widgets', link: '/widgets/internal-widgets' },
             ]
           },
-          { text: 'Best Practices', link: '/best-practices' },
+          { text: 'Branding', link: '/branding' },
+          { text: 'Eodash Store', link: '/eodash-store' },
+          { text: 'CLI', link: '/cli' },
+          { text: 'SPA vs Web Component', link: '/spa-vs-webcomponent' },
         ]
       },
       {

@@ -1,14 +1,14 @@
 # Widgets
-eodash client is a micro frontend host, that exposes a store to share stateful STAC related data and actions between the widgets. The placement of the widgets is backed by the [EOxElement]() `@eox/layout` that offers a grid based layout system, a `layout` property configures the element on the dashboard. Refer to the [API]() to learn more.
+eodash client is a micro frontend host, that exposes a store to share stateful STAC related data and actions between the widgets. The placement of the widgets is backed by the [EOxElement](https://github.com/EOX-A/EOxElements) `@eox/layout` that offers a grid based layout system, and a `layout` property configures the element on the dashboard. Refer to the [API](/api/core/types/type-aliases/Widget.html) to learn more.
 
 ## Type of Widgets:
 eodash supports the integration of three widget types:
 
 ### Web Component Widgets
-Learn how to integrate Web Components that are developed using Custom Elements specification by referring to the [guide](/widgets/webcomponent-widgets) and [API]().
+Learn how to integrate Web Components that are developed using Custom Elements specification by referring to the [guide](/widgets/webcomponent-widgets) and [API](/api/core/types/interfaces/WebComponentWidget.html).
 
 ### IFrame Widgets
-Integrating micro-frontend standalone apps and HTML files using an IFrame. Check out the [API]() for further information. 
+Integrating micro-frontend standalone apps and HTML files using an IFrame. Check out the [API](/api/core/types/interfaces/IFrameWidget.html) for further information. 
 #### Example 
 ```js
 const myIframe =  new URL('./assets/iframe.html', import.meta.url).href // in-project HTML file
@@ -155,7 +155,7 @@ export default createEodash({
                 color: "#004170"
               }
             }
-          },
+        },
     }
 })
 ```

@@ -81,6 +81,83 @@ export default createEodash({
 You can define a web component in a file in your instance project and include it using an internal link.
 
 ### example 
+```js
+// src/elements/current-date.js
 
+export class CurrentDate extends HTMLElement {
+    connectedCallback() {
+        // Create a Date object representing the current date.
+        const now = new Date();
+        
+        // Format the date to a human-friendly string, and set the
+        // formatted date as the text content of this element.
+        this.textContent = now.toLocaleDateString();
+    }
+}
+
+// Register the CurrentDate component using the tag name <current-date>.
+customElements.define('current-date', CurrentDate);
+```
+
+```js
+// src/main.js
+
+export default createEodash({
+    ...
+    template:{
+        ...
+        widgets: [      
+          {
+            type: "web-component",
+            id: Symbol(),
+            slidable: true,
+            layout: { x: 4, y: 0, h: 3, w: 3 },
+            title: "Current Date",
+            widget: {
+              link:new URL('./elements/current-date.js',import.meta.url).href,
+              tagName:"current-date",
+            }
+          },
+          ...
+       ]
+    }
+})
+```
 
 ## Exposed Hooks
+the configured web component is exposed on the hooks [onMounted](/api/core/types/interfaces/WebComponentProps.html#onmounted) and [onUnmounted](/api/core/types/interfaces/WebComponentProps.html#onunmounted). this is typically used for adding and removing Event Listeners, or assigning properties.
+
+### example 
+```js
+let handleMoveEnd = () => { // [!code focus]
+  ... // [!code focus]
+} // [!code focus]
+
+export default createEodash({
+    ...
+    template:{
+        ...
+        widgets: [      
+          {
+            type: "web-component",
+            id: Symbol(),
+            slidable: false,
+            layout: { x: 4, y: 0, h: 3, w: 3 },
+            title: "Map",
+            widget: {
+              link:async()=>await import("@eox/map"),
+              tagName:"eox-map",
+              onMounted:(eoxMap,_store) => {  // [!code focus]
+                eoxMap.map.on('moveend', handleMoveEnd) // [!code focus]
+              }, // [!code focus]
+              onUnmounted:(eoxMap,_store) => { // [!code focus]
+                 eoxMap.map.un('moveend', handleMoveEnd) // [!code focus]
+              } // [!code focus]
+            }
+          },
+          ...
+       ]
+    }
+})
+```
+```
