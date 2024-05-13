@@ -40,6 +40,7 @@ export interface EodashConfig {
    * File exporting eodash client runtime config
    */
   runtime?: string
+  /** set a custom path for importing user defined internal widgets */
   widgets?: string
   /** builds eodash as a web component library */
   lib?: boolean
