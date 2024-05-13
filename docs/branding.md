@@ -6,60 +6,70 @@ Supporting layout customization by allowing to configure the header and footer o
 ### No Layout
 Removing the header and footer completely by setting: 
 ```js
-{
+import { createEodash } from "@eodash/eodash"
+
+export default createEodash({
     ...
     brand: {
         noLayout: true
         ...
     }
-}
+})
 ```
 ### Dashboard Name
 Set the name displayed on the Header:
 ```js
-{
+import { createEodash } from "@eodash/eodash"
+
+export default createEodash({
     ...
     brand: {
         name: "My Dashboard"
         ...
     }
-}
+})
 ```
 
 ### Footer Text
 Configurable text on the footer left side:
 
 ```js
-{
+import { createEodash } from "@eodash/eodash"
+
+export default createEodash({
     ...
     brand: {
         footerText: "Lorem ipsum, dolor sit amet consectetur adipisicing elit."
         ...
     }
-}
+})
 ```
 
 ### Logo
 Add your own brand logo to the header by referencing it using [vite's static assets](https://vitejs.dev/guide/assets.html#static-asset-handling) handling:
 
 ```js
+import { createEodash } from "@eodash/eodash"
 import myLogo from './assets/logo.png'
 // or
 const myLogo = new URL('./assets/logo.png',import.meta.url).href 
-{
+
+export default createEodash({
     ...
     brand: {
         logo: myLogo
         ...
     }
-}
+})
 ```
 ## Theme Customization
 eodash components utilize [Vuetify's theming system](https://vuetifyjs.com/en/features/theme/#api) for colors customization. You can adapt the dashboard's look and feel to align with your brand.
 
 ### Theme Modification Example
 ```js
-{
+import { createEodash } from "@eodash/eodash"
+
+export default createEodash({
     ...
     brand: {
         ...
@@ -72,7 +82,7 @@ eodash components utilize [Vuetify's theming system](https://vuetifyjs.com/en/fe
            dark: false
         }
     }
-}
+})
 ```
 
 ## Font Customization
@@ -80,7 +90,9 @@ eodash utilizes [typekit/webfontloader](https://github.com/typekit/webfontloader
 Supporting loading [Google Fonts](https://fonts.google.com) out of the box by adding the font's family name only.
 
 ```js
-{
+import { createEodash } from "@eodash/eodash"
+
+export default createEodash({
     ...
     brand: {
         ...
@@ -88,12 +100,14 @@ Supporting loading [Google Fonts](https://fonts.google.com) out of the box by ad
           family: "Poppins"
         }
     }
-}
+})
 ```
 or loading custom fonts by adding a link to the stylesheet that defines the font-face. Could be either a relative or an absolute URL.
 
 ```js
-{
+import { createEodash } from "@eodash/eodash"
+
+export default createEodash({
     ...
     brand: {
         ...
@@ -102,6 +116,6 @@ or loading custom fonts by adding a link to the stylesheet that defines the font
           family: "MyCustomFont"
         }
     }
-}
+})
 ```
 

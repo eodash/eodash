@@ -1,5 +1,5 @@
 # Eodash Command Line Interface
-eodash CLI is built with [Vite](https://vite.dev), providing an optimized development experience and producing minified ESM bundles for production. 
+eodash CLI is powered by [Vite](https://vite.dev), providing an optimized development experience and producing minified ESM bundles for production. 
 <script setup>
     const options = {
         "-v, --version": "output the current version",
