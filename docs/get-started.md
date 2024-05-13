@@ -11,7 +11,7 @@ Eodash can be used on its own, or be installed into an existing project. In both
 npm install @eodash/eodash 
 ```
 ## Create your eodash instance
-1. Create your repository from eodash's [config template](https://github.com/eodash/config-template). Check Github's guide on how to [Create a repository from a template](https://docs.github.com/en/repositories/creating-and-managing-repositories/creating-a-repository-from-a-template#)
+1. Create your repository from eodash's [instance template](https://github.com/eodash/eodash-instance-template). Check Github's guide on how to [Create a repository from a template](https://docs.github.com/en/repositories/creating-and-managing-repositories/creating-a-repository-from-a-template#)
 2. Install dependecies:
 ```bash
 npm install
