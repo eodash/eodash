@@ -71,7 +71,7 @@ import "@eodash/eodash/webcomponent"
 import "@eodash/eodash/webcomponent.css"
 ...
 ```
-3. Create your [runtime configuration](/runtime-configuration).
+3. Create your [runtime configuration](/instantiation.html#runtime-configuration).
 ```js
 // public/config.js
 const store = window.eodashStore
