@@ -2,7 +2,9 @@
   <v-main>
     <eox-layout :gap="eodash.template.gap ?? 2">
       <eox-layout-item style="z-index: 0;" x="0" y="0" h="12" w="12">
-        <component id="bg-widget" :is="bgWidget.component" v-bind="bgWidget.props" />
+        <Suspense suspensible>
+          <component id="bg-widget" :is="bgWidget.component" v-bind="bgWidget.props" />
+        </Suspense>
       </eox-layout-item>
       <eox-layout-item v-for="(config, idx) in widgetsConfig" ref="itemEls" :key="idx"
         style="position: relative; overflow: visible; z-index: 1; border-radius: 0px; background: rgb(var(--v-theme-surface))"
@@ -10,11 +12,12 @@
 
         <v-btn v-if="slideBtns[idx].enabled" position="absolute" variant="tonal" :style="slideBtns[idx].style"
           class="slide-btn" @click="slideInOut(idx)">
-          <v-icon :icon="slideBtns[idx].active ? slideBtns[idx].icon.in : slideBtns[idx].icon.out" />
+          <v-icon :icon="[slideBtns[idx].active ? slideBtns[idx].icon.in : slideBtns[idx].icon.out]" />
         </v-btn>
-        <component :key="importedWidgets[idx].value.id" :is="importedWidgets[idx].value.component"
-          v-bind="importedWidgets[idx].value.props" />
-
+        <Suspense suspensible>
+          <component :key="importedWidgets[idx].value.id" :is="importedWidgets[idx].value.component"
+            v-bind="importedWidgets[idx].value.props" />
+        </Suspense>
       </eox-layout-item>
     </eox-layout>
   </v-main>
