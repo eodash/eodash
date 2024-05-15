@@ -23,7 +23,7 @@ export interface WebComponentProps<T extends ExecutionTime = "compiletime"> {
   constructorProp?: string
   tagName: `${string}-${string}`
   /** Object defining all the properties and attributes of the web component */
-  properties?: Record<string, any>
+  properties?: Record<string, unknown>
   /**
    * Triggered when the web component is mounted in the DOM.
    * @param el - web component
@@ -275,6 +275,8 @@ export interface Eodash<T extends ExecutionTime = "compiletime"> {
   brand: {
     /** Removes the dashboard layout */
     noLayout?: boolean
+    /** custom error message to alert the users if something crashes */
+    errorMessage?: string
     /**
      * Automatically fetches the specified font family from google fonts. if the [link](#font-link) property is specified
      * the font family will be fetched from the provided source instead.

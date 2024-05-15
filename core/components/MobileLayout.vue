@@ -1,16 +1,18 @@
 <template>
   <v-main class="overflow-hidden" style="height: 91dvh;">
-
-    <component id="bg-widget" :is="bgWidget.component" v-bind="bgWidget.props"></component>
-
+    <Suspense suspensible>
+      <component id="bg-widget" :is="bgWidget.component" v-bind="bgWidget.props"></component>
+    </Suspense>
     <div v-show="activeIdx === idx" id="overlay" class="pa-2" v-for="(importedWidget, idx) in importedWidgets"
       :key="idx" :style="{
         bottom: tabsHeightFromBtm, position: 'absolute', overflow: 'hidden',
         width: '100%', left: 0, top: mainRect.top + 'px', zIndex: 1, background: 'rgb(var(--v-theme-surface))'
       }">
       <v-btn icon variant="text" style="height: 5%;position: relative;" @click="activeIdx = -1">&#x2715;</v-btn>
-      <component style="height: 94% !important;" :key="importedWidget.value.id" :is="importedWidget.value.component"
-        v-show="activeIdx === idx" v-bind="importedWidget.value.props" />
+      <Suspense suspensible>
+        <component style="height: 94% !important;" :key="importedWidget.value.id" :is="importedWidget.value.component"
+          v-show="activeIdx === idx" v-bind="importedWidget.value.props" />
+      </Suspense>
     </div>
 
     <v-tabs ref="tabs" align-tabs="center" bg-color="surface"
