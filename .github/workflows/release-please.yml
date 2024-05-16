@@ -1,0 +1,30 @@
+on:
+  push:
+    branches:
+      - main
+permissions:
+  contents: write
+  pull-requests: write
+name: release-please
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout 🛎
+        uses: actions/checkout@v4
+      - name: Setup node env 🏗
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          check-latest: true
+          cache: "npm"
+      - name: Install dependencies 👨🏻‍💻
+        run: npm ci --prefer-offline --no-audit
+      - name: Build Web Component Library 🧱
+        run: npm run build:lib
+      - name: Release Please! 🤖
+        uses: googleapis/release-please-action@v4
+        with:
+          token: ${{ secrets.RELEASE_TOKEN }}
+          release-type: node
+          repo-url: eodash/eodash
