@@ -41,7 +41,7 @@ export interface WebComponentProps<T extends ExecutionTime = "compiletime"> {
 
 /** @ignore */
 export interface WidgetsContainerProps {
-  widgets: Omit<Widget, 'layout' | 'slidable'>[]
+  widgets: Omit<Widget, 'layout'>[]
 }
 
 // eodash types:
@@ -73,10 +73,6 @@ export interface WebComponentWidget<T extends ExecutionTime = "compiletime"> {
      */
     h: number
   },
-  /**
- * Enable/Disable widget sliding.
- */
-  slidable?: boolean
   widget: WebComponentProps<T>
   type: 'web-component'
 }
@@ -110,10 +106,6 @@ export interface InternalComponentWidget {
      */
     h: number
   }
-  /**
-   * Enable/Disable widget sliding.
-   */
-  slidable?: boolean
   widget: {
     /**
      * Internal Vue Components inside the [widgets](https://github.com/eodash/eodash/tree/main/widgets) folder. Referenced
@@ -159,10 +151,6 @@ export interface IFrameWidget {
      */
     h: number
   }
-  /**
-  * Enable/Disable widget sliding.
-  */
-  slidable?: boolean;
   widget: {
     /**
      * The URL of the page to embed
@@ -202,10 +190,6 @@ export interface FunctionalWidget<T extends ExecutionTime = "compiletime"> {
      */
     h: number
   }
-  /**
-  * Enable/Disable widget sliding.
-  */
-  slidable?: boolean
 }
 /**
  * @group Eodash
