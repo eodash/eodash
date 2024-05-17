@@ -10,6 +10,11 @@ jobs:
   release-please:
     runs-on: ubuntu-latest
     steps:
+      - name: Release Please! 🤖
+        uses: googleapis/release-please-action@v4
+        with:
+          release-type: node
+          repo-url: eodash/eodash
       - name: Checkout 🛎
         uses: actions/checkout@v4
       - name: Setup node env 🏗
@@ -17,14 +22,13 @@ jobs:
         with:
           node-version: 20
           check-latest: true
+          registry-url: 'https://registry.npmjs.org'
           cache: "npm"
       - name: Install dependencies 👨🏻‍💻
         run: npm ci --prefer-offline --no-audit
       - name: Build Web Component Library 🧱
         run: npm run build:lib
-      - name: Release Please! 🤖
-        uses: googleapis/release-please-action@v4
-        with:
-          token: ${{ secrets.RELEASE_TOKEN }}
-          release-type: node
-          repo-url: eodash/eodash
+      - name: Publish package on NPM 📦
+        run: npm publish
+        env:
+         NODE_AUTH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
