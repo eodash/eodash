@@ -2,7 +2,6 @@
 
 import vue from '@vitejs/plugin-vue';
 import vuetify, { transformAssetUrls } from 'vite-plugin-vuetify';
-import { fileURLToPath, URL } from 'url';
 import {
   runtimeConfigPath,
   appPath, entryPath,
@@ -11,7 +10,7 @@ import {
   logger,
   rootPath,
   internalWidgetsPath
-} from "./utils.js";
+} from "./globals.js";
 import { readFile } from "fs/promises";
 import { defineConfig, searchForWorkspaceRoot } from "vite"
 import { existsSync } from 'fs';
@@ -30,15 +29,15 @@ export const indexHtml = `
 
 <body>
 ${userConfig.lib ? `<eo-dash style="height:100dvh;"/>
-<script type="module" src="${path.resolve(`/@fs/${appPath}`, `core/asWebComponent.js`)}"></script>
+<script type="module" src="${path.resolve(`/@fs/${appPath}`, `core/client/asWebComponent.js`)}"></script>
 `: ` <div id="app"/>
-<script type="module" src="${path.resolve(`/@fs/${appPath}`, `core/render.js`)}"></script>
+<script type="module" src="${path.resolve(`/@fs/${appPath}`, `core/client/render.js`)}"></script>
 `}
 </body>
 </html>`
 
 //@ts-expect-error
-export const serverConfig = /** @type {import('vite').UserConfigFnPromise}*/(defineConfig(async ({ mode, command }) => {
+export const viteConfig = /** @type {import('vite').UserConfigFnPromise}*/(defineConfig(async ({ mode, command }) => {
   return {
     base: userConfig.base ?? '',
     cacheDir: cachePath,
@@ -65,8 +64,8 @@ export const serverConfig = /** @type {import('vite').UserConfigFnPromise}*/(def
     define: { 'process.env': {} },
     resolve: {
       alias: {
-        '@': fileURLToPath(new URL('../core', import.meta.url)),
-        '^': fileURLToPath(new URL('../widgets', import.meta.url)),
+        '@': path.join(appPath, 'core/client'),
+        '^': path.join(appPath, 'widgets'),
         "user:config": entryPath,
         "user:widgets": internalWidgetsPath
       },
@@ -74,7 +73,7 @@ export const serverConfig = /** @type {import('vite').UserConfigFnPromise}*/(def
     },
     server: {
       warmup: {
-        clientFiles: [path.join(appPath, "core/**")]
+        clientFiles: [path.join(appPath, "core/client/**")]
       },
       port: userConfig.port ?? 3000,
       open: userConfig.open,
@@ -83,7 +82,7 @@ export const serverConfig = /** @type {import('vite').UserConfigFnPromise}*/(def
       },
       host: userConfig.host
     },
-    root: fileURLToPath(new URL('..', import.meta.url)),
+    root: appPath,
     optimizeDeps: mode === "development" ? {
       include: ["webfontloader", "vuetify", "vue", "pinia", "stac-js", "urijs"],
       noDiscovery: true,
@@ -92,7 +91,7 @@ export const serverConfig = /** @type {import('vite').UserConfigFnPromise}*/(def
     publicDir: userConfig.publicDir === false ? false : publicPath,
     build: {
       lib: (mode === 'lib' && command === 'build') && {
-        entry: path.join(appPath, "core/asWebComponent.js"),
+        entry: path.join(appPath, "core/client/asWebComponent.js"),
         fileName: "eo-dash",
         formats: ["es"],
         name: "@eodash/eodash"
@@ -100,7 +99,7 @@ export const serverConfig = /** @type {import('vite').UserConfigFnPromise}*/(def
       outDir: buildTargetPath,
       emptyOutDir: true,
       rollupOptions: command == 'build' ? {
-        input: fileURLToPath(new URL(mode === 'lib' ? '../core/asWebComponent.js' : '../index.html', import.meta.url)),
+        input: path.join(appPath, "core/client/asWebComponent.js")
       } : undefined,
       target: "esnext"
     }

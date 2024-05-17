@@ -26,7 +26,7 @@
     ],
     "paths": {
       "@/*": [
-        "core/*"
+        "core/client/*"
       ],
       "^/*": [
         "widgets/*"
@@ -43,7 +43,6 @@
     "dist"
   ],
   "include": [
-    "bin/types.d.ts",
     "core/**/*.ts",
     "core/**/*.js",
     "core/**/*.umd.cjs",

@@ -4,15 +4,15 @@ import { build, createServer, preview } from "vite"
 import {
   rootPath, appPath, buildTargetPath,
   userConfig, runtimeConfigPath,
-} from "./utils.js";
+} from "./globals.js";
 import { writeFile, rm, cp } from "fs/promises";
-import { indexHtml, serverConfig } from "./serverConfig.js";
+import { indexHtml, viteConfig } from "./viteConfig.js";
 import path from "path";
 import { existsSync } from "fs";
 
 
 export const createDevServer = async () => {
-  const server = await createServer(await serverConfig({ mode: 'development', command: 'serve' }))
+  const server = await createServer(await viteConfig({ mode: 'development', command: 'serve' }))
   await server.listen()
   server.printUrls()
   server.bindCLIShortcuts({ print: true })
@@ -21,7 +21,7 @@ export const createDevServer = async () => {
 export const buildApp = async () => {
   /** @param {"production"|"lib"} mode  */
   const viteBuild = async (mode) => {
-    const config = await serverConfig({ mode, command: 'build' });
+    const config = await viteConfig({ mode, command: 'build' });
     await build(config)
 
     if (existsSync(runtimeConfigPath)) {

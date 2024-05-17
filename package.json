@@ -4,31 +4,31 @@
   "type": "module",
   "types": "./core/types.d.ts",
   "files": [
-    "core",
-    "bin",
+    "core/client",
     "widgets",
     "dist"
   ],
   "exports": {
     ".": {
-      "types": "./core/types.d.ts",
-      "default": "./core/main.js"
-    },
-    "./config": {
-      "types": "./bin/types.d.ts",
-      "default": "./bin/main.js"
+      "types": "./core/client/types.d.ts",
+      "default": "./core/client/main.js"
     },
     "./webcomponent": {
-      "types": "./core/asWebComponent.d.ts",
+      "types": "./core/client/asWebComponent.d.ts",
       "default": "./dist/eo-dash.js"
     },
-    "./webcomponent.css": "./dist/style.css"
+    "./webcomponent.css": "./dist/style.css",
+    "./config": {
+      "types": "./dist/node/types.d.ts",
+      "default": "./dist/node/main.js"
+    }
   },
-  "browser": "./core/main.js",
+  "browser": "./core/client/main.js",
   "scripts": {
-    "dev": "npx eodash dev --entryPoint core/eodash.js",
-    "build": "npx eodash build --entryPoint core/eodash.js",
-    "build:lib": "npx eodash build --entryPoint core/eodash.js --lib --outDir dist",
+    "dev": "npx eodash dev --entryPoint core/client/eodash.js",
+    "build": "npx eodash build --entryPoint core/client/eodash.js",
+    "build:lib": "npx eodash build --entryPoint core/client/eodash.js --lib --outDir dist/client",
+    "build:cli": "rollup -c",
     "check": "vue-tsc --noEmit --skipLibCheck && eslint .",
     "check:lint": "eslint .",
     "check:types": "vue-tsc --noEmit --skipLibCheck",
@@ -89,6 +89,6 @@
     "vue-tsc": "^1.2.0"
   },
   "bin": {
-    "eodash": "./bin/app.js"
+    "eodash": "dist/node/cli.js"
   }
 }
