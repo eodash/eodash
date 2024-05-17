@@ -57,17 +57,19 @@ export const useSlidePanels = (elements, configs) => {
   /**
    * Array of sliding button's style and icons
    */
-  const slideBtns = slideDirs.map((dir, idx) => {
+  const slideBtns = slideDirs.map((dir, _idx) => {
     const btn = reactive({
       style: {},
       icon: { in: "", out: "" },
       active: false,
       enabled: true,
     });
-    if (configs[idx].slidable === false) {
-      btn.enabled = false;
-      return btn;
-    }
+
+    // temp removal of `slidable` from the  widgets API
+    // if (configs[idx].slidable === false) {
+    //   btn.enabled = false;
+    //   return btn;
+    // }
 
     switch (dir) {
       case "left":
