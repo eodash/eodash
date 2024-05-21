@@ -1,28 +1,32 @@
 <template>
   <v-main class="overflow-hidden" style="height: 91dvh;">
     <Suspense suspensible>
-      <component id="bg-widget" :is="bgWidget.component" v-bind="bgWidget.props"></component>
+      <component id="bg-widget" v-if="bgWidget.component" :is="bgWidget.component" v-bind="bgWidget.props"></component>
     </Suspense>
-    <div v-show="activeIdx === idx" id="overlay" class="pa-2" v-for="(importedWidget, idx) in importedWidgets"
-      :key="idx" :style="{
+
+    <template v-for="(importedWidget, idx) in importedWidgets" :key="idx">
+      <div v-if="importedWidget.value.component" v-show="activeIdx === idx" id="overlay" class="pa-2" :style="{
         bottom: tabsHeightFromBtm, position: 'absolute', overflow: 'hidden',
         width: '100%', left: 0, top: mainRect.top + 'px', zIndex: 1, background: 'rgb(var(--v-theme-surface))'
       }">
-      <v-btn icon variant="text" style="height: 5%;position: relative;" @click="activeIdx = -1">&#x2715;</v-btn>
-      <Suspense suspensible>
-        <div style="height: 90% !important;" v-show="activeIdx === idx">
-          <component :key="importedWidget.value.id" :is="importedWidget.value.component"
-            v-bind="importedWidget.value.props" />
-        </div>
-      </Suspense>
-    </div>
+        <v-btn icon variant="text" style="height: 5%;position: relative;" @click="activeIdx = -1">&#x2715;</v-btn>
+        <Suspense suspensible>
+          <div style="height: 90% !important;" v-show="activeIdx === idx">
+            <component :key="importedWidget.value.id" :is="importedWidget.value.component"
+              v-bind="importedWidget.value.props" />
+          </div>
+        </Suspense>
+      </div>
+    </template>
 
     <v-tabs ref="tabs" align-tabs="center" bg-color="surface"
       :style="{ position: 'relative', bottom: (mainRect.bottom || 48) + 'px', zIndex: 10 }" show-arrows
       v-model="activeIdx">
-      <v-tab v-for="(importedWidget, idx) in importedWidgets" :key="idx" :value="idx">
-        {{ importedWidget.value.title }}
-      </v-tab>
+      <template v-for="(importedWidget, idx) in importedWidgets" :key="idx">
+        <v-tab v-if="importedWidget.value.component" :value="idx">
+          {{ importedWidget.value.title }}
+        </v-tab>
+      </template>
     </v-tabs>
 
   </v-main>

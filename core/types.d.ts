@@ -170,8 +170,7 @@ export interface FunctionalWidget<T extends ExecutionTime = "compiletime"> {
    * @param selectedSTAC - Currently selected STAC object
    */
   defineWidget: (selectedSTAC: import("stac-ts").StacCatalog |
-    import("stac-ts").StacCollection | import("stac-ts").StacItem
-    | null) => Omit<StaticWidget<T>, 'layout' | 'slidable'>
+    import("stac-ts").StacCollection | import("stac-ts").StacItem | null) => Omit<StaticWidget<T>, 'layout' | 'slidable'> | undefined | null
   layout: {
     /**
      *  Horizontal start position. Integer between 1 and 12
