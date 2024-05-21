@@ -13,7 +13,8 @@ jobs:
       - name: Release Please! 🤖
         uses: googleapis/release-please-action@v4
         with:
-          release-type: node
+          release-type: prerelease
+          prerelease: alpha
           repo-url: eodash/eodash
       - name: Checkout 🛎
         uses: actions/checkout@v4
