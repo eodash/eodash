@@ -90,7 +90,7 @@ export const viteConfig = /** @type {import('vite').UserConfigFnPromise}*/(defin
     /** @type {string|false} */
     publicDir: userConfig.publicDir === false ? false : publicPath,
     build: {
-      lib: (mode === 'lib' && command === 'build') && {
+      lib: (userConfig.lib && command === 'build') && {
         entry: path.join(appPath, "core/client/asWebComponent.js"),
         fileName: "eo-dash",
         formats: ["es"],
@@ -98,7 +98,7 @@ export const viteConfig = /** @type {import('vite').UserConfigFnPromise}*/(defin
       },
       outDir: buildTargetPath,
       emptyOutDir: true,
-      rollupOptions: command == 'build' ? {
+      rollupOptions: (userConfig.lib && command === 'build') ? {
         input: path.join(appPath, "core/client/asWebComponent.js")
       } : undefined,
       target: "esnext"

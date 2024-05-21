@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { build, createServer, preview } from "vite"
+import { build as viteBuild, createServer, preview } from "vite"
 import {
   rootPath, appPath, buildTargetPath,
   userConfig, runtimeConfigPath,
@@ -19,10 +19,9 @@ export const createDevServer = async () => {
 }
 
 export const buildApp = async () => {
-  /** @param {"production"|"lib"} mode  */
-  const viteBuild = async (mode) => {
-    const config = await viteConfig({ mode, command: 'build' });
-    await build(config)
+  const build = async () => {
+    const config = await viteConfig({ mode: "production", command: 'build' });
+    await viteBuild(config)
 
     if (existsSync(runtimeConfigPath)) {
       await cp(runtimeConfigPath, path.join(buildTargetPath, 'config.js'),
@@ -32,11 +31,11 @@ export const buildApp = async () => {
     }
   }
   if (userConfig.lib) {
-    await viteBuild("lib")
+    await build()
   } else {
     const htmlPath = path.join(appPath, '/index.html')
     await writeFile(htmlPath, indexHtml).then(async () => {
-      await viteBuild("production")
+      await build()
       await rm(htmlPath).catch(() => {
         console.error('failed to remove index.html')
       })

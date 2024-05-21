@@ -106,7 +106,11 @@ async function getUserConfig(options, command) {
  */
 function searchForPackageRoot(from = import.meta.dirname) {
   if (from.split('/').length) {
-    return existsSync(path.resolve(from, 'package.json')) ?
-      from : searchForPackageRoot(path.resolve(from, '..'))
+    if (existsSync(path.resolve(from, 'package.json'))) {
+      return from
+    }
+    return searchForPackageRoot(path.resolve(from, '..'))
+  } else {
+    throw new Error('no package root found')
   }
 }
