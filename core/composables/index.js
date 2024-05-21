@@ -61,10 +61,10 @@ export const useSlidePanels = (elements, configs) => {
       style: {},
       icon: { in: "", out: "" },
       active: false,
-      enabled: true,
+      enabled: false,
     });
-    if (configs[idx].slidable === false) {
-      btn.enabled = false;
+    if (configs[idx].slidable) {
+      btn.enabled = true;
       return btn;
     }
 

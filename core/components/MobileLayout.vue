@@ -8,12 +8,14 @@
         bottom: tabsHeightFromBtm, position: 'absolute', overflow: 'hidden',
         width: '100%', left: 0, top: mainRect.top + 'px', zIndex: 1, background: 'rgb(var(--v-theme-surface))'
       }">
-      <v-btn icon variant="text" style="height: 5%;position: relative;" @click="activeIdx = -1">&#x2715;</v-btn>
+      <div class="text-right">
+        <v-btn size="small" icon="mdi-close" @click="activeIdx = -1"></v-btn>
+      </div>
       <component style="height: 94% !important;" :key="importedWidget.value.id" :is="importedWidget.value.component"
         v-show="activeIdx === idx" v-bind="importedWidget.value.props" />
     </div>
 
-    <v-tabs ref="tabs" align-tabs="center" bg-color="surface"
+    <v-tabs ref="tabs" align-tabs="center" bg-color="grey-lighten-5"
       :style="{ position: 'relative', bottom: (mainRect.bottom || 48) + 'px', zIndex: 10 }" show-arrows
       v-model="activeIdx">
       <v-tab v-for="(importedWidget, idx) in importedWidgets" :key="idx" :value="idx">
