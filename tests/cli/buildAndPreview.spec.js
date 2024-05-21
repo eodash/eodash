@@ -23,23 +23,23 @@ describe("test build and preview commands", () => {
   describe("test build command", () => {
 
     it("test build log output", () => {
-      build = spawnSync('npx', ['eodash', "build", "--entryPoint", "core/eodash.js"])
+      build = spawnSync('npx', ['eodash', "build", "--entryPoint", "core/client/eodash.js"])
       expect(build.output.toString()).to.contain('✓ built in ')
     })
 
     it("check if the output html file exists", () => {
-      build = spawnSync('npx', ['eodash', "build", "--entryPoint", "core/eodash.js"])
+      build = spawnSync('node', ['core/node/cli/index.js', "build", "--entryPoint", "core/client/eodash.js", "--no-lib"])
       expect(existsSync('.eodash/dist/index.html')).toBeTruthy()
     })
     it("test building as a web component using --lib flag", () => {
-      build = spawnSync('npx', ['eodash', "build", "--entryPoint", "core/eodash.js", "--lib"])
+      build = spawnSync('npx', ['eodash', "build", "--entryPoint", "core/client/eodash.js", "--lib"])
       expect(existsSync('.eodash/dist/eo-dash.js')).toBeTruthy()
       expect(existsSync('.eodash/dist/style.css')).toBeTruthy()
     })
 
     it("test --base flag", async () => {
       const base = "/base"
-      build = spawnSync('npx', ['eodash', "build", "--entryPoint", "core/eodash.js", "--base", base])
+      build = spawnSync('npx', ['eodash', "build", "--entryPoint", "core/client/eodash.js", "--base", base])
       const indexHtml = await readFile(".eodash/dist/index.html", "utf-8")
       expect(indexHtml).toContain(`src="${base}`)
     })
@@ -50,7 +50,7 @@ describe("test build and preview commands", () => {
   describe("test preview command", () => {
 
     beforeAll(() => {
-      build = spawnSync('npx', ['eodash', "build", "--entryPoint", "core/eodash.js"])
+      build = spawnSync('npx', ['eodash', "build", "--entryPoint", "core/client/eodash.js"])
     })
 
     it("test preview log output", async () => {
@@ -81,7 +81,7 @@ describe("test build and preview commands", () => {
   })
 
   it("test --outDir flag", async () => {
-    build = spawnSync('npx', ['eodash', "build", "--entryPoint", "core/eodash.js", "--outDir", "./.eodash/testDest"])
+    build = spawnSync('npx', ['eodash', "build", "--entryPoint", "core/client/eodash.js", "--outDir", "./.eodash/testDest"])
     expect(existsSync('.eodash/testDest/index.html')).to.be.true
 
     preview = spawn('npx', ['eodash', "preview", "--outDir", "./.eodash/testDest"])
@@ -97,7 +97,7 @@ describe("test build and preview commands", () => {
     await mkdir(testPublic, { recursive: true });
     await writeFile(path.join(testPublic, "test.txt"), "test file")
 
-    build = spawnSync('npx', ['eodash', "build", "--entryPoint", "core/eodash.js", "--publicDir", "testPublic"])
+    build = spawnSync('npx', ['eodash', "build", "--entryPoint", "core/client/eodash.js", "--publicDir", "testPublic"])
     preview = spawn('npx', ['eodash', "preview"])
 
     await assertAndKillChildProcess(preview, async () => {
@@ -113,7 +113,7 @@ describe("test build and preview commands", () => {
     const runtimeFile = fileURLToPath(new URL("../../testRuntime.js", import.meta.url));
     await writeFile(runtimeFile, `export default ${JSON.stringify(mockedEodash)}`)
 
-    build = spawnSync('npx', ['eodash', "build", "--runtime", "./testRuntime.js", "--entryPoint", "core/eodash.js"])
+    build = spawnSync('npx', ['eodash', "build", "--runtime", "./testRuntime.js", "--entryPoint", "core/client/eodash.js"])
     preview = spawn('npx', ['eodash', "preview"])
 
     await assertAndKillChildProcess(preview, async () => {

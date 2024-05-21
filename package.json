@@ -89,6 +89,6 @@
     "vue-tsc": "^1.2.0"
   },
   "bin": {
-    "eodash": "dist/node/cli.js"
+    "eodash": "./dist/node/cli.js"
   }
 }

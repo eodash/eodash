@@ -13,7 +13,7 @@ describe("test dev command", () => {
   let output = ''
 
   it("check dev log output", async () => {
-    dev = spawn('npx', ['eodash', "dev", "--entryPoint", "./core/eodash.js"])
+    dev = spawn('npx', ['eodash', "dev", "--entryPoint", "./core/client/eodash.js"])
     output = ''
     dev.stdout.on("data", (data) => {
       output += data
@@ -22,16 +22,17 @@ describe("test dev command", () => {
   })
 
   it("check --port flag", async () => {
-    dev = spawn('npx', ['eodash', "dev", "--entryPoint", "./core/eodash.js", "--port", "3000"])
+    dev = spawn('npx', ['eodash', "dev", "--entryPoint", "./core/client/eodash.js", "--port", "3000"])
     output = ''
     dev.stdout.on("data", (data) => {
       output += data
     })
+
     await assertAndKillChildProcess(dev, async () => { expect(output).to.contain('➜  Local:   http://localhost:3000') })
   })
 
   it("check --host flag", async () => {
-    dev = spawn('npx', ['eodash', "dev", "--entryPoint", "./core/eodash.js", "--host"])
+    dev = spawn('npx', ['eodash', "dev", "--entryPoint", "./core/client/eodash.js", "--host"])
     output = ''
     dev.stdout.on("data", (data) => {
       output += data
@@ -48,7 +49,7 @@ describe("test dev command", () => {
       console.error(e);
     });
 
-    dev = spawn('npx', ['eodash', "dev", "--entryPoint", "./core/eodash.js", "--publicDir", "./testPublic"])
+    dev = spawn('npx', ['eodash', "dev", "--entryPoint", "./core/client/eodash.js", "--publicDir", "./testPublic"])
 
     await assertAndKillChildProcess(dev, async () => {
       const text = await axios.get("http://localhost:5173/test.txt").then(resp => resp.data).catch((e) => {
@@ -63,7 +64,7 @@ describe("test dev command", () => {
     const runtimeFile = fileURLToPath(new URL("../../testRuntime.js", import.meta.url));
     await writeFile(runtimeFile, `export default ${JSON.stringify(mockedEodash)}`)
 
-    dev = spawn('npx', ['eodash', "dev", "--runtime", "./testRuntime.js", "--entryPoint", "core/eodash.js"])
+    dev = spawn('npx', ['eodash', "dev", "--runtime", "./testRuntime.js", "--entryPoint", "core/client/eodash.js"])
 
     await assertAndKillChildProcess(dev, async () => {
       const runtimeStr = await axios.get("http://localhost:5173/@fs/config.js")
