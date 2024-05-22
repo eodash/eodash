@@ -12,6 +12,7 @@ jobs:
     steps:
       - name: Release Please! 🤖
         uses: googleapis/release-please-action@v4
+        id: release
       - name: Checkout 🛎
         uses: actions/checkout@v4
         if: ${{ steps.release.outputs.release_created }}
