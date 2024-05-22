@@ -35,7 +35,6 @@ export default defineConfig({
   input: {
     cli: 'core/node/cli/index.js',
     main: 'core/node/main.js',
-    // types: "core/node/types.d.ts"
   },
   output: {
     dir: 'dist/node',

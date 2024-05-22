@@ -2,7 +2,7 @@
   "name": "@eodash/eodash",
   "version": "5.0.0-alpha.2.1",
   "type": "module",
-  "types": "./core/types.d.ts",
+  "types": "./core/client/types.d.ts",
   "files": [
     "core/client",
     "widgets",
@@ -15,9 +15,9 @@
     },
     "./webcomponent": {
       "types": "./core/client/asWebComponent.d.ts",
-      "default": "./dist/eo-dash.js"
+      "default": "./dist/client/eo-dash.js"
     },
-    "./webcomponent.css": "./dist/style.css",
+    "./webcomponent.css": "./dist/client/style.css",
     "./config": {
       "types": "./dist/node/types.d.ts",
       "default": "./dist/node/main.js"
@@ -25,6 +25,8 @@
   },
   "browser": "./core/client/main.js",
   "scripts": {
+    "prepare": "rollup -c",
+    "prepack": "npm run build:lib",
     "dev": "npx eodash dev --entryPoint core/client/eodash.js",
     "build": "npx eodash build --entryPoint core/client/eodash.js",
     "build:lib": "npx eodash build --entryPoint core/client/eodash.js --lib --outDir dist/client",
