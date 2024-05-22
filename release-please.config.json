@@ -1,0 +1,10 @@
+{
+    "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+    "packages": {
+        "@eodash/eodash": {}
+    },
+    "prerelease": true,
+    "prerelease-type": "alpha",
+    "versioning": "prerelease",
+    "release-type": "node"
+}
