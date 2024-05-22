@@ -39,7 +39,9 @@ export const useSTAcStore = defineStore('stac', () => {
         return link
       })
       stac.value = links;
-    }).catch(err => console.error(err));
+    }).catch(err => {
+      throw new Error("error loading assigned STAC endpoint", err)
+    });
   }
 
   /**
@@ -56,7 +58,9 @@ export const useSTAcStore = defineStore('stac', () => {
     await axios.get(absoluteUrl.value).then(resp => {
       selectedStac.value = resp.data;
       indicator.value = selectedStac.value?.id ?? "";
-    }).catch(err => console.error(err));
+    }).catch(err => {
+      throw new Error("error loading the selected STAC", err)
+    });
   }
 
   return { stac, loadSTAC, loadSelectedSTAC, selectedStac };
