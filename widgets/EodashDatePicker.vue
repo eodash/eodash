@@ -6,6 +6,7 @@
         type="date" bg-color="surface" color="primary" density="comfortable" label="Select Date" v-model="currentDate"
         variant="plain" hide-details />
     </div>
+
     <v-date-picker v-else ref="datePicker" :width="width" :height="height" hide-header v-model="currentDate"
       color="primary" bg-color="surface" location="center" class="overflow-auto fill-height fill-width"
       position="relative" show-adjacent-months></v-date-picker>

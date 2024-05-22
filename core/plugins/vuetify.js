@@ -5,15 +5,21 @@
  */
 
 // Styles
-import '@mdi/font/css/materialdesignicons.css';
 import 'vuetify/styles';
 
 
 import { createVuetify } from 'vuetify';
-// import {} from "vuetify"
+import { mdiChevronLeft, mdiChevronRight, mdiMenuDown } from "@mdi/js"
 
-// https://vuetifyjs.com/en/introduction/why-vuetify/#feature-guides
 const vuetify = createVuetify({
+  icons: {
+    aliases: {
+      // remapping v-date-picker and v-tabs default icons to `@mdi/js`
+      next: [mdiChevronRight],
+      prev: [mdiChevronLeft],
+      subgroup: [mdiMenuDown]
+    },
+  },
   theme: {
     themes: {
       dashboardTheme: {},

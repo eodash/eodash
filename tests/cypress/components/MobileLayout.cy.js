@@ -24,8 +24,8 @@ describe('<MobileLayout />', () => {
     cy.get('@vue').then(({ options }) => {
       /** @type {import('@/types').Widget[]} */
       (options.global.provide[eodashKey].template.widgets).forEach((widget, idx) => {
-        const title = "defineWidget" in widget ? widget.defineWidget(null).title : widget.title
-        cy.get(`button[value="${idx}"]`).contains(title)
+        const title = "defineWidget" in widget ? widget.defineWidget(null)?.title : widget.title
+        cy.get(`button[value="${idx}"]`).contains(title ?? '')
       })
     })
   })

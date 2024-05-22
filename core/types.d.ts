@@ -23,7 +23,7 @@ export interface WebComponentProps<T extends ExecutionTime = "compiletime"> {
   constructorProp?: string
   tagName: `${string}-${string}`
   /** Object defining all the properties and attributes of the web component */
-  properties?: Record<string, any>
+  properties?: Record<string, unknown>
   /**
    * Triggered when the web component is mounted in the DOM.
    * @param el - web component
@@ -41,7 +41,7 @@ export interface WebComponentProps<T extends ExecutionTime = "compiletime"> {
 
 /** @ignore */
 export interface WidgetsContainerProps {
-  widgets: Omit<Widget, 'layout' | 'slidable'>[]
+  widgets: Omit<Widget, 'layout'>[]
 }
 
 // eodash types:
@@ -73,10 +73,6 @@ export interface WebComponentWidget<T extends ExecutionTime = "compiletime"> {
      */
     h: number
   },
-  /**
- * Enable/Disable widget sliding.
- */
-  slidable?: boolean
   widget: WebComponentProps<T>
   type: 'web-component'
 }
@@ -110,10 +106,6 @@ export interface InternalComponentWidget {
      */
     h: number
   }
-  /**
-   * Enable/Disable widget sliding.
-   */
-  slidable?: boolean
   widget: {
     /**
      * Internal Vue Components inside the [widgets](https://github.com/eodash/eodash/tree/main/widgets) folder. Referenced
@@ -159,10 +151,6 @@ export interface IFrameWidget {
      */
     h: number
   }
-  /**
-  * Enable/Disable widget sliding.
-  */
-  slidable?: boolean;
   widget: {
     /**
      * The URL of the page to embed
@@ -182,8 +170,7 @@ export interface FunctionalWidget<T extends ExecutionTime = "compiletime"> {
    * @param selectedSTAC - Currently selected STAC object
    */
   defineWidget: (selectedSTAC: import("stac-ts").StacCatalog |
-    import("stac-ts").StacCollection | import("stac-ts").StacItem
-    | null) => Omit<StaticWidget<T>, 'layout' | 'slidable'>
+    import("stac-ts").StacCollection | import("stac-ts").StacItem | null) => Omit<StaticWidget<T>, 'layout' | 'slidable'> | undefined | null
   layout: {
     /**
      *  Horizontal start position. Integer between 1 and 12
@@ -202,10 +189,6 @@ export interface FunctionalWidget<T extends ExecutionTime = "compiletime"> {
      */
     h: number
   }
-  /**
-  * Enable/Disable widget sliding.
-  */
-  slidable?: boolean
 }
 /**
  * @group Eodash
@@ -276,6 +259,8 @@ export interface Eodash<T extends ExecutionTime = "compiletime"> {
   brand: {
     /** Removes the dashboard layout */
     noLayout?: boolean
+    /** custom error message to alert the users if something crashes */
+    errorMessage?: string
     /**
      * Automatically fetches the specified font family from google fonts. if the [link](#font-link) property is specified
      * the font family will be fetched from the provided source instead.

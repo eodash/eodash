@@ -9,7 +9,7 @@
 </template>
 <script setup>
 import { useDefineWidgets } from '@/composables/DefineWidgets';
-import { onMounted } from 'vue';
+import { nextTick, onMounted } from 'vue';
 import { ref } from 'vue';
 import { useLayout } from 'vuetify/lib/framework.mjs';
 import 'animated-details'
@@ -38,9 +38,11 @@ const widgetHeight = ref('')
 const summariesHeights = ref(0)
 
 
-onMounted(() => {
-  summariesHeights.value = summaryEls.value.reduce((acc, el) => acc += el.clientHeight, 0)
-  const { mainRect } = useLayout()
-  widgetHeight.value = ((detailsEls.value[0].parentElement?.scrollHeight ?? 0) - summariesHeights.value - mainRect.value['top']) + 'px'
+const { mainRect } = useLayout()
+onMounted(async () => {
+  await nextTick(() => {
+    summariesHeights.value = summaryEls.value.reduce((acc, el) => acc += el.clientHeight, 0)
+    widgetHeight.value = ((detailsEls.value[0].parentElement?.scrollHeight ?? 0) - summariesHeights.value - mainRect.value['top']) + 'px'
+  })
 })
 </script>

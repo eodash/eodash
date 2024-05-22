@@ -2,20 +2,19 @@
   <v-app>
     <Suspense>
       <Dashboard :on-template-mount="setStylesFromHead" :config="config" />
+
       <template #fallback>
-        <div style="height: 100dvh; display: flex; align-items: center; justify-content: center;">
-          <Loading />
-        </div>
+        <ErrorAlert @vue:mounted="setStylesFromHead()" v-model="error" />
       </template>
     </Suspense>
   </v-app>
 </template>
 <script setup>
 import Dashboard from '@/views/Dashboard.vue';
-import { createApp, getCurrentInstance } from "vue"
+import { createApp, getCurrentInstance, onErrorCaptured, ref } from "vue"
 import { registerPlugins } from '@/plugins';
 import { eodashKey } from '@/utils/keys';
-import Loading from '@/components/Loading.vue';
+import ErrorAlert from '@/components/ErrorAlert.vue';
 
 defineProps({
   config: {
@@ -62,4 +61,13 @@ ${//@ts-expect-error
   styleSheet.replaceSync(stylesStr.replaceAll(":root", ":host"))
   eodashComponent?.shadowRoot?.adoptedStyleSheets.push(styleSheet)
 }
+
+const error = ref('')
+onErrorCaptured((e, comp, info) => {
+  error.value = `
+  ${e}.
+  component: ${comp?.$.type.name}.
+  info: ${info}.
+  `
+})
 </script>
