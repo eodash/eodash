@@ -43,12 +43,12 @@
     "dist"
   ],
   "include": [
-    "core/**/*.ts",
-    "core/**/*.js",
-    "core/**/*.umd.cjs",
-    "core/**/*.d.ts",
-    "core/**/*.tsx",
-    "core/**/*.vue",
+    "core/client/**/*.ts",
+    "core/client/**/*.js",
+    "core/client/**/*.umd.cjs",
+    "core/client/**/*.d.ts",
+    "core/client/**/*.tsx",
+    "core/client/**/*.vue",
     "widgets/**/*.vue",
     "widgets/**/*.ts",
     "widgets/**/*.js",

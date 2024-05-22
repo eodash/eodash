@@ -28,7 +28,7 @@ describe("test build and preview commands", () => {
     })
 
     it("check if the output html file exists", () => {
-      build = spawnSync('node', ['core/node/cli/index.js', "build", "--entryPoint", "core/client/eodash.js", "--no-lib"])
+      build = spawnSync('npx', ['eodash', "build", "--entryPoint", "core/client/eodash.js", "--no-lib"])
       expect(existsSync('.eodash/dist/index.html')).toBeTruthy()
     })
     it("test building as a web component using --lib flag", () => {
