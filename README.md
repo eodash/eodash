@@ -26,3 +26,6 @@ npm run preview
     ├── public             # Statically served directory
     └── README.md
 
+
+## Writing commits
+To ensure clear communication with the package consumers and enable machine-readable commits, we adhere to [The Conventional Commits](https://www.conventionalcommits.org/) specification that allows for the generation of releases using [semVer](https://semver.org) and associated change logs.
