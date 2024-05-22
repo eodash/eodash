@@ -61,5 +61,6 @@
     "tests/cypress/**/*.d.ts",
     "tests/cypress/**/*.tsx",
     "tests/cypress/**/*.vue",
+    "core/node/types.d.ts"
   ]
 }
