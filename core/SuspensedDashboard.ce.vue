@@ -1,5 +1,5 @@
 <template>
-  <v-app>
+  <v-app ref="vAppRef">
     <Suspense>
       <Dashboard :on-template-mount="setStylesFromHead" :config="config" />
 
@@ -20,7 +20,10 @@ defineProps({
   config: {
     type: String,
   }
-})
+});
+
+/** @type { import("vue").Ref<import("vuetify/components").VApp| null > } */
+const vAppRef = ref(null)
 const app = createApp({})
 registerPlugins(app)
 
@@ -30,8 +33,9 @@ Object.assign(inst.appContext, app._context)
 //@ts-expect-error
 Object.assign(inst.provides, app._context.provides)
 
-function setStylesFromHead() {
-  const eodashComponent = document.querySelector('eo-dash')
+/** @param {import("vue").Ref<HTMLElement | import("vue").ComponentPublicInstance>[]} [hiddenElements] */
+function setStylesFromHead(hiddenElements) {
+  const eodashShadowRoot = vAppRef.value?.$el.getRootNode()
   const styleSheet = new CSSStyleSheet()
   const head = document.querySelector('head')
   let stylesStr = ''
@@ -43,23 +47,35 @@ function setStylesFromHead() {
     }
 
     if (child.tagName == 'LINK' && child.getAttribute('rel')?.includes('stylesheet')) {
-      eodashComponent?.shadowRoot?.appendChild(child.cloneNode(true))
+      eodashShadowRoot?.appendChild(child.cloneNode(true))
     }
   });
 
   stylesStr += `\n * {
-    font-family:${
-      //@ts-expect-error
-      /** @type {import("@/types").Eodash} */ (inst.provides[eodashKey])?.brand.font?.family ?? 'Roboto'}
-  }
-${//@ts-expect-error
-  /** @type {import("@/types").Eodash} */ (inst.provides[eodashKey]).brand.noLayout ?
+      font-family:${
+        //@ts-expect-error
+        /** @type {import("@/types").Eodash} */ (inst.provides[eodashKey])?.brand.font?.family ?? 'Roboto'}
+      }
+      ${//@ts-expect-error
+        /** @type {import("@/types").Eodash} */ (inst.provides[eodashKey]).brand.noLayout ?
       `div.v-application__wrap {
-  min-height: fit-content;
-}`: ""}
-  `
+          min-height: fit-content;
+        }`: ""}
+        `
   styleSheet.replaceSync(stylesStr.replaceAll(":root", ":host"))
-  eodashComponent?.shadowRoot?.adoptedStyleSheets.push(styleSheet)
+  eodashShadowRoot?.adoptedStyleSheets.push(styleSheet);
+
+  //@ts-expect-error
+  if (hiddenElements && !(/** @type {import("@/types").Eodash} */ (inst.provides[eodashKey])?.brand.noLayout)) {
+    hiddenElements.forEach(element => {
+      if (element.value instanceof HTMLElement) {
+        element.value.style.opacity = "1"
+      } else {
+        /** @type {HTMLElement} */
+        (element.value.$el).style.opacity = "1"
+      }
+    })
+  }
 }
 
 const error = ref('')
