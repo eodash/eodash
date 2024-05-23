@@ -25,3 +25,11 @@ npm run preview
     ├── public             # Statically served directory
     └── README.md
 
+
+## Writing commits
+To ensure clear communication with the package consumers and enable machine-readable commits, we adhere to [The Conventional Commits](https://www.conventionalcommits.org/) specification that allows the generation of [semVer](https://semver.org) releases and associated change logs using [googleapis/release-please](https://github.com/googleapis/release-please).
+
+The most important prefixes you should have in mind are:
+* fix: which represents bug fixes, and correlates to a SemVer patch.
+* feat: which represents a new feature, and correlates to a SemVer minor.
+* feat!:, or fix!:, refactor!:, etc., which represent a breaking change (indicated by the !) and will result in a SemVer major.

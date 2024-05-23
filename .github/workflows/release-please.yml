@@ -12,6 +12,7 @@ jobs:
     steps:
       - name: Release Please! 🤖
         uses: googleapis/release-please-action@v4
+        id: release
       - name: Checkout 🛎
         uses: actions/checkout@v4
         if: ${{ steps.release.outputs.release_created }}
@@ -25,9 +26,6 @@ jobs:
         if: ${{ steps.release.outputs.release_created }}
       - name: Install dependencies 👨🏻‍💻
         run: npm ci --prefer-offline --no-audit
-        if: ${{ steps.release.outputs.release_created }}
-      - name: Build Web Component Library 🧱
-        run: npm run build:lib
         if: ${{ steps.release.outputs.release_created }}
       - name: Publish package on NPM 📦
         run: npm publish

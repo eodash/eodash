@@ -1,5 +1,17 @@
 # Changelog
 
+## [5.0.0-alpha.2.3](https://github.com/eodash/eodash/compare/eodash-v5.0.0-alpha.2.2...eodash-v5.0.0-alpha.2.3) (2024-05-23)
+
+
+### Features
+
+* Introduce Error Alert Banner ([#27](https://github.com/eodash/eodash/issues/27)) ([1bf741f](https://github.com/eodash/eodash/commit/1bf741fbae3404dfa08e04ec762efd38ecb28052))
+
+
+### Bug Fixes
+
+* Automate Release ([#35](https://github.com/eodash/eodash/issues/35)) ([3ffb091](https://github.com/eodash/eodash/commit/3ffb091d5c3b1fad4c150949120048fac37b1d36))
+
 ## [5.0.0-alpha.2.2](https://github.com/eodash/eodash/compare/eodash-v5.0.0-alpha.2.1...eodash-v5.0.0-alpha.2.2) (2024-05-22)
 
 
