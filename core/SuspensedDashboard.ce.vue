@@ -68,11 +68,13 @@ function setStylesFromHead(hiddenElements) {
   //@ts-expect-error
   if (hiddenElements && !(/** @type {import("@/types").Eodash} */ (inst.provides[eodashKey])?.brand.noLayout)) {
     hiddenElements.forEach(element => {
-      if (element.value instanceof HTMLElement) {
-        element.value.style.opacity = "1"
-      } else {
-        /** @type {HTMLElement} */
-        (element.value.$el).style.opacity = "1"
+      if (element.value) {
+        if (element.value instanceof HTMLElement) {
+          element.value.style.opacity = "1"
+        } else {
+          /** @type {HTMLElement} */
+          (element.value.$el).style.opacity = "1"
+        }
       }
     })
   }
