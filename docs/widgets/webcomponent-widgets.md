@@ -5,6 +5,9 @@ Including a web component in your instance can be either using an NPM package id
 
 ### Example of importing from a package identifier
 ```js
+import { store } from "@eodash/eodash"
+const { currentUrl } = store.states
+
 export default createEodash({
     ...
     template:{
@@ -43,6 +46,9 @@ importing from a package identifier using an import function is only possible in
 ### Example of importing from a URL
 
 ```js
+import { store } from "@eodash/eodash"
+const { currentUrl } = store.states
+
 export default createEodash({
     ...
     template:{
@@ -77,7 +83,7 @@ export default createEodash({
 ## Deploying Web Components Within Eodash Instance
 You can define a web component in a file in your instance project and include it using an internal link.
 
-### example 
+### Example 
 ```js
 // src/elements/current-date.js
 
@@ -111,7 +117,7 @@ export default createEodash({
             layout: { x: 4, y: 0, h: 3, w: 3 },
             title: "Current Date",
             widget: {
-              link:new URL('./elements/current-date.js',import.meta.url).href,
+              link: new URL('./elements/current-date.js',import.meta.url).href,
               tagName:"current-date",
             }
           },
@@ -122,13 +128,14 @@ export default createEodash({
 ```
 
 ## Registering Web Components in eodash
-Custom elements normally should be registered in the javascript file defining it. in that case, you should provide the file as a `link` and the `tagName` of your registered element, eodash will automatically run the `link` provided if the `tagName` isn't already defined as a Custom Element. In case the `link` provided doesn't register the element, eodash assumes that it exports a Custom Element Constructor. The exported constructor property from your provided link should be assigned to `constructorProp` and eodash will automatically register the given tagName to that constructor as a custom element.
+Custom elements normally should be registered in the javascript file defining it. in that case, you should provide the file as a `link` and the `tagName` of your registered element, eodash will automatically import the `link` provided if the `tagName` isn't already defined as a Custom Element. In case the `link` provided doesn't register the element, eodash assumes that it exports a Custom Element Constructor. The exported constructor property from your provided link should be assigned to `constructorProp` and eodash will automatically register the given tagName to that constructor as a custom element.
+
 
 
 ## Exposed Hooks
 the configured web component is exposed on the hooks [onMounted](/api/core/types/interfaces/WebComponentProps.html#onmounted) and [onUnmounted](/api/core/types/interfaces/WebComponentProps.html#onunmounted). this is typically used for adding and removing Event Listeners, or assigning properties.
 
-### example 
+### Example 
 ```js
 let handleMoveEnd = () => { // [!code focus]
   ... // [!code focus]

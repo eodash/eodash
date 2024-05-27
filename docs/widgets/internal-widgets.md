@@ -2,7 +2,7 @@
 Eodash provides Internal Widgets as extendable Vue Components that are maintained within the package. Along with these, users can also define their own Vue Components. For further information, you can refer to the [API](/api/core/types/interfaces/InternalComponentWidget.html).
 
 ## Using Eodash Provided Internal Widgets
-to use eodash provided widgets simply set the `name` to the desired widget and the `properties` if any props needed from the following list:
+To use eodash provided internal widgets simply set the desired component's name to `widget.name` and props to `widget.properties` if needed. Find the provided components below:
 
 <script setup>
 const internalWidgets = (()=>{
@@ -19,7 +19,7 @@ const internalWidgets = (()=>{
 </li>
 </ul>
 
-find all provided widgets on  the [widgets](https://github.com/eodash/eodash/tree/main/widgets) folder on **eodash/eodash** repo.
+find all provided widgets source code in the [widgets](https://github.com/eodash/eodash/tree/main/widgets) folder on **eodash/eodash** repository.
 
 ### Example 
 
@@ -65,7 +65,7 @@ const dependencies = Object.keys(pkg.dependencies).filter(dep => !['commander',"
     <th>Version</th>
   </tr>
   <tr v-for="dependency in dependencies" >
-    <td>{{dependency}}</td>
+    <td><a  target="_blank" :href="`https://www.npmjs.com/package/${dependency}`"> {{dependency}} </a></td>
     <td>{{ pkg.dependencies[dependency]}}</td>
   </tr>
 </table>
