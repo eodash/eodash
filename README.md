@@ -1,19 +1,29 @@
+# @eodash/eodash [![Version](https://badgen.net/npm/v/@eodash/eodash)](https://www.npmjs.com/package/@eodash/eodash)
+
+A package for creating earth observation dashboards. To learn more about eodash ecosystem visit [eodash.org](https://eodash.org)
+## Usage
+Checkout the [documentation](https://eodash.github.io/eodash/get-started.html) for a detailed guide.
+
 ## Get Started
 Install all the required dependecies after cloning or downloading the repository using Node v18 or higher:
 ```bash
 npm run install
 ```
-Run the dev server and the app will open your default browser window to the landing page:
+Run the dev server:
 ```bash
 npm run dev
 ```
-To compile and minify for production:
+To compile and minify a demo instance:
 ```bash
 npm run build
 ```
 To preview the compiled production files :
 ```bash
 npm run preview
+```
+To compile and minify a demo instance as a web component library:
+```bash
+npm run build -- --lib
 ```
 
 ## Folder Structure
