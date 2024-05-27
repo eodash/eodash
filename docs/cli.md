@@ -2,22 +2,22 @@
 eodash CLI is powered by [Vite](https://vite.dev), providing an optimized development experience and producing minified ESM bundles for production. 
 <script setup>
     const options = {
-        "-v, --version": "output the current version",
-        "--publicDir <path> ": "path to statically served assets folder",
-        "--no-publicDir":"do not serve static assets",
-        "--outDir <path>": "sets the minified output folder",
-        "-e, --entryPoint <path>": "file exporting `createEodash` ",
-        "-w, --widgets <path>": "folder that contains vue components as internal widgets",
-        "--cacheDir <path>": "set cache folder",
-        "-r, --runtime <path>": "file exporting eodash client runtime config",
-        "-b, --base <path>": "base public path",
-        "-p, --port <port>": "serving  port",
-        "-o, --open": "open default browser when the server starts",  
-        "-c, --config <path>": "path to eodash server and build configuration file ",
-        "--host [IP address]": "specify which IP addresses the server should listen on",
-        "--no-host": "do not expose server to the network",
-        "-l, --lib": "builds and serves eodash as a web component",
-        "--no-lib": "builds and serves eodash as an SPA"
+        "-v, --version": ["output the current version"],
+        "--publicDir <path> ": ["path to statically served assets folder", "/public"],
+        "--no-publicDir": ["do not serve static assets"],
+        "--outDir <path>": ["sets the minified output folder",".eodash/dist"],
+        "-e, --entryPoint <path>": ["file exporting `createEodash` ","src/main.js"],
+        "-w, --widgets <path>": ["folder that contains vue components as internal widgets","src/widgets"],
+        "--cacheDir <path>": ["set cache folder",".eodash/cache"],
+        "-r, --runtime <path>": ["file exporting eodash client runtime config","src/runtime.js"],
+        "-b, --base <path>": ["base public path","/"],
+        "-p, --port <port>": ["serving  port"],
+        "-o, --open": ["open default browser when the server starts","false"],  
+        "-c, --config <path>": ["path to eodash server and build configuration file ","eodash.config.js"],
+        "--host [IP address]": ["specify which IP addresses the server should listen on","false"],
+        "--no-host": ["do not expose server to the network"],
+        "-l, --lib": ["builds and serves eodash as a web component","false"],
+        "--no-lib": ["builds and serves eodash as an SPA"]
     }
     const devOptions = Object.keys(options).filter(opt => opt !==  "--outDir <path>");
     const buildOptions =  Object.keys(options).filter(opt => !["--cacheDir <path>","-b, --base <path>", "-p, --port <port>","-o, --open", "--host [IP address]","--no-host"].includes(opt));
@@ -37,10 +37,12 @@ eodash dev
   <tr>
     <th>Option</th>
     <th>Description</th>
+    <th>Default</th>
   </tr>
   <tr v-for="opt in devOptions" >
     <td>{{opt}}</td>
-    <td>{{ options[opt]}}</td>
+    <td>{{ options[opt][0]}}</td>
+    <td>{{ options[opt]?.[1] ?? '--'}}</td>
   </tr>
 </table>
 
@@ -56,10 +58,12 @@ eodash build
   <tr>
     <th>Option</th>
     <th>Description</th>
+    <th>Default</th>
   </tr>
   <tr v-for="opt in buildOptions" >
     <td>{{opt}}</td>
-    <td>{{ options[opt]}}</td>
+    <td>{{ options[opt][0]}}</td>
+    <td>{{ options[opt]?.[1] ?? '--'}}</td>
   </tr>
 </table>
 
@@ -75,10 +79,13 @@ eodash preview
   <tr>
     <th>Option</th>
     <th>Description</th>
+    <th>Default</th>
+
   </tr>
   <tr v-for="opt in preiewOptions" >
     <td>{{opt}}</td>
-    <td>{{ options[opt]}}</td>
+    <td>{{ options[opt][0]}}</td>
+    <td>{{ options[opt]?.[1] ?? '--'}}</td>
   </tr>
 </table>
 
