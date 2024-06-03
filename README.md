@@ -18,10 +18,9 @@ npm run preview
 
 ## Folder Structure
     .
-    ├── bin                # CLI source code
-    ├── core               # Client source code that hosts the microfrontends and renders the dashboard
+    ├── core               # CLI & Client source code 
     ├── docs               # Documentation files
-    ├── tests              # CLI and component tests folder
+    ├── tests              # CLI & Client component tests folder
     ├── widgets            # Vue componenets as internal widgets.
     ├── public             # Statically served directory
     └── README.md

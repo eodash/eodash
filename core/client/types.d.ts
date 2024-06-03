@@ -27,13 +27,13 @@ export interface WebComponentProps<T extends ExecutionTime = "compiletime"> {
   /**
    * Triggered when the web component is mounted in the DOM.
    * @param el - web component
-   * @param store - return value of the core STAC pinia store in `/core/store/stac.ts`
+   * @param store - return value of the core STAC pinia store in `/core/client/store/stac.ts`
    */
   onMounted?: (el: Element | null, store: ReturnType<typeof import("./store/stac").useSTAcStore>) => (Promise<void> | void)
   /**
    * Triggered when the web component is unmounted from the DOM.
    * @param el - web component
-   * @param store - return value of the core STAC pinia store in `/core/store/stac.ts`
+   * @param store - return value of the core STAC pinia store in `/core/client/store/stac.ts`
    */
   onUnmounted?: (el: Element | null, store: ReturnType<typeof import("./store/stac").useSTAcStore>) => (Promise<void> | void)
 }
