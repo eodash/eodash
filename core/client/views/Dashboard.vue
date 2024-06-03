@@ -1,8 +1,8 @@
 <template>
-  <HeaderComponent v-if="!eodash.brand.noLayout" />
+  <HeaderComponent ref="headerRef" v-if="!eodash.brand.noLayout" />
   <ErrorAlert v-model="error" />
   <Suspense>
-    <TemplateComponent @vue:mounted="onTemplateMount?.()"
+    <TemplateComponent @vue:mounted="onTemplateMount?.(hiddenElements)"
       :style="`height: ${eodash.brand.noLayout ? (onTemplateMount ? '100%' : '90dvh') : 'calc(100dvh - ' + mainRect['top'] + mainRect['bottom'] + 'px)'}`" />
     <template #fallback>
       <div style="height: 100dvh; display: flex; align-items: center; justify-content: center;">
@@ -10,7 +10,7 @@
       </div>
     </template>
   </Suspense>
-  <FooterComponent v-if="!eodash.brand.noLayout" />
+  <FooterComponent ref="footerRef" v-if="!eodash.brand.noLayout" />
 </template>
 
 <script setup>
@@ -31,7 +31,6 @@ const props = defineProps({
     type: Function
   }
 })
-
 const eodash = await useEodashRuntime(props.config)
 
 useURLSearchParametersSync();
@@ -53,9 +52,28 @@ const HeaderComponent = defineAsyncComponent(() => import(`@/components/Header.v
 const FooterComponent = defineAsyncComponent(() => import(`@/components/Footer.vue`))
 const { mainRect } = useLayout()
 
+/** @type {import("vue").Ref<InstanceType<typeof
+ *  import("@/components/Header.vue").default >|null>}
+ **/
+const headerRef = ref(null);
+/** @type {import("vue").Ref<InstanceType<typeof
+ *  import("@/components/Footer.vue").default >|null>}
+ **/
+const footerRef = ref(null);
+
+const hiddenElements = [headerRef, footerRef]
+
 onMounted(() => {
   const htmlTag = /** @type {HTMLElement}  */(document.querySelector('html'))
   htmlTag.style.overflow = 'hidden';
+
+  if (props.onTemplateMount && !eodash.brand.noLayout) {
+    hiddenElements.forEach(element => {
+      /** @type {HTMLElement} */
+      // @ts-expect-error
+      (element.value.$el).style.opacity = "0"
+    })
+  }
 })
 
 const error = ref('')
