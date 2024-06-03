@@ -27,9 +27,6 @@ jobs:
       - name: Install dependencies 👨🏻‍💻
         run: npm ci --prefer-offline --no-audit
         if: ${{ steps.release.outputs.release_created }}
-      - name: Build Web Component Library 🧱
-        run: npm run build:lib
-        if: ${{ steps.release.outputs.release_created }}
       - name: Publish package on NPM 📦
         run: npm publish
         env:

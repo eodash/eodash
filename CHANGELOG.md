@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.0.0-alpha.2.4](https://github.com/eodash/eodash/compare/eodash-v5.0.0-alpha.2.3...eodash-v5.0.0-alpha.2.4) (2024-06-03)
+
+
+### Bug Fixes
+
+* Flash of Unstyled Content in Web Component ([#38](https://github.com/eodash/eodash/issues/38)) ([8bb3e63](https://github.com/eodash/eodash/commit/8bb3e6383bfde71c06f6b475e517100e53e06cfe))
+
 ## [5.0.0-alpha.2.3](https://github.com/eodash/eodash/compare/eodash-v5.0.0-alpha.2.2...eodash-v5.0.0-alpha.2.3) (2024-05-23)
 
 

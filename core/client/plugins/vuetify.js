@@ -14,7 +14,7 @@ import { mdiChevronLeft, mdiChevronRight, mdiMenuDown } from "@mdi/js"
 const vuetify = createVuetify({
   icons: {
     aliases: {
-      // remapping v-date-picker and v-tabs default icons to `@mdi/js`
+      // mapping v-date-picker and v-tabs default icons to `@mdi/js`
       next: [mdiChevronRight],
       prev: [mdiChevronLeft],
       subgroup: [mdiMenuDown]

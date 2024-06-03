@@ -2,11 +2,10 @@
 
 import { existsSync, readFileSync } from 'fs';
 import path from 'path';
-import { fileURLToPath } from 'url';
-import { searchForWorkspaceRoot, createLogger } from 'vite';
+import { createLogger } from 'vite';
 import { Command } from 'commander';
 
-export const rootPath = searchForWorkspaceRoot(process.cwd());
+export const rootPath = searchForPackageRoot(process.cwd());
 const cli = new Command('eodash')
 
 const pkg = JSON.parse(
@@ -52,7 +51,7 @@ cli.version(pkg.version, '-v, --version', 'output the current version')
 
 export const userConfig = await getUserConfig(cli.opts(), process.argv?.[2])
 
-export const appPath = fileURLToPath(new URL("..", import.meta.url)),
+export const appPath = searchForPackageRoot(),
   publicPath = userConfig.publicDir ? path.resolve(rootPath, userConfig.publicDir) : path.join(rootPath, './public'),
   srcPath = path.join(rootPath, "/src"),
   runtimeConfigPath = userConfig.runtime ? path.resolve(rootPath, userConfig.runtime) : path.join(srcPath, "./runtime.js"),
@@ -71,14 +70,14 @@ export const logger = createLogger(undefined, { prefix: '[eodash]' })
  */
 async function getUserConfig(options, command) {
   let eodashCLiConfigFile = options.config ? path.resolve(rootPath, options.config) : path.join(rootPath, 'eodash.config.js');
-  /** @type {import("./types").EodashConfig} */
+  /** @type {import("../types").EodashConfig} */
   let config = {};
   if (existsSync(eodashCLiConfigFile)) {
-    config = await import(eodashCLiConfigFile).then(config => {
-      if (config.default instanceof Function) {
-        return config.default()
+    config = await import(eodashCLiConfigFile).then(userConfig => {
+      if (userConfig.default instanceof Function) {
+        return userConfig.default()
       } else {
-        return config.default
+        return userConfig.default
       }
     }).catch(err => {
       console.error(err);
@@ -99,5 +98,19 @@ async function getUserConfig(options, command) {
     runtime: options.runtime ?? config?.runtime,
     widgets: options.widgets ?? config?.widgets,
     lib: options.lib ?? config?.lib
+  }
+}
+
+/**
+ * @param {string} from
+ */
+function searchForPackageRoot(from = import.meta.dirname) {
+  if (from.split('/').length) {
+    if (existsSync(path.resolve(from, 'package.json'))) {
+      return from
+    }
+    return searchForPackageRoot(path.resolve(from, '..'))
+  } else {
+    throw new Error('no package root found')
   }
 }

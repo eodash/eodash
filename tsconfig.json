@@ -26,7 +26,7 @@
     ],
     "paths": {
       "@/*": [
-        "core/*"
+        "core/client/*"
       ],
       "^/*": [
         "widgets/*"
@@ -43,13 +43,12 @@
     "dist"
   ],
   "include": [
-    "bin/types.d.ts",
-    "core/**/*.ts",
-    "core/**/*.js",
-    "core/**/*.umd.cjs",
-    "core/**/*.d.ts",
-    "core/**/*.tsx",
-    "core/**/*.vue",
+    "core/client/**/*.ts",
+    "core/client/**/*.js",
+    "core/client/**/*.umd.cjs",
+    "core/client/**/*.d.ts",
+    "core/client/**/*.tsx",
+    "core/client/**/*.vue",
     "widgets/**/*.vue",
     "widgets/**/*.ts",
     "widgets/**/*.js",
@@ -62,5 +61,6 @@
     "tests/cypress/**/*.d.ts",
     "tests/cypress/**/*.tsx",
     "tests/cypress/**/*.vue",
+    "core/node/types.d.ts"
   ]
 }
