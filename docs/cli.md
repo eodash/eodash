@@ -83,7 +83,7 @@ eodash preview
 </table>
 
 ## Configuration 
-While running the eodash command line, it automatically tries to locate a configuration file named `eodash.config.js` from the root folder of your project. You can also explicitly specify a config file to use with the `--config` or `-c` CLI option (resolved relative to your projects root folder). You can also override the configuration values using the CLI options. refer to the [API](api/bin/types/interfaces/EodashConfig.html) to learn more:
+While running the eodash command line, it automatically tries to locate a configuration file named `eodash.config.js` from the root folder of your project. You can also explicitly specify a config file to use with the `--config` or `-c` CLI option (resolved relative to your projects root folder). You can also override the configuration values using the CLI options. refer to the [API](/api/node/types/interfaces/EodashConfig.html) to learn more:
 
 ### `eodash.config.js` Basic Example
 ```js

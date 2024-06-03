@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { buildApp, createDevServer, previewApp } from './cli.js'
+import { buildApp, createDevServer, previewApp } from './app.js'
 
 const command = process.argv?.[2];
 (async () => {

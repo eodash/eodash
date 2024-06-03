@@ -29,7 +29,7 @@ const properties = {
   },
 };
 
-/** @type {import("../core/types").WebComponentProps["onMounted"]}*/
+/** @type {import("@/types").WebComponentProps["onMounted"]}*/
 const onMounted = (el, store) => {
   /**
    * @typedef {object} Item
