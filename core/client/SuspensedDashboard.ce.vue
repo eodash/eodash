@@ -51,11 +51,7 @@ function setStylesFromHead(hiddenElements) {
     }
   });
 
-  stylesStr += `\n * {
-      font-family:${
-        //@ts-expect-error
-        /** @type {import("@/types").Eodash} */ (inst.provides[eodashKey])?.brand.font?.family ?? 'Roboto'}
-      }
+  stylesStr += `\n
       ${//@ts-expect-error
         /** @type {import("@/types").Eodash} */ (inst.provides[eodashKey]).brand.noLayout ?
       `div.v-application__wrap {
