@@ -1,9 +1,9 @@
 {
     "$schema": "https://typedoc.org/schema.json",
     "entryPoints": [
-        "bin/types.d.ts",
-        "core/types.d.ts",
-        "core/asWebComponent.d.ts"
+        "core/node/types.d.ts",
+        "core/client/types.d.ts",
+        "core/client/asWebComponent.d.ts"
     ],
     "sortEntryPoints": false,
     "docsRoot": "./docs",
@@ -18,11 +18,6 @@
     "excludeExternals": true,
     "categorizeByGroup": true,
     "defaultCategory": "Eodash",
-    "navigationLeaves": [
-        "bin/types",
-        "core/types",
-        "core/asWebComponent"
-    ],
     "jsDocCompatibility": true,
     "useTsLinkResolution": true,
 }

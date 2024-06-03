@@ -1,5 +1,5 @@
 # What are Internal Widgets
-Eodash provides Internal Widgets as extendable Vue Components that are maintained within the package. Along with these, users can also define their own Vue Components. For further information, you can refer to the [API](/api/core/types/interfaces/InternalComponentWidget.html).
+Eodash provides Internal Widgets as extendable Vue Components that are maintained within the package. Along with these, users can also define their own Vue Components. For further information, you can refer to the [API](/api/client/types/interfaces/InternalComponentWidget.html).
 
 ## Using Eodash Provided Internal Widgets
 To use eodash provided internal widgets simply set the desired component's name to `widget.name` and props to `widget.properties` if needed. Find the provided components below:
@@ -50,7 +50,7 @@ export default createEodash({
 ## Creating your own Internal Widget
 You can define your own vue components and import them on your instance. Eodash automatically looks for a `src/widgets` folder on your project. If found, it imports all vue files defined inside the folder. The defined components can simply be referenced by their name on your dashboard configuration and the component's props and attributes can be assigned using the `properties` property.
 
-You can assign internal widgets on a folder of your choice by assigning the folders path either using the `--widgets` CLI option or in the [widgets](/api/bin/types/interfaces/EodashConfig.html#widgets) property in `eodash.config.js`
+You can assign internal widgets on a folder of your choice by assigning the folders path either using the `--widgets` CLI option or in the [widgets](/api/node/types/interfaces/EodashConfig.html#widgets) property in `eodash.config.js`
 
 All eodash's dependencies are accessible inside your created vue components without the need to reinstall them. Eodash uses the following dependencies.
 <script server>

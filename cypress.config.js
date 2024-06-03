@@ -27,9 +27,9 @@ export default defineConfig({
         define: { 'process.env': {} },
         resolve: {
           alias: {
-            '@': fileURLToPath(new URL('./core', import.meta.url)),
+            '@': fileURLToPath(new URL('./core/client', import.meta.url)),
             '^': fileURLToPath(new URL('./widgets', import.meta.url)),
-            "user:config": fileURLToPath(new URL('./core/eodash.js', import.meta.url)),
+            "user:config": fileURLToPath(new URL('./core/client/eodash.js', import.meta.url)),
             "user:widgets": fileURLToPath(new URL('./widgets', import.meta.url))
           },
           extensions: ['.js', '.json', '.jsx', '.mjs', '.ts', '.tsx', '.vue'],

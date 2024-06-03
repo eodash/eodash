@@ -10,11 +10,13 @@
         "outDir": "dist"
     },
     "include": [
-        "bin/**/*.js",
-        "bin/**/*.d.ts",
+        "core/node/**/*.js",
+        "core/node/**/*.d.ts",
         "tests/cli/**/*.js",
         "tests/cli/**/*.spec.js",
         "tests/cli/**/*.test.js",
-        "cypress.config.js"
+        "cypress.config.js",
+        "rollup.config.js",
+        "vitest.config.js"
     ],
 }

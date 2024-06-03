@@ -1,11 +1,11 @@
 # Eodash Store
-eodash fetches the SpatioTemporal Asset Catalog (STAC) endpoint [assigned in the client configuration](/api/core/types/interfaces/Eodash.html#stacendpoint), navigate through its links, and assign values to its store. This store is then exposed to users, giving them the ability to read or modify the state of the dashboard. 
+eodash fetches the SpatioTemporal Asset Catalog (STAC) endpoint [assigned in the client configuration](/api/client/types/interfaces/Eodash.html#stacendpoint), navigate through its links, and assign values to its store. This store is then exposed to users, giving them the ability to read or modify the state of the dashboard. 
 
 The store is divided into three main areas. The first area is the reactive `states`. These states are designed to respond to changes in the dashboard and update the interface accordingly and is backed by [vue reactivity system](https://vuejs.org/guide/essentials/reactivity-fundamentals). 
 
 The second area of the store will contain a set of `actions` (currently export an empty object) that will trigger changes in the state of the dashboard. These functions will be designed to perform specific actions, such as updating the dashboard with new data or changing the display format of existing data.
 
-Finally, the third area is under the `stac` property. This is a [pinia store](https://pinia.vuejs.org/) that exposes the root STAC catalog links, the selected STAC object, a function to load the selected STAC object, and a function to load the links from the root catalog endpoint. Checkout the [API](/api/core/types/interfaces/EodashStore.html) to learn more
+Finally, the third area is under the `stac` property. This is a [pinia store](https://pinia.vuejs.org/) that exposes the root STAC catalog links, the selected STAC object, a function to load the selected STAC object, and a function to load the links from the root catalog endpoint. Checkout the [API](/api/client/types/interfaces/EodashStore.html) to learn more
 
 ## STAC
 Eodash adopts STAC standards to facilitate the sharing of data from various sources. STAC (SpatioTemporal Asset Catalog) is a specification for organizing and describing geospatial data assets like satellite imagery, point clouds, and more. It standardizes the use of metadata, making data easily discoverable and usable across different systems. STAC simplifies search, promotes interoperability between tools, and facilitates data analysis. It's increasingly adopted by major data providers, government agencies, and software developers in the geospatial industry learn more at https://stacspec.org/
