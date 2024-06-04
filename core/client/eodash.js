@@ -58,27 +58,31 @@ export const eodash = reactive({
         },
       },
       {
-        id: Symbol(),
-        title: "Information",
         layout: { x: 9, y: 0, w: 3, h: 12 },
-        widget: {
-          link: async () => await import("@eox/stacinfo"),
-          properties: {
-            for: currentUrl,
-            allowHtml: "true",
-            styleOverride:
-              "#properties li > .value {font-weight: normal !important;}",
-            header: "[]",
+        defineWidget: (selectedSTAC) => {
+          return selectedSTAC ? {
+            id: Symbol(),
+            title: "Information",
+            type: "web-component",
+            widget: {
+              link: async () => await import("@eox/stacinfo"),
+              properties: {
+                for: currentUrl,
+                allowHtml: "true",
+                styleOverride:
+                  "#properties li > .value {font-weight: normal !important;}",
+                header: "[]",
 
-            subheader: "[]",
-            properties: '["description"]',
-            featured: "[]",
-            footer: "[]",
-          },
-          tagName: "eox-stacinfo",
-        },
-        type: "web-component",
-      },
+                subheader: "[]",
+                properties: '["description"]',
+                featured: "[]",
+                footer: "[]",
+              },
+              tagName: "eox-stacinfo",
+            }
+          } : false
+        }
+      }
     ],
   },
 });
