@@ -37,7 +37,7 @@ export default createEodash({
 
 ```
 ::: warning
-importing from a package identifier using an import function is only possible in "compiletime" eodash client configuration. see [here](/api/core/types/interfaces/WebComponentProps.html#link)
+importing from a package identifier using an import function is only possible in "compiletime" eodash client configuration. see [here](/api/client/types/interfaces/WebComponentProps.html#link)
 :::
 
 ### Example of importing from a URL
@@ -126,7 +126,7 @@ Custom elements normally should be registered in the javascript file defining it
 
 
 ## Exposed Hooks
-the configured web component is exposed on the hooks [onMounted](/api/core/types/interfaces/WebComponentProps.html#onmounted) and [onUnmounted](/api/core/types/interfaces/WebComponentProps.html#onunmounted). this is typically used for adding and removing Event Listeners, or assigning properties.
+the configured web component is exposed on the hooks [onMounted](/api/client/types/interfaces/WebComponentProps.html#onmounted) and [onUnmounted](/api/client/types/interfaces/WebComponentProps.html#onunmounted). this is typically used for adding and removing Event Listeners, or assigning properties.
 
 ### example 
 ```js

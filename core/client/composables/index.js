@@ -6,6 +6,7 @@ import { currentUrl, indicator, mapPosition } from "@/store/States";
 import eodash from "@/eodash";
 import { useTheme } from "vuetify/lib/framework.mjs";
 import { onMounted, watch } from "vue";
+import { mdiChevronDoubleDown, mdiChevronDoubleLeft, mdiChevronDoubleRight, mdiChevronDoubleUp } from "@mdi/js"
 
 /**
  * Creates an absolute URL from a relative link and assignes it to `currentUrl`
@@ -56,41 +57,43 @@ export const useSlidePanels = (elements, configs) => {
   /**
    * Array of sliding button's style and icons
    */
-  const slideBtns = slideDirs.map((dir, idx) => {
+  const slideBtns = slideDirs.map((dir, _idx) => {
     const btn = reactive({
       style: {},
       icon: { in: "", out: "" },
       active: false,
       enabled: false,
     });
-    if (configs[idx].slidable) {
-      btn.enabled = true;
-      return btn;
-    }
+
+    // temp removal of `slidable` from the  widgets API
+    // if (configs[idx].slidable === false) {
+    //   btn.enabled = false;
+    //   return btn;
+    // }
 
     switch (dir) {
       case "left":
         btn.style = { top: "50%", right: "-11%" };
-        btn.icon.in = "mdi-chevron-double-right";
-        btn.icon.out = "mdi-chevron-double-left";
+        btn.icon.in = mdiChevronDoubleRight
+        btn.icon.out = mdiChevronDoubleLeft
 
         break;
       case "right":
         btn.style = { top: "50%", left: "-11%" };
-        btn.icon.in = "mdi-chevron-double-left";
-        btn.icon.out = "mdi-chevron-double-right";
+        btn.icon.in = mdiChevronDoubleLeft
+        btn.icon.out = mdiChevronDoubleRight
 
         break;
       case "up":
         btn.style = { right: "50%", bottom: "-17%" };
-        btn.icon.in = "mdi-chevron-double-down";
-        btn.icon.out = "mdi-chevron-double-up";
+        btn.icon.in = mdiChevronDoubleDown
+        btn.icon.out = mdiChevronDoubleUp
 
         break;
       case "down":
         btn.style = { right: "50%", top: "-17%" };
-        btn.icon.in = "mdi-chevron-double-up";
-        btn.icon.out = "mdi-chevron-double-down";
+        btn.icon.in = mdiChevronDoubleUp
+        btn.icon.out = mdiChevronDoubleDown
         break;
 
       default:

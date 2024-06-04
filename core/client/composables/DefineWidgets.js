@@ -60,9 +60,11 @@ export const useDefineWidgets = (widgetConfigs) => {
     if ('defineWidget' in (config ?? {})) {
       const { selectedStac } = storeToRefs(useSTAcStore())
       watch(selectedStac, (updatedStac) => {
-        const definedConfig = reactive(/** @type {import("@/types").FunctionalWidget} */
-          (config)?.defineWidget(updatedStac))
-        definedWidget.value = definedWidget.value.id === definedConfig.id ?
+        let definedConfig =  /** @type {import("@/types").FunctionalWidget} */(config)?.defineWidget(updatedStac)
+        if (definedConfig) {
+          definedConfig = reactive(definedConfig)
+        }
+        definedWidget.value = definedWidget.value.id === definedConfig?.id ?
           definedWidget.value : getWidgetDefinition(definedConfig);
       }, { immediate: true })
     } else {
@@ -76,7 +78,7 @@ export const useDefineWidgets = (widgetConfigs) => {
 
 /**
  * Converts a static widget configuration to a defined imported widget
- * @param {import("@/types").StaticWidget| Omit<import("@/types").StaticWidget, "layout">| undefined} config
+ * @param {import("@/types").StaticWidget| Omit<import("@/types").StaticWidget, "layout">| undefined | null} config
  * @returns {DefinedWidget}
  **/
 const getWidgetDefinition = (config) => {
@@ -119,7 +121,11 @@ const getWidgetDefinition = (config) => {
       break;
 
     default:
-      console.error('Widget type not found')
+      if (!config) {
+        return importedWidget
+      } else {
+        console.error('Widget type not found')
+      }
       break;
   }
   importedWidget.title = config?.title ?? ''

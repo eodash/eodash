@@ -32,7 +32,7 @@ const properties = {
   },
 };
 
-/** @type {import("../core/types").WebComponentProps["onMounted"]}*/
+/** @type {import("@/types").WebComponentProps["onMounted"]}*/
 const onMounted = (el, store) => {
   /** @type {any} */ (el).style.height = "100%";
   
