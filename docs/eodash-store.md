@@ -7,9 +7,6 @@ The second area of the store will contain a set of `actions` (currently export a
 
 Finally, the third area is under the `stac` property. This is a [pinia store](https://pinia.vuejs.org/) that exposes the root STAC catalog links, the selected STAC object, a function to load the selected STAC object, and a function to load the links from the root catalog endpoint. Checkout the [API](/api/client/types/interfaces/EodashStore.html) to learn more
 
-## STAC
-Eodash adopts STAC standards to facilitate the sharing of data from various sources. STAC (SpatioTemporal Asset Catalog) is a specification for organizing and describing geospatial data assets like satellite imagery, point clouds, and more. It standardizes the use of metadata, making data easily discoverable and usable across different systems. STAC simplifies search, promotes interoperability between tools, and facilitates data analysis. It's increasingly adopted by major data providers, government agencies, and software developers in the geospatial industry learn more at https://stacspec.org/
-
 
 ## URL Query Parameters
 The dashboard is designed to display data based on the selected store states. This is achieved through the use of URL query parameters, which enable the dashboard to load on a specific state according to the values provided.
