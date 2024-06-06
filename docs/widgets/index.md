@@ -1,5 +1,6 @@
 # Widgets
-eodash client is a micro frontend host, that exposes a store to share stateful STAC related data and actions between the widgets. The placement of the widgets is backed by the [EOxElement](https://github.com/EOX-A/EOxElements) `@eox/layout` that offers a grid based layout system, and a `layout` property configures the element on the dashboard. Refer to the [API](/api/client/types/type-aliases/Widget.html) to learn more.
+Eodash client is a micro frontend host, that exposes a store to share stateful STAC related data and actions between the widgets.
+Eodash offers a grid based layout system and widgets can be set on the dashboard using `layout` property, The placement of the widgets is backed by the [EOxElement](https://github.com/EOX-A/EOxElements) `@eox/layout`. Refer to the [API](/api/client/types/type-aliases/Widget.html) to learn more.
 
 ## Type of Widgets:
 eodash supports the integration of three widget types `iframes`, `web-components`, and `internal`:

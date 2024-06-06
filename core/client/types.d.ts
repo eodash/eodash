@@ -235,10 +235,9 @@ export interface Template<T extends ExecutionTime = "compiletime"> {
 export type StacEndpoint = `${'https://' | 'http://'}${string}/catalog.json`
 
 /**
- * @ignore
  * @group Eodash
  */
-export type ExecutionTime = "runtime" | "compiletime";
+type ExecutionTime = "runtime" | "compiletime";
 
 /**
  * Eodash instance API

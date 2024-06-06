@@ -1,7 +1,5 @@
 # Branding
-
-## Layout:
-Supporting layout customization by allowing to configure the header and footer of the dashboard
+eodash allows you to configure your own brand. Check out the [API](/api/client/types/interfaces/Eodash.html#brand) and the guide below to learn more.
 
 ### No Layout
 Removing the header and footer completely by setting: 
@@ -31,7 +29,7 @@ export default createEodash({
 ```
 
 ### Footer Text
-Configurable text on the footer left side:
+Configurable text on the footer:
 
 ```js
 import { createEodash } from "@eodash/eodash"
@@ -46,7 +44,7 @@ export default createEodash({
 ```
 
 ### Logo
-Add your own brand logo to the header by referencing it using [vite's static assets](https://vitejs.dev/guide/assets.html#static-asset-handling) handling:
+Add your own brand logo to the header by referencing it using [Vite's static assets](https://vitejs.dev/guide/assets.html#static-asset-handling) handling:
 
 ```js
 import { createEodash } from "@eodash/eodash"

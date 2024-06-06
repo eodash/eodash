@@ -1,5 +1,5 @@
 # Instantiating Eodash
-Eodash client is configured through two primary methods:
+Eodash client is configured through two primary methods. Check out the [API](/api/client/types/interfaces/Eodash.html) and the guide below:
 
 ## Compile-time (Build-time) Configuration
 To configure your instance, the default and recommended method is to use Compile Time Configuration. In this method, eodash utilizes the exported `createEodash` function from the entry point of your project `src/main.js` to define your custom dashboard. When your instance is being built, this configuration is processed by Vite and bundled into the minified output.
