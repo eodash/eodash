@@ -1,13 +1,15 @@
 import { Collection, Item } from 'stac-js';
 import { toAbsolute } from 'stac-js/src/http.js';
 import { generateFeatures } from './helpers'
+import axios from 'axios';
 
 export class EodashCollection {
-  /** @type {string | undefined} */
-  #collectionUrl = undefined;
-  #collectionStac = undefined;
-  /** @type {*} */
-  selectedItem = null;
+  /** @type {string} */
+  #collectionUrl = '';
+  /** @type {import("stac-ts").StacCollection | undefined} */
+  #collectionStac;
+  /** @type {import("stac-ts").StacLink | undefined } */
+  selectedItem;
 
   /**
    * @param {string} collectionUrl
@@ -21,8 +23,12 @@ export class EodashCollection {
    * @async
    */
   createLayersJson = async (item = null) => {
-    let stacItem, stac;
+    /** @type {import("stac-ts").StacLink | undefined} */
+    let stacItem,
+      /** @type {import("stac-ts").StacCollection | undefined} */
+      stac;
     // TODO get auxiliary layers from collection
+    /** @type {object[]} */
     let layersJson = [
       {
         type: 'Tile',
@@ -36,13 +42,12 @@ export class EodashCollection {
     ];
     // Load collectionstac if not yet initialized
     if (!this.#collectionStac) {
-      //@ts-expect-error
-      const response = await fetch(this.#collectionUrl);
-      stac = await response.json();
+      const response = await axios.get(this.#collectionUrl);
+      stac = await response.data
       this.#collectionStac = new Collection(stac);
     }
 
-    if(stac && stac.endpointtype === "GeoDB") {
+    if (stac && stac.endpointtype === "GeoDB") {
       // Special handling of point based data
       const allFeatures = generateFeatures(stac.links);
       layersJson.unshift({
@@ -68,11 +73,9 @@ export class EodashCollection {
     } else {
       if (item instanceof Date) {
         // if collectionStac not yet initialized we do it here
-        stacItem = this.getItems().sort((a, b) => {
-          //@ts-expect-error
-          const distanceA = Math.abs(new Date(a.datetime) - item);
-          //@ts-expect-error
-          const distanceB = Math.abs(new Date(b.datetime) - item);
+        stacItem = this.getItems()?.sort((a, b) => {
+          const distanceA = Math.abs((new Date(/** @type {number} */(a.datetime))).getTime() - item.getTime());
+          const distanceB = Math.abs(new Date(/** @type {number} */(b.datetime)).getTime() - item.getTime());
           return distanceA - distanceB;
         })[0];
         this.selectedItem = stacItem;
@@ -85,19 +88,24 @@ export class EodashCollection {
           : this.#collectionUrl
       );
       stac = await response.json();
-      
+
       if (!stacItem) {
         // no specific item was requested; render last item
         this.#collectionStac = new Collection(stac);
         const items = this.getItems();
-        this.selectedItem = items[items.length - 1];
-        layersJson = await this.createLayersJson(this.selectedItem);
+        this.selectedItem = items?.[items.length - 1];
+        if (this.selectedItem) {
+          layersJson = await this.createLayersJson(this.selectedItem);
+        } else {
+          if (import.meta.env.DEV) {
+            console.warn('[eodash] the selected collection does not include any items')
+          }
+        }
         return layersJson;
       } else {
         // specific item was requested
         const item = new Item(stac);
         this.selectedItem = item;
-        //@ts-expect-error
         layersJson.unshift(this.buildJson(item));
         return layersJson;
       }
@@ -141,9 +149,7 @@ export class EodashCollection {
 
   getItems() {
     return (
-      //@ts-expect-error
-       // eslint-disable-next-line
-     /** @type {import('stac-ts').StacLink[]}*/(this.#collectionStac?.links)
+      this.#collectionStac?.links
         .filter((i) => i.rel === 'item')
         // sort by `datetime`, where oldest is first in array
         .sort((a, b) => ( /** @type {number} */(a.datetime) <  /** @type {number} */(b.datetime) ? -1 : 1))
@@ -152,9 +158,7 @@ export class EodashCollection {
 
   getDates() {
     return (
-     //@ts-expect-error
-      // eslint-disable-next-line
-      /** @type {import('stac-ts').StacLink[]}*/ (this.#collectionStac?.links)
+      this.#collectionStac?.links
         .filter((i) => i.rel === 'item')
         // sort by `datetime`, where oldest is first in array
         .sort((a, b) => ( /** @type {number} */(a.datetime) < /** @type {number} */(b.datetime) ? -1 : 1))
