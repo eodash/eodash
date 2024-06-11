@@ -7,6 +7,7 @@ import eodash from "@/eodash";
 import { useTheme } from "vuetify/lib/framework.mjs";
 import { onMounted, watch } from "vue";
 import { mdiChevronDoubleDown, mdiChevronDoubleLeft, mdiChevronDoubleRight, mdiChevronDoubleUp } from "@mdi/js"
+import { useSTAcStore } from "@/store/stac";
 
 /**
  * Creates an absolute URL from a relative link and assignes it to `currentUrl`
@@ -178,25 +179,35 @@ export const useUpdateTheme = (themeName, themeDefinition = {}) => {
  */
 
 export const useURLSearchParametersSync = () => {
-  onMounted(() => {
+  onMounted(async () => {
     // Analyze currently set url params when first loaded and set them in the store
     if ('URLSearchParams' in window) {
       const searchParams = new URLSearchParams(window.location.search);
-      let x, y, z;
-      searchParams.forEach((value, key) => {
+      /** @type {number} */
+      let x,
+        /** @type {number} */
+        y,
+        /** @type {number} */
+        z;
+      searchParams.forEach(async (value, key) => {
         if (key === "indicator") {
-          indicator.value = value;
+          const { loadSelectedSTAC, stac } = useSTAcStore()
+          const match = stac?.find(link => link.id == value)
+          if (match) {
+            await loadSelectedSTAC(match.href)
+          }
         }
         if (key === "x") {
-          x = value;
+          x = Number(value);
         }
         if (key === "y") {
-          y = value;
+          y = Number(value);
         }
         if (key === "z") {
-          z = value;
+          z = Number(value);
         }
       })
+      //@ts-expect-error
       if (x !== undefined && y !== undefined && z !== undefined) {
         mapPosition.value = [x, y, z];
       }
