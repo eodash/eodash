@@ -1,7 +1,6 @@
 import { defineAsyncComponent, reactive, shallowRef, watch } from 'vue'
 import { useSTAcStore } from '@/store/stac'
 import { storeToRefs } from 'pinia'
-import Loading from '@/components/Loading.vue';
 
 /**
  * @typedef {{
@@ -96,7 +95,6 @@ const getWidgetDefinition = (config) => {
       importedWidget.component = defineAsyncComponent({
         loader: internalWidgets[/** @type {import("@/types").InternalComponentWidget} **/(config)?.widget.name],
         suspensible: true,
-        loadingComponent: Loading
       })
       importedWidget.props = reactive(/** @type {import("@/types").InternalComponentWidget} **/(config)?.widget.properties ?? {})
 
@@ -106,7 +104,6 @@ const getWidgetDefinition = (config) => {
       importedWidget.component = defineAsyncComponent({
         loader: () => import('@/components/DynamicWebComponent.vue'),
         suspensible: true,
-        loadingComponent: Loading
       })
       importedWidget.props = reactive(config.widget)
 
@@ -115,7 +112,6 @@ const getWidgetDefinition = (config) => {
       importedWidget.component = defineAsyncComponent({
         loader: () => import('@/components/IframeWrapper.vue'),
         suspensible: true,
-        loadingComponent: Loading
       })
       importedWidget.props = reactive(config.widget)
       break;
