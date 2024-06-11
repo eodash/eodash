@@ -267,16 +267,15 @@ export interface Eodash<T extends ExecutionTime = "compiletime"> {
     /** custom error message to alert the users if something crashes */
     errorMessage?: string
     /**
-     * Automatically fetches the specified font family from google fonts. if the [link](#font-link) property is specified
-     * the font family will be fetched from the provided source instead.
+     *  fetches the specified font family from the specified `link` property.
      */
     font?: {
       /**
        * Link to stylesheet that defines font-face. Could be either a relative or absolute URL.
        */
-      link?: string;
+      link: string;
       /**
-       * Font family. Use FVD notation to include families. see https://github.com/typekit/fvd
+       * Font family name.
        */
       family: string
     }

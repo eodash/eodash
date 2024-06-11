@@ -12,9 +12,6 @@ export const eodash = reactive({
   brand: {
     noLayout: true,
     name: "Demo",
-    font: {
-      family: "Roboto",
-    },
     theme: {
       colors: {
         primary: "#fff",
