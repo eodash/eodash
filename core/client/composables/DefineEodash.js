@@ -31,8 +31,9 @@ export const useEodashRuntime = async (runtimeConfig) => {
   }
 
   try {
+    const configJs = '/@fs/config.js'
     assignInstance(
-      (await import( /* @vite-ignore */new URL('/config.js', import.meta.url).href)).default
+      (await import( /* @vite-ignore */new URL(configJs, import.meta.url).href)).default
     )
   } catch {
     try {
