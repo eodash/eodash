@@ -139,7 +139,7 @@ async function configureServer(server) {
 
   return () => {
     server.middlewares.use(async (req, res, next) => {
-      if (req.originalUrl === '/@fs/config.js') {
+      if (req.originalUrl === '/@fs/config.js' || req.originalUrl === '/config.js') {
         res.statusCode = 200
         res.setHeader('Content-Type', 'text/javascript')
         if (existsSync(runtimeConfigPath)) {
