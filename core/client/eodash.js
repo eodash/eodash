@@ -84,7 +84,7 @@ export const eodash = reactive({
         }
       },
       {
-        layout: { x: 5, y: 11, w: 2, h: 1 },
+        layout: { x: 5, y: 10, w: 1, h: 1 },
         defineWidget: (selectedSTAC) => {
           return selectedSTAC ? {
             id: Symbol(),
