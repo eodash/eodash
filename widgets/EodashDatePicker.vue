@@ -36,7 +36,7 @@ import { datetime } from "@/store/States";
 import { mdiRayStartArrow } from '@mdi/js';
 
 function jumpDate() {
-  if (attributes && attributes.value.length > 0) {
+  if (attributes.value && attributes.value.length > 0) {
     // We have potentially multiple collections we need to iterate (currently only one)
     let latestDateMS = 0;
     attributes.value.forEach((coll) => {
@@ -50,7 +50,6 @@ function jumpDate() {
       }
     })
     if (latestDateMS !== 0) {
-      console.log(latestDateMS);
       currentDate.value = new Date(latestDateMS);
     }
   }
@@ -91,16 +90,6 @@ const currentDate = computed({
     }
   }
 });
-
-/**
- * @type {import("vue").Ref<import("vuetify/components").VDatePicker | null>}
- **/
-const datePicker = ref(null)
-/** @type {import("vue").Ref<string|undefined>} */
-const width = ref()
-/** @type {import("vue").Ref<string|undefined>} */
-const height = ref()
-
 /** @type {import("@/types").WebComponentProps["onMounted"]} */
 onMounted (() => {
   const { selectedStac } = storeToRefs(useSTAcStore());
