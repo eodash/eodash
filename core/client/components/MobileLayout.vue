@@ -1,17 +1,14 @@
 <template>
-  <v-main class="overflow-hidden" style="height: 91dvh;">
+  <v-main class="overflow-hidden main">
     <Suspense suspensible>
       <component id="bg-widget" v-if="bgWidget.component" :is="bgWidget.component" v-bind="bgWidget.props"></component>
     </Suspense>
 
     <template v-for="(importedWidget, idx) in importedWidgets" :key="idx">
-      <div v-if="importedWidget.value.component" v-show="activeIdx === idx" id="overlay" class="pa-2" :style="{
-        bottom: tabsHeightFromBtm, position: 'absolute', overflow: 'hidden',
-        width: '100%', left: 0, top: mainRect.top + 'px', zIndex: 1, background: 'rgb(var(--v-theme-surface))'
-      }">
-        <v-btn icon variant="text" style="height: 5%;position: relative;" @click="activeIdx = -1">&#x2715;</v-btn>
+      <div v-if="importedWidget.value.component" v-show="activeIdx === idx" id="overlay" class="pa-2 panel">
+        <v-btn icon variant="text" class="close-btn" @click="activeIdx = -1">&#x2715;</v-btn>
         <Suspense suspensible>
-          <div style="height: 90% !important;" v-show="activeIdx === idx">
+          <div class="component-container" v-show="activeIdx === idx">
             <component :key="importedWidget.value.id" :is="importedWidget.value.component"
               v-bind="importedWidget.value.props" />
           </div>
@@ -19,9 +16,7 @@
       </div>
     </template>
 
-    <v-tabs ref="tabs" align-tabs="center" bg-color="surface"
-      :style="{ position: 'relative', bottom: (mainRect.bottom || 48) + 'px', zIndex: 10 }" show-arrows
-      v-model="activeIdx">
+    <v-tabs ref="tabs" align-tabs="center" bg-color="surface" class="tabs" show-arrows v-model="activeIdx">
       <template v-for="(importedWidget, idx) in importedWidgets" :key="idx">
         <v-tab v-if="importedWidget.value.component" :value="idx">
           {{ importedWidget.value.title }}
@@ -51,7 +46,41 @@ const activeIdx = ref(-1)
 /** @type {import("vue").Ref<import("vuetify/components").VTabs|null>} */
 const tabs = ref(null)
 const tabsHeightFromBtm = ref('')
+const mainRectTopPx = mainRect.value.top + 'px'
+const mainRectBtmPx = mainRect.value.bottom || 48 + 'px'
+
 onMounted(() => {
   tabsHeightFromBtm.value = mainRect.value.bottom + (/** @type {HTMLElement} */(tabs.value?.$el)?.clientHeight ?? 0) + "px"
 })
 </script>
+<style scoped>
+.main {
+  height: 91dvh;
+}
+
+.panel {
+  top: v-bind("mainRectTopPx");
+  bottom: v-bind("tabsHeightFromBtm");
+  position: absolute;
+  overflow: hidden;
+  width: 100%;
+  left: 0;
+  z-index: 1;
+  background: rgb(var(--v-theme-surface));
+}
+
+.component-container {
+  height: 90%;
+}
+
+.close-btn {
+  height: 5%;
+  position: relative;
+}
+
+.tabs {
+  bottom: v-bind("mainRectBtmPx");
+  position: relative;
+  z-index: 10;
+}
+</style>

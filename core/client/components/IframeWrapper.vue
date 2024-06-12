@@ -1,5 +1,5 @@
 <template>
-  <iframe :src="src" style="width: 100%; height: 100%"></iframe>
+  <iframe :src="src" class="fill-height fill-width"></iframe>
 </template>
 <script setup>
 defineProps({

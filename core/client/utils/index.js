@@ -4,7 +4,7 @@
  * @param {string} [link]
  * @param {boolean} [isWebComponent]
  * @returns {Promise<string>} - font family name
- * @see {@link "https://github.com/typekit/webfontloader "}
+ * @see {@link "https://github.com/typekit/webfontloader"}
  */
 export const loadFont = async (family = '', link = '', isWebComponent = false) => {
   if (family && link) {
