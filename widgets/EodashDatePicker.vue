@@ -108,7 +108,11 @@ onMounted (() => {
 
         const stacCollection = await (await fetch(childCollUrl)).json();
         const dates = stacCollection.links
-          .filter((/** @type {{ rel: string; }} */ item) => item.rel === 'item')
+          .filter(
+            (/** @type {{ rel: string; datetime: string; }} */ item) => (
+              item.rel === 'item' && 'datetime' in item
+            )
+          )
           .map((/** @type {{ datetime: string; }} */ it) => new Date(it.datetime));
         attributes.value = [
           {
