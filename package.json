@@ -52,7 +52,6 @@
     "@eox/map": "^1.4.0",
     "@eox/stacinfo": "^0.3.0",
     "@mdi/js": "^7.4.47",
-    "@popperjs/core": "^2.11.8",
     "@vitejs/plugin-vue": "^5.0.0",
     "animated-details": "gist:2912bb049fa906671807415eb0e87188",
     "axios": "^1.6.2",

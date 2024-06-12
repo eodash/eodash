@@ -11,7 +11,7 @@
       }">
         <v-btn icon variant="text" style="height: 5%;position: relative;" @click="activeIdx = -1">&#x2715;</v-btn>
         <Suspense suspensible>
-          <div style="height: 94% !important;" v-show="activeIdx === idx">
+          <div style="height: 90% !important;" v-show="activeIdx === idx">
             <component :key="importedWidget.value.id" :is="importedWidget.value.component"
               v-bind="importedWidget.value.props" />
           </div>
