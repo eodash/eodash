@@ -42,7 +42,8 @@ function jumpDate() {
     attributes.value.forEach((coll) => {
       if (coll?.dates) {
         coll.dates.forEach((d) => {
-          if (d.getTime() > latestDateMS) {
+          // TODO: we need to handle time ranges and other options here
+          if (d instanceof Date && d.getTime() > latestDateMS) {
             latestDateMS = d.getTime();
           }
         })
