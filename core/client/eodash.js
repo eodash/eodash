@@ -80,7 +80,7 @@ export const eodash = reactive({
               },
               tagName: "eox-stacinfo",
             }
-          } : false
+          } : null
         }
       },
       {
@@ -93,7 +93,7 @@ export const eodash = reactive({
             widget: {
               name: "EodashDatePicker",
             },
-          } : false
+          } : null
         }
       }
     ],
