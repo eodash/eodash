@@ -7,14 +7,16 @@
         </Suspense>
       </eox-layout-item>
       <template v-for="(importedWidget, idx) in importedWidgets" :key="idx">
-        <eox-layout-item v-if="importedWidget.value.component" :key="importedWidget.value.id"
-          style="position: relative; overflow: visible; z-index: 1; border-radius: 0px; background: rgb(var(--v-theme-surface))"
-          v-bind="importedWidget.value.layout">
-          <Suspense suspensible>
-            <component :key="importedWidget.value.id" :is="importedWidget.value.component"
-              v-bind="importedWidget.value.props" />
-          </Suspense>
-        </eox-layout-item>
+        <Transition name="fade">
+          <eox-layout-item v-if="importedWidget.value.component" :key="importedWidget.value.id"
+            style="position: relative; overflow: visible; z-index: 1; border-radius: 0px; background: rgb(var(--v-theme-surface))"
+            v-bind="importedWidget.value.layout">
+            <Suspense suspensible>
+              <component :key="importedWidget.value.id" :is="importedWidget.value.component"
+                v-bind="importedWidget.value.props" />
+            </Suspense>
+          </eox-layout-item>
+        </Transition>
       </template>
     </eox-layout>
   </v-main>
@@ -31,3 +33,15 @@ const [bgWidget] = useDefineWidgets([eodash.template?.background])
 
 const importedWidgets = useDefineWidgets(eodash.template?.widgets)
 </script>
+
+<style scoped lang="scss">
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.25s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+</style>
