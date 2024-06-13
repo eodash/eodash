@@ -32,8 +32,6 @@
     "build:lib": "npx eodash build --entryPoint core/client/eodash.js --lib --outDir dist/client",
     "build:cli": "rollup -c",
     "check": "vue-tsc --noEmit --skipLibCheck && eslint .",
-    "check:lint": "eslint .",
-    "check:types": "vue-tsc --noEmit --skipLibCheck",
     "preview": "npx eodash preview",
     "lint": "eslint . --fix",
     "cypress": "cypress open --component ",
