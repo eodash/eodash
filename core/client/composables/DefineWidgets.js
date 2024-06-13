@@ -5,10 +5,11 @@ import Loading from '@/components/Loading.vue';
 
 /**
  * @typedef {{
- *   component:import('vue').Component | null;
+ *   component: import('vue').Component | null;
  *   props: Record<string, unknown>;
- *   title :string;
- *   id:string|number|symbol;
+ *   title: string;
+ *   id: string | number | symbol;
+ *   layout: { x: number; y: number; h: number; w: number }
  * }} DefinedWidget
 */
 
@@ -55,6 +56,7 @@ export const useDefineWidgets = (widgetConfigs) => {
       props: {},
       title: '',
       id: Symbol(),
+      layout: { x: 0, y: 0, h: 0, w: 0 }
     })
 
     if ('defineWidget' in (config ?? {})) {
@@ -78,7 +80,7 @@ export const useDefineWidgets = (widgetConfigs) => {
 
 /**
  * Converts a static widget configuration to a defined imported widget
- * @param {import("@/types").StaticWidget| Omit<import("@/types").StaticWidget, "layout">| undefined | null} config
+ * @param {import("@/types").StaticWidget| Omit<import("@/types").StaticWidget, "layout">| undefined | null} [config]
  * @returns {DefinedWidget}
  **/
 const getWidgetDefinition = (config) => {
@@ -90,6 +92,7 @@ const getWidgetDefinition = (config) => {
     props: {},
     title: '',
     id: Symbol(),
+    layout: reactive({ x: 0, y: 0, h: 0, w: 0 })
   }
   switch (config?.type) {
     case 'internal':
@@ -130,6 +133,13 @@ const getWidgetDefinition = (config) => {
   }
   importedWidget.title = config?.title ?? ''
   importedWidget.id = config?.id ?? importedWidget.id
+
+  if ("layout" in config) {
+    importedWidget.layout.x = config.layout.x
+    importedWidget.layout.y = config.layout.y
+    importedWidget.layout.h = config.layout.h
+    importedWidget.layout.w = config.layout.w
+  }
   return importedWidget
 }
 

@@ -46,6 +46,28 @@ export interface WidgetsContainerProps {
 
 // eodash types:
 /**
+ * properties of EOxLayoutItem used for setting
+ * the position and size of panels
+ */
+export interface Layout {
+  /**
+     *  Horizontal start position. Integer between 1 and 12
+     */
+  x: number
+  /**
+   *  Vertical start position. Integer between 1 and 12
+   */
+  y: number
+  /**
+   *  Width. Integer between 1 and 12
+   */
+  w: number
+  /**
+   *  Height. Integer between 1 and 12
+   */
+  h: number
+}
+/**
  * Widget type: `web-component` API
  * @group Eodash
  */
@@ -55,24 +77,7 @@ export interface WebComponentWidget<T extends ExecutionTime = "compiletime"> {
   /**
    * Widget position and size.
    */
-  layout: {
-    /**
-     *  Horizontal start position. Integer between 1 and 12
-     */
-    x: number
-    /**
-     *  Vertical start position. Integer between 1 and 12
-     */
-    y: number
-    /**
-     *  Width. Integer between 1 and 12
-     */
-    w: number
-    /**
-     *  Height. Integer between 1 and 12
-     */
-    h: number
-  },
+  layout: Layout,
   widget: WebComponentProps<T>
   type: 'web-component'
 }
@@ -88,24 +93,7 @@ export interface InternalComponentWidget {
   /**
   * Widget position and size.
   */
-  layout: {
-    /**
-     *  Horizontal start position. Integer between 1 and 12
-     */
-    x: number
-    /**
-     *  Vertical start position. Integer between 1 and 12
-     */
-    y: number
-    /**
-     *  Width. Integer between 1 and 12
-     */
-    w: number
-    /**
-     *  Height. Integer between 1 and 12
-     */
-    h: number
-  }
+  layout: Layout
   widget: {
     /**
      * Internal Vue Components inside the [widgets](https://github.com/eodash/eodash/tree/main/widgets) folder. Referenced
@@ -133,24 +121,7 @@ export interface IFrameWidget {
   /**
   * Widget position and size.
   */
-  layout: {
-    /**
-     *  Horizontal start position. Integer between 1 and 12
-     */
-    x: number
-    /**
-     *  Vertical start position. Integer between 1 and 12
-     */
-    y: number
-    /**
-     *  Width. Integer between 1 and 12
-     */
-    w: number
-    /**
-     *  Height. Integer between 1 and 12
-     */
-    h: number
-  }
+  layout: Layout
   widget: {
     /**
      * The URL of the page to embed
@@ -170,25 +141,7 @@ export interface FunctionalWidget<T extends ExecutionTime = "compiletime"> {
    * @param selectedSTAC - Currently selected STAC object
    */
   defineWidget: (selectedSTAC: import("stac-ts").StacCatalog |
-    import("stac-ts").StacCollection | import("stac-ts").StacItem | null) => Omit<StaticWidget<T>, 'layout' | 'slidable'> | undefined | null
-  layout: {
-    /**
-     *  Horizontal start position. Integer between 1 and 12
-     */
-    x: number
-    /**
-     *  Vertical start position. Integer between 1 and 12
-     */
-    y: number
-    /**
-     *  Width. Integer between 1 and 12
-     */
-    w: number
-    /**
-     *  Height. Integer between 1 and 12
-     */
-    h: number
-  }
+    import("stac-ts").StacCollection | import("stac-ts").StacItem | null) => StaticWidget<T> | undefined | null
 }
 /**
  * @group Eodash
