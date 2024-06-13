@@ -46,10 +46,12 @@ const activeIdx = ref(-1)
 /** @type {import("vue").Ref<import("vuetify/components").VTabs|null>} */
 const tabs = ref(null)
 const tabsHeightFromBtm = ref('')
-const mainRectTopPx = mainRect.value.top + 'px'
-const mainRectBtmPx = mainRect.value.bottom || 48 + 'px'
+const mainRectTopPx = ref('')
+const mainRectBtmPx = ref('')
 
 onMounted(() => {
+  mainRectTopPx.value = mainRect.value.top + 'px';
+  mainRectBtmPx.value = (mainRect.value.bottom || 48) + 'px';
   tabsHeightFromBtm.value = mainRect.value.bottom + (/** @type {HTMLElement} */(tabs.value?.$el)?.clientHeight ?? 0) + "px"
 })
 </script>
