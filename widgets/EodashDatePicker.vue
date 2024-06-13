@@ -47,12 +47,6 @@ function jumpDate() {
 
 const eodashConfig = /** @type {import("@/types").Eodash} */ inject(eodashKey);
 
-const props = defineProps({
-  inline: {
-    type: Boolean
-  }
-})
-
 const masks = ref({
   input: 'YYYY-MM-DD',
 });
@@ -65,13 +59,10 @@ const attributes = ref([]);
 
 const currentDate = computed({
   get() {
-    return props.inline ? datetime.value.split("T")[0] : new Date(datetime.value) ?? new Date()
+    return new Date(datetime.value) ?? new Date()
   },
   /** @param {Date | string} updatedDate */
   set(updatedDate) {
-    if (props.inline) {
-      updatedDate = new Date(updatedDate);
-    }
     //@ts-expect-error
     if (updatedDate instanceof Date && !isNaN(updatedDate)) {
       datetime.value = new Date(updatedDate.getTime() - updatedDate.getTimezoneOffset() * 60000).toISOString()
