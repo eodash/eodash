@@ -1,5 +1,27 @@
 # Changelog
 
+## [5.0.0-alpha.2.5](https://github.com/eodash/eodash/compare/eodash-v5.0.0-alpha.2.4...eodash-v5.0.0-alpha.2.5) (2024-06-13)
+
+
+### Features
+
+* add trasition ([790442d](https://github.com/eodash/eodash/commit/790442dca2373ade870226655a3cc3e29e098231))
+* change panels layout in functional widgets ([3bfdcca](https://github.com/eodash/eodash/commit/3bfdccac4e0cc20ac14377e1aafcdd8858e5b12c))
+* converted stacinfo to functional widget ([e959c90](https://github.com/eodash/eodash/commit/e959c9034d329eb47cd73ddb3cc0effb6c711e46))
+* replacing time selection with VCalendar, adding visualization of available datasets and jump to latest function ([f780699](https://github.com/eodash/eodash/commit/f780699c23d345cc79f648c5dd1bd21dadb02bec))
+
+
+### Bug Fixes
+
+* central loading of initial indicator ([cc43a51](https://github.com/eodash/eodash/commit/cc43a51ca360260527eb09028fb4d8071385bce8))
+* EodashCollection types + warning collections with no items in dev ([5c348e2](https://github.com/eodash/eodash/commit/5c348e25cea02fefefaa8b7988bacd3df9275a08))
+* Flash of Unstyled Content in Web Component ([#38](https://github.com/eodash/eodash/issues/38)) ([f07c298](https://github.com/eodash/eodash/commit/f07c2980f679106884fbffa59b0fb3bf54d3ef95))
+* handling runtime config ([51bc881](https://github.com/eodash/eodash/commit/51bc881705cecf1b3018345b360283b0ffe54059))
+* panel heights on mobile ([6b3fc5c](https://github.com/eodash/eodash/commit/6b3fc5c40d3e0883cef562e4f67ada86405f1d0a))
+* remove google font fetching ([22e8821](https://github.com/eodash/eodash/commit/22e88215957133c8dcea69560b2d997d0848c586))
+* suppress `/config` vite warning ([f829001](https://github.com/eodash/eodash/commit/f829001380913a435468bdf656c36f4d7d12f894))
+* update tests ([8397346](https://github.com/eodash/eodash/commit/839734631d00cc4468d718a54c4ce4a555cc63d4))
+
 ## [5.0.0-alpha.2.4](https://github.com/eodash/eodash/compare/eodash-v5.0.0-alpha.2.3...eodash-v5.0.0-alpha.2.4) (2024-06-03)
 
 
