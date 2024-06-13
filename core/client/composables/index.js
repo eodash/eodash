@@ -63,7 +63,7 @@ export const useSlidePanels = (elements, configs) => {
       style: {},
       icon: { in: "", out: "" },
       active: false,
-      enabled: true,
+      enabled: false,
     });
 
     // temp removal of `slidable` from the  widgets API

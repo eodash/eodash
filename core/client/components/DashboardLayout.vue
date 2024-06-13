@@ -6,15 +6,16 @@
           <component id="bg-widget" :is="bgWidget.component" v-bind="bgWidget.props" />
         </Suspense>
       </eox-layout-item>
-      <template v-for="(config, idx) in widgetsConfig" :key="idx">
-        <eox-layout-item v-if="importedWidgets[idx].value.component" class="panel" :x="config.layout.x"
-          :y="config.layout.y" :h="config.layout.h" :w="config.layout.w">
-
-          <Suspense suspensible>
-            <component :key="importedWidgets[idx].value.id" :is="importedWidgets[idx].value.component"
-              v-bind="importedWidgets[idx].value.props" />
-          </Suspense>
-        </eox-layout-item>
+      <template v-for="(importedWidget, idx) in importedWidgets" :key="idx">
+        <Transition name="fade">
+          <eox-layout-item v-if="importedWidget.value.component" :key="importedWidget.value.id" class="panel"
+            v-bind="importedWidget.value.layout">
+            <Suspense suspensible>
+              <component :key="importedWidget.value.id" :is="importedWidget.value.component"
+                v-bind="importedWidget.value.props" />
+            </Suspense>
+          </eox-layout-item>
+        </Transition>
       </template>
     </eox-layout>
   </v-main>
@@ -29,9 +30,7 @@ const eodash = /** @type {import("@/types").Eodash} */ (inject(eodashKey))
 
 const [bgWidget] = useDefineWidgets([eodash.template?.background])
 
-const widgetsConfig = eodash.template?.widgets
-
-const importedWidgets = useDefineWidgets(widgetsConfig)
+const importedWidgets = useDefineWidgets(eodash.template?.widgets)
 </script>
 <style scoped>
 .panel {
@@ -44,5 +43,16 @@ const importedWidgets = useDefineWidgets(widgetsConfig)
 
 .bg-panel {
   z-index: 0;
+
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.25s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 </style>

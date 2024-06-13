@@ -48,46 +48,51 @@ export const eodash = reactive({
       {
         id: Symbol(),
         type: "internal",
-        title: "itemfilter",
-        layout: { x: 0, y: 0, w: 3, h: 12 },
+        title: "Indicators",
+        layout: { x: 0, y: 0, w: 2, h: 12 },
         widget: {
           name: "EodashItemFilter",
         },
       },
       {
-        id: Symbol(),
-        type: "internal",
-        title: "datepicker",
-        layout: { x: 5, y: 11, w: 2, h: 1 },
-        widget: {
-          name: "EodashDatePicker",
-          properties: {
-            inline: true,
-          },
-        },
+        defineWidget: (selectedSTAC) => {
+          return selectedSTAC ? {
+            id: "Information",
+            title: "Information",
+            layout: { x: 9, y: 0, w: 3, h: 12 },
+            type: "web-component",
+            widget: {
+              link: async () => await import("@eox/stacinfo"),
+              properties: {
+                for: currentUrl,
+                allowHtml: "true",
+                styleOverride:
+                  "#properties li > .value {font-weight: normal !important;}",
+                header: "[]",
+
+                subheader: "[]",
+                properties: '["description"]',
+                featured: "[]",
+                footer: "[]",
+              },
+              tagName: "eox-stacinfo",
+            }
+          } : null
+        }
       },
       {
-        id: Symbol(),
-        title: "Information",
-        layout: { x: 9, y: 0, w: 3, h: 12 },
-        widget: {
-          link: async () => await import("@eox/stacinfo"),
-          properties: {
-            for: currentUrl,
-            allowHtml: "true",
-            styleOverride:
-              "#properties li > .value {font-weight: normal !important;}",
-            header: "[]",
-
-            subheader: "[]",
-            properties: '["description"]',
-            featured: "[]",
-            footer: "[]",
-          },
-          tagName: "eox-stacinfo",
-        },
-        type: "web-component",
-      },
+        defineWidget: (selectedSTAC) => {
+          return selectedSTAC ? {
+            id: "Datepicker",
+            type: "internal",
+            layout: { x: 5, y: 10, w: 1, h: 1 },
+            title: "Datepicker",
+            widget: {
+              name: "EodashDatePicker",
+            },
+          } : null
+        }
+      }
     ],
   },
 });

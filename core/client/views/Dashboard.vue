@@ -53,10 +53,6 @@ const { mainRect } = useLayout()
 const templateHeight = eodash.brand.noLayout ? (props.onTemplateMount ? '100%' : '90dvh') :
   `calc(100dvh - ${mainRect.value['top'] + mainRect.value['bottom']}px)`
 
-
-/** @type {import("vue").Ref<InstanceType<typeof
- *  import("@/components/Header.vue").default >|null>}
- **/
 const headerRef = ref(null);
 /** @type {import("vue").Ref<InstanceType<typeof
  *  import("@/components/Footer.vue").default >|null>}
