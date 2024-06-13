@@ -25,22 +25,15 @@ export default defineConfig({
     },
     // https://vitepress.dev/reference/default-theme-config
     nav: [
-      { text: 'Home', link: '/' },
-      { text: 'Get Started', link: '/get-started' },
+      { text: 'Get Started', link: '/' },
       { text: 'API', link: '/api/' }
 
     ],
     sidebar: [
       {
-        text: 'Introduction',
-        items: [
-          { text: 'What is eodash', link: '/what-is-eodash' },
-          { text: 'Get Started', link: '/get-started' }
-        ]
-      },
-      {
         text: 'Guide',
         items: [
+          { text: 'Get Started', link: '/' },
           { text: 'Instantiating Eodash', link: '/instantiation' },
           {
             text: 'Widgets', link: '/widgets/',

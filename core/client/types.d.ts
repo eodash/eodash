@@ -196,7 +196,7 @@ export type StacEndpoint = `${'https://' | 'http://'}${string}/catalog.json`
 /**
  * @group Eodash
  */
-export type ExecutionTime = "runtime" | "compiletime";
+type ExecutionTime = "runtime" | "compiletime";
 
 /**
  * Eodash instance API

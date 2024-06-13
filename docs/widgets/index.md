@@ -1,8 +1,9 @@
 # Widgets
-eodash client is a micro frontend host, that exposes a store to share stateful STAC related data and actions between the widgets. The placement of the widgets is backed by the [EOxElement](https://github.com/EOX-A/EOxElements) `@eox/layout` that offers a grid based layout system, and a `layout` property configures the element on the dashboard. Refer to the [API](/api/client/types/type-aliases/Widget.html) to learn more.
+Eodash client is a micro frontend host, that exposes a store to share stateful STAC related data and actions between the widgets.
+Eodash offers a grid based layout system and widgets can be set on the dashboard using `layout` property, The placement of the widgets is backed by the [EOxElement](https://github.com/EOX-A/EOxElements) `@eox/layout`. Refer to the [API](/api/client/types/type-aliases/Widget.html) to learn more.
 
 ## Type of Widgets:
-eodash supports the integration of three widget types:
+eodash supports the integration of three widget types `iframes`, `web-components`, and `internal`:
 
 ### Web Component Widgets
 Learn how to integrate Web Components that are developed using Custom Elements specification by referring to the [guide](/widgets/webcomponent-widgets) and [API](/api/client/types/interfaces/WebComponentWidget.html).
@@ -41,12 +42,16 @@ Eodash provides Internal Widgets as extendable Vue Components that are maintaine
 
 
 ## Functional Widgets
-Functional widgets are a special type of widgets that are rendered using the [defineWidget](/api/client/types/interfaces/FunctionalWidget#definewidget) function on STAC object selection, and provides the selected STAC object as a parameter before render. The render of the widget is triggered when the `id` of the returned config changes. It gives the ability to switch between widgets based on a specific state or indicator.
+Functional widgets are a special form of widgets that are rendered using the [defineWidget](/api/client/types/interfaces/FunctionalWidget#definewidget) function on STAC object selection, and provides the selected STAC object as a parameter before render. The render of the widget is triggered when the `id` of the returned config changes. It gives the ability to switch and hide widgets based on a specific state or indicator.
 
 ### Example based on the existence of a WMS relation
 in the following example a widget is configured based on if a wms relation is found in the selected STAC object links. A `eox-stacinfo` web component is rendered if no relation found. A `eox-map` web component is rendered whenever a relation is found, and rerendered if `wmsLink["wms:layers"][0]` value changes.
 
 ```js
+import { store } from "@eodash/eodash"
+
+const { currentUrl } = store.states
+
 export default createEodash({
     template: {
         ...
