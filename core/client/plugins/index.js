@@ -5,8 +5,6 @@ import VCalendar from 'v-calendar';
 import { eodashKey } from '@/utils/keys';
 import store from '../store';
 
-import 'v-calendar/style.css';
-
 export const pinia = createPinia();
 
 /**

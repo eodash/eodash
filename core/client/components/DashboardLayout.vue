@@ -9,7 +9,8 @@
       <template v-for="(importedWidget, idx) in importedWidgets" :key="idx">
         <Transition name="fade">
           <eox-layout-item v-if="importedWidget.value.component" :key="importedWidget.value.id" class="panel"
-            v-bind="importedWidget.value.layout">
+            :h="importedWidget.value.layout.h" :w="importedWidget.value.layout.w" :x="importedWidget.value.layout.x"
+            :y="importedWidget.value.layout.y">
             <Suspense suspensible>
               <component :key="importedWidget.value.id" :is="importedWidget.value.component"
                 v-bind="importedWidget.value.props" />
