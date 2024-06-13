@@ -6,7 +6,7 @@ import { VApp } from 'vuetify/components'
 import { registerPlugins } from './utils';
 import { eodashKey } from '@/utils/keys';
 import eodash from '@/eodash';
-
+import "vuetify/styles"
 /**
  * @param {import('vue').DefineComponent<{},{},any> | Element} OriginalComponent
  * @param {Parameters<typeof mount >['1'] & {

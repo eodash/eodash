@@ -1,7 +1,7 @@
 <template>
   <v-app-bar color="primary">
     <v-app-bar-title>{{ title }}</v-app-bar-title>
-    <v-img class="mx-12" style="max-width: 140px;" :src="eodash.brand?.logo" />
+    <v-img class="mx-12 logo" :src="eodash.brand?.logo" />
   </v-app-bar>
 </template>
 <script setup>
@@ -12,3 +12,8 @@ const eodash = /** @type {import("@/types").Eodash} */(inject(eodashKey))
 
 const title = eodash.brand?.name
 </script>
+<style scoped>
+.logo {
+  max-width: 140px;
+}
+</style>

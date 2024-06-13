@@ -12,9 +12,6 @@ export const eodash = reactive({
   brand: {
     noLayout: true,
     name: "Demo",
-    font: {
-      family: "Roboto",
-    },
     theme: {
       colors: {
         primary: "#fff",
@@ -58,11 +55,11 @@ export const eodash = reactive({
         },
       },
       {
-        layout: { x: 9, y: 0, w: 3, h: 12 },
         defineWidget: (selectedSTAC) => {
           return selectedSTAC ? {
-            id: Symbol(),
+            id: "Information",
             title: "Information",
+            layout: { x: 9, y: 0, w: 3, h: 12 },
             type: "web-component",
             widget: {
               link: async () => await import("@eox/stacinfo"),
@@ -84,11 +81,11 @@ export const eodash = reactive({
         }
       },
       {
-        layout: { x: 5, y: 10, w: 1, h: 1 },
         defineWidget: (selectedSTAC) => {
           return selectedSTAC ? {
-            id: Symbol(),
+            id: "Datepicker",
             type: "internal",
+            layout: { x: 5, y: 10, w: 1, h: 1 },
             title: "Datepicker",
             widget: {
               name: "EodashDatePicker",

@@ -144,11 +144,18 @@ export interface FunctionalWidget<T extends ExecutionTime = "compiletime"> {
     import("stac-ts").StacCollection | import("stac-ts").StacItem | null) => StaticWidget<T> | undefined | null
 }
 /**
+ *  There are 3 types of Widgets:
+ *
  * @group Eodash
  */
 export type StaticWidget<T extends ExecutionTime = "compiletime"> = WebComponentWidget<T> | InternalComponentWidget | IFrameWidget
 /**
- * @group Eodash
+ *  widgets can be defined in 2 forms:
+ *  1. {@link StaticWidget} : This is defined as an object once, and is considered the default form.
+ *  2. {@link FunctionalWidget} : a special form which contains the {@link FunctionalWidget.defineWidget `defineWidget`} function that
+ *  runs when {@link EodashStore.stac `loadSelectedSTAC`} function
+ *  is triggered, and returns a value of a Static Widget or null or undefined.
+ *  @group Eodash
  */
 export type Widget<T extends ExecutionTime = "compiletime"> = StaticWidget<T> | FunctionalWidget<T>
 
@@ -174,8 +181,7 @@ export interface Template<T extends ExecutionTime = "compiletime"> {
   loading?: BackgroundWidget<T>
   /**
    * Widget rendered as the dashboard background.
-   * Has the same specifications of `Widget` without the `title` and  `layout` properties
-   * @see {@link Widget}
+   * Has the same specifications of {@link Widget} without the `title` and  `layout` properties
    */
   background?: BackgroundWidget<T>
   /**
@@ -188,7 +194,6 @@ export interface Template<T extends ExecutionTime = "compiletime"> {
 export type StacEndpoint = `${'https://' | 'http://'}${string}/catalog.json`
 
 /**
- * @ignore
  * @group Eodash
  */
 export type ExecutionTime = "runtime" | "compiletime";
@@ -215,16 +220,15 @@ export interface Eodash<T extends ExecutionTime = "compiletime"> {
     /** custom error message to alert the users if something crashes */
     errorMessage?: string
     /**
-     * Automatically fetches the specified font family from google fonts. if the [link](#font-link) property is specified
-     * the font family will be fetched from the provided source instead.
+     *  fetches the specified font family from the specified `link` property.
      */
     font?: {
       /**
        * Link to stylesheet that defines font-face. Could be either a relative or absolute URL.
        */
-      link?: string;
+      link: string;
       /**
-       * Font family. Use FVD notation to include families. see https://github.com/typekit/fvd
+       * Font family name.
        */
       family: string
     }
@@ -279,7 +283,7 @@ export interface EodashStore {
    *  Pinia store definition used to navigate the root STAC catalog.
    */
   stac: {
-    useSTAcStore: typeof import("./store/stac").useSTAcStore
+    useSTAcStore: typeof import("./store/stac.js").useSTAcStore
   }
 }
 ///////

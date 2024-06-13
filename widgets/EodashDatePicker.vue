@@ -1,32 +1,22 @@
 <template>
   <VCDatePicker v-model="currentDate" :masks="masks" :attributes="attributes">
     <template #default="{ inputValue, inputEvents }">
-      <div
-        class="flex rounded-lg border border-gray-300 dark:border-gray-600"
-        style="margin: 2px;"
-      >
-        <input
-          :value="inputValue"
-          v-on="inputEvents"
-          style="margin: 1px;"
-          class="flex-grow px-1 py-1 bg-white dark:bg-gray-700"
-        />
+      <div class="flex rounded-lg border border-gray-300 dark:border-gray-600" style="margin: 2px;">
+        <input :value="inputValue" v-on="inputEvents" style="margin: 1px;"
+          class="flex-grow px-1 py-1 bg-white dark:bg-gray-700" />
       </div>
     </template>
   </VCDatePicker>
   <v-row align="center" justify="center" style="margin-top: 6px;">
-    <v-btn
-    density="compact"
-    v-tooltip:bottom="'Set date to latest available dataset'"
-    @click="jumpDate"
-  >
-    <v-icon :icon="[mdiRayStartArrow]"/>
-  </v-btn>
+    <v-btn density="compact" v-tooltip:bottom="'Set date to latest available dataset'" @click="jumpDate">
+      <v-icon :icon="[mdiRayStartArrow]" />
+    </v-btn>
   </v-row>
 </template>
 
 <script setup>
-import {DatePicker as VCDatePicker} from 'v-calendar';
+import { DatePicker as VCDatePicker } from 'v-calendar';
+import 'v-calendar/style.css';
 import { computed, ref, onMounted, watch, inject } from "vue";
 import { eodashKey } from "@/utils/keys";
 import { toAbsolute } from "stac-js/src/http.js";
@@ -57,12 +47,6 @@ function jumpDate() {
 
 const eodashConfig = /** @type {import("@/types").Eodash} */ inject(eodashKey);
 
-const props = defineProps({
-  inline: {
-    type: Boolean
-  }
-})
-
 const masks = ref({
   input: 'YYYY-MM-DD',
 });
@@ -75,13 +59,10 @@ const attributes = ref([]);
 
 const currentDate = computed({
   get() {
-    return props.inline ? datetime.value.split("T")[0] : new Date(datetime.value) ?? new Date()
+    return new Date(datetime.value) ?? new Date()
   },
   /** @param {Date | string} updatedDate */
   set(updatedDate) {
-    if (props.inline) {
-      updatedDate = new Date(updatedDate);
-    }
     //@ts-expect-error
     if (updatedDate instanceof Date && !isNaN(updatedDate)) {
       datetime.value = new Date(updatedDate.getTime() - updatedDate.getTimezoneOffset() * 60000).toISOString()
@@ -91,7 +72,7 @@ const currentDate = computed({
   }
 });
 /** @type {import("@/types").WebComponentProps["onMounted"]} */
-onMounted (() => {
+onMounted(() => {
   const { selectedStac } = storeToRefs(useSTAcStore());
   watch(
     [selectedStac],

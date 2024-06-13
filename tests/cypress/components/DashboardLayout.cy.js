@@ -2,8 +2,8 @@ import DashboardLayout from '@/components/DashboardLayout.vue'
 import { eodashKey } from '@/utils/keys'
 
 describe('<DashboardLayout />', () => {
-  /** @type {import('@/types').Widget[]|null} */
-  let widgets = null
+  /** @type {import('@/types').Layout[]} */
+  let layouts = []
   beforeEach(() => {
     cy.vMount(DashboardLayout, {
       global: {
@@ -15,7 +15,14 @@ describe('<DashboardLayout />', () => {
       }
     }).then(({ options }) => {
       //@ts-expect-error
-      widgets = options.global.provide[eodashKey].template.widgets
+      layouts =/** @type {.import('@/types').Widget[]} */ (options.global.provide[eodashKey].template.widgets).map((w) => {
+        if ('defineWidget' in w) {
+          const staticWidget = w.defineWidget(null)
+          return staticWidget ? staticWidget.layout : undefined
+        } else {
+          return w.layout
+        }
+      })
     })
   })
 
@@ -25,33 +32,42 @@ describe('<DashboardLayout />', () => {
     })
   })
 
+  it('renders background widget', () => {
+    cy.get('#bg-widget').should('exist')
+  })
 
   it('check layout elements based on X position', () => {
-    widgets?.forEach((widget) => {
-      cy.get(`[x="${widget.layout.x}"]`).should('exist')
+    layouts?.forEach((layout) => {
+      if (layout) {
+        cy.get(`[x="${layout.x}"]`).should('exist')
+      }
     })
   })
 
   it('check layout elements based on Y position', () => {
-    widgets?.forEach((widget) => {
-      cy.get(`[y="${widget.layout.y}"]`).should('exist')
+    layouts?.forEach((layout) => {
+      if (layout) {
+        cy.get(`[y="${layout.y}"]`).should('exist')
+      }
     })
   })
 
   it('check layout elements based on height', () => {
-    widgets?.forEach((widget) => {
-      cy.get(`[h="${widget.layout.h}"]`).should('exist')
+    layouts?.forEach((layout) => {
+      if (layout) {
+        cy.get(`[h="${layout.h}"]`).should('exist')
+      }
     })
   })
 
   it('check layout elements based on width', () => {
-    widgets?.forEach((widget) => {
-      cy.get(`[w="${widget.layout.w}"]`).should('exist')
+    layouts?.forEach((layout) => {
+      if (layout) {
+        cy.get(`[w="${layout.w}"]`).should('exist')
+      }
     })
   })
 
-  it('renders background widget', () => {
-    cy.get('#bg-widget').should('exist')
-  })
+
 
 })

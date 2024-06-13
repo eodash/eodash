@@ -2,10 +2,9 @@
   <HeaderComponent ref="headerRef" v-if="!eodash.brand.noLayout" />
   <ErrorAlert v-model="error" />
   <Suspense>
-    <TemplateComponent @vue:mounted="onTemplateMount?.(hiddenElements)"
-      :style="`height: ${eodash.brand.noLayout ? (onTemplateMount ? '100%' : '90dvh') : 'calc(100dvh - ' + mainRect['top'] + mainRect['bottom'] + 'px)'}`" />
+    <TemplateComponent @vue:mounted="onTemplateMount?.(hiddenElements)" class="template" />
     <template #fallback>
-      <div style="height: 100dvh; display: flex; align-items: center; justify-content: center;">
+      <div class="loading-container">
         <Loading />
       </div>
     </template>
@@ -38,7 +37,7 @@ useURLSearchParametersSync();
 const theme = useUpdateTheme('dashboardTheme', eodash.brand?.theme)
 theme.global.name.value = 'dashboardTheme'
 
-await loadFont(eodash.brand?.font?.family, eodash.brand?.font?.link)
+await loadFont(eodash.brand?.font?.family, eodash.brand?.font?.link, !!props.onTemplateMount)
 
 const { loadSTAC } = useSTAcStore()
 await loadSTAC()
@@ -51,10 +50,9 @@ const TemplateComponent = smAndDown.value ?
 const HeaderComponent = defineAsyncComponent(() => import(`@/components/Header.vue`))
 const FooterComponent = defineAsyncComponent(() => import(`@/components/Footer.vue`))
 const { mainRect } = useLayout()
+const templateHeight = eodash.brand.noLayout ? (props.onTemplateMount ? '100%' : '90dvh') :
+  `calc(100dvh - ${mainRect.value['top'] + mainRect.value['bottom']}px)`
 
-/** @type {import("vue").Ref<InstanceType<typeof
- *  import("@/components/Header.vue").default >|null>}
- **/
 const headerRef = ref(null);
 /** @type {import("vue").Ref<InstanceType<typeof
  *  import("@/components/Footer.vue").default >|null>}
@@ -64,9 +62,6 @@ const footerRef = ref(null);
 const hiddenElements = [headerRef, footerRef]
 
 onMounted(() => {
-  const htmlTag = /** @type {HTMLElement}  */(document.querySelector('html'))
-  htmlTag.style.overflow = 'hidden';
-
   if (props.onTemplateMount && !eodash.brand.noLayout) {
     hiddenElements.forEach(element => {
       /** @type {HTMLElement} */
@@ -79,10 +74,26 @@ onMounted(() => {
 const error = ref('')
 onErrorCaptured((e, comp, info) => {
   error.value = `
-  error: ${e}.
+  ${e}.
   component: ${comp?.$.type.name}.
   info: ${info}.
   `
 })
 
 </script>
+<style>
+html {
+  overflow: hidden !important;
+}
+
+.template {
+  height: v-bind("templateHeight")
+}
+
+.loading-container {
+  height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+</style>

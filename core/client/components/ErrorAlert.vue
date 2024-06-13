@@ -1,6 +1,6 @@
 <template>
   <v-alert v-if="error" translate="yes" location="start bottom" type="error" position="fixed" @click:close="error = ''"
-    variant="elevated" :icon="[mdiAlertCircle]" style="z-index: 10000;" closable :close-icon="[mdiClose]">
+    variant="elevated" :icon="[mdiAlertCircle]" class="alert" closable :close-icon="[mdiClose]">
     {{ errorMessage }}
     <details is="animated-details">
       <summary> Error </summary>
@@ -17,3 +17,8 @@ const error = defineModel({ type: String, required: true })
 const eodash = /** @type {import("@/types").Eodash} */(inject(eodashKey))
 const errorMessage = eodash.brand.errorMessage ?? 'something went wrong, please try again later'
 </script>
+<style scoped>
+.alert {
+  z-index: 10000;
+}
+</style>

@@ -43,7 +43,8 @@ export const viteConfig = /** @type {import('vite').UserConfigFnPromise}*/(defin
     cacheDir: cachePath,
     plugins: [
       vue({
-        customElement: userConfig.lib,
+        // to do: inject styles to web component directly
+        customElement: false,
         template: {
           transformAssetUrls,
           compilerOptions: {
@@ -58,7 +59,7 @@ export const viteConfig = /** @type {import('vite').UserConfigFnPromise}*/(defin
       (mode === "development" && {
         name: "inject-html",
         configureServer
-      })
+      }),
     ],
     customLogger: logger,
     define: { 'process.env': {} },
@@ -139,7 +140,7 @@ async function configureServer(server) {
 
   return () => {
     server.middlewares.use(async (req, res, next) => {
-      if (req.originalUrl === '/@fs/config.js') {
+      if (req.originalUrl === '/@fs/config.js' || req.originalUrl === '/config.js') {
         res.statusCode = 200
         res.setHeader('Content-Type', 'text/javascript')
         if (existsSync(runtimeConfigPath)) {
