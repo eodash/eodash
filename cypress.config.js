@@ -1,6 +1,6 @@
 import { defineConfig } from "cypress";
-import vuetify, { transformAssetUrls } from 'vite-plugin-vuetify';
-import vue from '@vitejs/plugin-vue';
+import vuetify, { transformAssetUrls } from "vite-plugin-vuetify";
+import vue from "@vitejs/plugin-vue";
 import { fileURLToPath } from "url";
 
 export default defineConfig({
@@ -15,8 +15,9 @@ export default defineConfig({
             template: {
               transformAssetUrls,
               compilerOptions: {
-                isCustomElement: (tag) => !tag.includes('v-') && tag.includes('-')
-              }
+                isCustomElement: (tag) =>
+                  !tag.includes("v-") && tag.includes("-"),
+              },
             },
           }),
           // https://github.com/vuetifyjs/vuetify-loader/tree/master/packages/vite-plugin#readme
@@ -24,23 +25,27 @@ export default defineConfig({
             autoImport: true,
           }),
         ],
-        define: { 'process.env': {} },
+        define: { "process.env": {} },
         resolve: {
           alias: {
-            '@': fileURLToPath(new URL('./core/client', import.meta.url)),
-            '^': fileURLToPath(new URL('./widgets', import.meta.url)),
-            "user:config": fileURLToPath(new URL('./core/client/eodash.js', import.meta.url)),
-            "user:widgets": fileURLToPath(new URL('./widgets', import.meta.url))
+            "@": fileURLToPath(new URL("./core/client", import.meta.url)),
+            "^": fileURLToPath(new URL("./widgets", import.meta.url)),
+            "user:config": fileURLToPath(
+              new URL("./core/client/eodash.js", import.meta.url),
+            ),
+            "user:widgets": fileURLToPath(
+              new URL("./widgets", import.meta.url),
+            ),
           },
-          extensions: ['.js', '.json', '.jsx', '.mjs', '.ts', '.tsx', '.vue'],
+          extensions: [".js", ".json", ".jsx", ".mjs", ".ts", ".tsx", ".vue"],
         },
         optimizeDeps: {
-          exclude: ['vuetify'],
+          exclude: ["vuetify"],
         },
         build: {
-          outDir: './.eodash/dist',
-          target: "esnext"
-        }
+          outDir: "./.eodash/dist",
+          target: "esnext",
+        },
       },
     },
     port: 3791,
@@ -50,5 +55,5 @@ export default defineConfig({
     fixturesFolder: "./tests/cypress/fixtures",
     screenshotsFolder: "./tests/cypress/screenshots",
     downloadsFolder: "./tests/cypress/screenshots",
-  }
-})
+  },
+});

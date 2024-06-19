@@ -5,12 +5,12 @@
   </v-app-bar>
 </template>
 <script setup>
-import { eodashKey } from '@/utils/keys';
-import { inject } from 'vue';
+import { eodashKey } from "@/utils/keys";
+import { inject } from "vue";
 
-const eodash = /** @type {import("@/types").Eodash} */(inject(eodashKey))
+const eodash = /** @type {import("@/types").Eodash} */ (inject(eodashKey));
 
-const title = eodash.brand?.name
+const title = eodash.brand?.name;
 </script>
 <style scoped>
 .logo {

@@ -1,26 +1,28 @@
-import { Collection, Item } from 'stac-js';
-import { toAbsolute } from 'stac-js/src/http.js';
-import { generateFeatures } from './helpers'
-import axios from 'axios';
+import { Collection, Item } from "stac-js";
+import { toAbsolute } from "stac-js/src/http.js";
+import { generateFeatures } from "./helpers";
+import axios from "axios";
 
 export class EodashCollection {
   /** @type {string} */
-  #collectionUrl = '';
+  #collectionUrl = "";
   /** @type {import("stac-ts").StacCollection | undefined} */
   #collectionStac;
-  /** @type {import("stac-ts").StacLink | undefined } */
+  /**
+   * @type {import("stac-ts").StacLink
+   *   | import("stac-ts").StacItem
+   *   | undefined}
+   */
   selectedItem;
 
-  /**
-   * @param {string} collectionUrl
-   */
+  /** @param {string} collectionUrl */
   constructor(collectionUrl) {
     this.#collectionUrl = collectionUrl;
   }
   /**
-   * @param {*} item
-   * @returns
    * @async
+   * @param {any} item
+   * @returns
    */
   createLayersJson = async (item = null) => {
     /** @type {import("stac-ts").StacLink | undefined} */
@@ -31,19 +33,19 @@ export class EodashCollection {
     /** @type {object[]} */
     let layersJson = [
       {
-        type: 'Tile',
+        type: "Tile",
         properties: {
-          id: 'OSM',
+          id: "OSM",
         },
         source: {
-          type: 'OSM',
+          type: "OSM",
         },
       },
     ];
     // Load collectionstac if not yet initialized
     if (!this.#collectionStac) {
       const response = await axios.get(this.#collectionUrl);
-      stac = await response.data
+      stac = await response.data;
       this.#collectionStac = new Collection(stac);
     }
 
@@ -57,7 +59,6 @@ export class EodashCollection {
         },
         source: {
           type: "Vector",
-          // @ts-ignore
           url: "data:," + encodeURIComponent(JSON.stringify(allFeatures)),
           format: "GeoJSON",
         },
@@ -67,15 +68,21 @@ export class EodashCollection {
           "circle-stroke-color": "#004170",
           "fill-color": "#00417077",
           "stroke-color": "#004170",
-        }
+        },
       });
       return layersJson;
     } else {
       if (item instanceof Date) {
         // if collectionStac not yet initialized we do it here
         stacItem = this.getItems()?.sort((a, b) => {
-          const distanceA = Math.abs((new Date(/** @type {number} */(a.datetime))).getTime() - item.getTime());
-          const distanceB = Math.abs(new Date(/** @type {number} */(b.datetime)).getTime() - item.getTime());
+          const distanceA = Math.abs(
+            new Date(/** @type {number} */ (a.datetime)).getTime() -
+              item.getTime(),
+          );
+          const distanceB = Math.abs(
+            new Date(/** @type {number} */ (b.datetime)).getTime() -
+              item.getTime(),
+          );
           return distanceA - distanceB;
         })[0];
         this.selectedItem = stacItem;
@@ -85,7 +92,7 @@ export class EodashCollection {
       const response = await fetch(
         stacItem
           ? toAbsolute(stacItem.href, this.#collectionUrl)
-          : this.#collectionUrl
+          : this.#collectionUrl,
       );
       stac = await response.json();
 
@@ -98,7 +105,9 @@ export class EodashCollection {
           layersJson = await this.createLayersJson(this.selectedItem);
         } else {
           if (import.meta.env.DEV) {
-            console.warn('[eodash] the selected collection does not include any items')
+            console.warn(
+              "[eodash] the selected collection does not include any items",
+            );
           }
         }
         return layersJson;
@@ -110,18 +119,19 @@ export class EodashCollection {
         return layersJson;
       }
     }
-  }
+  };
 
-  /**
-   * @param {*} item
-   */
+  /** @param {import("stac-ts").StacItem} item */
   buildJson(item) {
     let json;
     // TODO implement other types, such as COG
-    if (/** @type {import('stac-ts').StacLink[]} */(item.links)
-      .find((l) => l.rel === 'wms' || l.rel === 'wmts' || l.rel === 'xyz')) {
+    if (
+      item.links.find(
+        (l) => l.rel === "wms" || l.rel === "wmts" || l.rel === "xyz",
+      )
+    ) {
       json = {
-        type: 'STAC',
+        type: "STAC",
         displayWebMapLink: true,
         displayFootprint: false,
         data: item,
@@ -132,11 +142,11 @@ export class EodashCollection {
     } else {
       // fall back to rendering the feature
       json = {
-        type: 'Vector',
+        type: "Vector",
         source: {
-          type: 'Vector',
-          url: 'data:,' + encodeURIComponent(JSON.stringify(item.geometry)),
-          format: 'GeoJSON',
+          type: "Vector",
+          url: "data:," + encodeURIComponent(JSON.stringify(item.geometry)),
+          format: "GeoJSON",
         },
         properties: {
           id: item.id,
@@ -150,19 +160,29 @@ export class EodashCollection {
   getItems() {
     return (
       this.#collectionStac?.links
-        .filter((i) => i.rel === 'item')
+        .filter((i) => i.rel === "item")
         // sort by `datetime`, where oldest is first in array
-        .sort((a, b) => ( /** @type {number} */(a.datetime) <  /** @type {number} */(b.datetime) ? -1 : 1))
+        .sort((a, b) =>
+          /** @type {number} */ (a.datetime) <
+          /** @type {number} */ (b.datetime)
+            ? -1
+            : 1,
+        )
     );
   }
 
   getDates() {
     return (
       this.#collectionStac?.links
-        .filter((i) => i.rel === 'item')
+        .filter((i) => i.rel === "item")
         // sort by `datetime`, where oldest is first in array
-        .sort((a, b) => ( /** @type {number} */(a.datetime) < /** @type {number} */(b.datetime) ? -1 : 1))
-        .map((i) => new Date( /** @type {number} */(i.datetime)))
+        .sort((a, b) =>
+          /** @type {number} */ (a.datetime) <
+          /** @type {number} */ (b.datetime)
+            ? -1
+            : 1,
+        )
+        .map((i) => new Date(/** @type {number} */ (i.datetime)))
     );
   }
 }

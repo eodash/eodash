@@ -1,7 +1,6 @@
 <template>
   <v-app>
     <Suspense>
-
       <Dashboard />
 
       <template #fallback>
@@ -12,16 +11,16 @@
 </template>
 
 <script setup>
-import Dashboard from '@/views/Dashboard.vue';
-import ErrorAlert from './components/ErrorAlert.vue';
-import { onErrorCaptured, ref } from 'vue';
+import Dashboard from "@/views/Dashboard.vue";
+import ErrorAlert from "./components/ErrorAlert.vue";
+import { onErrorCaptured, ref } from "vue";
 
-const error = ref('')
+const error = ref("");
 onErrorCaptured((e, inst, info) => {
   error.value = `
   ${e}.
   component: ${inst?.$.type.name}.
   info: ${info}.
-  `
-})
+  `;
+});
 </script>

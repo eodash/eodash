@@ -1,31 +1,33 @@
 /// <reference types="vite/client" />
 
-declare module '*.vue' {
-  import type { DefineComponent } from 'vue'
-  const component: DefineComponent<{}, {}, any>
-  export default component
+declare module "*.vue" {
+  import type { DefineComponent } from "vue";
+  const component: DefineComponent<object, object, unknown>;
+  export default component;
 }
 declare interface Window {
-  eodashStore: import("@/types").EodashStore
+  eodashStore: import("@/types").EodashStore;
 }
-declare module '@eox/stacinfo' {
-  export const EOxStacInfo: CustomElementConstructor
+declare module "@eox/stacinfo" {
+  export const EOxStacInfo: CustomElementConstructor;
 }
-declare module '@eox/map' {
-  export const EOxMap: CustomElementConstructor
+declare module "@eox/map" {
+  export const EOxMap: CustomElementConstructor;
 }
-declare module '@eox/itemfilter' {
-  export const EOxItemFilter: CustomElementConstructor
+declare module "@eox/itemfilter" {
+  export const EOxItemFilter: CustomElementConstructor;
 }
-declare module 'user:config' {
+declare module "user:config" {
   const eodash: import("@/types").Eodash | Promise<import("@/types").Eodash>;
-  export default eodash
+  export default eodash;
 }
 declare module "stac-js" {
-  const STAC: any, Collection: any, Item: any
-  export { STAC, Collection, Item }
+  export const Collection: {
+    new (data?: object): import("stac-ts").StacCollection;
+  };
+  export const Item: { new (data?: object): import("stac-ts").StacItem };
 }
 declare module "stac-js/src/http.js" {
-  const toAbsolute: any
-  export { toAbsolute }
+  const toAbsolute: (...args: string[]) => string;
+  export { toAbsolute };
 }

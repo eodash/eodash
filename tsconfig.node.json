@@ -1,22 +1,22 @@
 {
-    "compilerOptions": {
-        "composite": true,
-        "module": "esnext",
-        "checkJs": true,
-        "allowJs": true,
-        "moduleResolution": "node",
-        "target": "ESNext",
-        "allowSyntheticDefaultImports": true,
-        "outDir": "dist"
-    },
-    "include": [
-        "core/node/**/*.js",
-        "core/node/**/*.d.ts",
-        "tests/cli/**/*.js",
-        "tests/cli/**/*.spec.js",
-        "tests/cli/**/*.test.js",
-        "cypress.config.js",
-        "rollup.config.js",
-        "vitest.config.js"
-    ],
+  "compilerOptions": {
+    "composite": true,
+    "module": "esnext",
+    "checkJs": true,
+    "allowJs": true,
+    "moduleResolution": "node",
+    "target": "ESNext",
+    "allowSyntheticDefaultImports": true,
+    "outDir": "dist"
+  },
+  "include": [
+    "core/node/**/*.js",
+    "core/node/**/*.d.ts",
+    "tests/cli/**/*.js",
+    "tests/cli/**/*.spec.js",
+    "tests/cli/**/*.test.js",
+    "cypress.config.js",
+    "rollup.config.js",
+    "vitest.config.js"
+  ]
 }

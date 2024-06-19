@@ -5,7 +5,7 @@
 defineProps({
   src: {
     type: String,
-    required: true
-  }
-})
+    required: true,
+  },
+});
 </script>

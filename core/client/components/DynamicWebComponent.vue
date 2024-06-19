@@ -5,64 +5,64 @@
 </template>
 
 <script async setup>
-import { useSTAcStore } from '@/store/stac';
-import {
-  onUnmounted as whenUnMounted,
-  onMounted as whenMounted
-} from 'vue';
-import { ref } from 'vue';
+import { useSTAcStore } from "@/store/stac";
+import { onUnmounted as whenUnMounted, onMounted as whenMounted } from "vue";
+import { ref } from "vue";
 
-const props =   /** @type {import("@/types").WebComponentProps}  */(defineProps({
-  link: {
-    type: [String, Function],
-    required: true
-  },
-  constructorProp: String,
-  tagName: {
-    type: String,
-    required: true
-  },
-  properties: {
-    type: Object,
-    default: () => {
-      return {}
-    }
-  },
-  onMounted: Function,
-  onUnmounted: Function
-}))
+const props = /** @type {import("@/types").WebComponentProps} */ (
+  defineProps({
+    link: {
+      type: [String, Function],
+      required: true,
+    },
+    constructorProp: String,
+    tagName: {
+      type: String,
+      required: true,
+    },
+    properties: {
+      type: Object,
+      default: () => {
+        return {};
+      },
+    },
+    onMounted: Function,
+    onUnmounted: Function,
+  })
+);
 
+const getWebComponent = async () =>
+  typeof props.link === "string"
+    ? await import(/* @vite-ignore */ props.link)
+    : await props.link();
 
-const getWebComponent = async () => typeof props.link === 'string' ?
-  await import( /* @vite-ignore */props.link) : await props.link()
+const imported = !customElements.get(props.tagName)
+  ? await getWebComponent().catch((e) => {
+      console.error(e);
+    })
+  : null;
 
-const imported = !customElements.get(props.tagName) ? await getWebComponent().catch(e => {
-  console.error(e)
-}) : null
-
-const defined = customElements.get(props.tagName)
+const defined = customElements.get(props.tagName);
 
 // if the imported link doesn't define the custom tag provided
 if (!defined && props.constructorProp) {
-  const Constructor = imported[props.constructorProp]
-  customElements.define(props.tagName, Constructor)
+  const Constructor = imported[props.constructorProp];
+  customElements.define(props.tagName, Constructor);
 }
 
-const store = useSTAcStore()
+const store = useSTAcStore();
 
 /**
- *  @typedef {HTMLElement &
- * Record<string|number|symbol,unknown>} CustomElement
- * @type {import('vue').Ref<CustomElement|null>}
+ * @typedef {HTMLElement & Record<string | number | symbol, unknown>} CustomElement
+ * @type {import("vue").Ref<CustomElement | null>}
  */
-const elementRef = ref(null)
-
+const elementRef = ref(null);
 
 whenMounted(() => {
-  props.onMounted?.(elementRef.value, store)
-})
+  props.onMounted?.(elementRef.value, store);
+});
 
 whenUnMounted(() => {
-  props.onUnmounted?.(elementRef.value, store)
-})
+  props.onUnmounted?.(elementRef.value, store);
+});
 </script>

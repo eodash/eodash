@@ -9,9 +9,11 @@ import { useSTAcStore } from "@/store/stac";
 
 /**
  * Creates an absolute URL from a relative link and assignes it to `currentUrl`
- * @param {string} [rel = '']
- * @param {string} [base = eodash.stacEndpoint] - base URL, default value is the root stac catalog
- * @returns {import('vue').Ref<string>} - returns `currentUrl`
+ *
+ * @param {string} [rel=''] Default is `''`
+ * @param {string} [base=eodash.stacEndpoint] - Base URL, default value is the
+ *   root stac catalog. Default is `eodash.stacEndpoint`
+ * @returns {import("vue").Ref<string>} - Returns `currentUrl`
  * @see {@link '@/store/States.js'}
  */
 export const useAbsoluteUrl = (rel = "", base = eodash.stacEndpoint) => {
@@ -35,16 +37,18 @@ export const useAbsoluteUrl = (rel = "", base = eodash.stacEndpoint) => {
 };
 
 /**
- * Updates an existing Vuetify theme.
- * updates only the values provided in the `ThemeDefinition`
+ * Updates an existing Vuetify theme. updates only the values provided in the
+ * `ThemeDefinition`
+ *
  * @param {string} themeName - Name of the theme to be updated
- * @param {import('vuetify').ThemeDefinition} [themeDefinition = {}] - New defintion to be updated to
- * @returns {import('vuetify').ThemeInstance}
+ * @param {import("vuetify").ThemeDefinition} [themeDefinition={}] - New
+ *   defintion to be updated to. Default is `{}`
+ * @returns {import("vuetify").ThemeInstance}
  */
 export const useUpdateTheme = (themeName, themeDefinition = {}) => {
   const theme = useTheme();
 
-  /** @type {Array<keyof import('vuetify').ThemeDefinition>} */ (
+  /** @type {(keyof import("vuetify").ThemeDefinition)[]} */ (
     Object.keys(themeDefinition)
   ).forEach((key) => {
     if (key === "dark") {
@@ -52,7 +56,7 @@ export const useUpdateTheme = (themeName, themeDefinition = {}) => {
         themeDefinition[key]
       );
     } else {
-      //@ts-expect-error
+      //@ts-expect-error to do
       theme.themes.value[themeName][key] = {
         ...theme.themes.value[themeName][key],
         ...themeDefinition[key],
@@ -62,27 +66,25 @@ export const useUpdateTheme = (themeName, themeDefinition = {}) => {
   return theme;
 };
 
-/**
- * Composable that syncs store and  URLSearchParameters
- */
+/** Composable that syncs store and URLSearchParameters */
 
 export const useURLSearchParametersSync = () => {
   onMounted(async () => {
     // Analyze currently set url params when first loaded and set them in the store
-    if ('URLSearchParams' in window) {
+    if ("URLSearchParams" in window) {
       const searchParams = new URLSearchParams(window.location.search);
-      /** @type {number} */
+      /** @type {number | undefined} */
       let x,
-        /** @type {number} */
+        /** @type {number | undefined} */
         y,
-        /** @type {number} */
+        /** @type {number | undefined} */
         z;
       searchParams.forEach(async (value, key) => {
         if (key === "indicator") {
-          const { loadSelectedSTAC, stac } = useSTAcStore()
-          const match = stac?.find(link => link.id == value)
+          const { loadSelectedSTAC, stac } = useSTAcStore();
+          const match = stac?.find((link) => link.id == value);
           if (match) {
-            await loadSelectedSTAC(match.href)
+            await loadSelectedSTAC(match.href);
           }
         }
         if (key === "x") {
@@ -94,28 +96,29 @@ export const useURLSearchParametersSync = () => {
         if (key === "z") {
           z = Number(value);
         }
-      })
-      //@ts-expect-error
-      if (x !== undefined && y !== undefined && z !== undefined) {
+      });
+      if (x && y && z) {
         mapPosition.value = [x, y, z];
       }
     }
     watch(
       [indicator, mapPosition],
       ([updatedIndicator, updatedMapPosition]) => {
-        if ('URLSearchParams' in window) {
+        if ("URLSearchParams" in window) {
           const searchParams = new URLSearchParams(window.location.search);
           if (updatedIndicator !== "") {
             searchParams.set("indicator", updatedIndicator);
           }
           if (updatedMapPosition && updatedMapPosition.length === 3) {
-            searchParams.set("x", updatedMapPosition[0]?.toFixed(4) ?? '');
-            searchParams.set("y", updatedMapPosition[1]?.toFixed(4) ?? '');
-            searchParams.set("z", updatedMapPosition[2]?.toFixed(4) ?? '');
+            searchParams.set("x", updatedMapPosition[0]?.toFixed(4) ?? "");
+            searchParams.set("y", updatedMapPosition[1]?.toFixed(4) ?? "");
+            searchParams.set("z", updatedMapPosition[2]?.toFixed(4) ?? "");
           }
-          const newRelativePathQuery = window.location.pathname + '?' + searchParams.toString();
-          history.pushState(null, '', newRelativePathQuery);
+          const newRelativePathQuery =
+            window.location.pathname + "?" + searchParams.toString();
+          history.pushState(null, "", newRelativePathQuery);
         }
-      })
+      },
+    );
   });
 };

@@ -1,5 +1,10 @@
 <template>
-  <DynamicWebComponent :link="link" tag-name="eox-itemfilter" :properties="properties" :on-mounted="onMounted" />
+  <DynamicWebComponent
+    :link="link"
+    tag-name="eox-itemfilter"
+    :properties="properties"
+    :on-mounted="onMounted"
+  />
 </template>
 <script setup>
 import DynamicWebComponent from "@/components/DynamicWebComponent.vue";
@@ -31,10 +36,10 @@ const properties = {
   },
 };
 
-/** @type {import("@/types").WebComponentProps["onMounted"]}*/
+/** @type {import("@/types").WebComponentProps["onMounted"]} */
 const onMounted = (el, store) => {
   /** @type {any} */ (el).style.height = "100%";
-  
+
   const style = document.createElement("style");
   style.innerHTML = `
     section {
@@ -59,15 +64,13 @@ const onMounted = (el, store) => {
   /**
    * @typedef {object} Item
    * @property {string} href
-   * */
+   */
   /** @type {any} */ (el).apply(
-  // Only list child elements in list
-  store.stac?.filter((item) => item.rel === "child")
-);
+    // Only list child elements in list
+    store.stac?.filter((item) => item.rel === "child"),
+  );
   /** @type {any} */ (el).config.onSelect =
-    /**
-     * @param {Item} item
-     * */
+    /** @param {Item} item */
     async (item) => {
       console.log(item);
       await store.loadSelectedSTAC(item.href);

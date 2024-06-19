@@ -1,8 +1,11 @@
 # Branding
+
 eodash allows you to configure your own brand. Check out the [API](/api/client/types/interfaces/Eodash.html#brand) and the guide below to learn more.
 
 ### No Layout
-Removing the header and footer completely by setting: 
+
+Removing the header and footer completely by setting:
+
 ```js
 import { createEodash } from "@eodash/eodash"
 
@@ -14,8 +17,11 @@ export default createEodash({
     }
 })
 ```
+
 ### Dashboard Name
+
 Set the name displayed on the Header:
+
 ```js
 import { createEodash } from "@eodash/eodash"
 
@@ -29,6 +35,7 @@ export default createEodash({
 ```
 
 ### Footer Text
+
 Configurable text on the footer:
 
 ```js
@@ -44,13 +51,14 @@ export default createEodash({
 ```
 
 ### Logo
+
 Add your own brand logo to the header by referencing it using [Vite's static assets](https://vitejs.dev/guide/assets.html#static-asset-handling) handling:
 
 ```js
 import { createEodash } from "@eodash/eodash"
 import myLogo from './assets/logo.png'
 // or
-const myLogo = new URL('./assets/logo.png',import.meta.url).href 
+const myLogo = new URL('./assets/logo.png',import.meta.url).href
 
 export default createEodash({
     ...
@@ -60,10 +68,13 @@ export default createEodash({
     }
 })
 ```
+
 ## Theme Customization
+
 eodash components utilize [Vuetify's theming system](https://vuetifyjs.com/en/features/theme/#api) for colors customization. You can adapt the dashboard's look and feel to align with your brand.
 
 ### Theme Modification Example
+
 ```js
 import { createEodash } from "@eodash/eodash"
 
@@ -84,6 +95,7 @@ export default createEodash({
 ```
 
 ## Font Customization
+
 eodash utilizes [typekit/webfontloader](https://github.com/typekit/webfontloader) which applies the specified font across the dashboard.
 Supporting loading [Google Fonts](https://fonts.google.com) out of the box by adding the font's family name only.
 
@@ -100,6 +112,7 @@ export default createEodash({
     }
 })
 ```
+
 or loading custom fonts by adding a link to the stylesheet that defines the font-face. Could be either a relative or an absolute URL.
 
 ```js
@@ -110,10 +123,9 @@ export default createEodash({
     brand: {
         ...
         font: {
-          link:'/link-to-stylesheet.css',  
+          link:'/link-to-stylesheet.css',
           family: "MyCustomFont"
         }
     }
 })
 ```
-

@@ -1,50 +1,50 @@
-import IframeWrapper from '@/components/IframeWrapper.vue'
+import IframeWrapper from "@/components/IframeWrapper.vue";
 
-
-describe('<IframeWrapper />', () => {
-
+describe("<IframeWrapper />", () => {
   describe("renders Hello World html", () => {
-
     beforeEach(() => {
-      cy.fixture('../fixtures/hello-world.html').then(/** @param {string} html */(html) => {
-        const url = URL.createObjectURL(new Blob([html], { type: "text/html" })).toString()
-        cy.wrap(html).as('html')
-        cy.wrap(url).as('url')
-      })
+      cy.fixture("../fixtures/hello-world.html").then(
+        /** @param {string} html */ (html) => {
+          const url = URL.createObjectURL(
+            new Blob([html], { type: "text/html" }),
+          ).toString();
+          cy.wrap(html).as("html");
+          cy.wrap(url).as("url");
+        },
+      );
 
-      cy.get('@url').then((url) => {
+      cy.get("@url").then((url) => {
         cy.vMount(IframeWrapper, {
-          //@ts-expect-error
           props: {
-            src: url
-          }
-        })
-      })
-    })
+            src: url,
+          },
+        });
+      });
+    });
 
-    it('iframe renders internal DOM', () => {
-      cy.get('@vue').then(vue => {
-        //@ts-expect-error
-        cy.get(/** @type {HTMLIFrameElement} */(vue.wrapper.element)).its('0.contentDocument').should('exist')
-      })
-    })
+    it("iframe renders internal DOM", () => {
+      cy.get("@vue").then((vue) => {
+        //@ts-expect-error type of 'HTMLIFrameElement' is not assignable to parameter of type 'string'
+        cy.get(/** @type {HTMLIFrameElement} */ (vue.wrapper.element))
+          .its("0.contentDocument")
+          .should("exist");
+      });
+    });
 
     it('external html contains "Hello world"', () => {
-      cy.get('@html').then(html => {
-        expect(html).to.contain('Hello World')
-      })
-    })
+      cy.get("@html").then((html) => {
+        expect(html).to.contain("Hello World");
+      });
+    });
 
     it('iframe contains "Hello World"', () => {
-      cy.get('@vue').then(vue => {
-        //@ts-expect-error
-        cy.get(/** @type {HTMLIFrameElement} */(vue.wrapper.element)).
-          its('0.contentDocument')
-          .its('body')
-          .should('contain', "Hello World")
-      })
-    })
-
-
-  })
-})
+      cy.get("@vue").then((vue) => {
+        //@ts-expect-error type of 'HTMLIFrameElement' is not assignable to parameter of type 'string'
+        cy.get(/** @type {HTMLIFrameElement} */ (vue.wrapper.element))
+          .its("0.contentDocument")
+          .its("body")
+          .should("contain", "Hello World");
+      });
+    });
+  });
+});

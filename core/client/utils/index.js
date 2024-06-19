@@ -1,14 +1,19 @@
 /**
- * loads font in the app using `webfontloader`
+ * Loads font in the app using `webfontloader`
+ *
  * @param {string} [family]
  * @param {string} [link]
  * @param {boolean} [isWebComponent]
- * @returns {Promise<string>} - font family name
+ * @returns {Promise<string>} - Font family name
  * @see {@link "https://github.com/typekit/webfontloader"}
  */
-export const loadFont = async (family = '', link = '', isWebComponent = false) => {
+export const loadFont = async (
+  family = "",
+  link = "",
+  isWebComponent = false,
+) => {
   if (family && link) {
-    const WebFontLoader = (await import('webfontloader')).default;
+    const WebFontLoader = (await import("webfontloader")).default;
     WebFontLoader.load({
       classes: false,
       custom: {
@@ -18,14 +23,16 @@ export const loadFont = async (family = '', link = '', isWebComponent = false) =
         urls: [link],
       },
       fontactive(familyName, _fvd) {
-        const stylesheet = new CSSStyleSheet()
-        const styles = isWebComponent ? `eo-dash {font-family: ${familyName};}` : `* {font-family: ${familyName};}`
-        stylesheet.replaceSync(styles)
-        document.adoptedStyleSheets.push(stylesheet)
+        const stylesheet = new CSSStyleSheet();
+        const styles = isWebComponent
+          ? `eo-dash {font-family: ${familyName};}`
+          : `* {font-family: ${familyName};}`;
+        stylesheet.replaceSync(styles);
+        document.adoptedStyleSheets.push(stylesheet);
       },
       fontinactive(familyName, _fvd) {
-        throw new Error(`error loading font: ${familyName}`)
-      }
+        throw new Error(`error loading font: ${familyName}`);
+      },
     });
   }
   return family;
