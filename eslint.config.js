@@ -13,5 +13,5 @@ export default [
       "vue/no-deprecated-html-element-is": "warn",
       "vue/multi-word-component-names": "off",
     },
-  }
+  },
 ];

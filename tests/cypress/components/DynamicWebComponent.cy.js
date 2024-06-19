@@ -1,10 +1,9 @@
-import DynamicWebComponent from '@/components/DynamicWebComponent.vue'
+import DynamicWebComponent from "@/components/DynamicWebComponent.vue";
 
-describe('<DynamicWebComponent />', () => {
-
-  it('renders successfully from external URL', () => {
+describe("<DynamicWebComponent />", () => {
+  it("renders successfully from external URL", () => {
     cy.vMount(DynamicWebComponent, {
-      /** @type {import('@/types').WebComponentProps} */
+      /** @type {import("@/types").WebComponentProps} */
       props: {
         link: "https://cdn.jsdelivr.net/npm/ldrs/dist/auto/mirage.js",
         tagName: "l-mirage",
@@ -12,16 +11,16 @@ describe('<DynamicWebComponent />', () => {
           class: "align-self-center justify-self-center",
           size: "120",
           speed: "2.5",
-          color: "#004170"
-        }
-      }
-    })
-    cy.get("l-mirage", { timeout: 10000 }).should("exist")
-  })
+          color: "#004170",
+        },
+      },
+    });
+    cy.get("l-mirage", { timeout: 10000 }).should("exist");
+  });
 
-  it('renders successfully from import map', () => {
+  it("renders successfully from import map", () => {
     cy.vMount(DynamicWebComponent, {
-      /** @type {import('@/types').WebComponentProps} */
+      /** @type {import("@/types").WebComponentProps} */
       props: {
         link: async () => await import("@eox/stacinfo"),
         tagName: "eox-stacinfo",
@@ -29,8 +28,8 @@ describe('<DynamicWebComponent />', () => {
           for: "https://esa-eodash.github.io/RACE-catalog/RACE/cruises_impact/collection.json",
           allowHtml: "true",
         },
-      }
-    })
-    cy.get("eox-stacinfo", { timeout: 10000 }).should("exist")
-  })
-})
+      },
+    });
+    cy.get("eox-stacinfo", { timeout: 10000 }).should("exist");
+  });
+});

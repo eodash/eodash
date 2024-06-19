@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { buildApp, createDevServer, previewApp } from './app.js'
+import { buildApp, createDevServer, previewApp } from "./app.js";
 
 const command = process.argv?.[2];
 (async () => {
@@ -16,7 +16,7 @@ const command = process.argv?.[2];
       break;
 
     default:
-      console.error('command not found')
+      console.error("command not found");
       break;
   }
 })();

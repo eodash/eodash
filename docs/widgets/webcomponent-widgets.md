@@ -1,9 +1,11 @@
 # Web Component Widgets
 
 ## Importing a deployed web component library
+
 Including a web component in your instance can be either using an NPM package identifier or a URL (a CDN for example)
 
 ### Example of importing from a package identifier
+
 ```js
 import { store } from "@eodash/eodash"
 const { currentUrl } = store.states
@@ -12,7 +14,7 @@ export default createEodash({
     ...
     template:{
         ...
-        widgets: [      
+        widgets: [
           {
             id: "Information",
             title: "Information",
@@ -39,6 +41,7 @@ export default createEodash({
 })
 
 ```
+
 ::: warning
 importing from a package identifier using an import function is only possible in "compiletime" eodash client configuration. see [here](/api/client/types/interfaces/WebComponentProps.html#link)
 :::
@@ -53,7 +56,7 @@ export default createEodash({
     ...
     template:{
         ...
-        widgets: [      
+        widgets: [
           {
             id: "Information",
             title: "Information",
@@ -81,25 +84,27 @@ export default createEodash({
 ```
 
 ## Deploying Web Components Within Eodash Instance
+
 You can define a web component in a file in your instance project and include it using an internal link.
 
-### Example 
+### Example
+
 ```js
 // src/elements/current-date.js
 
 export class CurrentDate extends HTMLElement {
-    connectedCallback() {
-        // Create a Date object representing the current date.
-        const now = new Date();
-        
-        // Format the date to a human-friendly string, and set the
-        // formatted date as the text content of this element.
-        this.textContent = now.toLocaleDateString();
-    }
+  connectedCallback() {
+    // Create a Date object representing the current date.
+    const now = new Date();
+
+    // Format the date to a human-friendly string, and set the
+    // formatted date as the text content of this element.
+    this.textContent = now.toLocaleDateString();
+  }
 }
 
 // Register the CurrentDate component using the tag name <current-date>.
-customElements.define('current-date', CurrentDate);
+customElements.define("current-date", CurrentDate);
 ```
 
 ```js
@@ -109,7 +114,7 @@ export default createEodash({
     ...
     template:{
         ...
-        widgets: [      
+        widgets: [
           {
             type: "web-component",
             id: Symbol(),
@@ -128,14 +133,15 @@ export default createEodash({
 ```
 
 ## Registering Web Components in eodash
+
 Custom elements normally should be registered in the javascript file defining it. in that case, you should provide the file as a `link` and the `tagName` of your registered element, eodash will automatically import the `link` provided if the `tagName` isn't already defined as a Custom Element. In case the `link` provided doesn't register the element, eodash assumes that it exports a Custom Element Constructor. The exported constructor property from your provided link should be assigned to `constructorProp` and eodash will automatically register the given tagName to that constructor as a custom element.
 
-
-
 ## Exposed Hooks
+
 the configured web component is exposed on the hooks [onMounted](/api/client/types/interfaces/WebComponentProps.html#onmounted) and [onUnmounted](/api/client/types/interfaces/WebComponentProps.html#onunmounted). this is typically used for adding and removing Event Listeners, or assigning properties.
 
-### Example 
+### Example
+
 ```js
 let handleMoveEnd = () => { // [!code focus]
   ... // [!code focus]
@@ -145,7 +151,7 @@ export default createEodash({
     ...
     template:{
         ...
-        widgets: [      
+        widgets: [
           {
             type: "web-component",
             id: Symbol(),
@@ -168,4 +174,7 @@ export default createEodash({
     }
 })
 ```
+
+```
+
 ```

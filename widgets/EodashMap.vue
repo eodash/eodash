@@ -1,6 +1,11 @@
 <template>
-  <DynamicWebComponent :link="link" tag-name="eox-map" :properties="properties" :on-mounted="onMounted"
-    :on-unmounted="onUnmounted" />
+  <DynamicWebComponent
+    :link="link"
+    tag-name="eox-map"
+    :properties="properties"
+    :on-mounted="onMounted"
+    :on-unmounted="onUnmounted"
+  />
 </template>
 <script setup>
 import { inject, watch } from "vue";
@@ -14,7 +19,7 @@ import "@eox/map/dist/eox-map-advanced-layers-and-sources.js";
 
 const eodashConfig = /** @type {import("@/types").Eodash} */ inject(eodashKey);
 
-/** @type {Record<string,unknown>} */
+/** @type {Record<string, unknown>} */
 const properties = {
   class: "fill-height fill-width overflow-none",
   center: [15, 48],
@@ -29,10 +34,10 @@ if (mapPosition && mapPosition.value && mapPosition.value.length === 3) {
 
 const link = () => import("@eox/map");
 
-/** @type {import("openlayers").EventsListenerFunctionType}*/
+/** @type {import("openlayers").EventsListenerFunctionType} */
 const handleMoveEnd = (evt) => {
   const map = /** @type {import("openlayers").Map | undefined} */ (
-    /** @type {*} */ (evt).map
+    /** @type {any} */ (evt).map
   );
   const [x, y] = map?.getView().getCenter() ?? [0, 0];
   const z = map?.getView().getZoom();
@@ -54,23 +59,23 @@ const onMounted = (el, store) => {
       if (updatedStac) {
         const parentCollUrl = toAbsolute(
           `./${updatedStac.id}/collection.json`,
-          eodashConfig.stacEndpoint
+          eodashConfig.stacEndpoint,
         );
         const childCollUrl = toAbsolute(
           updatedStac.links[1].href,
-          parentCollUrl
+          parentCollUrl,
         );
         const eodash = new EodashCollection(childCollUrl);
         if (updatedTime) {
           /** @type {any} */ (el).layers = await eodash.createLayersJson(
-          new Date(updatedTime)
-        );
+            new Date(updatedTime),
+          );
         } else {
           /** @type {any} */ (el).layers = await eodash.createLayersJson();
         }
       }
     },
-    { immediate: true }
+    { immediate: true },
   );
 };
 

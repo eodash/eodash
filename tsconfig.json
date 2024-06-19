@@ -15,22 +15,11 @@
     "sourceMap": false,
     "resolveJsonModule": true,
     "esModuleInterop": true,
-    "lib": [
-      "esnext",
-      "dom"
-    ],
-    "types": [
-      "node",
-      "vuetify",
-      "cypress"
-    ],
+    "lib": ["esnext", "dom"],
+    "types": ["node", "vuetify", "cypress"],
     "paths": {
-      "@/*": [
-        "core/client/*"
-      ],
-      "^/*": [
-        "widgets/*"
-      ]
+      "@/*": ["core/client/*"],
+      "^/*": ["widgets/*"]
     }
   },
   "references": [
@@ -38,10 +27,7 @@
       "path": "tsconfig.node.json"
     }
   ],
-  "exclude": [
-    "node_modules",
-    "dist"
-  ],
+  "exclude": ["node_modules", "dist"],
   "include": [
     "core/client/**/*.ts",
     "core/client/**/*.js",

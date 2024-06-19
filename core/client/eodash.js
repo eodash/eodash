@@ -2,8 +2,9 @@ import { reactive } from "vue";
 import { currentUrl } from "./store/States";
 
 /**
- * Reactive Edoash Instance Object. provided globally in the app,
- * and used as an intermediate object to make user defined instances config reactive.
+ * Reactive Edoash Instance Object. provided globally in the app, and used as an
+ * intermediate object to make user defined instances config reactive.
+ *
  * @type {import("./types").Eodash}
  */
 export const eodash = reactive({
@@ -33,9 +34,9 @@ export const eodash = reactive({
           class: "align-self-center justify-self-center",
           size: "120",
           speed: "2.5",
-          color: "#004170"
-        }
-      }
+          color: "#004170",
+        },
+      },
     },
     background: {
       id: Symbol(),
@@ -56,43 +57,47 @@ export const eodash = reactive({
       },
       {
         defineWidget: (selectedSTAC) => {
-          return selectedSTAC ? {
-            id: "Information",
-            title: "Information",
-            layout: { x: 9, y: 0, w: 3, h: 12 },
-            type: "web-component",
-            widget: {
-              link: async () => await import("@eox/stacinfo"),
-              properties: {
-                for: currentUrl,
-                allowHtml: "true",
-                styleOverride:
-                  "#properties li > .value {font-weight: normal !important;}",
-                header: "[]",
+          return selectedSTAC
+            ? {
+                id: "Information",
+                title: "Information",
+                layout: { x: 9, y: 0, w: 3, h: 12 },
+                type: "web-component",
+                widget: {
+                  link: async () => await import("@eox/stacinfo"),
+                  properties: {
+                    for: currentUrl,
+                    allowHtml: "true",
+                    styleOverride:
+                      "#properties li > .value {font-weight: normal !important;}",
+                    header: "[]",
 
-                subheader: "[]",
-                properties: '["description"]',
-                featured: "[]",
-                footer: "[]",
-              },
-              tagName: "eox-stacinfo",
-            }
-          } : null
-        }
+                    subheader: "[]",
+                    properties: '["description"]',
+                    featured: "[]",
+                    footer: "[]",
+                  },
+                  tagName: "eox-stacinfo",
+                },
+              }
+            : null;
+        },
       },
       {
         defineWidget: (selectedSTAC) => {
-          return selectedSTAC ? {
-            id: "Datepicker",
-            type: "internal",
-            layout: { x: 5, y: 10, w: 1, h: 1 },
-            title: "Datepicker",
-            widget: {
-              name: "EodashDatePicker",
-            },
-          } : null
-        }
-      }
+          return selectedSTAC
+            ? {
+                id: "Datepicker",
+                type: "internal",
+                layout: { x: 5, y: 10, w: 1, h: 1 },
+                title: "Datepicker",
+                widget: {
+                  name: "EodashDatePicker",
+                },
+              }
+            : null;
+        },
+      },
     ],
   },
 });

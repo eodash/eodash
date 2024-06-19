@@ -1,13 +1,13 @@
-import WidgetsContainer from '^/WidgetsContainer.vue'
+import WidgetsContainer from "^/WidgetsContainer.vue";
 
-describe('<WidgetsContainer />', () => {
+describe("<WidgetsContainer />", () => {
   const widgets = [
     {
       id: Symbol(),
-      title: 'Tools',
-      type: 'web-component',
+      title: "Tools",
+      type: "web-component",
       widget: {
-        link: () => import('@eox/itemfilter'),
+        link: () => import("@eox/itemfilter"),
         properties: {
           config: {
             titleProperty: "title",
@@ -22,49 +22,49 @@ describe('<WidgetsContainer />', () => {
                 key: "themes",
                 title: "Theme",
                 type: "multiselect",
-                featured: true
+                featured: true,
               },
             ],
             aggregateResults: "themes",
             enableHighlighting: true,
-          }
+          },
         },
-        tagName: 'eox-itemfilter'
+        tagName: "eox-itemfilter",
       },
     },
     {
-      title: 'Map',
+      title: "Map",
       type: "web-component",
       widget: {
-        link: () => import('@eox/map'),
+        link: () => import("@eox/map"),
         properties: {
           class: "fill-height fill-width overflow-none",
           center: [15, 48],
           layers: [{ type: "Tile", source: { type: "OSM" } }],
         },
-        tagName: 'eox-map',
+        tagName: "eox-map",
       },
-    }
-  ]
+    },
+  ];
 
   beforeEach(() => {
     cy.vMount(WidgetsContainer, {
       props: {
-        widgets
+        widgets,
       },
-    })
-  })
+    });
+  });
 
-  it('renders successfully', () => {
-    cy.get('@vue').should('exist')
-    cy.get('details').should('exist')
-  })
+  it("renders successfully", () => {
+    cy.get("@vue").should("exist");
+    cy.get("details").should("exist");
+  });
 
-  it('renders statically configured titles', () => {
+  it("renders statically configured titles", () => {
     for (let index = 0; index < widgets.length; index++) {
-      cy.get(`:nth-child(${index + 1}) > summary`).contains(widgets[index].title)
+      cy.get(`:nth-child(${index + 1}) > summary`).contains(
+        widgets[index].title,
+      );
     }
-  })
-
-
-})
+  });
+});

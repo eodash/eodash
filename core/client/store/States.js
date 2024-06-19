@@ -1,21 +1,16 @@
 import { ref } from "vue";
 
-/**
- * currently selected STAC endpoint
- */
-export const currentUrl = ref('');
-/**
- * currently selected datetime
- */
+/** Currently selected STAC endpoint */
+export const currentUrl = ref("");
+/** Currently selected datetime */
 export const datetime = ref(new Date().toISOString());
 
-/**
- * Currently selected indicator
- */
-export const indicator = ref("")
+/** Currently selected indicator */
+export const indicator = ref("");
 
 /**
  * Current map position
- * @type {import("vue").Ref<(number|undefined)[]>}
+ *
+ * @type {import("vue").Ref<(number | undefined)[]>}
  */
-export const mapPosition = ref([])
+export const mapPosition = ref([]);

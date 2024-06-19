@@ -1,5 +1,7 @@
 # Eodash Command Line Interface
-eodash CLI is powered by [Vite](https://vite.dev), providing an optimized development experience and producing minified ESM bundles for production. 
+
+eodash CLI is powered by [Vite](https://vite.dev), providing an optimized development experience and producing minified ESM bundles for production.
+
 <script setup>
     const options = {
         "-v, --version": ["output the current version"],
@@ -26,13 +28,17 @@ eodash CLI is powered by [Vite](https://vite.dev), providing an optimized develo
 </script>
 
 ## dev
+
 Starts vite's dev server.
 
 ### usage
+
 ```bash
 eodash dev
 ```
+
 ### options
+
 <table>
   <tr>
     <th>Option</th>
@@ -47,13 +53,17 @@ eodash dev
 </table>
 
 ## build
+
 Builds eodash for production
 
 ### usage
+
 ```bash
 eodash build
 ```
+
 ### options
+
 <table>
   <tr>
     <th>Option</th>
@@ -68,13 +78,17 @@ eodash build
 </table>
 
 ## preview
+
 Locally preview the production build. This is not intended to be used for production.
 
 ### usage
+
 ```bash
 eodash preview
 ```
+
 ### options
+
 <table>
   <tr>
     <th>Option</th>
@@ -89,10 +103,12 @@ eodash preview
   </tr>
 </table>
 
-## Configuration 
+## Configuration
+
 While running the eodash command line, it automatically tries to locate a configuration file named `eodash.config.js` from the root folder of your project. You can also explicitly specify a config file to use with the `--config` or `-c` CLI option (resolved relative to your projects root folder). You can also override the configuration values using the CLI options. refer to the [API](/api/node/types/interfaces/EodashConfig.html) to learn more:
 
 ### `eodash.config.js` Basic Example
+
 ```js
 export default {
     lib: false,
@@ -104,7 +120,8 @@ export default {
 }
 ```
 
-### Integrate your IDE’s intellisense 
+### Integrate your IDE’s intellisense
+
 with eodash’s TypeScript typings using jsdoc hints
 
 ```js
@@ -113,6 +130,7 @@ export default {
     ...
 }
 ```
+
 Or using the `defineConfig` helper funtion
 
 ```js
