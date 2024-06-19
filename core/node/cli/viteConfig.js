@@ -36,8 +36,8 @@ ${userConfig.lib ? `<eo-dash style="height:100dvh;"/>
 </body>
 </html>`
 
-//@ts-expect-error
-export const viteConfig = /** @type {import('vite').UserConfigFnPromise}*/(defineConfig(async ({ mode, command }) => {
+
+export const viteConfig = /** @type {import('vite').UserConfigFnPromise}*/(defineConfig(({ mode, command }) => {
   return {
     base: userConfig.base ?? '',
     cacheDir: cachePath,

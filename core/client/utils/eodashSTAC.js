@@ -8,7 +8,7 @@ export class EodashCollection {
   #collectionUrl = '';
   /** @type {import("stac-ts").StacCollection | undefined} */
   #collectionStac;
-  /** @type {import("stac-ts").StacLink | undefined } */
+  /** @type {import("stac-ts").StacLink | import("stac-ts").StacItem | undefined } */
   selectedItem;
 
   /**
@@ -57,7 +57,6 @@ export class EodashCollection {
         },
         source: {
           type: "Vector",
-          // @ts-ignore
           url: "data:," + encodeURIComponent(JSON.stringify(allFeatures)),
           format: "GeoJSON",
         },
@@ -113,12 +112,12 @@ export class EodashCollection {
   }
 
   /**
-   * @param {*} item
+   * @param {import('stac-ts').StacItem} item
    */
   buildJson(item) {
     let json;
     // TODO implement other types, such as COG
-    if (/** @type {import('stac-ts').StacLink[]} */(item.links)
+    if (item.links
       .find((l) => l.rel === 'wms' || l.rel === 'wmts' || l.rel === 'xyz')) {
       json = {
         type: 'STAC',

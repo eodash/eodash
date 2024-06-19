@@ -65,8 +65,8 @@ onMounted(() => {
   if (props.onTemplateMount && !eodash.brand.noLayout) {
     hiddenElements.forEach(element => {
       /** @type {HTMLElement} */
-      // @ts-expect-error
-      (element.value.$el).style.opacity = "0"
+      (/** @type {import("vue").ComponentPublicInstance} */
+        (element.value).$el).style.opacity = "0"
     })
   }
 })

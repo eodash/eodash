@@ -15,8 +15,7 @@ export function generateFeatures(links) {
   const features = [];
   links.forEach(element => {
     if (element.rel === "item" && "latlng" in element) {
-      //@ts-expect-error
-      const [lat, lon] = element.latlng.split(",").map((/** @type {string} */it) => Number(it))
+      const [lat, lon] =/** @type {string} */ (element.latlng).split(",").map((it) => Number(it))
       features.push({
         type: 'Feature',
         geometry: {

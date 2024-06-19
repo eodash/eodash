@@ -59,12 +59,12 @@ const attributes = ref([]);
 
 const currentDate = computed({
   get() {
-    return new Date(datetime.value) ?? new Date()
+    return datetime.value ? new Date(datetime.value) : new Date()
   },
   /** @param {Date | string} updatedDate */
   set(updatedDate) {
-    //@ts-expect-error
-    if (updatedDate instanceof Date && !isNaN(updatedDate)) {
+
+    if (updatedDate instanceof Date && !isNaN(updatedDate.getTime())) {
       datetime.value = new Date(updatedDate.getTime() - updatedDate.getTimezoneOffset() * 60000).toISOString()
     } else {
       datetime.value = new Date().toISOString()

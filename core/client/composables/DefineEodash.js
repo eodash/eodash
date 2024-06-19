@@ -20,7 +20,7 @@ export const useEodashRuntime = async (runtimeConfig) => {
   const assignInstance = (config) => {
        /** @type {(keyof import("@/types").Eodash)[]} */(Object.keys(eodash))
       .forEach((key) => {
-        //@ts-expect-error
+        //@ts-expect-error to do
         eodash[key] = config[key]
       })
   }

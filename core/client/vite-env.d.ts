@@ -2,7 +2,7 @@
 
 declare module '*.vue' {
   import type { DefineComponent } from 'vue'
-  const component: DefineComponent<{}, {}, any>
+  const component: DefineComponent<object, object, unknown>
   export default component
 }
 declare interface Window {
@@ -22,10 +22,10 @@ declare module 'user:config' {
   export default eodash
 }
 declare module "stac-js" {
-  const STAC: any, Collection: any, Item: any
-  export { STAC, Collection, Item }
+  export const Collection: { new(data?: object): import('stac-ts').StacCollection; }
+  export const Item: { new(data?: object): import('stac-ts').StacItem }
 }
 declare module "stac-js/src/http.js" {
-  const toAbsolute: any
+  const toAbsolute: (...args: string[]) => string
   export { toAbsolute }
 }

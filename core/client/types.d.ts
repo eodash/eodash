@@ -278,7 +278,7 @@ export interface EodashStore {
      */
     indicator: import("vue").Ref<string>
   }
-  actions: {};
+  actions: object;
   /**
    *  Pinia store definition used to navigate the root STAC catalog.
    */

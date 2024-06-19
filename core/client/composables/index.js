@@ -52,7 +52,7 @@ export const useUpdateTheme = (themeName, themeDefinition = {}) => {
         themeDefinition[key]
       );
     } else {
-      //@ts-expect-error
+      //@ts-expect-error to do
       theme.themes.value[themeName][key] = {
         ...theme.themes.value[themeName][key],
         ...themeDefinition[key],
@@ -71,11 +71,11 @@ export const useURLSearchParametersSync = () => {
     // Analyze currently set url params when first loaded and set them in the store
     if ('URLSearchParams' in window) {
       const searchParams = new URLSearchParams(window.location.search);
-      /** @type {number} */
+      /** @type {number | undefined} */
       let x,
-        /** @type {number} */
+        /** @type {number | undefined} */
         y,
-        /** @type {number} */
+        /** @type {number | undefined} */
         z;
       searchParams.forEach(async (value, key) => {
         if (key === "indicator") {
@@ -95,8 +95,7 @@ export const useURLSearchParametersSync = () => {
           z = Number(value);
         }
       })
-      //@ts-expect-error
-      if (x !== undefined && y !== undefined && z !== undefined) {
+      if (x && y && z) {
         mapPosition.value = [x, y, z];
       }
     }

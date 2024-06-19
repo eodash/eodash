@@ -28,10 +28,11 @@ const app = createApp({})
 registerPlugins(app)
 
 const inst = getCurrentInstance()
-//@ts-expect-error
-Object.assign(inst.appContext, app._context)
-//@ts-expect-error
-Object.assign(inst.provides, app._context.provides)
+
+Object.assign(inst?.appContext ?? {}, app._context)
+
+//@ts-expect-error Property 'provides' does not exist on type 'ComponentInternalInstance'
+Object.assign(inst?.provides ?? {}, app._context.provides)
 
 /** @param {import("vue").Ref<HTMLElement | import("vue").ComponentPublicInstance>[]} [hiddenElements] */
 function setStylesFromHead(hiddenElements) {
@@ -52,8 +53,8 @@ function setStylesFromHead(hiddenElements) {
   });
 
   stylesStr += `\n
-      ${//@ts-expect-error
-        /** @type {import("@/types").Eodash} */ (inst.provides[eodashKey]).brand.noLayout ?
+      ${//@ts-expect-error Property 'provides' does not exist on type 'ComponentInternalInstance'
+        /** @type {import("@/types").Eodash} */ (inst?.provides[eodashKey])?.brand.noLayout ?
       `div.v-application__wrap {
           min-height: fit-content;
         }`: ""}
@@ -61,7 +62,7 @@ function setStylesFromHead(hiddenElements) {
   styleSheet.replaceSync(stylesStr.replaceAll(":root", ":host"))
   eodashShadowRoot?.adoptedStyleSheets.push(styleSheet);
 
-  //@ts-expect-error
+  //@ts-expect-error Property 'provides' does not exist on type 'ComponentInternalInstance'
   if (hiddenElements && !(/** @type {import("@/types").Eodash} */ (inst.provides[eodashKey])?.brand.noLayout)) {
     hiddenElements.forEach(element => {
       if (element.value) {
