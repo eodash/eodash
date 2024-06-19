@@ -49,7 +49,6 @@ describe('<WidgetsContainer />', () => {
 
   beforeEach(() => {
     cy.vMount(WidgetsContainer, {
-      //@ts-ignore
       props: {
         widgets
       },

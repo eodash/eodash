@@ -7,7 +7,6 @@ describe("<EodashDatePicker/>", () => {
     })
 
     it("render component", () => {
-      //@ts-expect-error
       cy.get("@vue").then(({ wrapper }) => {
         expect(wrapper.wrapperElement).to.exist
       })

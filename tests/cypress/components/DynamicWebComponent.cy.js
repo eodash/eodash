@@ -5,7 +5,6 @@ describe('<DynamicWebComponent />', () => {
   it('renders successfully from external URL', () => {
     cy.vMount(DynamicWebComponent, {
       /** @type {import('@/types').WebComponentProps} */
-      //@ts-ignore
       props: {
         link: "https://cdn.jsdelivr.net/npm/ldrs/dist/auto/mirage.js",
         tagName: "l-mirage",
@@ -23,7 +22,6 @@ describe('<DynamicWebComponent />', () => {
   it('renders successfully from import map', () => {
     cy.vMount(DynamicWebComponent, {
       /** @type {import('@/types').WebComponentProps} */
-      //@ts-ignore
       props: {
         link: async () => await import("@eox/stacinfo"),
         tagName: "eox-stacinfo",

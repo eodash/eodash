@@ -17,17 +17,18 @@ describe('<MobileLayout />', () => {
 
   /** @param {import('@/types').Widget}  w*/
   const onlyStatic = (w) => Object.hasOwn(w, 'title')
+
+
   it('renders successfully', () => {
     cy.get("main", { timeout: 10000 }).should("exist")
   })
 
   it('renders static widgets titles in tabs ', () => {
-    //@ts-expect-error
     cy.get('@vue').then(({ options }) => {
       /** @type {import('@/types').StaticWidget[]} */
-      //@ts-expect-error
-      const widgets = /** @type {import('@/types').Widget[]} */
-        (options.global.provide[eodashKey].template.widgets).filter(onlyStatic)
+      const widgets =
+        //@ts-expect-error https://github.com/microsoft/TypeScript/issues/1863
+        options.global?.provide?.[eodashKey].template.widgets.filter(onlyStatic)
 
       widgets.forEach((widget, idx) => {
         cy.get(`button[value="${idx}"]`).contains(widget.title ?? '')
@@ -47,10 +48,10 @@ describe('<MobileLayout />', () => {
   })
 
   it("open new tab", () => {
-    //@ts-expect-error
     cy.get("@vue").then(({ options }) => {
       const lastIdx =  /** @type {import('@/types').Eodash} */
-        (options.global.provide[eodashKey]).template.widgets.filter(onlyStatic).length - 1
+        //@ts-expect-error https://github.com/microsoft/TypeScript/issues/1863
+        (options.global?.provide?.[eodashKey])?.template.widgets.filter(onlyStatic).length - 1
       cy.get(`.v-slide-group__content button[value=${lastIdx}]`).click({ force: true })
 
       cy.get("#overlay").should("exist")

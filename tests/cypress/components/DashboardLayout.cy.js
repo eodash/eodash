@@ -2,7 +2,7 @@ import DashboardLayout from '@/components/DashboardLayout.vue'
 import { eodashKey } from '@/utils/keys'
 
 describe('<DashboardLayout />', () => {
-  /** @type {import('@/types').Layout[]} */
+  /** @type {(import('@/types').Layout|undefined)[]} */
   let layouts = []
   beforeEach(() => {
     cy.vMount(DashboardLayout, {
@@ -14,8 +14,8 @@ describe('<DashboardLayout />', () => {
         }
       }
     }).then(({ options }) => {
-      //@ts-expect-error
-      layouts =/** @type {.import('@/types').Widget[]} */ (options.global.provide[eodashKey].template.widgets).map((w) => {
+      //@ts-expect-error https://github.com/Microsoft/TypeScript/issues/24587
+      layouts =/** @type {import('@/types').Widget[]} */ (options.global?.provide?.[eodashKey].template.widgets)?.map((w) => {
         if ('defineWidget' in w) {
           const staticWidget = w.defineWidget(null)
           return staticWidget ? staticWidget.layout : undefined

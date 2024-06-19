@@ -9,10 +9,7 @@ import eodash from '@/eodash';
 import "vuetify/styles"
 /**
  * @param {import('vue').DefineComponent<{},{},any> | Element} OriginalComponent
- * @param {Parameters<typeof mount >['1'] & {
- * vuetify?:import('vuetify/lib/framework.mjs').VuetifyOptions;
- * pinia?:import('@pinia/testing').TestingPinia | import("pinia").Pinia;
- * } } options
+ * @param {import('./cypress-types').VueMountOptions } options
  */
 export const vMountComponent = (OriginalComponent, options = {}) => {
   options.global = options.global ?? {}
@@ -29,7 +26,6 @@ export const vMountComponent = (OriginalComponent, options = {}) => {
   })
 
   options.global.provide = {
-    //@ts-expect-error
     [eodashKey]: eodash,
   }
 

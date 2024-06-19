@@ -14,7 +14,6 @@ describe('<IframeWrapper />', () => {
 
       cy.get('@url').then((url) => {
         cy.vMount(IframeWrapper, {
-          //@ts-expect-error
           props: {
             src: url
           }
@@ -24,7 +23,7 @@ describe('<IframeWrapper />', () => {
 
     it('iframe renders internal DOM', () => {
       cy.get('@vue').then(vue => {
-        //@ts-expect-error
+        //@ts-expect-error type of 'HTMLIFrameElement' is not assignable to parameter of type 'string'
         cy.get(/** @type {HTMLIFrameElement} */(vue.wrapper.element)).its('0.contentDocument').should('exist')
       })
     })
@@ -37,7 +36,7 @@ describe('<IframeWrapper />', () => {
 
     it('iframe contains "Hello World"', () => {
       cy.get('@vue').then(vue => {
-        //@ts-expect-error
+        //@ts-expect-error type of 'HTMLIFrameElement' is not assignable to parameter of type 'string'
         cy.get(/** @type {HTMLIFrameElement} */(vue.wrapper.element)).
           its('0.contentDocument')
           .its('body')
