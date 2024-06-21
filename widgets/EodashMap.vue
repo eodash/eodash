@@ -10,7 +10,7 @@
 <script setup>
 import { inject, watch } from "vue";
 import { toAbsolute } from "stac-js/src/http.js";
-import { EodashCollection } from "@/utils/eodashSTAC";
+import { EodashCollection, extractCollectionUrls } from "@/utils/eodashSTAC";
 import { eodashKey } from "@/utils/keys";
 import { datetime, mapPosition } from "@/store/States";
 import DynamicWebComponent from "@/components/DynamicWebComponent.vue";
@@ -61,18 +61,30 @@ const onMounted = (el, store) => {
           `./${updatedStac.id}/collection.json`,
           eodashConfig.stacEndpoint,
         );
-        const childCollUrl = toAbsolute(
-          updatedStac.links[1].href,
+        const collectionUrls = extractCollectionUrls(
+          selectedStac.value,
           parentCollUrl,
         );
-        const eodash = new EodashCollection(childCollUrl);
-        if (updatedTime) {
-          /** @type {any} */ (el).layers = await eodash.createLayersJson(
-            new Date(updatedTime),
-          );
-        } else {
-          /** @type {any} */ (el).layers = await eodash.createLayersJson();
+        /** @type {import("@/utils/eodashSTAC").EodashCollection[]} */
+        const eodashCollections = [];
+        collectionUrls.forEach((cu) => {
+          eodashCollections.push(new EodashCollection(cu));
+        });
+        const layersCollection = [];
+        for (let idx = 0; idx < eodashCollections.length; idx++) {
+          const ec = eodashCollections[idx];
+          let layers;
+          if (updatedTime) {
+            layers = await ec.createLayersJson(new Date(updatedTime));
+          } else {
+            layers = await ec.createLayersJson();
+          }
+          if (layers) {
+            layersCollection.push(...layers);
+          }
         }
+        /** @type {any} */
+        (el).layers = layersCollection;
       }
     },
     { immediate: true },
