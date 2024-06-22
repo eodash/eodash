@@ -46,9 +46,9 @@
     "docs:generate": "typedoc --options typedoc.config.json"
   },
   "dependencies": {
-    "@eox/itemfilter": "^0.14.0",
+    "@eox/itemfilter": "^0.14.1",
     "@eox/layout": "^0.1.0",
-    "@eox/map": "^1.4.0",
+    "@eox/map": "^1.9.0",
     "@eox/stacinfo": "^0.3.0",
     "@mdi/js": "^7.4.47",
     "@vitejs/plugin-vue": "^5.0.0",
