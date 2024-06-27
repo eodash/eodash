@@ -23,7 +23,7 @@ const eodashConfig = /** @type {import("@/types").Eodash} */ inject(eodashKey);
 const properties = {
   class: "fill-height fill-width overflow-none",
   center: [15, 48],
-  layers: [{ type: "Tile", source: { type: "OSM" } }],
+  layers: [],
 };
 // Check if selected indicator was already set in store
 if (mapPosition && mapPosition.value && mapPosition.value.length === 3) {

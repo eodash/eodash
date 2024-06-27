@@ -50,36 +50,50 @@ export const eodash = reactive({
         id: Symbol(),
         type: "internal",
         title: "Indicators",
-        layout: { x: 0, y: 0, w: 2, h: 12 },
+        layout: { x: 0, y: 0, w: 2, h: 8 },
         widget: {
           name: "EodashItemFilter",
+        },
+      },
+      {
+        id: Symbol(),
+        type: "web-component",
+        title: "Layer Control",
+        layout: { x: 0, y: 8, w: 2, h: 4 },
+        widget: {
+          link: () => import("@eox/layercontrol"),
+          tagName: "eox-layercontrol",
+          properties:{
+            for:"eox-map",
+            class:"pa-4"
+          }
         },
       },
       {
         defineWidget: (selectedSTAC) => {
           return selectedSTAC
             ? {
-                id: "Information",
-                title: "Information",
-                layout: { x: 9, y: 0, w: 3, h: 12 },
-                type: "web-component",
-                widget: {
-                  link: async () => await import("@eox/stacinfo"),
-                  properties: {
-                    for: currentUrl,
-                    allowHtml: "true",
-                    styleOverride:
-                      "#properties li > .value {font-weight: normal !important;}",
-                    header: "[]",
+              id: "Information",
+              title: "Information",
+              layout: { x: 9, y: 0, w: 3, h: 12 },
+              type: "web-component",
+              widget: {
+                link: async () => await import("@eox/stacinfo"),
+                properties: {
+                  for: currentUrl,
+                  allowHtml: "true",
+                  styleOverride:
+                    "#properties li > .value {font-weight: normal !important;}",
+                  header: "[]",
 
-                    subheader: "[]",
-                    properties: '["description"]',
-                    featured: "[]",
-                    footer: "[]",
-                  },
-                  tagName: "eox-stacinfo",
+                  subheader: "[]",
+                  properties: '["description"]',
+                  featured: "[]",
+                  footer: "[]",
                 },
-              }
+                tagName: "eox-stacinfo",
+              },
+            }
             : null;
         },
       },
@@ -87,14 +101,14 @@ export const eodash = reactive({
         defineWidget: (selectedSTAC) => {
           return selectedSTAC
             ? {
-                id: "Datepicker",
-                type: "internal",
-                layout: { x: 5, y: 10, w: 1, h: 1 },
-                title: "Datepicker",
-                widget: {
-                  name: "EodashDatePicker",
-                },
-              }
+              id: "Datepicker",
+              type: "internal",
+              layout: { x: 5, y: 10, w: 1, h: 1 },
+              title: "Datepicker",
+              widget: {
+                name: "EodashDatePicker",
+              },
+            }
             : null;
         },
       },

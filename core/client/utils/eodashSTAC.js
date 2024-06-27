@@ -36,6 +36,7 @@ export class EodashCollection {
         type: "Tile",
         properties: {
           id: "OSM",
+          title:"OSM"
         },
         source: {
           type: "OSM",
@@ -56,6 +57,7 @@ export class EodashCollection {
         type: "Vector",
         properties: {
           id: stac.id,
+          title:stac.title || stac.id
         },
         source: {
           type: "Vector",
