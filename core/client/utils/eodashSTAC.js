@@ -3,6 +3,36 @@ import { toAbsolute } from "stac-js/src/http.js";
 import { generateFeatures } from "./helpers";
 import axios from "axios";
 
+/**
+ * Function to extract collection urls from an indicator
+ * @param {import("stac-ts").StacCatalog
+ *   | import("stac-ts").StacCollection
+ *   | import("stac-ts").StacItem
+ *   | null
+ * } stacObject
+ * @param {string} basepath
+ * @returns {string[]}
+ */
+export function extractCollectionUrls(stacObject, basepath) {
+  const collectionUrls = [];
+  // Support for two structure types, flat and indicator, simplified here:
+  // Flat assumes Catalog-Collection-Item
+  // Indicator assumes Catalog-Collection-Collection-Item
+  // TODO: this is not the most stable test approach,
+  // we should discuss potential other approaches
+  //
+  if (stacObject?.links && stacObject?.links[1].rel === "item") {
+    collectionUrls.push(basepath);
+  } else if (stacObject?.links[1].rel === "child") {
+    // TODO: Iterate through all children to create collections
+    stacObject.links.forEach((link) => {
+      if (link.rel === "child") {
+        collectionUrls.push(toAbsolute(link.href, basepath));
+      }
+    });
+  }
+  return collectionUrls;
+}
 export class EodashCollection {
   /** @type {string} */
   #collectionUrl = "";
@@ -32,7 +62,7 @@ export class EodashCollection {
     // TODO get auxiliary layers from collection
     /** @type {object[]} */
     let layersJson = [
-      {
+      /*{
         type: "Tile",
         properties: {
           id: "OSM",
@@ -40,7 +70,7 @@ export class EodashCollection {
         source: {
           type: "OSM",
         },
-      },
+      },*/
     ];
     // Load collectionstac if not yet initialized
     if (!this.#collectionStac) {
@@ -110,27 +140,58 @@ export class EodashCollection {
             );
           }
         }
-        return layersJson;
+        return [];
       } else {
         // specific item was requested
         const item = new Item(stac);
         this.selectedItem = item;
-        layersJson.unshift(this.buildJson(item));
+        layersJson.unshift(...this.buildJsonArray(item));
         return layersJson;
       }
     }
   };
 
   /** @param {import("stac-ts").StacItem} item */
-  buildJson(item) {
-    let json;
-    // TODO implement other types, such as COG
-    if (
-      item.links.find(
-        (l) => l.rel === "wms" || l.rel === "wmts" || l.rel === "xyz",
-      )
-    ) {
-      json = {
+  buildJsonArray(item) {
+    const jsonArray = [];
+    // TODO: this currently assumes only one layer will be extracted
+    //       from an item, although it think this is currently true
+    //       potentially this could return multiple layers
+    // TODO: implement other types, such as COG
+
+    // I propose following approach, we "manually" create configurations
+    // for the rendering options we know and expect.
+    // If we don't find any we fallback to using the STAC ol item that
+    // will try to extract anything it supports but for which we have
+    // less control.
+    const wms = item.links.find((l) => l.rel === "wms");
+    // const projDef = false; // TODO: add capability to find projection in item
+    if (wms) {
+      let json = {
+        type: "Tile",
+        properties: {
+          id: item.id,
+        },
+        source: {
+          // if no projection information is provided we should
+          // assume one, else for WMS requests it will try to get
+          // the map projection that might not be supported
+          // projection: projDef ? projDef : "EPSG:4326",
+          type: "TileWMS",
+          url: wms.href,
+          params: {
+            LAYERS: wms["wms:layers"],
+            TILED: true,
+          },
+        },
+      };
+      if ("wms:dimensions" in wms) {
+        // @ts-expect-error: waiting for eox-map to provide type definition
+        json.source.params.time = wms["wms:dimensions"];
+      }
+      jsonArray.push(json);
+    } else if (item.links.find((l) => l.rel === "wmts" || l.rel === "xyz")) {
+      jsonArray.push({
         type: "STAC",
         displayWebMapLink: true,
         displayFootprint: false,
@@ -138,10 +199,10 @@ export class EodashCollection {
         properties: {
           id: item.id,
         },
-      };
+      });
     } else {
       // fall back to rendering the feature
-      json = {
+      jsonArray.push({
         type: "Vector",
         source: {
           type: "Vector",
@@ -151,10 +212,10 @@ export class EodashCollection {
         properties: {
           id: item.id,
         },
-      };
+      });
     }
 
-    return json;
+    return jsonArray;
   }
 
   getItems() {
