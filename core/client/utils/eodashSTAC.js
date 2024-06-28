@@ -145,7 +145,7 @@ export class EodashCollection {
         // specific item was requested
         const item = new Item(stac);
         this.selectedItem = item;
-        layersJson.unshift(...this.buildJsonArray(item));        
+        layersJson.unshift(...this.buildJsonArray(item));
         return layersJson;
       }
     }
@@ -161,8 +161,8 @@ export class EodashCollection {
 
     // I propose following approach, we "manually" create configurations
     // for the rendering options we know and expect.
-    // If we don't find any we fallback to using the STAC ol item that 
-    // will try to extract anything it supports but for which we have 
+    // If we don't find any we fallback to using the STAC ol item that
+    // will try to extract anything it supports but for which we have
     // less control.
     const wms = item.links.find((l) => l.rel === "wms");
     const projDef = false; // TODO: add capability to find projection in item
@@ -173,7 +173,7 @@ export class EodashCollection {
           id: item.id,
         },
         source: {
-          // if no projection information is provided we should 
+          // if no projection information is provided we should
           // assume one, else for WMS requests it will try to get
           // the map projection that might not be supported
           // projection: projDef ? projDef : "EPSG:4326",
@@ -181,20 +181,16 @@ export class EodashCollection {
           url: wms.href,
           params: {
             LAYERS: wms["wms:layers"],
-            TILED: true
+            TILED: true,
           },
-        }
+        },
       };
       if ("wms:dimensions" in wms) {
         // @ts-expect-error: waiting for eox-map to provide type definition
         json.source.params.time = wms["wms:dimensions"];
       }
       jsonArray.push(json);
-    } else if (
-      item.links.find(
-        (l) => l.rel === "wmts" || l.rel === "xyz",
-      )
-    ) {
+    } else if (item.links.find((l) => l.rel === "wmts" || l.rel === "xyz")) {
       jsonArray.push({
         type: "STAC",
         displayWebMapLink: true,

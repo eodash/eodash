@@ -24,27 +24,27 @@ const properties = {
   class: "fill-height fill-width overflow-none",
   center: [15, 48],
   zoom: 4,
-  // TODO: we should probably introduce some way of defining 
+  // TODO: we should probably introduce some way of defining
   layers: [
-  {
-    "type": "Vector",
-    "source": {
-      "type": "Vector",
-      "url": "https://openlayers.org/data/vector/ecoregions.json",
-      "format": "GeoJSON"
-    }
-  },
-  {
-    "type": "Tile",
-    "properties": {
-      "id": "osm",
-      "title": "Background"
+    {
+      type: "Vector",
+      source: {
+        type: "Vector",
+        url: "https://openlayers.org/data/vector/ecoregions.json",
+        format: "GeoJSON",
+      },
     },
-    "source": {
-      "type": "OSM"
-    }
-  }
-],
+    {
+      type: "Tile",
+      properties: {
+        id: "osm",
+        title: "Background",
+      },
+      source: {
+        type: "OSM",
+      },
+    },
+  ],
 };
 // Check if selected indicator was already set in store
 if (mapPosition && mapPosition.value && mapPosition.value.length === 3) {
@@ -113,17 +113,17 @@ const onMounted = (el, store) => {
         // Probably best also to introduce background and overlay groups
         // For now adding OSM as background
         layersCollection.push({
-          "type": "Tile",
-          "properties": {
-            "id": "osm",
-            "title": "Background"
+          type: "Tile",
+          properties: {
+            id: "osm",
+            title: "Background",
           },
-          "source": {
-            "type": "OSM"
-          }
+          source: {
+            type: "OSM",
+          },
         });
 
-        // TODO: we can check if the collection / indicator has a specific 
+        // TODO: we can check if the collection / indicator has a specific
         //       projection it wants to be displayed in the map we can register
         //       and set the attribute here, e.g. like following
         /* 
@@ -135,7 +135,6 @@ const onMounted = (el, store) => {
 
         /** @type {any} */
         (el).layers = layersCollection;
-
       }
     },
     { immediate: true },
