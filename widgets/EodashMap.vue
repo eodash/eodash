@@ -110,6 +110,7 @@ const onMounted = (el, store) => {
           }
         }
         // TODO: add base layers and overlays as defined in the top collection / indicator
+        // Probably best also to introduce background and overlay groups
         // For now adding OSM as background
         layersCollection.push({
           "type": "Tile",
