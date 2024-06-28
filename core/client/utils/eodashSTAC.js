@@ -165,7 +165,7 @@ export class EodashCollection {
     // will try to extract anything it supports but for which we have
     // less control.
     const wms = item.links.find((l) => l.rel === "wms");
-    const projDef = false; // TODO: add capability to find projection in item
+    // const projDef = false; // TODO: add capability to find projection in item
     if (wms) {
       let json = {
         type: "Tile",
