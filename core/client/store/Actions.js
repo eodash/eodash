@@ -4,4 +4,4 @@
  * @returns {object[]}
  */
 //@ts-expect-error layers doesn't exist on type element
-export const getLayers = (el = "eox-map") => document.querySelector(el)?.layers
+export const getLayers = (el = "eox-map") => document.querySelector(el)?.layers;

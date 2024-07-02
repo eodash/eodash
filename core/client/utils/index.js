@@ -42,10 +42,10 @@ export const loadFont = async (
  *  @param {string} text
  *  @param {import("vue").Ref<boolean>} showIcon
  **/
-export const copyToClipBoard = async (text,showIcon) =>{
-  await navigator.clipboard.writeText(text)
-  showIcon.value = true
-  setTimeout(()=>{
-    showIcon.value = false
-  },2000)
-}
+export const copyToClipBoard = async (text, showIcon) => {
+  await navigator.clipboard.writeText(text);
+  showIcon.value = true;
+  setTimeout(() => {
+    showIcon.value = false;
+  }, 2000);
+};
