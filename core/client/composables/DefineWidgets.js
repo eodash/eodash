@@ -40,9 +40,9 @@ const internalWidgets = (() => {
  * @param {(
  *       | import("@/types").Widget
  *       | import("@/types").BackgroundWidget
+ *       | Omit<import("@/types").Widget, "layout">
  *       | undefined
  *     )[]
- *   | import("@/types").WidgetsContainerProps["widgets"]
  *   | undefined} widgetConfigs
  * @returns {ReactiveDefinedWidget[]}
  */
