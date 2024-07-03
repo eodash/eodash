@@ -1,0 +1,1 @@
+import{_ as s,c as i,o as a,a3 as n}from"./chunks/framework.CUnLlneh.js";const y=JSON.parse('{"title":"Get Started","description":"","frontmatter":{},"headers":[],"relativePath":"index.md","filePath":"index.md"}'),t={name:"index.md"},h=n("",33),l=[h];function p(e,k,E,d,r,o){return a(),i("div",null,l)}const c=s(t,[["render",p]]);export{y as __pageData,c as default};
