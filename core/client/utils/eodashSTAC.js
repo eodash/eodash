@@ -1,6 +1,6 @@
 import { Collection, Item } from "stac-js";
 import { toAbsolute } from "stac-js/src/http.js";
-import { generateFeatures } from "./helpers";
+import { extractJSONForm, generateFeatures } from "./helpers";
 import axios from "axios";
 
 /**
@@ -51,28 +51,18 @@ export class EodashCollection {
   }
   /**
    * @async
-   * @param {any} item
+   * @param {import('stac-ts').StacLink|Date} [itemLinkOrDate]
    * @returns
    */
-  createLayersJson = async (item = null) => {
+  createLayersJson = async (itemLinkOrDate) => {
     /** @type {import("stac-ts").StacLink | undefined} */
     let stacItem,
       /** @type {import("stac-ts").StacCollection | undefined} */
       stac;
     // TODO get auxiliary layers from collection
     /** @type {object[]} */
-    let layersJson = [
-      /*{
-        type: "Tile",
-        properties: {
-          id: "OSM",
-          title:"OSM"
-        },
-        source: {
-          type: "OSM",
-        },
-      },*/
-    ];
+    let layersJson = [];
+
     // Load collectionstac if not yet initialized
     if (!this.#collectionStac) {
       const response = await axios.get(this.#collectionUrl);
@@ -87,7 +77,7 @@ export class EodashCollection {
         type: "Vector",
         properties: {
           id: stac.id,
-          title:stac.title || stac.id
+          title: stac.title || stac.id
         },
         source: {
           type: "Vector",
@@ -104,29 +94,28 @@ export class EodashCollection {
       });
       return layersJson;
     } else {
-      if (item instanceof Date) {
+      if (itemLinkOrDate instanceof Date) {
         // if collectionStac not yet initialized we do it here
         stacItem = this.getItems()?.sort((a, b) => {
           const distanceA = Math.abs(
-            new Date(/** @type {number} */ (a.datetime)).getTime() -
-              item.getTime(),
+            new Date(/** @type {number} */(a.datetime)).getTime() -
+            itemLinkOrDate.getTime(),
           );
           const distanceB = Math.abs(
-            new Date(/** @type {number} */ (b.datetime)).getTime() -
-              item.getTime(),
+            new Date(/** @type {number} */(b.datetime)).getTime() -
+            itemLinkOrDate.getTime(),
           );
           return distanceA - distanceB;
         })[0];
         this.selectedItem = stacItem;
       } else {
-        stacItem = item;
+        stacItem = itemLinkOrDate;
       }
-      const response = await fetch(
+      stac = await axios.get(
         stacItem
           ? toAbsolute(stacItem.href, this.#collectionUrl)
           : this.#collectionUrl,
-      );
-      stac = await response.json();
+      ).then(resp=>resp.data)
 
       if (!stacItem) {
         // no specific item was requested; render last item
@@ -147,14 +136,14 @@ export class EodashCollection {
         // specific item was requested
         const item = new Item(stac);
         this.selectedItem = item;
-        layersJson.unshift(...this.buildJsonArray(item));
+        layersJson.unshift(... await this.buildJsonArray(item));
         return layersJson;
       }
     }
   };
 
   /** @param {import("stac-ts").StacItem} item */
-  buildJsonArray(item) {
+  async buildJsonArray(item) {
     const jsonArray = [];
     // TODO: this currently assumes only one layer will be extracted
     //       from an item, although it think this is currently true
@@ -166,6 +155,8 @@ export class EodashCollection {
     // If we don't find any we fallback to using the STAC ol item that
     // will try to extract anything it supports but for which we have
     // less control.
+
+    const { jsonform, styles } = extractJSONForm(await this.getStyle(item, ''))
     const wms = item.links.find((l) => l.rel === "wms");
     // const projDef = false; // TODO: add capability to find projection in item
     if (wms) {
@@ -202,6 +193,44 @@ export class EodashCollection {
           id: item.id,
         },
       });
+    } else if (Object.keys(item.assets).filter(ast=>item.assets[ast].roles?.includes('data'))?.length) {
+      for (const asset in item.assets) {
+        const projDef = item.assets[asset]['proj:epsg'] ? `EPSG:${item.assets[asset]['proj:epsg']}` : "EPSG:4326"
+        if (item.assets[asset]?.type === "application/geo+json") {
+          jsonArray.unshift({
+              type: "VectorTile",
+              projection:{ code: projDef },
+              source: {
+                type: "VectorTile",
+                url: item.assets[asset].href,
+                format: "GeoJSON",
+              },
+              properties: {
+                id: (this.#collectionStac?.title || item.id),
+                title: (this.#collectionStac?.title || item.id),
+                layerConfig: jsonform
+              },
+              styles
+            });
+          }
+          // else if(item.assets[asset]?.type === "image/tiff"){
+          //   jsonArray.unshift({
+          //     type: "Tile",
+          //     source: {
+          //       projection:{ code: projDef },
+          //       type: "GeoTIFF",
+          //       url: item.assets[asset].href,
+          //       format:""
+          //     },
+          //     properties: {
+          //       id: item.id,
+          //       title: (this.#collectionStac?.title || item.id),
+          //       layerConfig: jsonform
+          //     },
+          //     styles
+          //   });
+          // }
+        }
     } else {
       // fall back to rendering the feature
       jsonArray.push({
@@ -213,7 +242,10 @@ export class EodashCollection {
         },
         properties: {
           id: item.id,
+          title: this.#collectionStac?.title || item.id,
+          layerConfig: jsonform
         },
+        styles
       });
     }
 
@@ -226,12 +258,31 @@ export class EodashCollection {
         .filter((i) => i.rel === "item")
         // sort by `datetime`, where oldest is first in array
         .sort((a, b) =>
-          /** @type {number} */ (a.datetime) <
+          /** @type {number} */(a.datetime) <
           /** @type {number} */ (b.datetime)
             ? -1
             : 1,
         )
     );
+  }
+
+  /**
+   * @param {import("stac-ts").StacItem} item
+   * @param {string} itemUrl
+   **/
+  async getStyle(item, itemUrl) {
+    const styleLink = item.links.find(link => link.rel.includes('style'))
+    if (styleLink) {
+      /** @type {import("ol/style/flat").FlatStyle} */
+      let styleJson = {}
+      if (styleLink.href.startsWith('http')) {
+        styleJson = await axios.get(styleLink.href).then(resp => resp.data)
+      } else {
+        const url = toAbsolute(styleLink.href, itemUrl)
+        styleJson = await axios.get(url).then(resp => resp.data)
+      }
+      return styleJson
+    }
   }
 
   getDates() {
@@ -240,12 +291,12 @@ export class EodashCollection {
         .filter((i) => i.rel === "item")
         // sort by `datetime`, where oldest is first in array
         .sort((a, b) =>
-          /** @type {number} */ (a.datetime) <
+          /** @type {number} */(a.datetime) <
           /** @type {number} */ (b.datetime)
             ? -1
             : 1,
         )
-        .map((i) => new Date(/** @type {number} */ (i.datetime)))
+        .map((i) => new Date(/** @type {number} */(i.datetime)))
     );
   }
 }

@@ -1,11 +1,6 @@
 <template>
-  <DynamicWebComponent
-    :link="link"
-    tag-name="eox-map"
-    :properties="properties"
-    :on-mounted="onMounted"
-    :on-unmounted="onUnmounted"
-  />
+  <DynamicWebComponent :link="link" tag-name="eox-map" :properties="properties" :on-mounted="onMounted"
+    :on-unmounted="onUnmounted" />
 </template>
 <script setup>
 import { inject, watch } from "vue";
@@ -33,6 +28,10 @@ const properties = {
         url: "https://openlayers.org/data/vector/ecoregions.json",
         format: "GeoJSON",
       },
+      properties:{
+        id:"Regions",
+        title:"Regions",
+      }
     },
     {
       type: "Tile",
@@ -97,6 +96,7 @@ const onMounted = (el, store) => {
           eodashCollections.push(new EodashCollection(cu));
         });
         const layersCollection = [];
+        let collectionGrouped = []
         for (let idx = 0; idx < eodashCollections.length; idx++) {
           const ec = eodashCollections[idx];
           let layers;
@@ -106,9 +106,20 @@ const onMounted = (el, store) => {
             layers = await ec.createLayersJson();
           }
           if (layers) {
-            layersCollection.push(...layers);
+            collectionGrouped.push(...layers);
           }
         }
+        if (collectionGrouped.length > 1) {
+          collectionGrouped =   [{
+            type:"Group",
+            properties:{
+              id:updatedStac.id,
+              title:updatedStac.title
+            },
+            layers:collectionGrouped
+          }]
+        }
+        layersCollection.push(...collectionGrouped)
         // TODO: add base layers and overlays as defined in the top collection / indicator
         // Probably best also to introduce background and overlay groups
         // For now adding OSM as background
