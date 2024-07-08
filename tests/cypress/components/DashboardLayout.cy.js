@@ -10,7 +10,7 @@ describe("<DashboardLayout />", () => {
           EodashDatePicker: true,
           EodashItemFilter: true,
           EodashMap: true,
-          EodashMapBtns:true
+          EodashMapBtns: true,
         },
       },
     }).then(({ options }) => {
