@@ -88,7 +88,7 @@ const copyBtns = [
 
 const mapStepCode = computed(() => {
   const [x, y, z] = mapPosition.value;
-  const preTag = '### <!--{ layers=';
+  const preTag = "### <!--{ layers=";
   const endTag = `zoom="${z}" center=[${[x, y]}] animationOptions={duration:500}}-->
 #### Tour step title
 Text describing the current step of the tour and why it is interesting what the map shows currently

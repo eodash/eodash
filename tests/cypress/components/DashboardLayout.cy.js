@@ -1,5 +1,6 @@
 import DashboardLayout from "@/components/DashboardLayout.vue";
 import { eodashKey } from "@/utils/keys";
+
 describe("<DashboardLayout />", () => {
   /** @type {(import("@/types").Layout | undefined)[]} */
   let layouts = [];
@@ -11,6 +12,7 @@ describe("<DashboardLayout />", () => {
           EodashItemFilter: true,
           EodashMap: true,
           EodashMapBtns: true,
+          ExportState: true,
         },
       },
     }).then(({ options }) => {
