@@ -122,3 +122,14 @@ export const useURLSearchParametersSync = () => {
     );
   });
 };
+
+/** @param {import("vue").Ref<HTMLElement|null>} root - components root element ref*/
+export const makePanelTransparent = (root) => {
+  onMounted(() => {
+    const eoxItem = root.value?.parentElement;
+    if (eoxItem?.tagName === "EOX-LAYOUT-ITEM") {
+      eoxItem.style.background = "transparent";
+      eoxItem.style.border = "transparent";
+    }
+  });
+};

@@ -1,6 +1,5 @@
 import { reactive } from "vue";
 import { currentUrl } from "./store/States";
-
 /**
  * Reactive Edoash Instance Object. provided globally in the app, and used as an
  * intermediate object to make user defined instances config reactive.
@@ -71,7 +70,6 @@ export const eodash = reactive({
                     styleOverride:
                       "#properties li > .value {font-weight: normal !important;}",
                     header: "[]",
-
                     subheader: "[]",
                     properties: '["description"]',
                     featured: "[]",
@@ -93,6 +91,21 @@ export const eodash = reactive({
                 title: "Datepicker",
                 widget: {
                   name: "EodashDatePicker",
+                },
+              }
+            : null;
+        },
+      },
+      {
+        defineWidget: (selected) => {
+          return selected
+            ? {
+                id: Symbol(),
+                layout: { x: 8, y: 0, w: 1, h: 1 },
+                title: "Buttons",
+                type: "internal",
+                widget: {
+                  name: "EodashMapBtns",
                 },
               }
             : null;
