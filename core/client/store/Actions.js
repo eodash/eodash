@@ -3,6 +3,6 @@
  * @param {string} [el="eox-map"] - `eox-map` element selector
  * @returns {object[]}
  */
-//@ts-expect-error layers doesn't exist on type element
 export const getLayers = (el = "eox-map") =>
+  //@ts-expect-error layers doesn't exist on type element
   document.querySelector(el)?.layers.toReversed();
