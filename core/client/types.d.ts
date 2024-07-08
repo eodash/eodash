@@ -245,11 +245,17 @@ export interface EodashStore {
     /** Currently selected indicator */
     indicator: import("vue").Ref<string>;
   };
-  actions: object;
+  actions: {
+    /** returns the layers of the `eox-map`
+     * @param `eox-map` element selector
+     */
+    getLayers:(el:string = "eox-map")=>object[]
+  };
   /** Pinia store definition used to navigate the root STAC catalog. */
   stac: {
     useSTAcStore: typeof import("./store/stac.js").useSTAcStore;
   };
+
 }
 ///////
 /**
