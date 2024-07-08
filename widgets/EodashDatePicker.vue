@@ -16,9 +16,18 @@
   </VCDatePicker>
   <v-row align="center" justify="center" style="margin-top: 6px">
     <v-btn
+      style="padding: 0px; margin-right: 4px"
+      density="compact"
+      v-tooltip:bottom="'Set date to oldest available dataset'"
+      @click="jumpDate(true)"
+    >
+      <v-icon :icon="[mdiRayEndArrow]" />
+    </v-btn>
+    <v-btn
+      style="padding: 0px; margin-left: 4px"
       density="compact"
       v-tooltip:bottom="'Set date to latest available dataset'"
-      @click="jumpDate"
+      @click="jumpDate(false)"
     >
       <v-icon :icon="[mdiRayStartArrow]" />
     </v-btn>
@@ -34,18 +43,27 @@ import { toAbsolute } from "stac-js/src/http.js";
 import { storeToRefs } from "pinia";
 import { useSTAcStore } from "@/store/stac";
 import { datetime } from "@/store/States";
-import { mdiRayStartArrow } from "@mdi/js";
+import { mdiRayStartArrow, mdiRayEndArrow } from "@mdi/js";
+import { extractCollectionUrls } from "@/utils/eodashSTAC";
 
-function jumpDate() {
+/**
+ * @param {boolean} reverse
+ */
+function jumpDate(reverse) {
   if (attributes.value && attributes.value.length > 0) {
     // We have potentially multiple collections we need to iterate (currently only one)
-    let latestDateMS = 0;
+    let latestDateMS = reverse ? Infinity : -Infinity;
     attributes.value.forEach((coll) => {
       if (coll?.dates) {
         coll.dates.forEach((d) => {
           // TODO: we need to handle time ranges and other options here
-          if (d instanceof Date && d.getTime() > latestDateMS) {
-            latestDateMS = d.getTime();
+          if (d instanceof Date) {
+            if (
+              (!reverse && d.getTime() > latestDateMS) ||
+              (reverse && d.getTime() < latestDateMS)
+            ) {
+              latestDateMS = d.getTime();
+            }
           }
         });
       }
@@ -100,26 +118,41 @@ onMounted(() => {
           `./${updatedStac.id}/collection.json`,
           eodashConfig.stacEndpoint,
         );
-        const childCollUrl = toAbsolute(
-          updatedStac.links[1].href,
+        const collectionUrls = extractCollectionUrls(
+          selectedStac.value,
           parentCollUrl,
         );
-
-        const stacCollection = await (await fetch(childCollUrl)).json();
-        const dates = stacCollection.links
-          .filter(
-            (/** @type {{ rel: string; datetime: string }} */ item) =>
-              item.rel === "item" && "datetime" in item,
-          )
-          .map(
-            (/** @type {{ datetime: string }} */ it) => new Date(it.datetime),
-          );
-        attributes.value = [
-          {
-            bar: true,
-            dates,
-          },
+        const wongPalette = [
+          "#009E73",
+          "#0072B2",
+          "#E69F00",
+          "#CC79A7",
+          "#56B4E9",
+          "#D55E00",
         ];
+        for (let idx = 0; idx < collectionUrls.length; idx++) {
+          const stacCollection = await (
+            await fetch(collectionUrls[idx])
+          ).json();
+          const dates = stacCollection.links
+            .filter(
+              (/** @type {{ rel: string; datetime: string }} */ item) =>
+                item.rel === "item" && "datetime" in item,
+            )
+            .map(
+              (/** @type {{ datetime: string }} */ it) => new Date(it.datetime),
+            );
+          attributes.value = [
+            {
+              bar: {
+                style: {
+                  backgroundColor: wongPalette[idx % wongPalette.length],
+                },
+              },
+              dates,
+            },
+          ];
+        }
       }
     },
     { immediate: true },

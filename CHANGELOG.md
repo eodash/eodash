@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.0.0-alpha.2.6](https://github.com/eodash/eodash/compare/eodash-v5.0.0-alpha.2.5...eodash-v5.0.0-alpha.2.6) (2024-07-03)
+
+
+### Features
+
+* Updates to the map widget ([#49](https://github.com/eodash/eodash/issues/49)) ([0304d8b](https://github.com/eodash/eodash/commit/0304d8b9a079ea26018a7aebd9b190eaf4e0740a))
+
 ## [5.0.0-alpha.2.5](https://github.com/eodash/eodash/compare/eodash-v5.0.0-alpha.2.4...eodash-v5.0.0-alpha.2.5) (2024-06-13)
 
 

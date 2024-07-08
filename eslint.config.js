@@ -5,7 +5,7 @@ export default [
   ...eox,
   ...pluginVue.configs["flat/essential"],
   {
-    ignores: ["public/", "dist/", ".eodash/"],
+    ignores: ["public/", "dist/", ".eodash/", "docs/"],
   },
   {
     files: ["core/client/**/*.vue", "widgets/**/*.vue"],

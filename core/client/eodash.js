@@ -8,7 +8,7 @@ import { currentUrl } from "./store/States";
  */
 export const eodash = reactive({
   id: "demo",
-  stacEndpoint: "https://esa-eodash.github.io/RACE-catalog/RACE/catalog.json",
+  stacEndpoint: "https://gtif-cerulean.github.io/catalog/cerulean/catalog.json",
   brand: {
     noLayout: true,
     name: "Demo",
