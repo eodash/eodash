@@ -37,16 +37,12 @@ export function generateFeatures(links) {
   return geojsonObject;
 }
 
-/** @param {import("ol/style/flat").FlatStyle} [styles] */
+/** @param {import("@/types").JSONFormStyles} [styles] */
 export function extractJSONForm(styles) {
-  //@ts-expect-error asfasf
   let jsonform = styles?.jsonform
   if (jsonform) {
-    jsonform = { schema: jsonform }
-    //@ts-expect-error adas
+    jsonform = { schema: jsonform, type: "style" }
     delete styles?.jsonform;
   }
-  console.log('styles:', styles);
-  console.log('jsonform:', jsonform);
   return { jsonform, styles }
 }

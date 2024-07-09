@@ -20,7 +20,7 @@ export function extractCollectionUrls(stacObject, basepath) {
   // Indicator assumes Catalog-Collection-Collection-Item
   // TODO: this is not the most stable test approach,
   // we should discuss potential other approaches
-  //
+
   if (stacObject?.links && stacObject?.links[1].rel === "item") {
     collectionUrls.push(basepath);
   } else if (stacObject?.links[1].rel === "child") {
@@ -51,7 +51,7 @@ export class EodashCollection {
   }
   /**
    * @async
-   * @param {import('stac-ts').StacLink|Date} [itemLinkOrDate]
+   * @param {import('stac-ts').StacLink | Date} [itemLinkOrDate]
    * @returns
    */
   createLayersJson = async (itemLinkOrDate) => {
@@ -115,7 +115,7 @@ export class EodashCollection {
         stacItem
           ? toAbsolute(stacItem.href, this.#collectionUrl)
           : this.#collectionUrl,
-      ).then(resp=>resp.data)
+      ).then(resp => resp.data)
 
       if (!stacItem) {
         // no specific item was requested; render last item
@@ -155,8 +155,13 @@ export class EodashCollection {
     // If we don't find any we fallback to using the STAC ol item that
     // will try to extract anything it supports but for which we have
     // less control.
-
-    const { jsonform, styles } = extractJSONForm(await this.getStyle(item, ''))
+    const dataAssets = Object.keys(item.assets).reduce((data,ast) => {
+      if (item.assets[ast].roles?.includes('data')) {
+        data[ast] = item.assets[ast]
+      }
+      return data
+    },/** @type {Record<string,import('stac-ts').StacAsset>} */({}))
+    const { jsonform, styles } = extractJSONForm(await this.fetchStyle(item, ''))
     const wms = item.links.find((l) => l.rel === "wms");
     // const projDef = false; // TODO: add capability to find projection in item
     if (wms) {
@@ -193,44 +198,55 @@ export class EodashCollection {
           id: item.id,
         },
       });
-    } else if (Object.keys(item.assets).filter(ast=>item.assets[ast].roles?.includes('data'))?.length) {
-      for (const asset in item.assets) {
-        const projDef = item.assets[asset]['proj:epsg'] ? `EPSG:${item.assets[asset]['proj:epsg']}` : "EPSG:4326"
-        if (item.assets[asset]?.type === "application/geo+json") {
-          jsonArray.unshift({
-              type: "VectorTile",
-              projection:{ code: projDef },
-              source: {
-                type: "VectorTile",
-                url: item.assets[asset].href,
-                format: "GeoJSON",
-              },
-              properties: {
-                id: (this.#collectionStac?.title || item.id),
-                title: (this.#collectionStac?.title || item.id),
-                layerConfig: jsonform
-              },
-              styles
-            });
-          }
-          // else if(item.assets[asset]?.type === "image/tiff"){
-          //   jsonArray.unshift({
-          //     type: "Tile",
-          //     source: {
-          //       projection:{ code: projDef },
-          //       type: "GeoTIFF",
-          //       url: item.assets[asset].href,
-          //       format:""
-          //     },
-          //     properties: {
-          //       id: item.id,
-          //       title: (this.#collectionStac?.title || item.id),
-          //       layerConfig: jsonform
-          //     },
-          //     styles
-          //   });
-          // }
+    } else if (Object.keys(dataAssets).length) {
+      let geoTIFFSources = []
+      for (const asset in dataAssets) {
+        const projDef = dataAssets[asset]?.['proj:epsg'] ? `EPSG:${dataAssets[asset]['proj:epsg']}` : "EPSG:3857"
+        // create list of registered projections and move this logic to the item level not the asset level
+        if (!["EPSG:4326", "EPSG:3857", 4326, 3857].includes(projDef)) {
+          //@ts-expect-error eox-map API
+          await document.querySelector('eox-map').registerProjectionFromCode(projDef)
+          // then add it to the list of registered projections
         }
+        //else{
+        //   document.querySelector('eox-map')?.setAttribute("projection",projDef)
+        // }
+        if (dataAssets[asset]?.type === "application/geo+json") {
+          jsonArray.unshift({
+            type: "Vector",
+            source: {
+              type: "Vector",
+              url: dataAssets[asset].href,
+              format: "GeoJSON",
+            },
+            properties: {
+              id: (this.#collectionStac?.title || item.id),
+              title: (this.#collectionStac?.title || item.id),
+              layerConfig: jsonform
+            },
+            styles:styles
+          });
+        } else if (dataAssets[asset]?.type === "image/tiff") {
+          geoTIFFSources.push({ url: dataAssets[asset].href })
+        }
+      }
+      if (geoTIFFSources.length) {
+        jsonArray.unshift({
+          type: "WebGLTile",
+          source: {
+            type: "GeoTIFF",
+            normalize:styles?.variables ? false: true,
+            sources: geoTIFFSources
+          },
+          properties: {
+            id: item.id,
+            title: (this.#collectionStac?.title || item.id),
+            layerConfig: jsonform
+          },
+          style: styles
+        });
+      }
+
     } else {
       // fall back to rendering the feature
       jsonArray.push({
@@ -243,7 +259,6 @@ export class EodashCollection {
         properties: {
           id: item.id,
           title: this.#collectionStac?.title || item.id,
-          layerConfig: jsonform
         },
         styles
       });
@@ -270,10 +285,10 @@ export class EodashCollection {
    * @param {import("stac-ts").StacItem} item
    * @param {string} itemUrl
    **/
-  async getStyle(item, itemUrl) {
+  async fetchStyle(item, itemUrl) {
     const styleLink = item.links.find(link => link.rel.includes('style'))
     if (styleLink) {
-      /** @type {import("ol/style/flat").FlatStyle} */
+/** @type {import("@/types").JSONFormStyles} */
       let styleJson = {}
       if (styleLink.href.startsWith('http')) {
         styleJson = await axios.get(styleLink.href).then(resp => resp.data)
