@@ -11,6 +11,8 @@ describe("<DashboardLayout />", () => {
           EodashDatePicker: true,
           EodashItemFilter: true,
           EodashMap: true,
+          EodashMapBtns: true,
+          ExportState: true,
         },
       },
     }).then(({ options }) => {

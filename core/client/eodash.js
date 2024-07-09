@@ -1,6 +1,5 @@
 import { reactive } from "vue";
 import { currentUrl } from "./store/States";
-
 /**
  * Reactive Edoash Instance Object. provided globally in the app, and used as an
  * intermediate object to make user defined instances config reactive.
@@ -73,27 +72,26 @@ export const eodash = reactive({
         defineWidget: (selectedSTAC) => {
           return selectedSTAC
             ? {
-              id: "Information",
-              title: "Information",
-              layout: { x: 9, y: 0, w: 3, h: 12 },
-              type: "web-component",
-              widget: {
-                link: async () => await import("@eox/stacinfo"),
-                properties: {
-                  for: currentUrl,
-                  allowHtml: "true",
-                  styleOverride:
-                    "#properties li > .value {font-weight: normal !important;}",
-                  header: "[]",
-
-                  subheader: "[]",
-                  properties: '["description"]',
-                  featured: "[]",
-                  footer: "[]",
+                id: "Information",
+                title: "Information",
+                layout: { x: 9, y: 0, w: 3, h: 12 },
+                type: "web-component",
+                widget: {
+                  link: async () => await import("@eox/stacinfo"),
+                  properties: {
+                    for: currentUrl,
+                    allowHtml: "true",
+                    styleOverride:
+                      "#properties li > .value {font-weight: normal !important;}",
+                    header: "[]",
+                    subheader: "[]",
+                    properties: '["description"]',
+                    featured: "[]",
+                    footer: "[]",
+                  },
+                  tagName: "eox-stacinfo",
                 },
-                tagName: "eox-stacinfo",
-              },
-            }
+              }
             : null;
         },
       },
@@ -109,6 +107,21 @@ export const eodash = reactive({
                 name: "EodashDatePicker",
               },
             }
+            : null;
+        },
+      },
+      {
+        defineWidget: (selected) => {
+          return selected
+            ? {
+                id: "Buttons",
+                layout: { x: 8, y: 0, w: 1, h: 1 },
+                title: "Buttons",
+                type: "internal",
+                widget: {
+                  name: "EodashMapBtns",
+                },
+              }
             : null;
         },
       },

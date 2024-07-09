@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.0.0-alpha.2.7](https://github.com/eodash/eodash/compare/eodash-v5.0.0-alpha.2.6...eodash-v5.0.0-alpha.2.7) (2024-07-08)
+
+
+### Bug Fixes
+
+* reverting layer order to be provided as eox-maps expects it ([e61aa74](https://github.com/eodash/eodash/commit/e61aa74b214eee28f3b103d2cd3691ff3c046966))
+
 ## [5.0.0-alpha.2.6](https://github.com/eodash/eodash/compare/eodash-v5.0.0-alpha.2.5...eodash-v5.0.0-alpha.2.6) (2024-07-03)
 
 
