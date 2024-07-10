@@ -26,7 +26,6 @@ describe("<MobileLayout />", () => {
     cy.get("@vue").then(({ options }) => {
       /** @type {import("@/types").StaticWidget[]} */
       const widgets =
-        //@ts-expect-error https://github.com/microsoft/TypeScript/issues/1863
         options.global?.provide?.[eodashKey].template.widgets.filter(
           onlyStatic,
         );
@@ -52,7 +51,6 @@ describe("<MobileLayout />", () => {
     cy.get("@vue").then(({ options }) => {
       const lastIdx =
         /** @type {import("@/types").Eodash} */
-        //@ts-expect-error https://github.com/microsoft/TypeScript/issues/1863
         (options.global?.provide?.[eodashKey])?.template.widgets.filter(
           onlyStatic,
         ).length - 1;

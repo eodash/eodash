@@ -98,19 +98,18 @@ export class EodashCollection {
         },
       });
 
-      return layersJson
-
+      return layersJson;
     } else {
       if (itemLinkOrDate instanceof Date) {
         // if collectionStac not yet initialized we do it here
         stacItem = this.getItems()?.sort((a, b) => {
           const distanceA = Math.abs(
-            new Date(/** @type {number} */(a.datetime)).getTime() -
-            itemLinkOrDate.getTime(),
+            new Date(/** @type {number} */ (a.datetime)).getTime() -
+              itemLinkOrDate.getTime(),
           );
           const distanceB = Math.abs(
-            new Date(/** @type {number} */(b.datetime)).getTime() -
-            itemLinkOrDate.getTime(),
+            new Date(/** @type {number} */ (b.datetime)).getTime() -
+              itemLinkOrDate.getTime(),
           );
           return distanceA - distanceB;
         })[0];
@@ -119,9 +118,10 @@ export class EodashCollection {
         stacItem = itemLinkOrDate;
       }
 
-      const stacItemUrl = stacItem ? toAbsolute(stacItem.href, this.#collectionUrl) : this.#collectionUrl
-      stac = await axios.get(stacItemUrl)
-        .then((resp) => resp.data);
+      const stacItemUrl = stacItem
+        ? toAbsolute(stacItem.href, this.#collectionUrl)
+        : this.#collectionUrl;
+      stac = await axios.get(stacItemUrl).then((resp) => resp.data);
 
       if (!stacItem) {
         // no specific item was requested; render last item
@@ -169,7 +169,7 @@ export class EodashCollection {
         data[ast] = item.assets[ast];
       }
       return data;
-    }, /** @type {Record<string,import('stac-ts').StacAsset>} */({}));
+    }, /** @type {Record<string,import('stac-ts').StacAsset>} */ ({}));
     const { jsonform, styles } = extractJSONForm(
       await this.fetchStyle(item, itemUrl),
     );
@@ -180,7 +180,7 @@ export class EodashCollection {
 
     // TODO: add capability to find projection in item
     await registerProjection(
-      /** @type {number | undefined} */(item?.["proj:epsg"]),
+      /** @type {number | undefined} */ (item?.["proj:epsg"]),
     );
 
     if (wms) {
@@ -215,7 +215,7 @@ export class EodashCollection {
         data: item,
         properties: {
           id: item.title || item.id,
-          title: item.title || item.id
+          title: item.title || item.id,
         },
       });
     } else if (Object.keys(dataAssets).length) {
@@ -236,7 +236,7 @@ export class EodashCollection {
           type: "Vector",
           url: "data:," + encodeURIComponent(JSON.stringify(item.geometry)),
           format: "GeoJSON",
-          layerConfig: jsonform
+          layerConfig: jsonform,
         },
         properties: {
           id: item.id,
@@ -255,7 +255,7 @@ export class EodashCollection {
         .filter((i) => i.rel === "item")
         // sort by `datetime`, where oldest is first in array
         .sort((a, b) =>
-          /** @type {number} */(a.datetime) <
+          /** @type {number} */ (a.datetime) <
           /** @type {number} */ (b.datetime)
             ? -1
             : 1,
@@ -270,9 +270,9 @@ export class EodashCollection {
   async fetchStyle(item, itemUrl) {
     const styleLink = item.links.find((link) => link.rel.includes("style"));
     if (styleLink) {
-      let url = ''
+      let url = "";
       if (styleLink.href.startsWith("http")) {
-        url = styleLink.href
+        url = styleLink.href;
       } else {
         url = toAbsolute(styleLink.href, itemUrl);
       }
@@ -289,12 +289,12 @@ export class EodashCollection {
         .filter((i) => i.rel === "item")
         // sort by `datetime`, where oldest is first in array
         .sort((a, b) =>
-          /** @type {number} */(a.datetime) <
+          /** @type {number} */ (a.datetime) <
           /** @type {number} */ (b.datetime)
             ? -1
             : 1,
         )
-        .map((i) => new Date(/** @type {number} */(i.datetime)))
+        .map((i) => new Date(/** @type {number} */ (i.datetime)))
     );
   }
 }

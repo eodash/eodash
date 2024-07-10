@@ -17,7 +17,6 @@ describe("<DashboardLayout />", () => {
       },
     }).then(({ options }) => {
       layouts = /** @type {import("@/types").Widget[]} */ (
-        //@ts-expect-error https://github.com/Microsoft/TypeScript/issues/24587
         options.global?.provide?.[eodashKey].template.widgets
       )?.map((w) => {
         if ("defineWidget" in w) {

@@ -1,6 +1,6 @@
 /// <reference types="cypress" />
-import { vMountComponent } from "./component";
-import { mount } from "cypress/vue";
+import { vMountComponent as _vMount } from "./component";
+import { mount as _mount } from "cypress/vue";
 
 type VueMountOptions = Parameters<typeof mount<object, object>>["1"] & {
   vuetify?: import("vuetify/lib/framework.mjs").VuetifyOptions;
@@ -9,8 +9,8 @@ type VueMountOptions = Parameters<typeof mount<object, object>>["1"] & {
 declare global {
   namespace Cypress {
     interface Chainable {
-      vMount: typeof vMountComponent;
-      mount: typeof mount;
+      vMount: typeof _vMount;
+      mount: typeof _mount;
       get(el: "@vue"): Chainable<{
         wrapper: Record<string, unknown>;
         options: VueMountOptions;
