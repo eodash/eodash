@@ -236,6 +236,7 @@ export class EodashCollection {
           type: "Vector",
           url: "data:," + encodeURIComponent(JSON.stringify(item.geometry)),
           format: "GeoJSON",
+          layerConfig: jsonform
         },
         properties: {
           id: item.id,
