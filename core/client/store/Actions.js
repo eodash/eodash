@@ -11,10 +11,10 @@ export const getLayers = (el = "eox-map") =>
 
 /**
  * Register EPSG projection in `eox-map`
- * @param {string|number} code*/
+ * @param {string|number} [code]*/
 export const registerProjection = async (code) => {
   code = typeof code === "number" ? `EPSG:${code}` : code;
-  if (registeredProjections.includes(code)) {
+  if (!code || registeredProjections.includes(code)) {
     return;
   }
   const eoxMap =

@@ -6,6 +6,7 @@ import {
   generateFeatures,
 } from "./helpers";
 import axios from "axios";
+import { registerProjection } from "@/store/Actions";
 
 /**
  * Function to extract collection urls from an indicator
@@ -174,7 +175,12 @@ export class EodashCollection {
     const fallbackToStac = item.links.find(
       (l) => l.rel === "wmts" || l.rel === "xyz",
     );
+
     // const projDef = false; // TODO: add capability to find projection in item
+    await registerProjection(
+      /** @type {number | undefined} */ (item?.["proj:epsg"]),
+    );
+
     if (wms) {
       let json = {
         type: "Tile",
@@ -211,13 +217,13 @@ export class EodashCollection {
       });
     } else if (Object.keys(dataAssets).length) {
       jsonArray.push(
-        ... await createLayersFromDataAssets(
+        ...(await createLayersFromDataAssets(
           this.#collectionStac?.title || item.id,
           this.#collectionStac?.title || item.id,
           dataAssets,
           styles,
           jsonform,
-        ),
+        )),
       );
     } else {
       // fall back to rendering the feature

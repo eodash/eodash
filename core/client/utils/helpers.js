@@ -41,27 +41,33 @@ export function generateFeatures(links) {
 
 /** @param {import("@/types").JSONFormStyles} [styles] */
 export function extractJSONForm(styles) {
-  let jsonform = styles?.jsonform
+  let jsonform = styles?.jsonform;
   if (jsonform) {
-    jsonform = { schema: jsonform, type: "style" }
+    jsonform = { schema: jsonform, type: "style" };
     delete styles?.jsonform;
   }
-  return { jsonform, styles }
+  return { jsonform, styles };
 }
 /**
-* @param {string} id
-* @param {string} title
-* @param {Record<string,import("stac-ts").StacAsset>} assets
-* @param {import("@/types").JSONFormStyles} [styles]
-* @param {Record<string, unknown>} [jsonform]
-**/
-export async function createLayersFromDataAssets(id, title, assets, styles, jsonform) {
-  let jsonArray = []
-  let geoTIFFSources = []
+ * @param {string} id
+ * @param {string} title
+ * @param {Record<string,import("stac-ts").StacAsset>} assets
+ * @param {import("@/types").JSONFormStyles} [styles]
+ * @param {Record<string, unknown>} [jsonform]
+ **/
+export async function createLayersFromDataAssets(
+  id,
+  title,
+  assets,
+  styles,
+  jsonform,
+) {
+  let jsonArray = [];
+  let geoTIFFSources = [];
   for (const ast in assets) {
-    const projDef = assets[ast]?.['proj:epsg'] ? `EPSG:${assets[ast]['proj:epsg']}` : "EPSG:3857"
-    // add this logic to the item level as well
-   await registerProjection(projDef)
+    await registerProjection(
+      /** @type {number | undefined} */ (assets[ast]?.["proj:epsg"]),
+    );
 
     if (assets[ast]?.type === "application/geo+json") {
       jsonArray.push({
@@ -74,12 +80,12 @@ export async function createLayersFromDataAssets(id, title, assets, styles, json
         properties: {
           id,
           title,
-          layerConfig: jsonform
+          layerConfig: jsonform,
         },
-        styles: styles
+        styles: styles,
       });
     } else if (assets[ast]?.type === "image/tiff") {
-      geoTIFFSources.push({ url: assets[ast].href })
+      geoTIFFSources.push({ url: assets[ast].href });
     }
   }
   if (geoTIFFSources.length) {
@@ -88,15 +94,15 @@ export async function createLayersFromDataAssets(id, title, assets, styles, json
       source: {
         type: "GeoTIFF",
         normalize: styles?.variables ? false : true,
-        sources: geoTIFFSources
+        sources: geoTIFFSources,
       },
       properties: {
         id,
         title,
-        layerConfig: jsonform
+        layerConfig: jsonform,
       },
-      style: styles
+      style: styles,
     });
   }
-  return jsonArray
+  return jsonArray;
 }
