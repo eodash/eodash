@@ -13,17 +13,20 @@ import { eodashKey } from "@/utils/keys";
 import { datetime, mapPosition } from "@/store/States";
 import { storeToRefs } from "pinia";
 import { useSTAcStore } from "@/store/stac";
-import "@eox/map/dist/eox-map-advanced-layers-and-sources.js";
 import "@eox/map";
+import "@eox/map/dist/eox-map-advanced-layers-and-sources.js";
 
-const eodashConfig = /** @type {import("@/types").Eodash} */ inject(eodashKey);
+const eodashConfig = /** @type {import("@/types").Eodash} */ (
+  inject(eodashKey)
+);
 
 /** @type {import("vue").Ref<(HTMLElement & Record<string,unknown>) | null>} */
 const eoxMap = ref(null);
 
-/** @type {Record<string, unknown>} */
 const eoxMapConfig = reactive({
+  /** @type {(number|undefined)[] | undefined} */
   center: [15, 48],
+  /** @type {number | undefined} */
   zoom: 4,
   // TODO: we should probably introduce some way of defining
   layers: [
@@ -47,6 +50,7 @@ const eoxMapConfig = reactive({
     },
   ],
 });
+
 // Check if selected indicator was already set in store
 if (mapPosition && mapPosition.value && mapPosition.value.length === 3) {
   // TODO: do further checks for invalid values?
