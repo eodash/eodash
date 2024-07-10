@@ -1,6 +1,10 @@
 import { Collection, Item } from "stac-js";
 import { toAbsolute } from "stac-js/src/http.js";
-import { extractJSONForm, generateFeatures } from "./helpers";
+import {
+  createLayerFromDataAssets,
+  extractJSONForm,
+  generateFeatures,
+} from "./helpers";
 import axios from "axios";
 
 /**
@@ -77,7 +81,7 @@ export class EodashCollection {
         type: "Vector",
         properties: {
           id: stac.id,
-          title: stac.title || stac.id
+          title: stac.title || stac.id,
         },
         source: {
           type: "Vector",
@@ -98,12 +102,12 @@ export class EodashCollection {
         // if collectionStac not yet initialized we do it here
         stacItem = this.getItems()?.sort((a, b) => {
           const distanceA = Math.abs(
-            new Date(/** @type {number} */(a.datetime)).getTime() -
-            itemLinkOrDate.getTime(),
+            new Date(/** @type {number} */ (a.datetime)).getTime() -
+              itemLinkOrDate.getTime(),
           );
           const distanceB = Math.abs(
-            new Date(/** @type {number} */(b.datetime)).getTime() -
-            itemLinkOrDate.getTime(),
+            new Date(/** @type {number} */ (b.datetime)).getTime() -
+              itemLinkOrDate.getTime(),
           );
           return distanceA - distanceB;
         })[0];
@@ -111,11 +115,13 @@ export class EodashCollection {
       } else {
         stacItem = itemLinkOrDate;
       }
-      stac = await axios.get(
-        stacItem
-          ? toAbsolute(stacItem.href, this.#collectionUrl)
-          : this.#collectionUrl,
-      ).then(resp => resp.data)
+      stac = await axios
+        .get(
+          stacItem
+            ? toAbsolute(stacItem.href, this.#collectionUrl)
+            : this.#collectionUrl,
+        )
+        .then((resp) => resp.data);
 
       if (!stacItem) {
         // no specific item was requested; render last item
@@ -136,7 +142,7 @@ export class EodashCollection {
         // specific item was requested
         const item = new Item(stac);
         this.selectedItem = item;
-        layersJson.unshift(... await this.buildJsonArray(item));
+        layersJson.unshift(...(await this.buildJsonArray(item)));
         return layersJson;
       }
     }
@@ -155,14 +161,19 @@ export class EodashCollection {
     // If we don't find any we fallback to using the STAC ol item that
     // will try to extract anything it supports but for which we have
     // less control.
-    const dataAssets = Object.keys(item.assets).reduce((data,ast) => {
-      if (item.assets[ast].roles?.includes('data')) {
-        data[ast] = item.assets[ast]
+    const dataAssets = Object.keys(item.assets).reduce((data, ast) => {
+      if (item.assets[ast].roles?.includes("data")) {
+        data[ast] = item.assets[ast];
       }
-      return data
-    },/** @type {Record<string,import('stac-ts').StacAsset>} */({}))
-    const { jsonform, styles } = extractJSONForm(await this.fetchStyle(item, ''))
+      return data;
+    }, /** @type {Record<string,import('stac-ts').StacAsset>} */ ({}));
+    const { jsonform, styles } = extractJSONForm(
+      await this.fetchStyle(item, ""),
+    );
     const wms = item.links.find((l) => l.rel === "wms");
+    const fallbackToStac = item.links.find(
+      (l) => l.rel === "wmts" || l.rel === "xyz",
+    );
     // const projDef = false; // TODO: add capability to find projection in item
     if (wms) {
       let json = {
@@ -188,7 +199,7 @@ export class EodashCollection {
         json.source.params.time = wms["wms:dimensions"];
       }
       jsonArray.push(json);
-    } else if (item.links.find((l) => l.rel === "wmts" || l.rel === "xyz")) {
+    } else if (fallbackToStac) {
       jsonArray.push({
         type: "STAC",
         displayWebMapLink: true,
@@ -199,54 +210,15 @@ export class EodashCollection {
         },
       });
     } else if (Object.keys(dataAssets).length) {
-      let geoTIFFSources = []
-      for (const asset in dataAssets) {
-        const projDef = dataAssets[asset]?.['proj:epsg'] ? `EPSG:${dataAssets[asset]['proj:epsg']}` : "EPSG:3857"
-        // create list of registered projections and move this logic to the item level not the asset level
-        if (!["EPSG:4326", "EPSG:3857", 4326, 3857].includes(projDef)) {
-          //@ts-expect-error eox-map API
-          await document.querySelector('eox-map').registerProjectionFromCode(projDef)
-          // then add it to the list of registered projections
-        }
-        //else{
-        //   document.querySelector('eox-map')?.setAttribute("projection",projDef)
-        // }
-        if (dataAssets[asset]?.type === "application/geo+json") {
-          jsonArray.unshift({
-            type: "Vector",
-            source: {
-              type: "Vector",
-              url: dataAssets[asset].href,
-              format: "GeoJSON",
-            },
-            properties: {
-              id: (this.#collectionStac?.title || item.id),
-              title: (this.#collectionStac?.title || item.id),
-              layerConfig: jsonform
-            },
-            styles:styles
-          });
-        } else if (dataAssets[asset]?.type === "image/tiff") {
-          geoTIFFSources.push({ url: dataAssets[asset].href })
-        }
-      }
-      if (geoTIFFSources.length) {
-        jsonArray.unshift({
-          type: "WebGLTile",
-          source: {
-            type: "GeoTIFF",
-            normalize:styles?.variables ? false: true,
-            sources: geoTIFFSources
-          },
-          properties: {
-            id: item.id,
-            title: (this.#collectionStac?.title || item.id),
-            layerConfig: jsonform
-          },
-          style: styles
-        });
-      }
-
+      jsonArray.push(
+        ...createLayerFromDataAssets(
+          this.#collectionStac?.title || item.id,
+          this.#collectionStac?.title || item.id,
+          dataAssets,
+          styles,
+          jsonform,
+        ),
+      );
     } else {
       // fall back to rendering the feature
       jsonArray.push({
@@ -260,7 +232,7 @@ export class EodashCollection {
           id: item.id,
           title: this.#collectionStac?.title || item.id,
         },
-        styles
+        styles,
       });
     }
 
@@ -273,7 +245,7 @@ export class EodashCollection {
         .filter((i) => i.rel === "item")
         // sort by `datetime`, where oldest is first in array
         .sort((a, b) =>
-          /** @type {number} */(a.datetime) <
+          /** @type {number} */ (a.datetime) <
           /** @type {number} */ (b.datetime)
             ? -1
             : 1,
@@ -286,17 +258,17 @@ export class EodashCollection {
    * @param {string} itemUrl
    **/
   async fetchStyle(item, itemUrl) {
-    const styleLink = item.links.find(link => link.rel.includes('style'))
+    const styleLink = item.links.find((link) => link.rel.includes("style"));
     if (styleLink) {
-/** @type {import("@/types").JSONFormStyles} */
-      let styleJson = {}
-      if (styleLink.href.startsWith('http')) {
-        styleJson = await axios.get(styleLink.href).then(resp => resp.data)
+      /** @type {import("@/types").JSONFormStyles} */
+      let styleJson = {};
+      if (styleLink.href.startsWith("http")) {
+        styleJson = await axios.get(styleLink.href).then((resp) => resp.data);
       } else {
-        const url = toAbsolute(styleLink.href, itemUrl)
-        styleJson = await axios.get(url).then(resp => resp.data)
+        const url = toAbsolute(styleLink.href, itemUrl);
+        styleJson = await axios.get(url).then((resp) => resp.data);
       }
-      return styleJson
+      return styleJson;
     }
   }
 
@@ -306,12 +278,12 @@ export class EodashCollection {
         .filter((i) => i.rel === "item")
         // sort by `datetime`, where oldest is first in array
         .sort((a, b) =>
-          /** @type {number} */(a.datetime) <
+          /** @type {number} */ (a.datetime) <
           /** @type {number} */ (b.datetime)
             ? -1
             : 1,
         )
-        .map((i) => new Date(/** @type {number} */(i.datetime)))
+        .map((i) => new Date(/** @type {number} */ (i.datetime)))
     );
   }
 }

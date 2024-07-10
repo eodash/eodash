@@ -1,8 +1,7 @@
-
 export type JSONFormStyles = import("ol/style/flat").FlatStyle & {
-  jsonform?: Record<string, unknown>
-  variables?: Record<string, number>
-}
+  jsonform?: Record<string, unknown>;
+  variables?: Record<string, number>;
+};
 /** @group Eodash */
 export interface WebComponentProps<T extends ExecutionTime = "compiletime"> {
   /**
@@ -254,7 +253,7 @@ export interface EodashStore {
     /** returns the layers of the `eox-map`
      * @param `eox-map` element selector
      */
-    getLayers: (el?: string) => object[]
+    getLayers: (el?: string) => object[];
   };
   /** Pinia store definition used to navigate the root STAC catalog. */
   stac: {

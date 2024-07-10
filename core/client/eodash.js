@@ -8,7 +8,8 @@ import { currentUrl } from "./store/States";
  */
 export const eodash = reactive({
   id: "demo",
-  stacEndpoint: "https://eodashcatalog.eox.at/test-style/trilateral/catalog.json",
+  stacEndpoint:
+    "https://eodashcatalog.eox.at/test-style/trilateral/catalog.json",
   brand: {
     noLayout: true,
     name: "Demo",
@@ -60,12 +61,15 @@ export const eodash = reactive({
         title: "Layer Control",
         layout: { x: 0, y: 8, w: 4, h: 4 },
         widget: {
-          link: async() =>{ await import("@eox/layercontrol"); await import("@eox/jsonform")},
+          link: async () => {
+            await import("@eox/layercontrol");
+            await import("@eox/jsonform");
+          },
           tagName: "eox-layercontrol",
-          properties:{
-            for:"eox-map",
-            class:"pa-4"
-          }
+          properties: {
+            for: "eox-map",
+            class: "pa-4",
+          },
         },
       },
       {
@@ -99,14 +103,14 @@ export const eodash = reactive({
         defineWidget: (selectedSTAC) => {
           return selectedSTAC
             ? {
-              id: "Datepicker",
-              type: "internal",
-              layout: { x: 5, y: 10, w: 1, h: 1 },
-              title: "Datepicker",
-              widget: {
-                name: "EodashDatePicker",
-              },
-            }
+                id: "Datepicker",
+                type: "internal",
+                layout: { x: 5, y: 10, w: 1, h: 1 },
+                title: "Datepicker",
+                widget: {
+                  name: "EodashDatePicker",
+                },
+              }
             : null;
         },
       },

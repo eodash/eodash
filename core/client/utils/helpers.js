@@ -46,3 +46,61 @@ export function extractJSONForm(styles) {
   }
   return { jsonform, styles }
 }
+/**
+* @param {string} id
+* @param {string} title
+* @param {Record<string,import("stac-ts").StacAsset>} assets
+* @param {import("@/types").JSONFormStyles} [styles]
+* @param {Record<string, unknown>} [jsonform]
+**/
+export function createLayerFromDataAssets(id, title, assets, styles, jsonform) {
+  let jsonArray = []
+  let geoTIFFSources = []
+  for (const ast in assets) {
+    const projDef = assets[ast]?.['proj:epsg'] ? `EPSG:${assets[ast]['proj:epsg']}` : "EPSG:3857"
+    // create list of registered projections and move this logic to the item level not the ast level
+    if (!["EPSG:4326", "EPSG:3857", 4326, 3857].includes(projDef)) {
+      //@ts-expect-error eox-map API
+      await document.querySelector('eox-map').registerProjectionFromCode(projDef)
+      // then add it to the list of registered projections
+    }
+    //else{
+    //   document.querySelector('eox-map')?.setAttribute("projection",projDef)
+    // }
+    if (assets[ast]?.type === "application/geo+json") {
+      jsonArray.unshift({
+        type: "Vector",
+        source: {
+          type: "Vector",
+          url: assets[ast].href,
+          format: "GeoJSON",
+        },
+        properties: {
+          id,
+          title,
+          layerConfig: jsonform
+        },
+        styles: styles
+      });
+    } else if (assets[ast]?.type === "image/tiff") {
+      geoTIFFSources.push({ url: assets[ast].href })
+    }
+  }
+  if (geoTIFFSources.length) {
+    jsonArray.unshift({
+      type: "WebGLTile",
+      source: {
+        type: "GeoTIFF",
+        normalize: styles?.variables ? false : true,
+        sources: geoTIFFSources
+      },
+      properties: {
+        id,
+        title,
+        layerConfig: jsonform
+      },
+      style: styles
+    });
+  }
+  return jsonArray
+}
