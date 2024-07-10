@@ -22,7 +22,7 @@
           <eox-layout-item
             v-if="importedWidget.value.component"
             :key="importedWidget.value.id"
-            class="panel"
+            class="panel bg-surface"
             :h="importedWidget.value.layout.h"
             :w="importedWidget.value.layout.w"
             :x="importedWidget.value.layout.x"
@@ -59,7 +59,6 @@ const importedWidgets = useDefineWidgets(eodash.template?.widgets);
   overflow: visible;
   z-index: 1;
   border-radius: 0px;
-  background: rgb(var(--v-theme-surface));
 }
 
 .bg-panel {
