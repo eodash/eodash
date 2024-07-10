@@ -1,7 +1,7 @@
 import { Collection, Item } from "stac-js";
 import { toAbsolute } from "stac-js/src/http.js";
 import {
-  createLayerFromDataAssets,
+  createLayersFromDataAssets,
   extractJSONForm,
   generateFeatures,
 } from "./helpers";
@@ -211,7 +211,7 @@ export class EodashCollection {
       });
     } else if (Object.keys(dataAssets).length) {
       jsonArray.push(
-        ...createLayerFromDataAssets(
+        ... await createLayersFromDataAssets(
           this.#collectionStac?.title || item.id,
           this.#collectionStac?.title || item.id,
           dataAssets,

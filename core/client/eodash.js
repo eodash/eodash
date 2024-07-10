@@ -50,7 +50,7 @@ export const eodash = reactive({
         id: Symbol(),
         type: "internal",
         title: "Indicators",
-        layout: { x: 0, y: 0, w: 4, h: 8 },
+        layout: { x: 0, y: 0, w: 3, h: 8 },
         widget: {
           name: "EodashItemFilter",
         },
@@ -59,7 +59,7 @@ export const eodash = reactive({
         id: Symbol(),
         type: "web-component",
         title: "Layer Control",
-        layout: { x: 0, y: 8, w: 4, h: 4 },
+        layout: { x: 0, y: 8, w: 3, h: 4 },
         widget: {
           link: async () => {
             await import("@eox/layercontrol");

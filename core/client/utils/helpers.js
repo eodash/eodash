@@ -1,3 +1,5 @@
+import { registerProjection } from "@/store/Actions";
+
 /** @param {import("stac-ts").StacLink[]} links */
 export function generateFeatures(links) {
   /**
@@ -53,22 +55,16 @@ export function extractJSONForm(styles) {
 * @param {import("@/types").JSONFormStyles} [styles]
 * @param {Record<string, unknown>} [jsonform]
 **/
-export function createLayerFromDataAssets(id, title, assets, styles, jsonform) {
+export async function createLayersFromDataAssets(id, title, assets, styles, jsonform) {
   let jsonArray = []
   let geoTIFFSources = []
   for (const ast in assets) {
     const projDef = assets[ast]?.['proj:epsg'] ? `EPSG:${assets[ast]['proj:epsg']}` : "EPSG:3857"
-    // create list of registered projections and move this logic to the item level not the ast level
-    if (!["EPSG:4326", "EPSG:3857", 4326, 3857].includes(projDef)) {
-      //@ts-expect-error eox-map API
-      await document.querySelector('eox-map').registerProjectionFromCode(projDef)
-      // then add it to the list of registered projections
-    }
-    //else{
-    //   document.querySelector('eox-map')?.setAttribute("projection",projDef)
-    // }
+    // add this logic to the item level as well
+   await registerProjection(projDef)
+
     if (assets[ast]?.type === "application/geo+json") {
-      jsonArray.unshift({
+      jsonArray.push({
         type: "Vector",
         source: {
           type: "Vector",
@@ -87,7 +83,7 @@ export function createLayerFromDataAssets(id, title, assets, styles, jsonform) {
     }
   }
   if (geoTIFFSources.length) {
-    jsonArray.unshift({
+    jsonArray.push({
       type: "WebGLTile",
       source: {
         type: "GeoTIFF",
