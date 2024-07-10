@@ -2,7 +2,6 @@
   <div ref="rootRef" class="d-flex align-end justify-end my-3 pa-2">
     <v-btn
       class="map-btn"
-      color="primary"
       :icon="[mdiMapPlus]"
       @click="showMapState = !showMapState"
     />
