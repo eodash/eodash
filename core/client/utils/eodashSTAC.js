@@ -139,7 +139,6 @@ export class EodashCollection {
         }
         return [];
       } else {
-        console.log('stac var passed to constructor', stac);
         // specific item was requested
         const item = new Item(stac);
         this.selectedItem = item;
@@ -215,7 +214,8 @@ export class EodashCollection {
         displayFootprint: false,
         data: item,
         properties: {
-          id: item.id,
+          id: item.title || item.id,
+          title: item.title || item.id
         },
       });
     } else if (Object.keys(dataAssets).length) {
