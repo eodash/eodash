@@ -1,7 +1,3 @@
-export type JSONFormStyles = import("ol/style/flat").FlatStyle & {
-  jsonform?: Record<string, unknown>;
-  variables?: Record<string, number>;
-};
 /** @group Eodash */
 export interface WebComponentProps<T extends ExecutionTime = "compiletime"> {
   /**

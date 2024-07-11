@@ -2,7 +2,7 @@ import { Collection, Item } from "stac-js";
 import { toAbsolute } from "stac-js/src/http.js";
 import {
   createLayersFromDataAssets,
-  extractJSONForm,
+  extractLayerConfig,
   generateFeatures,
   setMapProjFromCol,
 } from "./helpers";
@@ -144,7 +144,8 @@ export class EodashCollection {
       }
       return data;
     }, /** @type {Record<string,import('stac-ts').StacAsset>} */ ({}));
-    const { jsonform, styles } = extractJSONForm(
+
+    const { layerConfig, style } = extractLayerConfig(
       await this.fetchStyle(item, itemUrl),
     );
     const wms = item.links.find((l) => l.rel === "wms");
@@ -198,8 +199,8 @@ export class EodashCollection {
           this.#collectionStac?.title || item.id,
           this.#collectionStac?.title || item.id,
           dataAssets,
-          styles,
-          jsonform,
+          style,
+          layerConfig,
         )),
       );
     } else {
@@ -210,13 +211,15 @@ export class EodashCollection {
           type: "Vector",
           url: "data:," + encodeURIComponent(JSON.stringify(item.geometry)),
           format: "GeoJSON",
-          layerConfig: jsonform,
         },
         properties: {
           id: item.id,
           title: this.#collectionStac?.title || item.id,
+          layerConfig: {
+            ...layerConfig,
+            style,
+          },
         },
-        styles,
       });
     }
 
@@ -251,7 +254,7 @@ export class EodashCollection {
         url = toAbsolute(styleLink.href, itemUrl);
       }
 
-      /** @type {import("@/types").JSONFormStyles} */
+      /** @type {import("ol/layer/WebGLTile").Style & {jsonform?:object}} */
       const styleJson = await axios.get(url).then((resp) => resp.data);
       return styleJson;
     }

@@ -41,32 +41,34 @@ export function generateFeatures(links) {
   return geojsonObject;
 }
 
-/** @param {import("@/types").JSONFormStyles} [styles] */
-export function extractJSONForm(styles) {
-  let jsonform = styles?.jsonform;
-  if (jsonform) {
-    jsonform = { schema: jsonform, type: "style" };
-    delete styles?.jsonform;
+/** @param { import("ol/layer/WebGLTile").Style & { jsonform?: object } } [style] */
+export function extractLayerConfig(style) {
+  /** @type {Record<string,unknown>} */
+  let layerConfig = {};
+  if (style?.jsonform) {
+    layerConfig = { schema: style.jsonform, type: "style" };
+    delete style?.jsonform;
   }
-  return { jsonform, styles };
+  return { layerConfig, style };
 }
 /**
  * @param {string} id
  * @param {string} title
  * @param {Record<string,import("stac-ts").StacAsset>} assets
- * @param {import("@/types").JSONFormStyles} [styles]
- * @param {Record<string, unknown>} [jsonform]
+ * @param {import("ol/layer/WebGLTile").Style} [style]
+ * @param {Record<string, unknown>} [layerConfig]
  **/
 export async function createLayersFromDataAssets(
   id,
   title,
   assets,
-  styles,
-  jsonform,
+  style,
+  layerConfig,
 ) {
   let jsonArray = [];
   let geoTIFFSources = [];
   for (const ast in assets) {
+    // register projection if exists
     await registerProjection(
       /** @type {number | undefined} */ (assets[ast]?.["proj:epsg"]),
     );
@@ -82,9 +84,11 @@ export async function createLayersFromDataAssets(
         properties: {
           id,
           title,
-          layerConfig: jsonform,
+          layerConfig: {
+            ...layerConfig,
+            style,
+          },
         },
-        styles: styles,
       });
     } else if (assets[ast]?.type === "image/tiff") {
       geoTIFFSources.push({ url: assets[ast].href });
@@ -95,15 +99,15 @@ export async function createLayersFromDataAssets(
       type: "WebGLTile",
       source: {
         type: "GeoTIFF",
-        normalize: styles?.variables ? false : true,
+        normalize: style?.variables ? false : true,
         sources: geoTIFFSources,
       },
       properties: {
         id,
         title,
-        layerConfig: jsonform,
+        layerConfig,
       },
-      style: styles,
+      style,
     });
   }
   return jsonArray;
