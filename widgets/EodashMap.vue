@@ -10,7 +10,8 @@
 <script setup>
 import { inject, watch } from "vue";
 import { toAbsolute } from "stac-js/src/http.js";
-import { EodashCollection, extractCollectionUrls } from "@/utils/eodashSTAC";
+import { EodashCollection } from "@/utils/eodashSTAC";
+import { extractCollectionUrls } from "@/utils/helpers";
 import { eodashKey } from "@/utils/keys";
 import { datetime, mapPosition } from "@/store/States";
 import DynamicWebComponent from "@/components/DynamicWebComponent.vue";

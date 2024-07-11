@@ -1,5 +1,4 @@
 import { registeredProjections } from "@/store/States";
-import { useSTAcStore } from "./stac";
 
 /**
  * Returns the current layers of the `eox-map`

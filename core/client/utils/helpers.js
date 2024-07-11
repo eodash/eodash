@@ -1,4 +1,6 @@
-import { registerProjection } from "@/store/Actions";
+import { changeMapProjection, registerProjection } from "@/store/Actions";
+import { availableMapProjection } from "@/store/States";
+import { toAbsolute } from "stac-js/src/http.js";
 
 /** @param {import("stac-ts").StacLink[]} links */
 export function generateFeatures(links) {
@@ -105,4 +107,62 @@ export async function createLayersFromDataAssets(
     });
   }
   return jsonArray;
+}
+
+/**
+ * checks if there's a projection on the Collection and
+ * updates {@link availableMapProjection}
+ * @param {import('stac-ts').StacCollection} STAcCollection
+ */
+export const setMapProjFromCol = (STAcCollection) => {
+  // if a projection exists on the collection level
+  if (STAcCollection?.["proj:epsg"]) {
+    if (
+      availableMapProjection.value &&
+      availableMapProjection.value !== STAcCollection?.["proj:epsg"]
+    ) {
+      changeMapProjection(
+        /** @type {number} */
+        (STAcCollection["proj:epsg"]),
+      );
+    }
+    // set it for `EodashMapBtns`
+    availableMapProjection.value = /** @type {string} */ (
+      STAcCollection["proj:epsg"]
+    );
+  } else {
+    // reset to default projection
+    changeMapProjection((availableMapProjection.value = ""));
+  }
+};
+
+/**
+ * Function to extract collection urls from an indicator
+ * @param {import("stac-ts").StacCatalog
+ *   | import("stac-ts").StacCollection
+ *   | import("stac-ts").StacItem
+ *   | null
+ * } stacObject
+ * @param {string} basepath
+ * @returns {string[]}
+ */
+export function extractCollectionUrls(stacObject, basepath) {
+  const collectionUrls = [];
+  // Support for two structure types, flat and indicator, simplified here:
+  // Flat assumes Catalog-Collection-Item
+  // Indicator assumes Catalog-Collection-Collection-Item
+  // TODO: this is not the most stable test approach,
+  // we should discuss potential other approaches
+
+  if (stacObject?.links && stacObject?.links[1].rel === "item") {
+    collectionUrls.push(basepath);
+  } else if (stacObject?.links[1].rel === "child") {
+    // TODO: Iterate through all children to create collections
+    stacObject.links.forEach((link) => {
+      if (link.rel === "child") {
+        collectionUrls.push(toAbsolute(link.href, basepath));
+      }
+    });
+  }
+  return collectionUrls;
 }

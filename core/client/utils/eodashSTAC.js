@@ -4,41 +4,11 @@ import {
   createLayersFromDataAssets,
   extractJSONForm,
   generateFeatures,
+  setMapProjFromCol,
 } from "./helpers";
 import axios from "axios";
-import { changeMapProjection, registerProjection } from "@/store/Actions";
-import { availableMapProjection } from "@/store/States";
+import { registerProjection } from "@/store/Actions";
 
-/**
- * Function to extract collection urls from an indicator
- * @param {import("stac-ts").StacCatalog
- *   | import("stac-ts").StacCollection
- *   | import("stac-ts").StacItem
- *   | null
- * } stacObject
- * @param {string} basepath
- * @returns {string[]}
- */
-export function extractCollectionUrls(stacObject, basepath) {
-  const collectionUrls = [];
-  // Support for two structure types, flat and indicator, simplified here:
-  // Flat assumes Catalog-Collection-Item
-  // Indicator assumes Catalog-Collection-Collection-Item
-  // TODO: this is not the most stable test approach,
-  // we should discuss potential other approaches
-
-  if (stacObject?.links && stacObject?.links[1].rel === "item") {
-    collectionUrls.push(basepath);
-  } else if (stacObject?.links[1].rel === "child") {
-    // TODO: Iterate through all children to create collections
-    stacObject.links.forEach((link) => {
-      if (link.rel === "child") {
-        collectionUrls.push(toAbsolute(link.href, basepath));
-      }
-    });
-  }
-  return collectionUrls;
-}
 export class EodashCollection {
   /** @type {string} */
   #collectionUrl = "";
@@ -74,27 +44,10 @@ export class EodashCollection {
       const response = await axios.get(this.#collectionUrl);
       stac = await response.data;
       this.#collectionStac = new Collection(stac);
-
-      // if a projection exists on the collection level
-      if (this.#collectionStac?.["proj:epsg"]) {
-        if (
-          availableMapProjection.value &&
-          availableMapProjection.value !== this.#collectionStac?.["proj:epsg"]
-        ) {
-          changeMapProjection(
-            /** @type {number} */
-            (this.#collectionStac["proj:epsg"]),
-          );
-        }
-        // set it for `EodashMapBtns`
-        availableMapProjection.value = /** @type {string} */ (
-          this.#collectionStac["proj:epsg"]
-        );
-      } else {
-        // reset to default projection
-        changeMapProjection((availableMapProjection.value = ""));
-      }
     }
+
+    // set availabe map projection
+    setMapProjFromCol(this.#collectionStac);
 
     if (stac && stac.endpointtype === "GeoDB") {
       // Special handling of point based data
