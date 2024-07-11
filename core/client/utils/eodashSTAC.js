@@ -6,7 +6,8 @@ import {
   generateFeatures,
 } from "./helpers";
 import axios from "axios";
-import { registerProjection } from "@/store/Actions";
+import { changeMapProjection, registerProjection } from "@/store/Actions";
+import { availableMapProjection } from "@/store/States";
 
 /**
  * Function to extract collection urls from an indicator
@@ -73,6 +74,26 @@ export class EodashCollection {
       const response = await axios.get(this.#collectionUrl);
       stac = await response.data;
       this.#collectionStac = new Collection(stac);
+
+      // if a projection exists on the collection level
+      if (this.#collectionStac?.["proj:epsg"]) {
+        if (
+          availableMapProjection.value &&
+          availableMapProjection.value !== this.#collectionStac?.["proj:epsg"]
+        ) {
+          changeMapProjection(
+            /** @type {number} */
+            (this.#collectionStac["proj:epsg"]),
+          );
+        }
+        // set it for `EodashMapBtns`
+        availableMapProjection.value = /** @type {string} */ (
+          this.#collectionStac["proj:epsg"]
+        );
+      } else {
+        // reset to default projection
+        changeMapProjection((availableMapProjection.value = ""));
+      }
     }
 
     if (stac && stac.endpointtype === "GeoDB") {
