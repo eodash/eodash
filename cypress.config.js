@@ -26,6 +26,11 @@ export default defineConfig({
           }),
         ],
         define: { "process.env": {} },
+        server: {
+          warmup: {
+            clientFiles: ["./core/client/**","./tests/cypress/**"],
+          }
+        },
         resolve: {
           alias: {
             "@": fileURLToPath(new URL("./core/client", import.meta.url)),
