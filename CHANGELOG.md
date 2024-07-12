@@ -1,5 +1,15 @@
 # Changelog
 
+## [5.0.0-alpha.2.8](https://github.com/eodash/eodash/compare/eodash-v5.0.0-alpha.2.7...eodash-v5.0.0-alpha.2.8) (2024-07-12)
+
+
+### Bug Fixes
+
+* commander undefined option from version ([0e4eb73](https://github.com/eodash/eodash/commit/0e4eb7326094268b3a4be99e6ec21ea28ffec381))
+* export btn color ([5959434](https://github.com/eodash/eodash/commit/5959434786d6fd4e8f3f25274f7d05355879fe2a))
+* get layers in lib mode ([8a06101](https://github.com/eodash/eodash/commit/8a0610160c8284168b9be4cbfc8e2aa295847029))
+* panel surface color ([a06907a](https://github.com/eodash/eodash/commit/a06907a31d0070dbc76741c291326bf5611700c5))
+
 ## [5.0.0-alpha.2.7](https://github.com/eodash/eodash/compare/eodash-v5.0.0-alpha.2.6...eodash-v5.0.0-alpha.2.7) (2024-07-08)
 
 
