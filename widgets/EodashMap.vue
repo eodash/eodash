@@ -6,6 +6,7 @@
   />
 </template>
 <script setup>
+import { transformExtent } from "ol/proj";
 import { inject, onMounted, onUnmounted, reactive, ref, watch } from "vue";
 import { toAbsolute } from "stac-js/src/http.js";
 import { EodashCollection } from "@/utils/eodashSTAC";
@@ -168,7 +169,7 @@ onMounted(() => {
           },
           layers: /** @type {object[]}*/ ([]),
         };
-        if (indicatorLayers) {
+        if (indicatorLayers && indicatorLayers.length > 0) {
           baseLayers.layers.push(
             ...indicatorLayers.filter(
               // @ts-expect-error group is added by the buildJsonArray
@@ -216,6 +217,28 @@ onMounted(() => {
 
         /** @type {any} */
         (eoxMap.value).layers = layersCollection;
+
+        // Try to move map view to extent
+        const extent = await indicator.getExtent();
+        // Make sure for now we are always converting from 4326
+        // of stac items  into current map projection
+        // TODO: This might change if we decide to use 4326 as default for zoom and extent
+        // Sanitize extent
+        const b = extent.spatial.bbox[0];
+        const sanitizedExtent = [
+          b[0] > -180 ? b[0] : -180,
+          b[1] > -90 ? b[1] : -90,
+          b[2] < 180 ? b[2] : 180,
+          b[3] < 90 ? b[3] : 90,
+        ];
+        const reprojExtent = transformExtent(
+          sanitizedExtent,
+          "EPSG:4326",
+          // @ts-expect-error we should expect to have the view here
+          eoxMap.value?.map?.getView().getProjection(),
+        );
+        /** @type {any} */
+        (eoxMap.value).zoomExtent = reprojExtent;
       }
     },
     { immediate: true },

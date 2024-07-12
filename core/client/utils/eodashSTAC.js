@@ -124,6 +124,15 @@ export class EodashCollection {
       }
     }
   };
+
+  async getExtent() {
+    if (!this.#collectionStac) {
+      const response = await axios.get(this.#collectionUrl);
+      const stac = await response.data;
+      this.#collectionStac = new Collection(stac);
+    }
+    return this.#collectionStac?.extent;
+  }
   /**
    * @param {object} properties
    * @param {[string]} roles
@@ -157,13 +166,15 @@ export class EodashCollection {
     // If we don't find any we fallback to using the STAC ol item that
     // will try to extract anything it supports but for which we have
     // less control.
-
-    const dataAssets = Object.keys(item.assets).reduce((data, ast) => {
-      if (item.assets[ast].roles?.includes("data")) {
-        data[ast] = item.assets[ast];
-      }
-      return data;
-    }, /** @type {Record<string,import('stac-ts').StacAsset>} */ ({}));
+    let dataAssets = /** @type {Record<string,import('stac-ts').StacAsset>} */ ({});
+    if (item.assets) {
+      dataAssets = Object.keys(item.assets).reduce((data, ast) => {
+        if (item.assets[ast].roles?.includes("data")) {
+          data[ast] = item.assets[ast];
+        }
+        return data;
+      }, /** @type {Record<string,import('stac-ts').StacAsset>} */ ({}));
+    }
 
     const { layerConfig, style } = extractLayerConfig(
       await this.fetchStyle(item, itemUrl),
@@ -252,7 +263,7 @@ export class EodashCollection {
           layerConfig,
         )),
       );
-    } else {
+    } else if (item.geometry) {
       // fall back to rendering the feature
       jsonArray.push({
         type: "Vector",
