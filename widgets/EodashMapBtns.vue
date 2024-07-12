@@ -3,7 +3,6 @@
     <v-btn
       v-if="exportMap"
       class="map-btn"
-      color="primary"
       :icon="[mdiMapPlus]"
       @click="showMapState = !showMapState"
     />

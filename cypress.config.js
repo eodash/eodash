@@ -28,8 +28,8 @@ export default defineConfig({
         define: { "process.env": {} },
         server: {
           warmup: {
-            clientFiles: ["./core/client/**","./tests/cypress/**"],
-          }
+            clientFiles: ["./core/client/**", "./tests/cypress/**"],
+          },
         },
         resolve: {
           alias: {

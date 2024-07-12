@@ -29,8 +29,10 @@ const pkg = JSON.parse(
  * @property {string} config
  * @property {boolean} lib
  */
+
+cli.version(pkg.version, "-v, --version", "output the current version");
+
 cli
-  .version(pkg.version, "-v, --version", "output the current version")
   .option("--publicDir <path>", "path to statically served assets folder")
   .option("--no-publicDir", "stop serving static assets")
   .option("--outDir <path>", "minified output folder")
@@ -130,12 +132,12 @@ async function getUserConfig(options, command) {
 
 /** @param {string} from */
 function searchForPackageRoot(from = import.meta.dirname) {
-  if (from.split("/").length) {
+  if (from.split("/").length > 0) {
     if (existsSync(path.resolve(from, "package.json"))) {
       return from;
     }
     return searchForPackageRoot(path.resolve(from, ".."));
   } else {
-    throw new Error("no package root found");
+    throw new Error("no package root found from " + from);
   }
 }

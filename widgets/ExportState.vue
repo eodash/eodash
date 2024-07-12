@@ -11,7 +11,7 @@
           editor:
         </p>
         <div class="pa-3 code-block">
-          {{ getLayers(props.for) }}
+          {{ getLayers() }}
         </div>
 
         <div style="position: absolute; bottom: 15px">
@@ -53,15 +53,15 @@ import { mdiClipboardCheckOutline, mdiContentCopy } from "@mdi/js";
 import PopUp from "./PopUp.vue";
 import { copyToClipBoard } from "@/utils";
 import { computed, ref } from "vue";
-import { getLayers } from "@/store/Actions";
+import { getLayers as getLayerAction } from "@/store/Actions";
 import { mapPosition } from "@/store/States";
 
 const dialog = defineModel({ type: Boolean, required: true, default: false });
 
 const props = defineProps({
-  for: {
-    type: String,
-    default: "eox-map",
+  getLayers: {
+    type: Function,
+    default: getLayerAction,
   },
 });
 
@@ -76,7 +76,7 @@ const copyBtns = [
   {
     id: Symbol(),
     copyFn: async () =>
-      await copyToClipBoard(JSON.stringify(getLayers(props?.for)), copySuccess),
+      await copyToClipBoard(JSON.stringify(props.getLayers()), copySuccess),
     copyAs: "layers configuration",
   },
   {
@@ -93,14 +93,14 @@ const mapStepCode = computed(() => {
 #### Tour step title
 Text describing the current step of the tour and why it is interesting what the map shows currently
 `;
-  return `${preTag}'${JSON.stringify(getLayers(props?.for))}' ${endTag}`;
+  return `${preTag}'${JSON.stringify(props.getLayers())}' ${endTag}`;
 });
 const mapEntryCode = computed(() => {
   const [x, y, z] = mapPosition.value;
   const preTag =
     '## Map Example <!--{as="eox-map" style="width: 100%; height: 500px;" layers=';
   const endTag = `zoom="${z}" center=[${[x, y]}] }-->`;
-  return `${preTag}'${JSON.stringify(getLayers(props?.for))}' ${endTag}`;
+  return `${preTag}'${JSON.stringify(props.getLayers())}' ${endTag}`;
 });
 </script>
 <style scoped>

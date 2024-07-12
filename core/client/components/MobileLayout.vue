@@ -14,7 +14,7 @@
         v-if="importedWidget.value.component"
         v-show="activeIdx === idx"
         id="overlay"
-        class="pa-2 panel"
+        class="pa-2 panel bg-surface"
       >
         <v-btn icon variant="text" class="close-btn" @click="activeIdx = -1"
           >&#x2715;</v-btn
@@ -90,7 +90,6 @@ onMounted(() => {
   width: 100%;
   left: 0;
   z-index: 1;
-  background: rgb(var(--v-theme-surface));
 }
 
 .component-container {
