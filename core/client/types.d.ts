@@ -249,7 +249,7 @@ export interface EodashStore {
     /** returns the layers of the `eox-map`
      * @param `eox-map` element selector
      */
-    getLayers: (el: string = "eox-map") => object[];
+    getLayers: (el: string) => object[];
   };
   /** Pinia store definition used to navigate the root STAC catalog. */
   stac: {

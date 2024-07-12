@@ -1,28 +1,32 @@
 <template>
-  <DynamicWebComponent
-    :link="link"
-    tag-name="eox-map"
-    :properties="properties"
-    :on-mounted="onMounted"
-    :on-unmounted="onUnmounted"
+  <eox-map
+    class="fill-height fill-width overflow-none"
+    ref="eoxMap"
+    :config="eoxMapConfig"
   />
 </template>
 <script setup>
-import { inject, watch } from "vue";
+import { inject, onMounted, onUnmounted, reactive, ref, watch } from "vue";
 import { toAbsolute } from "stac-js/src/http.js";
 import { EodashCollection, extractCollectionUrls } from "@/utils/eodashSTAC";
 import { eodashKey } from "@/utils/keys";
 import { datetime, mapPosition } from "@/store/States";
-import DynamicWebComponent from "@/components/DynamicWebComponent.vue";
 import { storeToRefs } from "pinia";
+import { useSTAcStore } from "@/store/stac";
+import "@eox/map";
 import "@eox/map/dist/eox-map-advanced-layers-and-sources.js";
 
-const eodashConfig = /** @type {import("@/types").Eodash} */ inject(eodashKey);
+const eodashConfig = /** @type {import("@/types").Eodash} */ (
+  inject(eodashKey)
+);
 
-/** @type {Record<string, unknown>} */
-const properties = {
-  class: "fill-height fill-width overflow-none",
+/** @type {import("vue").Ref<(HTMLElement & Record<string,unknown>) | null>} */
+const eoxMap = ref(null);
+
+const eoxMapConfig = reactive({
+  /** @type {(number|undefined)[] | undefined} */
   center: [15, 48],
+  /** @type {number | undefined} */
   zoom: 4,
   // TODO: we should probably introduce some way of defining
   layers: [
@@ -45,16 +49,15 @@ const properties = {
       },
     },
   ],
-};
+});
+
 // Check if selected indicator was already set in store
 if (mapPosition && mapPosition.value && mapPosition.value.length === 3) {
   // TODO: do further checks for invalid values?
   // TODO: can we expect the values to be in a specific projection
-  properties.center = [mapPosition.value?.[0], mapPosition.value[1]];
-  properties.zoom = mapPosition.value[2];
+  eoxMapConfig.center = [mapPosition.value?.[0], mapPosition.value[1]];
+  eoxMapConfig.zoom = mapPosition.value[2];
 }
-
-const link = () => import("@eox/map");
 
 /** @type {import("openlayers").EventsListenerFunctionType} */
 const handleMoveEnd = (evt) => {
@@ -73,10 +76,12 @@ const handleMoveEnd = (evt) => {
   }
 };
 
-/** @type {import("@/types").WebComponentProps["onMounted"]} */
-const onMounted = (el, store) => {
-  /** @type {any} */
-  (el)?.map?.on("moveend", handleMoveEnd);
+const store = useSTAcStore();
+
+onMounted(() => {
+  /** @type {import('ol/Map').default} */
+  (eoxMap.value?.map)?.on("moveend", handleMoveEnd);
+
   const { selectedStac } = storeToRefs(store);
 
   watch(
@@ -126,7 +131,7 @@ const onMounted = (el, store) => {
         // TODO: we can check if the collection / indicator has a specific
         //       projection it wants to be displayed in the map we can register
         //       and set the attribute here, e.g. like following
-        /* 
+        /*
         (el)?.registerProjection(
           'EPSG:3031','+proj=stere +lat_0=-90 +lat_ts=-71 +lon_0=0 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs +type=crs'
         );
@@ -134,16 +139,15 @@ const onMounted = (el, store) => {
         */
 
         /** @type {any} */
-        (el).layers = layersCollection;
+        (eoxMap.value).layers = layersCollection;
       }
     },
     { immediate: true },
   );
-};
+});
 
-/** @type {import("@/types").WebComponentProps["onUnmounted"]} */
-const onUnmounted = (el, _store) => {
-  /** @type {any} */
-  (el)?.map?.un("moveend", handleMoveEnd);
-};
+onUnmounted(() => {
+  /** @type {import('ol/Map').default} */
+  (eoxMap.value?.map)?.un("moveend", handleMoveEnd);
+});
 </script>
