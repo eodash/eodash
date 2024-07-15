@@ -12,6 +12,13 @@ export default [
     rules: {
       "vue/no-deprecated-html-element-is": "warn",
       "vue/multi-word-component-names": "off",
+      "vue/no-deprecated-slot-attribute": [
+        "error",
+        {
+          // used for the `eox-itemfilter` titles
+          ignore: ["h4"],
+        },
+      ],
     },
   },
 ];
