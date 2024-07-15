@@ -1,0 +1,1 @@
+import{_ as s,c as a,o as i,a4 as n}from"./chunks/framework.Q5n-9psv.js";const c=JSON.parse('{"title":"Branding","description":"","frontmatter":{},"headers":[],"relativePath":"branding.md","filePath":"branding.md"}'),t={name:"branding.md"},e=n("",23),h=[e];function l(p,k,r,o,d,E){return i(),a("div",null,h)}const y=s(t,[["render",l]]);export{c as __pageData,y as default};
