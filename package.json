@@ -1,6 +1,6 @@
 {
   "name": "@eodash/eodash",
-  "version": "5.0.0-alpha.2.9",
+  "version": "5.0.0-alpha.2.10",
   "type": "module",
   "types": "./core/client/types.d.ts",
   "files": [
