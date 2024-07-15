@@ -8,7 +8,8 @@ import { currentUrl } from "./store/States";
  */
 export const eodash = reactive({
   id: "demo",
-  stacEndpoint: "https://gtif-cerulean.github.io/catalog/cerulean/catalog.json",
+  stacEndpoint:
+    "https://eodashcatalog.eox.at/test-style/trilateral/catalog.json",
   brand: {
     noLayout: true,
     name: "Demo",
@@ -49,9 +50,26 @@ export const eodash = reactive({
         id: Symbol(),
         type: "internal",
         title: "Indicators",
-        layout: { x: 0, y: 0, w: 2, h: 12 },
+        layout: { x: 0, y: 0, w: 3, h: 8 },
         widget: {
           name: "EodashItemFilter",
+        },
+      },
+      {
+        id: Symbol(),
+        type: "web-component",
+        title: "Layer Control",
+        layout: { x: 0, y: 8, w: 3, h: 4 },
+        widget: {
+          link: async () => {
+            await import("@eox/layercontrol");
+            await import("@eox/jsonform");
+          },
+          tagName: "eox-layercontrol",
+          properties: {
+            for: "eox-map",
+            class: "pa-4",
+          },
         },
       },
       {
@@ -100,7 +118,7 @@ export const eodash = reactive({
         defineWidget: (selected) => {
           return selected
             ? {
-                id: Symbol(),
+                id: "Buttons",
                 layout: { x: 8, y: 0, w: 1, h: 1 },
                 title: "Buttons",
                 type: "internal",

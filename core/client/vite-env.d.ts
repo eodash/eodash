@@ -11,6 +11,12 @@ declare interface Window {
 declare module "@eox/stacinfo" {
   export const EOxStacInfo: CustomElementConstructor;
 }
+declare module "@eox/layercontrol" {
+  export const EOxLayerControl: CustomElementConstructor;
+}
+declare module "@eox/jsonform" {
+  export const EOxJSONForm: CustomElementConstructor;
+}
 declare module "@eox/map" {
   export const EOxMap: CustomElementConstructor;
 }

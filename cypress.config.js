@@ -26,6 +26,11 @@ export default defineConfig({
           }),
         ],
         define: { "process.env": {} },
+        server: {
+          warmup: {
+            clientFiles: ["./core/client/**", "./tests/cypress/**"],
+          },
+        },
         resolve: {
           alias: {
             "@": fileURLToPath(new URL("./core/client", import.meta.url)),
@@ -38,9 +43,6 @@ export default defineConfig({
             ),
           },
           extensions: [".js", ".json", ".jsx", ".mjs", ".ts", ".tsx", ".vue"],
-        },
-        optimizeDeps: {
-          exclude: ["vuetify"],
         },
         build: {
           outDir: "./.eodash/dist",

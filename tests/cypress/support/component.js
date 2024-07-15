@@ -19,6 +19,7 @@ export const vMountComponent = (OriginalComponent, options = {}) => {
 
   // Add plugins
   options.global.plugins.push({
+    /** @param {import("vue").App} app */
     async install(app) {
       await registerPlugins(app, options);
     },

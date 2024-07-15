@@ -244,13 +244,28 @@ export interface EodashStore {
     datetime: import("vue").Ref<string>;
     /** Currently selected indicator */
     indicator: import("vue").Ref<string>;
+
+    registeredProjections: `EPSG${number}`[];
+
+    /** available projection to be rendered by the Map */
+    availableMapProjection: import("vue").Ref<string>;
   };
   actions: {
-    /** returns the layers of the `eox-map`
-     * @param `eox-map` element selector
+    /**
+     * returns the layers of the `eox-map`
+     * @param [el] - `eox-map` element selector
      */
-    getLayers: (el: string) => object[];
+    getLayers: (el?: string) => object[];
+
+    /**
+     * Register EPSG projection in `eox-map` and adds it to {@link EodashStore.states.availableMapProjection `availableMapProjection`` }
+     * */
+    registerProjection: (code?: number | string) => Promise<void>;
+
+    /** Change `eox-map` projection from an `EPSG` code */
+    changeMapProjection: (code?: number | string) => Promise<void>;
   };
+
   /** Pinia store definition used to navigate the root STAC catalog. */
   stac: {
     useSTAcStore: typeof import("./store/stac.js").useSTAcStore;

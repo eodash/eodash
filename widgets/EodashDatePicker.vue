@@ -44,7 +44,7 @@ import { storeToRefs } from "pinia";
 import { useSTAcStore } from "@/store/stac";
 import { datetime } from "@/store/States";
 import { mdiRayStartArrow, mdiRayEndArrow } from "@mdi/js";
-import { extractCollectionUrls } from "@/utils/eodashSTAC";
+import { extractCollectionUrls } from "@/utils/helpers";
 
 /**
  * @param {boolean} reverse
