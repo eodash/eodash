@@ -1,45 +1,73 @@
 <template>
-  <DynamicWebComponent
-    :link="link"
-    tag-name="eox-itemfilter"
-    :properties="properties"
-    :on-mounted="onMounted"
-  />
+  <eox-itemfilter class="fill-height" :config="config" ref="eoxItemFilter">
+    <h4 slot="filterstitle" style="margin: 14px 8px">{{ filtersTitle }}</h4>
+
+    <h4 slot="resultstitle" style="margin: 14px 8px">{{ resultsTitle }}</h4>
+  </eox-itemfilter>
 </template>
 <script setup>
-import DynamicWebComponent from "@/components/DynamicWebComponent.vue";
+import { useSTAcStore } from "@/store/stac";
+import "@eox/itemfilter";
+import { onMounted, ref } from "vue";
 
-const link = () => import("@eox/itemfilter");
+const props = defineProps({
+  filtersTitle: {
+    type: String,
+    default: "Indicators",
+  },
+  resultsTitle: {
+    type: String,
+    default: "",
+  },
+  titleProperty: {
+    type: String,
+    default: "title",
+  },
 
-const properties = {
-  config: {
-    titleProperty: "title",
-    filterProperties: [
+  aggregateResults: {
+    type: String,
+    default: "themes",
+  },
+  enableHighlighting: { type: Boolean, default: true },
+  expandMultipleFilters: { type: Boolean, default: false },
+  expandMultipleResults: { type: Boolean, default: false },
+  filterProperties: {
+    /** @type {import("vue").PropType<{
+     * keys:string[];
+     * title:string;
+     * type:string;
+     * expanded?:boolean
+     * }[]> }*/
+    type: Array,
+    default: () => [
       {
-        keys: ["title", "themes"],
+        keys: ["title", "themes", "description"],
         title: "Search",
         type: "text",
-        // expanded: true,
       },
       {
         key: "themes",
         title: "Theme Filter",
         type: "multiselect",
-        // featured: true,
-        // expanded: true
       },
     ],
-    aggregateResults: "themes",
-    enableHighlighting: true,
-    expandMultipleFilters: false,
-    expandMultipleResults: false,
   },
+});
+
+const config = {
+  titleProperty: props.titleProperty,
+  filterProperties: props.filterProperties,
+  aggregateResults: props.aggregateResults,
+  enableHighlighting: props.enableHighlighting,
+  expandMultipleFilters: props.expandMultipleFilters,
+  expandMultipleResults: props.expandMultipleResults,
 };
+/** @type {import("vue").Ref<HTMLElement & Record<string,any> | null>} */
+const eoxItemFilter = ref(null);
 
-/** @type {import("@/types").WebComponentProps["onMounted"]} */
-const onMounted = (el, store) => {
-  /** @type {any} */ (el).style.height = "100%";
+const store = useSTAcStore();
 
+onMounted(() => {
   const style = document.createElement("style");
   style.innerHTML = `
     section {
@@ -51,29 +79,17 @@ const onMounted = (el, store) => {
       right: 8px;
     }
   `;
-  el?.shadowRoot?.appendChild(style);
+  eoxItemFilter.value?.shadowRoot?.appendChild(style);
 
-  const filterstitle = document.createElement("div");
-  filterstitle.setAttribute("slot", "filterstitle");
-  filterstitle.innerHTML = `<h4 style="margin: 14px 8px">Indicators</h4>`;
-  /** @type {any} */ (el).appendChild(filterstitle);
-  const resultstitle = document.createElement("div");
-  resultstitle.setAttribute("slot", "resultstitle");
-  /** @type {any} */ (el).appendChild(resultstitle);
-
-  /**
-   * @typedef {object} Item
-   * @property {string} href
-   */
-  /** @type {any} */ (el).apply(
+  eoxItemFilter.value?.apply(
     // Only list child elements in list
     store.stac?.filter((item) => item.rel === "child"),
   );
-  /** @type {any} */ (el).config.onSelect =
-    /** @param {Item} item */
+  /** @type {any} */ (eoxItemFilter.value).config.onSelect =
+    /** @param {import('stac-ts').StacLink} item */
     async (item) => {
-      console.log(item);
       await store.loadSelectedSTAC(item.href);
+      console.log(item, store.selectedStac);
     };
-};
+});
 </script>
