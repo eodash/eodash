@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.0.0-alpha.2.9](https://github.com/eodash/eodash/compare/eodash-v5.0.0-alpha.2.8...eodash-v5.0.0-alpha.2.9) (2024-07-15)
+
+
+### Bug Fixes
+
+* Extend Itemfilter properties ([#58](https://github.com/eodash/eodash/issues/58)) ([187b323](https://github.com/eodash/eodash/commit/187b32334fd8636682cff7a882c6faffd504ddb0))
+
 ## [5.0.0-alpha.2.8](https://github.com/eodash/eodash/compare/eodash-v5.0.0-alpha.2.7...eodash-v5.0.0-alpha.2.8) (2024-07-12)
 
 
