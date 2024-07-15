@@ -116,17 +116,45 @@ export class EodashCollection {
         // specific item was requested
         const item = new Item(stac);
         this.selectedItem = item;
-        layersJson.unshift(...(await this.buildJsonArray(item, stacItemUrl)));
+        const title = this.#collectionStac.title || this.#collectionStac.id;
+        layersJson.unshift(
+          ...(await this.buildJsonArray(item, stacItemUrl, title)),
+        );
         return layersJson;
       }
     }
   };
 
+  async getExtent() {
+    if (!this.#collectionStac) {
+      const response = await axios.get(this.#collectionUrl);
+      const stac = await response.data;
+      this.#collectionStac = new Collection(stac);
+    }
+    return this.#collectionStac?.extent;
+  }
+  /**
+   * @param {object} properties
+   * @param {[string]} roles
+   * */
+  extractRoles(properties, roles) {
+    roles?.forEach((role) => {
+      if (role === "visible") {
+        // @ts-expect-error visible does not need to exist in properties
+        properties.visible = true;
+      }
+      if (role === "overlay" || role === "baselayer") {
+        // @ts-expect-error group not expected to exist in properties
+        properties.group = role;
+      }
+    });
+  }
   /**
    * @param {import("stac-ts").StacItem} item
    * @param {string} itemUrl
+   * @param {string} title
    * */
-  async buildJsonArray(item, itemUrl) {
+  async buildJsonArray(item, itemUrl, title) {
     const jsonArray = [];
     // TODO: this currently assumes only one layer will be extracted
     //       from an item, although it think this is currently true
@@ -138,50 +166,82 @@ export class EodashCollection {
     // If we don't find any we fallback to using the STAC ol item that
     // will try to extract anything it supports but for which we have
     // less control.
-    const dataAssets = Object.keys(item.assets).reduce((data, ast) => {
-      if (item.assets[ast].roles?.includes("data")) {
-        data[ast] = item.assets[ast];
-      }
-      return data;
-    }, /** @type {Record<string,import('stac-ts').StacAsset>} */ ({}));
+    let dataAssets = /** @type {Record<string,import('stac-ts').StacAsset>} */ ({});
+    if (item.assets) {
+      dataAssets = Object.keys(item.assets).reduce((data, ast) => {
+        if (item.assets[ast].roles?.includes("data")) {
+          data[ast] = item.assets[ast];
+        }
+        return data;
+      }, /** @type {Record<string,import('stac-ts').StacAsset>} */ ({}));
+    }
 
     const { layerConfig, style } = extractLayerConfig(
       await this.fetchStyle(item, itemUrl),
     );
-    const wms = item.links.find((l) => l.rel === "wms");
-    const fallbackToStac = item.links.find(
-      (l) => l.rel === "wmts" || l.rel === "xyz",
-    );
+    const wmsArray = item.links.filter((l) => l.rel === "wms");
+    const xyzArray = item.links.filter((l) => l.rel === "xyz");
+    const fallbackToStac = item.links.find((l) => l.rel === "wmts");
 
     // TODO: add capability to find projection in item
     await registerProjection(
       /** @type {number | undefined} */ (item?.["proj:epsg"]),
     );
 
-    if (wms) {
-      let json = {
-        type: "Tile",
-        properties: {
-          id: item.id,
-        },
-        source: {
-          // if no projection information is provided we should
-          // assume one, else for WMS requests it will try to get
-          // the map projection that might not be supported
-          // projection: projDef ? projDef : "EPSG:4326",
-          type: "TileWMS",
-          url: wms.href,
-          params: {
-            LAYERS: wms["wms:layers"],
-            TILED: true,
+    if (wmsArray.length > 0) {
+      wmsArray.forEach((link) => {
+        let json = {
+          type: "Tile",
+          properties: {
+            id: link.id || item.id,
+            title: title || link.title || item.id,
           },
-        },
-      };
-      if ("wms:dimensions" in wms) {
-        // @ts-expect-error: waiting for eox-map to provide type definition
-        json.source.params.time = wms["wms:dimensions"];
-      }
-      jsonArray.push(json);
+          source: {
+            // TODO: if no projection information is provided we should
+            // assume one, else for WMS requests it will try to get
+            // the map projection that might not be supported
+            // projection: projDef ? projDef : "EPSG:4326",
+            type: "TileWMS",
+            url: link.href,
+            params: {
+              LAYERS: link["wms:layers"],
+              TILED: true,
+            },
+          },
+        };
+        this.extractRoles(
+          json.properties,
+          /** @type {[string]} */ (link.roles),
+        );
+        if ("wms:dimensions" in link) {
+          // Expand all dimensions into the params attribute
+          json.source.params = Object.assign(
+            json.source.params,
+            link["wms:dimensions"],
+          );
+        }
+        jsonArray.push(json);
+      });
+    } else if (xyzArray.length > 0) {
+      xyzArray.forEach((link) => {
+        let json = {
+          type: "Tile",
+          properties: {
+            id: link.id || item.id,
+            title: title || link.title || item.id,
+            roles: link.roles,
+          },
+          source: {
+            type: "XYZ",
+            url: link.href,
+          },
+        };
+        this.extractRoles(
+          json.properties,
+          /** @type {[string]} */ (link.roles),
+        );
+        jsonArray.push(json);
+      });
     } else if (fallbackToStac) {
       jsonArray.push({
         type: "STAC",
@@ -189,8 +249,8 @@ export class EodashCollection {
         displayFootprint: false,
         data: item,
         properties: {
-          id: item.title || item.id,
-          title: item.title || item.id,
+          id: item.id,
+          title: title || item.id,
         },
       });
     } else if (Object.keys(dataAssets).length) {
@@ -203,7 +263,7 @@ export class EodashCollection {
           layerConfig,
         )),
       );
-    } else {
+    } else if (item.geometry) {
       // fall back to rendering the feature
       jsonArray.push({
         type: "Vector",
