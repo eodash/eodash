@@ -13,7 +13,7 @@ import { onMounted, ref } from "vue";
 const props = defineProps({
   filtersTitle: {
     type: String,
-    default: "Indicator",
+    default: "Indicators",
   },
   resultsTitle: {
     type: String,
