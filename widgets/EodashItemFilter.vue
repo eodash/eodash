@@ -81,15 +81,18 @@ onMounted(() => {
   `;
   eoxItemFilter.value?.shadowRoot?.appendChild(style);
 
-  eoxItemFilter.value?.apply(
-    // Only list child elements in list
-    store.stac?.filter((item) => item.rel === "child"),
+  // Only list child elements in list
+  const items = store.stac?.filter((item) => item.rel === "child");
+  debugger;
+  eoxItemFilter.items = items;
+
+  /** @type {any} */ (eoxItemFilter.value).addEventListener(
+    "select",
+    /** @param {import('stac-ts').StacLink} detail */
+    async ({ detail }) => {
+      await store.loadSelectedSTAC(detail.href);
+      console.log(detail, store.selectedStac);
+    },
   );
-  /** @type {any} */ (eoxItemFilter.value).config.onSelect =
-    /** @param {import('stac-ts').StacLink} item */
-    async (item) => {
-      await store.loadSelectedSTAC(item.href);
-      console.log(item, store.selectedStac);
-    };
 });
 </script>
