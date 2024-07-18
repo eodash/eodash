@@ -5,6 +5,7 @@ import {
   extractLayerConfig,
   generateFeatures,
   setMapProjFromCol,
+  getProjectionCode,
 } from "./helpers";
 import axios from "axios";
 import { registerProjection } from "@/store/Actions";
@@ -166,7 +167,8 @@ export class EodashCollection {
     // If we don't find any we fallback to using the STAC ol item that
     // will try to extract anything it supports but for which we have
     // less control.
-    let dataAssets = /** @type {Record<string,import('stac-ts').StacAsset>} */ ({});
+    let dataAssets =
+      /** @type {Record<string,import('stac-ts').StacAsset>} */ ({});
     if (item.assets) {
       dataAssets = Object.keys(item.assets).reduce((data, ast) => {
         if (item.assets[ast].roles?.includes("data")) {
@@ -183,13 +185,26 @@ export class EodashCollection {
     const xyzArray = item.links.filter((l) => l.rel === "xyz");
     const fallbackToStac = item.links.find((l) => l.rel === "wmts");
 
-    // TODO: add capability to find projection in item
+    const itemProjection = item?.["proj:epsg"] || item?.["eodash:proj4_def"];
     await registerProjection(
-      /** @type {number | undefined} */ (item?.["proj:epsg"]),
+      /** @type {number | string | {name: string, def: string} | undefined} */ (
+        itemProjection
+      ),
     );
 
     if (wmsArray.length > 0) {
-      wmsArray.forEach((link) => {
+      for (let i = 0; i < wmsArray.length; i++) {
+        const link = wmsArray[i];
+        const wmsLinkProjection =
+          link?.["proj:epsg"] || link?.["eodash:proj4_def"];
+        await registerProjection(
+          /** @type {number | string | {name: string, def: string} | undefined} */ (
+            wmsLinkProjection
+          ),
+        );
+        const projectionCode = getProjectionCode(
+          wmsLinkProjection || itemProjection || "EPSG:4326",
+        );
         let json = {
           type: "Tile",
           properties: {
@@ -197,10 +212,7 @@ export class EodashCollection {
             title: title || link.title || item.id,
           },
           source: {
-            // TODO: if no projection information is provided we should
-            // assume one, else for WMS requests it will try to get
-            // the map projection that might not be supported
-            // projection: projDef ? projDef : "EPSG:4326",
+            projection: projectionCode,
             type: "TileWMS",
             url: link.href,
             params: {
@@ -221,9 +233,20 @@ export class EodashCollection {
           );
         }
         jsonArray.push(json);
-      });
+      }
     } else if (xyzArray.length > 0) {
-      xyzArray.forEach((link) => {
+      for (let i = 0; i < xyzArray.length; i++) {
+        const link = xyzArray[i];
+        const xyzLinkProjection =
+          link?.["proj:epsg"] || link?.["eodash:proj4_def"];
+        await registerProjection(
+          /** @type {number | string | {name: string, def: string} | undefined} */ (
+            xyzLinkProjection
+          ),
+        );
+        const projectionCode = getProjectionCode(
+          xyzLinkProjection || itemProjection || "EPSG:3857",
+        );
         let json = {
           type: "Tile",
           properties: {
@@ -234,6 +257,7 @@ export class EodashCollection {
           source: {
             type: "XYZ",
             url: link.href,
+            projection: projectionCode,
           },
         };
         this.extractRoles(
@@ -241,7 +265,17 @@ export class EodashCollection {
           /** @type {[string]} */ (link.roles),
         );
         jsonArray.push(json);
-      });
+      }
+    } else if (Object.keys(dataAssets).length) {
+      jsonArray.push(
+        ...(await createLayersFromDataAssets(
+          this.#collectionStac?.title || item.id,
+          this.#collectionStac?.title || item.id,
+          dataAssets,
+          style,
+          layerConfig,
+        )),
+      );
     } else if (fallbackToStac) {
       jsonArray.push({
         type: "STAC",
@@ -253,16 +287,6 @@ export class EodashCollection {
           title: title || item.id,
         },
       });
-    } else if (Object.keys(dataAssets).length) {
-      jsonArray.push(
-        ...(await createLayersFromDataAssets(
-          this.#collectionStac?.title || item.id,
-          this.#collectionStac?.title || item.id,
-          dataAssets,
-          style,
-          layerConfig,
-        )),
-      );
     } else if (item.geometry) {
       // fall back to rendering the feature
       jsonArray.push({
