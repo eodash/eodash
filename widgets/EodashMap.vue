@@ -1,9 +1,20 @@
 <template>
-  <eox-map
-    class="fill-height fill-width overflow-none"
-    ref="eoxMap"
-    :config="eoxMapConfig"
-  />
+  <eox-map-compare class="fill-height fill-width overflow-none" :enabled="showCompare">
+      <eox-map
+        class="fill-height fill-width overflow-none"
+        slot="first"
+        ref="eoxMap"
+        id="main"
+        :config="eoxMapConfig"
+      />
+      <eox-map
+        class="fill-height fill-width overflow-none"
+        id="compare"
+        slot="second"
+        sync="eox-map#main"
+        :config="eoxMapConfig"
+      />
+    </eox-map-compare>
 </template>
 <script setup>
 import { transformExtent } from "ol/proj";
@@ -25,6 +36,8 @@ const eodashConfig = /** @type {import("@/types").Eodash} */ (
 /** @type {import("vue").Ref<(HTMLElement & Record<string,unknown>) | null>} */
 const eoxMap = ref(null);
 
+const showCompare = ref("first");
+
 const eoxMapConfig = reactive({
   /** @type {(number|undefined)[] | undefined} */
   center: [15, 48],
@@ -32,18 +45,6 @@ const eoxMapConfig = reactive({
   zoom: 4,
   // TODO: we should probably introduce some way of defining
   layers: [
-    {
-      type: "Vector",
-      source: {
-        type: "Vector",
-        url: "https://openlayers.org/data/vector/ecoregions.json",
-        format: "GeoJSON",
-      },
-      properties: {
-        id: "Regions",
-        title: "Regions",
-      },
-    },
     {
       type: "Tile",
       properties: {
