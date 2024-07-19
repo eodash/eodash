@@ -166,7 +166,8 @@ export class EodashCollection {
     // If we don't find any we fallback to using the STAC ol item that
     // will try to extract anything it supports but for which we have
     // less control.
-    let dataAssets = /** @type {Record<string,import('stac-ts').StacAsset>} */ ({});
+    let dataAssets =
+      /** @type {Record<string,import('stac-ts').StacAsset>} */ ({});
     if (item.assets) {
       dataAssets = Object.keys(item.assets).reduce((data, ast) => {
         if (item.assets[ast].roles?.includes("data")) {

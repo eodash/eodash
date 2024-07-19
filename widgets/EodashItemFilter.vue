@@ -1,5 +1,10 @@
 <template>
-  <eox-itemfilter class="fill-height" :config="config" ref="eoxItemFilter">
+  <eox-itemfilter
+    class="fill-height"
+    :config="config"
+    ref="eoxItemFilter"
+    style="overflow: auto"
+  >
     <h4 slot="filterstitle" style="margin: 14px 8px">{{ filtersTitle }}</h4>
 
     <h4 slot="resultstitle" style="margin: 14px 8px">{{ resultsTitle }}</h4>
@@ -83,15 +88,16 @@ onMounted(() => {
 
   // Only list child elements in list
   const items = store.stac?.filter((item) => item.rel === "child");
-  debugger;
-  eoxItemFilter.items = items;
+  /** @type {any} */
+  (eoxItemFilter.value).items = items;
 
   /** @type {any} */ (eoxItemFilter.value).addEventListener(
     "select",
-    /** @param {import('stac-ts').StacLink} detail */
-    async ({ detail }) => {
-      await store.loadSelectedSTAC(detail.href);
-      console.log(detail, store.selectedStac);
+    /** @param {any} evt*/
+    async (evt) => {
+      const item = /** @type {import('stac-ts').StacLink} */ evt.detail;
+      await store.loadSelectedSTAC(item.href);
+      console.log(item, store.selectedStac);
     },
   );
 });
