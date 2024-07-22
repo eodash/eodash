@@ -2,18 +2,23 @@ import { Collection, Item } from "stac-js";
 import { toAbsolute } from "stac-js/src/http.js";
 import {
   createLayersFromDataAssets,
+  createLayersFromLinks,
   extractLayerConfig,
+  extractRoles,
+  fetchStyle,
   generateFeatures,
   setMapProjFromCol,
+  uid,
 } from "./helpers";
 import axios from "axios";
 import { registerProjection } from "@/store/Actions";
 
 export class EodashCollection {
-  /** @type {string} */
   #collectionUrl = "";
+
   /** @type {import("stac-ts").StacCollection | undefined} */
   #collectionStac;
+
   /**
    * @type {import("stac-ts").StacLink
    *   | import("stac-ts").StacItem
@@ -25,225 +30,153 @@ export class EodashCollection {
   constructor(collectionUrl) {
     this.#collectionUrl = collectionUrl;
   }
+
   /**
    * @async
-   * @param {import('stac-ts').StacLink | Date} [itemLinkOrDate]
+   * @param {import('stac-ts').StacLink | Date} [linkOrDate]
    * @returns
    */
-  createLayersJson = async (itemLinkOrDate) => {
-    /** @type {import("stac-ts").StacLink | undefined} */
-    let stacItem,
-      /** @type {import("stac-ts").StacCollection | undefined} */
-      stac;
+  createLayersJson = async (linkOrDate) => {
+    /**
+     * @type {import("stac-ts").StacLink | undefined}
+     **/
+    let stacItem;
+
+    /**
+     * @type {import("stac-ts").StacCollection | undefined}
+     **/
+    let stac;
     // TODO get auxiliary layers from collection
-    /** @type {object[]} */
+    /** @type {Record<string,any>[]} */
     let layersJson = [];
 
     // Load collectionstac if not yet initialized
     if (!this.#collectionStac) {
-      const response = await axios.get(this.#collectionUrl);
-      stac = await response.data;
+      stac = await axios.get(this.#collectionUrl).then((resp) => resp.data);
       this.#collectionStac = new Collection(stac);
     }
 
     // set availabe map projection
     setMapProjFromCol(this.#collectionStac);
 
-    if (stac && stac.endpointtype === "GeoDB") {
-      // Special handling of point based data
-      const allFeatures = generateFeatures(stac.links);
-      layersJson.unshift({
-        type: "Vector",
-        properties: {
-          id: stac.id,
-          title: stac.title || stac.id,
-        },
-        source: {
-          type: "Vector",
-          url: "data:," + encodeURIComponent(JSON.stringify(allFeatures)),
-          format: "GeoJSON",
-        },
-        style: {
-          "circle-radius": 5,
-          "circle-fill-color": "#00417077",
-          "circle-stroke-color": "#004170",
-          "fill-color": "#00417077",
-          "stroke-color": "#004170",
-        },
-      });
+    const isGeoDB = stac?.endpointtype === "GeoDB";
 
-      return layersJson;
+    if (linkOrDate instanceof Date) {
+      // if collectionStac not yet initialized we do it here
+      stacItem = this.getItem(linkOrDate);
     } else {
-      if (itemLinkOrDate instanceof Date) {
-        // if collectionStac not yet initialized we do it here
-        stacItem = this.getItems()?.sort((a, b) => {
-          const distanceA = Math.abs(
-            new Date(/** @type {number} */ (a.datetime)).getTime() -
-              itemLinkOrDate.getTime(),
-          );
-          const distanceB = Math.abs(
-            new Date(/** @type {number} */ (b.datetime)).getTime() -
-              itemLinkOrDate.getTime(),
-          );
-          return distanceA - distanceB;
-        })[0];
-        this.selectedItem = stacItem;
-      } else {
-        stacItem = itemLinkOrDate;
-      }
+      stacItem = linkOrDate;
+    }
 
-      const stacItemUrl = stacItem
-        ? toAbsolute(stacItem.href, this.#collectionUrl)
-        : this.#collectionUrl;
-      stac = await axios.get(stacItemUrl).then((resp) => resp.data);
+    const stacItemUrl = stacItem
+      ? toAbsolute(stacItem.href, this.#collectionUrl)
+      : this.#collectionUrl;
 
-      if (!stacItem) {
-        // no specific item was requested; render last item
-        this.#collectionStac = new Collection(stac);
-        const items = this.getItems();
-        this.selectedItem = items?.[items.length - 1];
-        if (this.selectedItem) {
-          layersJson = await this.createLayersJson(this.selectedItem);
-        } else {
-          if (import.meta.env.DEV) {
-            console.warn(
-              "[eodash] the selected collection does not include any items",
-            );
-          }
-        }
-        return [];
-      } else {
-        // specific item was requested
-        const item = new Item(stac);
-        this.selectedItem = item;
-        const title = this.#collectionStac.title || this.#collectionStac.id;
-        layersJson.unshift(
-          ...(await this.buildJsonArray(item, stacItemUrl, title)),
+    stac = await axios.get(stacItemUrl).then((resp) => resp.data);
+
+    if (!stacItem) {
+      // no specific item was requested; render last item
+      this.#collectionStac = new Collection(stac);
+      this.selectedItem = this.getItem();
+
+      if (this.selectedItem) {
+        layersJson = /** @type {Record<string,any>[]} */ (
+          await this.createLayersJson(this.selectedItem)
         );
-        return layersJson;
+      } else {
+        console.warn(
+          "[eodash] the selected collection does not include any items",
+        );
       }
+      return [];
+    } else {
+      // specific item was requested
+      const item = new Item(stac);
+      this.selectedItem = item;
+      const title = this.#collectionStac.title || this.#collectionStac.id;
+      layersJson.unshift(
+        ...(await this.buildJsonArray(item, stacItemUrl, title, isGeoDB)),
+      );
+      return layersJson;
     }
   };
 
-  async getExtent() {
-    if (!this.#collectionStac) {
-      const response = await axios.get(this.#collectionUrl);
-      const stac = await response.data;
-      this.#collectionStac = new Collection(stac);
-    }
-    return this.#collectionStac?.extent;
-  }
-  /**
-   * @param {object} properties
-   * @param {[string]} roles
-   * */
-  extractRoles(properties, roles) {
-    roles?.forEach((role) => {
-      if (role === "visible") {
-        // @ts-expect-error visible does not need to exist in properties
-        properties.visible = true;
-      }
-      if (role === "overlay" || role === "baselayer") {
-        // @ts-expect-error group not expected to exist in properties
-        properties.group = role;
-      }
-    });
-  }
   /**
    * @param {import("stac-ts").StacItem} item
    * @param {string} itemUrl
    * @param {string} title
+   * @param {boolean} isGeoDB
+   * @returns {Promise<Record<string,any>[]>} arrays
    * */
-  async buildJsonArray(item, itemUrl, title) {
+  async buildJsonArray(item, itemUrl, title, isGeoDB) {
     const jsonArray = [];
-    // TODO: this currently assumes only one layer will be extracted
-    //       from an item, although it think this is currently true
-    //       potentially this could return multiple layers
-    // TODO: implement other types, such as COG
+
+    await registerProjection(
+      /** @type {number | undefined} */ (item?.["proj:epsg"]),
+    );
+
+    if (isGeoDB) {
+      const allFeatures = generateFeatures(this.#collectionStac?.links);
+
+      return [
+        {
+          type: "Vector",
+          properties: {
+            id: item.id,
+            title: this.#collectionStac?.title || item.id,
+          },
+          source: {
+            type: "Vector",
+            url: "data:," + encodeURIComponent(JSON.stringify(allFeatures)),
+            format: "GeoJSON",
+          },
+          style: {
+            "circle-radius": 5,
+            "circle-fill-color": "#00417077",
+            "circle-stroke-color": "#004170",
+            "fill-color": "#00417077",
+            "stroke-color": "#004170",
+          },
+        },
+      ];
+    }
 
     // I propose following approach, we "manually" create configurations
     // for the rendering options we know and expect.
     // If we don't find any we fallback to using the STAC ol item that
     // will try to extract anything it supports but for which we have
     // less control.
-    let dataAssets = /** @type {Record<string,import('stac-ts').StacAsset>} */ ({});
-    if (item.assets) {
-      dataAssets = Object.keys(item.assets).reduce((data, ast) => {
-        if (item.assets[ast].roles?.includes("data")) {
-          data[ast] = item.assets[ast];
-        }
-        return data;
-      }, /** @type {Record<string,import('stac-ts').StacAsset>} */ ({}));
-    }
 
     const { layerConfig, style } = extractLayerConfig(
-      await this.fetchStyle(item, itemUrl),
-    );
-    const wmsArray = item.links.filter((l) => l.rel === "wms");
-    const xyzArray = item.links.filter((l) => l.rel === "xyz");
-    const fallbackToStac = item.links.find((l) => l.rel === "wmts");
-
-    // TODO: add capability to find projection in item
-    await registerProjection(
-      /** @type {number | undefined} */ (item?.["proj:epsg"]),
+      await fetchStyle(item, itemUrl),
     );
 
-    if (wmsArray.length > 0) {
-      wmsArray.forEach((link) => {
-        let json = {
-          type: "Tile",
-          properties: {
-            id: link.id || item.id,
-            title: title || link.title || item.id,
-          },
-          source: {
-            // TODO: if no projection information is provided we should
-            // assume one, else for WMS requests it will try to get
-            // the map projection that might not be supported
-            // projection: projDef ? projDef : "EPSG:4326",
-            type: "TileWMS",
-            url: link.href,
-            params: {
-              LAYERS: link["wms:layers"],
-              TILED: true,
-            },
-          },
-        };
-        this.extractRoles(
-          json.properties,
-          /** @type {[string]} */ (link.roles),
-        );
-        if ("wms:dimensions" in link) {
-          // Expand all dimensions into the params attribute
-          json.source.params = Object.assign(
-            json.source.params,
-            link["wms:dimensions"],
-          );
-        }
-        jsonArray.push(json);
-      });
-    } else if (xyzArray.length > 0) {
-      xyzArray.forEach((link) => {
-        let json = {
-          type: "Tile",
-          properties: {
-            id: link.id || item.id,
-            title: title || link.title || item.id,
-            roles: link.roles,
-          },
-          source: {
-            type: "XYZ",
-            url: link.href,
-          },
-        };
-        this.extractRoles(
-          json.properties,
-          /** @type {[string]} */ (link.roles),
-        );
-        jsonArray.push(json);
-      });
-    } else if (fallbackToStac) {
-      jsonArray.push({
+    const dataAssets = Object.keys(item?.assets ?? {}).reduce((data, ast) => {
+      if (item.assets[ast].roles?.includes("data")) {
+        data[ast] = item.assets[ast];
+      }
+      return data;
+    }, /** @type {Record<string,import('stac-ts').StacAsset>} */ ({}));
+
+    const isSupported =
+      item.links.some((link) => ["wms", "xyz"].includes(link.rel)) ||
+      Object.keys(dataAssets).length;
+
+    if (isSupported) {
+      jsonArray.push(...createLayersFromLinks(uid(), title, item));
+
+      jsonArray.push(
+        ...(await createLayersFromDataAssets(
+          uid(),
+          title || this.#collectionStac?.title || item.id,
+          dataAssets,
+          style,
+          layerConfig,
+        )),
+      );
+    } else {
+      // fallback to STAC
+      const json = {
         type: "STAC",
         displayWebMapLink: true,
         displayFootprint: false,
@@ -251,36 +184,12 @@ export class EodashCollection {
         properties: {
           id: item.id,
           title: title || item.id,
-        },
-      });
-    } else if (Object.keys(dataAssets).length) {
-      jsonArray.push(
-        ...(await createLayersFromDataAssets(
-          this.#collectionStac?.title || item.id,
-          this.#collectionStac?.title || item.id,
-          dataAssets,
-          style,
           layerConfig,
-        )),
-      );
-    } else if (item.geometry) {
-      // fall back to rendering the feature
-      jsonArray.push({
-        type: "Vector",
-        source: {
-          type: "Vector",
-          url: "data:," + encodeURIComponent(JSON.stringify(item.geometry)),
-          format: "GeoJSON",
         },
-        properties: {
-          id: item.id,
-          title: this.#collectionStac?.title || item.id,
-          layerConfig: {
-            ...layerConfig,
-            style,
-          },
-        },
-      });
+        style,
+      };
+      extractRoles(json.properties, /** @type {string[]} */ (item?.roles));
+      jsonArray.push(json);
     }
 
     return jsonArray;
@@ -300,26 +209,6 @@ export class EodashCollection {
     );
   }
 
-  /**
-   * @param {import("stac-ts").StacItem} item
-   * @param {string} itemUrl
-   **/
-  async fetchStyle(item, itemUrl) {
-    const styleLink = item.links.find((link) => link.rel.includes("style"));
-    if (styleLink) {
-      let url = "";
-      if (styleLink.href.startsWith("http")) {
-        url = styleLink.href;
-      } else {
-        url = toAbsolute(styleLink.href, itemUrl);
-      }
-
-      /** @type {import("ol/layer/WebGLTile").Style & {jsonform?:object}} */
-      const styleJson = await axios.get(url).then((resp) => resp.data);
-      return styleJson;
-    }
-  }
-
   getDates() {
     return (
       this.#collectionStac?.links
@@ -333,5 +222,35 @@ export class EodashCollection {
         )
         .map((i) => new Date(/** @type {number} */ (i.datetime)))
     );
+  }
+
+  async getExtent() {
+    if (!this.#collectionStac) {
+      const response = await axios.get(this.#collectionUrl);
+      const stac = await response.data;
+      this.#collectionStac = new Collection(stac);
+    }
+    return this.#collectionStac?.extent;
+  }
+
+  /**
+   * Get closest Item Link from a certain date,
+   * get the latest if no date provided
+   *  @param {Date} [date]
+   **/
+  getItem(date) {
+    return date
+      ? this.getItems()?.sort((a, b) => {
+          const distanceA = Math.abs(
+            new Date(/** @type {number} */ (a.datetime)).getTime() -
+              date.getTime(),
+          );
+          const distanceB = Math.abs(
+            new Date(/** @type {number} */ (b.datetime)).getTime() -
+              date.getTime(),
+          );
+          return distanceA - distanceB;
+        })[0]
+      : this.getItems()?.at(-1);
   }
 }

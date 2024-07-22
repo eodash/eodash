@@ -3,7 +3,7 @@ import { registeredProjections } from "@/store/States";
 /**
  * Returns the current layers of the `eox-map`
  * @param {string} [el="eox-map"] - `eox-map` element selector
- * @returns {object[]}
+ * @returns {Record<string,any>[]}
  */
 export const getLayers = (el = "eox-map") =>
   customElements.get("eo-dash")

@@ -1,8 +1,9 @@
 import { changeMapProjection, registerProjection } from "@/store/Actions";
 import { availableMapProjection } from "@/store/States";
+import axios from "axios";
 import { toAbsolute } from "stac-js/src/http.js";
 
-/** @param {import("stac-ts").StacLink[]} links */
+/** @param {import("stac-ts").StacLink[]} [links] */
 export function generateFeatures(links) {
   /**
    * @type {{
@@ -14,7 +15,7 @@ export function generateFeatures(links) {
    * }[]}
    */
   const features = [];
-  links.forEach((element) => {
+  links?.forEach((element) => {
     if (element.rel === "item" && "latlng" in element) {
       const [lat, lon] = /** @type {string} */ (element.latlng)
         .split(",")
@@ -41,13 +42,13 @@ export function generateFeatures(links) {
   return geojsonObject;
 }
 
-/** @param { import("ol/layer/WebGLTile").Style & { jsonform?: object } } [style] */
+/** @param { import("ol/layer/WebGLTile").Style & { jsonform?: Record<string,any> } } [style] */
 export function extractLayerConfig(style) {
-  /** @type {Record<string,unknown>} */
-  let layerConfig = {};
+  /** @type {Record<string,unknown> | undefined} */
+  let layerConfig = undefined;
   if (style?.jsonform) {
     layerConfig = { schema: style.jsonform, type: "style" };
-    delete style?.jsonform;
+    delete style.jsonform;
   }
   return { layerConfig, style };
 }
@@ -74,7 +75,7 @@ export async function createLayersFromDataAssets(
     );
 
     if (assets[ast]?.type === "application/geo+json") {
-      jsonArray.push({
+      const layer = {
         type: "Vector",
         source: {
           type: "Vector",
@@ -84,22 +85,27 @@ export async function createLayersFromDataAssets(
         properties: {
           id,
           title,
-          layerConfig: {
-            ...layerConfig,
-            style,
-          },
+          ...(layerConfig && {
+            layerConfig: {
+              ...layerConfig,
+              style,
+            },
+          }),
         },
-      });
+      };
+      extractRoles(layer.properties, assets[ast]?.roles ?? []);
+      jsonArray.push(layer);
     } else if (assets[ast]?.type === "image/tiff") {
       geoTIFFSources.push({ url: assets[ast].href });
     }
   }
+
   if (geoTIFFSources.length) {
     jsonArray.push({
       type: "WebGLTile",
       source: {
         type: "GeoTIFF",
-        normalize: style?.variables ? false : true,
+        normalize: !style?.variables,
         sources: geoTIFFSources,
       },
       properties: {
@@ -110,13 +116,75 @@ export async function createLayersFromDataAssets(
       style,
     });
   }
+
   return jsonArray;
 }
 
 /**
+ * @param {import('stac-ts').StacItem} item
+ * @param {string} id
+ * @param {string} title
+ */
+export const createLayersFromLinks = (id, title, item) => {
+  /** @type {Record<string,any>[]} */
+  const jsonArray = [];
+  const wmsArray = item.links.filter((l) => l.rel === "wms");
+  const xyzArray = item.links.filter((l) => l.rel === "xyz");
+
+  if (wmsArray.length) {
+    wmsArray.forEach((link) => {
+      let json = {
+        type: "Tile",
+        properties: {
+          id: id || link.id,
+          title: title || link.title || item.id,
+        },
+        source: {
+          type: "TileWMS",
+          url: link.href,
+          params: {
+            LAYERS: link["wms:layers"],
+            TILED: true,
+          },
+        },
+      };
+
+      extractRoles(json.properties, /** @type {string[]} */ (link.roles));
+
+      if ("wms:dimensions" in link) {
+        // Expand all dimensions into the params attribute
+        Object.assign(json.source.params, link["wms:dimensions"]);
+      }
+      jsonArray.push(json);
+    });
+  }
+
+  if (xyzArray.length) {
+    xyzArray.forEach((link) => {
+      let json = {
+        type: "Tile",
+        properties: {
+          id: link.id || item.id,
+          title: title || link.title || item.id,
+          roles: link.roles,
+        },
+        source: {
+          type: "XYZ",
+          url: link.href,
+        },
+      };
+
+      extractRoles(json.properties, /** @type {string[]} */ (link.roles));
+      jsonArray.push(json);
+    });
+  }
+  return jsonArray;
+};
+
+/**
  * checks if there's a projection on the Collection and
  * updates {@link availableMapProjection}
- * @param {import('stac-ts').StacCollection} STAcCollection
+ * @param {import('stac-ts').StacCollection} [STAcCollection]
  */
 export const setMapProjFromCol = (STAcCollection) => {
   // if a projection exists on the collection level
@@ -170,3 +238,43 @@ export function extractCollectionUrls(stacObject, basepath) {
   }
   return collectionUrls;
 }
+
+export const uid = () =>
+  Date.now().toString(36) + Math.random().toString(36).substring(2);
+
+/**
+ * Assign extracted roles to layer properties
+ * @param {Record<string,any>} properties
+ * @param {string[]} roles
+ * */
+export const extractRoles = (properties, roles) => {
+  roles?.forEach((role) => {
+    if (role === "visible") {
+      properties.visible = true;
+    }
+    if (role === "overlay" || role === "baselayer") {
+      properties.group = role;
+    }
+    return properties;
+  });
+};
+
+/**
+ * @param {import("stac-ts").StacItem} item
+ * @param {string} itemUrl
+ **/
+export const fetchStyle = async (item, itemUrl) => {
+  const styleLink = item.links.find((link) => link.rel.includes("style"));
+  if (styleLink) {
+    let url = "";
+    if (styleLink.href.startsWith("http")) {
+      url = styleLink.href;
+    } else {
+      url = toAbsolute(styleLink.href, itemUrl);
+    }
+
+    /** @type {import("ol/layer/WebGLTile").Style & {jsonform?:Record<string,any>}} */
+    const styleJson = await axios.get(url).then((resp) => resp.data);
+    return styleJson;
+  }
+};
