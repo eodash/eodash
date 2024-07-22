@@ -91,6 +91,9 @@
     "vitest": "^1.6.0",
     "vue-tsc": "2.0.22"
   },
+  "engines": {
+    "node": ">=20.15.1"
+  },
   "bin": {
     "eodash": "./dist/node/cli.js"
   }
