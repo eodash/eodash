@@ -8,7 +8,7 @@
 <script setup>
 import { useSTAcStore } from "@/store/stac";
 import "@eox/itemfilter";
-import { onMounted, ref } from "vue";
+import { onMounted, onUpdated, ref } from "vue";
 
 const props = defineProps({
   filtersTitle: {
@@ -91,5 +91,27 @@ onMounted(() => {
       await store.loadSelectedSTAC(item.href);
       console.log(item, store.selectedStac);
     };
+    setTimeout(() => {
+      eoxItemFilter.value.shadowRoot.getElementById("section-results").querySelectorAll('input[type=radio]').forEach((res) => {
+        let compareButton = document.createElement('button');
+        compareButton.dataset.id = res.id;
+        compareButton.onclick = async (evt) => {
+          const selected = eoxItemFilter._value._items.find((it)=>it.id === evt.target.dataset.id);
+          if (selected) {
+            await store.loadSelectedCompareSTAC(selected.href);
+          }
+          /*
+          evt.target.dispatchEvent(new CustomEvent("showCompare", {
+            bubbles: true,
+            detail: { id: evt.target.dataset.id }
+          }));
+          */
+        };
+        let span = document.createElement('span');
+        span.innerHTML = 'compare';
+        compareButton.appendChild(span);   
+        res.parentElement.append(compareButton);
+      }); 
+    }, 100);
 });
 </script>
