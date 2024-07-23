@@ -1,21 +1,24 @@
 <template>
-  <eox-map-compare class="fill-height fill-width overflow-none" :enabled="showCompare">
-      <eox-map
-        class="fill-height fill-width overflow-none"
-        slot="first"
-        ref="eoxMap"
-        id="main"
-        :config="eoxMapConfig"
-      />
-      <eox-map
-        class="fill-height fill-width overflow-none"
-        sync="eox-map#main"
-        id="compare"
-        slot="second"
-        ref="compareMap"
-        :config="eoxMapConfig"
-      />
-    </eox-map-compare>
+  <eox-map-compare
+    class="fill-height fill-width overflow-none"
+    :enabled="showCompare"
+  >
+    <eox-map
+      class="fill-height fill-width overflow-none"
+      slot="first"
+      ref="eoxMap"
+      id="main"
+      :config="eoxMapConfig"
+    />
+    <eox-map
+      class="fill-height fill-width overflow-none"
+      sync="eox-map#main"
+      id="compare"
+      slot="second"
+      ref="compareMap"
+      :config="eoxMapConfig"
+    />
+  </eox-map-compare>
 </template>
 <script setup>
 import { transformExtent } from "ol/proj";
@@ -94,19 +97,14 @@ const createLayersConfig = async (stacItem, updatedTime, selectedStac) => {
     `./${stacItem.id}/collection.json`,
     eodashConfig.stacEndpoint,
   );
-  const collectionUrls = extractCollectionUrls(
-    stacItem,
-    parentCollUrl,
-  );
+  const collectionUrls = extractCollectionUrls(stacItem, parentCollUrl);
   /** @type {import("@/utils/eodashSTAC").EodashCollection[]} */
   const eodashCollections = [];
   collectionUrls.forEach((cu) => {
     eodashCollections.push(new EodashCollection(cu));
   });
   const uid = function () {
-    return (
-      Date.now().toString(36) + Math.random().toString(36).substring(2)
-    );
+    return Date.now().toString(36) + Math.random().toString(36).substring(2);
   };
   const layersCollection = [];
   const dataLayers = {
@@ -212,7 +210,7 @@ const createLayersConfig = async (stacItem, updatedTime, selectedStac) => {
   */
 
   return layersCollection;
-}
+};
 
 onMounted(() => {
   /** @type {import('ol/Map').default} */
@@ -220,49 +218,39 @@ onMounted(() => {
 
   const { selectedStac, selectedCompareStac } = storeToRefs(store);
 
-  watch( [selectedCompareStac, datetime],
-  async ([updatedCompareStac, updatedTime], [_previousCompareStac, _previousTime]) => {
-    if(updatedCompareStac) {
-      const comapreLayersCollection = await createLayersConfig(updatedCompareStac, updatedTime, selectedCompareStac);
-      /** @type {any} */
-      (compareMap.value).layers = comapreLayersCollection;
-      showCompare.value = "";
-    }
-  });
+  watch(
+    [selectedCompareStac, datetime],
+    async (
+      [updatedCompareStac, updatedTime],
+      [_previousCompareStac, _previousTime],
+    ) => {
+      if (updatedCompareStac) {
+        const comapreLayersCollection = await createLayersConfig(
+          updatedCompareStac,
+          updatedTime,
+          selectedCompareStac,
+        );
+        /** @type {any} */
+        (compareMap.value).layers = comapreLayersCollection;
+        showCompare.value = "";
+      }
+    },
+  );
   watch(
     [selectedStac, datetime],
     async ([updatedStac, updatedTime], [_previousSTAC, _previousTime]) => {
       if (updatedStac) {
-        const layersCollection = await createLayersConfig(updatedStac, updatedTime, selectedStac);
+        const layersCollection = await createLayersConfig(
+          updatedStac,
+          updatedTime,
+          selectedStac,
+        );
         showCompare.value = "first";
         /** @type {any} */
         (eoxMap.value).layers = layersCollection;
-        /*
-        // only on different indicator selection and not on time change
-        if (previousSTAC?.id !== updatedStac.id) {
-          // Try to move map view to extent
-          const extent = await indicator.getExtent();
-          // Make sure for now we are always converting from 4326
-          // of stac items  into current map projection
-          // TODO: This might change if we decide to use 4326 as default for zoom and extent
-          // Sanitize extent
-          const b = extent.spatial.bbox[0];
-          const sanitizedExtent = [
-            b[0] > -180 ? b[0] : -180,
-            b[1] > -90 ? b[1] : -90,
-            b[2] < 180 ? b[2] : 180,
-            b[3] < 90 ? b[3] : 90,
-          ];
-          const reprojExtent = transformExtent(
-            sanitizedExtent,
-            "EPSG:4326",
-            // @ts-expect-error we should expect to have the view here
-            eoxMap.value?.map?.getView().getProjection(),
-          );
-          /** @type {any} *
-          //(eoxMap.value).zoomExtent = reprojExtent;
-        }
-          */
+        // Reset compare layers config to empty
+        /** @type {any} */
+        (compareMap.value).layers = [];
       }
     },
     { immediate: true },
