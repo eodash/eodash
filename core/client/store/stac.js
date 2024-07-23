@@ -99,5 +99,12 @@ export const useSTAcStore = defineStore("stac", () => {
       });
   }
 
-  return { stac, loadSTAC, loadSelectedSTAC, loadSelectedCompareSTAC, selectedStac, selectedCompareStac };
+  return {
+    stac,
+    loadSTAC,
+    loadSelectedSTAC,
+    loadSelectedCompareSTAC,
+    selectedStac,
+    selectedCompareStac,
+  };
 });

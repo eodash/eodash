@@ -220,19 +220,21 @@ onMounted(() => {
 
   const { selectedStac, selectedCompareStac } = storeToRefs(store);
 
+  watch( [selectedCompareStac, datetime],
+  async ([updatedCompareStac, updatedTime], [_previousCompareStac, _previousTime]) => {
+    if(updatedCompareStac) {
+      const comapreLayersCollection = await createLayersConfig(updatedCompareStac, updatedTime, selectedCompareStac);
+      /** @type {any} */
+      (compareMap.value).layers = comapreLayersCollection;
+      showCompare.value = "";
+    }
+  });
   watch(
-    [selectedStac, selectedCompareStac, datetime],
-    async ([updatedStac, updatedCompareStac, updatedTime], [previousSTAC, _previousCompareStac, _previousTime]) => {
+    [selectedStac, datetime],
+    async ([updatedStac, updatedTime], [_previousSTAC, _previousTime]) => {
       if (updatedStac) {
         const layersCollection = await createLayersConfig(updatedStac, updatedTime, selectedStac);
-        if(updatedCompareStac) {
-          const comapreLayersCollection = await createLayersConfig(updatedCompareStac, updatedTime, selectedStac);
-          /** @type {any} */
-          (compareMap.value).layers = comapreLayersCollection;
-          showCompare.value = false;
-        } else {
-          showCompare.value = "first";
-        }
+        showCompare.value = "first";
         /** @type {any} */
         (eoxMap.value).layers = layersCollection;
         /*

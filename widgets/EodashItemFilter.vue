@@ -8,7 +8,7 @@
 <script setup>
 import { useSTAcStore } from "@/store/stac";
 import "@eox/itemfilter";
-import { onMounted, onUpdated, ref } from "vue";
+import { onMounted, ref } from "vue";
 
 const props = defineProps({
   filtersTitle: {
@@ -91,27 +91,32 @@ onMounted(() => {
       await store.loadSelectedSTAC(item.href);
       console.log(item, store.selectedStac);
     };
-    setTimeout(() => {
-      eoxItemFilter.value.shadowRoot.getElementById("section-results").querySelectorAll('input[type=radio]').forEach((res) => {
-        let compareButton = document.createElement('button');
+  setTimeout(() => {
+    // @ts-expect-error best approach to be solved in updated itemfilter
+    eoxItemFilter.value.shadowRoot
+      .getElementById("section-results")
+      .querySelectorAll("input[type=radio]")
+      .forEach((res) => {
+        let compareButton = document.createElement("button");
         compareButton.dataset.id = res.id;
         compareButton.onclick = async (evt) => {
-          const selected = eoxItemFilter._value._items.find((it)=>it.id === evt.target.dataset.id);
+          const selected = eoxItemFilter.value?.items.find(
+            (it) => it.id === evt.currentTarget.dataset.id,
+          );
           if (selected) {
             await store.loadSelectedCompareSTAC(selected.href);
           }
-          /*
-          evt.target.dispatchEvent(new CustomEvent("showCompare", {
-            bubbles: true,
-            detail: { id: evt.target.dataset.id }
-          }));
-          */
         };
-        let span = document.createElement('span');
-        span.innerHTML = 'compare';
-        compareButton.appendChild(span);   
-        res.parentElement.append(compareButton);
-      }); 
-    }, 100);
+        compareButton.setAttribute(
+          "style",
+          "margin-left: auto; height: 15px; padding: 4px;",
+        );
+        let span = document.createElement("span");
+        span.innerHTML = "compare";
+        // span.setAttribute("style", "padding-top: 0px; padding-bottom: 0px");
+        compareButton.appendChild(span);
+        res.parentElement?.append(compareButton);
+      });
+  }, 100);
 });
 </script>
