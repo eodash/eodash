@@ -43,7 +43,7 @@ const eoxMap = ref(null);
 /** @type {import("vue").Ref<(HTMLElement & Record<string,unknown>) | null>} */
 const compareMap = ref(null);
 
-const showCompare = ref("first");
+const showCompare = ref("");
 
 const eoxMapConfig = reactive({
   /** @type {(number|undefined)[] | undefined} */
@@ -217,14 +217,15 @@ onMounted(() => {
   (eoxMap.value?.map)?.on("moveend", handleMoveEnd);
 
   const { selectedStac, selectedCompareStac } = storeToRefs(store);
+  showCompare.value = "first";
 
   watch(
     [selectedCompareStac, datetime],
     async (
       [updatedCompareStac, updatedTime],
-      [_previousCompareStac, _previousTime],
+      [previousCompareStac, _previousTime],
     ) => {
-      if (updatedCompareStac) {
+      if (updatedCompareStac && updatedCompareStac !== previousCompareStac) {
         const comapreLayersCollection = await createLayersConfig(
           updatedCompareStac,
           updatedTime,
