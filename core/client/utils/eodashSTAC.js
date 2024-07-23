@@ -1,8 +1,6 @@
 import { Collection, Item } from "stac-js";
 import { toAbsolute } from "stac-js/src/http.js";
 import {
-  createLayersFromDataAssets,
-  createLayersFromLinks,
   extractLayerConfig,
   extractRoles,
   fetchStyle,
@@ -10,8 +8,12 @@ import {
   setMapProjFromCol,
   uid,
 } from "./helpers";
-import axios from "axios";
 import { registerProjection } from "@/store/Actions";
+import {
+  createLayersFromDataAssets,
+  createLayersFromLinks,
+} from "./createLayers";
+import axios from "axios";
 
 export class EodashCollection {
   #collectionUrl = "";
@@ -109,11 +111,11 @@ export class EodashCollection {
    * @returns {Promise<Record<string,any>[]>} arrays
    * */
   async buildJsonArray(item, itemUrl, title, isGeoDB) {
-    const jsonArray = [];
-
     await registerProjection(
       /** @type {number | undefined} */ (item?.["proj:epsg"]),
     );
+
+    const jsonArray = [];
 
     if (isGeoDB) {
       const allFeatures = generateFeatures(this.#collectionStac?.links);
@@ -163,9 +165,9 @@ export class EodashCollection {
       Object.keys(dataAssets).length;
 
     if (isSupported) {
-      jsonArray.push(...createLayersFromLinks(uid(), title, item));
-
       jsonArray.push(
+        ...createLayersFromLinks(uid(), title, item),
+
         ...(await createLayersFromDataAssets(
           uid(),
           title || this.#collectionStac?.title || item.id,
@@ -226,8 +228,9 @@ export class EodashCollection {
 
   async getExtent() {
     if (!this.#collectionStac) {
-      const response = await axios.get(this.#collectionUrl);
-      const stac = await response.data;
+      const stac = await axios
+        .get(this.#collectionUrl)
+        .then((resp) => resp.data);
       this.#collectionStac = new Collection(stac);
     }
     return this.#collectionStac?.extent;
