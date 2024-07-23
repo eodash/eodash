@@ -88,6 +88,15 @@ onMounted(() => {
   /** @type {any} */ (eoxItemFilter.value).config.onSelect =
     /** @param {import('stac-ts').StacLink} item */
     async (item) => {
+      // reset the style of all compare buttons
+      eoxItemFilter.value?.shadowRoot
+        ?.querySelectorAll(".compareMapButton")
+        .forEach((res) => {
+          res.setAttribute(
+            "style",
+            "margin-left: auto; height: 15px; padding: 4px; background-color: white;",
+          );
+        });
       await store.loadSelectedSTAC(item.href);
       console.log(item, store.selectedStac);
     };
@@ -98,8 +107,22 @@ onMounted(() => {
       .querySelectorAll("input[type=radio]")
       .forEach((res) => {
         let compareButton = document.createElement("button");
+        compareButton.className = "compareMapButton";
         compareButton.dataset.id = res.id;
         compareButton.onclick = async (evt) => {
+          // reset the style of all compare buttons
+          eoxItemFilter.value?.shadowRoot
+            ?.querySelectorAll(".compareMapButton")
+            .forEach((res) => {
+              res.setAttribute(
+                "style",
+                "margin-left: auto; height: 15px; padding: 4px; background-color: white;",
+              );
+            });
+          evt.currentTarget?.setAttribute(
+            "style",
+            "margin-left: auto; height: 15px; padding: 4px; background-color: #004170;",
+          );
           const selected = eoxItemFilter.value?.items.find(
             (it) => it.id === evt.currentTarget.dataset.id,
           );
@@ -109,12 +132,25 @@ onMounted(() => {
         };
         compareButton.setAttribute(
           "style",
-          "margin-left: auto; height: 15px; padding: 4px;",
+          "margin-left: auto; height: 15px; padding: 4px; background-color: white;",
         );
-        let span = document.createElement("span");
-        span.innerHTML = "compare";
-        // span.setAttribute("style", "padding-top: 0px; padding-bottom: 0px");
-        compareButton.appendChild(span);
+        const svgIcon = document.createElementNS(
+          "http://www.w3.org/2000/svg",
+          "svg",
+        );
+        const iconPath = document.createElementNS(
+          "http://www.w3.org/2000/svg",
+          "path",
+        );
+        svgIcon.setAttribute("width", "15");
+        svgIcon.setAttribute("height", "15");
+        svgIcon.setAttribute("viewBox", "0 0 24 24");
+        iconPath.setAttribute(
+          "d",
+          "M19,3H14V5H19V18L14,12V21H19A2,2 0 0,0 21,19V5C21,3.89 20.1,3 19,3M10,18H5L10,12M10,3H5C3.89,3 3,3.89 3,5V19A2,2 0 0,0 5,21H10V23H12V1H10V3Z",
+        );
+        svgIcon.appendChild(iconPath);
+        compareButton.appendChild(svgIcon);
         res.parentElement?.append(compareButton);
       });
   }, 100);
