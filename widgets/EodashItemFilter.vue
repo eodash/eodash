@@ -1,9 +1,10 @@
 <template>
   <eox-itemfilter
     class="fill-height"
-    :config="config"
+    v-bind="config"
     ref="eoxItemFilter"
     style="overflow: auto"
+    @select="onSelect"
   >
     <h4 slot="filterstitle" style="margin: 14px 8px">{{ filtersTitle }}</h4>
 
@@ -58,7 +59,13 @@ const props = defineProps({
     ],
   },
 });
-
+/** @param {any} evt*/
+const onSelect = async (evt) => {
+  const item = /** @type {import('stac-ts').StacLink} */ evt.detail;
+  console.log('item',item);
+  await store.loadSelectedSTAC(item.href);
+  console.log(item, store.selectedStac);
+};
 const config = {
   titleProperty: props.titleProperty,
   filterProperties: props.filterProperties,
@@ -90,15 +97,5 @@ onMounted(() => {
   const items = store.stac?.filter((item) => item.rel === "child");
   /** @type {any} */
   (eoxItemFilter.value).items = items;
-
-  /** @type {any} */ (eoxItemFilter.value).addEventListener(
-    "select",
-    /** @param {any} evt*/
-    async (evt) => {
-      const item = /** @type {import('stac-ts').StacLink} */ evt.detail;
-      await store.loadSelectedSTAC(item.href);
-      console.log(item, store.selectedStac);
-    },
-  );
 });
 </script>
