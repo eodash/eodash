@@ -69,7 +69,6 @@ export async function createLayersFromDataAssets(
   return jsonArray;
 }
 
-
 /**
  * @param {import('stac-ts').StacItem} item
  * @param {string} id

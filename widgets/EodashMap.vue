@@ -10,7 +10,7 @@ import { transformExtent } from "ol/proj";
 import { onMounted, onUnmounted, reactive, ref, watch } from "vue";
 import { EodashCollection } from "@/utils/eodashSTAC";
 import { extractCollectionUrls, uid } from "@/utils/helpers";
-import { currentUrl, datetime, mapPosition } from "@/store/States";
+import { currentUrl, datetime, mapEl, mapPosition } from "@/store/States";
 import { storeToRefs } from "pinia";
 import { useSTAcStore } from "@/store/stac";
 import "@eox/map";
@@ -74,6 +74,8 @@ const handleMoveEnd = (evt) => {
 const store = useSTAcStore();
 
 onMounted(() => {
+  mapEl.value = /** @type {HTMLElement & Record<string,any>} */ (eoxMap.value);
+
   /** @type {import('ol/Map').default} */
   (eoxMap.value?.map)?.on("moveend", handleMoveEnd);
 

@@ -62,7 +62,6 @@ const props = defineProps({
 /** @param {any} evt*/
 const onSelect = async (evt) => {
   const item = /** @type {import('stac-ts').StacLink} */ evt.detail;
-  console.log('item',item);
   await store.loadSelectedSTAC(item.href);
   console.log(item, store.selectedStac);
 };
