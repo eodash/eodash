@@ -260,10 +260,14 @@ export interface EodashStore {
     /**
      * Register EPSG projection in `eox-map` and adds it to {@link EodashStore.states.availableMapProjection `availableMapProjection`` }
      * */
-    registerProjection: (code?: number | string) => Promise<void>;
+    registerProjection: (
+      code?: number | string | { name: string; def: string },
+    ) => Promise<void>;
 
     /** Change `eox-map` projection from an `EPSG` code */
-    changeMapProjection: (code?: number | string) => Promise<void>;
+    changeMapProjection: (
+      code?: number | string | { name: string; def: string },
+    ) => Promise<void>;
   };
 
   /** Pinia store definition used to navigate the root STAC catalog. */

@@ -69,9 +69,11 @@ export async function createLayersFromDataAssets(
   let geoTIFFSources = [];
   for (const ast in assets) {
     // register projection if exists
-    await registerProjection(
-      /** @type {number | undefined} */ (assets[ast]?.["proj:epsg"]),
-    );
+    const assetProjection =
+      /** @type {string | number | {name: string, def: string} | undefined} */ (
+        assets[ast]?.["proj:epsg"] || assets[ast]?.["eodash:proj4_def"]
+      );
+    await registerProjection(assetProjection);
 
     if (assets[ast]?.type === "application/geo+json") {
       jsonArray.push({
@@ -99,7 +101,7 @@ export async function createLayersFromDataAssets(
       type: "WebGLTile",
       source: {
         type: "GeoTIFF",
-        normalize: style?.variables ? false : true,
+        normalize: style ? false : true,
         sources: geoTIFFSources,
       },
       properties: {
@@ -120,23 +122,26 @@ export async function createLayersFromDataAssets(
  */
 export const setMapProjFromCol = (STAcCollection) => {
   // if a projection exists on the collection level
-  if (STAcCollection?.["proj:epsg"]) {
+  const projection =
+    STAcCollection?.["eodash:mapProjection"] ||
+    STAcCollection?.["proj:epsg"] ||
+    STAcCollection?.["eodash:proj4_def"];
+  if (projection) {
+    const projectionCode = getProjectionCode(projection);
     if (
       availableMapProjection.value &&
-      availableMapProjection.value !== STAcCollection?.["proj:epsg"]
+      availableMapProjection.value !== projectionCode
     ) {
       changeMapProjection(
-        /** @type {number} */
-        (STAcCollection["proj:epsg"]),
+        /** @type {number | string | {name: string, def: string}} */
+        (projection),
       );
     }
     // set it for `EodashMapBtns`
-    availableMapProjection.value = /** @type {string} */ (
-      STAcCollection["proj:epsg"]
-    );
+    availableMapProjection.value = /** @type {string} */ (projectionCode);
   } else {
     // reset to default projection
-    changeMapProjection((availableMapProjection.value = ""));
+    changeMapProjection((availableMapProjection.value = "EPSG:3857"));
   }
 };
 
@@ -170,3 +175,23 @@ export function extractCollectionUrls(stacObject, basepath) {
   }
   return collectionUrls;
 }
+
+/**
+ * Return projection code which is to be registered in `eox-map`
+ * @param {string|number|{name: string, def: string}} [projection]
+ * @returns {string}
+ */
+export const getProjectionCode = (projection) => {
+  let code = projection;
+  switch (typeof projection) {
+    case "number":
+      code = `EPSG:${projection}`;
+      break;
+    case "string":
+      code = projection;
+      break;
+    case "object":
+      code = projection?.name;
+  }
+  return /** @type {string} */ (code);
+};
