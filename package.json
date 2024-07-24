@@ -48,7 +48,7 @@
   "dependencies": {
     "@eox/itemfilter": "^1.0.0",
     "@eox/jsonform": "^0.8.1",
-    "@eox/layercontrol": "0.17.6-dev.2.0",
+    "@eox/layercontrol": "^0.18.1-dev.1721833788.0",
     "@eox/layout": "^0.1.0",
     "@eox/map": "1.9.3-ol-9.2.5-dev.1719634408469.0",
     "@eox/stacinfo": "^0.3.3",
