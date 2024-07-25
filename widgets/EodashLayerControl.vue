@@ -1,5 +1,7 @@
 <template>
-  <eox-layercontrol ref="eoxLayercontrol" class="pa-4" />
+  <span class="d-flex flex-column fill-height overflow-auto pa-4">
+    <eox-layercontrol ref="eoxLayercontrol" />
+  </span>
 </template>
 <script setup>
 import "@eox/layercontrol";
