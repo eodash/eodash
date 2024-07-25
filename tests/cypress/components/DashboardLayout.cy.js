@@ -13,7 +13,7 @@ describe("<DashboardLayout />", () => {
           EodashMap: true,
           EodashMapBtns: true,
           ExportState: true,
-          EodashLayerControl:true
+          EodashLayerControl: true,
         },
       },
     }).then(({ options }) => {

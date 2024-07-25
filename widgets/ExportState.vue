@@ -98,7 +98,8 @@ Text describing the current step of the tour and why it is interesting what the 
 const mapEntryCode = computed(() => {
   const [x, y, z] = mapPosition.value;
   const preTag =
-    '## Map Example <!' + '--{as="eox-map" style="width: 100%; height: 500px;" layers=';
+    "## Map Example <!" +
+    '--{as="eox-map" style="width: 100%; height: 500px;" layers=';
   const endTag = `zoom="${z}" center=[${[x, y]}] }-->`;
   return `${preTag}'${JSON.stringify(props.getLayers())}' ${endTag}`;
 });
