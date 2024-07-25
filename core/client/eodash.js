@@ -1,5 +1,6 @@
 import { reactive } from "vue";
 import { currentUrl } from "./store/States";
+
 /**
  * Reactive Edoash Instance Object. provided globally in the app, and used as an
  * intermediate object to make user defined instances config reactive.
@@ -57,19 +58,11 @@ export const eodash = reactive({
       },
       {
         id: Symbol(),
-        type: "web-component",
+        type: "internal",
         title: "Layer Control",
         layout: { x: 0, y: 8, w: 3, h: 4 },
         widget: {
-          link: async () => {
-            await import("@eox/layercontrol");
-            await import("@eox/jsonform");
-          },
-          tagName: "eox-layercontrol",
-          properties: {
-            for: "eox-map",
-            class: "pa-4",
-          },
+          name: "EodashLayerControl",
         },
       },
       {
