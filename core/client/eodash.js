@@ -58,19 +58,11 @@ export const eodash = reactive({
       },
       {
         id: Symbol(),
-        type: "web-component",
+        type: "internal",
         title: "Layer Control",
         layout: { x: 0, y: 8, w: 3, h: 4 },
         widget: {
-          link: async () => {
-            await import("@eox/layercontrol");
-            await import("@eox/jsonform");
-          },
-          tagName: "eox-layercontrol",
-          properties: {
-            for: mapEl,
-            class: "pa-4",
-          },
+          name: "EodashLayerControl",
         },
       },
       {
