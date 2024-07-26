@@ -1,5 +1,19 @@
 # Changelog
 
+## [5.0.0-alpha.2.12](https://github.com/eodash/eodash/compare/eodash-v5.0.0-alpha.2.11...eodash-v5.0.0-alpha.2.12) (2024-07-25)
+
+
+### Bug Fixes
+
+* cypress component testing ([#71](https://github.com/eodash/eodash/issues/71)) ([deb3337](https://github.com/eodash/eodash/commit/deb3337cad223ab028fd3a704196956204636a39))
+
+## [5.0.0-alpha.2.11](https://github.com/eodash/eodash/compare/eodash-v5.0.0-alpha.2.10...eodash-v5.0.0-alpha.2.11) (2024-07-25)
+
+
+### Bug Fixes
+
+* general updates ([#68](https://github.com/eodash/eodash/issues/68)) ([9373b77](https://github.com/eodash/eodash/commit/9373b772f294d1507487b3ca32cd49cd17b14945))
+
 ## [5.0.0-alpha.2.10](https://github.com/eodash/eodash/compare/eodash-v5.0.0-alpha.2.9...eodash-v5.0.0-alpha.2.10) (2024-07-15)
 
 

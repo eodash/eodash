@@ -45,6 +45,7 @@ import { useSTAcStore } from "@/store/stac";
 import { datetime } from "@/store/States";
 import { mdiRayStartArrow, mdiRayEndArrow } from "@mdi/js";
 import { extractCollectionUrls } from "@/utils/helpers";
+import axios from "axios";
 
 /**
  * @param {boolean} reverse
@@ -131,9 +132,9 @@ onMounted(() => {
           "#D55E00",
         ];
         for (let idx = 0; idx < collectionUrls.length; idx++) {
-          const stacCollection = await (
-            await fetch(collectionUrls[idx])
-          ).json();
+          const stacCollection = await axios
+            .get(collectionUrls[idx])
+            .then((resp) => resp.data);
           const dates = stacCollection.links
             .filter(
               (/** @type {{ rel: string; datetime: string }} */ item) =>

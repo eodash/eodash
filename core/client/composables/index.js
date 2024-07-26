@@ -1,7 +1,7 @@
 // functions of this folder can only be consumed inside setup stores,
 // setup functions or vue composition api components
 
-import { currentUrl, indicator, mapPosition } from "@/store/States";
+import { currentUrl, datetime, indicator, mapPosition } from "@/store/States";
 import eodash from "@/eodash";
 import { useTheme } from "vuetify/lib/framework.mjs";
 import { onMounted, watch } from "vue";
@@ -71,7 +71,7 @@ export const useUpdateTheme = (themeName, themeDefinition = {}) => {
 export const useURLSearchParametersSync = () => {
   onMounted(async () => {
     // Analyze currently set url params when first loaded and set them in the store
-    if ("URLSearchParams" in window) {
+    if (window.location.search) {
       const searchParams = new URLSearchParams(window.location.search);
       /** @type {number | undefined} */
       let x,
@@ -80,39 +80,58 @@ export const useURLSearchParametersSync = () => {
         /** @type {number | undefined} */
         z;
       searchParams.forEach(async (value, key) => {
-        if (key === "indicator") {
-          const { loadSelectedSTAC, stac } = useSTAcStore();
-          const match = stac?.find((link) => link.id == value);
-          if (match) {
-            await loadSelectedSTAC(match.href);
+        switch (key) {
+          case "indicator": {
+            const { loadSelectedSTAC, stac } = useSTAcStore();
+            const match = stac?.find((link) => link.id == value);
+            if (match) {
+              await loadSelectedSTAC(match.href);
+            }
+            break;
           }
-        }
-        if (key === "x") {
-          x = Number(value);
-        }
-        if (key === "y") {
-          y = Number(value);
-        }
-        if (key === "z") {
-          z = Number(value);
+          case "x":
+            x = Number(value);
+            break;
+          case "y":
+            y = Number(value);
+            break;
+          case "z":
+            z = Number(value);
+            break;
+          case "datetime":
+            try {
+              datetime.value = new Date(value).toISOString();
+            } catch {
+              datetime.value = new Date().toISOString();
+            }
+            break;
+          default:
+            break;
         }
       });
+
       if (x && y && z) {
         mapPosition.value = [x, y, z];
       }
     }
+
     watch(
-      [indicator, mapPosition],
-      ([updatedIndicator, updatedMapPosition]) => {
+      [indicator, mapPosition, datetime],
+      ([updatedIndicator, updatedMapPosition, updatedDatetime]) => {
         if ("URLSearchParams" in window) {
           const searchParams = new URLSearchParams(window.location.search);
           if (updatedIndicator !== "") {
             searchParams.set("indicator", updatedIndicator);
           }
+
           if (updatedMapPosition && updatedMapPosition.length === 3) {
             searchParams.set("x", updatedMapPosition[0]?.toFixed(4) ?? "");
             searchParams.set("y", updatedMapPosition[1]?.toFixed(4) ?? "");
             searchParams.set("z", updatedMapPosition[2]?.toFixed(4) ?? "");
+          }
+
+          if (updatedDatetime) {
+            searchParams.set("datetime", updatedDatetime.split("T")?.[0] ?? "");
           }
           const newRelativePathQuery =
             window.location.pathname + "?" + searchParams.toString();

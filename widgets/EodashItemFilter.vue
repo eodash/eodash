@@ -1,5 +1,11 @@
 <template>
-  <eox-itemfilter class="fill-height" :config="config" ref="eoxItemFilter">
+  <eox-itemfilter
+    class="fill-height"
+    v-bind="config"
+    ref="eoxItemFilter"
+    style="overflow: auto"
+    @select="onSelect"
+  >
     <h4 slot="filterstitle" style="margin: 14px 8px">{{ filtersTitle }}</h4>
 
     <h4 slot="resultstitle" style="margin: 14px 8px">{{ resultsTitle }}</h4>
@@ -29,8 +35,8 @@ const props = defineProps({
     default: "themes",
   },
   enableHighlighting: { type: Boolean, default: true },
-  expandMultipleFilters: { type: Boolean, default: false },
-  expandMultipleResults: { type: Boolean, default: false },
+  expandMultipleFilters: { type: Boolean, default: true },
+  expandMultipleResults: { type: Boolean, default: true },
   filterProperties: {
     /** @type {import("vue").PropType<{
      * keys:string[];
@@ -53,7 +59,21 @@ const props = defineProps({
     ],
   },
 });
-
+/** @param {any} evt*/
+const onSelect = async (evt) => {
+  // reset the style of all compare buttons
+  eoxItemFilter.value?.shadowRoot
+    ?.querySelectorAll(".compareMapButton")
+    .forEach((res) => {
+      res.setAttribute(
+        "style",
+        "float: right; height: 15px; padding: 4px; margin-top:-4px; background-color: white;",
+      );
+    });
+  const item = /** @type {import('stac-ts').StacLink} */ evt.detail;
+  await store.loadSelectedSTAC(item.href);
+  console.log(item, store.selectedStac);
+};
 const config = {
   titleProperty: props.titleProperty,
   filterProperties: props.filterProperties,
@@ -66,6 +86,9 @@ const config = {
 const eoxItemFilter = ref(null);
 
 const store = useSTAcStore();
+
+const defaultStyle = "float:right; height:15px; padding:4px;  margin-top:-4px; background-color:white;";
+const highlightStyle = "float:right; height:15px; padding:4px;  margin-top:-4px; background-color:#9bcaeb;";
 
 onMounted(() => {
   const style = document.createElement("style");
@@ -81,59 +104,46 @@ onMounted(() => {
   `;
   eoxItemFilter.value?.shadowRoot?.appendChild(style);
 
-  eoxItemFilter.value?.apply(
-    // Only list child elements in list
-    store.stac?.filter((item) => item.rel === "child"),
-  );
-  /** @type {any} */ (eoxItemFilter.value).config.onSelect =
-    /** @param {import('stac-ts').StacLink} item */
-    async (item) => {
-      // reset the style of all compare buttons
-      eoxItemFilter.value?.shadowRoot
-        ?.querySelectorAll(".compareMapButton")
-        .forEach((res) => {
-          res.setAttribute(
-            "style",
-            "margin-left: auto; height: 15px; padding: 4px; background-color: white;",
-          );
-        });
-      await store.loadSelectedSTAC(item.href);
-      console.log(item, store.selectedStac);
-    };
+  // Only list child elements in list
+  const items = store.stac?.filter((item) => item.rel === "child");
+  /** @type {any} */
+  (eoxItemFilter.value).items = items;
+
   setTimeout(() => {
-    // @ts-expect-error best approach to be solved in updated itemfilter
-    eoxItemFilter.value.shadowRoot
-      .getElementById("section-results")
-      .querySelectorAll("input[type=radio]")
-      .forEach((res) => {
+    /** @type {any} */
+    (eoxItemFilter.value)?.shadowRoot
+      .querySelectorAll("details>summary")
+      .forEach((/** @type {HTMLElement} */ el) =>
+        el.setAttribute("style", "width: 100%"),
+      );
+    /** @type {any} */
+    (eoxItemFilter.value)?.shadowRoot
+      .querySelectorAll("details>div li")
+      .forEach((/** @type {HTMLElement} */ res) => {
         let compareButton = document.createElement("button");
         compareButton.className = "compareMapButton";
         compareButton.dataset.id = res.id;
-        compareButton.onclick = async (evt) => {
+
+        compareButton.onclick = async (
+          /** {Event & { currentTarget: HTMLElement }} */ evt,
+        ) => {
           // reset the style of all compare buttons
           eoxItemFilter.value?.shadowRoot
             ?.querySelectorAll(".compareMapButton")
             .forEach((res) => {
-              res.setAttribute(
-                "style",
-                "margin-left: auto; height: 15px; padding: 4px; background-color: white;",
-              );
+              res.setAttribute("style", defaultStyle);
             });
-          evt.currentTarget?.setAttribute(
-            "style",
-            "margin-left: auto; height: 15px; padding: 4px; background-color: #004170;",
-          );
+          const currentTarget = /** @type {HTMLElement}*/ (evt.currentTarget);
+          currentTarget?.setAttribute("style", highlightStyle);
           const selected = eoxItemFilter.value?.items.find(
-            (it) => it.id === evt.currentTarget.dataset.id,
+            (/** @type {HTMLElement} */ it) =>
+              it.id === currentTarget?.dataset.id,
           );
           if (selected) {
             await store.loadSelectedCompareSTAC(selected.href);
           }
         };
-        compareButton.setAttribute(
-          "style",
-          "margin-left: auto; height: 15px; padding: 4px; background-color: white;",
-        );
+        compareButton.setAttribute("style", defaultStyle);
         const svgIcon = document.createElementNS(
           "http://www.w3.org/2000/svg",
           "svg",
@@ -151,7 +161,7 @@ onMounted(() => {
         );
         svgIcon.appendChild(iconPath);
         compareButton.appendChild(svgIcon);
-        res.parentElement?.append(compareButton);
+        res.append(compareButton);
       });
   }, 100);
 });

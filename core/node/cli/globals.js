@@ -4,6 +4,7 @@ import { existsSync, readFileSync } from "fs";
 import path from "path";
 import { createLogger } from "vite";
 import { Command } from "commander";
+import { fileURLToPath } from "url";
 
 export const rootPath = searchForPackageRoot(process.cwd());
 const cli = new Command("eodash");
@@ -130,9 +131,11 @@ async function getUserConfig(options, command) {
   };
 }
 
-/** @param {string} from */
-function searchForPackageRoot(from = import.meta.dirname) {
-  if (from.split("/").length > 0) {
+/** @param {string} [from] */
+function searchForPackageRoot(
+  from = import.meta.dirname ?? path.dirname(fileURLToPath(import.meta.url)),
+) {
+  if (from?.split("/").length) {
     if (existsSync(path.resolve(from, "package.json"))) {
       return from;
     }
