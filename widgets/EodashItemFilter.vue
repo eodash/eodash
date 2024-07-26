@@ -70,11 +70,11 @@ const onSelect = async (evt) => {
     ?.querySelectorAll(".compareMapButton")
     .forEach((res) => res.setAttribute("style", defaultStyle));
   const item = /** @type {import('stac-ts').StacLink} */ evt.detail;
-  if (item){
+  if (item) {
     await store.loadSelectedSTAC(item.href);
   } else {
     // TODO: it is possible to unselect items now
-    // we need to consider how to reset to "default" 
+    // we need to consider how to reset to "default"
     // if that happens here
   }
 };
@@ -152,7 +152,7 @@ const injectCompareButtons = () => {
         res.append(compareButton);
       });
   }, 100);
-}
+};
 
 onMounted(() => {
   const style = document.createElement("style");

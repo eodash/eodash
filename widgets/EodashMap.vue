@@ -75,7 +75,7 @@ const eoxCompareMapConfig = reactive({
   center: [15, 48],
   /** @type {number | undefined} */
   zoom: 4,
-  layers: []
+  layers: [],
 });
 
 // Check if selected indicator was already set in store
