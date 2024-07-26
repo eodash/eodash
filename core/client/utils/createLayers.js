@@ -41,6 +41,7 @@ export async function createLayersFromDataAssets(
             },
           }),
         },
+        ...(!style?.variables && {style}),
       };
       extractRoles(layer.properties, assets[ast]?.roles ?? []);
       jsonArray.push(layer);
@@ -54,7 +55,7 @@ export async function createLayersFromDataAssets(
       type: "WebGLTile",
       source: {
         type: "GeoTIFF",
-        normalize: !style?.variables,
+        normalize: !style,
         sources: geoTIFFSources,
       },
       properties: {
