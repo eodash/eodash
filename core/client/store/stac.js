@@ -1,7 +1,7 @@
 import { defineStore } from "pinia";
 import { inject, ref } from "vue";
 import axios from "axios";
-import { useAbsoluteUrl } from "@/composables/index";
+import { useAbsoluteUrl, useCompareAbsoluteUrl } from "@/composables/index";
 import { eodashKey } from "@/utils/keys";
 import { indicator } from "@/store/States";
 
@@ -24,6 +24,17 @@ export const useSTAcStore = defineStore("stac", () => {
    * >}
    */
   const selectedStac = ref(null);
+
+  /**
+   * Selected STAC object.
+   *
+   * @type {import("vue").Ref<
+   *   | import("stac-ts").StacCatalog
+   *   | import("stac-ts").StacCollection
+   *   | import("stac-ts").StacItem
+   *   | null
+   * >}
+   */
   const selectedCompareStac = ref(null);
 
   const eodash = /** @type {import("@/types").Eodash} */ (inject(eodashKey));
@@ -87,7 +98,7 @@ export const useSTAcStore = defineStore("stac", () => {
    * @see {@link selectedCompareStac}
    */
   async function loadSelectedCompareSTAC(relativePath = "") {
-    const absoluteUrl = useAbsoluteUrl(relativePath);
+    const absoluteUrl = useCompareAbsoluteUrl(relativePath);
 
     await axios
       .get(absoluteUrl.value)
@@ -95,7 +106,7 @@ export const useSTAcStore = defineStore("stac", () => {
         selectedCompareStac.value = resp.data;
       })
       .catch((err) => {
-        throw new Error("error loading the selected STAC", err);
+        throw new Error("error loading the selected comparison STAC", err);
       });
   }
 

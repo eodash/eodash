@@ -25,7 +25,13 @@ import { transformExtent } from "ol/proj";
 import { onMounted, onUnmounted, reactive, ref, watch } from "vue";
 import { EodashCollection } from "@/utils/eodashSTAC";
 import { extractCollectionUrls, uid } from "@/utils/helpers";
-import { currentUrl, datetime, mapEl, mapPosition } from "@/store/States";
+import {
+  currentUrl,
+  currentCompareUrl,
+  datetime,
+  mapEl,
+  mapPosition,
+} from "@/store/States";
 import { storeToRefs } from "pinia";
 import { useSTAcStore } from "@/store/stac";
 import "@eox/map";
@@ -33,6 +39,10 @@ import "@eox/map/dist/eox-map-advanced-layers-and-sources.js";
 
 /** @type {import("vue").Ref<(HTMLElement & Record<string,any>) | null>} */
 const eoxMap = ref(null);
+/** @type {import("vue").Ref<(HTMLElement & Record<string,any>) | null>} */
+const compareMap = ref(null);
+
+const showCompare = ref("");
 
 const eoxMapConfig = reactive({
   /** @type {(number|undefined)[] | undefined} */
@@ -75,6 +85,121 @@ const handleMoveEnd = (evt) => {
 };
 
 const store = useSTAcStore();
+/**
+ *
+ * @param {import("vue").Ref<string>} baseUrl
+ * @param {string} updatedTime
+ * @param {import("vue").Ref<
+ *   | import("stac-ts").StacCatalog
+ *   | import("stac-ts").StacCollection
+ *   | import("stac-ts").StacItem
+ *   | null
+ * >} selectedStac
+ */
+const createLayersConfig = async (baseUrl, updatedTime, selectedStac) => {
+  const collectionUrls = extractCollectionUrls(
+    selectedStac.value,
+    baseUrl.value,
+  );
+  const eodashCollections = collectionUrls.map(
+    (cu) => new EodashCollection(cu),
+  );
+
+  const layersCollection = [];
+  const dataLayers = {
+    type: "Group",
+    properties: {
+      id: uid(),
+      title: "Analysis Layers",
+      layerControlExpand: true,
+    },
+    layers: /** @type {Record<string,any>[]}*/ ([]),
+  };
+
+  for (const ec of eodashCollections) {
+    let layers;
+    if (updatedTime) {
+      layers = await ec.createLayersJson(new Date(updatedTime));
+    } else {
+      layers = await ec.createLayersJson();
+    }
+    if (layers) {
+      dataLayers.layers.push(...layers);
+    }
+  }
+  // Add expand to all analysis layers
+  dataLayers.layers.forEach((dl) => {
+    dl.properties.layerControlExpand = true;
+    dl.properties.layerControlToolsExpand = true;
+  });
+
+  layersCollection.push(dataLayers);
+  const indicator = new EodashCollection(currentUrl.value);
+  const indicatorLayers = await indicator.buildJsonArray(
+    //@ts-expect-error we use this function to generate collection level visualization
+    selectedStac.value,
+    currentUrl.value,
+    selectedStac.value?.title ?? "",
+    selectedStac.value?.endpointtype ?? false,
+  );
+
+  const baseLayers = {
+    type: "Group",
+    properties: {
+      id: uid(),
+      title: "Base Layers",
+    },
+    layers: /** @type {Record<string,any>[]}*/ ([]),
+  };
+
+  const indicatorBaseLayers = indicatorLayers.filter(
+    (l) => l.properties.group === "baselayer",
+  );
+  if (indicatorBaseLayers.length) {
+    baseLayers.layers.push(...indicatorBaseLayers);
+
+    // Add exclusive to baselayers and make sure only one is selected
+    baseLayers.layers.forEach((bl) => {
+      bl.properties.layerControlExclusive = true;
+    });
+  } else {
+    // Default to some baselayer
+    baseLayers.layers.push({
+      type: "Tile",
+      properties: {
+        id: "osm",
+        title: "Background",
+        layerControlExclusive: true,
+      },
+      source: {
+        type: "OSM",
+      },
+    });
+  }
+
+  if (baseLayers.layers.length) {
+    layersCollection.push(baseLayers);
+  }
+
+  const overlayLayers = {
+    type: "Group",
+    properties: {
+      id: uid(),
+      title: "Overlay Layers",
+    },
+    layers: /** @type {Record<string,any>[]}*/ ([]),
+  };
+
+  const indicatorOverlays = indicatorLayers.filter(
+    (l) => l.properties.group === "overlay",
+  );
+  if (indicatorOverlays.length) {
+    overlayLayers.layers.push(...indicatorOverlays);
+    layersCollection.unshift(overlayLayers);
+  }
+
+  return layersCollection;
+};
 
 onMounted(() => {
   mapEl.value = /** @type {HTMLElement & Record<string,any>} */ (eoxMap.value);
@@ -82,123 +207,42 @@ onMounted(() => {
   /** @type {import('ol/Map').default} */
   (eoxMap.value?.map)?.on("moveend", handleMoveEnd);
 
-  const { selectedStac } = storeToRefs(store);
+  const { selectedStac, selectedCompareStac } = storeToRefs(store);
+
+  watch(
+    [selectedCompareStac, datetime],
+    async (
+      [updatedCompareStac, updatedTime],
+      [previousCompareStac, _previousTime],
+    ) => {
+      if (updatedCompareStac && updatedCompareStac !== previousCompareStac) {
+        const compareLayersCollection = await createLayersConfig(
+          currentCompareUrl,
+          updatedTime,
+          selectedCompareStac,
+        );
+        /** @type {any} */
+        (compareMap.value).layers = compareLayersCollection;
+        showCompare.value = "";
+      }
+    },
+  );
 
   watch(
     [selectedStac, datetime],
     async ([updatedStac, updatedTime], [previousSTAC, _previousTime]) => {
       if (updatedStac) {
-        const collectionUrls = extractCollectionUrls(
-          selectedStac.value,
-          currentUrl.value,
+        const layersCollection = await createLayersConfig(
+          currentUrl,
+          updatedTime,
+          selectedStac,
         );
-        const collectionUrls = extractCollectionUrls(
-          selectedStac.value,
-          currentUrl.value,
-        );
-
-        const eodashCollections = collectionUrls.map(
-          (cu) => new EodashCollection(cu),
-        );
-
-        const layersCollection = [];
-        const dataLayers = {
-          type: "Group",
-          properties: {
-            id: uid(),
-            title: "Analysis Layers",
-            layerControlExpand: true,
-          },
-          layers: /** @type {Record<string,any>[]}*/ ([]),
-        };
-
-        for (const ec of eodashCollections) {
-          let layers;
-          if (updatedTime) {
-            layers = await ec.createLayersJson(new Date(updatedTime));
-          } else {
-            layers = await ec.createLayersJson();
-          }
-          if (layers) {
-            dataLayers.layers.push(...layers);
-          }
-        }
-        // Add expand to all analysis layers
-        dataLayers.layers.forEach((dl) => {
-          dl.properties.layerControlExpand = true;
-          dl.properties.layerControlToolsExpand = true;
-        });
-
-        layersCollection.push(dataLayers);
-        const indicator = new EodashCollection(currentUrl.value);
-        const indicatorLayers = await indicator.buildJsonArray(
-          // @ts-expect-error we pass a collection instead of an item, we want to reuse the layer extraction logic
-          selectedStac.value,
-          currentUrl.value,
-          selectedStac.value?.title ?? "",
-          selectedStac.value?.endpointtype ?? false,
-        );
-
-        const baseLayers = {
-          type: "Group",
-          properties: {
-            id: uid(),
-            title: "Base Layers",
-          },
-          layers: /** @type {Record<string,any>[]}*/ ([]),
-        };
-
-        const indicatorBaseLayers = indicatorLayers.filter(
-          (l) => l.properties.group === "baselayer",
-        );
-        if (indicatorBaseLayers.length) {
-          baseLayers.layers.push(...indicatorBaseLayers);
-
-          // Add exclusive to baselayers and make sure only one is selected
-          baseLayers.layers.forEach((bl) => {
-            bl.properties.layerControlExclusive = true;
-          });
-        } else {
-          // Default to some baselayer
-          baseLayers.layers.push({
-            type: "Tile",
-            properties: {
-              id: "osm",
-              title: "Background",
-              layerControlExclusive: true,
-            },
-            source: {
-              type: "OSM",
-            },
-          });
-        }
-
-        if (baseLayers.layers.length) {
-          layersCollection.push(baseLayers);
-        }
-
-        const overlayLayers = {
-          type: "Group",
-          properties: {
-            id: uid(),
-            title: "Overlay Layers",
-          },
-          layers: /** @type {Record<string,any>[]}*/ ([]),
-        };
-
-        const indicatorOverlays = indicatorLayers.filter(
-          (l) => l.properties.group === "overlay",
-        );
-        if (indicatorOverlays.length) {
-          overlayLayers.layers.push(...indicatorOverlays);
-          layersCollection.unshift(overlayLayers);
-        }
-
         /** @type {any} */
         (eoxMap.value).layers = layersCollection;
 
         // only on different indicator selection and not on time change
         if (previousSTAC?.id !== updatedStac.id) {
+          /*
           // Try to move map view to extent
           const extent = await indicator.getExtent();
           // Make sure for now we are always converting from 4326
@@ -217,8 +261,9 @@ onMounted(() => {
             "EPSG:4326",
             eoxMap.value?.map?.getView().getProjection(),
           );
+          */
           /** @type {any} */
-          (eoxMap.value).zoomExtent = reprojExtent;
+          // (eoxMap.value).zoomExtent = reprojExtent;
         }
       }
     },

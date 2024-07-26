@@ -87,8 +87,10 @@ const eoxItemFilter = ref(null);
 
 const store = useSTAcStore();
 
-const defaultStyle = "float:right; height:15px; padding:4px;  margin-top:-4px; background-color:white;";
-const highlightStyle = "float:right; height:15px; padding:4px;  margin-top:-4px; background-color:#9bcaeb;";
+const defaultStyle =
+  "float:right; height:15px; padding:4px;  margin-top:-4px; background-color:white;";
+const highlightStyle =
+  "float:right; height:15px; padding:4px;  margin-top:-4px; background-color:#9bcaeb;";
 
 onMounted(() => {
   const style = document.createElement("style");
@@ -122,7 +124,7 @@ onMounted(() => {
       .forEach((/** @type {HTMLElement} */ res) => {
         let compareButton = document.createElement("button");
         compareButton.className = "compareMapButton";
-        compareButton.dataset.id = res.id;
+        compareButton.dataset.id = res.children[0].id;
 
         compareButton.onclick = async (
           /** {Event & { currentTarget: HTMLElement }} */ evt,
