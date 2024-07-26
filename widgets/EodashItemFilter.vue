@@ -17,6 +17,10 @@ import "@eox/itemfilter";
 import { onMounted, ref } from "vue";
 
 const props = defineProps({
+  enableCompare: {
+    type: Boolean,
+    default: false,
+  },
   filtersTitle: {
     type: String,
     default: "Indicators",
@@ -92,25 +96,7 @@ const defaultStyle =
 const highlightStyle =
   "float:right; height:15px; padding:4px;  margin-top:-4px; background-color:#9bcaeb;";
 
-onMounted(() => {
-  const style = document.createElement("style");
-  style.innerHTML = `
-    section {
-      margin: 0 !important;
-    }
-    section button#filter-reset {
-      padding: 0 8px;
-      top: 8px;
-      right: 8px;
-    }
-  `;
-  eoxItemFilter.value?.shadowRoot?.appendChild(style);
-
-  // Only list child elements in list
-  const items = store.stac?.filter((item) => item.rel === "child");
-  /** @type {any} */
-  (eoxItemFilter.value).items = items;
-
+const injectCompareButtons = () => {
   setTimeout(() => {
     /** @type {any} */
     (eoxItemFilter.value)?.shadowRoot
@@ -166,5 +152,28 @@ onMounted(() => {
         res.append(compareButton);
       });
   }, 100);
+}
+
+onMounted(() => {
+  const style = document.createElement("style");
+  style.innerHTML = `
+    section {
+      margin: 0 !important;
+    }
+    section button#filter-reset {
+      padding: 0 8px;
+      top: 8px;
+      right: 8px;
+    }
+  `;
+  eoxItemFilter.value?.shadowRoot?.appendChild(style);
+
+  // Only list child elements in list
+  const items = store.stac?.filter((item) => item.rel === "child");
+  /** @type {any} */
+  (eoxItemFilter.value).items = items;
+  if (props.enableCompare) {
+    injectCompareButtons();
+  }
 });
 </script>

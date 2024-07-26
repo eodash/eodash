@@ -44,6 +44,9 @@ export const eodash = reactive({
       type: "internal",
       widget: {
         name: "EodashMap",
+        properties: {
+          enableCompare: true,
+        }
       },
     },
     widgets: [
@@ -54,6 +57,9 @@ export const eodash = reactive({
         layout: { x: 0, y: 0, w: 3, h: 8 },
         widget: {
           name: "EodashItemFilter",
+          properties: {
+            enableCompare: true,
+          }
         },
       },
       {

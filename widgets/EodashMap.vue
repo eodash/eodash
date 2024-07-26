@@ -37,12 +37,22 @@ import { useSTAcStore } from "@/store/stac";
 import "@eox/map";
 import "@eox/map/dist/eox-map-advanced-layers-and-sources.js";
 
+const props = defineProps({
+  enableCompare: {
+    type: Boolean,
+    default: false,
+  },
+});
+
 /** @type {import("vue").Ref<(HTMLElement & Record<string,any>) | null>} */
 const eoxMap = ref(null);
 /** @type {import("vue").Ref<(HTMLElement & Record<string,any>) | null>} */
 const compareMap = ref(null);
 
 const showCompare = ref("");
+if (!props.enableCompare) {
+  showCompare.value = "first";
+}
 
 const eoxMapConfig = reactive({
   /** @type {(number|undefined)[] | undefined} */
@@ -208,25 +218,26 @@ onMounted(() => {
   (eoxMap.value?.map)?.on("moveend", handleMoveEnd);
 
   const { selectedStac, selectedCompareStac } = storeToRefs(store);
-
-  watch(
-    [selectedCompareStac, datetime],
-    async (
-      [updatedCompareStac, updatedTime],
-      [previousCompareStac, _previousTime],
-    ) => {
-      if (updatedCompareStac && updatedCompareStac !== previousCompareStac) {
-        const compareLayersCollection = await createLayersConfig(
-          currentCompareUrl,
-          updatedTime,
-          selectedCompareStac,
-        );
-        /** @type {any} */
-        (compareMap.value).layers = compareLayersCollection;
-        showCompare.value = "";
-      }
-    },
-  );
+  if (props.enableCompare) {
+    watch(
+      [selectedCompareStac, datetime],
+      async (
+        [updatedCompareStac, updatedTime],
+        [previousCompareStac, _previousTime],
+      ) => {
+        if (updatedCompareStac && updatedCompareStac !== previousCompareStac) {
+          const compareLayersCollection = await createLayersConfig(
+            currentCompareUrl,
+            updatedTime,
+            selectedCompareStac,
+          );
+          /** @type {any} */
+          (compareMap.value).layers = compareLayersCollection;
+          showCompare.value = "";
+        }
+      },
+    );
+  }
 
   watch(
     [selectedStac, datetime],
