@@ -68,15 +68,15 @@ const onSelect = async (evt) => {
   // reset the style of all compare buttons
   eoxItemFilter.value?.shadowRoot
     ?.querySelectorAll(".compareMapButton")
-    .forEach((res) => {
-      res.setAttribute(
-        "style",
-        "float: right; height: 15px; padding: 4px; margin-top:-4px; background-color: white;",
-      );
-    });
+    .forEach((res) => res.setAttribute("style", defaultStyle));
   const item = /** @type {import('stac-ts').StacLink} */ evt.detail;
-  await store.loadSelectedSTAC(item.href);
-  console.log(item, store.selectedStac);
+  if (item){
+    await store.loadSelectedSTAC(item.href);
+  } else {
+    // TODO: it is possible to unselect items now
+    // we need to consider how to reset to "default" 
+    // if that happens here
+  }
 };
 const config = {
   titleProperty: props.titleProperty,
