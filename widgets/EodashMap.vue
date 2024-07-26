@@ -16,12 +16,11 @@
       id="compare"
       slot="second"
       ref="compareMap"
-      :config="eoxMapConfig"
+      :config="eoxCompareMapConfig"
     />
   </eox-map-compare>
 </template>
 <script setup>
-import { transformExtent } from "ol/proj";
 import { onMounted, onUnmounted, reactive, ref, watch } from "vue";
 import { EodashCollection } from "@/utils/eodashSTAC";
 import { extractCollectionUrls, uid } from "@/utils/helpers";
@@ -49,10 +48,7 @@ const eoxMap = ref(null);
 /** @type {import("vue").Ref<(HTMLElement & Record<string,any>) | null>} */
 const compareMap = ref(null);
 
-const showCompare = ref("");
-if (!props.enableCompare) {
-  showCompare.value = "first";
-}
+const showCompare = ref("first");
 
 const eoxMapConfig = reactive({
   /** @type {(number|undefined)[] | undefined} */
@@ -72,6 +68,14 @@ const eoxMapConfig = reactive({
       },
     },
   ],
+});
+
+const eoxCompareMapConfig = reactive({
+  /** @type {(number|undefined)[] | undefined} */
+  center: [15, 48],
+  /** @type {number | undefined} */
+  zoom: 4,
+  layers: []
 });
 
 // Check if selected indicator was already set in store
@@ -253,6 +257,7 @@ onMounted(() => {
 
         // only on different indicator selection and not on time change
         if (previousSTAC?.id !== updatedStac.id) {
+          showCompare.value = "first";
           /*
           // Try to move map view to extent
           const extent = await indicator.getExtent();
