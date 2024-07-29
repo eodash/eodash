@@ -227,9 +227,9 @@ onMounted(() => {
       [selectedCompareStac, datetime],
       async (
         [updatedCompareStac, updatedTime],
-        [previousCompareStac, _previousTime],
+        [_previousCompareStac, _previousTime],
       ) => {
-        if (updatedCompareStac && updatedCompareStac !== previousCompareStac) {
+        if (updatedCompareStac) {
           const compareLayersCollection = await createLayersConfig(
             currentCompareUrl,
             updatedTime,
