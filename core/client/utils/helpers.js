@@ -125,6 +125,7 @@ export const extractRoles = (properties, roles) => {
       properties.visible = true;
     }
     if (role === "overlay" || role === "baselayer") {
+      properties.id = properties.title
       properties.group = role;
     }
     return properties;

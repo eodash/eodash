@@ -33,7 +33,7 @@ export async function createLayersFromDataAssets(
         },
         properties: {
           id,
-          title,
+          title: assets[ast]?.title || title,
           ...(layerConfig && {
             layerConfig: {
               ...layerConfig,
@@ -87,7 +87,7 @@ export const createLayersFromLinks = (id, title, item) => {
         type: "Tile",
         properties: {
           id: id || link.id,
-          title: title || link.title || item.id,
+          title: link.title || title ||  item.id,
         },
         source: {
           type: "TileWMS",
@@ -115,7 +115,7 @@ export const createLayersFromLinks = (id, title, item) => {
         type: "Tile",
         properties: {
           id: link.id || item.id,
-          title: title || link.title || item.id,
+          title: link.title || title ||  item.id,
           roles: link.roles,
         },
         source: {

@@ -135,7 +135,7 @@ onMounted(() => {
         const baseLayers = {
           type: "Group",
           properties: {
-            id: uid(),
+            id: "BaseLayers",
             title: "Base Layers",
           },
           layers: /** @type {Record<string,any>[]}*/ ([]),
@@ -173,7 +173,7 @@ onMounted(() => {
         const overlayLayers = {
           type: "Group",
           properties: {
-            id: uid(),
+            id: "OverlayLayers",
             title: "Overlay Layers",
           },
           layers: /** @type {Record<string,any>[]}*/ ([]),
