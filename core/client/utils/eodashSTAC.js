@@ -6,7 +6,6 @@ import {
   fetchStyle,
   generateFeatures,
   setMapProjFromCol,
-  uid,
 } from "./helpers";
 import { registerProjection } from "@/store/Actions";
 import {
@@ -166,10 +165,10 @@ export class EodashCollection {
 
     if (isSupported) {
       jsonArray.push(
-        ...createLayersFromLinks(uid(), title, item),
+        ...createLayersFromLinks(item.id, title, item),
 
         ...(await createLayersFromDataAssets(
-          uid(),
+          item.id+"_assets",
           title || this.#collectionStac?.title || item.id,
           dataAssets,
           style,

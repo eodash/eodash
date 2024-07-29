@@ -110,9 +110,6 @@ export function extractCollectionUrls(stacObject, basepath) {
   return collectionUrls;
 }
 
-export const uid = () =>
-  Date.now().toString(36) + Math.random().toString(36).substring(2);
-
 /**
  * Assign extracted roles to layer properties
  * @param {Record<string,any>} properties

@@ -23,7 +23,7 @@
 <script setup>
 import { onMounted, onUnmounted, reactive, ref, watch } from "vue";
 import { EodashCollection } from "@/utils/eodashSTAC";
-import { extractCollectionUrls, uid } from "@/utils/helpers";
+import { extractCollectionUrls } from "@/utils/helpers";
 import {
   currentUrl,
   currentCompareUrl,
@@ -123,7 +123,7 @@ const createLayersConfig = async (baseUrl, updatedTime, selectedStac) => {
   const dataLayers = {
     type: "Group",
     properties: {
-      id: uid(),
+      id: "AnalysisGroup",
       title: "Analysis Layers",
       layerControlExpand: true,
     },
@@ -160,7 +160,7 @@ const createLayersConfig = async (baseUrl, updatedTime, selectedStac) => {
   const baseLayers = {
     type: "Group",
     properties: {
-      id: uid(),
+      id: "BaseLayersGroup",
       title: "Base Layers",
     },
     layers: /** @type {Record<string,any>[]}*/ ([]),
@@ -198,7 +198,7 @@ const createLayersConfig = async (baseUrl, updatedTime, selectedStac) => {
   const overlayLayers = {
     type: "Group",
     properties: {
-      id: uid(),
+      id: "OverlayGroup",
       title: "Overlay Layers",
     },
     layers: /** @type {Record<string,any>[]}*/ ([]),
