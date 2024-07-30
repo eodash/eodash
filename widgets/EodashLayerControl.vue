@@ -6,6 +6,8 @@
 <script setup>
 import "@eox/layercontrol";
 import "@eox/jsonform";
+import "@eox/timecontrol"
+
 import { onMounted, ref } from "vue";
 import { mapEl } from "@/store/States";
 /** @type { import("vue").Ref<HTMLElement & Record<string,any> | null>} */

@@ -150,3 +150,24 @@ export const fetchStyle = async (item, itemUrl) => {
     return styleJson;
   }
 };
+
+/**
+ * @param {import("stac-ts").StacLink[]} [links]
+ * @param {string|null} [current]
+ **/
+export const extractLayerDatetime = (links,current) =>{
+  if (!current || !links?.length) {
+    return
+  }
+  const values = links.map(link => {
+    if (link.datetime) {
+      return link.datetime
+    }
+  })
+
+  if (!values.includes(current) && current.includes('T')) {
+    current = current.split('T')[0]
+  }
+
+  return {values,current}
+}

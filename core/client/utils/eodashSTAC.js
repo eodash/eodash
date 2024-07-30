@@ -2,6 +2,7 @@ import { Collection, Item } from "stac-js";
 import { toAbsolute } from "stac-js/src/http.js";
 import {
   extractLayerConfig,
+  extractLayerDatetime,
   extractRoles,
   fetchStyle,
   generateFeatures,
@@ -153,6 +154,9 @@ export class EodashCollection {
       await fetchStyle(item, itemUrl),
     );
 
+
+    const layerDatetime = extractLayerDatetime(this.getItems(),item.properties?.datetime)
+
     const dataAssets = Object.keys(item?.assets ?? {}).reduce((data, ast) => {
       if (item.assets[ast].roles?.includes("data")) {
         data[ast] = item.assets[ast];
@@ -166,7 +170,7 @@ export class EodashCollection {
 
     if (isSupported) {
       jsonArray.push(
-        ...createLayersFromLinks(uid(), title, item),
+        ...createLayersFromLinks(uid(), title, item,layerDatetime),
 
         ...(await createLayersFromDataAssets(
           uid(),
@@ -174,6 +178,7 @@ export class EodashCollection {
           dataAssets,
           style,
           layerConfig,
+          layerDatetime
         )),
       );
     } else {

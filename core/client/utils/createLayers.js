@@ -7,6 +7,7 @@ import { extractRoles } from "./helpers";
  * @param {Record<string,import("stac-ts").StacAsset>} assets
  * @param {import("ol/layer/WebGLTile").Style} [style]
  * @param {Record<string, unknown>} [layerConfig]
+ * @param {Record<string, unknown>} [layerDatetime]
  **/
 export async function createLayersFromDataAssets(
   id,
@@ -14,6 +15,7 @@ export async function createLayersFromDataAssets(
   assets,
   style,
   layerConfig,
+  layerDatetime
 ) {
   let jsonArray = [];
   let geoTIFFSources = [];
@@ -34,6 +36,7 @@ export async function createLayersFromDataAssets(
         properties: {
           id,
           title,
+          layerDatetime,
           ...(layerConfig && {
             layerConfig: {
               ...layerConfig,
@@ -62,6 +65,7 @@ export async function createLayersFromDataAssets(
         id,
         title,
         layerConfig,
+        layerDatetime
       },
       style,
     });
@@ -74,8 +78,9 @@ export async function createLayersFromDataAssets(
  * @param {import('stac-ts').StacItem} item
  * @param {string} id
  * @param {string} title
+ * @param {Record<string,any>} [layerDatetime]
  */
-export const createLayersFromLinks = (id, title, item) => {
+export const createLayersFromLinks = (id, title, item,layerDatetime) => {
   /** @type {Record<string,any>[]} */
   const jsonArray = [];
   const wmsArray = item.links.filter((l) => l.rel === "wms");
@@ -88,6 +93,7 @@ export const createLayersFromLinks = (id, title, item) => {
         properties: {
           id: id || link.id,
           title: title || link.title || item.id,
+          layerDatetime
         },
         source: {
           type: "TileWMS",
@@ -117,6 +123,7 @@ export const createLayersFromLinks = (id, title, item) => {
           id: link.id || item.id,
           title: title || link.title || item.id,
           roles: link.roles,
+          layerDatetime
         },
         source: {
           type: "XYZ",
