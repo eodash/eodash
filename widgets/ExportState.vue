@@ -1,11 +1,11 @@
 <template>
-  <PopUp v-model="dialog">
-    <v-card>
-      <v-card-title class="bg-primary">
+  <PopUp v-model="dialog" >
+    <v-card style="max-height: 498px;">
+      <v-card-title class="bg-primary" style="max-height: 49px;">
         <h5 class="text-h5">Storytelling map configuration</h5>
       </v-card-title>
 
-      <v-card-text class="py-5">
+      <v-card-text class="py-5 overflow-auto"  style="height:400px">
         <p class="text-body-2">
           Copy and paste this code into the map layers field of the storytelling
           editor:
@@ -41,7 +41,7 @@
 
       <v-divider></v-divider>
 
-      <v-card-actions>
+      <v-card-actions style="max-height: 49px;">
         <v-spacer></v-spacer>
         <v-btn variant="text" @click="dialog = !dialog"> Close </v-btn>
       </v-card-actions>
