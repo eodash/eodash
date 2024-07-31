@@ -59,6 +59,7 @@ export const eodash = reactive({
           name: "EodashItemFilter",
           properties: {
             enableCompare: true,
+            aggregateResults: "collection_group",
           },
         },
       },
@@ -84,13 +85,27 @@ export const eodash = reactive({
                   properties: {
                     for: currentUrl,
                     allowHtml: "true",
-                    styleOverride:
-                      "#properties li > .value {font-weight: normal !important;}",
-                    header: "[]",
+                    styleOverride: `.single-property {columns: 1!important;}
+                      h1 {margin:0px!important;font-size:16px!important;}
+                      header h1:after {
+                        content:' ';
+                        display:block;
+                        border:1px solid #d0d0d0;
+                      }
+                      h2 {font-size:15px}
+                      h3 {font-size:14px}
+                      summary {cursor: pointer;}
+                      #properties li > .value { font-weight: normal !important;}
+                      main {padding-bottom: 10px;}
+                      .footer-container {line-height:1;}
+                      .footer-container button {margin-top: -10px;}
+                      .footer-container small {font-size:10px;line-height:1;}`,
+                    header: '["title"]',
+                    tags: '["themes"]',
                     subheader: "[]",
-                    properties: '["description"]',
-                    featured: "[]",
-                    footer: "[]",
+                    properties: '["satellite","sensor","agency","extent"]',
+                    featured: '["description","providers","assets","links"]',
+                    footer: '["sci:citation"]',
                   },
                   tagName: "eox-stacinfo",
                 },
