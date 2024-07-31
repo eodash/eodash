@@ -6,13 +6,13 @@
     <eox-map
       class="fill-height fill-width overflow-none"
       slot="first"
+      sync="eox-map#compare"
       ref="eoxMap"
       id="main"
       :config="eoxMapConfig"
     />
     <eox-map
       class="fill-height fill-width overflow-none"
-      sync="eox-map#main"
       id="compare"
       slot="second"
       ref="compareMap"
@@ -31,6 +31,7 @@ import {
   mapEl,
   mapPosition,
 } from "@/store/States";
+import { transformExtent } from "ol/proj";
 import { storeToRefs } from "pinia";
 import { useSTAcStore } from "@/store/stac";
 import "@eox/map";
@@ -258,14 +259,14 @@ onMounted(() => {
         // only on different indicator selection and not on time change
         if (previousSTAC?.id !== updatedStac.id) {
           showCompare.value = "first";
-          /*
           // Try to move map view to extent
-          const extent = await indicator.getExtent();
           // Make sure for now we are always converting from 4326
           // of stac items  into current map projection
           // TODO: This might change if we decide to use 4326 as default for zoom and extent
           // Sanitize extent
-          const b = extent.spatial.bbox[0];
+          // @ts-expect-error we will need to change the approach to use
+          // native eox-map transformation once included
+          const b = updatedStac.extent?.spatial.bbox[0];
           const sanitizedExtent = [
             b[0] > -180 ? b[0] : -180,
             b[1] > -90 ? b[1] : -90,
@@ -277,9 +278,8 @@ onMounted(() => {
             "EPSG:4326",
             eoxMap.value?.map?.getView().getProjection(),
           );
-          */
           /** @type {any} */
-          // (eoxMap.value).zoomExtent = reprojExtent;
+          (eoxMap.value).zoomExtent = reprojExtent;
         }
       }
     },
