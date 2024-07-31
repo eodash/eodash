@@ -158,7 +158,6 @@ export class EodashCollection {
       }
       return data;
     }, /** @type {Record<string,import('stac-ts').StacAsset>} */ ({}));
-
     const isSupported =
       item.links.some((link) => ["wms", "xyz"].includes(link.rel)) ||
       Object.keys(dataAssets).length;
@@ -168,7 +167,7 @@ export class EodashCollection {
         ...createLayersFromLinks(item.id, title, item),
 
         ...(await createLayersFromDataAssets(
-          item.id+"_assets",
+          `${item.collection}_${item.id}_assets`,
           title || this.#collectionStac?.title || item.id,
           dataAssets,
           style,
