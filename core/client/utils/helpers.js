@@ -97,7 +97,6 @@ export function extractCollectionUrls(stacObject, basepath) {
   // Indicator assumes Catalog-Collection-Collection-Item
   // TODO: this is not the most stable test approach,
   // we should discuss potential other approaches
-
   if (stacObject?.links && stacObject?.links[1].rel === "item") {
     collectionUrls.push(basepath);
   } else if (stacObject?.links[1].rel === "child") {
@@ -110,9 +109,6 @@ export function extractCollectionUrls(stacObject, basepath) {
   }
   return collectionUrls;
 }
-
-export const uid = () =>
-  Date.now().toString(36) + Math.random().toString(36).substring(2);
 
 /**
  * Assign extracted roles to layer properties

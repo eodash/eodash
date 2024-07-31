@@ -2,6 +2,10 @@ import { ref } from "vue";
 
 /** Currently selected STAC endpoint */
 export const currentUrl = ref("");
+
+/** Currently selected compare STAC endpoint */
+export const currentCompareUrl = ref("");
+
 /** Currently selected datetime */
 export const datetime = ref(new Date().toISOString());
 
