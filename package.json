@@ -48,9 +48,9 @@
   "dependencies": {
     "@eox/itemfilter": "^1.0.1",
     "@eox/jsonform": "^0.8.2",
-    "@eox/layercontrol": "^0.18.0",
+    "@eox/layercontrol": "^0.18.1",
     "@eox/layout": "^0.1.0",
-    "@eox/map": "1.11.0",
+    "@eox/map": "1.11.2",
     "@eox/stacinfo": "^0.3.3",
     "@mdi/js": "^7.4.47",
     "@vitejs/plugin-vue": "^5.0.5",
