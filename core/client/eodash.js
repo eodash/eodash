@@ -45,7 +45,7 @@ export const eodash = reactive({
       widget: {
         name: "EodashMap",
         properties: {
-          enableCompare: true,
+          // enableCompare: true,
         },
       },
     },
@@ -58,7 +58,7 @@ export const eodash = reactive({
         widget: {
           name: "EodashItemFilter",
           properties: {
-            enableCompare: true,
+            // enableCompare: true,
             aggregateResults: "collection_group",
           },
         },
