@@ -15,7 +15,7 @@ export async function createLayersFromDataAssets(
   assets,
   style,
   layerConfig,
-  layerDatetime
+  layerDatetime,
 ) {
   let jsonArray = [];
   let geoTIFFSources = [];
@@ -44,7 +44,7 @@ export async function createLayersFromDataAssets(
             },
           }),
         },
-        ...(!style?.variables && {style}),
+        ...(!style?.variables && { style }),
       };
       extractRoles(layer.properties, assets[ast]?.roles ?? []);
       jsonArray.push(layer);
@@ -65,7 +65,7 @@ export async function createLayersFromDataAssets(
         id,
         title,
         layerConfig,
-        layerDatetime
+        layerDatetime,
       },
       style,
     });
@@ -80,7 +80,7 @@ export async function createLayersFromDataAssets(
  * @param {string} title
  * @param {Record<string,any>} [layerDatetime]
  */
-export const createLayersFromLinks = (id, title, item,layerDatetime) => {
+export const createLayersFromLinks = (id, title, item, layerDatetime) => {
   /** @type {Record<string,any>[]} */
   const jsonArray = [];
   const wmsArray = item.links.filter((l) => l.rel === "wms");
@@ -93,7 +93,7 @@ export const createLayersFromLinks = (id, title, item,layerDatetime) => {
         properties: {
           id: id || link.id,
           title: title || link.title || item.id,
-          layerDatetime
+          layerDatetime,
         },
         source: {
           type: "TileWMS",
@@ -123,7 +123,7 @@ export const createLayersFromLinks = (id, title, item,layerDatetime) => {
           id: link.id || item.id,
           title: title || link.title || item.id,
           roles: link.roles,
-          layerDatetime
+          layerDatetime,
         },
         source: {
           type: "XYZ",

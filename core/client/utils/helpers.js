@@ -155,19 +155,70 @@ export const fetchStyle = async (item, itemUrl) => {
  * @param {import("stac-ts").StacLink[]} [links]
  * @param {string|null} [current]
  **/
-export const extractLayerDatetime = (links,current) =>{
+export const extractLayerDatetime = (links, current) => {
   if (!current || !links?.length) {
+    return;
+  }
+  const hasDatetime = links.some(l=>l.datetime)
+  if (!hasDatetime) {
     return
   }
-  const values = links.map(link => {
+  const values = links.reduce((vals,link) => {
     if (link.datetime) {
-      return link.datetime
+      vals.push( /** @type {string} */(link.datetime))
     }
-  })
+    return vals
+  },/** @type {string[]} */([]));
 
-  if (!values.includes(current) && current.includes('T')) {
-    current = current.split('T')[0]
+  if (!values.length) {
+    return
   }
 
-  return {values,current}
-}
+  if (!values.includes(current) && current.includes("T")) {
+    current = current.split("T")[0];
+  }
+
+  return {
+    values,
+    current,
+    slider: false,
+    disablePlay: true,
+  };
+};
+
+/**
+ *  @param {Record<string,any> & {properties:{id?:string,title?:string}}} layer
+ *  @param {Record<string, any>[]} layers
+ *  @returns {Record<string,any> | undefined}
+ **/
+export const findLayer = (layers, layer) => {
+  const property = layer.properties.id ? "id" : "title";
+  if (!layer.properties[property]) {
+    console.warn("[eodash] no valid id or title provided");
+    return;
+  }
+
+  return layers.find((l) => {
+    if (l.type === "Group") {
+      return findLayer(l.layers, layer);
+    }
+    return l.properties[property] === layer.properties[property];
+  });
+};
+/**
+ *
+ * @param {Record<string,any>[]} curentLayers
+ * @param {Record<string,any> & {properties:{id?:string,title?:string}}} oldLayer
+ * @param {Record<string,any>[]} newLayers
+ */
+export const replaceLayer = (curentLayers, oldLayer, newLayers) => {
+  // rethink findlayer/ old layer
+  const oldLayerIdx = curentLayers.findIndex(
+    (l) => l.properties.id === oldLayer.properties.id,
+  );
+  if (oldLayerIdx === -1) {
+    console.warn("[eodash] no layer found to be replaced");
+    return;
+  }
+  return curentLayers.splice(oldLayerIdx, 1, newLayers);
+};

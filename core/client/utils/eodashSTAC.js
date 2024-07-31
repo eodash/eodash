@@ -5,11 +5,13 @@ import {
   extractLayerDatetime,
   extractRoles,
   fetchStyle,
+  findLayer,
   generateFeatures,
+  replaceLayer,
   setMapProjFromCol,
   uid,
 } from "./helpers";
-import { registerProjection } from "@/store/Actions";
+import { getLayers, registerProjection } from "@/store/Actions";
 import {
   createLayersFromDataAssets,
   createLayersFromLinks,
@@ -112,6 +114,7 @@ export class EodashCollection {
    * @returns {Promise<Record<string,any>[]>} arrays
    * */
   async buildJsonArray(item, itemUrl, title, isGeoDB) {
+    // console.log('buildJsonArray params:',item, itemUrl, title, isGeoDB);
     await registerProjection(
       /** @type {number | undefined} */ (item?.["proj:epsg"]),
     );
@@ -154,8 +157,10 @@ export class EodashCollection {
       await fetchStyle(item, itemUrl),
     );
 
-
-    const layerDatetime = extractLayerDatetime(this.getItems(),item.properties?.datetime)
+    const layerDatetime = extractLayerDatetime(
+      this.getItems(),
+      item.properties?.datetime,
+    );
 
     const dataAssets = Object.keys(item?.assets ?? {}).reduce((data, ast) => {
       if (item.assets[ast].roles?.includes("data")) {
@@ -170,7 +175,7 @@ export class EodashCollection {
 
     if (isSupported) {
       jsonArray.push(
-        ...createLayersFromLinks(uid(), title, item,layerDatetime),
+        ...createLayersFromLinks(uid(), title, item, layerDatetime),
 
         ...(await createLayersFromDataAssets(
           uid(),
@@ -178,7 +183,7 @@ export class EodashCollection {
           dataAssets,
           style,
           layerConfig,
-          layerDatetime
+          layerDatetime,
         )),
       );
     } else {
@@ -200,6 +205,16 @@ export class EodashCollection {
     }
 
     return jsonArray;
+  }
+
+  async fetchCollection() {
+    if (!this.#collectionStac) {
+      const col = await axios
+        .get(this.#collectionUrl)
+        .then((resp) => resp.data);
+      this.#collectionStac = new Collection(col);
+    }
+    return this.#collectionStac;
   }
 
   getItems() {
@@ -260,5 +275,71 @@ export class EodashCollection {
           return distanceA - distanceB;
         })[0]
       : this.getItems()?.at(-1);
+  }
+
+  /**
+   *
+   * @param {string} datetime
+   * @param {string} layer
+   */
+  async updateLayerJson(datetime, layer) {
+    // Load collectionstac if not yet initialized
+    if (!this.#collectionStac) {
+      const col = await axios
+        .get(this.#collectionUrl)
+        .then((resp) => resp.data);
+      this.#collectionStac = new Collection(col);
+    }
+    // 3. get the link of the specified date
+    const specifiedLink = this.getItems()?.find(
+      (item) => item.datetime === datetime
+    );
+
+    if ( !specifiedLink || specifiedLink?.datetime !== datetime) {
+      console.warn(
+        "[eodash] no Item found for the provided datetime",
+        specifiedLink?.datetime,
+        datetime,
+      );
+      return;
+    }
+
+    if (
+      !this.#collectionStac.links.some(
+        (link) => link.href === specifiedLink?.href,
+      )
+    ) {
+      console.warn(
+        "[eodash] no Item found for the provided datetime in this collection",
+        this.#collectionStac,
+        specifiedLink?.datetime
+      );
+      return;
+    }
+    // 4. fetch the item
+    const itemUrl = toAbsolute(this.#collectionUrl, specifiedLink?.href);
+    const StacItem = new Item(
+      await axios.get(itemUrl).then((resp) => resp.data),
+    );
+
+    // 5. build json from the item
+    const newLayers = await this.buildJsonArray(
+      StacItem,
+      itemUrl,
+      specifiedLink.title || this.#collectionStac.title || "",
+      this.#collectionStac.endpointtype === "GeoDB",
+    );
+    // 6. replace the found layer with the built json
+    // get layers
+    const curentLayers = getLayers();
+    // find the layer from the id, consider groups
+    const oldLayer = findLayer(curentLayers, { properties: { id: layer } });
+
+    return replaceLayer(
+      curentLayers,
+      /** @type {Record<string,any> & {properties:{id:string;title:string}}} */
+      (oldLayer),
+      newLayers,
+    );
   }
 }
