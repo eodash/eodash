@@ -15,8 +15,8 @@ export default [
       "vue/no-deprecated-slot-attribute": [
         "error",
         {
-          // used for the `eox-itemfilter` titles
-          ignore: ["h4"],
+          // used for the `eox-itemfilter` titles and slots in eox-map
+          ignore: ["h4", "eox-map"],
         },
       ],
     },

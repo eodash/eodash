@@ -1,6 +1,6 @@
 {
   "name": "@eodash/eodash",
-  "version": "5.0.0-alpha.2.12",
+  "version": "5.0.0-alpha.2.13",
   "type": "module",
   "types": "./core/client/types.d.ts",
   "files": [
@@ -46,11 +46,11 @@
     "docs:generate": "typedoc --options typedoc.config.json"
   },
   "dependencies": {
-    "@eox/itemfilter": "^1.0.0",
-    "@eox/jsonform": "^0.8.1",
+    "@eox/itemfilter": "^1.0.1",
+    "@eox/jsonform": "^0.8.2",
     "@eox/layercontrol": "^0.18.2-dev.1722439716.0",
     "@eox/layout": "^0.1.0",
-    "@eox/map": "1.9.3-ol-9.2.5-dev.1719634408469.0",
+    "@eox/map": "1.11.2",
     "@eox/stacinfo": "^0.3.3",
     "@eox/timecontrol": "^0.6.1",
     "@mdi/js": "^7.4.47",

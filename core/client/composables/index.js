@@ -1,7 +1,13 @@
 // functions of this folder can only be consumed inside setup stores,
 // setup functions or vue composition api components
 
-import { currentUrl, datetime, indicator, mapPosition } from "@/store/States";
+import {
+  currentCompareUrl,
+  currentUrl,
+  datetime,
+  indicator,
+  mapPosition,
+} from "@/store/States";
 import eodash from "@/eodash";
 import { useTheme } from "vuetify/lib/framework.mjs";
 import { onMounted, watch } from "vue";
@@ -34,6 +40,35 @@ export const useAbsoluteUrl = (rel = "", base = eodash.stacEndpoint) => {
 
   currentUrl.value = st.join("/");
   return currentUrl;
+};
+
+/**
+ * Use the absolute compare URL from a relative link
+ *
+ * @param {string} [rel=''] Default is `''`
+ * @param {string} [base=eodash.stacEndpoint] - Base URL, default value is the
+ *   root stac catalog. Default is `eodash.stacEndpoint`
+ * @returns {import("vue").Ref<string>} - Returns `currentUrl`
+ * @see {@link '@/store/States.js'}
+ */
+export const useCompareAbsoluteUrl = (rel = "", base = eodash.stacEndpoint) => {
+  if (!rel || rel.includes("http")) {
+    currentCompareUrl.value = base;
+    return currentCompareUrl;
+  }
+
+  const st = base.split("/");
+  const arr = rel.split("/");
+  st.pop();
+
+  for (let i = 0; i < arr.length; i++) {
+    if (arr[i] == ".") continue;
+    if (arr[i] == "..") st.pop();
+    else st.push(arr[i]);
+  }
+
+  currentCompareUrl.value = st.join("/");
+  return currentCompareUrl;
 };
 
 /**

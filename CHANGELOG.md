@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.0.0-alpha.2.13](https://github.com/eodash/eodash/compare/eodash-v5.0.0-alpha.2.12...eodash-v5.0.0-alpha.2.13) (2024-07-26)
+
+
+### Bug Fixes
+
+* correctly apply style if no eox-jsonform to be included ([4f48103](https://github.com/eodash/eodash/commit/4f48103294772e35381e46fde933f1fac563bcf8))
+
 ## [5.0.0-alpha.2.12](https://github.com/eodash/eodash/compare/eodash-v5.0.0-alpha.2.11...eodash-v5.0.0-alpha.2.12) (2024-07-25)
 
 

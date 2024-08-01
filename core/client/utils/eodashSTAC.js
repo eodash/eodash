@@ -9,7 +9,6 @@ import {
   generateFeatures,
   replaceLayer,
   setMapProjFromCol,
-  uid,
 } from "./helpers";
 import { getLayers, registerProjection } from "@/store/Actions";
 import {
@@ -168,17 +167,16 @@ export class EodashCollection {
       }
       return data;
     }, /** @type {Record<string,import('stac-ts').StacAsset>} */ ({}));
-
     const isSupported =
       item.links.some((link) => ["wms", "xyz"].includes(link.rel)) ||
       Object.keys(dataAssets).length;
 
     if (isSupported) {
       jsonArray.push(
-        ...createLayersFromLinks(uid(), title, item, layerDatetime),
+        ...createLayersFromLinks(item.id, title, item),
 
         ...(await createLayersFromDataAssets(
-          uid(),
+          `${item.collection}_${item.id}_assets`,
           title || this.#collectionStac?.title || item.id,
           dataAssets,
           style,
