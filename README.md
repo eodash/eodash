@@ -4,7 +4,7 @@ A package for creating earth observation dashboards. To learn more about eodash 
 
 ## Usage
 
-Checkout the [documentation](https://eodash.github.io/eodash/get-started.html) for a detailed guide.
+Checkout the [documentation](https://eodash.github.io/eodash/) for a detailed guide.
 
 ## Get Started
 
