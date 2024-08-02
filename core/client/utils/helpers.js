@@ -155,19 +155,19 @@ export const extractLayerDatetime = (links, current) => {
   if (!current || !links?.length) {
     return;
   }
-  const hasDatetime = links.some(l=>l.datetime)
+  const hasDatetime = links.some((l) => typeof l.datetime === "string");
   if (!hasDatetime) {
-    return
+    return;
   }
-  const values = links.reduce((vals,link) => {
+  const values = links.reduce((vals, link) => {
     if (link.datetime) {
-      vals.push( /** @type {string} */(link.datetime))
+      vals.push(/** @type {string} */ (link.datetime));
     }
-    return vals
-  },/** @type {string[]} */([]));
+    return vals;
+  }, /** @type {string[]} */ ([]));
 
-  if (!values.length) {
-    return
+  if (values.length <= 1) {
+    return;
   }
 
   if (!values.includes(current) && current.includes("T")) {
@@ -177,8 +177,8 @@ export const extractLayerDatetime = (links, current) => {
   return {
     values,
     current,
-    slider: false,
-    disablePlay: true,
+    slider: true,
+    disablePlay: false,
   };
 };
 
@@ -189,32 +189,72 @@ export const extractLayerDatetime = (links, current) => {
  **/
 export const findLayer = (layers, layer) => {
   const property = layer.properties.id ? "id" : "title";
-  if (!layer.properties[property]) {
-    console.warn("[eodash] no valid id or title provided");
-    return;
-  }
-
-  return layers.find((l) => {
+  for (const l of layers) {
     if (l.type === "Group") {
       return findLayer(l.layers, layer);
     }
-    return l.properties[property] === layer.properties[property];
-  });
+    if (l.properties[property] === layer.properties[property]) {
+      return l;
+    }
+  }
 };
 /**
- *
- * @param {Record<string,any>[]} curentLayers
- * @param {Record<string,any> & {properties:{id?:string,title?:string}}} oldLayer
+ * @param {Record<string,any>[]} currentLayers
+ * @param {Record<string,any>} oldLayer
  * @param {Record<string,any>[]} newLayers
+ * @returns {Record<string,any>[] | undefined}
  */
-export const replaceLayer = (curentLayers, oldLayer, newLayers) => {
-  // rethink findlayer/ old layer
-  const oldLayerIdx = curentLayers.findIndex(
+export const replaceLayer = (currentLayers, oldLayer, newLayers) => {
+  const oldLayerIdx = currentLayers.findIndex(
     (l) => l.properties.id === oldLayer.properties.id,
   );
   if (oldLayerIdx === -1) {
-    console.warn("[eodash] no layer found to be replaced");
-    return;
+    for (const l of currentLayers) {
+      if (l.type === "Group") {
+        const updatedGroup = replaceLayer(l.layers, oldLayer, newLayers);
+        if (updatedGroup?.length) {
+          const idx = currentLayers.findIndex(
+            (l) => l.properties.id === oldLayer.properties.id,
+          );
+          currentLayers[idx] = updatedGroup;
+          return currentLayers;
+        }
+      }
+    }
   }
-  return curentLayers.splice(oldLayerIdx, 1, newLayers);
+
+  currentLayers.splice(oldLayerIdx, 1, ...newLayers);
+  return currentLayers;
+};
+/**
+ * @param {import('./eodashSTAC.js').EodashCollection[]} indicators
+ * @param {import('ol/layer').Layer} layer
+ */
+export const getColFromLayer = async (indicators, layer) => {
+  // init cols
+  const collections = await Promise.all(
+    indicators.map((ind) => ind.fetchCollection()),
+  );
+  const [collectionId, itemId, _asset] = layer.get("id").split("  ");
+
+  const chosen = collections.find((col) => {
+    const isInd =
+      col.id === collectionId &&
+      col.links?.some(
+        (link) => link.rel === "item" && link.href.includes(itemId),
+      );
+    return isInd ?? false;
+  });
+  return indicators.find((ind) => ind.collectionStac?.id === chosen?.id);
+};
+/**
+ *
+ * @param {string} colId
+ * @param {string} itemId
+ * @param {boolean} isAsset
+ * @returns
+ */
+export const createLayerID = (colId, itemId, isAsset) => {
+  // todo: find a better seperator
+  return `${colId ?? ""}  ${itemId ?? ""}  ${isAsset ? "_asset" : ""}`;
 };

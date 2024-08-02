@@ -91,7 +91,7 @@ export const createLayersFromLinks = (id, title, item, layerDatetime) => {
       let json = {
         type: "Tile",
         properties: {
-          id: id || link.id,
+          id,
           title: title || link.title || item.id,
           layerDatetime,
         },
@@ -120,7 +120,7 @@ export const createLayersFromLinks = (id, title, item, layerDatetime) => {
       let json = {
         type: "Tile",
         properties: {
-          id: link.id || item.id,
+          id,
           title: title || link.title || item.id,
           roles: link.roles,
           layerDatetime,

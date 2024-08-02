@@ -1,6 +1,7 @@
 import { Collection, Item } from "stac-js";
 import { toAbsolute } from "stac-js/src/http.js";
 import {
+  createLayerID,
   extractLayerConfig,
   extractLayerDatetime,
   extractRoles,
@@ -22,6 +23,11 @@ export class EodashCollection {
 
   /** @type {import("stac-ts").StacCollection | undefined} */
   #collectionStac;
+
+  //  read only
+  get collectionStac() {
+    return this.#collectionStac;
+  }
 
   /**
    * @type {import("stac-ts").StacLink
@@ -110,10 +116,12 @@ export class EodashCollection {
    * @param {string} itemUrl
    * @param {string} title
    * @param {boolean} isGeoDB
+   * @param {string} [itemDatetime]
    * @returns {Promise<Record<string,any>[]>} arrays
    * */
-  async buildJsonArray(item, itemUrl, title, isGeoDB) {
-    // console.log('buildJsonArray params:',item, itemUrl, title, isGeoDB);
+  async buildJsonArray(item, itemUrl, title, isGeoDB, itemDatetime) {
+    await this.fetchCollection();
+
     await registerProjection(
       /** @type {number | undefined} */ (item?.["proj:epsg"]),
     );
@@ -127,7 +135,7 @@ export class EodashCollection {
         {
           type: "Vector",
           properties: {
-            id: item.id,
+            id: createLayerID(this.#collectionStac?.id ?? "", item.id, false),
             title: this.#collectionStac?.title || item.id,
           },
           source: {
@@ -158,7 +166,7 @@ export class EodashCollection {
 
     const layerDatetime = extractLayerDatetime(
       this.getItems(),
-      item.properties?.datetime,
+      item.properties?.datetime ?? itemDatetime,
     );
 
     const dataAssets = Object.keys(item?.assets ?? {}).reduce((data, ast) => {
@@ -173,10 +181,15 @@ export class EodashCollection {
 
     if (isSupported) {
       jsonArray.push(
-        ...createLayersFromLinks(item.id, title, item),
+        ...createLayersFromLinks(
+          createLayerID(this.#collectionStac?.id ?? "", item.id, false),
+          title,
+          item,
+          layerDatetime,
+        ),
 
         ...(await createLayersFromDataAssets(
-          `${item.collection}_${item.id}_assets`,
+          createLayerID(this.#collectionStac?.id ?? "", item.id, true),
           title || this.#collectionStac?.title || item.id,
           dataAssets,
           style,
@@ -281,53 +294,24 @@ export class EodashCollection {
    * @param {string} layer
    */
   async updateLayerJson(datetime, layer) {
-    // Load collectionstac if not yet initialized
-    if (!this.#collectionStac) {
-      const col = await axios
-        .get(this.#collectionUrl)
-        .then((resp) => resp.data);
-      this.#collectionStac = new Collection(col);
-    }
-    // 3. get the link of the specified date
+    await this.fetchCollection();
+
+    // get the link of the specified date
     const specifiedLink = this.getItems()?.find(
-      (item) => item.datetime === datetime
+      (item) => item.datetime === datetime,
     );
 
-    if ( !specifiedLink || specifiedLink?.datetime !== datetime) {
+    if (!specifiedLink) {
       console.warn(
         "[eodash] no Item found for the provided datetime",
-        specifiedLink?.datetime,
         datetime,
       );
       return;
     }
 
-    if (
-      !this.#collectionStac.links.some(
-        (link) => link.href === specifiedLink?.href,
-      )
-    ) {
-      console.warn(
-        "[eodash] no Item found for the provided datetime in this collection",
-        this.#collectionStac,
-        specifiedLink?.datetime
-      );
-      return;
-    }
-    // 4. fetch the item
-    const itemUrl = toAbsolute(this.#collectionUrl, specifiedLink?.href);
-    const StacItem = new Item(
-      await axios.get(itemUrl).then((resp) => resp.data),
-    );
-
-    // 5. build json from the item
-    const newLayers = await this.buildJsonArray(
-      StacItem,
-      itemUrl,
-      specifiedLink.title || this.#collectionStac.title || "",
-      this.#collectionStac.endpointtype === "GeoDB",
-    );
-    // 6. replace the found layer with the built json
+    // create json layers from the item
+    const newLayers = await this.createLayersJson(specifiedLink);
+    // replace the found layer with the built json
     // get layers
     const curentLayers = getLayers();
     // find the layer from the id, consider groups
@@ -335,7 +319,7 @@ export class EodashCollection {
 
     return replaceLayer(
       curentLayers,
-      /** @type {Record<string,any> & {properties:{id:string;title:string}}} */
+      /** @type {Record<string,any> & { properties:{ id:string; title:string } } } */
       (oldLayer),
       newLayers,
     );
