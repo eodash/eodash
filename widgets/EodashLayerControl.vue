@@ -6,9 +6,8 @@
 <script setup>
 import "@eox/layercontrol";
 import "@eox/jsonform";
-import {  ref } from "vue";
+import { ref } from "vue";
 import { mapEl } from "@/store/States";
 /** @type { import("vue").Ref<HTMLElement & Record<string,any> | null>} */
 const eoxLayercontrol = ref(null);
-
 </script>
