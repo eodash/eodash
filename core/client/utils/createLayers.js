@@ -41,7 +41,7 @@ export async function createLayersFromDataAssets(
             },
           }),
         },
-        ...(!style?.variables && {style}),
+        ...(!style?.variables && { style }),
       };
       extractRoles(layer.properties, assets[ast]?.roles ?? []);
       jsonArray.push(layer);
