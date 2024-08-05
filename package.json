@@ -25,6 +25,7 @@
   },
   "browser": "./core/client/main.js",
   "scripts": {
+    "start": "npx eodash dev --entryPoint core/client/eodash.js",
     "prepare": "rollup -c",
     "prepack": "npm run build:lib",
     "dev": "npx eodash dev --entryPoint core/client/eodash.js",
