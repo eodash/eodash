@@ -113,8 +113,8 @@ onMounted(() => {
   const { selectedStac } = storeToRefs(useSTAcStore());
   watch(
     [selectedStac],
-    async ([updatedStac]) => {
-      if (updatedStac) {
+    async ([updatedStac], [previousStac]) => {
+      if (updatedStac && updatedStac !== previousStac) {
         const parentCollUrl = toAbsolute(
           `./${updatedStac.id}/collection.json`,
           eodashConfig.stacEndpoint,
@@ -135,7 +135,7 @@ onMounted(() => {
           const stacCollection = await axios
             .get(collectionUrls[idx])
             .then((resp) => resp.data);
-          const dates = stacCollection.links
+          let dates = stacCollection.links
             .filter(
               (/** @type {{ rel: string; datetime: string }} */ item) =>
                 item.rel === "item" && "datetime" in item,
@@ -143,6 +143,15 @@ onMounted(() => {
             .map(
               (/** @type {{ datetime: string }} */ it) => new Date(it.datetime),
             );
+          const resultLength = dates.length;
+          // data sanitation, we remove invalid dates in
+          // case there was badly formatted date information
+          dates = dates.filter((/** @type Date **/ d) => !isNaN(d.getTime()));
+          if (resultLength !== dates.length) {
+            console.log(
+              `Warning: Some dates for collection ${stacCollection.id} were invalid`,
+            );
+          }
           attributes.value = [
             {
               bar: {
@@ -153,6 +162,13 @@ onMounted(() => {
               dates,
             },
           ];
+        }
+        // We try to set the current time selection
+        // to latest extent date
+        // @ts-expect-error it seems the temporal extent is not defined in type
+        const interval = updatedStac?.extent?.temporal?.interval;
+        if (interval && interval.length > 0 && interval[0].length > 1) {
+          currentDate.value = new Date(interval[0][1]);
         }
       }
     },
