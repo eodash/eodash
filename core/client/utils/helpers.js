@@ -236,7 +236,7 @@ export const getColFromLayer = async (indicators, layer) => {
   const collections = await Promise.all(
     indicators.map((ind) => ind.fetchCollection()),
   );
-  const [collectionId, itemId, _asset] = layer.get("id").split("  ");
+  const [collectionId, itemId, _asset] = layer.get("id").split(";:;");
 
   const chosen = collections.find((col) => {
     const isInd =
@@ -256,6 +256,5 @@ export const getColFromLayer = async (indicators, layer) => {
  * @returns
  */
 export const createLayerID = (colId, itemId, isAsset) => {
-  // todo: find a better seperator
-  return `${colId ?? ""}  ${itemId ?? ""}  ${isAsset ? "_asset" : ""}`;
+  return `${colId ?? ""};:;${itemId ?? ""};:;${isAsset ? "_asset" : ""}`;
 };
