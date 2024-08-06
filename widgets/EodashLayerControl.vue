@@ -35,8 +35,18 @@ const handleDatetimeUpdate = async (evt) => {
     await ec.fetchCollection();
     updatedLayers = await ec.updateLayerJson(datetime, layer.get("id"));
   }
+  /** @type {Record<String,any>[] | undefined} */
+  const dataLayers = updatedLayers?.find(
+    (l) => l.properties.id === "AnalysisGroup",
+  )?.layers;
 
-  if (updatedLayers?.length) {
+  if (dataLayers?.length) {
+    // Add expand to all analysis layers
+    dataLayers?.forEach((dl) => {
+      dl.properties.layerControlExpand = true;
+      dl.properties.layerControlToolsExpand = true;
+    });
+    // assign layers to the map
     /** @type {HTMLElement & Record<string,any>} */
     (mapEl.value).layers = updatedLayers;
   }

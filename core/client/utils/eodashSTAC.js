@@ -61,10 +61,7 @@ export class EodashCollection {
     let layersJson = [];
 
     // Load collectionstac if not yet initialized
-    if (!this.#collectionStac) {
-      stac = await axios.get(this.#collectionUrl).then((resp) => resp.data);
-      this.#collectionStac = new Collection(stac);
-    }
+    stac = await this.fetchCollection();
 
     // set availabe map projection
     setMapProjFromCol(this.#collectionStac);
@@ -103,7 +100,8 @@ export class EodashCollection {
       // specific item was requested
       const item = new Item(stac);
       this.selectedItem = item;
-      const title = this.#collectionStac.title || this.#collectionStac.id;
+      const title =
+        this.#collectionStac?.title || this.#collectionStac?.id || "";
       layersJson.unshift(
         ...(await this.buildJsonArray(item, stacItemUrl, title, isGeoDB)),
       );
@@ -311,10 +309,9 @@ export class EodashCollection {
 
     // create json layers from the item
     const newLayers = await this.createLayersJson(specifiedLink);
-    // replace the found layer with the built json
-    // get layers
+
     const curentLayers = getLayers();
-    // find the layer from the id, consider groups
+
     const oldLayer = findLayer(curentLayers, { properties: { id: layer } });
 
     return replaceLayer(

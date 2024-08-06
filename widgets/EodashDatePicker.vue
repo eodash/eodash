@@ -130,7 +130,7 @@ onMounted(() => {
             ),
           ];
           attributes.push({
-            key: "id-"+ idx + Math.random().toString(16).slice(2),
+            key: "id-" + idx.toString() + Math.random().toString(16).slice(2),
             bar: {
               style: {
                 backgroundColor: wongPalette[idx % wongPalette.length],
