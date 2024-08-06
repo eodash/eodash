@@ -177,8 +177,8 @@ export const extractLayerDatetime = (links, current) => {
   return {
     values,
     current,
-    slider: true,
-    disablePlay: false,
+    slider: false,
+    disablePlay: true,
   };
 };
 
@@ -189,15 +189,17 @@ export const extractLayerDatetime = (links, current) => {
  **/
 export const findLayer = (layers, layer) => {
   const property = layer.properties.id ? "id" : "title";
-  for (const l of layers) {
-    if (l.type === "Group") {
-      return findLayer(l.layers, layer);
+  for (const lyr of layers) {
+    if (lyr.type === "Group") {
+      return findLayer(lyr.layers, layer);
     }
-    if (l.properties[property] === layer.properties[property]) {
-      return l;
+    if (lyr.properties[property] === layer.properties[property]) {
+      return lyr;
     }
   }
 };
+
+
 /**
  * @param {Record<string,any>[]} currentLayers
  * @param {Record<string,any>} oldLayer
