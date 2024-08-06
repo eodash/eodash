@@ -1,5 +1,22 @@
 # Changelog
 
+
+## [5.0.0-alpha.2.15](https://github.com/eodash/eodash/compare/eodash-v5.0.0-alpha.2.14...eodash-v5.0.0-alpha.2.15) (2024-08-02)
+
+
+### Bug Fixes
+
+* Only render the Layercontrol when there's a map element ([#81](https://github.com/eodash/eodash/pull/81))[1a52734](https://github.com/eodash/eodash/commit/1a5273421970a0825b9f5979996767bffac9740b)
+
+
+## [5.0.0-alpha.2.14](https://github.com/eodash/eodash/compare/eodash-v5.0.0-alpha.2.13...eodash-v5.0.0-alpha.2.14) (2024-08-01)
+
+
+### Features
+
+* Compare indicator functionality ([#75](https://github.com/eodash/eodash/pull/75)) ([dd4115a](https://github.com/eodash/eodash/commit/dd4115a92f2db870d8436b75adde91a2d242e315))
+
+
 ## [5.0.0-alpha.2.13](https://github.com/eodash/eodash/compare/eodash-v5.0.0-alpha.2.12...eodash-v5.0.0-alpha.2.13) (2024-07-26)
 
 
