@@ -83,7 +83,7 @@ export const useSTAcStore = defineStore("stac", () => {
 
     await axios
       .get(absoluteUrl.value)
-      .then( async (resp) => {
+      .then(async (resp) => {
         selectedStac.value = resp.data;
         indicator.value = selectedStac.value?.id ?? "";
 
@@ -94,16 +94,18 @@ export const useSTAcStore = defineStore("stac", () => {
         );
 
         // empty array from old collections
-        eodashCollections.length = 0
+        eodashCollections.length = 0;
 
         // update eodashCollections
-         eodashCollections.push(... await Promise.all(collectionUrls.map(
-          (cu) =>{
-            const ec =  new EodashCollection(cu);
-            ec.fetchCollection()
-            return ec
-          },
-        )));
+        eodashCollections.push(
+          ...(await Promise.all(
+            collectionUrls.map((cu) => {
+              const ec = new EodashCollection(cu);
+              ec.fetchCollection();
+              return ec;
+            }),
+          )),
+        );
       })
       .catch((err) => {
         throw new Error("error loading the selected STAC", err);

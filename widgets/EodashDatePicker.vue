@@ -37,24 +37,21 @@
 <script setup>
 import { DatePicker as VCDatePicker } from "v-calendar";
 import "v-calendar/style.css";
-import { computed, ref, onMounted, watch, inject } from "vue";
-import { eodashKey } from "@/utils/keys";
-import { toAbsolute } from "stac-js/src/http.js";
+import { computed, ref, onMounted, watch, reactive } from "vue";
 import { storeToRefs } from "pinia";
 import { useSTAcStore } from "@/store/stac";
 import { datetime } from "@/store/States";
 import { mdiRayStartArrow, mdiRayEndArrow } from "@mdi/js";
-import { extractCollectionUrls } from "@/utils/helpers";
-import axios from "axios";
+import { eodashCollections } from "@/utils/states";
 
 /**
  * @param {boolean} reverse
  */
 function jumpDate(reverse) {
-  if (attributes.value && attributes.value.length > 0) {
+  if (attributes.length) {
     // We have potentially multiple collections we need to iterate (currently only one)
     let latestDateMS = reverse ? Infinity : -Infinity;
-    attributes.value.forEach((coll) => {
+    attributes.forEach((coll) => {
       if (coll?.dates) {
         coll.dates.forEach((d) => {
           // TODO: we need to handle time ranges and other options here
@@ -75,8 +72,6 @@ function jumpDate(reverse) {
   }
 }
 
-const eodashConfig = /** @type {import("@/types").Eodash} */ inject(eodashKey);
-
 const masks = ref({
   input: "YYYY-MM-DD",
 });
@@ -84,14 +79,14 @@ const masks = ref({
 /**
  * Attributes displayed on datepicker
  *
- * @type {import("vue").Ref<
+ * @type {import("vue").Reactive<
  *   (
  *     | import("v-calendar/dist/types/src/utils/attribute").AttributeConfig
  *     | undefined
  *   )[]
  * >}
  */
-const attributes = ref([]);
+const attributes = reactive([]);
 
 const currentDate = computed({
   get() {
@@ -108,21 +103,13 @@ const currentDate = computed({
     }
   },
 });
-/** @type {import("@/types").WebComponentProps["onMounted"]} */
+
 onMounted(() => {
   const { selectedStac } = storeToRefs(useSTAcStore());
   watch(
     [selectedStac],
     async ([updatedStac]) => {
       if (updatedStac) {
-        const parentCollUrl = toAbsolute(
-          `./${updatedStac.id}/collection.json`,
-          eodashConfig.stacEndpoint,
-        );
-        const collectionUrls = extractCollectionUrls(
-          selectedStac.value,
-          parentCollUrl,
-        );
         const wongPalette = [
           "#009E73",
           "#0072B2",
@@ -131,28 +118,26 @@ onMounted(() => {
           "#56B4E9",
           "#D55E00",
         ];
-        for (let idx = 0; idx < collectionUrls.length; idx++) {
-          const stacCollection = await axios
-            .get(collectionUrls[idx])
-            .then((resp) => resp.data);
-          const dates = stacCollection.links
-            .filter(
-              (/** @type {{ rel: string; datetime: string }} */ item) =>
-                item.rel === "item" && "datetime" in item,
-            )
-            .map(
-              (/** @type {{ datetime: string }} */ it) => new Date(it.datetime),
-            );
-          attributes.value = [
-            {
-              bar: {
-                style: {
-                  backgroundColor: wongPalette[idx % wongPalette.length],
-                },
-              },
-              dates,
-            },
+
+        // remove old values
+        attributes.length = 0;
+        for (let idx = 0; idx < eodashCollections.length; idx++) {
+          const dates = [
+            ...new Set(
+              eodashCollections[idx]
+                .getItems()
+                ?.map((it) => new Date(/** @type {string} */ (it.datetime))),
+            ),
           ];
+          attributes.push({
+            key: "id-"+ idx + Math.random().toString(16).slice(2),
+            bar: {
+              style: {
+                backgroundColor: wongPalette[idx % wongPalette.length],
+              },
+            },
+            dates,
+          });
         }
       }
     },

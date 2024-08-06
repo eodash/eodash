@@ -199,7 +199,6 @@ export const findLayer = (layers, layer) => {
   }
 };
 
-
 /**
  * @param {Record<string,any>[]} currentLayers
  * @param {Record<string,any>} oldLayer

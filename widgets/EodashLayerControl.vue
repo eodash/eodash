@@ -1,7 +1,12 @@
 <template>
   <span class="d-flex flex-column fill-height overflow-auto pa-4">
-    <eox-layercontrol v-if="mapEl" :for="mapEl" @datetime:updated="debouncedHandleDateTime" class="fill-height"
-      ref="eoxLayercontrol" />
+    <eox-layercontrol
+      v-if="mapEl"
+      :for="mapEl"
+      @datetime:updated="debouncedHandleDateTime"
+      class="fill-height"
+      ref="eoxLayercontrol"
+    />
   </span>
 </template>
 <script setup>
@@ -19,7 +24,6 @@ const eoxLayercontrol = ref(null);
 
 /** @param {CustomEvent<{layer:import('ol/layer').Layer; datetime:string;}>} evt */
 const handleDatetimeUpdate = async (evt) => {
-
   const { layer, datetime } = evt.detail;
 
   const ec = await getColFromLayer(eodashCollections, layer);
@@ -46,12 +50,10 @@ let timeout;
  * @param {CustomEvent<{layer:import('ol/layer').Layer; datetime:string;}>} evt
  **/
 const debouncedHandleDateTime = (evt) => {
-  clearTimeout(timeout)
+  clearTimeout(timeout);
   timeout = setTimeout(() => {
-    handleDatetimeUpdate(evt)
-  }, 500)
-
-}
+    handleDatetimeUpdate(evt);
+  }, 500);
+};
 // ------
-
 </script>
