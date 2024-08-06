@@ -9,37 +9,26 @@ import "@eox/layercontrol";
 import "@eox/jsonform";
 import "@eox/timecontrol";
 
-import { onMounted, ref, watch } from "vue";
-import { currentUrl, mapEl } from "@/store/States";
-import { extractCollectionUrls, getColFromLayer } from "@/utils/helpers";
-import { storeToRefs } from "pinia";
-import { useSTAcStore } from "@/store/stac";
-import { EodashCollection } from "@/utils/eodashSTAC";
-import { getLayers } from "@/store/Actions";
+import { ref } from "vue";
+import { mapEl } from "@/store/States";
+import { getColFromLayer } from "@/utils/helpers";
+import { eodashCollections } from "@/utils/states";
 
 /** @type { import("vue").Ref<HTMLElement & Record<string,any> | null>} */
 const eoxLayercontrol = ref(null);
 
-const { selectedStac } = storeToRefs(useSTAcStore());
-
-/** @type {import('@/utils/eodashSTAC').EodashCollection[]} */
-let eodashCols = [];
-
 /** @param {CustomEvent<{layer:import('ol/layer').Layer; datetime:string;}>} evt */
 const handleDatetimeUpdate = async (evt) => {
-  console.log("before:", getLayers());
 
   const { layer, datetime } = evt.detail;
 
-  const ec = await getColFromLayer(eodashCols, layer);
+  const ec = await getColFromLayer(eodashCollections, layer);
 
   /** @type {Record<string,any>[] | undefined} */
   let updatedLayers = [];
 
   if (ec) {
     await ec.fetchCollection();
-    console.log("🚀 the target ec:", ec.collectionStac);
-
     updatedLayers = await ec.updateLayerJson(datetime, layer.get("id"));
   }
 
@@ -47,7 +36,6 @@ const handleDatetimeUpdate = async (evt) => {
     /** @type {HTMLElement & Record<string,any>} */
     (mapEl.value).layers = updatedLayers;
   }
-  console.log("after:", getLayers());
 };
 
 // -----  debounce logic
@@ -66,22 +54,4 @@ const debouncedHandleDateTime = (evt) => {
 }
 // ------
 
-
-onMounted(() => {
-  // init eodash collections on selection
-  watch(selectedStac, async (updatedSelectedStac) => {
-    const eodashColsUrls = extractCollectionUrls(
-      updatedSelectedStac,
-      currentUrl.value,
-    );
-
-    eodashCols = await Promise.all(
-      eodashColsUrls.map(async (endpoint) => {
-        const col = new EodashCollection(endpoint);
-        await col.fetchCollection();
-        return col;
-      }),
-    );
-  }, { immediate: true })
-})
 </script>
