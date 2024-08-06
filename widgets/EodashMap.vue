@@ -174,6 +174,33 @@ const createLayersConfig = async (baseUrl, updatedTime, selectedStac) => {
   const indicatorBaseLayers = indicatorLayers.filter(
     (l) => l.properties.group === "baselayer",
   );
+  // Only one baselayer can be set to visible, let's first set all to
+  // false that have not a dedicated property visible, then check
+  // if there are more then one visible and only allow one
+  let counter = 0;
+  let lastPos = 0;
+  indicatorBaseLayers.forEach((bl, indx) => {
+    if (!("visible" in bl.properties)) {
+      bl.properties.visible = false;
+    }
+    if (bl.properties.visible) {
+      counter++;
+      lastPos = indx;
+    }
+  });
+  // if none visible set the last one as visible
+  if (counter == 0) {
+    indicatorBaseLayers[indicatorBaseLayers.length-1].properties.visible = true;
+  }
+  // disable all apart from last
+  if (counter > 1) {
+    indicatorBaseLayers.forEach((bl, indx) => {
+      if (indx !== lastPos) {
+        bl.properties.visible = false;
+      }
+    });
+  }
+
   if (indicatorBaseLayers.length) {
     baseLayers.layers.push(...indicatorBaseLayers);
 
@@ -284,7 +311,6 @@ onMounted(() => {
             "EPSG:4326",
             eoxMap.value?.map?.getView().getProjection(),
           );
-          console.log(reprojExtent);
           /** @type {any} */
           (eoxMap.value).zoomExtent = reprojExtent;
         }
