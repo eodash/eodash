@@ -6,8 +6,8 @@
     <eox-map
       class="fill-height fill-width overflow-none"
       slot="first"
-      sync="eox-map#compare"
       ref="eoxMap"
+      sync="eox-map#compare"
       id="main"
       :config="eoxMapConfig"
     />
@@ -23,7 +23,7 @@
 <script setup>
 import { onMounted, onUnmounted, reactive, ref, watch } from "vue";
 import { EodashCollection } from "@/utils/eodashSTAC";
-import { extractCollectionUrls } from "@/utils/helpers";
+import { extractCollectionUrls, setMapProjFromCol } from "@/utils/helpers";
 import {
   currentUrl,
   currentCompareUrl,
@@ -31,7 +31,6 @@ import {
   mapEl,
   mapPosition,
 } from "@/store/States";
-import { transformExtent } from "ol/proj";
 import { storeToRefs } from "pinia";
 import { useSTAcStore } from "@/store/stac";
 import "@eox/map";
@@ -92,10 +91,15 @@ const handleMoveEnd = (evt) => {
   const map = /** @type {import("openlayers").Map | undefined} */ (
     /** @type {any} */ (evt).map
   );
-  const [x, y] = map?.getView().getCenter() ?? [0, 0];
+  const lonlat = eoxMap.value?.lonLatCenter;
   const z = map?.getView().getZoom();
-  if (!Number.isNaN(x) && !Number.isNaN(y) && !Number.isNaN(z)) {
-    mapPosition.value = [x, y, z];
+  if (
+    lonlat &&
+    !Number.isNaN(lonlat[0]) &&
+    !Number.isNaN(lonlat[1]) &&
+    !Number.isNaN(z)
+  ) {
+    mapPosition.value = [lonlat[0], lonlat[1], z];
   }
 };
 
@@ -258,6 +262,8 @@ onMounted(() => {
 
         // only on different indicator selection and not on time change
         if (previousSTAC?.id !== updatedStac.id) {
+          // Set projection based on indicator level information
+          setMapProjFromCol(updatedStac);
           showCompare.value = "first";
           // Try to move map view to extent
           // Make sure for now we are always converting from 4326
@@ -273,11 +279,12 @@ onMounted(() => {
             b[2] < 180 ? b[2] : 180,
             b[3] < 90 ? b[3] : 90,
           ];
-          const reprojExtent = transformExtent(
+          const reprojExtent = eoxMap.value?.transformExtent(
             sanitizedExtent,
             "EPSG:4326",
             eoxMap.value?.map?.getView().getProjection(),
           );
+          console.log(reprojExtent);
           /** @type {any} */
           (eoxMap.value).zoomExtent = reprojExtent;
         }

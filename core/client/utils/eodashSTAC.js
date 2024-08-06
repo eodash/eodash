@@ -5,7 +5,6 @@ import {
   extractRoles,
   fetchStyle,
   generateFeatures,
-  setMapProjFromCol,
 } from "./helpers";
 import { registerProjection } from "@/store/Actions";
 import {
@@ -57,9 +56,6 @@ export class EodashCollection {
       this.#collectionStac = new Collection(stac);
     }
 
-    // set availabe map projection
-    setMapProjFromCol(this.#collectionStac);
-
     const isGeoDB = stac?.endpointtype === "GeoDB";
 
     if (linkOrDate instanceof Date) {
@@ -110,8 +106,13 @@ export class EodashCollection {
    * @returns {Promise<Record<string,any>[]>} arrays
    * */
   async buildJsonArray(item, itemUrl, title, isGeoDB) {
+    // registering top level indicator projection
+    const indicatorProjection =
+      item?.["proj:epsg"] || item?.["eodash:proj4_def"];
     await registerProjection(
-      /** @type {number | undefined} */ (item?.["proj:epsg"]),
+      /** @type {number | string | {name: string, def: string} | undefined} */ (
+        indicatorProjection
+      ),
     );
 
     const jsonArray = [];
@@ -163,9 +164,9 @@ export class EodashCollection {
       Object.keys(dataAssets).length;
 
     if (isSupported) {
+      const links = await createLayersFromLinks(item.id, title, item);
       jsonArray.push(
-        ...createLayersFromLinks(item.id, title, item),
-
+        ...links,
         ...(await createLayersFromDataAssets(
           `${item.collection}_${item.id}_assets`,
           title || this.#collectionStac?.title || item.id,

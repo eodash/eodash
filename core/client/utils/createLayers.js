@@ -1,5 +1,5 @@
 import { registerProjection } from "@/store/Actions";
-import { extractRoles } from "./helpers";
+import { extractRoles, getProjectionCode } from "./helpers";
 
 /**
  * @param {string} id
@@ -19,9 +19,11 @@ export async function createLayersFromDataAssets(
   let geoTIFFSources = [];
   for (const ast in assets) {
     // register projection if exists
-    await registerProjection(
-      /** @type {number | undefined} */ (assets[ast]?.["proj:epsg"]),
-    );
+    const assetProjection =
+      /** @type {string | number | {name: string, def: string} | undefined} */ (
+        assets[ast]?.["proj:epsg"] || assets[ast]?.["eodash:proj4_def"]
+      );
+    await registerProjection(assetProjection);
 
     if (assets[ast]?.type === "application/geo+json") {
       const layer = {
@@ -75,14 +77,25 @@ export async function createLayersFromDataAssets(
  * @param {string} id
  * @param {string} title
  */
-export const createLayersFromLinks = (id, title, item) => {
+export async function createLayersFromLinks(id, title, item) {
   /** @type {Record<string,any>[]} */
   const jsonArray = [];
   const wmsArray = item.links.filter((l) => l.rel === "wms");
   const xyzArray = item.links.filter((l) => l.rel === "xyz");
 
   if (wmsArray.length) {
-    wmsArray.forEach((link) => {
+    wmsArray.forEach(async (link) => {
+      // Registering setting sub wms link projection
+      const wmsLinkProjection =
+        link?.["proj:epsg"] || link?.["eodash:proj4_def"];
+      await registerProjection(
+        /** @type {number | string | {name: string, def: string} | undefined} */ (
+          wmsLinkProjection
+        ),
+      );
+      const projectionCode = getProjectionCode(
+        wmsLinkProjection || "EPSG:4326",
+      );
       let json = {
         type: "Tile",
         properties: {
@@ -92,6 +105,7 @@ export const createLayersFromLinks = (id, title, item) => {
         source: {
           type: "TileWMS",
           url: link.href,
+          projection: projectionCode,
           params: {
             LAYERS: link["wms:layers"],
             TILED: true,
@@ -110,7 +124,17 @@ export const createLayersFromLinks = (id, title, item) => {
   }
 
   if (xyzArray.length) {
-    xyzArray.forEach((link) => {
+    xyzArray.forEach(async (link) => {
+      const xyzLinkProjection =
+        link?.["proj:epsg"] || link?.["eodash:proj4_def"];
+      await registerProjection(
+        /** @type {number | string | {name: string, def: string} | undefined} */ (
+          xyzLinkProjection
+        ),
+      );
+      const projectionCode = getProjectionCode(
+        xyzLinkProjection || "EPSG:3857",
+      );
       let json = {
         type: "Tile",
         properties: {
@@ -121,6 +145,7 @@ export const createLayersFromLinks = (id, title, item) => {
         source: {
           type: "XYZ",
           url: link.href,
+          projection: projectionCode,
         },
       };
 
@@ -129,4 +154,4 @@ export const createLayersFromLinks = (id, title, item) => {
     });
   }
   return jsonArray;
-};
+}

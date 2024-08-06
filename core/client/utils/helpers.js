@@ -60,23 +60,26 @@ export function extractLayerConfig(style) {
  */
 export const setMapProjFromCol = (STAcCollection) => {
   // if a projection exists on the collection level
-  if (STAcCollection?.["proj:epsg"]) {
+  const projection =
+    STAcCollection?.["eodash:mapProjection"] ||
+    STAcCollection?.["proj:epsg"] ||
+    STAcCollection?.["eodash:proj4_def"];
+  if (projection) {
+    const projectionCode = getProjectionCode(projection);
     if (
       availableMapProjection.value &&
-      availableMapProjection.value !== STAcCollection?.["proj:epsg"]
+      availableMapProjection.value !== projectionCode
     ) {
       changeMapProjection(
-        /** @type {number} */
-        (STAcCollection["proj:epsg"]),
+        /** @type {number | string | {name: string, def: string}} */
+        (projection),
       );
     }
     // set it for `EodashMapBtns`
-    availableMapProjection.value = /** @type {string} */ (
-      STAcCollection["proj:epsg"]
-    );
+    availableMapProjection.value = /** @type {string} */ (projectionCode);
   } else {
     // reset to default projection
-    changeMapProjection((availableMapProjection.value = ""));
+    changeMapProjection((availableMapProjection.value = "EPSG:3857"));
   }
 };
 
@@ -145,4 +148,24 @@ export const fetchStyle = async (item, itemUrl) => {
     const styleJson = await axios.get(url).then((resp) => resp.data);
     return styleJson;
   }
+};
+
+/**
+ * Return projection code which is to be registered in `eox-map`
+ * @param {string|number|{name: string, def: string}} [projection]
+ * @returns {string}
+ */
+export const getProjectionCode = (projection) => {
+  let code = projection;
+  switch (typeof projection) {
+    case "number":
+      code = `EPSG:${projection}`;
+      break;
+    case "string":
+      code = projection;
+      break;
+    case "object":
+      code = projection?.name;
+  }
+  return /** @type {string} */ (code);
 };
