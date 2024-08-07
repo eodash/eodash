@@ -1,13 +1,17 @@
 import { Collection, Item } from "stac-js";
 import { toAbsolute } from "stac-js/src/http.js";
 import {
+  createLayerID,
   extractLayerConfig,
+  extractLayerDatetime,
   extractRoles,
   fetchStyle,
+  findLayer,
   generateFeatures,
+  replaceLayer,
   setMapProjFromCol,
 } from "./helpers";
-import { registerProjection } from "@/store/Actions";
+import { getLayers, registerProjection } from "@/store/Actions";
 import {
   createLayersFromDataAssets,
   createLayersFromLinks,
@@ -19,6 +23,11 @@ export class EodashCollection {
 
   /** @type {import("stac-ts").StacCollection | undefined} */
   #collectionStac;
+
+  //  read only
+  get collectionStac() {
+    return this.#collectionStac;
+  }
 
   /**
    * @type {import("stac-ts").StacLink
@@ -52,10 +61,7 @@ export class EodashCollection {
     let layersJson = [];
 
     // Load collectionstac if not yet initialized
-    if (!this.#collectionStac) {
-      stac = await axios.get(this.#collectionUrl).then((resp) => resp.data);
-      this.#collectionStac = new Collection(stac);
-    }
+    stac = await this.fetchCollection();
 
     // set availabe map projection
     setMapProjFromCol(this.#collectionStac);
@@ -94,7 +100,8 @@ export class EodashCollection {
       // specific item was requested
       const item = new Item(stac);
       this.selectedItem = item;
-      const title = this.#collectionStac.title || this.#collectionStac.id;
+      const title =
+        this.#collectionStac?.title || this.#collectionStac?.id || "";
       layersJson.unshift(
         ...(await this.buildJsonArray(item, stacItemUrl, title, isGeoDB)),
       );
@@ -107,9 +114,12 @@ export class EodashCollection {
    * @param {string} itemUrl
    * @param {string} title
    * @param {boolean} isGeoDB
+   * @param {string} [itemDatetime]
    * @returns {Promise<Record<string,any>[]>} arrays
    * */
-  async buildJsonArray(item, itemUrl, title, isGeoDB) {
+  async buildJsonArray(item, itemUrl, title, isGeoDB, itemDatetime) {
+    await this.fetchCollection();
+
     await registerProjection(
       /** @type {number | undefined} */ (item?.["proj:epsg"]),
     );
@@ -123,7 +133,7 @@ export class EodashCollection {
         {
           type: "Vector",
           properties: {
-            id: item.id,
+            id: createLayerID(this.#collectionStac?.id ?? "", item.id, false),
             title: this.#collectionStac?.title || item.id,
           },
           source: {
@@ -152,6 +162,11 @@ export class EodashCollection {
       await fetchStyle(item, itemUrl),
     );
 
+    const layerDatetime = extractLayerDatetime(
+      this.getItems(),
+      item.properties?.datetime ?? itemDatetime,
+    );
+
     const dataAssets = Object.keys(item?.assets ?? {}).reduce((data, ast) => {
       if (item.assets[ast].roles?.includes("data")) {
         data[ast] = item.assets[ast];
@@ -164,14 +179,20 @@ export class EodashCollection {
 
     if (isSupported) {
       jsonArray.push(
-        ...createLayersFromLinks(item.id, title, item),
+        ...createLayersFromLinks(
+          createLayerID(this.#collectionStac?.id ?? "", item.id, false),
+          title,
+          item,
+          layerDatetime,
+        ),
 
         ...(await createLayersFromDataAssets(
-          `${item.collection}_${item.id}_assets`,
+          createLayerID(this.#collectionStac?.id ?? "", item.id, true),
           title || this.#collectionStac?.title || item.id,
           dataAssets,
           style,
           layerConfig,
+          layerDatetime,
         )),
       );
     } else {
@@ -193,6 +214,16 @@ export class EodashCollection {
     }
 
     return jsonArray;
+  }
+
+  async fetchCollection() {
+    if (!this.#collectionStac) {
+      const col = await axios
+        .get(this.#collectionUrl)
+        .then((resp) => resp.data);
+      this.#collectionStac = new Collection(col);
+    }
+    return this.#collectionStac;
   }
 
   getItems() {
@@ -253,5 +284,41 @@ export class EodashCollection {
           return distanceA - distanceB;
         })[0]
       : this.getItems()?.at(-1);
+  }
+
+  /**
+   *
+   * @param {string} datetime
+   * @param {string} layer
+   */
+  async updateLayerJson(datetime, layer) {
+    await this.fetchCollection();
+
+    // get the link of the specified date
+    const specifiedLink = this.getItems()?.find(
+      (item) => item.datetime === datetime,
+    );
+
+    if (!specifiedLink) {
+      console.warn(
+        "[eodash] no Item found for the provided datetime",
+        datetime,
+      );
+      return;
+    }
+
+    // create json layers from the item
+    const newLayers = await this.createLayersJson(specifiedLink);
+
+    const curentLayers = getLayers();
+
+    const oldLayer = findLayer(curentLayers, { properties: { id: layer } });
+
+    return replaceLayer(
+      curentLayers,
+      /** @type {Record<string,any> & { properties:{ id:string; title:string } } } */
+      (oldLayer),
+      newLayers,
+    );
   }
 }

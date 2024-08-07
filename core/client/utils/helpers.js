@@ -146,3 +146,115 @@ export const fetchStyle = async (item, itemUrl) => {
     return styleJson;
   }
 };
+
+/**
+ * @param {import("stac-ts").StacLink[]} [links]
+ * @param {string|null} [current]
+ **/
+export const extractLayerDatetime = (links, current) => {
+  if (!current || !links?.length) {
+    return;
+  }
+  const hasDatetime = links.some((l) => typeof l.datetime === "string");
+  if (!hasDatetime) {
+    return;
+  }
+  const values = links.reduce((vals, link) => {
+    if (link.datetime) {
+      vals.push(/** @type {string} */ (link.datetime));
+    }
+    return vals;
+  }, /** @type {string[]} */ ([]));
+
+  if (values.length <= 1) {
+    return;
+  }
+
+  if (!values.includes(current) && current.includes("T")) {
+    current = current.split("T")[0];
+  }
+
+  return {
+    values,
+    current,
+    slider: false,
+    disablePlay: true,
+  };
+};
+
+/**
+ *  @param {Record<string,any> & {properties:{id?:string,title?:string}}} layer
+ *  @param {Record<string, any>[]} layers
+ *  @returns {Record<string,any> | undefined}
+ **/
+export const findLayer = (layers, layer) => {
+  const property = layer.properties.id ? "id" : "title";
+  for (const lyr of layers) {
+    if (lyr.type === "Group") {
+      return findLayer(lyr.layers, layer);
+    }
+    if (lyr.properties[property] === layer.properties[property]) {
+      return lyr;
+    }
+  }
+};
+
+/**
+ * @param {Record<string,any>[]} currentLayers
+ * @param {Record<string,any>} oldLayer
+ * @param {Record<string,any>[]} newLayers
+ * @returns {Record<string,any>[] | undefined}
+ */
+export const replaceLayer = (currentLayers, oldLayer, newLayers) => {
+  const oldLayerIdx = currentLayers.findIndex(
+    (l) => l.properties.id === oldLayer.properties.id,
+  );
+  if (oldLayerIdx === -1) {
+    for (const l of currentLayers) {
+      if (l.type === "Group") {
+        const updatedGroup = replaceLayer(l.layers, oldLayer, newLayers);
+        if (updatedGroup?.length) {
+          const idx = currentLayers.findIndex(
+            (l) => l.properties.id === oldLayer.properties.id,
+          );
+          currentLayers[idx] = updatedGroup;
+          return currentLayers;
+        }
+      }
+    }
+  }
+
+  currentLayers.splice(oldLayerIdx, 1, ...newLayers);
+  return currentLayers;
+};
+/**
+ * @param {import('./eodashSTAC.js').EodashCollection[]} indicators
+ * @param {import('ol/layer').Layer} layer
+ */
+export const getColFromLayer = async (indicators, layer) => {
+  // init cols
+  const collections = await Promise.all(
+    indicators.map((ind) => ind.fetchCollection()),
+  );
+  const [collectionId, itemId, _asset] = layer.get("id").split(";:;");
+
+  const chosen = collections.find((col) => {
+    const isInd =
+      col.id === collectionId &&
+      col.links?.some(
+        (link) => link.rel === "item" && link.href.includes(itemId),
+      );
+    return isInd ?? false;
+  });
+  return indicators.find((ind) => ind.collectionStac?.id === chosen?.id);
+};
+/**
+ *
+ * @param {string} colId
+ * @param {string} itemId
+ * @param {boolean} isAsset
+ * @returns
+ */
+export const createLayerID = (colId, itemId, isAsset) => {
+  return `${colId ?? ""};:;${itemId ?? ""};:;${isAsset ? "_asset" : ""}`;
+};
