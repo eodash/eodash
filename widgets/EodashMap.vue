@@ -189,8 +189,8 @@ const createLayersConfig = async (baseUrl, updatedTime, selectedStac) => {
     }
   });
   // if none visible set the last one as visible
-  if (counter == 0) {
-    indicatorBaseLayers[indicatorBaseLayers.length-1].properties.visible = true;
+  if (counter == 0 && indicatorBaseLayers.length > 0) {
+    indicatorBaseLayers[0].properties.visible = true;
   }
   // disable all apart from last
   if (counter > 1) {
