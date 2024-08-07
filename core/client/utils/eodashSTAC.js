@@ -63,6 +63,9 @@ export class EodashCollection {
     // Load collectionstac if not yet initialized
     stac = await this.fetchCollection();
 
+    // set availabe map projection
+    setMapProjFromCol(this.#collectionStac);
+
     const isGeoDB = stac?.endpointtype === "GeoDB";
 
     if (linkOrDate instanceof Date) {

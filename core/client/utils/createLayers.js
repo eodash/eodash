@@ -82,7 +82,7 @@ export async function createLayersFromDataAssets(
  * @param {string} title
  * @param {Record<string,any>} [layerDatetime]
  */
-export async function createLayersFromLinks(id, title, item, layerDatetime) {
+export const createLayersFromLinks = (id, title, item, layerDatetime) => {
   /** @type {Record<string,any>[]} */
   const jsonArray = [];
   const wmsArray = item.links.filter((l) => l.rel === "wms");
