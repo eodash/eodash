@@ -60,20 +60,21 @@ export function extractLayerConfig(style) {
  */
 export const setMapProjFromCol = (STAcCollection) => {
   // if a projection exists on the collection level
+
   const projection =
-    STAcCollection?.["eodash:mapProjection"] ||
-    STAcCollection?.["proj:epsg"] ||
-    STAcCollection?.["eodash:proj4_def"];
+    /** @type {number | string | {name: string, def: string} | undefined} */
+    (
+      STAcCollection?.["eodash:mapProjection"] ||
+        STAcCollection?.["proj:epsg"] ||
+        STAcCollection?.["eodash:proj4_def"]
+    );
   if (projection) {
     const projectionCode = getProjectionCode(projection);
     if (
       availableMapProjection.value &&
       availableMapProjection.value !== projectionCode
     ) {
-      changeMapProjection(
-        /** @type {number | string | {name: string, def: string}} */
-        (projection),
-      );
+      changeMapProjection(projection);
     }
     // set it for `EodashMapBtns`
     availableMapProjection.value = /** @type {string} */ (projectionCode);
@@ -117,14 +118,17 @@ export function extractCollectionUrls(stacObject, basepath) {
  * Assign extracted roles to layer properties
  * @param {Record<string,any>} properties
  * @param {string[]} roles
+ * @param {string} id - unique ID for baselayers and overlays
  * */
-export const extractRoles = (properties, roles) => {
+export const extractRoles = (properties, roles, id) => {
   roles?.forEach((role) => {
     if (role === "visible") {
       properties.visible = true;
     }
     if (role === "overlay" || role === "baselayer") {
       properties.group = role;
+      const [colId, itemId, isAsset, _random] = properties.id.split(";:;");
+      properties.id = [colId, itemId, isAsset, id].join(";:;");
     }
     return properties;
   });
@@ -259,7 +263,7 @@ export const getColFromLayer = async (indicators, layer) => {
   const collections = await Promise.all(
     indicators.map((ind) => ind.fetchCollection()),
   );
-  const [collectionId, itemId, _asset] = layer.get("id").split(";:;");
+  const [collectionId, itemId, _asset, _random] = layer.get("id").split(";:;");
 
   const chosen = collections.find((col) => {
     const isInd =
@@ -279,5 +283,5 @@ export const getColFromLayer = async (indicators, layer) => {
  * @returns
  */
 export const createLayerID = (colId, itemId, isAsset) => {
-  return `${colId ?? ""};:;${itemId ?? ""};:;${isAsset ? "_asset" : ""}`;
+  return `${colId ?? ""};:;${itemId ?? ""};:;${isAsset ? "_asset" : ""};:;${Math.random().toString(16).slice(2)}`;
 };

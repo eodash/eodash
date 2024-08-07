@@ -48,7 +48,11 @@ export async function createLayersFromDataAssets(
         },
         ...(!style?.variables && { style }),
       };
-      extractRoles(layer.properties, assets[ast]?.roles ?? []);
+      extractRoles(
+        layer.properties,
+        assets[ast]?.roles ?? [],
+        /** @type {string} */ (assets[ast].id || assets[ast].title || ""),
+      );
       jsonArray.push(layer);
     } else if (assets[ast]?.type === "image/tiff") {
       geoTIFFSources.push({ url: assets[ast].href });
@@ -88,73 +92,77 @@ export const createLayersFromLinks = async (id, title, item, layerDatetime) => {
   const wmsArray = item.links.filter((l) => l.rel === "wms");
   const xyzArray = item.links.filter((l) => l.rel === "xyz") ?? [];
 
+  for (const wmsLink of wmsArray ?? []) {
+    // Registering setting sub wms link projection
 
-  for(const wmsLink of wmsArray ?? [] ){
-      // Registering setting sub wms link projection
-
-      const wmsLinkProjection =  /** @type {number | string | {name: string, def: string} | undefined} */
+    const wmsLinkProjection =
+      /** @type {number | string | {name: string, def: string} | undefined} */
       (wmsLink?.["proj:epsg"] || wmsLink?.["eodash:proj4_def"]);
 
-      await registerProjection(wmsLinkProjection)
-      const projectionCode = getProjectionCode(
-        wmsLinkProjection || "EPSG:4326",
-      );
-      let json = {
-        type: "Tile",
-        properties: {
-          id,
-          title: title || wmsLink.title || item.id,
-          layerDatetime,
+    await registerProjection(wmsLinkProjection);
+    const projectionCode = getProjectionCode(wmsLinkProjection || "EPSG:4326");
+    let json = {
+      type: "Tile",
+      properties: {
+        id,
+        title: wmsLink.title || title || item.id,
+        layerDatetime,
+      },
+      source: {
+        type: "TileWMS",
+        url: wmsLink.href,
+        projection: projectionCode,
+        params: {
+          LAYERS: wmsLink["wms:layers"],
+          TILED: true,
         },
-        source: {
-          type: "TileWMS",
-          url: wmsLink.href,
-          projection: projectionCode,
-          params: {
-            LAYERS: wmsLink["wms:layers"],
-            TILED: true,
-          },
-        },
-      };
+      },
+    };
 
-      extractRoles(json.properties, /** @type {string[]} */ (wmsLink.roles));
+    extractRoles(
+      json.properties,
+      /** @type {string[]} */ (wmsLink.roles),
+      /** @type {string} */ (wmsLink.id) ||
+        /** @type {string} */ (wmsLink.title) ||
+        "",
+    );
 
-      if ("wms:dimensions" in wmsLink) {
-        // Expand all dimensions into the params attribute
-        Object.assign(json.source.params, wmsLink["wms:dimensions"]);
-      }
-      jsonArray.push(json);
+    if ("wms:dimensions" in wmsLink) {
+      // Expand all dimensions into the params attribute
+      Object.assign(json.source.params, wmsLink["wms:dimensions"]);
     }
+    jsonArray.push(json);
+  }
 
-
-
-    for(const xyzLink of xyzArray ?? []){
-
-      const xyzLinkProjection =/** @type {number | string | {name: string, def: string} | undefined} */
+  for (const xyzLink of xyzArray ?? []) {
+    const xyzLinkProjection =
+      /** @type {number | string | {name: string, def: string} | undefined} */
       (xyzLink?.["proj:epsg"] || xyzLink?.["eodash:proj4_def"]);
 
-      await registerProjection(xyzLinkProjection);
+    await registerProjection(xyzLinkProjection);
 
-      const projectionCode = getProjectionCode(
-        xyzLinkProjection || "EPSG:3857",
-      );
-      let json = {
-        type: "Tile",
-        properties: {
-          id,
-          title: title || xyzLink.title || item.id,
-          roles: xyzLink.roles,
-          layerDatetime,
-        },
-        source: {
-          type: "XYZ",
-          url: xyzLink.href,
-          projection: projectionCode,
-        },
-      };
+    const projectionCode = getProjectionCode(xyzLinkProjection || "EPSG:3857");
+    let json = {
+      type: "Tile",
+      properties: {
+        id,
+        title: xyzLink.title || title || item.id,
+        roles: xyzLink.roles,
+        layerDatetime,
+      },
+      source: {
+        type: "XYZ",
+        url: xyzLink.href,
+        projection: projectionCode,
+      },
+    };
 
-      extractRoles(json.properties, /** @type {string[]} */ (xyzLink.roles));
-      jsonArray.push(json);
-    }
-    return jsonArray;
+    extractRoles(
+      json.properties,
+      /** @type {string[]} */ (xyzLink.roles),
+      /** @type {string} */ (xyzLink.id || xyzLink.title || ""),
+    );
+    jsonArray.push(json);
   }
+  return jsonArray;
+};

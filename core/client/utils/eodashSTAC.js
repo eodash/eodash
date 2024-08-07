@@ -9,7 +9,6 @@ import {
   findLayer,
   generateFeatures,
   replaceLayer,
-  setMapProjFromCol,
 } from "./helpers";
 import { getLayers, registerProjection } from "@/store/Actions";
 import {
@@ -63,8 +62,6 @@ export class EodashCollection {
     // Load collectionstac if not yet initialized
     stac = await this.fetchCollection();
 
-    // set availabe map projection
-    setMapProjFromCol(this.#collectionStac);
 
     const isGeoDB = stac?.endpointtype === "GeoDB";
 
@@ -207,13 +204,17 @@ export class EodashCollection {
         displayFootprint: false,
         data: item,
         properties: {
-          id: item.id,
+          id: createLayerID(this.#collectionStac?.id ?? "",item.id,false),
           title: title || item.id,
           layerConfig,
         },
         style,
       };
-      extractRoles(json.properties, /** @type {string[]} */ (item?.roles));
+      extractRoles(
+        json.properties,
+        /** @type {string[]} */ (item?.roles),
+        item.id || /** @type {string} */ (item.title) || ""+ " STAC",
+      );
       jsonArray.push(json);
     }
 
