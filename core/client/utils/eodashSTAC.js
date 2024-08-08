@@ -62,7 +62,6 @@ export class EodashCollection {
     // Load collectionstac if not yet initialized
     stac = await this.fetchCollection();
 
-
     const isGeoDB = stac?.endpointtype === "GeoDB";
 
     if (linkOrDate instanceof Date) {
@@ -204,7 +203,7 @@ export class EodashCollection {
         displayFootprint: false,
         data: item,
         properties: {
-          id: createLayerID(this.#collectionStac?.id ?? "",item.id,false),
+          id: createLayerID(this.#collectionStac?.id ?? "", item.id, false),
           title: title || item.id,
           layerConfig,
         },
@@ -213,7 +212,7 @@ export class EodashCollection {
       extractRoles(
         json.properties,
         /** @type {string[]} */ (item?.roles),
-        item.id || /** @type {string} */ (item.title) || ""+ " STAC",
+        item.id || /** @type {string} */ (item.title) || "" + " STAC",
       );
       jsonArray.push(json);
     }

@@ -7,3 +7,11 @@ import { shallowReactive } from "vue";
  * @private
  */
 export const eodashCollections = shallowReactive([]);
+
+/**
+ * Array of eodash STAC Collections extracted from the current selected COMPARE indicator.
+ * Updated in {@link file://./../store/stac.js ` loadSelectedCompareSTAC`} widget
+ * @type {import('./eodashSTAC').EodashCollection[]}
+ * @private
+ */
+export const eodashCompareCollections = shallowReactive([]);
