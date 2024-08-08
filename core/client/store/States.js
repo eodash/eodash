@@ -26,3 +26,6 @@ export const availableMapProjection = ref("EPSG:3857");
 
 /** @type {import("vue").Ref<HTMLElement & Record<string,any> | null>} */
 export const mapEl = ref(null);
+
+/** @type {import("vue").Ref<HTMLElement & Record<string,any> | null>} */
+export const mapCompareEl = ref(null);

@@ -28,6 +28,7 @@ import {
   datetime,
   mapEl,
   mapPosition,
+  mapCompareEl,
 } from "@/store/States";
 import { storeToRefs } from "pinia";
 import { useSTAcStore } from "@/store/stac";
@@ -83,7 +84,9 @@ if (mapPosition && mapPosition.value && mapPosition.value.length === 3) {
   eoxMapConfig.center = [mapPosition.value?.[0], mapPosition.value[1]];
   eoxMapConfig.zoom = mapPosition.value[2];
 }
-const showCompare = computed(() => (props.enableCompare &&  !!selectedCompareStac.value ? "" : "first"));
+const showCompare = computed(() =>
+  props.enableCompare && !!selectedCompareStac.value ? "" : "first",
+);
 
 useHandleMapMoveEnd(eoxMap, mapPosition);
 
@@ -110,6 +113,9 @@ useInitMap(
 
 onMounted(() => {
   // assign map Element state to eox map
-  mapEl.value = /** @type {HTMLElement & Record<string,any>} */ (eoxMap.value);
+  mapEl.value = eoxMap.value;
+  if (props.enableCompare) {
+    mapCompareEl.value = compareMap.value;
+  }
 });
 </script>
