@@ -119,7 +119,7 @@ export class EodashCollection {
     const indicatorProjection =
       item?.["proj:epsg"] || item?.["eodash:proj4_def"];
     await registerProjection(
-      /** @type {number | string | {name: string, def: string} | undefined} */ (
+      /** @type {number | string | {name: string, def: string; extent: number[] | undefined;} } */ (
         indicatorProjection
       ),
     );
@@ -318,13 +318,15 @@ export class EodashCollection {
 
     const curentLayers = getLayers();
 
-    const oldLayer = findLayer(curentLayers, { properties: { id: layer } });
+    const oldLayer = findLayer(curentLayers, layer);
 
-    return replaceLayer(
+    const updatedLayers = replaceLayer(
       curentLayers,
       /** @type {Record<string,any> & { properties:{ id:string; title:string } } } */
       (oldLayer),
       newLayers,
     );
+
+    return updatedLayers;
   }
 }

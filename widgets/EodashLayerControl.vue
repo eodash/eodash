@@ -48,7 +48,7 @@ const handleDatetimeUpdate = async (evt) => {
   }
   /** @type {Record<String,any>[] | undefined} */
   const dataLayers = updatedLayers?.find(
-    (l) => l.properties.id === "AnalysisGroup",
+    (l) => l?.properties?.id === "AnalysisGroup",
   )?.layers;
 
   if (dataLayers?.length) {

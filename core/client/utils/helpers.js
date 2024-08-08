@@ -225,12 +225,12 @@ export const extractLayerDatetime = (links, current) => {
 };
 
 /**
- *  @param {Record<string,any> & {properties:{id?:string,title?:string}}} layer
+ * Find layer by ID
+ *  @param {string} layer
  *  @param {Record<string, any>[]} layers
  *  @returns {Record<string,any> | undefined}
  **/
 export const findLayer = (layers, layer) => {
-  const property = layer.properties.id ? "id" : "title";
   for (const lyr of layers) {
     if (lyr.type === "Group") {
       const found = findLayer(lyr.layers, layer);
@@ -239,7 +239,7 @@ export const findLayer = (layers, layer) => {
       }
       return found;
     }
-    if (lyr.properties[property] === layer.properties[property]) {
+    if (lyr.properties.id === layer) {
       return lyr;
     }
   }
@@ -255,23 +255,20 @@ export const replaceLayer = (currentLayers, oldLayer, newLayers) => {
   const oldLayerIdx = currentLayers.findIndex(
     (l) => l.properties.id === oldLayer.properties.id,
   );
-  if (oldLayerIdx === -1) {
-    for (const l of currentLayers) {
-      if (l.type === "Group") {
-        const updatedGroup = replaceLayer(l.layers, oldLayer, newLayers);
-        if (updatedGroup?.length) {
-          const idx = currentLayers.findIndex(
-            (l) => l.properties.id === oldLayer.properties.id,
-          );
-          currentLayers[idx] = updatedGroup;
-          return currentLayers;
-        }
+  if (oldLayerIdx !== -1) {
+    currentLayers.splice(oldLayerIdx, 1, ...newLayers);
+    return currentLayers;
+  }
+
+  for (const l of currentLayers) {
+    if (l.type === "Group") {
+      const updatedGroupLyrs = replaceLayer(l.layers, oldLayer, newLayers);
+      if (updatedGroupLyrs?.length) {
+        l.layers = updatedGroupLyrs;
+        return currentLayers;
       }
     }
   }
-
-  currentLayers.splice(oldLayerIdx, 1, ...newLayers);
-  return currentLayers;
 };
 /**
  * @param {import('./eodashSTAC.js').EodashCollection[]} indicators
