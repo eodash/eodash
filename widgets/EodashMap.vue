@@ -83,7 +83,7 @@ if (mapPosition && mapPosition.value && mapPosition.value.length === 3) {
   eoxMapConfig.center = [mapPosition.value?.[0], mapPosition.value[1]];
   eoxMapConfig.zoom = mapPosition.value[2];
 }
-const showCompare = computed(() => (props.enableCompare ? "" : "first"));
+const showCompare = computed(() => (props.enableCompare &&  !!selectedCompareStac.value ? "" : "first"));
 
 useHandleMapMoveEnd(eoxMap, mapPosition);
 
