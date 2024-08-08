@@ -9,7 +9,7 @@ export const getLayers = () => mapEl.value?.layers.toReversed();
 
 /**
  * Register EPSG projection in `eox-map`
- * @param {string|number|{name: string, def: string}} [projection]*/
+ * @param {string|number|{name: string, def: string, extent: number[]|undefined}} [projection]*/
 export const registerProjection = async (projection) => {
   let code = getProjectionCode(projection);
   if (!code || registeredProjections.includes(code)) {
@@ -19,7 +19,11 @@ export const registerProjection = async (projection) => {
   registeredProjections.push(code);
   if (typeof projection === "object") {
     // registering whole projection definition
-    await mapEl.value?.registerProjection(code, projection.def);
+    await mapEl.value?.registerProjection(
+      code,
+      projection.def,
+      projection.extent,
+    );
   } else {
     await mapEl.value?.registerProjectionFromCode(code);
   }

@@ -51,7 +51,7 @@
     "@eox/jsonform": "^0.8.2",
     "@eox/layercontrol": "^0.18.2-dev.1722439716.0",
     "@eox/layout": "^0.1.0",
-    "@eox/map": "1.12.1-dev.1723035636.0",
+    "@eox/map": "1.12.1-dev.1723130201.0",
     "@eox/stacinfo": "^0.3.3",
     "@eox/timecontrol": "^0.6.1",
     "@mdi/js": "^7.4.47",
