@@ -299,8 +299,9 @@ export class EodashCollection {
     await this.fetchCollection();
 
     // get the link of the specified date
-    const specifiedLink = this.getItems()?.find(
-      (item) => item.datetime === datetime,
+    const specifiedLink = this.getItems()?.find((item) =>
+      typeof item.datetime === "string"
+        && new Date(item.datetime).toISOString() === datetime
     );
 
     if (!specifiedLink) {

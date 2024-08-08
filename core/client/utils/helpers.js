@@ -180,25 +180,40 @@ export const getProjectionCode = (projection) => {
  **/
 export const extractLayerDatetime = (links, current) => {
   if (!current || !links?.length) {
-    return;
+    return undefined;
   }
+
+  // check if links has a datetime value
   const hasDatetime = links.some((l) => typeof l.datetime === "string");
   if (!hasDatetime) {
-    return;
+    return undefined;
   }
-  const values = links.reduce((vals, link) => {
-    if (link.datetime) {
-      vals.push(/** @type {string} */ (link.datetime));
-    }
-    return vals;
-  }, /** @type {string[]} */ ([]));
 
+  /** @type {string[]} */
+  const values = [];
+  try {
+    current = new Date(current).toISOString();
+
+    links.reduce((vals, link) => {
+      if (link.datetime && link.rel === "item") {
+        vals.push(
+          new Date(/** @type {string} */ (link.datetime)).toISOString(),
+        );
+      }
+      return vals;
+    }, values);
+  } catch (e) {
+    console.warn("[eodash] not supported datetime format was provided", e);
+    return undefined;
+  }
+  // not enough values
   if (values.length <= 1) {
-    return;
+    return undefined;
   }
 
-  if (!values.includes(current) && current.includes("T")) {
-    current = current.split("T")[0];
+  // item datetime is not included in the item links datetime
+  if (!values.includes(current)) {
+    return undefined;
   }
 
   return {
@@ -218,7 +233,11 @@ export const findLayer = (layers, layer) => {
   const property = layer.properties.id ? "id" : "title";
   for (const lyr of layers) {
     if (lyr.type === "Group") {
-      return findLayer(lyr.layers, layer);
+      const found = findLayer(lyr.layers, layer);
+      if (!found) {
+        continue;
+      }
+      return found;
     }
     if (lyr.properties[property] === layer.properties[property]) {
       return lyr;
