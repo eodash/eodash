@@ -304,3 +304,23 @@ export const getColFromLayer = async (indicators, layer) => {
 export const createLayerID = (colId, itemId, isAsset) => {
   return `${colId ?? ""};:;${itemId ?? ""};:;${isAsset ? "_asset" : ""};:;${Math.random().toString(16).slice(2)}`;
 };
+
+/**
+ * creates a structured clone from the layers and
+ * removes all properties from the clone
+ * except the ID and title
+ *
+ * @param {Record<string,any>[]} layers
+ */
+export const removeUnneededProperties = (layers) => {
+  const cloned = structuredClone(layers);
+  cloned.forEach((layer) => {
+    const id = layer.properties.id;
+    const title = layer.properties.title;
+    layer.properties = { id, title };
+    if (layer.type === "Group") {
+      layer.layers = removeUnneededProperties(layer.layers);
+    }
+  });
+  return cloned;
+};
