@@ -71,6 +71,8 @@ const onSelect = async (evt) => {
     .forEach((res) => res.setAttribute("style", defaultStyle));
   const item = /** @type {import('stac-ts').StacLink} */ evt.detail;
   if (item) {
+    // Reset compare stac to empty
+    store.resetSelectedCompareSTAC();
     await store.loadSelectedSTAC(item.href);
   } else {
     // TODO: it is possible to unselect items now

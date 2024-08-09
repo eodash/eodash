@@ -151,11 +151,20 @@ export const useSTAcStore = defineStore("stac", () => {
       });
   }
 
+  /**
+   * Reset selected compare stac object
+   *
+   */
+  async function resetSelectedCompareSTAC() {
+    selectedCompareStac.value = null;
+  }
+
   return {
     stac,
     loadSTAC,
     loadSelectedSTAC,
     loadSelectedCompareSTAC,
+    resetSelectedCompareSTAC,
     selectedStac,
     selectedCompareStac,
   };
