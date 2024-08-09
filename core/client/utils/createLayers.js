@@ -90,6 +90,7 @@ export const createLayersFromLinks = async (id, title, item, layerDatetime) => {
   /** @type {Record<string,any>[]} */
   const jsonArray = [];
   const wmsArray = item.links.filter((l) => l.rel === "wms");
+  const wmtsArray = item.links.filter((l) => l.rel === "wmts");
   const xyzArray = item.links.filter((l) => l.rel === "xyz") ?? [];
 
   for (const wmsLink of wmsArray ?? []) {
@@ -131,6 +132,76 @@ export const createLayersFromLinks = async (id, title, item, layerDatetime) => {
       // Expand all dimensions into the params attribute
       Object.assign(json.source.params, wmsLink["wms:dimensions"]);
     }
+    jsonArray.push(json);
+  }
+
+  for (const wmtsLink of wmtsArray ?? []) {
+    // Registering setting sub wmts link projection
+
+    const wmtsLinkProjection =
+      /** @type {number | string | {name: string, def: string} | undefined} */
+      (wmtsLink?.["proj:epsg"] || wmtsLink?.["eodash:proj4_def"]);
+
+    await registerProjection(wmtsLinkProjection);
+    const projectionCode = getProjectionCode(wmtsLinkProjection || "EPSG:3857");
+    // TODO: WARNING! This is a temporary project specific implementation
+    // that needs to be removed once catalog and wmts creation from capabilities
+    // combined with custom view projections is solved
+    let json;
+    if (wmtsLink.title === "wmts capabilities") {
+      json = {
+        type: "Tile",
+        properties: {
+          id,
+          title: title || item.id,
+          layerDatetime,
+        },
+        source: {
+          type: "WMTS",
+          // TODO: Hard coding url as the current one set is for capabilities
+          url: "https://wmts.marine.copernicus.eu/teroWmts",
+          layer: wmtsLink["wmts:layer"],
+          style: wmtsLink.style || "default",
+          // TODO: Hard coding matrixSet until we find solution to wmts creation from capabilities
+          matrixSet: "EPSG:3857",
+          projection: projectionCode,
+          tileGrid: {
+            tileSize: [128, 128],
+          },
+          dimensions: wmtsLink["wmts:dimensions"],
+        },
+      };
+    } else {
+      json = {
+        type: "Tile",
+        properties: {
+          id,
+          title: wmtsLink.title || title || item.id,
+          layerDatetime,
+        },
+        source: {
+          type: "WMTS",
+          url: wmtsLink,
+          layer: wmtsLink["wmts:layer"],
+          style: wmtsLink.style || "default",
+          matrixSet: wmtsLink.matrixSet || "EPSG:3857",
+          projection: projectionCode,
+          tileGrid: {
+            tileSize: [128, 128],
+          },
+          dimensions: wmtsLink["wmts:dimensions"],
+        },
+      };
+    }
+
+    extractRoles(
+      json.properties,
+      /** @type {string[]} */ (wmtsLink.roles),
+      /** @type {string} */ (wmtsLink.id) ||
+        /** @type {string} */ (wmtsLink.title) ||
+        "",
+    );
+
     jsonArray.push(json);
   }
 
