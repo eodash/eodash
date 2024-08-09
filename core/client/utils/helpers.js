@@ -80,7 +80,7 @@ export const setMapProjFromCol = (STAcCollection) => {
     availableMapProjection.value = /** @type {string} */ (projectionCode);
   } else {
     // reset to default projection
-    changeMapProjection((availableMapProjection.value = ""));
+    changeMapProjection((availableMapProjection.value = "EPSG:3857"));
   }
 };
 
