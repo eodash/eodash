@@ -1,4 +1,4 @@
-import { mapEl, registeredProjections } from "@/store/States";
+import { mapEl, mapCompareEl, registeredProjections } from "@/store/States";
 import { getProjectionCode } from "@/utils/helpers";
 
 /**
@@ -24,8 +24,16 @@ export const registerProjection = async (projection) => {
       projection.def,
       projection.extent,
     );
+    // also registering for comparison map
+    await mapCompareEl.value?.registerProjection(
+      code,
+      projection.def,
+      projection.extent,
+    );
   } else {
     await mapEl.value?.registerProjectionFromCode(code);
+    // also registering for comparison map
+    await mapCompareEl.value?.registerProjectionFromCode(code);
   }
 };
 /**
@@ -36,6 +44,7 @@ export const changeMapProjection = async (projection) => {
 
   if (!code) {
     mapEl.value?.setAttribute("projection", "EPSG:3857");
+    mapCompareEl.value?.setAttribute("projection", "EPSG:3857");
     return;
   }
 
@@ -45,4 +54,5 @@ export const changeMapProjection = async (projection) => {
 
   code = mapEl.value?.getAttribute("projection") === code ? "EPSG:3857" : code;
   mapEl.value?.setAttribute("projection", code);
+  mapCompareEl.value?.setAttribute("projection", code);
 };
