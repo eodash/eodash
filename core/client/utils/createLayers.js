@@ -22,7 +22,7 @@ export async function createLayersFromDataAssets(
   for (const ast in assets) {
     // register projection if exists
     const assetProjection =
-      /** @type {string | number | {name: string, def: string} | undefined} */ (
+      /** @type {string | number | {name: string, def: string, extent?:number[]} | undefined} */ (
         assets[ast]?.["proj:epsg"] || assets[ast]?.["eodash:proj4_def"]
       );
     await registerProjection(assetProjection);
