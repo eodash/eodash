@@ -1,6 +1,14 @@
 # Changelog
 
 
+## [5.0.0-alpha.2.16](https://github.com/eodash/eodash/compare/eodash-v5.0.0-alpha.2.15...eodash-v5.0.0-alpha.2.16) (2024-08-09)
+
+
+### Features
+
+* Introduce layer specific datetime ([#88](https://github.com/eodash/eodash/issues/88)) ([00ff8a7](https://github.com/eodash/eodash/commit/00ff8a7139b2da83face8795570709c063ff2f73))
+* multiple improvements ([#91](https://github.com/eodash/eodash/issues/91)) ([b7e0de4](https://github.com/eodash/eodash/commit/b7e0de40febe11c16cec91d75fe83689460d2ef4))
+
 ## [5.0.0-alpha.2.15](https://github.com/eodash/eodash/compare/eodash-v5.0.0-alpha.2.14...eodash-v5.0.0-alpha.2.15) (2024-08-02)
 
 
