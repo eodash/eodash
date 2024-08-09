@@ -315,6 +315,9 @@ export const removeUnneededProperties = (layers) => {
     const id = layer.properties.id;
     const title = layer.properties.title;
     layer.properties = { id, title };
+    if (layer["interactions"]) {
+      delete layer["interactions"]
+    }
     if (layer.type === "Group") {
       layer.layers = removeUnneededProperties(layer.layers);
     }
