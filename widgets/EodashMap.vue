@@ -7,7 +7,7 @@
       class="fill-height fill-width overflow-none"
       slot="first"
       ref="eoxMap"
-      sync="eox-map#compare"
+      :sync="compareMap"
       id="main"
       :config="eoxMapConfig"
     />
