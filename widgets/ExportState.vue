@@ -11,7 +11,7 @@
           editor:
         </p>
         <div class="pa-3 code-block">
-          {{ getLayers() }}
+          {{ removeUnneededProperties(getLayers()) }}
         </div>
 
         <div style="position: absolute; bottom: 15px">
@@ -55,6 +55,7 @@ import { copyToClipBoard } from "@/utils";
 import { computed, ref } from "vue";
 import { getLayers as getLayerAction } from "@/store/Actions";
 import { mapPosition } from "@/store/States";
+import { removeUnneededProperties } from "@/utils/helpers";
 
 const dialog = defineModel({ type: Boolean, required: true, default: false });
 
@@ -93,7 +94,7 @@ const mapStepCode = computed(() => {
 #### Tour step title
 Text describing the current step of the tour and why it is interesting what the map shows currently
 `;
-  return `${preTag}'${JSON.stringify(props.getLayers())}' ${endTag}`;
+  return `${preTag}'${JSON.stringify(removeUnneededProperties(props.getLayers()))}' ${endTag}`;
 });
 const mapEntryCode = computed(() => {
   const [x, y, z] = mapPosition.value;
@@ -101,7 +102,7 @@ const mapEntryCode = computed(() => {
     "## Map Example <!" +
     '--{as="eox-map" style="width: 100%; height: 500px;" layers=';
   const endTag = `zoom="${z}" center=[${[x, y]}] }-->`;
-  return `${preTag}'${JSON.stringify(props.getLayers())}' ${endTag}`;
+  return `${preTag}'${JSON.stringify(removeUnneededProperties(props.getLayers()))}' ${endTag}`;
 });
 </script>
 <style scoped>

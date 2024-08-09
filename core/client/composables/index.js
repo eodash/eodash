@@ -114,7 +114,7 @@ export const useURLSearchParametersSync = () => {
         y,
         /** @type {number | undefined} */
         z;
-      searchParams.forEach(async (value, key) => {
+      for (const [key, value] of searchParams) {
         switch (key) {
           case "indicator": {
             const { loadSelectedSTAC, stac } = useSTAcStore();
@@ -143,7 +143,7 @@ export const useURLSearchParametersSync = () => {
           default:
             break;
         }
-      });
+      }
 
       if (x && y && z) {
         mapPosition.value = [x, y, z];

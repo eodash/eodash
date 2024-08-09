@@ -1,8 +1,8 @@
 <template>
   <span class="d-flex flex-column fill-height overflow-auto pa-4">
     <eox-layercontrol
-      v-if="mapEl"
-      :for="mapEl"
+      v-if="mapElement"
+      :for="mapElement"
       @datetime:updated="debouncedHandleDateTime"
       class="fill-height"
       ref="eoxLayercontrol"
@@ -15,9 +15,20 @@ import "@eox/jsonform";
 import "@eox/timecontrol";
 
 import { ref } from "vue";
-import { mapEl } from "@/store/States";
+import { mapEl, mapCompareEl } from "@/store/States";
 import { getColFromLayer } from "@/utils/helpers";
-import { eodashCollections } from "@/utils/states";
+import { eodashCollections, eodashCompareCollections } from "@/utils/states";
+
+const props = defineProps({
+  map: {
+    type: String,
+    default: "first",
+  },
+});
+
+const eodashCols =
+  props.map === "second" ? eodashCompareCollections : eodashCollections;
+const mapElement = props.map === "second" ? mapCompareEl : mapEl;
 
 /** @type { import("vue").Ref<HTMLElement & Record<string,any> | null>} */
 const eoxLayercontrol = ref(null);
@@ -26,7 +37,7 @@ const eoxLayercontrol = ref(null);
 const handleDatetimeUpdate = async (evt) => {
   const { layer, datetime } = evt.detail;
 
-  const ec = await getColFromLayer(eodashCollections, layer);
+  const ec = await getColFromLayer(eodashCols, layer);
 
   /** @type {Record<string,any>[] | undefined} */
   let updatedLayers = [];
@@ -37,7 +48,7 @@ const handleDatetimeUpdate = async (evt) => {
   }
   /** @type {Record<String,any>[] | undefined} */
   const dataLayers = updatedLayers?.find(
-    (l) => l.properties.id === "AnalysisGroup",
+    (l) => l?.properties?.id === "AnalysisGroup",
   )?.layers;
 
   if (dataLayers?.length) {
@@ -48,7 +59,7 @@ const handleDatetimeUpdate = async (evt) => {
     });
     // assign layers to the map
     /** @type {HTMLElement & Record<string,any>} */
-    (mapEl.value).layers = updatedLayers;
+    (mapElement.value).layers = updatedLayers;
   }
 };
 

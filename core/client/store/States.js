@@ -22,7 +22,10 @@ export const mapPosition = ref([]);
 export const registeredProjections = ["EPSG:4326", "EPSG:3857"];
 
 /** available projection to be rendered by `EodashMap` */
-export const availableMapProjection = ref("");
+export const availableMapProjection = ref("EPSG:3857");
 
 /** @type {import("vue").Ref<HTMLElement & Record<string,any> | null>} */
 export const mapEl = ref(null);
+
+/** @type {import("vue").Ref<HTMLElement & Record<string,any> | null>} */
+export const mapCompareEl = ref(null);

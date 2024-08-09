@@ -9,7 +9,6 @@ import {
   findLayer,
   generateFeatures,
   replaceLayer,
-  setMapProjFromCol,
 } from "./helpers";
 import { getLayers, registerProjection } from "@/store/Actions";
 import {
@@ -62,9 +61,6 @@ export class EodashCollection {
 
     // Load collectionstac if not yet initialized
     stac = await this.fetchCollection();
-
-    // set availabe map projection
-    setMapProjFromCol(this.#collectionStac);
 
     const isGeoDB = stac?.endpointtype === "GeoDB";
 
@@ -119,9 +115,13 @@ export class EodashCollection {
    * */
   async buildJsonArray(item, itemUrl, title, isGeoDB, itemDatetime) {
     await this.fetchCollection();
-
+    // registering top level indicator projection
+    const indicatorProjection =
+      item?.["proj:epsg"] || item?.["eodash:proj4_def"];
     await registerProjection(
-      /** @type {number | undefined} */ (item?.["proj:epsg"]),
+      /** @type {number | string | {name: string, def: string; extent: number[] | undefined;} } */ (
+        indicatorProjection
+      ),
     );
 
     const jsonArray = [];
@@ -174,18 +174,18 @@ export class EodashCollection {
       return data;
     }, /** @type {Record<string,import('stac-ts').StacAsset>} */ ({}));
     const isSupported =
-      item.links.some((link) => ["wms", "xyz"].includes(link.rel)) ||
+      item.links.some((link) => ["wms", "xyz", "wmts"].includes(link.rel)) ||
       Object.keys(dataAssets).length;
 
     if (isSupported) {
+      const links = await createLayersFromLinks(
+        createLayerID(this.#collectionStac?.id ?? "", item.id, false),
+        title,
+        item,
+        layerDatetime,
+      );
       jsonArray.push(
-        ...createLayersFromLinks(
-          createLayerID(this.#collectionStac?.id ?? "", item.id, false),
-          title,
-          item,
-          layerDatetime,
-        ),
-
+        ...links,
         ...(await createLayersFromDataAssets(
           createLayerID(this.#collectionStac?.id ?? "", item.id, true),
           title || this.#collectionStac?.title || item.id,
@@ -203,13 +203,17 @@ export class EodashCollection {
         displayFootprint: false,
         data: item,
         properties: {
-          id: item.id,
+          id: createLayerID(this.#collectionStac?.id ?? "", item.id, false),
           title: title || item.id,
           layerConfig,
         },
         style,
       };
-      extractRoles(json.properties, /** @type {string[]} */ (item?.roles));
+      extractRoles(
+        json.properties,
+        /** @type {string[]} */ (item?.roles),
+        item.id || /** @type {string} */ (item.title) || "" + " STAC",
+      );
       jsonArray.push(json);
     }
 
@@ -296,7 +300,9 @@ export class EodashCollection {
 
     // get the link of the specified date
     const specifiedLink = this.getItems()?.find(
-      (item) => item.datetime === datetime,
+      (item) =>
+        typeof item.datetime === "string" &&
+        new Date(item.datetime).toISOString() === datetime,
     );
 
     if (!specifiedLink) {
@@ -312,13 +318,15 @@ export class EodashCollection {
 
     const curentLayers = getLayers();
 
-    const oldLayer = findLayer(curentLayers, { properties: { id: layer } });
+    const oldLayer = findLayer(curentLayers, layer);
 
-    return replaceLayer(
+    const updatedLayers = replaceLayer(
       curentLayers,
       /** @type {Record<string,any> & { properties:{ id:string; title:string } } } */
       (oldLayer),
       newLayers,
     );
+
+    return updatedLayers;
   }
 }

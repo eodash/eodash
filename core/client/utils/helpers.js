@@ -60,23 +60,27 @@ export function extractLayerConfig(style) {
  */
 export const setMapProjFromCol = (STAcCollection) => {
   // if a projection exists on the collection level
-  if (STAcCollection?.["proj:epsg"]) {
+
+  const projection =
+    /** @type {number | string | {name: string, def: string} | undefined} */
+    (
+      STAcCollection?.["eodash:mapProjection"] ||
+        STAcCollection?.["proj:epsg"] ||
+        STAcCollection?.["eodash:proj4_def"]
+    );
+  if (projection) {
+    const projectionCode = getProjectionCode(projection);
     if (
       availableMapProjection.value &&
-      availableMapProjection.value !== STAcCollection?.["proj:epsg"]
+      availableMapProjection.value !== projectionCode
     ) {
-      changeMapProjection(
-        /** @type {number} */
-        (STAcCollection["proj:epsg"]),
-      );
+      changeMapProjection(projection);
     }
     // set it for `EodashMapBtns`
-    availableMapProjection.value = /** @type {string} */ (
-      STAcCollection["proj:epsg"]
-    );
+    availableMapProjection.value = /** @type {string} */ (projectionCode);
   } else {
     // reset to default projection
-    changeMapProjection((availableMapProjection.value = ""));
+    changeMapProjection((availableMapProjection.value = "EPSG:3857"));
   }
 };
 
@@ -114,14 +118,17 @@ export function extractCollectionUrls(stacObject, basepath) {
  * Assign extracted roles to layer properties
  * @param {Record<string,any>} properties
  * @param {string[]} roles
+ * @param {string} id - unique ID for baselayers and overlays
  * */
-export const extractRoles = (properties, roles) => {
+export const extractRoles = (properties, roles, id) => {
   roles?.forEach((role) => {
     if (role === "visible") {
       properties.visible = true;
     }
     if (role === "overlay" || role === "baselayer") {
       properties.group = role;
+      const [colId, itemId, isAsset, _random] = properties.id.split(";:;");
+      properties.id = [colId, itemId, isAsset, id].join(";:;");
     }
     return properties;
   });
@@ -148,30 +155,65 @@ export const fetchStyle = async (item, itemUrl) => {
 };
 
 /**
+ * Return projection code which is to be registered in `eox-map`
+ * @param {string|number|{name: string, def: string}} [projection]
+ * @returns {string}
+ */
+export const getProjectionCode = (projection) => {
+  let code = projection;
+  switch (typeof projection) {
+    case "number":
+      code = `EPSG:${projection}`;
+      break;
+    case "string":
+      code = projection;
+      break;
+    case "object":
+      code = projection?.name;
+  }
+  return /** @type {string} */ (code);
+};
+
+/**
  * @param {import("stac-ts").StacLink[]} [links]
  * @param {string|null} [current]
  **/
 export const extractLayerDatetime = (links, current) => {
   if (!current || !links?.length) {
-    return;
+    return undefined;
   }
+
+  // check if links has a datetime value
   const hasDatetime = links.some((l) => typeof l.datetime === "string");
   if (!hasDatetime) {
-    return;
+    return undefined;
   }
-  const values = links.reduce((vals, link) => {
-    if (link.datetime) {
-      vals.push(/** @type {string} */ (link.datetime));
-    }
-    return vals;
-  }, /** @type {string[]} */ ([]));
 
+  /** @type {string[]} */
+  const values = [];
+  try {
+    current = new Date(current).toISOString();
+
+    links.reduce((vals, link) => {
+      if (link.datetime && link.rel === "item") {
+        vals.push(
+          new Date(/** @type {string} */ (link.datetime)).toISOString(),
+        );
+      }
+      return vals;
+    }, values);
+  } catch (e) {
+    console.warn("[eodash] not supported datetime format was provided", e);
+    return undefined;
+  }
+  // not enough values
   if (values.length <= 1) {
-    return;
+    return undefined;
   }
 
-  if (!values.includes(current) && current.includes("T")) {
-    current = current.split("T")[0];
+  // item datetime is not included in the item links datetime
+  if (!values.includes(current)) {
+    return undefined;
   }
 
   return {
@@ -183,17 +225,21 @@ export const extractLayerDatetime = (links, current) => {
 };
 
 /**
- *  @param {Record<string,any> & {properties:{id?:string,title?:string}}} layer
+ * Find layer by ID
+ *  @param {string} layer
  *  @param {Record<string, any>[]} layers
  *  @returns {Record<string,any> | undefined}
  **/
 export const findLayer = (layers, layer) => {
-  const property = layer.properties.id ? "id" : "title";
   for (const lyr of layers) {
     if (lyr.type === "Group") {
-      return findLayer(lyr.layers, layer);
+      const found = findLayer(lyr.layers, layer);
+      if (!found) {
+        continue;
+      }
+      return found;
     }
-    if (lyr.properties[property] === layer.properties[property]) {
+    if (lyr.properties.id === layer) {
       return lyr;
     }
   }
@@ -209,23 +255,20 @@ export const replaceLayer = (currentLayers, oldLayer, newLayers) => {
   const oldLayerIdx = currentLayers.findIndex(
     (l) => l.properties.id === oldLayer.properties.id,
   );
-  if (oldLayerIdx === -1) {
-    for (const l of currentLayers) {
-      if (l.type === "Group") {
-        const updatedGroup = replaceLayer(l.layers, oldLayer, newLayers);
-        if (updatedGroup?.length) {
-          const idx = currentLayers.findIndex(
-            (l) => l.properties.id === oldLayer.properties.id,
-          );
-          currentLayers[idx] = updatedGroup;
-          return currentLayers;
-        }
+  if (oldLayerIdx !== -1) {
+    currentLayers.splice(oldLayerIdx, 1, ...newLayers);
+    return currentLayers;
+  }
+
+  for (const l of currentLayers) {
+    if (l.type === "Group") {
+      const updatedGroupLyrs = replaceLayer(l.layers, oldLayer, newLayers);
+      if (updatedGroupLyrs?.length) {
+        l.layers = updatedGroupLyrs;
+        return currentLayers;
       }
     }
   }
-
-  currentLayers.splice(oldLayerIdx, 1, ...newLayers);
-  return currentLayers;
 };
 /**
  * @param {import('./eodashSTAC.js').EodashCollection[]} indicators
@@ -236,7 +279,7 @@ export const getColFromLayer = async (indicators, layer) => {
   const collections = await Promise.all(
     indicators.map((ind) => ind.fetchCollection()),
   );
-  const [collectionId, itemId, _asset] = layer.get("id").split(";:;");
+  const [collectionId, itemId, _asset, _random] = layer.get("id").split(";:;");
 
   const chosen = collections.find((col) => {
     const isInd =
@@ -256,5 +299,28 @@ export const getColFromLayer = async (indicators, layer) => {
  * @returns
  */
 export const createLayerID = (colId, itemId, isAsset) => {
-  return `${colId ?? ""};:;${itemId ?? ""};:;${isAsset ? "_asset" : ""}`;
+  return `${colId ?? ""};:;${itemId ?? ""};:;${isAsset ? "_asset" : ""};:;${Math.random().toString(16).slice(2)}`;
+};
+
+/**
+ * creates a structured clone from the layers and
+ * removes all properties from the clone
+ * except the ID and title
+ *
+ * @param {Record<string,any>[]} layers
+ */
+export const removeUnneededProperties = (layers) => {
+  const cloned = structuredClone(layers);
+  cloned.forEach((layer) => {
+    const id = layer.properties.id;
+    const title = layer.properties.title;
+    layer.properties = { id, title };
+    if (layer["interactions"]) {
+      delete layer["interactions"]
+    }
+    if (layer.type === "Group") {
+      layer.layers = removeUnneededProperties(layer.layers);
+    }
+  });
+  return cloned;
 };

@@ -139,6 +139,13 @@ onMounted(() => {
             dates,
           });
         }
+        // We try to set the current time selection
+        // to latest extent date
+        // @ts-expect-error it seems the temporal extent is not defined in type
+        const interval = updatedStac?.extent?.temporal?.interval;
+        if (interval && interval.length > 0 && interval[0].length > 1) {
+          currentDate.value = new Date(interval[0][1]);
+        }
       }
     },
     { immediate: true },
