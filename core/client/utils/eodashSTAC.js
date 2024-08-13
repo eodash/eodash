@@ -11,10 +11,7 @@ import {
   replaceLayer,
 } from "./helpers";
 import { getLayers, registerProjection } from "@/store/Actions";
-import {
-  createLayersFromDataAssets,
-  createLayersFromLinks,
-} from "./createLayers";
+import { createLayersFromAssets, createLayersFromLinks } from "./createLayers";
 import axios from "axios";
 
 export class EodashCollection {
@@ -186,7 +183,7 @@ export class EodashCollection {
       );
       jsonArray.push(
         ...links,
-        ...(await createLayersFromDataAssets(
+        ...(await createLayersFromAssets(
           createLayerID(this.#collectionStac?.id ?? "", item.id, true),
           title || this.#collectionStac?.title || item.id,
           dataAssets,
@@ -260,12 +257,7 @@ export class EodashCollection {
   }
 
   async getExtent() {
-    if (!this.#collectionStac) {
-      const stac = await axios
-        .get(this.#collectionUrl)
-        .then((resp) => resp.data);
-      this.#collectionStac = new Collection(stac);
-    }
+    await this.fetchCollection();
     return this.#collectionStac?.extent;
   }
 
@@ -328,5 +320,42 @@ export class EodashCollection {
     );
 
     return updatedLayers;
+  }
+
+  /**
+   * Returns base layers and overlay layers of a STAC Collection
+   *
+   * @param {import("stac-ts").StacCollection} indicator */
+  static async getIndicatorLayers(indicator) {
+    const indicatorAssets = Object.keys(indicator?.assets ?? {}).reduce(
+      (assets, ast) => {
+        if (
+          indicator.assets?.[ast].roles?.includes("baselayer") ||
+          indicator.assets?.[ast].roles?.includes("overlay")
+        ) {
+          assets[ast] = indicator.assets[ast];
+        }
+        return assets;
+      },
+      /** @type {Record<string,import('stac-ts').StacAsset>} */ ({}),
+    );
+
+    return [
+      ...(await createLayersFromLinks(
+        createLayerID(indicator.id ?? "", indicator.id, false),
+        indicator.id,
+        //@ts-expect-error indicator instead of item
+        indicator,
+        // layerDatetime,
+      )),
+      ...(await createLayersFromAssets(
+        createLayerID(indicator?.id ?? "", indicator.id, true),
+        indicator?.title || indicator.id,
+        indicatorAssets,
+        // style,
+        // layerConfig,
+        // layerDatetime,
+      )),
+    ];
   }
 }

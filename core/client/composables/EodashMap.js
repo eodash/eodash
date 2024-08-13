@@ -1,7 +1,7 @@
 import { EodashCollection } from "@/utils/eodashSTAC";
 import { setMapProjFromCol } from "@/utils/helpers";
-import { onMounted, onUnmounted, watch } from "vue";
-
+import { onMounted, onUnmounted } from "vue";
+import { watchDebounced } from "@vueuse/core";
 /**
  * Description placeholder
  *
@@ -83,15 +83,9 @@ const createLayersConfig = async (
   });
 
   layersCollection.push(dataLayers);
-
-  const indicator = new EodashCollection(indicatorUrl);
-  const indicatorLayers = await indicator.buildJsonArray(
-    //@ts-expect-error we use this function to generate collection level visualization
-    selectedIndicator,
-    indicatorUrl,
-    selectedIndicator?.title ?? "",
-    selectedIndicator?.endpointtype === "GeoDB",
-  );
+  const indicatorLayers =
+    //@ts-expect-error indicator is collection
+    await EodashCollection.getIndicatorLayers(selectedIndicator);
 
   const baseLayers = {
     type: "Group",
@@ -195,7 +189,7 @@ export const useInitMap = (
   datetime,
 ) => {
   onMounted(() => {
-    watch(
+    watchDebounced(
       [selectedIndicator, datetime],
       async ([updatedStac, updatedTime], [previousSTAC, _previousTime]) => {
         if (updatedStac) {
@@ -239,7 +233,7 @@ export const useInitMap = (
           }
         }
       },
-      { immediate: true },
+      { immediate: true, debounce: 200 },
     );
   });
 };

@@ -9,7 +9,7 @@ import { extractRoles, getProjectionCode } from "./helpers";
  * @param {Record<string, unknown>} [layerConfig]
  * @param {Record<string, unknown>} [layerDatetime]
  **/
-export async function createLayersFromDataAssets(
+export async function createLayersFromAssets(
   id,
   title,
   assets,
