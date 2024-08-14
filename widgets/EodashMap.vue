@@ -54,7 +54,7 @@ const eoxMapConfig = reactive({
   center: [15, 48],
   /** @type {number | undefined} */
   zoom: 4,
-  // TODO: we should probably introduce some way of defining
+  // TODO: we should probably introduce some way of defining default base layers
   layers: [
     {
       type: "Tile",

@@ -38,10 +38,44 @@ export const useHandleMapMoveEnd = (mapElement, mapPosition) => {
 };
 
 /**
+ * @param {import("vue").Ref<HTMLElement & Record<string,any> | null>} mapElement
+ * @param {import("@/utils/eodashSTAC").EodashCollection[]} eodashCols
+ * @param {string} updatedTime
+*/
+const updateLayersConfig = async (
+  mapElement,
+ eodashCols,
+ updatedTime,
+) => {
+  const dataLayers = (mapElement.value)?.layers;
+  const analysisLayers = [];
+  for (const ec of eodashCols) {
+    let layers;
+    if (updatedTime) {
+      layers = await ec.createLayersJson(new Date(updatedTime));
+    } else {
+      layers = await ec.createLayersJson();
+    }
+    if (layers) {
+      analysisLayers.push(...layers);
+    }
+  }
+  // Add expand to all analysis layers
+  analysisLayers.forEach((dl) => {
+    dl.properties.layerControlExpand = true;
+    dl.properties.layerControlToolsExpand = true;
+  });
+  if (dataLayers && dataLayers.length>1 && dataLayers[1].properties.id === "AnalysisGroup") {
+    dataLayers[1].layers = analysisLayers;
+  }
+  return dataLayers;
+}
+
+
+/**
  *
  * @param {string} indicatorUrl
  * @param {import("@/utils/eodashSTAC").EodashCollection[]} eodashCols
- * @param {string} updatedTime
  * @param {import("stac-ts").StacCatalog
  *   | import("stac-ts").StacCollection
  *   | import("stac-ts").StacItem
@@ -51,7 +85,6 @@ export const useHandleMapMoveEnd = (mapElement, mapPosition) => {
 const createLayersConfig = async (
   indicatorUrl,
   eodashCols,
-  updatedTime,
   selectedIndicator,
 ) => {
   const layersCollection = [];
@@ -64,23 +97,6 @@ const createLayersConfig = async (
     },
     layers: /** @type {Record<string,any>[]}*/ ([]),
   };
-
-  for (const ec of eodashCols) {
-    let layers;
-    if (updatedTime) {
-      layers = await ec.createLayersJson(new Date(updatedTime));
-    } else {
-      layers = await ec.createLayersJson();
-    }
-    if (layers) {
-      dataLayers.layers.push(...layers);
-    }
-  }
-  // Add expand to all analysis layers
-  dataLayers.layers.forEach((dl) => {
-    dl.properties.layerControlExpand = true;
-    dl.properties.layerControlToolsExpand = true;
-  });
 
   layersCollection.push(dataLayers);
   const indicatorLayers =
@@ -189,58 +205,49 @@ export const useInitMap = (
   datetime,
 ) => {
   onMounted(() => {
-    // debounced because the indicator change updates the datetime in `EodashDatePicker`
-    // and triggers the watcher again
-    watchDebounced(
-      [selectedIndicator, datetime],
-      async ([updatedStac, updatedTime]) => {
-        if (updatedStac) {
+    watch(
+      selectedIndicator,
+      async (updatedStac, previousStac) => {
+        console.log("UPDATED INDICATOR OR TIME");
+        if (updatedStac && (previousStac?.id !== updatedStac.id) ) {
           const layersCollection = await createLayersConfig(
             indicatorUrl.value,
             eodashCols,
-            updatedTime,
             updatedStac,
           );
+          // Set projection based on indicator level information
+          setMapProjFromCol(
+            /** @type {import('stac-ts').StacCollection} */
+            (updatedStac),
+          );
+          // Try to move map view to extent
+          // Sanitize extent, 
+          const b = updatedStac.extent?.spatial.bbox[0];
+          const sanitizedExtent = [
+            b[0] > -180 ? b[0] : -180,
+            b[1] > -90 ? b[1] : -90,
+            b[2] < 180 ? b[2] : 180,
+            b[3] < 90 ? b[3] : 90,
+          ];
+          const reprojExtent = mapElement.value?.transformExtent(
+            sanitizedExtent,
+            "EPSG:4326",
+            mapElement.value?.map?.getView().getProjection(),
+          );
+          /** @type {any} */
+          (mapElement.value).zoomExtent = reprojExtent;
           /** @type {any} */
           (mapElement.value).layers = layersCollection;
-
         }
-      },
-      { immediate: true, debounce: 200 },
+      }
     );
-
-
-    watch(selectedIndicator,(updatedStac)=>{
-
-          // // only on different indicator selection and not on time change
-          // if (previousSTAC?.id !== updatedStac.id) {
-            // Set projection based on indicator level information
-            setMapProjFromCol(
-              /** @type {import('stac-ts').StacCollection} */
-              (updatedStac),
-            );
-            // Try to move map view to extent
-            // Make sure for now we are always converting from 4326
-            // of stac items  into current map projection
-            // TODO: This might change if we decide to use 4326 as default for zoom and extent
-            // Sanitize extent
-            // // native eox-map transformation once included
-            // @ts-expect-error we will need to change the approach to use
-            const b = updatedStac.extent?.spatial.bbox[0];
-            const sanitizedExtent = [
-              b[0] > -180 ? b[0] : -180,
-              b[1] > -90 ? b[1] : -90,
-              b[2] < 180 ? b[2] : 180,
-              b[3] < 90 ? b[3] : 90,
-            ];
-            const reprojExtent = mapElement.value?.transformExtent(
-              sanitizedExtent,
-              "EPSG:4326",
-              mapElement.value?.map?.getView().getProjection(),
-            );
-            /** @type {any} */
-            (mapElement.value).zoomExtent = reprojExtent;
-
+    watch(datetime, async (updatedTime, previousTime)=>{
+      if (updatedTime && (updatedTime !== previousTime)) {
+        console.log("UPDATE TIME");
+        const layersCollection = await updateLayersConfig(mapElement, eodashCols, updatedTime);
+        /** @type {any} */
+        (mapElement.value).layers = layersCollection.reverse();
+      } 
     })
   });
 };

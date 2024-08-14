@@ -339,7 +339,6 @@ export class EodashCollection {
       },
       /** @type {Record<string,import('stac-ts').StacAsset>} */ ({}),
     );
-
     return [
       ...(await createLayersFromLinks(
         createLayerID(indicator.id ?? "", indicator.id, false),

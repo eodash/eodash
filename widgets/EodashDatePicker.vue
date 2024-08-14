@@ -68,6 +68,7 @@ function jumpDate(reverse) {
     });
     if (latestDateMS !== 0) {
       currentDate.value = new Date(latestDateMS);
+      datetime.value = currentDate.value.toISOString();
     }
   }
 }
@@ -88,21 +89,7 @@ const masks = ref({
  */
 const attributes = reactive([]);
 
-const currentDate = computed({
-  get() {
-    return datetime.value ? new Date(datetime.value) : new Date();
-  },
-  /** @param {Date | string} updatedDate */
-  set(updatedDate) {
-    if (updatedDate instanceof Date && !isNaN(updatedDate.getTime())) {
-      datetime.value = new Date(
-        updatedDate.getTime() - updatedDate.getTimezoneOffset() * 60000,
-      ).toISOString();
-    } else {
-      datetime.value = new Date().toISOString();
-    }
-  },
-});
+const currentDate = ref(new Date());
 
 onMounted(() => {
   const { selectedStac } = storeToRefs(useSTAcStore());
@@ -145,6 +132,7 @@ onMounted(() => {
         const interval = updatedStac?.extent?.temporal?.interval;
         if (interval && interval.length > 0 && interval[0].length > 1) {
           currentDate.value = new Date(interval[0][1]);
+          datetime.value = interval[0][1];
         }
       }
     },
