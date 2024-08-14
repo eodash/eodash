@@ -127,8 +127,10 @@ export const extractRoles = (properties, roles, id) => {
     }
     if (role === "overlay" || role === "baselayer") {
       properties.group = role;
-      const [colId, itemId, isAsset, _random] = properties.id.split(";:;");
-      properties.id = [colId, itemId, isAsset, id].join(";:;");
+      //remove all the properties and replace the random ID with baselayer
+      // provided ID
+      const [_colId, _itemId, _isAsset, _random] = properties.id.split(";:;");
+      properties.id = ["","","", id].join(";:;");
     }
     return properties;
   });
