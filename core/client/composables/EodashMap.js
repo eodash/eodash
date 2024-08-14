@@ -41,13 +41,9 @@ export const useHandleMapMoveEnd = (mapElement, mapPosition) => {
  * @param {import("vue").Ref<HTMLElement & Record<string,any> | null>} mapElement
  * @param {import("@/utils/eodashSTAC").EodashCollection[]} eodashCols
  * @param {string} updatedTime
-*/
-const updateLayersConfig = async (
-  mapElement,
- eodashCols,
- updatedTime,
-) => {
-  const dataLayers = (mapElement.value)?.layers;
+ */
+const updateLayersConfig = async (mapElement, eodashCols, updatedTime) => {
+  const dataLayers = mapElement.value?.layers;
   const analysisLayers = [];
   for (const ec of eodashCols) {
     let layers;
@@ -65,12 +61,15 @@ const updateLayersConfig = async (
     dl.properties.layerControlExpand = true;
     dl.properties.layerControlToolsExpand = true;
   });
-  if (dataLayers && dataLayers.length>1 && dataLayers[1].properties.id === "AnalysisGroup") {
+  if (
+    dataLayers &&
+    dataLayers.length > 1 &&
+    dataLayers[1].properties.id === "AnalysisGroup"
+  ) {
     dataLayers[1].layers = analysisLayers;
   }
   return dataLayers;
-}
-
+};
 
 /**
  *
@@ -205,49 +204,50 @@ export const useInitMap = (
   datetime,
 ) => {
   onMounted(() => {
-    watch(
-      selectedIndicator,
-      async (updatedStac, previousStac) => {
-        console.log("UPDATED INDICATOR OR TIME");
-        if (updatedStac && (previousStac?.id !== updatedStac.id) ) {
-          const layersCollection = await createLayersConfig(
-            indicatorUrl.value,
-            eodashCols,
-            updatedStac,
-          );
-          // Set projection based on indicator level information
-          setMapProjFromCol(
-            /** @type {import('stac-ts').StacCollection} */
-            (updatedStac),
-          );
-          // Try to move map view to extent
-          // Sanitize extent, 
-          const b = updatedStac.extent?.spatial.bbox[0];
-          const sanitizedExtent = [
-            b[0] > -180 ? b[0] : -180,
-            b[1] > -90 ? b[1] : -90,
-            b[2] < 180 ? b[2] : 180,
-            b[3] < 90 ? b[3] : 90,
-          ];
-          const reprojExtent = mapElement.value?.transformExtent(
-            sanitizedExtent,
-            "EPSG:4326",
-            mapElement.value?.map?.getView().getProjection(),
-          );
-          /** @type {any} */
-          (mapElement.value).zoomExtent = reprojExtent;
-          /** @type {any} */
-          (mapElement.value).layers = layersCollection;
-        }
+    watch(selectedIndicator, async (updatedStac, previousStac) => {
+      console.log("UPDATED INDICATOR OR TIME");
+      if (updatedStac && previousStac?.id !== updatedStac.id) {
+        const layersCollection = await createLayersConfig(
+          indicatorUrl.value,
+          eodashCols,
+          updatedStac,
+        );
+        // Set projection based on indicator level information
+        setMapProjFromCol(
+          /** @type {import('stac-ts').StacCollection} */
+          (updatedStac),
+        );
+        // Try to move map view to extent
+        // Sanitize extent,
+        const b = updatedStac.extent?.spatial.bbox[0];
+        const sanitizedExtent = [
+          b[0] > -180 ? b[0] : -180,
+          b[1] > -90 ? b[1] : -90,
+          b[2] < 180 ? b[2] : 180,
+          b[3] < 90 ? b[3] : 90,
+        ];
+        const reprojExtent = mapElement.value?.transformExtent(
+          sanitizedExtent,
+          "EPSG:4326",
+          mapElement.value?.map?.getView().getProjection(),
+        );
+        /** @type {any} */
+        (mapElement.value).zoomExtent = reprojExtent;
+        /** @type {any} */
+        (mapElement.value).layers = layersCollection;
       }
-    );
-    watch(datetime, async (updatedTime, previousTime)=>{
-      if (updatedTime && (updatedTime !== previousTime)) {
+    });
+    watch(datetime, async (updatedTime, previousTime) => {
+      if (updatedTime && updatedTime !== previousTime) {
         console.log("UPDATE TIME");
-        const layersCollection = await updateLayersConfig(mapElement, eodashCols, updatedTime);
+        const layersCollection = await updateLayersConfig(
+          mapElement,
+          eodashCols,
+          updatedTime,
+        );
         /** @type {any} */
         (mapElement.value).layers = layersCollection.reverse();
-      } 
-    })
+      }
+    });
   });
 };
