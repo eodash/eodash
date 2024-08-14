@@ -178,10 +178,10 @@ export const getProjectionCode = (projection) => {
 
 /**
  * @param {import("stac-ts").StacLink[]} [links]
- * @param {string|null} [current]
+ * @param {string|null} [currentStep]
  **/
-export const extractLayerDatetime = (links, current) => {
-  if (!current || !links?.length) {
+export const extractLayerDatetime = (links, currentStep) => {
+  if (!currentStep || !links?.length) {
     return undefined;
   }
 
@@ -192,9 +192,9 @@ export const extractLayerDatetime = (links, current) => {
   }
 
   /** @type {string[]} */
-  const values = [];
+  const controlValues = [];
   try {
-    current = new Date(current).toISOString();
+    currentStep = new Date(currentStep).toISOString();
 
     links.reduce((vals, link) => {
       if (link.datetime && link.rel === "item") {
@@ -203,25 +203,25 @@ export const extractLayerDatetime = (links, current) => {
         );
       }
       return vals;
-    }, values);
+    }, controlValues);
   } catch (e) {
     console.warn("[eodash] not supported datetime format was provided", e);
     return undefined;
   }
-  // not enough values
-  if (values.length <= 1) {
+  // not enough controlValues
+  if (controlValues.length <= 1) {
     return undefined;
   }
 
   // item datetime is not included in the item links datetime
-  if (!values.includes(current)) {
+  if (!controlValues.includes(currentStep)) {
     return undefined;
   }
 
   return {
-    values,
-    current,
-    slider: false,
+    controlValues,
+    currentStep,
+    slider: true,
     disablePlay: true,
   };
 };
