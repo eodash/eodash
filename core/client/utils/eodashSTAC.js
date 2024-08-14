@@ -176,7 +176,6 @@ export class EodashCollection {
 
     if (isSupported) {
       const links = await createLayersFromLinks(
-        createLayerID(this.#collectionStac?.id ?? "", item.id, false),
         title,
         item,
         layerDatetime,
@@ -341,8 +340,7 @@ export class EodashCollection {
     );
     return [
       ...(await createLayersFromLinks(
-        createLayerID(indicator.id ?? "", indicator.id, false),
-        indicator.id,
+        indicator?.title || indicator.id,
         //@ts-expect-error indicator instead of item
         indicator,
         // layerDatetime,

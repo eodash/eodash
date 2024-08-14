@@ -80,13 +80,34 @@ export async function createLayersFromAssets(
   return jsonArray;
 }
 
+function generateId(item, link){
+  const indicatorProjection =
+      item?.["proj:epsg"] || item?.["eodash:mapProjection"]?.name || "EPSG:3857";
+  // TODO: WORK IN PROGRESS
+  let id = item.id;
+  // if the link has a role we use only the title as identifier (baselayers and overlays)
+  // plus potential projection of the current indicator to make sure tiles are reloaded
+  // when changing projection
+  if(link.roles && link.roles.find((r)=>r === "overlay" || r === "baselayer")) {
+    // TODO: add projection info
+    console.log(`${link.title};:;${indicatorProjection}`);
+    return `${link.title};:;${indicatorProjection}`;
+  }
+  if (link.id){
+    id+=`;:;${link.id}`;
+  }
+  // add projection to end
+  id+=`;:;${indicatorProjection}`;
+  console.log(id);
+  return id;
+}
+
 /**
  * @param {import('stac-ts').StacItem} item
- * @param {string} id
  * @param {string} title
  * @param {Record<string,any>} [layerDatetime]
  */
-export const createLayersFromLinks = async (id, title, item, layerDatetime) => {
+export const createLayersFromLinks = async (title, item, layerDatetime) => {
   /** @type {Record<string,any>[]} */
   const jsonArray = [];
   const wmsArray = item.links.filter((l) => l.rel === "wms");
@@ -102,10 +123,11 @@ export const createLayersFromLinks = async (id, title, item, layerDatetime) => {
 
     await registerProjection(wmsLinkProjection);
     const projectionCode = getProjectionCode(wmsLinkProjection || "EPSG:4326");
+
     let json = {
       type: "Tile",
       properties: {
-        id,
+        id: generateId(item, wmsLink),
         title: wmsLink.title || title || item.id,
         layerDatetime,
       },
@@ -152,7 +174,7 @@ export const createLayersFromLinks = async (id, title, item, layerDatetime) => {
       json = {
         type: "Tile",
         properties: {
-          id,
+          id: generateId(item, wmtsLink),
           title: title || item.id,
           layerDatetime,
         },
@@ -175,7 +197,7 @@ export const createLayersFromLinks = async (id, title, item, layerDatetime) => {
       json = {
         type: "Tile",
         properties: {
-          id,
+          id: generateId(item, wmtsLink),
           title: wmtsLink.title || title || item.id,
           layerDatetime,
         },
@@ -216,7 +238,7 @@ export const createLayersFromLinks = async (id, title, item, layerDatetime) => {
     let json = {
       type: "Tile",
       properties: {
-        id,
+        id: generateId(item, xyzLink),
         title: xyzLink.title || title || item.id,
         roles: xyzLink.roles,
         layerDatetime,
