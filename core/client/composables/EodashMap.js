@@ -1,6 +1,6 @@
 import { EodashCollection } from "@/utils/eodashSTAC";
 import { setMapProjFromCol } from "@/utils/helpers";
-import { onMounted, onUnmounted } from "vue";
+import { onMounted, onUnmounted, watch } from "vue";
 import { watchDebounced } from "@vueuse/core";
 /**
  * Description placeholder
@@ -193,7 +193,7 @@ export const useInitMap = (
     // and triggers the watcher again
     watchDebounced(
       [selectedIndicator, datetime],
-      async ([updatedStac, updatedTime], [previousSTAC, _previousTime]) => {
+      async ([updatedStac, updatedTime]) => {
         if (updatedStac) {
           const layersCollection = await createLayersConfig(
             indicatorUrl.value,
@@ -204,8 +204,16 @@ export const useInitMap = (
           /** @type {any} */
           (mapElement.value).layers = layersCollection;
 
-          // only on different indicator selection and not on time change
-          if (previousSTAC?.id !== updatedStac.id) {
+        }
+      },
+      { immediate: true, debounce: 200 },
+    );
+
+
+    watch(selectedIndicator,(updatedStac)=>{
+
+          // // only on different indicator selection and not on time change
+          // if (previousSTAC?.id !== updatedStac.id) {
             // Set projection based on indicator level information
             setMapProjFromCol(
               /** @type {import('stac-ts').StacCollection} */
@@ -216,8 +224,8 @@ export const useInitMap = (
             // of stac items  into current map projection
             // TODO: This might change if we decide to use 4326 as default for zoom and extent
             // Sanitize extent
-            // // @ts-expect-error we will need to change the approach to use
             // // native eox-map transformation once included
+            // @ts-expect-error we will need to change the approach to use
             const b = updatedStac.extent?.spatial.bbox[0];
             const sanitizedExtent = [
               b[0] > -180 ? b[0] : -180,
@@ -232,10 +240,7 @@ export const useInitMap = (
             );
             /** @type {any} */
             (mapElement.value).zoomExtent = reprojExtent;
-          }
-        }
-      },
-      { immediate: true, debounce: 200 },
-    );
+
+    })
   });
 };
