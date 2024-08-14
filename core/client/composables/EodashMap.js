@@ -205,7 +205,6 @@ export const useInitMap = (
 ) => {
   onMounted(() => {
     watch(selectedIndicator, async (updatedStac, previousStac) => {
-      console.log("UPDATED INDICATOR OR TIME");
       if (updatedStac && previousStac?.id !== updatedStac.id) {
         const layersCollection = await createLayersConfig(
           indicatorUrl.value,
@@ -239,7 +238,6 @@ export const useInitMap = (
     });
     watch(datetime, async (updatedTime, previousTime) => {
       if (updatedTime && updatedTime !== previousTime) {
-        console.log("UPDATE TIME");
         const layersCollection = await updateLayersConfig(
           mapElement,
           eodashCols,
