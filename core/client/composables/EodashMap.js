@@ -189,6 +189,8 @@ export const useInitMap = (
   datetime,
 ) => {
   onMounted(() => {
+    // debounced because the indicator change updates the datetime in `EodashDatePicker`
+    // and triggers the watcher again
     watchDebounced(
       [selectedIndicator, datetime],
       async ([updatedStac, updatedTime], [previousSTAC, _previousTime]) => {
