@@ -283,7 +283,7 @@ export const getColFromLayer = async (indicators, layer) => {
   const collections = await Promise.all(
     indicators.map((ind) => ind.fetchCollection()),
   );
-  const [collectionId, itemId, _asset, _random] = layer.get("id").split(";:;");
+  const [collectionId, itemId, _asset, _random,_proj] = layer.get("id").split(";:;");
 
   const chosen = collections.find((col) => {
     const isInd =
