@@ -117,10 +117,10 @@ export function extractCollectionUrls(stacObject, basepath) {
 /**
  * Assign extracted roles to layer properties
  * @param {Record<string,any>} properties
- * @param {string[]} roles
- * @param {string} id - unique ID for baselayers and overlays
+ * @param {import("stac-ts").StacLink | import("stac-ts").StacAsset} linkOrAsset
  * */
-export const extractRoles = (properties, roles, id) => {
+export const extractRoles = (properties, linkOrAsset) => {
+  const roles = /** @type {string[]} */ (linkOrAsset.roles);
   roles?.forEach((role) => {
     if (role === "visible") {
       properties.visible = true;
@@ -129,9 +129,11 @@ export const extractRoles = (properties, roles, id) => {
       properties.group = role;
       //remove all the properties and replace the random ID with baselayer
       // provided ID
-      const [_colId, _itemId, _isAsset, _random] = properties.id.split(";:;");
-      properties.id = ["", "", "", id].join(";:;");
+      const [_colId, _itemId, _isAsset, _random, proj] =
+        properties.id.split(";:;");
+      properties.id = ["", "", "", "", linkOrAsset.id, proj].join(";:;");
     }
+
     return properties;
   });
 };
@@ -293,16 +295,56 @@ export const getColFromLayer = async (indicators, layer) => {
   });
   return indicators.find((ind) => ind.collectionStac?.id === chosen?.id);
 };
+
 /**
- *
+ * generates layer specific ID, related functions are: {@link generateId} & {@link extractRoles}
  * @param {string} colId
  * @param {string} itemId
  * @param {boolean} isAsset
- * @returns
+ *
  */
 export const createLayerID = (colId, itemId, isAsset) => {
-  return `${colId ?? ""};:;${itemId ?? ""};:;${isAsset ? "_asset" : ""};:;${Math.random().toString(16).slice(2)}`;
+  return `${colId ?? ""};:;${itemId ?? ""};:;${isAsset ? "_asset" : ""};:;${Math.random().toString(16).slice(2)};:;EPSG:3857`;
 };
+
+/**
+ *
+ * @param {import("stac-ts").StacItem} item
+ * @param {import("stac-ts").StacLink | import("stac-ts").StacAsset} linkOrAsset
+ * @param {string} id - {@link createLayerID} & {@link extractRoles}
+ * @returns
+ */
+export function generateId(item, linkOrAsset, id) {
+  const indicatorProjection =
+    /** @type { string | undefined} */
+    (item?.["proj:epsg"]) ||
+    /** @type { {name?: string} | undefined} */
+    (item?.["eodash:mapProjection"])?.name ||
+    "EPSG:3857";
+
+  // TODO: WORK IN PROGRESS
+  const idArr = id.split(";:;");
+
+  // let theID = item.id;
+  // // if the link has a role we use the link identifier (baselayers and overlays)
+  // // plus potential projection of the current indicator to make sure tiles are reloaded
+  // // when changing projection
+  // const roles = /** @type {string[]|undefined} */(linkOrAsset.roles);
+
+  // if(roles?.some((r)=>r === "overlay" || r === "baselayer")) {
+  console.log("removed proj from ID:", idArr.pop());
+  console.log("added proj to ID", indicatorProjection);
+  idArr.push(indicatorProjection);
+  return idArr.join(";:;");
+  // }
+  // if (linkOrAsset.id){
+  //   theID+=`;:;${linkOrAsset.id}`;
+  // }
+  // // add projection to end
+  // theID+=`;:;${indicatorProjection}`;
+  // console.log(theID);
+  // return theID;
+}
 
 /**
  * creates a structured clone from the layers and

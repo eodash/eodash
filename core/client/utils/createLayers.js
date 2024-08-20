@@ -1,5 +1,5 @@
 import { registerProjection } from "@/store/Actions";
-import { extractRoles, getProjectionCode } from "./helpers";
+import { extractRoles, generateId, getProjectionCode } from "./helpers";
 
 /**
  * @param {string} id
@@ -48,11 +48,7 @@ export async function createLayersFromAssets(
         },
         ...(!style?.variables && { style }),
       };
-      extractRoles(
-        layer.properties,
-        assets[ast]?.roles ?? [],
-        /** @type {string} */ (assets[ast].id || assets[ast].title || ""),
-      );
+      extractRoles(layer.properties, assets[ast]);
       jsonArray.push(layer);
     } else if (assets[ast]?.type === "image/tiff") {
       geoTIFFSources.push({ url: assets[ast].href });
@@ -80,34 +76,13 @@ export async function createLayersFromAssets(
   return jsonArray;
 }
 
-function generateId(item, link){
-  const indicatorProjection =
-      item?.["proj:epsg"] || item?.["eodash:mapProjection"]?.name || "EPSG:3857";
-  // TODO: WORK IN PROGRESS
-  let id = item.id;
-  // if the link has a role we use only the title as identifier (baselayers and overlays)
-  // plus potential projection of the current indicator to make sure tiles are reloaded
-  // when changing projection
-  if(link.roles && link.roles.find((r)=>r === "overlay" || r === "baselayer")) {
-    // TODO: add projection info
-    console.log(`${link.title};:;${indicatorProjection}`);
-    return `${link.title};:;${indicatorProjection}`;
-  }
-  if (link.id){
-    id+=`;:;${link.id}`;
-  }
-  // add projection to end
-  id+=`;:;${indicatorProjection}`;
-  console.log(id);
-  return id;
-}
-
 /**
+ * @param {string} id
  * @param {import('stac-ts').StacItem} item
  * @param {string} title
  * @param {Record<string,any>} [layerDatetime]
  */
-export const createLayersFromLinks = async (title, item, layerDatetime) => {
+export const createLayersFromLinks = async (id, title, item, layerDatetime) => {
   /** @type {Record<string,any>[]} */
   const jsonArray = [];
   const wmsArray = item.links.filter((l) => l.rel === "wms");
@@ -127,7 +102,7 @@ export const createLayersFromLinks = async (title, item, layerDatetime) => {
     let json = {
       type: "Tile",
       properties: {
-        id: generateId(item, wmsLink),
+        id: generateId(item, wmsLink, id),
         title: wmsLink.title || title || item.id,
         layerDatetime,
       },
@@ -142,13 +117,7 @@ export const createLayersFromLinks = async (title, item, layerDatetime) => {
       },
     };
 
-    extractRoles(
-      json.properties,
-      /** @type {string[]} */ (wmsLink.roles),
-      /** @type {string} */ (wmsLink.id) ||
-        /** @type {string} */ (wmsLink.title) ||
-        "",
-    );
+    extractRoles(json.properties, wmsLink);
 
     if ("wms:dimensions" in wmsLink) {
       // Expand all dimensions into the params attribute
@@ -174,7 +143,7 @@ export const createLayersFromLinks = async (title, item, layerDatetime) => {
       json = {
         type: "Tile",
         properties: {
-          id: generateId(item, wmtsLink),
+          id: generateId(item, wmtsLink, id),
           title: title || item.id,
           layerDatetime,
         },
@@ -197,7 +166,7 @@ export const createLayersFromLinks = async (title, item, layerDatetime) => {
       json = {
         type: "Tile",
         properties: {
-          id: generateId(item, wmtsLink),
+          id: generateId(item, wmtsLink, id),
           title: wmtsLink.title || title || item.id,
           layerDatetime,
         },
@@ -216,13 +185,7 @@ export const createLayersFromLinks = async (title, item, layerDatetime) => {
       };
     }
 
-    extractRoles(
-      json.properties,
-      /** @type {string[]} */ (wmtsLink.roles),
-      /** @type {string} */ (wmtsLink.id) ||
-        /** @type {string} */ (wmtsLink.title) ||
-        "",
-    );
+    extractRoles(json.properties, wmtsLink);
 
     jsonArray.push(json);
   }
@@ -238,7 +201,7 @@ export const createLayersFromLinks = async (title, item, layerDatetime) => {
     let json = {
       type: "Tile",
       properties: {
-        id: generateId(item, xyzLink),
+        id: generateId(item, xyzLink, id),
         title: xyzLink.title || title || item.id,
         roles: xyzLink.roles,
         layerDatetime,
@@ -250,11 +213,8 @@ export const createLayersFromLinks = async (title, item, layerDatetime) => {
       },
     };
 
-    extractRoles(
-      json.properties,
-      /** @type {string[]} */ (xyzLink.roles),
-      /** @type {string} */ (xyzLink.id || xyzLink.title || ""),
-    );
+    extractRoles(json.properties, xyzLink);
+
     jsonArray.push(json);
   }
   return jsonArray;
