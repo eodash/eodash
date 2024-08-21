@@ -298,7 +298,7 @@ export const getColFromLayer = async (indicators, layer) => {
 };
 
 /**
- * generates layer specific ID, related functions are: {@link generateId} & {@link extractRoles}
+ * generates layer specific ID, related functions are: {@link assignProjID} & {@link extractRoles}
  * @param {string} colId
  * @param {string} itemId
  * @param {boolean} isAsset
@@ -313,9 +313,10 @@ export const createLayerID = (colId, itemId, isAsset) => {
  * @param {import("stac-ts").StacItem} item
  * @param {import("stac-ts").StacLink | import("stac-ts").StacAsset} linkOrAsset
  * @param {string} id - {@link createLayerID} & {@link extractRoles}
+ * @param {{ properties:{id:string}  & Record<string, any> }& Record<string,any>} layer
  * @returns
  */
-export function generateId(item, linkOrAsset, id) {
+export function assignProjID(item, linkOrAsset, id, layer) {
   const indicatorProjection =
     /** @type { string | undefined} */
     (item?.["proj:epsg"]) ||
@@ -323,28 +324,14 @@ export function generateId(item, linkOrAsset, id) {
     (item?.["eodash:mapProjection"])?.name ||
     "EPSG:3857";
 
-  // TODO: WORK IN PROGRESS
   const idArr = id.split(";:;");
 
-  // let theID = item.id;
-  // // if the link has a role we use the link identifier (baselayers and overlays)
-  // // plus potential projection of the current indicator to make sure tiles are reloaded
-  // // when changing projection
-  // const roles = /** @type {string[]|undefined} */(linkOrAsset.roles);
-
-  // if(roles?.some((r)=>r === "overlay" || r === "baselayer")) {
-  console.log("removed proj from ID:", idArr.pop());
-  console.log("added proj to ID", indicatorProjection);
+  idArr.pop();
   idArr.push(indicatorProjection);
-  return idArr.join(";:;");
-  // }
-  // if (linkOrAsset.id){
-  //   theID+=`;:;${linkOrAsset.id}`;
-  // }
-  // // add projection to end
-  // theID+=`;:;${indicatorProjection}`;
-  // console.log(theID);
-  // return theID;
+  const updatedID = idArr.join(";:;");
+  layer.properties.id = updatedID;
+
+  return updatedID;
 }
 
 /**

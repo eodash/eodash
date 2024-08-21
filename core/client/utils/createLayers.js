@@ -1,5 +1,5 @@
 import { registerProjection } from "@/store/Actions";
-import { extractRoles, generateId, getProjectionCode } from "./helpers";
+import { extractRoles, assignProjID, getProjectionCode } from "./helpers";
 
 /**
  * @param {string} id
@@ -41,7 +41,7 @@ export async function createLayersFromAssets(
           format: "GeoJSON",
         },
         properties: {
-          id: generateId(item, assets[ast], id),
+          id,
           title,
           layerDatetime,
           ...(layerConfig && {
@@ -53,6 +53,9 @@ export async function createLayersFromAssets(
         },
         ...(!style?.variables && { style }),
       };
+
+      assignProjID(item, assets[ast], id, layer);
+
       extractRoles(layer.properties, assets[ast]);
       jsonArray.push(layer);
     } else if (assets[ast]?.type === "image/tiff") {
@@ -62,7 +65,7 @@ export async function createLayersFromAssets(
   }
 
   if (geoTIFFSources.length) {
-    jsonArray.push({
+    const layer = {
       type: "WebGLTile",
       source: {
         type: "GeoTIFF",
@@ -70,18 +73,21 @@ export async function createLayersFromAssets(
         sources: geoTIFFSources,
       },
       properties: {
-        id: generateId(
-          item,
-          /** @type {import("stac-ts").StacAsset} */
-          (geoTIFFAsset),
-          id,
-        ),
+        id,
         title,
         layerConfig,
         layerDatetime,
       },
       style,
-    });
+    };
+    assignProjID(
+      item,
+      /** @type {import("stac-ts").StacAsset} */
+      (geoTIFFAsset),
+      id,
+      layer,
+    );
+    jsonArray.push(layer);
   }
 
   return jsonArray;
@@ -113,7 +119,7 @@ export const createLayersFromLinks = async (id, title, item, layerDatetime) => {
     let json = {
       type: "Tile",
       properties: {
-        id: generateId(item, wmsLink, id),
+        id,
         title: wmsLink.title || title || item.id,
         layerDatetime,
       },
@@ -127,6 +133,8 @@ export const createLayersFromLinks = async (id, title, item, layerDatetime) => {
         },
       },
     };
+
+    assignProjID(item, wmsLink, id, json);
 
     extractRoles(json.properties, wmsLink);
 
@@ -154,7 +162,7 @@ export const createLayersFromLinks = async (id, title, item, layerDatetime) => {
       json = {
         type: "Tile",
         properties: {
-          id: generateId(item, wmtsLink, id),
+          id,
           title: title || item.id,
           layerDatetime,
         },
@@ -177,7 +185,7 @@ export const createLayersFromLinks = async (id, title, item, layerDatetime) => {
       json = {
         type: "Tile",
         properties: {
-          id: generateId(item, wmtsLink, id),
+          id,
           title: wmtsLink.title || title || item.id,
           layerDatetime,
         },
@@ -196,6 +204,8 @@ export const createLayersFromLinks = async (id, title, item, layerDatetime) => {
       };
     }
 
+    assignProjID(item, wmtsLink, id, json);
+
     extractRoles(json.properties, wmtsLink);
 
     jsonArray.push(json);
@@ -212,7 +222,7 @@ export const createLayersFromLinks = async (id, title, item, layerDatetime) => {
     let json = {
       type: "Tile",
       properties: {
-        id: generateId(item, xyzLink, id),
+        id,
         title: xyzLink.title || title || item.id,
         roles: xyzLink.roles,
         layerDatetime,
@@ -223,6 +233,8 @@ export const createLayersFromLinks = async (id, title, item, layerDatetime) => {
         projection: projectionCode,
       },
     };
+
+    assignProjID(item, xyzLink, id, json);
 
     extractRoles(json.properties, xyzLink);
 
