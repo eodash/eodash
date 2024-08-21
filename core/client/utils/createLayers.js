@@ -5,6 +5,7 @@ import { extractRoles, generateId, getProjectionCode } from "./helpers";
  * @param {string} id
  * @param {string} title
  * @param {Record<string,import("stac-ts").StacAsset>} assets
+ * @param {import("stac-ts").StacItem } item
  * @param {import("ol/layer/WebGLTile").Style} [style]
  * @param {Record<string, unknown>} [layerConfig]
  * @param {Record<string, unknown>} [layerDatetime]
@@ -13,12 +14,16 @@ export async function createLayersFromAssets(
   id,
   title,
   assets,
+  item,
   style,
   layerConfig,
   layerDatetime,
 ) {
   let jsonArray = [];
   let geoTIFFSources = [];
+  /** @type {import("stac-ts").StacAsset | null} */
+  let geoTIFFAsset = null;
+
   for (const ast in assets) {
     // register projection if exists
     const assetProjection =
@@ -36,7 +41,7 @@ export async function createLayersFromAssets(
           format: "GeoJSON",
         },
         properties: {
-          id,
+          id: generateId(item, assets[ast], id),
           title,
           layerDatetime,
           ...(layerConfig && {
@@ -51,6 +56,7 @@ export async function createLayersFromAssets(
       extractRoles(layer.properties, assets[ast]);
       jsonArray.push(layer);
     } else if (assets[ast]?.type === "image/tiff") {
+      geoTIFFAsset = assets[ast];
       geoTIFFSources.push({ url: assets[ast].href });
     }
   }
@@ -64,7 +70,12 @@ export async function createLayersFromAssets(
         sources: geoTIFFSources,
       },
       properties: {
-        id,
+        id: generateId(
+          item,
+          /** @type {import("stac-ts").StacAsset} */
+          (geoTIFFAsset),
+          id,
+        ),
         title,
         layerConfig,
         layerDatetime,
