@@ -22,14 +22,7 @@
 </template>
 <script setup>
 import { computed, onMounted, reactive, ref } from "vue";
-import {
-  currentUrl,
-  currentCompareUrl,
-  datetime,
-  mapEl,
-  mapPosition,
-  mapCompareEl,
-} from "@/store/States";
+import { datetime, mapEl, mapPosition, mapCompareEl } from "@/store/States";
 import { storeToRefs } from "pinia";
 import { useSTAcStore } from "@/store/stac";
 import "@eox/map";
@@ -54,7 +47,7 @@ const eoxMapConfig = reactive({
   center: [15, 48],
   /** @type {number | undefined} */
   zoom: 4,
-  // TODO: we should probably introduce some way of defining
+  // TODO: we should probably introduce some way of defining default base layers
   layers: [
     {
       type: "Tile",
@@ -98,7 +91,6 @@ if (props.enableCompare) {
     //@ts-expect-error todo selectedStac as collection
     selectedCompareStac,
     eodashCompareCollections,
-    currentCompareUrl,
     datetime,
   );
 }
@@ -107,7 +99,6 @@ useInitMap(
   //@ts-expect-error todo selectedStac as collection
   selectedStac,
   eodashCollections,
-  currentUrl,
   datetime,
 );
 

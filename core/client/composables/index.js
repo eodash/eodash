@@ -102,12 +102,12 @@ export const useUpdateTheme = (themeName, themeDefinition = {}) => {
 };
 
 /** Composable that syncs store and URLSearchParameters */
-
 export const useURLSearchParametersSync = () => {
   onMounted(async () => {
     // Analyze currently set url params when first loaded and set them in the store
     if (window.location.search) {
       const searchParams = new URLSearchParams(window.location.search);
+
       /** @type {number | undefined} */
       let x,
         /** @type {number | undefined} */
@@ -124,15 +124,19 @@ export const useURLSearchParametersSync = () => {
             }
             break;
           }
+
           case "x":
             x = Number(value);
             break;
+
           case "y":
             y = Number(value);
             break;
+
           case "z":
             z = Number(value);
             break;
+
           case "datetime":
             try {
               datetime.value = new Date(value).toISOString();
@@ -140,6 +144,7 @@ export const useURLSearchParametersSync = () => {
               datetime.value = new Date().toISOString();
             }
             break;
+
           default:
             break;
         }

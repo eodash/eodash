@@ -187,6 +187,7 @@ export class EodashCollection {
           createLayerID(this.#collectionStac?.id ?? "", item.id, true),
           title || this.#collectionStac?.title || item.id,
           dataAssets,
+          item,
           style,
           layerConfig,
           layerDatetime,
@@ -208,8 +209,8 @@ export class EodashCollection {
       };
       extractRoles(
         json.properties,
-        /** @type {string[]} */ (item?.roles),
-        item.id || /** @type {string} */ (item.title) || "" + " STAC",
+        //@ts-expect-error using the item incase no self link is found
+        item.links.find((link) => link.rel === "self") ?? item,
       );
       jsonArray.push(json);
     }
@@ -342,8 +343,8 @@ export class EodashCollection {
 
     return [
       ...(await createLayersFromLinks(
-        createLayerID(indicator.id ?? "", indicator.id, false),
-        indicator.id,
+        createLayerID(indicator?.id ?? "", indicator.id, true),
+        indicator?.title || indicator.id,
         //@ts-expect-error indicator instead of item
         indicator,
         // layerDatetime,
@@ -352,6 +353,8 @@ export class EodashCollection {
         createLayerID(indicator?.id ?? "", indicator.id, true),
         indicator?.title || indicator.id,
         indicatorAssets,
+        //@ts-expect-error indicator instead of item
+        indicator,
         // style,
         // layerConfig,
         // layerDatetime,

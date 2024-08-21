@@ -98,13 +98,13 @@ export const useSTAcStore = defineStore("stac", () => {
           }),
         ).then((collections) => {
           // empty array from old collections
-          eodashCollections.length = 0;
+          eodashCollections.splice(0, eodashCollections.length);
           // update eodashCollections
           eodashCollections.push(...collections);
-        });
 
-        selectedStac.value = resp.data;
-        indicator.value = selectedStac.value?.id ?? "";
+          selectedStac.value = resp.data;
+          indicator.value = selectedStac.value?.id ?? "";
+        });
       })
       .catch((err) => {
         throw new Error("error loading the selected STAC", err);
@@ -139,12 +139,12 @@ export const useSTAcStore = defineStore("stac", () => {
           }),
         ).then((collections) => {
           // empty array from old collections
-          eodashCompareCollections.length = 0;
+          eodashCompareCollections.splice(0, eodashCompareCollections.length);
           // update eodashCompareCollections
           eodashCompareCollections.push(...collections);
-        });
 
-        selectedCompareStac.value = resp.data;
+          selectedCompareStac.value = resp.data;
+        });
       })
       .catch((err) => {
         throw new Error("error loading the selected comparison STAC", err);
