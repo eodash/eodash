@@ -1,4 +1,4 @@
-import { changeMapProjection } from "@/store/Actions";
+import { changeMapProjection, registerProjection } from "@/store/Actions";
 import { availableMapProjection } from "@/store/States";
 import { toAbsolute } from "stac-js/src/http.js";
 import axios from "axios";
@@ -69,6 +69,7 @@ export const setMapProjFromCol = (STAcCollection) => {
         STAcCollection?.["eodash:proj4_def"]
     );
   if (projection) {
+    registerProjection(projection);
     const projectionCode = getProjectionCode(projection);
     if (
       availableMapProjection.value &&
@@ -223,7 +224,7 @@ export const extractLayerDatetime = (links, currentStep) => {
   return {
     controlValues,
     currentStep,
-    slider: true,
+    slider: false,
     disablePlay: true,
   };
 };
@@ -283,7 +284,7 @@ export const getColFromLayer = async (indicators, layer) => {
   const collections = await Promise.all(
     indicators.map((ind) => ind.fetchCollection()),
   );
-  const [collectionId, itemId, _asset, _random,_proj] = layer.get("id").split(";:;");
+  const [collectionId, itemId, ..._other] = layer.get("id").split(";:;");
 
   const chosen = collections.find((col) => {
     const isInd =

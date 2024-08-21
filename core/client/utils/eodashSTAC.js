@@ -187,6 +187,7 @@ export class EodashCollection {
           createLayerID(this.#collectionStac?.id ?? "", item.id, true),
           title || this.#collectionStac?.title || item.id,
           dataAssets,
+          item,
           style,
           layerConfig,
           layerDatetime,
@@ -352,6 +353,8 @@ export class EodashCollection {
         createLayerID(indicator?.id ?? "", indicator.id, true),
         indicator?.title || indicator.id,
         indicatorAssets,
+        //@ts-expect-error indicator instead of item
+        indicator,
         // style,
         // layerConfig,
         // layerDatetime,
