@@ -11,8 +11,11 @@ import {
   replaceLayer,
 } from "./helpers";
 import { getLayers, registerProjection } from "@/store/Actions";
-import { createLayersFromAssets, createLayersFromLinks } from "./createLayers";
-import axios from "axios";
+import {
+  createLayersFromAssets,
+  createLayersFromLinks,
+} from "./createLayers";
+import axios from "@/plugins/axios";
 
 export class EodashCollection {
   #collectionUrl = "";

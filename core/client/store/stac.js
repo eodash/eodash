@@ -1,6 +1,6 @@
 import { defineStore } from "pinia";
 import { inject, ref } from "vue";
-import axios from "axios";
+import axios from "@/plugins/axios";
 import { useAbsoluteUrl, useCompareAbsoluteUrl } from "@/composables/index";
 import { eodashKey } from "@/utils/keys";
 import { indicator } from "@/store/States";

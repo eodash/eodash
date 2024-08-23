@@ -1,7 +1,7 @@
 import { changeMapProjection, registerProjection } from "@/store/Actions";
 import { availableMapProjection } from "@/store/States";
 import { toAbsolute } from "stac-js/src/http.js";
-import axios from "axios";
+import axios from "@/plugins/axios";
 
 /** @param {import("stac-ts").StacLink[]} [links] */
 export function generateFeatures(links) {
