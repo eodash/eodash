@@ -1,6 +1,7 @@
 import { EodashCollection } from "@/utils/eodashSTAC";
 import { setMapProjFromCol } from "@/utils/helpers";
 import { onMounted, onUnmounted, watch } from "vue";
+import log from "loglevel";
 /**
  * Description placeholder
  *
@@ -211,8 +212,10 @@ export const useInitMap = (
   eodashCols,
   datetime,
 ) => {
+  log.debug("InitMap", mapElement.value, selectedIndicator.value, eodashCols.values, datetime.value);
   onMounted(() => {
     watch(selectedIndicator, async (updatedStac) => {
+      log.debug("SelectedIndicator watch triggered", selectedIndicator, updatedStac);
       if (updatedStac) {
         const layersCollection = await createLayersConfig(updatedStac);
 

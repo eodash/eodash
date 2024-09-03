@@ -1,5 +1,6 @@
 import { registerProjection } from "@/store/Actions";
 import { extractRoles, assignProjID, getProjectionCode } from "./helpers";
+import log from 'loglevel';
 
 /**
  * @param {string} id
@@ -100,6 +101,7 @@ export async function createLayersFromAssets(
  * @param {Record<string,any>} [layerDatetime]
  */
 export const createLayersFromLinks = async (id, title, item, layerDatetime) => {
+  log.debug("Creating layers from links");
   /** @type {Record<string,any>[]} */
   const jsonArray = [];
   const wmsArray = item.links.filter((l) => l.rel === "wms");
