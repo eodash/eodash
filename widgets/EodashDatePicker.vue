@@ -125,7 +125,10 @@ watch(selectedStac, async (updatedStac, previousStac) => {
     const interval = updatedStac?.extent?.temporal?.interval;
     if (interval && interval.length > 0 && interval[0].length > 1) {
       const endInterval = new Date(interval[0][1]);
-      log.debug("Datepicker: found stac extent, setting time to latest value", endInterval);
+      log.debug(
+        "Datepicker: found stac extent, setting time to latest value",
+        endInterval,
+      );
       currentDate.value = endInterval?.getTime();
     }
   }

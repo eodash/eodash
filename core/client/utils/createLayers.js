@@ -1,6 +1,6 @@
 import { registerProjection } from "@/store/Actions";
 import { extractRoles, assignProjID, getProjectionCode } from "./helpers";
-import log from 'loglevel';
+import log from "loglevel";
 
 /**
  * @param {string} id

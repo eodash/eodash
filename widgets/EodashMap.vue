@@ -107,6 +107,5 @@ onMounted(() => {
   );
 
   useHandleMapMoveEnd(eoxMap, mapPosition);
-  
 });
 </script>

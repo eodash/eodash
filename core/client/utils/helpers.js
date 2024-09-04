@@ -77,7 +77,11 @@ export const setMapProjFromCol = (STAcCollection) => {
       availableMapProjection.value &&
       availableMapProjection.value !== projectionCode
     ) {
-      log.debug("Changing map projection", availableMapProjection.value, projectionCode);
+      log.debug(
+        "Changing map projection",
+        availableMapProjection.value,
+        projectionCode,
+      );
       changeMapProjection(projection);
     }
     // set it for `EodashMapBtns`

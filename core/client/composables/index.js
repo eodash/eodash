@@ -143,7 +143,7 @@ export const useURLSearchParametersSync = () => {
           case "datetime":
             try {
               const datetimeiso = new Date(value).toISOString();
-              log.debug("Valid datetime found", datetimeiso)
+              log.debug("Valid datetime found", datetimeiso);
               datetime.value = datetimeiso;
             } catch {
               datetime.value = new Date().toISOString();

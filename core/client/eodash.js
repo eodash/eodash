@@ -1,9 +1,9 @@
 import { reactive } from "vue";
 import { currentUrl } from "./store/States";
-import log from 'loglevel';
+import log from "loglevel";
 
 /* set log level */
-log.setLevel("debug")
+log.setLevel("debug");
 
 /**
  * Reactive Edoash Instance Object. provided globally in the app, and used as an

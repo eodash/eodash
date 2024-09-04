@@ -49,7 +49,12 @@ const updateLayersConfig = async (
   eodashCols,
   updatedTime,
 ) => {
-  log.debug("Updating layer configuration", layersCollection, eodashCols, updatedTime);
+  log.debug(
+    "Updating layer configuration",
+    layersCollection,
+    eodashCols,
+    updatedTime,
+  );
   /** @type {Record<string,any>[]} */
   const analysisLayers = [];
 
@@ -208,7 +213,12 @@ const createLayersConfig = async (selectedIndicator) => {
  * @param {EodashCollection[]} eodashCols
  * @param {import("vue").Ref<string>} datetime
  */
-const handleIndicatorLoading = async(mapElement, indicator, eodashCols, datetime)=> {
+const handleIndicatorLoading = async (
+  mapElement,
+  indicator,
+  eodashCols,
+  datetime,
+) => {
   const layersCollection = await createLayersConfig(indicator);
 
   // updates layersCollection in place
@@ -236,7 +246,7 @@ const handleIndicatorLoading = async(mapElement, indicator, eodashCols, datetime
 
   /** @type {any} */
   (mapElement.value).layers = layersCollection;
-}
+};
 
 /**
  * Description placeholder
@@ -252,14 +262,32 @@ export const useInitMap = (
   eodashCols,
   datetime,
 ) => {
-  log.debug("InitMap", mapElement.value, selectedIndicator.value, eodashCols.values, datetime.value);
+  log.debug(
+    "InitMap",
+    mapElement.value,
+    selectedIndicator.value,
+    eodashCols.values,
+    datetime.value,
+  );
   // Check if selected indicator already loaded when initializing map
   if (selectedIndicator && selectedIndicator.value) {
-    log.debug("Loading indicator based on url parameter", selectedIndicator.value.id);
-    handleIndicatorLoading(mapElement, selectedIndicator.value, eodashCols, datetime);
+    log.debug(
+      "Loading indicator based on url parameter",
+      selectedIndicator.value.id,
+    );
+    handleIndicatorLoading(
+      mapElement,
+      selectedIndicator.value,
+      eodashCols,
+      datetime,
+    );
   }
   watch(selectedIndicator, async (updatedStac) => {
-    log.debug("SelectedIndicator watch triggered", selectedIndicator, updatedStac);
+    log.debug(
+      "SelectedIndicator watch triggered",
+      selectedIndicator,
+      updatedStac,
+    );
     if (updatedStac) {
       handleIndicatorLoading(mapElement, updatedStac, eodashCols, datetime);
     }
