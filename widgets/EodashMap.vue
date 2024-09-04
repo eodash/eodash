@@ -77,36 +77,36 @@ if (mapPosition && mapPosition.value && mapPosition.value.length === 3) {
   eoxMapConfig.center = [mapPosition.value?.[0], mapPosition.value[1]];
   eoxMapConfig.zoom = mapPosition.value[2];
 }
+const { selectedCompareStac } = storeToRefs(useSTAcStore());
 const showCompare = computed(() =>
   props.enableCompare && !!selectedCompareStac.value ? "" : "first",
 );
 
-useHandleMapMoveEnd(eoxMap, mapPosition);
-
-const { selectedCompareStac, selectedStac } = storeToRefs(useSTAcStore());
-
-if (props.enableCompare) {
-  useInitMap(
-    compareMap,
-    //@ts-expect-error todo selectedStac as collection
-    selectedCompareStac,
-    eodashCompareCollections,
-    datetime,
-  );
-}
-useInitMap(
-  eoxMap,
-  //@ts-expect-error todo selectedStac as collection
-  selectedStac,
-  eodashCollections,
-  datetime,
-);
-
 onMounted(() => {
+  const { selectedCompareStac, selectedStac } = storeToRefs(useSTAcStore());
   // assign map Element state to eox map
   mapEl.value = eoxMap.value;
   if (props.enableCompare) {
     mapCompareEl.value = compareMap.value;
   }
+  if (props.enableCompare) {
+    useInitMap(
+      compareMap,
+      //@ts-expect-error todo selectedStac as collection
+      selectedCompareStac,
+      eodashCompareCollections,
+      datetime,
+    );
+  }
+  useInitMap(
+    eoxMap,
+    //@ts-expect-error todo selectedStac as collection
+    selectedStac,
+    eodashCollections,
+    datetime,
+  );
+
+  useHandleMapMoveEnd(eoxMap, mapPosition);
+  
 });
 </script>

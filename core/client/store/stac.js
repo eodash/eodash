@@ -7,6 +7,7 @@ import { indicator } from "@/store/States";
 import { extractCollectionUrls } from "@/utils/helpers";
 import { eodashCollections, eodashCompareCollections } from "@/utils/states";
 import { EodashCollection } from "@/utils/eodashSTAC";
+import log from "loglevel";
 
 export const useSTAcStore = defineStore("stac", () => {
   /**
@@ -52,6 +53,7 @@ export const useSTAcStore = defineStore("stac", () => {
    * @see {@link stac}
    */
   async function loadSTAC(url = eodash.stacEndpoint) {
+    log.debug("Loading STAC endpoint", url);
     await axios
       .get(url)
       .then((resp) => {
@@ -63,6 +65,7 @@ export const useSTAcStore = defineStore("stac", () => {
           }
           return link;
         });
+        log.debug("Setting selected STAC", links);
         stac.value = links;
       })
       .catch((err) => {

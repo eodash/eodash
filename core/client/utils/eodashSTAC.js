@@ -16,6 +16,7 @@ import {
   createLayersFromLinks,
 } from "./createLayers";
 import axios from "@/plugins/axios";
+import log from 'loglevel';
 
 export class EodashCollection {
   #collectionUrl = "";
@@ -114,6 +115,7 @@ export class EodashCollection {
    * @returns {Promise<Record<string,any>[]>} arrays
    * */
   async buildJsonArray(item, itemUrl, title, isGeoDB, itemDatetime) {
+    log.debug("Building JSON array", item, itemUrl, title, isGeoDB, itemDatetime);
     await this.fetchCollection();
     // registering top level indicator projection
     const indicatorProjection =
@@ -223,6 +225,7 @@ export class EodashCollection {
 
   async fetchCollection() {
     if (!this.#collectionStac) {
+      log.debug("Fetching collection file", this.#collectionUrl);
       const col = await axios
         .get(this.#collectionUrl)
         .then((resp) => resp.data);

@@ -49,6 +49,7 @@ const updateLayersConfig = async (
   eodashCols,
   updatedTime,
 ) => {
+  log.debug("Updating layer configuration", layersCollection, eodashCols, updatedTime);
   /** @type {Record<string,any>[]} */
   const analysisLayers = [];
 
@@ -89,6 +90,7 @@ const updateLayersConfig = async (
  */
 
 const createLayersConfig = async (selectedIndicator) => {
+  log.debug("Creating layers config", selectedIndicator);
   const layersCollection = [];
   const dataLayers = {
     type: "Group",
@@ -202,6 +204,44 @@ const createLayersConfig = async (selectedIndicator) => {
  * Description placeholder
  *
  * @param {import("vue").Ref<HTMLElement & Record<string,any> | null>} mapElement
+ * @param {import('stac-ts').StacCollection } indicator
+ * @param {EodashCollection[]} eodashCols
+ * @param {import("vue").Ref<string>} datetime
+ */
+const handleIndicatorLoading = async(mapElement, indicator, eodashCols, datetime)=> {
+  const layersCollection = await createLayersConfig(indicator);
+
+  // updates layersCollection in place
+  await updateLayersConfig(layersCollection, eodashCols, datetime.value);
+
+  // Set projection based on indicator level information
+  setMapProjFromCol(indicator);
+
+  // Try to move map view to extent
+  // Sanitize extent,
+  const b = indicator.extent?.spatial.bbox[0];
+  const sanitizedExtent = [
+    b[0] > -180 ? b[0] : -180,
+    b[1] > -90 ? b[1] : -90,
+    b[2] < 180 ? b[2] : 180,
+    b[3] < 90 ? b[3] : 90,
+  ];
+  const reprojExtent = mapElement.value?.transformExtent(
+    sanitizedExtent,
+    "EPSG:4326",
+    mapElement.value?.map?.getView().getProjection(),
+  );
+  /** @type {any} */
+  (mapElement.value).zoomExtent = reprojExtent;
+
+  /** @type {any} */
+  (mapElement.value).layers = layersCollection;
+}
+
+/**
+ * Description placeholder
+ *
+ * @param {import("vue").Ref<HTMLElement & Record<string,any> | null>} mapElement
  * @param {import("vue").Ref<import("stac-ts").StacCollection | null>} selectedIndicator
  * @param {EodashCollection[]} eodashCols
  * @param {import("vue").Ref<string>} datetime
@@ -213,53 +253,27 @@ export const useInitMap = (
   datetime,
 ) => {
   log.debug("InitMap", mapElement.value, selectedIndicator.value, eodashCols.values, datetime.value);
-  onMounted(() => {
-    watch(selectedIndicator, async (updatedStac) => {
-      log.debug("SelectedIndicator watch triggered", selectedIndicator, updatedStac);
-      if (updatedStac) {
-        const layersCollection = await createLayersConfig(updatedStac);
+  // Check if selected indicator already loaded when initializing map
+  if (selectedIndicator && selectedIndicator.value) {
+    log.debug("Loading indicator based on url parameter", selectedIndicator.value.id);
+    handleIndicatorLoading(mapElement, selectedIndicator.value, eodashCols, datetime);
+  }
+  watch(selectedIndicator, async (updatedStac) => {
+    log.debug("SelectedIndicator watch triggered", selectedIndicator, updatedStac);
+    if (updatedStac) {
+      handleIndicatorLoading(mapElement, updatedStac, eodashCols, datetime);
+    }
+  });
 
-        // updates layersCollection in place
-        await updateLayersConfig(layersCollection, eodashCols, datetime.value);
-
-        // Set projection based on indicator level information
-        setMapProjFromCol(
-          /** @type {import('stac-ts').StacCollection} */
-          (updatedStac),
-        );
-
-        // Try to move map view to extent
-        // Sanitize extent,
-        const b = updatedStac.extent?.spatial.bbox[0];
-        const sanitizedExtent = [
-          b[0] > -180 ? b[0] : -180,
-          b[1] > -90 ? b[1] : -90,
-          b[2] < 180 ? b[2] : 180,
-          b[3] < 90 ? b[3] : 90,
-        ];
-        const reprojExtent = mapElement.value?.transformExtent(
-          sanitizedExtent,
-          "EPSG:4326",
-          mapElement.value?.map?.getView().getProjection(),
-        );
-        /** @type {any} */
-        (mapElement.value).zoomExtent = reprojExtent;
-
-        /** @type {any} */
-        (mapElement.value).layers = layersCollection;
-      }
-    });
-
-    watch(datetime, async (updatedTime, previousTime) => {
-      if (updatedTime && updatedTime !== previousTime) {
-        const layersCollection = await updateLayersConfig(
-          [...(mapElement.value?.layers ?? [])],
-          eodashCols,
-          updatedTime,
-        );
-        /** @type {any} */
-        (mapElement.value).layers = layersCollection?.reverse();
-      }
-    });
+  watch(datetime, async (updatedTime, previousTime) => {
+    if (updatedTime && updatedTime !== previousTime) {
+      const layersCollection = await updateLayersConfig(
+        [...(mapElement.value?.layers ?? [])],
+        eodashCols,
+        updatedTime,
+      );
+      /** @type {any} */
+      (mapElement.value).layers = layersCollection?.reverse();
+    }
   });
 };

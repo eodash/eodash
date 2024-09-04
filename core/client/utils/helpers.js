@@ -2,6 +2,7 @@ import { changeMapProjection, registerProjection } from "@/store/Actions";
 import { availableMapProjection } from "@/store/States";
 import { toAbsolute } from "stac-js/src/http.js";
 import axios from "@/plugins/axios";
+import log from "loglevel";
 
 /** @param {import("stac-ts").StacLink[]} [links] */
 export function generateFeatures(links) {
@@ -60,7 +61,7 @@ export function extractLayerConfig(style) {
  */
 export const setMapProjFromCol = (STAcCollection) => {
   // if a projection exists on the collection level
-
+  log.debug("Checking for available map projection in indicator");
   const projection =
     /** @type {number | string | {name: string, def: string} | undefined} */
     (
@@ -69,18 +70,21 @@ export const setMapProjFromCol = (STAcCollection) => {
         STAcCollection?.["eodash:proj4_def"]
     );
   if (projection) {
+    log.debug("Projection found", projection);
     registerProjection(projection);
     const projectionCode = getProjectionCode(projection);
     if (
       availableMapProjection.value &&
       availableMapProjection.value !== projectionCode
     ) {
+      log.debug("Changing map projection", availableMapProjection.value, projectionCode);
       changeMapProjection(projection);
     }
     // set it for `EodashMapBtns`
     availableMapProjection.value = /** @type {string} */ (projectionCode);
   } else {
     // reset to default projection
+    log.debug("Resetting projection to default");
     changeMapProjection((availableMapProjection.value = "EPSG:3857"));
   }
 };

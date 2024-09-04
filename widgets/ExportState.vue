@@ -7,7 +7,7 @@
 
       <v-card-text class="py-5 overflow-auto" style="height: 400px">
         <p class="text-body-2">
-          Copy and paste this code into the map layers field of the storytelling
+          Copy and paste this code into the map <b>layers field</b> of the storytelling
           editor:
         </p>
         <div class="pa-3 code-block">
@@ -110,5 +110,7 @@ const mapEntryCode = computed(() => {
   background-color: #ddd;
   font-family: monospace;
   font-size: small;
+  max-height: 200px;
+  overflow-y: auto;
 }
 </style>

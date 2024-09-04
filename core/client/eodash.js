@@ -13,8 +13,8 @@ log.setLevel("debug")
  */
 export const eodash = reactive({
   id: "demo",
-  // stacEndpoint: "https://gtif-cerulean.github.io/catalog/cerulean/catalog.json",
-  stacEndpoint: "https://eodashcatalog.eox.at/test-style/trilateral/catalog.json",
+  stacEndpoint: "https://gtif-cerulean.github.io/catalog/cerulean/catalog.json",
+  // stacEndpoint: "https://eodashcatalog.eox.at/test-style/trilateral/catalog.json",
   //stacEndpoint: "https://eurodatacube.github.io/eodash-catalog/RACE/catalog.json",
   brand: {
     noLayout: true,
