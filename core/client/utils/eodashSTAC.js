@@ -1,7 +1,6 @@
 import { Collection, Item } from "stac-js";
 import { toAbsolute } from "stac-js/src/http.js";
 import {
-  createLayerID,
   extractLayerConfig,
   extractLayerDatetime,
   extractRoles,
@@ -139,7 +138,7 @@ export class EodashCollection {
         {
           type: "Vector",
           properties: {
-            id: createLayerID(this.#collectionStac?.id ?? "", item.id, false),
+            id: this.#collectionStac?.id ?? "",
             title: this.#collectionStac?.title || item.id,
           },
           source: {
@@ -185,7 +184,7 @@ export class EodashCollection {
 
     if (isSupported) {
       const links = await createLayersFromLinks(
-        createLayerID(this.#collectionStac?.id ?? "", item.id, false),
+        this.#collectionStac?.id ?? "",
         title,
         item,
         layerDatetime,
@@ -193,7 +192,7 @@ export class EodashCollection {
       jsonArray.push(
         ...links,
         ...(await createLayersFromAssets(
-          createLayerID(this.#collectionStac?.id ?? "", item.id, true),
+          this.#collectionStac?.id ?? "",
           title || this.#collectionStac?.title || item.id,
           dataAssets,
           item,
@@ -210,7 +209,7 @@ export class EodashCollection {
         displayFootprint: false,
         data: item,
         properties: {
-          id: createLayerID(this.#collectionStac?.id ?? "", item.id, false),
+          id: this.#collectionStac?.id ?? "",
           title: title || item.id,
           layerConfig,
         },
@@ -353,14 +352,14 @@ export class EodashCollection {
 
     return [
       ...(await createLayersFromLinks(
-        createLayerID(indicator?.id ?? "", indicator.id, true),
+        indicator?.id ?? "",
         indicator?.title || indicator.id,
         //@ts-expect-error indicator instead of item
         indicator,
         // layerDatetime,
       )),
       ...(await createLayersFromAssets(
-        createLayerID(indicator?.id ?? "", indicator.id, true),
+        indicator?.id ?? "",
         indicator?.title || indicator.id,
         indicatorAssets,
         //@ts-expect-error indicator instead of item

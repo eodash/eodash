@@ -244,6 +244,9 @@ const handleIndicatorLoading = async (
   /** @type {any} */
   (mapElement.value).zoomExtent = reprojExtent;
 
+  // TODO: adding random identifier to groups as there are issues updating
+  // layers because of the smart updates
+  layersCollection.forEach((lc)=>lc.properties.id = lc.properties.id + Math.random().toString(16).slice(2));
   /** @type {any} */
   (mapElement.value).layers = layersCollection;
 };
