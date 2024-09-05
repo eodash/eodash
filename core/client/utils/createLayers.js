@@ -41,11 +41,7 @@ export async function createLayersFromAssets(
     await registerProjection(assetProjection);
 
     if (assets[ast]?.type === "application/geo+json") {
-      const assetId = createAssetID(
-        collectionId,
-        item.id,
-        idx,
-      );
+      const assetId = createAssetID(collectionId, item.id, idx);
       log.debug("Creating Vector layer from GeoJSON", assetId);
       const layer = {
         type: "Vector",
@@ -76,7 +72,7 @@ export async function createLayersFromAssets(
   }
 
   if (geoTIFFSources.length) {
-    const geotiffSourceID = collectionId + ';:;GeoTIFF';
+    const geotiffSourceID = collectionId + ";:;GeoTIFF";
     log.debug("Creating Vector layer from GeoJSON", geotiffSourceID);
     log.debug("Configured Sources", geoTIFFSources);
     const layer = {
