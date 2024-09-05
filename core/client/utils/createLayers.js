@@ -1,7 +1,6 @@
 import { registerProjection } from "@/store/Actions";
 import {
   extractRoles,
-  assignProjID,
   getProjectionCode,
   createLayerID,
   createAssetID,
@@ -29,8 +28,8 @@ export async function createLayersFromAssets(
   log.debug("Creating layers from assets");
   let jsonArray = [];
   let geoTIFFSources = [];
-  /** @type {import("stac-ts").StacAsset | null} */
-  let geoTIFFAsset = null;
+  /** @type {number|null} */
+  let geoTIFFIdx = null;
 
   for (const [idx, ast] of Object.keys(assets).entries()) {
     // register projection if exists
@@ -66,12 +65,12 @@ export async function createLayersFromAssets(
       extractRoles(layer.properties, assets[ast]);
       jsonArray.push(layer);
     } else if (assets[ast]?.type === "image/tiff") {
-      geoTIFFAsset = assets[ast];
+      geoTIFFIdx = idx;
       geoTIFFSources.push({ url: assets[ast].href });
     }
   }
 
-  if (geoTIFFSources.length) {
+  if (geoTIFFSources.length && typeof geoTIFFIdx === "number") {
     const geotiffSourceID = collectionId + ";:;GeoTIFF";
     log.debug("Creating Vector layer from GeoJSON", geotiffSourceID);
     log.debug("Configured Sources", geoTIFFSources);
@@ -83,7 +82,7 @@ export async function createLayersFromAssets(
         sources: geoTIFFSources,
       },
       properties: {
-        id: geotiffSourceID,
+        id: createAssetID(collectionId, item.id, geoTIFFIdx),
         title,
         layerConfig,
         layerDatetime,

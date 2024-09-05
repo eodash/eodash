@@ -227,7 +227,7 @@ export const useInitMap = (
     datetime.value,
   );
 
-  watch(
+  const stopIndicatorWatcher = watch(
     selectedIndicator,
     async (updatedStac) => {
       log.debug(
@@ -274,15 +274,23 @@ export const useInitMap = (
     { immediate: true },
   );
 
-  watch(datetime, async (updatedTime, previousTime) => {
-    if (updatedTime && updatedTime !== previousTime) {
-      const layersCollection = await updateLayersConfig(
-        [...(mapElement.value?.layers ?? [])],
-        eodashCols,
-        updatedTime,
-      );
-      /** @type {any} */
-      (mapElement.value).layers = layersCollection?.reverse();
-    }
+  const stopDatetimeWatcher = watch(
+    datetime,
+    async (updatedTime, previousTime) => {
+      if (updatedTime && updatedTime !== previousTime) {
+        const layersCollection = await updateLayersConfig(
+          [...(mapElement.value?.layers ?? [])],
+          eodashCols,
+          updatedTime,
+        );
+        /** @type {any} */
+        (mapElement.value).layers = layersCollection?.reverse();
+      }
+    },
+  );
+
+  onUnmounted(() => {
+    stopIndicatorWatcher();
+    stopDatetimeWatcher();
   });
 };
