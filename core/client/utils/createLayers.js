@@ -146,6 +146,9 @@ export const createLayersFromLinks = async (
         type: "TileWMS",
         url: wmsLink.href,
         projection: projectionCode,
+        tileGrid: {
+          tileSize: [512, 512],
+        },
         params: {
           LAYERS: wmsLink["wms:layers"],
           TILED: true,
@@ -226,7 +229,7 @@ export const createLayersFromLinks = async (
           matrixSet: wmtsLink.matrixSet || "EPSG:3857",
           projection: projectionCode,
           tileGrid: {
-            tileSize: [128, 128],
+            tileSize: [512, 512],
           },
           dimensions: wmtsLink["wmts:dimensions"],
         },
