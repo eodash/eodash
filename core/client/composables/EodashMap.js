@@ -209,52 +209,6 @@ const createLayersConfig = async (selectedIndicator) => {
  * Description placeholder
  *
  * @param {import("vue").Ref<HTMLElement & Record<string,any> | null>} mapElement
- * @param {import('stac-ts').StacCollection } indicator
- * @param {EodashCollection[]} eodashCols
- * @param {import("vue").Ref<string>} datetime
- */
-const handleIndicatorLoading = async (
-  mapElement,
-  indicator,
-  eodashCols,
-  datetime,
-) => {
-  const layersCollection = await createLayersConfig(indicator);
-
-  // updates layersCollection in place
-  await updateLayersConfig(layersCollection, eodashCols, datetime.value);
-
-  // Set projection based on indicator level information
-  setMapProjFromCol(indicator);
-
-  // Try to move map view to extent
-  // Sanitize extent,
-  const b = indicator.extent?.spatial.bbox[0];
-  const sanitizedExtent = [
-    b[0] > -180 ? b[0] : -180,
-    b[1] > -90 ? b[1] : -90,
-    b[2] < 180 ? b[2] : 180,
-    b[3] < 90 ? b[3] : 90,
-  ];
-  const reprojExtent = mapElement.value?.transformExtent(
-    sanitizedExtent,
-    "EPSG:4326",
-    mapElement.value?.map?.getView().getProjection(),
-  );
-  /** @type {any} */
-  (mapElement.value).zoomExtent = reprojExtent;
-
-  // TODO: adding random identifier to groups as there are issues updating
-  // layers because of the smart updates
-  layersCollection.forEach((lc)=>lc.properties.id = lc.properties.id + Math.random().toString(16).slice(2));
-  /** @type {any} */
-  (mapElement.value).layers = layersCollection;
-};
-
-/**
- * Description placeholder
- *
- * @param {import("vue").Ref<HTMLElement & Record<string,any> | null>} mapElement
  * @param {import("vue").Ref<import("stac-ts").StacCollection | null>} selectedIndicator
  * @param {EodashCollection[]} eodashCols
  * @param {import("vue").Ref<string>} datetime
@@ -272,29 +226,53 @@ export const useInitMap = (
     eodashCols.values,
     datetime.value,
   );
-  // Check if selected indicator already loaded when initializing map
-  if (selectedIndicator && selectedIndicator.value) {
-    log.debug(
-      "Loading indicator based on url parameter",
-      selectedIndicator.value.id,
-    );
-    handleIndicatorLoading(
-      mapElement,
-      selectedIndicator.value,
-      eodashCols,
-      datetime,
-    );
-  }
-  watch(selectedIndicator, async (updatedStac) => {
-    log.debug(
-      "SelectedIndicator watch triggered",
-      selectedIndicator,
-      updatedStac,
-    );
-    if (updatedStac) {
-      handleIndicatorLoading(mapElement, updatedStac, eodashCols, datetime);
-    }
-  });
+
+  watch(
+    selectedIndicator,
+    async (updatedStac) => {
+      log.debug(
+        "SelectedIndicator watch triggered",
+        selectedIndicator,
+        updatedStac,
+      );
+      if (updatedStac) {
+        const layersCollection = await createLayersConfig(updatedStac);
+
+        // updates layersCollection in place
+        await updateLayersConfig(layersCollection, eodashCols, datetime.value);
+
+        // Set projection based on indicator level information
+        setMapProjFromCol(updatedStac);
+
+        // Try to move map view to extent
+        // Sanitize extent,
+        const b = updatedStac.extent?.spatial.bbox[0];
+        const sanitizedExtent = [
+          b[0] > -180 ? b[0] : -180,
+          b[1] > -90 ? b[1] : -90,
+          b[2] < 180 ? b[2] : 180,
+          b[3] < 90 ? b[3] : 90,
+        ];
+        const reprojExtent = mapElement.value?.transformExtent(
+          sanitizedExtent,
+          "EPSG:4326",
+          mapElement.value?.map?.getView().getProjection(),
+        );
+        /** @type {any} */
+        (mapElement.value).zoomExtent = reprojExtent;
+
+        // TODO: resetting layers to empty array first because smart layer update has issues
+        log.debug(
+          "WARN: Map configuration being completely, should be changed once smart update of config is reworked",
+        );
+        /** @type {any} */
+        (mapElement.value).layers = [];
+        /** @type {any} */
+        (mapElement.value).layers = layersCollection;
+      }
+    },
+    { immediate: true },
+  );
 
   watch(datetime, async (updatedTime, previousTime) => {
     if (updatedTime && updatedTime !== previousTime) {

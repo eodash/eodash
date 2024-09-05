@@ -81,58 +81,62 @@ const attributes = reactive([]);
 
 const { selectedStac } = storeToRefs(useSTAcStore());
 
-watch(selectedStac, async (updatedStac, previousStac) => {
-  if (updatedStac && previousStac?.id !== updatedStac.id) {
-    log.debug("Datepicker selected STAC change triggered");
-    const wongPalette = [
-      "#009E73",
-      "#0072B2",
-      "#E69F00",
-      "#CC79A7",
-      "#56B4E9",
-      "#D55E00",
-    ];
-    // remove old values
-    attributes.splice(0, attributes.length);
-
-    for (let idx = 0; idx < eodashCollections.length; idx++) {
-      log.debug("Retrieving dates", eodashCollections[idx]);
-      await eodashCollections[idx].fetchCollection();
-      const dates = [
-        ...new Set(
-          eodashCollections[idx].getItems()?.reduce((valid, it) => {
-            const parsed = Date.parse(/** @type {string} */ (it.datetime));
-            if (parsed) {
-              valid.push(new Date(parsed));
-            }
-            return valid;
-          }, /** @type {Date[]} */ ([])),
-        ),
+watch(
+  selectedStac,
+  async (updatedStac, previousStac) => {
+    if (updatedStac && previousStac?.id !== updatedStac.id) {
+      log.debug("Datepicker selected STAC change triggered");
+      const wongPalette = [
+        "#009E73",
+        "#0072B2",
+        "#E69F00",
+        "#CC79A7",
+        "#56B4E9",
+        "#D55E00",
       ];
-      attributes.push({
-        key: "id-" + idx.toString() + Math.random().toString(16).slice(2),
-        bar: {
-          style: {
-            backgroundColor: wongPalette[idx % wongPalette.length],
+      // remove old values
+      attributes.splice(0, attributes.length);
+
+      for (let idx = 0; idx < eodashCollections.length; idx++) {
+        log.debug("Retrieving dates", eodashCollections[idx]);
+        await eodashCollections[idx].fetchCollection();
+        const dates = [
+          ...new Set(
+            eodashCollections[idx].getItems()?.reduce((valid, it) => {
+              const parsed = Date.parse(/** @type {string} */ (it.datetime));
+              if (parsed) {
+                valid.push(new Date(parsed));
+              }
+              return valid;
+            }, /** @type {Date[]} */ ([])),
+          ),
+        ];
+        attributes.push({
+          key: "id-" + idx.toString() + Math.random().toString(16).slice(2),
+          bar: {
+            style: {
+              backgroundColor: wongPalette[idx % wongPalette.length],
+            },
           },
-        },
-        dates,
-      });
+          dates,
+        });
+      }
+      // We try to set the current time selection
+      // to latest extent date
+      // @ts-expect-error it seems the temporal extent is not defined in type
+      const interval = updatedStac?.extent?.temporal?.interval;
+      if (interval && interval.length > 0 && interval[0].length > 1) {
+        const endInterval = new Date(interval[0][1]);
+        log.debug(
+          "Datepicker: found stac extent, setting time to latest value",
+          endInterval,
+        );
+        currentDate.value = endInterval?.getTime();
+      }
     }
-    // We try to set the current time selection
-    // to latest extent date
-    // @ts-expect-error it seems the temporal extent is not defined in type
-    const interval = updatedStac?.extent?.temporal?.interval;
-    if (interval && interval.length > 0 && interval[0].length > 1) {
-      const endInterval = new Date(interval[0][1]);
-      log.debug(
-        "Datepicker: found stac extent, setting time to latest value",
-        endInterval,
-      );
-      currentDate.value = endInterval?.getTime();
-    }
-  }
-});
+  },
+  { immediate: true },
+);
 
 /**
  * @param {boolean} reverse

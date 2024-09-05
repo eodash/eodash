@@ -1,5 +1,10 @@
 import { registerProjection } from "@/store/Actions";
-import { extractRoles, assignProjID, getProjectionCode, createLayerID } from "./helpers";
+import {
+  extractRoles,
+  assignProjID,
+  getProjectionCode,
+  createLayerID,
+} from "./helpers";
 import log from "loglevel";
 
 /**
@@ -100,7 +105,12 @@ export async function createLayersFromAssets(
  * @param {string} title
  * @param {Record<string,any>} [layerDatetime]
  */
-export const createLayersFromLinks = async (collectionId, title, item, layerDatetime) => {
+export const createLayersFromLinks = async (
+  collectionId,
+  title,
+  item,
+  layerDatetime,
+) => {
   log.debug("Creating layers from links");
   /** @type {Record<string,any>[]} */
   const jsonArray = [];
@@ -117,7 +127,12 @@ export const createLayersFromLinks = async (collectionId, title, item, layerDate
 
     await registerProjection(wmsLinkProjection);
     const projectionCode = getProjectionCode(wmsLinkProjection || "EPSG:4326");
-    const linkId = createLayerID(collectionId, item.id, wmsLink, projectionCode);
+    const linkId = createLayerID(
+      collectionId,
+      item.id,
+      wmsLink,
+      projectionCode,
+    );
     log.debug("WMS Layer added", linkId);
     let json = {
       type: "Tile",
@@ -157,9 +172,17 @@ export const createLayersFromLinks = async (collectionId, title, item, layerDate
     // that needs to be removed once catalog and wmts creation from capabilities
     // combined with custom view projections is solved
     let json;
-    const linkId = createLayerID(collectionId, item.id, wmtsLink, projectionCode);
+    const linkId = createLayerID(
+      collectionId,
+      item.id,
+      wmtsLink,
+      projectionCode,
+    );
     if (wmtsLink.title === "wmts capabilities") {
-      log.debug("Warning: WMTS Layer from capabilities added, function needs to be updated", linkId);
+      log.debug(
+        "Warning: WMTS Layer from capabilities added, function needs to be updated",
+        linkId,
+      );
       json = {
         type: "Tile",
         properties: {
@@ -183,7 +206,10 @@ export const createLayersFromLinks = async (collectionId, title, item, layerDate
         },
       };
     } else {
-      log.debug("Warning: WMTS Layer from capabilities added, function needs to be updated", linkId);
+      log.debug(
+        "Warning: WMTS Layer from capabilities added, function needs to be updated",
+        linkId,
+      );
       json = {
         type: "Tile",
         properties: {
@@ -216,7 +242,12 @@ export const createLayersFromLinks = async (collectionId, title, item, layerDate
 
     await registerProjection(xyzLinkProjection);
     const projectionCode = getProjectionCode(xyzLinkProjection || "EPSG:3857");
-    const linkId = createLayerID(collectionId, item.id, xyzLink, projectionCode);
+    const linkId = createLayerID(
+      collectionId,
+      item.id,
+      xyzLink,
+      projectionCode,
+    );
     log.debug("XYZ Layer added", linkId);
     let json = {
       type: "Tile",

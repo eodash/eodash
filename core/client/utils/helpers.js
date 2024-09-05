@@ -305,7 +305,6 @@ export const getColFromLayer = async (indicators, layer) => {
   return indicators.find((ind) => ind.collectionStac?.id === chosen?.id);
 };
 
-
 /**
  * generates layer specific ID, related functions are: {@link assignProjID} & {@link extractRoles}
  * @param {string} collectionId
@@ -320,15 +319,14 @@ export const createLayerID = (collectionId, itemId, link, projectionCode) => {
   // If we are looking at base layers and overlays we remove the collection and item part
   // as we want to make sure tiles are not reloaded when switching layers
   // @ts-expect-error it seems roles it not defined for links yet
-  if (link.roles && link.roles.find((r)=>["baselayer", "overlay"].includes(r))) {
+  if (
+    link.roles &&
+    link.roles.find((r) => ["baselayer", "overlay"].includes(r))
+  ) {
     lId = `${linkId ?? ""};:;${projectionCode ?? ""}`;
   }
-  // TODO: adding pseudo random number to make sure layers are always updated
-  // this is necessary right now because changed layer properties will not be
-  // update, like visible, opacity, ... if the id is the same
-  lId = `${lId};:;${Math.random().toString(16).slice(2)}`;
   log.debug("Generated Layer ID", lId);
-  return lId
+  return lId;
 };
 
 /**
@@ -341,14 +339,14 @@ export const createLayerID = (collectionId, itemId, link, projectionCode) => {
  */
 export function assignProjID(item, linkOrAsset, id, layer) {
   const indicatorProjection =
-  /** @type { string | undefined} */
-  (item?.["proj:epsg"]) ||
-  /** @type { {name?: string} | undefined} */
-  (item?.["eodash:mapProjection"])?.name ||
-  "EPSG:3857";
-  
+    /** @type { string | undefined} */
+    (item?.["proj:epsg"]) ||
+    /** @type { {name?: string} | undefined} */
+    (item?.["eodash:mapProjection"])?.name ||
+    "EPSG:3857";
+
   const idArr = id.split(";:;");
-  
+
   idArr.pop();
   idArr.push(indicatorProjection);
   const updatedID = idArr.join(";:;");
