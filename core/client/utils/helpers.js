@@ -318,14 +318,27 @@ export const createLayerID = (collectionId, itemId, link, projectionCode) => {
   let lId = `${collectionId ?? ""};:;${itemId ?? ""};:;${linkId ?? ""};:;${projectionCode ?? ""}`;
   // If we are looking at base layers and overlays we remove the collection and item part
   // as we want to make sure tiles are not reloaded when switching layers
-  // @ts-expect-error it seems roles it not defined for links yet
   if (
     link.roles &&
+    // @ts-expect-error it seems roles it not defined for links yet
     link.roles.find((r) => ["baselayer", "overlay"].includes(r))
   ) {
     lId = `${linkId ?? ""};:;${projectionCode ?? ""}`;
   }
   log.debug("Generated Layer ID", lId);
+  return lId;
+};
+
+/**
+ * generates layer specific ID, related functions are: {@link assignProjID} & {@link extractRoles}
+ * @param {string} collectionId
+ * @param {string} itemId
+ * @param {number} index
+ *
+ */
+export const createAssetID = (collectionId, itemId, index) => {
+  let lId = `${collectionId ?? ""};:;${itemId ?? ""};:;${index ?? ""}`;
+  log.debug("Generated Asset ID", lId);
   return lId;
 };
 
