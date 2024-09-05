@@ -82,6 +82,8 @@ const showCompare = computed(() =>
   props.enableCompare && !!selectedCompareStac.value ? "" : "first",
 );
 
+useHandleMapMoveEnd(eoxMap, mapPosition);
+
 onMounted(() => {
   const { selectedCompareStac, selectedStac } = storeToRefs(useSTAcStore());
   // assign map Element state to eox map
@@ -105,7 +107,5 @@ onMounted(() => {
     eodashCollections,
     datetime,
   );
-
-  useHandleMapMoveEnd(eoxMap, mapPosition);
 });
 </script>
