@@ -1,8 +1,15 @@
 import { registerProjection } from "@/store/Actions";
-import { extractRoles, assignProjID, getProjectionCode } from "./helpers";
+import {
+  extractRoles,
+  assignProjID,
+  getProjectionCode,
+  createLayerID,
+  createAssetID,
+} from "./helpers";
+import log from "loglevel";
 
 /**
- * @param {string} id
+ * @param {string} collectionId
  * @param {string} title
  * @param {Record<string,import("stac-ts").StacAsset>} assets
  * @param {import("stac-ts").StacItem } item
@@ -11,7 +18,7 @@ import { extractRoles, assignProjID, getProjectionCode } from "./helpers";
  * @param {Record<string, unknown>} [layerDatetime]
  **/
 export async function createLayersFromAssets(
-  id,
+  collectionId,
   title,
   assets,
   item,
@@ -19,12 +26,13 @@ export async function createLayersFromAssets(
   layerConfig,
   layerDatetime,
 ) {
+  log.debug("Creating layers from assets");
   let jsonArray = [];
   let geoTIFFSources = [];
   /** @type {import("stac-ts").StacAsset | null} */
   let geoTIFFAsset = null;
 
-  for (const ast in assets) {
+  for (const [idx, ast] of Object.keys(assets).entries()) {
     // register projection if exists
     const assetProjection =
       /** @type {string | number | {name: string, def: string, extent?:number[]} | undefined} */ (
@@ -33,6 +41,8 @@ export async function createLayersFromAssets(
     await registerProjection(assetProjection);
 
     if (assets[ast]?.type === "application/geo+json") {
+      const assetId = createAssetID(collectionId, item.id, idx);
+      log.debug("Creating Vector layer from GeoJSON", assetId);
       const layer = {
         type: "Vector",
         source: {
@@ -41,7 +51,7 @@ export async function createLayersFromAssets(
           format: "GeoJSON",
         },
         properties: {
-          id,
+          id: assetId,
           title,
           layerDatetime,
           ...(layerConfig && {
@@ -53,9 +63,6 @@ export async function createLayersFromAssets(
         },
         ...(!style?.variables && { style }),
       };
-
-      assignProjID(item, assets[ast], id, layer);
-
       extractRoles(layer.properties, assets[ast]);
       jsonArray.push(layer);
     } else if (assets[ast]?.type === "image/tiff") {
@@ -65,6 +72,9 @@ export async function createLayersFromAssets(
   }
 
   if (geoTIFFSources.length) {
+    const geotiffSourceID = collectionId + ";:;GeoTIFF";
+    log.debug("Creating Vector layer from GeoJSON", geotiffSourceID);
+    log.debug("Configured Sources", geoTIFFSources);
     const layer = {
       type: "WebGLTile",
       source: {
@@ -73,20 +83,13 @@ export async function createLayersFromAssets(
         sources: geoTIFFSources,
       },
       properties: {
-        id,
+        id: geotiffSourceID,
         title,
         layerConfig,
         layerDatetime,
       },
       style,
     };
-    assignProjID(
-      item,
-      /** @type {import("stac-ts").StacAsset} */
-      (geoTIFFAsset),
-      id,
-      layer,
-    );
     jsonArray.push(layer);
   }
 
@@ -94,12 +97,18 @@ export async function createLayersFromAssets(
 }
 
 /**
- * @param {string} id
+ * @param {string} collectionId
  * @param {import('stac-ts').StacItem} item
  * @param {string} title
  * @param {Record<string,any>} [layerDatetime]
  */
-export const createLayersFromLinks = async (id, title, item, layerDatetime) => {
+export const createLayersFromLinks = async (
+  collectionId,
+  title,
+  item,
+  layerDatetime,
+) => {
+  log.debug("Creating layers from links");
   /** @type {Record<string,any>[]} */
   const jsonArray = [];
   const wmsArray = item.links.filter((l) => l.rel === "wms");
@@ -115,11 +124,17 @@ export const createLayersFromLinks = async (id, title, item, layerDatetime) => {
 
     await registerProjection(wmsLinkProjection);
     const projectionCode = getProjectionCode(wmsLinkProjection || "EPSG:4326");
-
+    const linkId = createLayerID(
+      collectionId,
+      item.id,
+      wmsLink,
+      projectionCode,
+    );
+    log.debug("WMS Layer added", linkId);
     let json = {
       type: "Tile",
       properties: {
-        id,
+        id: linkId,
         title: wmsLink.title || title || item.id,
         layerDatetime,
       },
@@ -127,17 +142,16 @@ export const createLayersFromLinks = async (id, title, item, layerDatetime) => {
         type: "TileWMS",
         url: wmsLink.href,
         projection: projectionCode,
+        tileGrid: {
+          tileSize: [512, 512],
+        },
         params: {
           LAYERS: wmsLink["wms:layers"],
           TILED: true,
         },
       },
     };
-
-    assignProjID(item, wmsLink, id, json);
-
     extractRoles(json.properties, wmsLink);
-
     if ("wms:dimensions" in wmsLink) {
       // Expand all dimensions into the params attribute
       Object.assign(json.source.params, wmsLink["wms:dimensions"]);
@@ -158,11 +172,21 @@ export const createLayersFromLinks = async (id, title, item, layerDatetime) => {
     // that needs to be removed once catalog and wmts creation from capabilities
     // combined with custom view projections is solved
     let json;
+    const linkId = createLayerID(
+      collectionId,
+      item.id,
+      wmtsLink,
+      projectionCode,
+    );
     if (wmtsLink.title === "wmts capabilities") {
+      log.debug(
+        "Warning: WMTS Layer from capabilities added, function needs to be updated",
+        linkId,
+      );
       json = {
         type: "Tile",
         properties: {
-          id,
+          id: linkId,
           title: title || item.id,
           layerDatetime,
         },
@@ -182,10 +206,14 @@ export const createLayersFromLinks = async (id, title, item, layerDatetime) => {
         },
       };
     } else {
+      log.debug(
+        "Warning: WMTS Layer from capabilities added, function needs to be updated",
+        linkId,
+      );
       json = {
         type: "Tile",
         properties: {
-          id,
+          id: linkId,
           title: wmtsLink.title || title || item.id,
           layerDatetime,
         },
@@ -197,17 +225,13 @@ export const createLayersFromLinks = async (id, title, item, layerDatetime) => {
           matrixSet: wmtsLink.matrixSet || "EPSG:3857",
           projection: projectionCode,
           tileGrid: {
-            tileSize: [128, 128],
+            tileSize: [512, 512],
           },
           dimensions: wmtsLink["wmts:dimensions"],
         },
       };
     }
-
-    assignProjID(item, wmtsLink, id, json);
-
     extractRoles(json.properties, wmtsLink);
-
     jsonArray.push(json);
   }
 
@@ -217,12 +241,18 @@ export const createLayersFromLinks = async (id, title, item, layerDatetime) => {
       (xyzLink?.["proj:epsg"] || xyzLink?.["eodash:proj4_def"]);
 
     await registerProjection(xyzLinkProjection);
-
     const projectionCode = getProjectionCode(xyzLinkProjection || "EPSG:3857");
+    const linkId = createLayerID(
+      collectionId,
+      item.id,
+      xyzLink,
+      projectionCode,
+    );
+    log.debug("XYZ Layer added", linkId);
     let json = {
       type: "Tile",
       properties: {
-        id,
+        id: linkId,
         title: xyzLink.title || title || item.id,
         roles: xyzLink.roles,
         layerDatetime,
@@ -234,10 +264,7 @@ export const createLayersFromLinks = async (id, title, item, layerDatetime) => {
       },
     };
 
-    assignProjID(item, xyzLink, id, json);
-
     extractRoles(json.properties, xyzLink);
-
     jsonArray.push(json);
   }
   return jsonArray;

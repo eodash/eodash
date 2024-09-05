@@ -12,6 +12,7 @@ import eodash from "@/eodash";
 import { useTheme } from "vuetify/lib/framework.mjs";
 import { onMounted, watch } from "vue";
 import { useSTAcStore } from "@/store/stac";
+import log from "loglevel";
 
 /**
  * Creates an absolute URL from a relative link and assignes it to `currentUrl`
@@ -117,9 +118,11 @@ export const useURLSearchParametersSync = () => {
       for (const [key, value] of searchParams) {
         switch (key) {
           case "indicator": {
+            log.debug("Found indicator key in url");
             const { loadSelectedSTAC, stac } = useSTAcStore();
             const match = stac?.find((link) => link.id == value);
             if (match) {
+              log.debug("Found match, loading stac item", match);
               await loadSelectedSTAC(match.href);
             }
             break;
@@ -139,7 +142,9 @@ export const useURLSearchParametersSync = () => {
 
           case "datetime":
             try {
-              datetime.value = new Date(value).toISOString();
+              const datetimeiso = new Date(value).toISOString();
+              log.debug("Valid datetime found", datetimeiso);
+              datetime.value = datetimeiso;
             } catch {
               datetime.value = new Date().toISOString();
             }
@@ -151,6 +156,7 @@ export const useURLSearchParametersSync = () => {
       }
 
       if (x && y && z) {
+        log.debug("Coordinates found, applying map poisition", x, y, z);
         mapPosition.value = [x, y, z];
       }
     }

@@ -1,6 +1,7 @@
 import { EodashCollection } from "@/utils/eodashSTAC";
 import { setMapProjFromCol } from "@/utils/helpers";
 import { onMounted, onUnmounted, watch } from "vue";
+import log from "loglevel";
 /**
  * Description placeholder
  *
@@ -48,6 +49,12 @@ const updateLayersConfig = async (
   eodashCols,
   updatedTime,
 ) => {
+  log.debug(
+    "Updating layer configuration",
+    layersCollection,
+    eodashCols,
+    updatedTime,
+  );
   /** @type {Record<string,any>[]} */
   const analysisLayers = [];
 
@@ -88,6 +95,7 @@ const updateLayersConfig = async (
  */
 
 const createLayersConfig = async (selectedIndicator) => {
+  log.debug("Creating layers config", selectedIndicator);
   const layersCollection = [];
   const dataLayers = {
     type: "Group",
@@ -211,8 +219,22 @@ export const useInitMap = (
   eodashCols,
   datetime,
 ) => {
-  onMounted(() => {
-    watch(selectedIndicator, async (updatedStac) => {
+  log.debug(
+    "InitMap",
+    mapElement.value,
+    selectedIndicator.value,
+    eodashCols.values,
+    datetime.value,
+  );
+
+  watch(
+    selectedIndicator,
+    async (updatedStac) => {
+      log.debug(
+        "SelectedIndicator watch triggered",
+        selectedIndicator,
+        updatedStac,
+      );
       if (updatedStac) {
         const layersCollection = await createLayersConfig(updatedStac);
 
@@ -220,10 +242,7 @@ export const useInitMap = (
         await updateLayersConfig(layersCollection, eodashCols, datetime.value);
 
         // Set projection based on indicator level information
-        setMapProjFromCol(
-          /** @type {import('stac-ts').StacCollection} */
-          (updatedStac),
-        );
+        setMapProjFromCol(updatedStac);
 
         // Try to move map view to extent
         // Sanitize extent,
@@ -242,21 +261,28 @@ export const useInitMap = (
         /** @type {any} */
         (mapElement.value).zoomExtent = reprojExtent;
 
+        // TODO: resetting layers to empty array first because smart layer update has issues
+        log.debug(
+          "WARN: Map configuration being completely, should be changed once smart update of config is reworked",
+        );
+        /** @type {any} */
+        (mapElement.value).layers = [];
         /** @type {any} */
         (mapElement.value).layers = layersCollection;
       }
-    });
+    },
+    { immediate: true },
+  );
 
-    watch(datetime, async (updatedTime, previousTime) => {
-      if (updatedTime && updatedTime !== previousTime) {
-        const layersCollection = await updateLayersConfig(
-          [...(mapElement.value?.layers ?? [])],
-          eodashCols,
-          updatedTime,
-        );
-        /** @type {any} */
-        (mapElement.value).layers = layersCollection?.reverse();
-      }
-    });
+  watch(datetime, async (updatedTime, previousTime) => {
+    if (updatedTime && updatedTime !== previousTime) {
+      const layersCollection = await updateLayersConfig(
+        [...(mapElement.value?.layers ?? [])],
+        eodashCols,
+        updatedTime,
+      );
+      /** @type {any} */
+      (mapElement.value).layers = layersCollection?.reverse();
+    }
   });
 };

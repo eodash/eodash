@@ -2,6 +2,7 @@ import { changeMapProjection, registerProjection } from "@/store/Actions";
 import { availableMapProjection } from "@/store/States";
 import { toAbsolute } from "stac-js/src/http.js";
 import axios from "@/plugins/axios";
+import log from "loglevel";
 
 /** @param {import("stac-ts").StacLink[]} [links] */
 export function generateFeatures(links) {
@@ -60,7 +61,7 @@ export function extractLayerConfig(style) {
  */
 export const setMapProjFromCol = (STAcCollection) => {
   // if a projection exists on the collection level
-
+  log.debug("Checking for available map projection in indicator");
   const projection =
     /** @type {number | string | {name: string, def: string} | undefined} */
     (
@@ -69,18 +70,25 @@ export const setMapProjFromCol = (STAcCollection) => {
         STAcCollection?.["eodash:proj4_def"]
     );
   if (projection) {
+    log.debug("Projection found", projection);
     registerProjection(projection);
     const projectionCode = getProjectionCode(projection);
     if (
       availableMapProjection.value &&
       availableMapProjection.value !== projectionCode
     ) {
+      log.debug(
+        "Changing map projection",
+        availableMapProjection.value,
+        projectionCode,
+      );
       changeMapProjection(projection);
     }
     // set it for `EodashMapBtns`
     availableMapProjection.value = /** @type {string} */ (projectionCode);
   } else {
     // reset to default projection
+    log.debug("Resetting projection to default");
     changeMapProjection((availableMapProjection.value = "EPSG:3857"));
   }
 };
@@ -299,13 +307,39 @@ export const getColFromLayer = async (indicators, layer) => {
 
 /**
  * generates layer specific ID, related functions are: {@link assignProjID} & {@link extractRoles}
- * @param {string} colId
+ * @param {string} collectionId
  * @param {string} itemId
- * @param {boolean} isAsset
+ * @param {import('stac-ts').StacLink} link
+ * @param {string} projectionCode
  *
  */
-export const createLayerID = (colId, itemId, isAsset) => {
-  return `${colId ?? ""};:;${itemId ?? ""};:;${isAsset ? "_asset" : ""};:;${Math.random().toString(16).slice(2)};:;EPSG:3857`;
+export const createLayerID = (collectionId, itemId, link, projectionCode) => {
+  const linkId = link.id || link.title || link.href;
+  let lId = `${collectionId ?? ""};:;${itemId ?? ""};:;${linkId ?? ""};:;${projectionCode ?? ""}`;
+  // If we are looking at base layers and overlays we remove the collection and item part
+  // as we want to make sure tiles are not reloaded when switching layers
+  if (
+    link.roles &&
+    // @ts-expect-error it seems roles it not defined for links yet
+    link.roles.find((r) => ["baselayer", "overlay"].includes(r))
+  ) {
+    lId = `${linkId ?? ""};:;${projectionCode ?? ""}`;
+  }
+  log.debug("Generated Layer ID", lId);
+  return lId;
+};
+
+/**
+ * generates layer specific ID, related functions are: {@link assignProjID} & {@link extractRoles}
+ * @param {string} collectionId
+ * @param {string} itemId
+ * @param {number} index
+ *
+ */
+export const createAssetID = (collectionId, itemId, index) => {
+  let lId = `${collectionId ?? ""};:;${itemId ?? ""};:;${index ?? ""}`;
+  log.debug("Generated Asset ID", lId);
+  return lId;
 };
 
 /**
@@ -330,6 +364,8 @@ export function assignProjID(item, linkOrAsset, id, layer) {
   idArr.push(indicatorProjection);
   const updatedID = idArr.join(";:;");
   layer.properties.id = updatedID;
+
+  log.debug("Updating layer id", updatedID);
 
   return updatedID;
 }

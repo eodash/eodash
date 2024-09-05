@@ -1,5 +1,6 @@
 import { mapEl, mapCompareEl, registeredProjections } from "@/store/States";
 import { getProjectionCode } from "@/utils/helpers";
+import log from "loglevel";
 
 /**
  * Returns the current layers of {@link mapEl}
@@ -15,7 +16,7 @@ export const registerProjection = async (projection) => {
   if (!code || registeredProjections.includes(code)) {
     return;
   }
-
+  log.debug("Unregistered projection found, registering it", code);
   registeredProjections.push(code);
   if (typeof projection === "object") {
     // registering whole projection definition
