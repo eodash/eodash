@@ -1,6 +1,13 @@
 # Changelog
 
 
+## [5.0.0-alpha.2.17](https://github.com/eodash/eodash/compare/eodash-v5.0.0-alpha.2.16...eodash-v5.0.0-alpha.2.17) (2024-09-06)
+
+
+### Bug Fixes
+
+* Base and overlay Layers creation ([#92](https://github.com/eodash/eodash/issues/92)) ([da0dd21](https://github.com/eodash/eodash/commit/da0dd211ebed3debb121dd0e94f91bd6997a04ae))
+
 ## [5.0.0-alpha.2.16](https://github.com/eodash/eodash/compare/eodash-v5.0.0-alpha.2.15...eodash-v5.0.0-alpha.2.16) (2024-08-09)
 
 
