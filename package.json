@@ -29,6 +29,7 @@
     "prepare": "rollup -c",
     "prepack": "npm run build:lib",
     "dev": "npx eodash dev --entryPoint core/client/eodash.js",
+    "dev:lib": "npx eodash dev --entryPoint core/client/eodash.js --lib",
     "build": "npx eodash build --entryPoint core/client/eodash.js",
     "build:lib": "npx eodash build --entryPoint core/client/eodash.js --lib --outDir dist/client",
     "build:cli": "rollup -c",
