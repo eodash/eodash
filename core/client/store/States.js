@@ -1,3 +1,7 @@
+/** setting default log level globally to warning */
+import log from "loglevel";
+log.setLevel(log.levels.WARN, true);
+
 import { ref } from "vue";
 
 /** Currently selected STAC endpoint */

@@ -12,6 +12,7 @@ import eodash from "@/eodash";
 import { useTheme } from "vuetify/lib/framework.mjs";
 import { onMounted, watch } from "vue";
 import { useSTAcStore } from "@/store/stac";
+import log from "loglevel";
 
 /**
  * Creates an absolute URL from a relative link and assignes it to `currentUrl`
@@ -102,12 +103,12 @@ export const useUpdateTheme = (themeName, themeDefinition = {}) => {
 };
 
 /** Composable that syncs store and URLSearchParameters */
-
 export const useURLSearchParametersSync = () => {
   onMounted(async () => {
     // Analyze currently set url params when first loaded and set them in the store
     if (window.location.search) {
       const searchParams = new URLSearchParams(window.location.search);
+
       /** @type {number | undefined} */
       let x,
         /** @type {number | undefined} */
@@ -117,35 +118,45 @@ export const useURLSearchParametersSync = () => {
       for (const [key, value] of searchParams) {
         switch (key) {
           case "indicator": {
+            log.debug("Found indicator key in url");
             const { loadSelectedSTAC, stac } = useSTAcStore();
             const match = stac?.find((link) => link.id == value);
             if (match) {
+              log.debug("Found match, loading stac item", match);
               await loadSelectedSTAC(match.href);
             }
             break;
           }
+
           case "x":
             x = Number(value);
             break;
+
           case "y":
             y = Number(value);
             break;
+
           case "z":
             z = Number(value);
             break;
+
           case "datetime":
             try {
-              datetime.value = new Date(value).toISOString();
+              const datetimeiso = new Date(value).toISOString();
+              log.debug("Valid datetime found", datetimeiso);
+              datetime.value = datetimeiso;
             } catch {
               datetime.value = new Date().toISOString();
             }
             break;
+
           default:
             break;
         }
       }
 
       if (x && y && z) {
+        log.debug("Coordinates found, applying map poisition", x, y, z);
         mapPosition.value = [x, y, z];
       }
     }

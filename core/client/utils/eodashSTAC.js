@@ -1,7 +1,6 @@
 import { Collection, Item } from "stac-js";
 import { toAbsolute } from "stac-js/src/http.js";
 import {
-  createLayerID,
   extractLayerConfig,
   extractLayerDatetime,
   extractRoles,
@@ -11,11 +10,9 @@ import {
   replaceLayer,
 } from "./helpers";
 import { getLayers, registerProjection } from "@/store/Actions";
-import {
-  createLayersFromDataAssets,
-  createLayersFromLinks,
-} from "./createLayers";
-import axios from "axios";
+import { createLayersFromAssets, createLayersFromLinks } from "./createLayers";
+import axios from "@/plugins/axios";
+import log from "loglevel";
 
 export class EodashCollection {
   #collectionUrl = "";
@@ -114,6 +111,14 @@ export class EodashCollection {
    * @returns {Promise<Record<string,any>[]>} arrays
    * */
   async buildJsonArray(item, itemUrl, title, isGeoDB, itemDatetime) {
+    log.debug(
+      "Building JSON array",
+      item,
+      itemUrl,
+      title,
+      isGeoDB,
+      itemDatetime,
+    );
     await this.fetchCollection();
     // registering top level indicator projection
     const indicatorProjection =
@@ -133,7 +138,7 @@ export class EodashCollection {
         {
           type: "Vector",
           properties: {
-            id: createLayerID(this.#collectionStac?.id ?? "", item.id, false),
+            id: this.#collectionStac?.id ?? "",
             title: this.#collectionStac?.title || item.id,
           },
           source: {
@@ -179,17 +184,18 @@ export class EodashCollection {
 
     if (isSupported) {
       const links = await createLayersFromLinks(
-        createLayerID(this.#collectionStac?.id ?? "", item.id, false),
+        this.#collectionStac?.id ?? "",
         title,
         item,
         layerDatetime,
       );
       jsonArray.push(
         ...links,
-        ...(await createLayersFromDataAssets(
-          createLayerID(this.#collectionStac?.id ?? "", item.id, true),
+        ...(await createLayersFromAssets(
+          this.#collectionStac?.id ?? "",
           title || this.#collectionStac?.title || item.id,
           dataAssets,
+          item,
           style,
           layerConfig,
           layerDatetime,
@@ -203,7 +209,7 @@ export class EodashCollection {
         displayFootprint: false,
         data: item,
         properties: {
-          id: createLayerID(this.#collectionStac?.id ?? "", item.id, false),
+          id: this.#collectionStac?.id ?? "",
           title: title || item.id,
           layerConfig,
         },
@@ -211,8 +217,8 @@ export class EodashCollection {
       };
       extractRoles(
         json.properties,
-        /** @type {string[]} */ (item?.roles),
-        item.id || /** @type {string} */ (item.title) || "" + " STAC",
+        //@ts-expect-error using the item incase no self link is found
+        item.links.find((link) => link.rel === "self") ?? item,
       );
       jsonArray.push(json);
     }
@@ -222,6 +228,7 @@ export class EodashCollection {
 
   async fetchCollection() {
     if (!this.#collectionStac) {
+      log.debug("Fetching collection file", this.#collectionUrl);
       const col = await axios
         .get(this.#collectionUrl)
         .then((resp) => resp.data);
@@ -260,12 +267,7 @@ export class EodashCollection {
   }
 
   async getExtent() {
-    if (!this.#collectionStac) {
-      const stac = await axios
-        .get(this.#collectionUrl)
-        .then((resp) => resp.data);
-      this.#collectionStac = new Collection(stac);
-    }
+    await this.fetchCollection();
     return this.#collectionStac?.extent;
   }
 
@@ -328,5 +330,44 @@ export class EodashCollection {
     );
 
     return updatedLayers;
+  }
+
+  /**
+   * Returns base layers and overlay layers of a STAC Collection
+   *
+   * @param {import("stac-ts").StacCollection} indicator */
+  static async getIndicatorLayers(indicator) {
+    const indicatorAssets = Object.keys(indicator?.assets ?? {}).reduce(
+      (assets, ast) => {
+        if (
+          indicator.assets?.[ast].roles?.includes("baselayer") ||
+          indicator.assets?.[ast].roles?.includes("overlay")
+        ) {
+          assets[ast] = indicator.assets[ast];
+        }
+        return assets;
+      },
+      /** @type {Record<string,import('stac-ts').StacAsset>} */ ({}),
+    );
+
+    return [
+      ...(await createLayersFromLinks(
+        indicator?.id ?? "",
+        indicator?.title || indicator.id,
+        //@ts-expect-error indicator instead of item
+        indicator,
+        // layerDatetime,
+      )),
+      ...(await createLayersFromAssets(
+        indicator?.id ?? "",
+        indicator?.title || indicator.id,
+        indicatorAssets,
+        //@ts-expect-error indicator instead of item
+        indicator,
+        // style,
+        // layerConfig,
+        // layerDatetime,
+      )),
+    ];
   }
 }
