@@ -77,6 +77,7 @@ export const viteConfig = /** @type {import("vite").UserConfigFnPromise} */ (
                 "pinia",
                 "stac-js",
                 "urijs",
+                "loglevel",
               ],
               noDiscovery: true,
             }

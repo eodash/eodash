@@ -1,12 +1,13 @@
 import { defineStore } from "pinia";
 import { inject, ref } from "vue";
-import axios from "axios";
+import axios from "@/plugins/axios";
 import { useAbsoluteUrl, useCompareAbsoluteUrl } from "@/composables/index";
 import { eodashKey } from "@/utils/keys";
 import { indicator } from "@/store/States";
 import { extractCollectionUrls } from "@/utils/helpers";
 import { eodashCollections, eodashCompareCollections } from "@/utils/states";
 import { EodashCollection } from "@/utils/eodashSTAC";
+import log from "loglevel";
 
 export const useSTAcStore = defineStore("stac", () => {
   /**
@@ -52,6 +53,7 @@ export const useSTAcStore = defineStore("stac", () => {
    * @see {@link stac}
    */
   async function loadSTAC(url = eodash.stacEndpoint) {
+    log.debug("Loading STAC endpoint", url);
     await axios
       .get(url)
       .then((resp) => {
@@ -63,6 +65,7 @@ export const useSTAcStore = defineStore("stac", () => {
           }
           return link;
         });
+        log.debug("Setting selected STAC", links);
         stac.value = links;
       })
       .catch((err) => {
@@ -98,13 +101,13 @@ export const useSTAcStore = defineStore("stac", () => {
           }),
         ).then((collections) => {
           // empty array from old collections
-          eodashCollections.length = 0;
+          eodashCollections.splice(0, eodashCollections.length);
           // update eodashCollections
           eodashCollections.push(...collections);
-        });
 
-        selectedStac.value = resp.data;
-        indicator.value = selectedStac.value?.id ?? "";
+          selectedStac.value = resp.data;
+          indicator.value = selectedStac.value?.id ?? "";
+        });
       })
       .catch((err) => {
         throw new Error("error loading the selected STAC", err);
@@ -139,12 +142,12 @@ export const useSTAcStore = defineStore("stac", () => {
           }),
         ).then((collections) => {
           // empty array from old collections
-          eodashCompareCollections.length = 0;
+          eodashCompareCollections.splice(0, eodashCompareCollections.length);
           // update eodashCompareCollections
           eodashCompareCollections.push(...collections);
-        });
 
-        selectedCompareStac.value = resp.data;
+          selectedCompareStac.value = resp.data;
+        });
       })
       .catch((err) => {
         throw new Error("error loading the selected comparison STAC", err);
