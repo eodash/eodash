@@ -1,6 +1,6 @@
 /** setting default log level globally to warning */
 import log from "loglevel";
-log.setLevel("warn", true);
+log.setLevel(log.levels.WARN, true);
 
 import { ref } from "vue";
 
