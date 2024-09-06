@@ -1,7 +1,7 @@
 <template>
   <v-app>
     <Suspense>
-      <Dashboard />
+      <Dashboard :is-web-component="!!$host" :config="config" />
 
       <template #fallback>
         <ErrorAlert v-model="error" />
@@ -13,9 +13,19 @@
 <script setup>
 import Dashboard from "@/views/Dashboard.vue";
 import ErrorAlert from "./components/ErrorAlert.vue";
-import { onErrorCaptured, ref } from "vue";
+import { onErrorCaptured, ref, useHost } from "vue";
+
+defineProps({
+  config: {
+    type: String,
+    required: false,
+    default: undefined,
+  },
+});
 
 const error = ref("");
+const $host = useHost();
+
 onErrorCaptured((e, inst, info) => {
   error.value = `
   ${e}.

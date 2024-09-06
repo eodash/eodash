@@ -13,35 +13,12 @@ import {
   logger,
   rootPath,
   internalWidgetsPath,
+  indexHtml,
 } from "./globals.js";
 import { readFile } from "fs/promises";
 import { defineConfig, searchForWorkspaceRoot } from "vite";
 import { existsSync } from "fs";
 import path from "path";
-
-export const indexHtml = `
-<!DOCTYPE html>
-<html lang="en">
-
-<head>
-  <meta charset="UTF-8" />
-  <link rel="icon" href="/favicon.ico" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Welcome to Eodash v5</title>
-</head>
-
-<body>
-${
-  userConfig.lib
-    ? `<eo-dash style="height:100dvh;"/>
-<script type="module" src="${path.resolve(`/@fs/${appPath}`, `core/client/asWebComponent.js`)}"></script>
-`
-    : ` <div id="app"/>
-<script type="module" src="${path.resolve(`/@fs/${appPath}`, `core/client/render.js`)}"></script>
-`
-}
-</body>
-</html>`;
 
 export const viteConfig = /** @type {import("vite").UserConfigFnPromise} */ (
   defineConfig(({ mode, command }) => {
@@ -50,8 +27,6 @@ export const viteConfig = /** @type {import("vite").UserConfigFnPromise} */ (
       cacheDir: cachePath,
       plugins: [
         vue({
-          // to do: inject styles to web component directly
-          customElement: false,
           template: {
             transformAssetUrls,
             compilerOptions: {

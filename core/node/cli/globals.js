@@ -144,3 +144,27 @@ function searchForPackageRoot(
     throw new Error("no package root found from " + from);
   }
 }
+
+export const indexHtml = `
+<!DOCTYPE html>
+<html lang="en" style="overflow: hidden">
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" href="/favicon.ico" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Welcome to Eodash v5</title>
+</head>
+
+<body>
+${
+  userConfig.lib
+    ? `<eo-dash style="height:100dvh;"/>
+<script type="module" src="${path.resolve(`/@fs/${appPath}`, `core/client/asWebComponent.js`)}"></script>
+`
+    : ` <div id="app" />
+<script type="module" src="${path.resolve(`/@fs/${appPath}`, `core/client/render.js`)}"></script>
+`
+}
+</body>
+</html>`;
