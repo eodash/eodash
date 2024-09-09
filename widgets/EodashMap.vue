@@ -10,6 +10,10 @@
       :sync="compareMap"
       id="main"
       :config="eoxMapConfig"
+      .layers='[{"type": "Tile","source": {"type": "OSM"}, properties: {
+        id: "osm",
+        title: "Background",
+      },}]'
     />
     <eox-map
       class="fill-height fill-width overflow-none"
@@ -17,6 +21,10 @@
       slot="second"
       ref="compareMap"
       :config="eoxCompareMapConfig"
+      .layers='[{"type": "Tile","source": {"type": "OSM"}, properties: {
+        id: "osm",
+        title: "Background",
+      },}]'
     />
   </eox-map-compare>
 </template>
@@ -42,33 +50,19 @@ const eoxMap = ref(null);
 /** @type {import("vue").Ref<(HTMLElement & Record<string,any> & { map:import("ol").Map }) | null>} */
 const compareMap = ref(null);
 
-const eoxMapConfig = reactive({
+const eoxMapConfig = {
   /** @type {(number|undefined)[] | undefined} */
   center: [15, 48],
   /** @type {number | undefined} */
   zoom: 4,
-  // TODO: we should probably introduce some way of defining default base layers
-  layers: [
-    {
-      type: "Tile",
-      properties: {
-        id: "osm",
-        title: "Background",
-      },
-      source: {
-        type: "OSM",
-      },
-    },
-  ],
-});
+};
 
-const eoxCompareMapConfig = reactive({
+const eoxCompareMapConfig = {
   /** @type {(number|undefined)[] | undefined} */
   center: [15, 48],
   /** @type {number | undefined} */
   zoom: 4,
-  layers: [],
-});
+};
 
 // Check if selected indicator was already set in store
 if (mapPosition && mapPosition.value && mapPosition.value.length === 3) {
