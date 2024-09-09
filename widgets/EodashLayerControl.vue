@@ -1,5 +1,5 @@
 <template>
-  <span class="d-flex flex-column fill-height overflow-auto pa-4">
+  <span class="d-flex flex-column fill-height overflow-auto">
     <eox-layercontrol
       v-if="mapElement"
       :for="mapElement"
