@@ -24,6 +24,7 @@ import { useDisplay, useLayout } from "vuetify/lib/framework.mjs";
 import { loadFont } from "@/utils";
 import Loading from "@/components/Loading.vue";
 import ErrorAlert from "@/components/ErrorAlert.vue";
+import log from "loglevel";
 
 const props = defineProps({
   config: {
@@ -34,6 +35,12 @@ const props = defineProps({
   },
 });
 const eodash = await useEodashRuntime(props.config);
+
+// Check if a log level was set in configuration
+if ("logLevel" in eodash) {
+  // @ts-expect-error not sure how we can map these nicely
+  log.setLevel(eodash.logLevel, true);
+}
 
 useURLSearchParametersSync();
 

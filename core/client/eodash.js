@@ -1,9 +1,5 @@
 import { reactive } from "vue";
 import { currentUrl } from "./store/States";
-import log from "loglevel";
-
-/* set log level */
-log.setLevel("debug", true);
 
 /**
  * Reactive Edoash Instance Object. provided globally in the app, and used as an
@@ -13,6 +9,7 @@ log.setLevel("debug", true);
  */
 export const eodash = reactive({
   id: "demo",
+  // logLevel: "debug",
   stacEndpoint: "https://gtif-cerulean.github.io/catalog/cerulean/catalog.json",
   // stacEndpoint: "https://eodashcatalog.eox.at/test-style/trilateral/catalog.json",
   //stacEndpoint: "https://eurodatacube.github.io/eodash-catalog/RACE/catalog.json",
