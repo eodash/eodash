@@ -29,7 +29,7 @@
   </eox-map-compare>
 </template>
 <script setup>
-import { computed, onMounted, reactive, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 import { datetime, mapEl, mapPosition, mapCompareEl } from "@/store/States";
 import { storeToRefs } from "pinia";
 import { useSTAcStore } from "@/store/stac";
