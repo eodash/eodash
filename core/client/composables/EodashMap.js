@@ -265,10 +265,17 @@ export const useInitMap = (
         log.debug(
           "WARN: Map configuration being completely, should be changed once smart update of config is reworked",
         );
+        const jsonConfig = JSON.stringify(layersCollection);
+        log.debug(jsonConfig);
         /** @type {any} */
         (mapElement.value).layers = [];
-        /** @type {any} */
-        (mapElement.value).layers = layersCollection;
+        setTimeout(() => {
+          log.debug(
+            "WARN: Delay to set new configuration applied as is seems to create update issues",
+          );
+          /** @type {any} */
+          (mapElement.value).layers = JSON.parse(jsonConfig);
+        }, 100);
       }
     },
     { immediate: true },
