@@ -33,3 +33,5 @@ export const mapEl = ref(null);
 
 /** @type {import("vue").Ref<HTMLElement & Record<string,any> | null>} */
 export const mapCompareEl = ref(null);
+
+export const mapConfig = ref(null);

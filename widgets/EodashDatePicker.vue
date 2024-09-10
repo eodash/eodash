@@ -1,41 +1,46 @@
 <template>
-  <VCDatePicker
-    v-model.number="currentDate"
-    :masks="masks"
-    :attributes="attributes"
-  >
-    <template #default="{ inputValue, inputEvents }">
-      <div
-        class="flex rounded-lg border border-gray-300 dark:border-gray-600"
-        style="margin: 2px"
+  <div style="backgroundColor: white">
+    <VCDatePicker
+      v-model.number="currentDate"
+      :masks="masks"
+      :attributes="attributes"
+    >
+      <template #default="{ inputValue, inputEvents }">
+        <div
+          class="flex rounded-lg border border-gray-300 dark:border-gray-600"
+          style="margin: 2px"
+        >
+          <input
+            :value="inputValue"
+            v-on="inputEvents"
+            style="margin: 1px"
+            class="flex-grow px-1 py-1 bg-white dark:bg-gray-700"
+          />
+        </div>
+      </template>
+    </VCDatePicker>
+    <v-row align="center" justify="center" style="margin-top: 6px">
+      <v-btn
+        style="padding: 0px; margin-right: 4px"
+        density="compact"
+        v-tooltip:bottom="'Set date to oldest available dataset'"
+        @click="jumpDate(true)"
       >
-        <input
-          :value="inputValue"
-          v-on="inputEvents"
-          style="margin: 1px"
-          class="flex-grow px-1 py-1 bg-white dark:bg-gray-700"
-        />
-      </div>
-    </template>
-  </VCDatePicker>
-  <v-row align="center" justify="center" style="margin-top: 6px">
-    <v-btn
-      style="padding: 0px; margin-right: 4px"
-      density="compact"
-      v-tooltip:bottom="'Set date to oldest available dataset'"
-      @click="jumpDate(true)"
-    >
-      <v-icon :icon="[mdiRayEndArrow]" />
-    </v-btn>
-    <v-btn
-      style="padding: 0px; margin-left: 4px"
-      density="compact"
-      v-tooltip:bottom="'Set date to latest available dataset'"
-      @click="jumpDate(false)"
-    >
-      <v-icon :icon="[mdiRayStartArrow]" />
-    </v-btn>
-  </v-row>
+        <v-icon :icon="[mdiRayEndArrow]" />
+      </v-btn>
+      <v-btn
+        style="padding: 0px; margin-left: 4px"
+        density="compact"
+        v-tooltip:bottom="'Set date to latest available dataset'"
+        @click="jumpDate(false)"
+      >
+        <v-icon :icon="[mdiRayStartArrow]" />
+      </v-btn>
+    </v-row>
+    <v-row v-for="item in selectedItems" align="center" justify="center" style="margin-top: 10px">
+      {{ item.collection }}: {{ item.time }}
+    </v-row>
+  </div>
 </template>
 
 <script setup>
@@ -44,7 +49,7 @@ import "v-calendar/style.css";
 import { watch, reactive, ref, customRef } from "vue";
 import { storeToRefs } from "pinia";
 import { useSTAcStore } from "@/store/stac";
-import { datetime } from "@/store/States";
+import { datetime, mapConfig } from "@/store/States";
 import { mdiRayStartArrow, mdiRayEndArrow } from "@mdi/js";
 import { eodashCollections } from "@/utils/states";
 import log from "loglevel";
@@ -62,7 +67,7 @@ const currentDate = customRef((track, trigger) => ({
     datetime.value = new Date(num).toISOString();
   },
 }));
-
+const selectedItems = ref("");
 const masks = ref({
   input: "YYYY-MM-DD",
 });
@@ -80,6 +85,16 @@ const masks = ref({
 const attributes = reactive([]);
 
 const { selectedStac } = storeToRefs(useSTAcStore());
+watch(mapConfig, () => {
+  const items = [];
+  eodashCollections.forEach((coll) => {
+    items.push({
+      collection: coll.collectionStac.id,
+      time: coll.selectedItem?.properties.datetime,
+    })
+  });
+  selectedItems.value = items;
+}, {immediate: true});
 
 watch(
   selectedStac,

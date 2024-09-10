@@ -277,19 +277,21 @@ export class EodashCollection {
    *  @param {Date} [date]
    **/
   getItem(date) {
-    return date
-      ? this.getItems()?.sort((a, b) => {
-          const distanceA = Math.abs(
-            new Date(/** @type {number} */ (a.datetime)).getTime() -
-              date.getTime(),
-          );
-          const distanceB = Math.abs(
-            new Date(/** @type {number} */ (b.datetime)).getTime() -
-              date.getTime(),
-          );
-          return distanceA - distanceB;
-        })[0]
-      : this.getItems()?.at(-1);
+    const foundItem = date
+    ? this.getItems()?.sort((a, b) => {
+        const distanceA = Math.abs(
+          new Date(/** @type {number} */ (a.datetime)).getTime() -
+            date.getTime(),
+        );
+        const distanceB = Math.abs(
+          new Date(/** @type {number} */ (b.datetime)).getTime() -
+            date.getTime(),
+        );
+        return distanceA - distanceB;
+      })[0]
+    : this.getItems()?.at(-1);
+    console.log(`Collection: ${this.#collectionStac.id}: ${foundItem.datetime}`);
+    return foundItem;
   }
 
   /**

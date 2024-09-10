@@ -2,6 +2,7 @@ import { EodashCollection } from "@/utils/eodashSTAC";
 import { setMapProjFromCol } from "@/utils/helpers";
 import { onMounted, onUnmounted, watch } from "vue";
 import log from "loglevel";
+import { mapConfig } from "@/store/States";
 /**
  * Description placeholder
  *
@@ -269,6 +270,7 @@ export const useInitMap = (
         (mapElement.value).layers = [];
         /** @type {any} */
         (mapElement.value).layers = layersCollection;
+        mapConfig.value = layersCollection;
       }
     },
     { immediate: true },
