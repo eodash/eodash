@@ -275,7 +275,7 @@ export const useInitMap = (
           );
           /** @type {any} */
           (mapElement.value).layers = JSON.parse(jsonConfig);
-        }, 100);
+        }, 500);
       }
     },
     { immediate: true },
