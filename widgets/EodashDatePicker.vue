@@ -17,6 +17,14 @@
         />
       </div>
     </template>
+    <template #footer>
+      <div class="w-full px-4 pb-3" style="font-size: 12px">
+        <span>
+          <b>Hint:</b> closest available date is displayed <br />
+          on map (see Analysis Layers)
+        </span>
+      </div>
+    </template>
   </VCDatePicker>
   <v-row align="center" justify="center" style="margin-top: 6px">
     <v-btn
@@ -37,6 +45,12 @@
     </v-btn>
   </v-row>
 </template>
+<style>
+.vc-day-content {
+  color: #5e5e5e;
+  font-weight: normal;
+}
+</style>
 
 <script setup>
 import { DatePicker as VCDatePicker } from "v-calendar";
@@ -119,6 +133,12 @@ watch(
             },
           },
           dates,
+          content: {
+            style: {
+              color: "#000000",
+              "font-weight": "bold",
+            },
+          },
         });
       }
       // We try to set the current time selection
