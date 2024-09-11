@@ -212,12 +212,14 @@ const createLayersConfig = async (selectedIndicator) => {
  * @param {import("vue").Ref<import("stac-ts").StacCollection | null>} selectedIndicator
  * @param {EodashCollection[]} eodashCols
  * @param {import("vue").Ref<string>} datetime
+ * @param {import("vue").Ref<Record<string,any>[]>} mapLayers
  */
 export const useInitMap = (
   mapElement,
   selectedIndicator,
   eodashCols,
   datetime,
+  mapLayers,
 ) => {
   log.debug(
     "InitMap",
@@ -265,17 +267,11 @@ export const useInitMap = (
         log.debug(
           "WARN: Map configuration being completely, should be changed once smart update of config is reworked",
         );
-        const jsonConfig = JSON.stringify(layersCollection);
+        const jsonConfig =  JSON.parse(JSON.stringify(layersCollection));
         log.debug(jsonConfig);
-        /** @type {any} */
-        (mapElement.value).layers = [];
-        setTimeout(() => {
-          log.debug(
-            "WARN: Delay to set new configuration applied as is seems to create update issues",
-          );
-          /** @type {any} */
-          (mapElement.value).layers = JSON.parse(jsonConfig);
-        }, 100);
+
+        mapLayers.value = jsonConfig;
+
       }
     },
     { immediate: true },
@@ -290,8 +286,8 @@ export const useInitMap = (
           eodashCols,
           updatedTime,
         );
-        /** @type {any} */
-        (mapElement.value).layers = layersCollection?.reverse();
+
+        mapLayers.value = layersCollection?.reverse() ?? [];
       }
     },
   );

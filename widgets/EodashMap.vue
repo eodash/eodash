@@ -10,10 +10,7 @@
       :sync="compareMap"
       id="main"
       :config="eoxMapConfig"
-      .layers='[{"type": "Tile","source": {"type": "OSM"}, properties: {
-        id: "osm",
-        title: "Background",
-      },}]'
+      .layers="eoxMapLayers"
     />
     <eox-map
       class="fill-height fill-width overflow-none"
@@ -21,10 +18,7 @@
       slot="second"
       ref="compareMap"
       :config="eoxCompareMapConfig"
-      .layers='[{"type": "Tile","source": {"type": "OSM"}, properties: {
-        id: "osm",
-        title: "Background",
-      },}]'
+      .layers="eoxMapCompareLayers"
     />
   </eox-map-compare>
 </template>
@@ -44,6 +38,27 @@ const props = defineProps({
     default: false,
   },
 });
+
+const eoxMapLayers = ref([
+  {
+    type: "Tile",
+    source: { type: "OSM" },
+    properties: {
+      id: "osm",
+      title: "Background",
+    },
+  },
+]);
+const eoxMapCompareLayers = ref([
+  {
+    type: "Tile",
+    source: { type: "OSM" },
+    properties: {
+      id: "osm",
+      title: "Background",
+    },
+  },
+]);
 
 /** @type {import("vue").Ref<(HTMLElement & Record<string,any> & { map:import("ol").Map }) | null>} */
 const eoxMap = ref(null);
@@ -92,6 +107,7 @@ onMounted(() => {
       selectedCompareStac,
       eodashCompareCollections,
       datetime,
+      eoxMapCompareLayers,
     );
   }
   useInitMap(
@@ -100,6 +116,7 @@ onMounted(() => {
     selectedStac,
     eodashCollections,
     datetime,
+    eoxMapLayers,
   );
 });
 </script>
