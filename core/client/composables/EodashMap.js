@@ -255,7 +255,7 @@ export const useInitMap = (
               updatedTime,
             )) ?? [];
           log.debug(
-            "assigned layers after changing time only",
+            "Assigned layers after changing time only",
             JSON.parse(JSON.stringify(layersCollection)),
           );
           mapLayers.value = layersCollection;
@@ -290,7 +290,7 @@ export const useInitMap = (
         (mapElement.value).zoomExtent = reprojExtent;
 
         log.debug(
-          "assigned layers",
+          "Assigned layers",
           JSON.parse(JSON.stringify(layersCollection)),
         );
 

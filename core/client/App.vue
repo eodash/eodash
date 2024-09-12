@@ -15,6 +15,8 @@ import Dashboard from "@/views/Dashboard.vue";
 import ErrorAlert from "./components/ErrorAlert.vue";
 import { onErrorCaptured, ref } from "vue";
 
+// window.setEodashLoglevel("DEBUG")
+
 const error = ref("");
 onErrorCaptured((e, inst, info) => {
   error.value = `
