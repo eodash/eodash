@@ -2,6 +2,8 @@ import { EodashCollection } from "@/utils/eodashSTAC";
 import { setMapProjFromCol } from "@/utils/helpers";
 import { onMounted, onUnmounted, watch } from "vue";
 import log from "loglevel";
+import { datetime } from "@/store/States";
+
 /**
  * Description placeholder
  *
@@ -55,8 +57,16 @@ const updateLayersConfig = async (
     eodashCols,
     updatedTime,
   );
+  const dataLayersGroup = layersCollection?.find(
+    (lyr) => lyr?.properties.id === "AnalysisGroup",
+  );
   /** @type {Record<string,any>[]} */
   const analysisLayers = [];
+
+  if (!dataLayersGroup) {
+    log.debug("no AnalysisGroup layer found to be updated");
+    return layersCollection;
+  }
 
   for (const ec of eodashCols) {
     let layers;
@@ -76,12 +86,7 @@ const updateLayersConfig = async (
     dl.properties.layerControlToolsExpand = true;
   });
 
-  const dataLayersGroup = layersCollection?.find(
-    (lyr) => lyr?.properties.id === "AnalysisGroup",
-  );
-  if (dataLayersGroup) {
-    dataLayersGroup.layers = analysisLayers;
-  }
+  dataLayersGroup.layers = analysisLayers;
 
   return layersCollection;
 };
@@ -202,6 +207,18 @@ const createLayersConfig = async (selectedIndicator) => {
     layersCollection.unshift(overlayLayers);
   }
 
+  // We try to set the current time selection
+  // to latest extent date
+  // @ts-expect-error it seems the temporal extent is not defined in type
+  const interval = selectedIndicator?.extent?.temporal?.interval;
+  if (interval && interval.length > 0 && interval[0].length > 1) {
+    const endInterval = new Date(interval[0][1]);
+    log.debug(
+      "Datepicker: found stac extent, setting time to latest value",
+      endInterval,
+    );
+    datetime.value = endInterval.toISOString();
+  }
   return layersCollection;
 };
 
@@ -212,12 +229,14 @@ const createLayersConfig = async (selectedIndicator) => {
  * @param {import("vue").Ref<import("stac-ts").StacCollection | null>} selectedIndicator
  * @param {EodashCollection[]} eodashCols
  * @param {import("vue").Ref<string>} datetime
+ * @param {import("vue").Ref<Record<string,any>[]>} mapLayers
  */
 export const useInitMap = (
   mapElement,
   selectedIndicator,
   eodashCols,
   datetime,
+  mapLayers,
 ) => {
   log.debug(
     "InitMap",
@@ -228,21 +247,42 @@ export const useInitMap = (
   );
 
   const stopIndicatorWatcher = watch(
-    selectedIndicator,
-    async (updatedStac) => {
-      log.debug(
-        "SelectedIndicator watch triggered",
-        selectedIndicator,
-        updatedStac,
-      );
+    [selectedIndicator, datetime],
+    async ([updatedStac, updatedTime], [previousStac, previousTime]) => {
       if (updatedStac) {
-        const layersCollection = await createLayersConfig(updatedStac);
+        log.debug(
+          "Selected Indicator watch triggered",
+          updatedStac,
+          updatedTime,
+        );
+        let layersCollection = [];
+
+        const onlyTimeChanged =
+          updatedStac?.id === previousStac?.id && updatedTime !== previousTime;
+
+        if (onlyTimeChanged) {
+          layersCollection =
+            (await updateLayersConfig(
+              [...(mapElement.value?.layers ?? [])].reverse(),
+              eodashCols,
+              updatedTime,
+            )) ?? [];
+          log.debug(
+            "Assigned layers after changing time only",
+            JSON.parse(JSON.stringify(layersCollection)),
+          );
+          mapLayers.value = layersCollection;
+          return;
+        }
+
+        /** @type {Record<string,any>[]} */
+        layersCollection = await createLayersConfig(updatedStac);
 
         // updates layersCollection in place
-        await updateLayersConfig(layersCollection, eodashCols, datetime.value);
+        await updateLayersConfig(layersCollection, eodashCols, updatedTime);
 
         // Set projection based on indicator level information
-        setMapProjFromCol(updatedStac);
+        await setMapProjFromCol(updatedStac);
 
         // Try to move map view to extent
         // Sanitize extent,
@@ -253,6 +293,7 @@ export const useInitMap = (
           b[2] < 180 ? b[2] : 180,
           b[3] < 90 ? b[3] : 90,
         ];
+
         const reprojExtent = mapElement.value?.transformExtent(
           sanitizedExtent,
           "EPSG:4326",
@@ -261,36 +302,18 @@ export const useInitMap = (
         /** @type {any} */
         (mapElement.value).zoomExtent = reprojExtent;
 
-        // TODO: resetting layers to empty array first because smart layer update has issues
         log.debug(
-          "WARN: Map configuration being completely, should be changed once smart update of config is reworked",
+          "Assigned layers",
+          JSON.parse(JSON.stringify(layersCollection)),
         );
-        /** @type {any} */
-        (mapElement.value).layers = [];
-        /** @type {any} */
-        (mapElement.value).layers = layersCollection;
+
+        mapLayers.value = layersCollection;
       }
     },
     { immediate: true },
   );
 
-  const stopDatetimeWatcher = watch(
-    datetime,
-    async (updatedTime, previousTime) => {
-      if (updatedTime && updatedTime !== previousTime) {
-        const layersCollection = await updateLayersConfig(
-          [...(mapElement.value?.layers ?? [])],
-          eodashCols,
-          updatedTime,
-        );
-        /** @type {any} */
-        (mapElement.value).layers = layersCollection?.reverse();
-      }
-    },
-  );
-
   onUnmounted(() => {
     stopIndicatorWatcher();
-    stopDatetimeWatcher();
   });
 };
