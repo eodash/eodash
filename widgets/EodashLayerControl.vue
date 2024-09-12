@@ -5,6 +5,7 @@
       :for="mapElement"
       @datetime:updated="debouncedHandleDateTime"
       class="fill-height"
+      disableTabs="true"
       ref="eoxLayercontrol"
     />
   </span>

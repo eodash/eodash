@@ -183,11 +183,18 @@ export class EodashCollection {
       Object.keys(dataAssets).length;
 
     if (isSupported) {
+      // Checking for potential legend asset
+      let legendInfo = null;
+      if (this.#collectionStac?.assets?.legend?.href) {
+        legendInfo = `<img src="${this.#collectionStac.assets.legend.href}" style="max-width: 100%" />`;
+        console.log(legendInfo);
+      }
       const links = await createLayersFromLinks(
         this.#collectionStac?.id ?? "",
         title,
         item,
         layerDatetime,
+        legendInfo
       );
       jsonArray.push(
         ...links,

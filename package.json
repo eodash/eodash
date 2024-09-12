@@ -49,7 +49,7 @@
   "dependencies": {
     "@eox/itemfilter": "^1.1.0",
     "@eox/jsonform": "^0.8.2",
-    "@eox/layercontrol": "^0.20.0",
+    "@eox/layercontrol": "^0.20.1-dev.1726146964.0",
     "@eox/layout": "^0.1.0",
     "@eox/map": "^1.13.0",
     "@eox/stacinfo": "^0.3.3",
