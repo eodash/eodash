@@ -56,7 +56,6 @@
     "@eox/timecontrol": "^0.7.2",
     "@mdi/js": "^7.4.47",
     "@vitejs/plugin-vue": "^5.1.2",
-    "@vueuse/core": "^10.11.1",
     "animated-details": "gist:2912bb049fa906671807415eb0e87188",
     "axios": "^1.7.4",
     "axios-cache-interceptor": "^1.5.3",
