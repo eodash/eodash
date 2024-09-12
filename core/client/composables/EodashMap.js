@@ -2,6 +2,7 @@ import { EodashCollection } from "@/utils/eodashSTAC";
 import { setMapProjFromCol } from "@/utils/helpers";
 import { onMounted, onUnmounted, watch } from "vue";
 import log from "loglevel";
+
 /**
  * Description placeholder
  *
@@ -55,8 +56,16 @@ const updateLayersConfig = async (
     eodashCols,
     updatedTime,
   );
+  const dataLayersGroup = layersCollection?.find(
+    (lyr) => lyr?.properties.id === "AnalysisGroup",
+  );
   /** @type {Record<string,any>[]} */
   const analysisLayers = [];
+
+  if (!dataLayersGroup) {
+    log.debug("no AnalysisGroup layer found to be updated");
+    return layersCollection;
+  }
 
   for (const ec of eodashCols) {
     let layers;
@@ -76,12 +85,7 @@ const updateLayersConfig = async (
     dl.properties.layerControlToolsExpand = true;
   });
 
-  const dataLayersGroup = layersCollection?.find(
-    (lyr) => lyr?.properties.id === "AnalysisGroup",
-  );
-  if (dataLayersGroup) {
-    dataLayersGroup.layers = analysisLayers;
-  }
+  dataLayersGroup.layers = analysisLayers;
 
   return layersCollection;
 };
@@ -230,21 +234,42 @@ export const useInitMap = (
   );
 
   const stopIndicatorWatcher = watch(
-    selectedIndicator,
-    async (updatedStac) => {
-      log.debug(
-        "SelectedIndicator watch triggered",
-        selectedIndicator,
-        updatedStac,
-      );
+    [selectedIndicator, datetime],
+    async ([updatedStac, updatedTime], [previousStac, previousTime]) => {
       if (updatedStac) {
-        const layersCollection = await createLayersConfig(updatedStac);
+        log.debug(
+          "Selected Indicator watch triggered",
+          updatedStac,
+          updatedTime,
+        );
+        let layersCollection = [];
+
+        const onlyTimeChanged =
+          updatedStac?.id === previousStac?.id && updatedTime !== previousTime;
+
+        if (onlyTimeChanged) {
+          layersCollection =
+            (await updateLayersConfig(
+              [...(mapElement.value?.layers ?? [])].reverse(),
+              eodashCols,
+              updatedTime,
+            )) ?? [];
+          log.debug(
+            "assigned layers after changing time only",
+            JSON.parse(JSON.stringify(layersCollection)),
+          );
+          mapLayers.value = layersCollection;
+          return;
+        }
+
+        /** @type {Record<string,any>[]} */
+        layersCollection = await createLayersConfig(updatedStac);
 
         // updates layersCollection in place
-        await updateLayersConfig(layersCollection, eodashCols, datetime.value);
+        await updateLayersConfig(layersCollection, eodashCols, updatedTime);
 
         // Set projection based on indicator level information
-        setMapProjFromCol(updatedStac);
+        await setMapProjFromCol(updatedStac);
 
         // Try to move map view to extent
         // Sanitize extent,
@@ -255,6 +280,7 @@ export const useInitMap = (
           b[2] < 180 ? b[2] : 180,
           b[3] < 90 ? b[3] : 90,
         ];
+
         const reprojExtent = mapElement.value?.transformExtent(
           sanitizedExtent,
           "EPSG:4326",
@@ -263,37 +289,18 @@ export const useInitMap = (
         /** @type {any} */
         (mapElement.value).zoomExtent = reprojExtent;
 
-        // TODO: resetting layers to empty array first because smart layer update has issues
         log.debug(
-          "WARN: Map configuration being completely, should be changed once smart update of config is reworked",
+          "assigned layers",
+          JSON.parse(JSON.stringify(layersCollection)),
         );
-        const jsonConfig =  JSON.parse(JSON.stringify(layersCollection));
-        log.debug(jsonConfig);
 
-        mapLayers.value = jsonConfig;
-
+        mapLayers.value = layersCollection;
       }
     },
     { immediate: true },
   );
 
-  const stopDatetimeWatcher = watch(
-    datetime,
-    async (updatedTime, previousTime) => {
-      if (updatedTime && updatedTime !== previousTime) {
-        const layersCollection = await updateLayersConfig(
-          [...(mapElement.value?.layers ?? [])],
-          eodashCols,
-          updatedTime,
-        );
-
-        mapLayers.value = layersCollection?.reverse() ?? [];
-      }
-    },
-  );
-
   onUnmounted(() => {
     stopIndicatorWatcher();
-    stopDatetimeWatcher();
   });
 };

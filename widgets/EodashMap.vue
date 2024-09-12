@@ -1,15 +1,15 @@
 <template>
   <eox-map-compare
     class="fill-height fill-width overflow-none"
-    :enabled="showCompare"
+    .enabled="showCompare"
   >
     <eox-map
       class="fill-height fill-width overflow-none"
       slot="first"
       ref="eoxMap"
-      :sync="compareMap"
+      .sync="compareMap"
+      .config="eoxMapConfig"
       id="main"
-      :config="eoxMapConfig"
       .layers="eoxMapLayers"
     />
     <eox-map
@@ -17,18 +17,18 @@
       id="compare"
       slot="second"
       ref="compareMap"
-      :config="eoxCompareMapConfig"
+      .config="eoxCompareMapConfig"
       .layers="eoxMapCompareLayers"
     />
   </eox-map-compare>
 </template>
 <script setup>
+import "@eox/map";
+import "@eox/map/dist/eox-map-advanced-layers-and-sources.js";
 import { computed, onMounted, ref } from "vue";
 import { datetime, mapEl, mapPosition, mapCompareEl } from "@/store/States";
 import { storeToRefs } from "pinia";
 import { useSTAcStore } from "@/store/stac";
-import "@eox/map";
-import "@eox/map/dist/eox-map-advanced-layers-and-sources.js";
 import { eodashCollections, eodashCompareCollections } from "@/utils/states";
 import { useHandleMapMoveEnd, useInitMap } from "@/composables/EodashMap";
 
@@ -39,6 +39,7 @@ const props = defineProps({
   },
 });
 
+/** @type {import("vue").Ref<Record<string,any>[]>} */
 const eoxMapLayers = ref([
   {
     type: "Tile",
@@ -49,6 +50,8 @@ const eoxMapLayers = ref([
     },
   },
 ]);
+
+/** @type {import("vue").Ref<Record<string,any>[]>} */
 const eoxMapCompareLayers = ref([
   {
     type: "Tile",
@@ -97,9 +100,11 @@ onMounted(() => {
   const { selectedCompareStac, selectedStac } = storeToRefs(useSTAcStore());
   // assign map Element state to eox map
   mapEl.value = eoxMap.value;
+
   if (props.enableCompare) {
     mapCompareEl.value = compareMap.value;
   }
+
   if (props.enableCompare) {
     useInitMap(
       compareMap,
@@ -110,6 +115,7 @@ onMounted(() => {
       eoxMapCompareLayers,
     );
   }
+
   useInitMap(
     eoxMap,
     //@ts-expect-error todo selectedStac as collection
