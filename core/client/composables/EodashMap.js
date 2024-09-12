@@ -2,6 +2,7 @@ import { EodashCollection } from "@/utils/eodashSTAC";
 import { setMapProjFromCol } from "@/utils/helpers";
 import { onMounted, onUnmounted, watch } from "vue";
 import log from "loglevel";
+import { datetime } from "@/store/States";
 
 /**
  * Description placeholder
@@ -206,6 +207,18 @@ const createLayersConfig = async (selectedIndicator) => {
     layersCollection.unshift(overlayLayers);
   }
 
+  // We try to set the current time selection
+  // to latest extent date
+  // @ts-expect-error it seems the temporal extent is not defined in type
+  const interval = selectedIndicator?.extent?.temporal?.interval;
+  if (interval && interval.length > 0 && interval[0].length > 1) {
+    const endInterval = new Date(interval[0][1]);
+    log.debug(
+      "Datepicker: found stac extent, setting time to latest value",
+      endInterval,
+    );
+    datetime.value = endInterval.toISOString();
+  }
   return layersCollection;
 };
 

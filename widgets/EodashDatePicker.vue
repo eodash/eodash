@@ -121,18 +121,6 @@ watch(
           dates,
         });
       }
-      // We try to set the current time selection
-      // to latest extent date
-      // @ts-expect-error it seems the temporal extent is not defined in type
-      const interval = updatedStac?.extent?.temporal?.interval;
-      if (interval && interval.length > 0 && interval[0].length > 1) {
-        const endInterval = new Date(interval[0][1]);
-        log.debug(
-          "Datepicker: found stac extent, setting time to latest value",
-          endInterval,
-        );
-        currentDate.value = endInterval?.getTime();
-      }
     }
   },
   { immediate: true },

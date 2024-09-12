@@ -7,7 +7,7 @@ declare module "*.vue" {
 }
 declare interface Window {
   eodashStore: import("@/types").EodashStore;
-  setEodashLoglevel:typeof import("loglevel").setLevel
+  setEodashLoglevel: typeof import("loglevel").setLevel;
 }
 declare module "@eox/stacinfo" {
   export const EOxStacInfo: CustomElementConstructor;

@@ -11,7 +11,7 @@ export const pinia = createPinia();
 /** @param {import("vue").App} app */
 export function registerPlugins(app) {
   window.eodashStore = store;
-  window.setEodashLoglevel = log.setLevel
+  window.setEodashLoglevel = log.setLevel;
   app
     .use(vuetify)
     .use(pinia)
