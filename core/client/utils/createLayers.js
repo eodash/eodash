@@ -72,7 +72,7 @@ export async function createLayersFromAssets(
 
   if (geoTIFFSources.length && typeof geoTIFFIdx === "number") {
     const geotiffSourceID = collectionId + ";:;GeoTIFF";
-    log.debug("Creating Vector layer from GeoJSON", geotiffSourceID);
+    log.debug("Creating WebGLTile layer from GeoTIFF", geotiffSourceID);
     log.debug("Configured Sources", geoTIFFSources);
     const layer = {
       type: "WebGLTile",
