@@ -7,7 +7,6 @@
       class="fill-height fill-width overflow-none"
       slot="first"
       ref="eoxMap"
-      .sync="compareMap"
       .config="eoxMapConfig"
       id="main"
       .layers="eoxMapLayers"
@@ -113,6 +112,7 @@ onMounted(() => {
       eodashCompareCollections,
       datetime,
       eoxMapCompareLayers,
+      eoxMap,
     );
   }
 
@@ -123,6 +123,7 @@ onMounted(() => {
     eodashCollections,
     datetime,
     eoxMapLayers,
+    compareMap,
   );
 });
 </script>

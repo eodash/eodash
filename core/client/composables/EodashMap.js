@@ -2,7 +2,15 @@ import { EodashCollection } from "@/utils/eodashSTAC";
 import { setMapProjFromCol } from "@/utils/helpers";
 import { onMounted, onUnmounted, watch } from "vue";
 import log from "loglevel";
-import { datetime } from "@/store/States";
+import { datetime, mapEl } from "@/store/States";
+import { useSTAcStore } from "@/store/stac";
+import { storeToRefs } from "pinia";
+
+/**
+ * Holder for previous compare map view as it is overwritten by sync
+ * @type { {map:import("ol").View } | null} mapElement
+ */
+let viewHolder = null;
 
 /**
  * Description placeholder
@@ -230,6 +238,7 @@ const createLayersConfig = async (selectedIndicator) => {
  * @param {EodashCollection[]} eodashCols
  * @param {import("vue").Ref<string>} datetime
  * @param {import("vue").Ref<Record<string,any>[]>} mapLayers
+ * @param {import("vue").Ref<HTMLElement & Record<string,any> | null>} partnerMap
  */
 export const useInitMap = (
   mapElement,
@@ -237,6 +246,7 @@ export const useInitMap = (
   eodashCols,
   datetime,
   mapLayers,
+  partnerMap,
 ) => {
   log.debug(
     "InitMap",
@@ -250,6 +260,10 @@ export const useInitMap = (
     [selectedIndicator, datetime],
     async ([updatedStac, updatedTime], [previousStac, previousTime]) => {
       if (updatedStac) {
+        if (viewHolder !== null) {
+          partnerMap?.value?.map.setView(viewHolder);
+          viewHolder = null;
+        }
         log.debug(
           "Selected Indicator watch triggered",
           updatedStac,
@@ -281,8 +295,22 @@ export const useInitMap = (
         // updates layersCollection in place
         await updateLayersConfig(layersCollection, eodashCols, updatedTime);
 
-        // Set projection based on indicator level information
-        await setMapProjFromCol(updatedStac);
+        const { selectedCompareStac } = storeToRefs(useSTAcStore());
+        if (mapElement?.value?.id === "main") {
+          // Main map being initialized
+          // Set projection based on indicator level information for both maps
+          await setMapProjFromCol(updatedStac);
+
+        } else {
+          // Compare map being initialized
+          if(selectedCompareStac.value !== null) {
+            // save old view to set later
+            viewHolder = mapElement?.value?.map.getView();
+            /** @type {any} */
+            (mapElement.value).sync = partnerMap.value;
+          }
+          
+        }
 
         // Try to move map view to extent
         // Sanitize extent,
