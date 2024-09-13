@@ -79,7 +79,7 @@ export const eodash = reactive({
             ? {
                 id: "Information",
                 title: "Information",
-                layout: { x: 9, y: 0, w: 3, h: 12 },
+                layout: { x: 9, y: 0, w: 3, h: 8 },
                 type: "web-component",
                 widget: {
                   link: async () => await import("@eox/stacinfo"),
@@ -115,19 +115,19 @@ export const eodash = reactive({
         },
       },
       {
-        defineWidget: (selectedSTAC) => {
-          return selectedSTAC
-            ? {
-                id: "Datepicker",
-                type: "internal",
-                layout: { x: 5, y: 10, w: 1, h: 1 },
-                title: "Datepicker",
-                widget: {
-                  name: "EodashDatePicker",
-                },
-              }
-            : null;
+        // defineWidget: (selectedSTAC) => {
+        //   return selectedSTAC
+        //     ? {
+        id: "Datepicker",
+        type: "internal",
+        layout: { x: 5, y: 10, w: 1, h: 1 },
+        title: "Datepicker",
+        widget: {
+          name: "EodashDatePicker",
         },
+        // }
+        // : null;
+        // },
       },
       {
         defineWidget: (selected) => {
@@ -139,6 +139,21 @@ export const eodash = reactive({
                 type: "internal",
                 widget: {
                   name: "EodashMapBtns",
+                },
+              }
+            : null;
+        },
+      },
+      {
+        defineWidget: (indicator) => {
+          return indicator
+            ? {
+                id: "process",
+                layout: { x: 9, y: 8, w: 3, h: 4 },
+                title: "Process",
+                type: "internal",
+                widget: {
+                  name: "EodashProcess",
                 },
               }
             : null;

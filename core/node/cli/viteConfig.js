@@ -103,6 +103,9 @@ export const viteConfig = /** @type {import("vite").UserConfigFnPromise} */ (
                 "stac-js",
                 "urijs",
                 "loglevel",
+                "vega",
+                "vega-lite",
+                "vega-embed",
               ],
               noDiscovery: true,
             }
