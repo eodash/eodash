@@ -1,32 +1,34 @@
 <template>
   <eox-map-compare
     class="fill-height fill-width overflow-none"
-    :enabled="showCompare"
+    .enabled="showCompare"
   >
     <eox-map
       class="fill-height fill-width overflow-none"
       slot="first"
       ref="eoxMap"
-      :sync="compareMap"
+      .sync="compareMap"
+      .config="eoxMapConfig"
       id="main"
-      :config="eoxMapConfig"
+      .layers="eoxMapLayers"
     />
     <eox-map
       class="fill-height fill-width overflow-none"
       id="compare"
       slot="second"
       ref="compareMap"
-      :config="eoxCompareMapConfig"
+      .config="eoxCompareMapConfig"
+      .layers="eoxMapCompareLayers"
     />
   </eox-map-compare>
 </template>
 <script setup>
-import { computed, onMounted, reactive, ref } from "vue";
+import "@eox/map";
+import "@eox/map/dist/eox-map-advanced-layers-and-sources.js";
+import { computed, onMounted, ref } from "vue";
 import { datetime, mapEl, mapPosition, mapCompareEl } from "@/store/States";
 import { storeToRefs } from "pinia";
 import { useSTAcStore } from "@/store/stac";
-import "@eox/map";
-import "@eox/map/dist/eox-map-advanced-layers-and-sources.js";
 import { eodashCollections, eodashCompareCollections } from "@/utils/states";
 import { useHandleMapMoveEnd, useInitMap } from "@/composables/EodashMap";
 
@@ -37,38 +39,48 @@ const props = defineProps({
   },
 });
 
+/** @type {import("vue").Ref<Record<string,any>[]>} */
+const eoxMapLayers = ref([
+  {
+    type: "Tile",
+    source: { type: "OSM" },
+    properties: {
+      id: "osm",
+      title: "Background",
+    },
+  },
+]);
+
+/** @type {import("vue").Ref<Record<string,any>[]>} */
+const eoxMapCompareLayers = ref([
+  {
+    type: "Tile",
+    source: { type: "OSM" },
+    properties: {
+      id: "osm",
+      title: "Background",
+    },
+  },
+]);
+
 /** @type {import("vue").Ref<(HTMLElement & Record<string,any> & { map:import("ol").Map }) | null>} */
 const eoxMap = ref(null);
 /** @type {import("vue").Ref<(HTMLElement & Record<string,any> & { map:import("ol").Map }) | null>} */
 const compareMap = ref(null);
 
-const eoxMapConfig = reactive({
+const eoxMapConfig = {
   /** @type {(number|undefined)[] | undefined} */
   center: [15, 48],
   /** @type {number | undefined} */
   zoom: 4,
-  // TODO: we should probably introduce some way of defining default base layers
-  layers: [
-    {
-      type: "Tile",
-      properties: {
-        id: "osm",
-        title: "Background",
-      },
-      source: {
-        type: "OSM",
-      },
-    },
-  ],
-});
+};
 
-const eoxCompareMapConfig = reactive({
+const eoxCompareMapConfig = {
   /** @type {(number|undefined)[] | undefined} */
   center: [15, 48],
   /** @type {number | undefined} */
   zoom: 4,
-  layers: [],
-});
+};
 
 // Check if selected indicator was already set in store
 if (mapPosition && mapPosition.value && mapPosition.value.length === 3) {
@@ -88,9 +100,11 @@ onMounted(() => {
   const { selectedCompareStac, selectedStac } = storeToRefs(useSTAcStore());
   // assign map Element state to eox map
   mapEl.value = eoxMap.value;
+
   if (props.enableCompare) {
     mapCompareEl.value = compareMap.value;
   }
+
   if (props.enableCompare) {
     useInitMap(
       compareMap,
@@ -98,14 +112,17 @@ onMounted(() => {
       selectedCompareStac,
       eodashCompareCollections,
       datetime,
+      eoxMapCompareLayers,
     );
   }
+
   useInitMap(
     eoxMap,
     //@ts-expect-error todo selectedStac as collection
     selectedStac,
     eodashCollections,
     datetime,
+    eoxMapLayers,
   );
 });
 </script>

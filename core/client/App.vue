@@ -23,6 +23,8 @@ defineProps({
   },
 });
 
+// window.setEodashLoglevel("DEBUG")
+
 const error = ref("");
 const $host = useHost();
 
