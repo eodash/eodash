@@ -2,7 +2,7 @@ import { EodashCollection } from "@/utils/eodashSTAC";
 import { setMapProjFromCol } from "@/utils/helpers";
 import { onMounted, onUnmounted, watch } from "vue";
 import log from "loglevel";
-import { datetime, mapEl } from "@/store/States";
+import { datetime } from "@/store/States";
 import { useSTAcStore } from "@/store/stac";
 import { storeToRefs } from "pinia";
 
@@ -304,16 +304,14 @@ export const useInitMap = (
           // Main map being initialized
           // Set projection based on indicator level information for both maps
           await setMapProjFromCol(updatedStac);
-
         } else {
           // Compare map being initialized
-          if(selectedCompareStac.value !== null) {
+          if (selectedCompareStac.value !== null) {
             // save old view to set later
             viewHolder = mapElement?.value?.map.getView();
             /** @type {any} */
             (mapElement.value).sync = partnerMap.value;
           }
-          
         }
 
         // Try to move map view to extent
