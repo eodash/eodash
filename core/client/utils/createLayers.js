@@ -158,6 +158,7 @@ export const createLayersFromLinks = async (
       Object.assign(json.source.params, wmsLink["wms:dimensions"]);
     }
     if (legendInfo !== null) {
+      // @ts-expect-error once we have a eox-map config type we can remove this
       json.properties.description = legendInfo;
     }
     jsonArray.push(json);
