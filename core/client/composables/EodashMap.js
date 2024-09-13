@@ -260,9 +260,13 @@ export const useInitMap = (
     [selectedIndicator, datetime],
     async ([updatedStac, updatedTime], [previousStac, previousTime]) => {
       if (updatedStac) {
-        if (viewHolder !== null) {
-          partnerMap?.value?.map.setView(viewHolder);
-          viewHolder = null;
+        if (mapElement?.value?.id === "main") {
+          // Making sure main map gets the viewer that seems to be
+          // removed when the second map is no longer rendered
+          if (viewHolder !== null) {
+            mapElement?.value?.map.setView(viewHolder);
+            viewHolder = null;
+          }
         }
         log.debug(
           "Selected Indicator watch triggered",
