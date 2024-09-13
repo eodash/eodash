@@ -157,7 +157,7 @@ export const createLayersFromLinks = async (
       // Expand all dimensions into the params attribute
       Object.assign(json.source.params, wmsLink["wms:dimensions"]);
     }
-    if(legendInfo !== null) {
+    if (legendInfo !== null) {
       json.properties.description = legendInfo;
     }
     jsonArray.push(json);

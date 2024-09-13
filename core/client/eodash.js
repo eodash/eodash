@@ -55,7 +55,7 @@ export const eodash = reactive({
         id: Symbol(),
         type: "internal",
         title: "Indicators",
-        layout: { x: 0, y: 0, w: 3, h: 8 },
+        layout: { x: 0, y: 0, w: 3, h: 6 },
         widget: {
           name: "EodashItemFilter",
           properties: {
@@ -68,7 +68,7 @@ export const eodash = reactive({
         id: Symbol(),
         type: "internal",
         title: "Layer Control",
-        layout: { x: 0, y: 8, w: 3, h: 4 },
+        layout: { x: 0, y: 6, w: 3, h: 6 },
         widget: {
           name: "EodashLayerControl",
         },
