@@ -69,7 +69,7 @@
     "v-calendar": "^3.1.2",
     "vite": "^5.4.2",
     "vite-plugin-vuetify": "^2.0.4",
-    "vue": "^3.2.0",
+    "vue": "3.4.38",
     "vuetify": "^3.7.0",
     "webfontloader": "^1.6.28"
   },
