@@ -311,8 +311,12 @@ export const useInitMap = (
               .forEach((/** @type import("openlayers").layer.Layer */ l) => {
                 try {
                   const prevSource = l.getSource();
-                  // @ts-expect-error this is a hack to reset source
-                  if (prevSource && "bandCount" in prevSource && prevSource.bandCount > 4) {
+                  if (
+                    prevSource &&
+                    "bandCount" in prevSource &&
+                    // @ts-expect-error this is a hack to reset source
+                    prevSource.bandCount > 4
+                  ) {
                     // @ts-expect-error this is a hack to reset source
                     l.setSource(null);
                     l.setSource(prevSource);
