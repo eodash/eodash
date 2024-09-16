@@ -278,6 +278,21 @@ export const useInitMap = (
         const onlyTimeChanged =
           updatedStac?.id === previousStac?.id && updatedTime !== previousTime;
 
+        const { selectedCompareStac } = storeToRefs(useSTAcStore());
+        if (mapElement?.value?.id === "main") {
+          // Main map being initialized
+          // Set projection based on indicator level information for both maps
+          await setMapProjFromCol(updatedStac);
+        } else {
+          // Compare map being initialized
+          if (selectedCompareStac.value !== null) {
+            // save old view to set later
+            viewHolder = mapElement?.value?.map.getView();
+            /** @type {any} */
+            (mapElement.value).sync = partnerMap.value;
+          }
+        }
+
         if (onlyTimeChanged) {
           layersCollection =
             (await updateLayersConfig(
@@ -298,21 +313,6 @@ export const useInitMap = (
 
         // updates layersCollection in place
         await updateLayersConfig(layersCollection, eodashCols, updatedTime);
-
-        const { selectedCompareStac } = storeToRefs(useSTAcStore());
-        if (mapElement?.value?.id === "main") {
-          // Main map being initialized
-          // Set projection based on indicator level information for both maps
-          await setMapProjFromCol(updatedStac);
-        } else {
-          // Compare map being initialized
-          if (selectedCompareStac.value !== null) {
-            // save old view to set later
-            viewHolder = mapElement?.value?.map.getView();
-            /** @type {any} */
-            (mapElement.value).sync = partnerMap.value;
-          }
-        }
 
         // Try to move map view to extent
         // Sanitize extent,
