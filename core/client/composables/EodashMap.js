@@ -305,6 +305,22 @@ export const useInitMap = (
             JSON.parse(JSON.stringify(layersCollection)),
           );
           mapLayers.value = layersCollection;
+          setTimeout(() => {
+            mapElement?.value?.map
+              .getAllLayers()
+              .forEach((/** @type import("openlayers").layer.Layer */ l) => {
+                try {
+                  const prevSource = l.getSource();
+                  if (prevSource && "bandCount" in prevSource) {
+                    // @ts-expect-error this is a hack to reset source
+                    l.setSource(null);
+                    l.setSource(prevSource);
+                  }
+                } catch (error) {
+                  console.log(error);
+                }
+              });
+          }, 1000);
           return;
         }
 
