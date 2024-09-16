@@ -100,12 +100,14 @@ export async function createLayersFromAssets(
  * @param {import('stac-ts').StacItem} item
  * @param {string} title
  * @param {Record<string,any>} [layerDatetime]
+ * @param {string | null} [legendInfo]
  */
 export const createLayersFromLinks = async (
   collectionId,
   title,
   item,
   layerDatetime,
+  legendInfo,
 ) => {
   log.debug("Creating layers from links");
   /** @type {Record<string,any>[]} */
@@ -154,6 +156,10 @@ export const createLayersFromLinks = async (
     if ("wms:dimensions" in wmsLink) {
       // Expand all dimensions into the params attribute
       Object.assign(json.source.params, wmsLink["wms:dimensions"]);
+    }
+    if (legendInfo !== null) {
+      // @ts-expect-error once we have a eox-map config type we can remove this
+      json.properties.description = legendInfo;
     }
     jsonArray.push(json);
   }

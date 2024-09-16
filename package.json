@@ -49,11 +49,11 @@
   "dependencies": {
     "@eox/itemfilter": "^1.1.0",
     "@eox/jsonform": "^0.8.2",
-    "@eox/layercontrol": "^0.20.0",
+    "@eox/layercontrol": "^0.20.1-dev.1726221051.0",
     "@eox/layout": "^0.1.0",
     "@eox/map": "^1.13.0",
     "@eox/stacinfo": "^0.3.3",
-    "@eox/timecontrol": "^0.7.2",
+    "@eox/timecontrol": "^0.7.3-dev.1726219233.0",
     "@mdi/js": "^7.4.47",
     "@vitejs/plugin-vue": "^5.1.2",
     "animated-details": "gist:2912bb049fa906671807415eb0e87188",
@@ -69,7 +69,7 @@
     "v-calendar": "^3.1.2",
     "vite": "^5.4.2",
     "vite-plugin-vuetify": "^2.0.4",
-    "vue": "^3.2.0",
+    "vue": "3.4.38",
     "vuetify": "^3.7.0",
     "webfontloader": "^1.6.28"
   },

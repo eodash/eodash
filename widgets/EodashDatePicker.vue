@@ -17,6 +17,11 @@
         />
       </div>
     </template>
+    <template #footer v-if="hintText">
+      <div class="w-full px-4 pb-3" style="font-size: 12px">
+        <span v-html="hintText" />
+      </div>
+    </template>
   </VCDatePicker>
   <v-row align="center" justify="center" style="margin-top: 6px">
     <v-btn
@@ -37,6 +42,12 @@
     </v-btn>
   </v-row>
 </template>
+<style>
+.vc-day-content {
+  color: #5e5e5e;
+  font-weight: normal;
+}
+</style>
 
 <script setup>
 import { DatePicker as VCDatePicker } from "v-calendar";
@@ -65,6 +76,13 @@ const currentDate = customRef((track, trigger) => ({
 
 const masks = ref({
   input: "YYYY-MM-DD",
+});
+
+defineProps({
+  hintText: {
+    type: String,
+    default: null,
+  },
 });
 
 /**
@@ -119,6 +137,12 @@ watch(
             },
           },
           dates,
+          content: {
+            style: {
+              color: "#000000",
+              "font-weight": "bold",
+            },
+          },
         });
       }
     }
