@@ -49,8 +49,14 @@ export function extractLayerConfig(style) {
   let layerConfig = undefined;
   if (style?.jsonform) {
     layerConfig = { schema: style.jsonform, type: "style" };
+    style = { ...style };
     delete style.jsonform;
   }
+  log.debug(
+    "extracted layerConfig",
+    JSON.parse(JSON.stringify({ layerConfig, style })),
+  );
+
   return { layerConfig, style };
 }
 
@@ -160,7 +166,9 @@ export const fetchStyle = async (item, itemUrl) => {
 
     /** @type {import("ol/layer/WebGLTile").Style & {jsonform?:Record<string,any>}} */
     const styleJson = await axios.get(url).then((resp) => resp.data);
-    return styleJson;
+
+    log.debug("fetched styles JSON", JSON.parse(JSON.stringify(styleJson)));
+    return { ...styleJson };
   }
 };
 
