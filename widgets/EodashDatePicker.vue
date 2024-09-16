@@ -17,12 +17,9 @@
         />
       </div>
     </template>
-    <template #footer>
+    <template #footer v-if="hintText">
       <div class="w-full px-4 pb-3" style="font-size: 12px">
-        <span>
-          <b>Hint:</b> closest available date is displayed <br />
-          on map (see Analysis Layers)
-        </span>
+        <span v-html="hintText" />
       </div>
     </template>
   </VCDatePicker>
@@ -79,6 +76,13 @@ const currentDate = customRef((track, trigger) => ({
 
 const masks = ref({
   input: "YYYY-MM-DD",
+});
+
+defineProps({
+  hintText: {
+    type: String,
+    default: null,
+  },
 });
 
 /**

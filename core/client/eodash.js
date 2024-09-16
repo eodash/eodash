@@ -9,9 +9,8 @@ import { currentUrl } from "./store/States";
  */
 export const eodash = reactive({
   id: "demo",
-  stacEndpoint: "https://gtif-cerulean.github.io/catalog/cerulean/catalog.json",
-  // stacEndpoint: "https://eodashcatalog.eox.at/test-style/trilateral/catalog.json",
-  //stacEndpoint: "https://eurodatacube.github.io/eodash-catalog/RACE/catalog.json",
+  stacEndpoint:
+    "https://eodashcatalog.eox.at/test-style/trilateral/catalog.json",
   brand: {
     noLayout: true,
     name: "Demo",
@@ -124,6 +123,10 @@ export const eodash = reactive({
                 title: "Datepicker",
                 widget: {
                   name: "EodashDatePicker",
+                  properties: {
+                    hintText: `<b>Hint:</b> closest available date is displayed <br />
+                      on map (see Analysis Layers)`,
+                  },
                 },
               }
             : null;
