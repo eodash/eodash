@@ -9,9 +9,8 @@ import { currentUrl } from "./store/States";
  */
 export const eodash = reactive({
   id: "demo",
-  stacEndpoint: "https://gtif-cerulean.github.io/catalog/cerulean/catalog.json",
-  // stacEndpoint: "https://eodashcatalog.eox.at/test-style/trilateral/catalog.json",
-  //stacEndpoint: "https://eurodatacube.github.io/eodash-catalog/RACE/catalog.json",
+  stacEndpoint:
+    "https://eodashcatalog.eox.at/test-style/trilateral/catalog.json",
   brand: {
     noLayout: true,
     name: "Demo",
@@ -55,7 +54,7 @@ export const eodash = reactive({
         id: Symbol(),
         type: "internal",
         title: "Indicators",
-        layout: { x: 0, y: 0, w: 3, h: 8 },
+        layout: { x: 0, y: 0, w: 3, h: 6 },
         widget: {
           name: "EodashItemFilter",
           properties: {
@@ -68,7 +67,7 @@ export const eodash = reactive({
         id: Symbol(),
         type: "internal",
         title: "Layer Control",
-        layout: { x: 0, y: 8, w: 3, h: 4 },
+        layout: { x: 0, y: 6, w: 3, h: 6 },
         widget: {
           name: "EodashLayerControl",
         },
@@ -124,6 +123,10 @@ export const eodash = reactive({
                 title: "Datepicker",
                 widget: {
                   name: "EodashDatePicker",
+                  properties: {
+                    hintText: `<b>Hint:</b> closest available date is displayed <br />
+                      on map (see Analysis Layers)`,
+                  },
                 },
               }
             : null;

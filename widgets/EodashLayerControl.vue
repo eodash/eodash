@@ -3,8 +3,10 @@
     <eox-layercontrol
       v-if="mapElement"
       :for="mapElement"
+      .tools="['datetime', 'info', 'config', 'opacity']"
       @datetime:updated="debouncedHandleDateTime"
       class="fill-height"
+      disableTabs="true"
       ref="eoxLayercontrol"
     />
   </span>
