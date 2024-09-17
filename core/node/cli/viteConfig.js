@@ -14,13 +14,14 @@ import {
   rootPath,
   internalWidgetsPath,
   indexHtml,
+  clientModules,
 } from "./globals.js";
 import { readFile } from "fs/promises";
 import { defineConfig, searchForWorkspaceRoot } from "vite";
 import { existsSync } from "fs";
 import path from "path";
 
-export const viteConfig = /** @type {import("vite").UserConfigFnPromise} */ (
+export const viteConfig = /** @type {import("vite").UserConfigFn} */ (
   defineConfig(({ mode, command }) => {
     return {
       base: userConfig.base ?? "",
@@ -57,7 +58,7 @@ export const viteConfig = /** @type {import("vite").UserConfigFnPromise} */ (
       },
       server: {
         warmup: {
-          clientFiles: [path.join(appPath, "core/client/**")],
+          clientFiles: [path.join(appPath, "core/client/**"), entryPath],
         },
         port: userConfig.port ?? 3000,
         open: userConfig.open,
@@ -67,24 +68,28 @@ export const viteConfig = /** @type {import("vite").UserConfigFnPromise} */ (
         host: userConfig.host,
       },
       root: appPath,
-      optimizeDeps:
-        mode === "development"
-          ? {
-              include: [
-                "webfontloader",
-                "vuetify",
-                "vue",
-                "pinia",
-                "stac-js",
-                "urijs",
-                "loglevel",
-              ],
-              noDiscovery: true,
-            }
-          : {},
+      optimizeDeps: {
+        ...(mode === "development" && {
+          include: [
+            "webfontloader",
+            "vuetify",
+            "vue",
+            "pinia",
+            "stac-js",
+            "urijs",
+            "loglevel",
+          ],
+        }),
+      },
+
       /** @type {string | false} */
       publicDir: userConfig.publicDir === false ? false : publicPath,
       build: {
+        ...(userConfig.lib &&
+          command === "build" && {
+            minify: false,
+          }),
+        cssMinify: true,
         lib: userConfig.lib &&
           command === "build" && {
             entry: path.join(appPath, "core/client/asWebComponent.js"),
@@ -94,12 +99,23 @@ export const viteConfig = /** @type {import("vite").UserConfigFnPromise} */ (
           },
         outDir: buildTargetPath,
         emptyOutDir: true,
-        rollupOptions:
-          userConfig.lib && command === "build"
-            ? {
-                input: path.join(appPath, "core/client/asWebComponent.js"),
-              }
-            : undefined,
+        rollupOptions: {
+          ...(userConfig.lib &&
+            command === "build" && {
+              input: path.join(appPath, "core/client/asWebComponent.js"),
+              // vuetify is compiled by "vite-plugin-vuetify"
+              external: (source) => {
+                const isCssOrVuetify =
+                  source.includes("vuetify") ||
+                  source.endsWith(".css") ||
+                  source.endsWith("styles");
+                const isClientDep = clientModules.some((m) =>
+                  source.startsWith(m),
+                );
+                return !isCssOrVuetify && isClientDep;
+              },
+            }),
+        },
         target: "esnext",
       },
     };
@@ -131,9 +147,9 @@ async function configureServer(server) {
   server.watcher.on("change", async (path) => {
     updatedPath = path;
     if (path === runtimeConfigPath) {
-      server.hot.send({
+      server.ws.send({
         type: "full-reload",
-        path: path,
+        path,
       });
     }
   });
