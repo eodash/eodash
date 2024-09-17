@@ -42,17 +42,10 @@
     </v-btn>
   </v-row>
 </template>
-<style>
-.vc-day-content {
-  color: #5e5e5e;
-  font-weight: normal;
-}
-</style>
-
 <script setup>
 import { DatePicker as VCDatePicker } from "v-calendar";
 import "v-calendar/style.css";
-import { watch, reactive, ref, customRef } from "vue";
+import { watch, reactive, ref, customRef, onMounted } from "vue";
 import { storeToRefs } from "pinia";
 import { useSTAcStore } from "@/store/stac";
 import { datetime } from "@/store/States";
@@ -90,7 +83,7 @@ defineProps({
  *
  * @type {import("vue").Reactive<
  *   (
- *     | import("v-calendar/dist/types/src/utils/attribute").AttributeConfig
+ *     | Partial<import("v-calendar/dist/types/src/utils/attribute").AttributeConfig>
  *     | undefined
  *   )[]
  * >}
@@ -175,4 +168,22 @@ function jumpDate(reverse) {
           : latestDateMS;
   }
 }
+
+// fixes calendar dispalcement on lib mode
+const transform = ref("");
+onMounted(() => {
+  transform.value = document.querySelector("eo-dash")
+    ? "translate3d(50px,-80px,0)"
+    : "translate3d(0px,-80px,0)";
+});
 </script>
+<style>
+.vc-day-content {
+  color: #5e5e5e;
+  font-weight: normal;
+}
+
+.vc-popover-content-wrapper {
+  transform: v-bind("transform") !important;
+}
+</style>
