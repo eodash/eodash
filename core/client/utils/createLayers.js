@@ -99,12 +99,14 @@ export async function createLayersFromAssets(
  * @param {string} collectionId
  * @param {import('stac-ts').StacItem} item
  * @param {string} title
+ * @param {string} viewProjectionCode
  * @param {Record<string,any>} [layerDatetime]
  * @param {string | null} [legendInfo]
  */
 export const createLayersFromLinks = async (
   collectionId,
   title,
+  viewProjectionCode,
   item,
   layerDatetime,
   legendInfo,
@@ -124,12 +126,14 @@ export const createLayersFromLinks = async (
       (wmsLink?.["proj:epsg"] || wmsLink?.["eodash:proj4_def"]);
 
     await registerProjection(wmsLinkProjection);
-    const projectionCode = getProjectionCode(wmsLinkProjection || "EPSG:4326");
+    // Projection code need to be based on map view projection to make sure
+    // tiles are reloaded when changing projection
+    debugger;
     const linkId = createLayerID(
       collectionId,
       item.id,
       wmsLink,
-      projectionCode,
+      viewProjectionCode,
     );
     log.debug("WMS Layer added", linkId);
     let json = {
