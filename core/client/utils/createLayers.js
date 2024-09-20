@@ -183,6 +183,11 @@ export const createLayersFromLinks = async (
       wmtsLink,
       projectionCode,
     );
+    const dimensions = /** @type { Object } */ (wmtsLink["wmts:dimensions"] || {});
+    //@ts-expect-error Property 'style' does not exist on type 'Object'.
+    let { style, ...dimensionsWithoutStyle } = { ...dimensions };
+    let extractedStyle = /** @type { string } */ (style || "default");
+
     if (wmtsLink.title === "wmts capabilities") {
       log.debug(
         "Warning: WMTS Layer from capabilities added, function needs to be updated",
@@ -200,14 +205,14 @@ export const createLayersFromLinks = async (
           // TODO: Hard coding url as the current one set is for capabilities
           url: "https://wmts.marine.copernicus.eu/teroWmts",
           layer: wmtsLink["wmts:layer"],
-          style: wmtsLink.style || "default",
+          style: extractedStyle,
           // TODO: Hard coding matrixSet until we find solution to wmts creation from capabilities
           matrixSet: "EPSG:3857",
           projection: projectionCode,
           tileGrid: {
             tileSize: [128, 128],
           },
-          dimensions: wmtsLink["wmts:dimensions"],
+          dimensions: dimensionsWithoutStyle,
         },
       };
     } else {
@@ -226,13 +231,13 @@ export const createLayersFromLinks = async (
           type: "WMTS",
           url: wmtsLink,
           layer: wmtsLink["wmts:layer"],
-          style: wmtsLink.style || "default",
+          style: extractedStyle,
           matrixSet: wmtsLink.matrixSet || "EPSG:3857",
           projection: projectionCode,
           tileGrid: {
             tileSize: [512, 512],
           },
-          dimensions: wmtsLink["wmts:dimensions"],
+          dimensions: dimensionsWithoutStyle,
         },
       };
     }
