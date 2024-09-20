@@ -46,7 +46,11 @@ const handleDatetimeUpdate = async (evt) => {
 
   if (ec) {
     await ec.fetchCollection();
-    updatedLayers = await ec.updateLayerJson(datetime, layer.get("id"));
+    updatedLayers = await ec.updateLayerJson(
+      datetime,
+      layer.get("id"),
+      props.map,
+    );
   }
   /** @type {Record<String,any>[] | undefined} */
   const dataLayers = updatedLayers?.find(
