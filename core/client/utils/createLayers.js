@@ -127,7 +127,8 @@ export const createLayersFromLinks = async (
 
     await registerProjection(wmsLinkProjection);
 
-    const linkProjectionCode = getProjectionCode(wmsLinkProjection) || "EPSG:4326";
+    const linkProjectionCode =
+      getProjectionCode(wmsLinkProjection) || "EPSG:4326";
     // Projection code need to be based on map view projection to make sure
     // tiles are reloaded when changing projection
     const linkId = createLayerID(

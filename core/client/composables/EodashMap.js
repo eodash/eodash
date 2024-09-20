@@ -48,67 +48,27 @@ export const useHandleMapMoveEnd = (mapElement, mapPosition) => {
 };
 
 /**
- *  Adds data layers extracted from eodash collections to Analysis Group
- *
- * @param { Record<string,any>[] | undefined} layersCollection
- * @param {EodashCollection[]} eodashCols
- * @param {string} [updatedTime]
- */
-const updateLayersConfig = async (
-  layersCollection,
-  eodashCols,
-  updatedTime,
-) => {
-  log.debug(
-    "Updating layer configuration",
-    layersCollection,
-    eodashCols,
-    updatedTime,
-  );
-  const dataLayersGroup = layersCollection?.find(
-    (lyr) => lyr?.properties.id === "AnalysisGroup",
-  );
-  /** @type {Record<string,any>[]} */
-  const analysisLayers = [];
-
-  if (!dataLayersGroup) {
-    log.debug("no AnalysisGroup layer found to be updated");
-    return layersCollection;
-  }
-
-  for (const ec of eodashCols) {
-    let layers;
-    if (updatedTime) {
-      layers = await ec.createLayersJson(new Date(updatedTime));
-    } else {
-      layers = await ec.createLayersJson();
-    }
-
-    if (layers) {
-      analysisLayers.push(...layers);
-    }
-  }
-  // Add expand to all analysis layers
-  analysisLayers.forEach((dl) => {
-    dl.properties.layerControlExpand = true;
-    dl.properties.layerControlToolsExpand = true;
-  });
-
-  dataLayersGroup.layers = analysisLayers.reverse();
-
-  return layersCollection;
-};
-
-/**
+ * Creates full layer configuration from indicator and time information
  * @param {import("stac-ts").StacCatalog
  *   | import("stac-ts").StacCollection
  *   | import("stac-ts").StacItem
  *   | null
- *  } selectedIndicator
+ * } selectedIndicator
+ * @param {EodashCollection[]} eodashCols
+ * @param {string} [updatedTime]
  */
 
-const createLayersConfig = async (selectedIndicator, eodashCols, updatedTime) => {
-  log.debug("Creating layers config", selectedIndicator, eodashCols, updatedTime);
+const createLayersConfig = async (
+  selectedIndicator,
+  eodashCols,
+  updatedTime,
+) => {
+  log.debug(
+    "Creating layers config",
+    selectedIndicator,
+    eodashCols,
+    updatedTime,
+  );
   const layersCollection = [];
   const dataLayers = {
     type: "Group",
@@ -121,13 +81,17 @@ const createLayersConfig = async (selectedIndicator, eodashCols, updatedTime) =>
   };
 
   for (const ec of eodashCols) {
-    // debugger;
     let layers;
     if (updatedTime) {
       layers = await ec.createLayersJson(new Date(updatedTime));
     } else {
       layers = await ec.createLayersJson();
     }
+    // Add expand to all analysis layers
+    layers.forEach((dl) => {
+      dl.properties.layerControlExpand = true;
+      dl.properties.layerControlToolsExpand = true;
+    });
     dataLayers.layers.push(...layers);
   }
 
@@ -271,7 +235,6 @@ export const useInitMap = (
           if (viewHolder !== null) {
             // Set view to previous compare view
             mapElement?.value?.map.setView(viewHolder);
-            // partnerMap?.value?.map.setView(viewHolder);
             viewHolder = null;
           }
         }
@@ -295,16 +258,13 @@ export const useInitMap = (
           }
         }
 
-        // We update the configuration if time changed
+        // We re-crate the configuration if time changed
         if (onlyTimeChanged) {
-          layersCollection =
-            // (await updateLayersConfig(
-            //   [...(mapElement.value?.layers ?? [])].reverse(),
-            //   eodashCols,
-            //   updatedTime,
-            // )) ?? [];
-          /** @type {Record<string,any>[]} */
-          layersCollection = await createLayersConfig(updatedStac, eodashCols, updatedTime);
+          layersCollection = await createLayersConfig(
+            updatedStac,
+            eodashCols,
+            updatedTime,
+          );
           log.debug(
             "Assigned layers after changing time only",
             JSON.parse(JSON.stringify(layersCollection)),
@@ -314,31 +274,29 @@ export const useInitMap = (
         }
 
         /** @type {Record<string,any>[]} */
-        layersCollection = await createLayersConfig(updatedStac, eodashCols, datetime.value);
+        layersCollection = await createLayersConfig(
+          updatedStac,
+          eodashCols,
+          datetime.value,
+        );
 
         // We try to set the current time selection to latest extent date
         let endInterval = null;
         const interval = updatedStac?.extent?.temporal?.interval;
         if (interval && interval.length > 0 && interval[0].length > 1) {
+          // @ts-expect-error this is the defined STAC structure
           endInterval = new Date(interval[0][1]);
           log.debug(
             "Indicator load: found stac extent, setting time to latest value",
             endInterval,
           );
         }
-        if (endInterval !== null && endInterval.toISOString() !== datetime.value) {
+        if (
+          endInterval !== null &&
+          endInterval.toISOString() !== datetime.value
+        ) {
           datetime.value = endInterval.toISOString();
-        } else {
-          // If no endinterval is found or the new time is equal to the old
-          // we make sure to change it the needed updateLayersConfig is called
-          // by the watch by increasing it with 1 millisecond
-          // datetime.value = new Date (new Date(datetime.value).getTime()+1).toISOString();
         }
-
-        
-
-        // updates layersCollection in place
-        // await updateLayersConfig(layersCollection, eodashCols, updatedTime);
 
         // Try to move map view to extent
         // Sanitize extent,

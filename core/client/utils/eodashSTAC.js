@@ -193,13 +193,15 @@ export class EodashCollection {
           </div>`;
       }
       const viewProjection =
-      /** @type {number | string | {name: string, def: string} | undefined} */
-      (
-        this.#collectionStac?.["eodash:mapProjection"] ||
-          this.#collectionStac?.["proj:epsg"] ||
-          this.#collectionStac?.["eodash:proj4_def"]
+        /** @type {number | string | {name: string, def: string} | undefined} */
+        (
+          this.#collectionStac?.["eodash:mapProjection"] ||
+            this.#collectionStac?.["proj:epsg"] ||
+            this.#collectionStac?.["eodash:proj4_def"]
+        );
+      const viewProjectionCode = getProjectionCode(
+        viewProjection || "EPSG:4326",
       );
-      const viewProjectionCode = getProjectionCode(viewProjection || "EPSG:4326");
       const links = await createLayersFromLinks(
         this.#collectionStac?.id ?? "",
         title,
@@ -373,10 +375,10 @@ export class EodashCollection {
       /** @type {number | string | {name: string, def: string} | undefined} */
       (
         indicator["eodash:mapProjection"] ||
-        indicator["proj:epsg"] ||
-        indicator["eodash:proj4_def"]
+          indicator["proj:epsg"] ||
+          indicator["eodash:proj4_def"]
       );
-      const viewProjectionCode = getProjectionCode(viewProjection || "EPSG:4326");
+    const viewProjectionCode = getProjectionCode(viewProjection || "EPSG:4326");
     return [
       ...(await createLayersFromLinks(
         indicator?.id ?? "",
