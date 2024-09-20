@@ -1,4 +1,5 @@
 import { registerProjection } from "@/store/Actions";
+import { mapEl } from "@/store/States";
 import {
   extractRoles,
   getProjectionCode,
@@ -99,14 +100,12 @@ export async function createLayersFromAssets(
  * @param {string} collectionId
  * @param {import('stac-ts').StacItem} item
  * @param {string} title
- * @param {string} viewProjectionCode
  * @param {Record<string,any>} [layerDatetime]
  * @param {string | null} [legendInfo]
  */
 export const createLayersFromLinks = async (
   collectionId,
   title,
-  viewProjectionCode,
   item,
   layerDatetime,
   legendInfo,
@@ -117,6 +116,10 @@ export const createLayersFromLinks = async (
   const wmsArray = item.links.filter((l) => l.rel === "wms");
   const wmtsArray = item.links.filter((l) => l.rel === "wmts");
   const xyzArray = item.links.filter((l) => l.rel === "xyz") ?? [];
+
+  // Taking projection code from main map view, as main view defines
+  // projection for comparison map
+  const viewProjectionCode = mapEl?.value?.projection || "EPSG:3857";
 
   for (const wmsLink of wmsArray ?? []) {
     // Registering setting sub wms link projection

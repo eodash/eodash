@@ -7,7 +7,6 @@ import {
   fetchStyle,
   findLayer,
   generateFeatures,
-  getProjectionCode,
   replaceLayer,
 } from "./helpers";
 import { getLayers, registerProjection } from "@/store/Actions";
@@ -192,20 +191,9 @@ export class EodashCollection {
             <img src="${this.#collectionStac.assets.legend.href}" style="max-height:70px; margin-top:-15px; margin-bottom:-20px;" />
           </div>`;
       }
-      const viewProjection =
-        /** @type {number | string | {name: string, def: string} | undefined} */
-        (
-          this.#collectionStac?.["eodash:mapProjection"] ||
-            this.#collectionStac?.["proj:epsg"] ||
-            this.#collectionStac?.["eodash:proj4_def"]
-        );
-      const viewProjectionCode = getProjectionCode(
-        viewProjection || "EPSG:4326",
-      );
       const links = await createLayersFromLinks(
         this.#collectionStac?.id ?? "",
         title,
-        viewProjectionCode,
         item,
         layerDatetime,
         legendInfo,
@@ -371,19 +359,10 @@ export class EodashCollection {
       /** @type {Record<string,import('stac-ts').StacAsset>} */ ({}),
     );
 
-    const viewProjection =
-      /** @type {number | string | {name: string, def: string} | undefined} */
-      (
-        indicator["eodash:mapProjection"] ||
-          indicator["proj:epsg"] ||
-          indicator["eodash:proj4_def"]
-      );
-    const viewProjectionCode = getProjectionCode(viewProjection || "EPSG:4326");
     return [
       ...(await createLayersFromLinks(
         indicator?.id ?? "",
         indicator?.title || indicator.id,
-        viewProjectionCode,
         //@ts-expect-error indicator instead of item
         indicator,
         // layerDatetime,

@@ -2,7 +2,6 @@ import { EodashCollection } from "@/utils/eodashSTAC";
 import { setMapProjFromCol } from "@/utils/helpers";
 import { onMounted, onUnmounted, watch } from "vue";
 import log from "loglevel";
-import { datetime } from "@/store/States";
 import { useSTAcStore } from "@/store/stac";
 import { storeToRefs } from "pinia";
 
