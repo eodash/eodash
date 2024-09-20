@@ -1,7 +1,7 @@
 <template>
   <span class="d-flex flex-column fill-height overflow-auto">
     <eox-layercontrol
-      v-if="mapElement"
+      v-if="showControls"
       :for="mapElement"
       .tools="['datetime', 'info', 'config', 'opacity']"
       @datetime:updated="debouncedHandleDateTime"
@@ -16,16 +16,29 @@ import "@eox/layercontrol";
 import "@eox/jsonform";
 import "@eox/timecontrol";
 
-import { ref } from "vue";
+import { computed, ref } from "vue";
 import { mapEl, mapCompareEl } from "@/store/States";
 import { getColFromLayer } from "@/utils/helpers";
 import { eodashCollections, eodashCompareCollections } from "@/utils/states";
+import { storeToRefs } from "pinia";
+import { useSTAcStore } from "@/store/stac";
 
 const props = defineProps({
   map: {
     type: String,
     default: "first",
   },
+});
+
+const showControls = computed(() => {
+  const { selectedCompareStac, selectedStac } = storeToRefs(useSTAcStore());
+  if (props.map === "second") {
+    return mapCompareEl && selectedCompareStac.value !== null;
+  }
+  if (mapEl && selectedStac) {
+    return true;
+  }
+  return false;
 });
 
 const eodashCols =
