@@ -94,7 +94,7 @@ const updateLayersConfig = async (
     dl.properties.layerControlToolsExpand = true;
   });
 
-  dataLayersGroup.layers = analysisLayers;
+  dataLayersGroup.layers = analysisLayers.reverse();
 
   return layersCollection;
 };
@@ -107,8 +107,8 @@ const updateLayersConfig = async (
  *  } selectedIndicator
  */
 
-const createLayersConfig = async (selectedIndicator) => {
-  log.debug("Creating layers config", selectedIndicator);
+const createLayersConfig = async (selectedIndicator, eodashCols, updatedTime) => {
+  log.debug("Creating layers config", selectedIndicator, eodashCols, updatedTime);
   const layersCollection = [];
   const dataLayers = {
     type: "Group",
@@ -119,6 +119,17 @@ const createLayersConfig = async (selectedIndicator) => {
     },
     layers: /** @type {Record<string,any>[]}*/ ([]),
   };
+
+  for (const ec of eodashCols) {
+    // debugger;
+    let layers;
+    if (updatedTime) {
+      layers = await ec.createLayersJson(new Date(updatedTime));
+    } else {
+      layers = await ec.createLayersJson();
+    }
+    dataLayers.layers.push(...layers);
+  }
 
   layersCollection.push(dataLayers);
   const indicatorLayers =
@@ -215,18 +226,6 @@ const createLayersConfig = async (selectedIndicator) => {
     layersCollection.unshift(overlayLayers);
   }
 
-  // We try to set the current time selection
-  // to latest extent date
-  // @ts-expect-error it seems the temporal extent is not defined in type
-  const interval = selectedIndicator?.extent?.temporal?.interval;
-  if (interval && interval.length > 0 && interval[0].length > 1) {
-    const endInterval = new Date(interval[0][1]);
-    log.debug(
-      "Datepicker: found stac extent, setting time to latest value",
-      endInterval,
-    );
-    datetime.value = endInterval.toISOString();
-  }
   return layersCollection;
 };
 
@@ -260,19 +259,22 @@ export const useInitMap = (
     [selectedIndicator, datetime],
     async ([updatedStac, updatedTime], [previousStac, previousTime]) => {
       if (updatedStac) {
-        if (mapElement?.value?.id === "main") {
-          // Making sure main map gets the viewer that seems to be
-          // removed when the second map is no longer rendered
-          if (viewHolder !== null) {
-            mapElement?.value?.map.setView(viewHolder);
-            viewHolder = null;
-          }
-        }
         log.debug(
           "Selected Indicator watch triggered",
           updatedStac,
           updatedTime,
         );
+
+        if (mapElement?.value?.id === "main") {
+          // Making sure main map gets the viewer that seems to be
+          // removed when the second map is no longer rendered
+          if (viewHolder !== null) {
+            // Set view to previous compare view
+            mapElement?.value?.map.setView(viewHolder);
+            // partnerMap?.value?.map.setView(viewHolder);
+            viewHolder = null;
+          }
+        }
         let layersCollection = [];
 
         const onlyTimeChanged =
@@ -286,20 +288,23 @@ export const useInitMap = (
         } else {
           // Compare map being initialized
           if (selectedCompareStac.value !== null) {
-            // save old view to set later
+            // save view of compare map
             viewHolder = mapElement?.value?.map.getView();
             /** @type {any} */
             (mapElement.value).sync = partnerMap.value;
           }
         }
 
+        // We update the configuration if time changed
         if (onlyTimeChanged) {
           layersCollection =
-            (await updateLayersConfig(
-              [...(mapElement.value?.layers ?? [])].reverse(),
-              eodashCols,
-              updatedTime,
-            )) ?? [];
+            // (await updateLayersConfig(
+            //   [...(mapElement.value?.layers ?? [])].reverse(),
+            //   eodashCols,
+            //   updatedTime,
+            // )) ?? [];
+          /** @type {Record<string,any>[]} */
+          layersCollection = await createLayersConfig(updatedStac, eodashCols, updatedTime);
           log.debug(
             "Assigned layers after changing time only",
             JSON.parse(JSON.stringify(layersCollection)),
@@ -309,10 +314,31 @@ export const useInitMap = (
         }
 
         /** @type {Record<string,any>[]} */
-        layersCollection = await createLayersConfig(updatedStac);
+        layersCollection = await createLayersConfig(updatedStac, eodashCols, datetime.value);
+
+        // We try to set the current time selection to latest extent date
+        let endInterval = null;
+        const interval = updatedStac?.extent?.temporal?.interval;
+        if (interval && interval.length > 0 && interval[0].length > 1) {
+          endInterval = new Date(interval[0][1]);
+          log.debug(
+            "Indicator load: found stac extent, setting time to latest value",
+            endInterval,
+          );
+        }
+        if (endInterval !== null && endInterval.toISOString() !== datetime.value) {
+          datetime.value = endInterval.toISOString();
+        } else {
+          // If no endinterval is found or the new time is equal to the old
+          // we make sure to change it the needed updateLayersConfig is called
+          // by the watch by increasing it with 1 millisecond
+          // datetime.value = new Date (new Date(datetime.value).getTime()+1).toISOString();
+        }
+
+        
 
         // updates layersCollection in place
-        await updateLayersConfig(layersCollection, eodashCols, updatedTime);
+        // await updateLayersConfig(layersCollection, eodashCols, updatedTime);
 
         // Try to move map view to extent
         // Sanitize extent,
