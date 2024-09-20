@@ -126,9 +126,10 @@ export const createLayersFromLinks = async (
       (wmsLink?.["proj:epsg"] || wmsLink?.["eodash:proj4_def"]);
 
     await registerProjection(wmsLinkProjection);
+
+    const linkProjectionCode = getProjectionCode(wmsLinkProjection) || "EPSG:4326";
     // Projection code need to be based on map view projection to make sure
     // tiles are reloaded when changing projection
-    debugger;
     const linkId = createLayerID(
       collectionId,
       item.id,
@@ -146,7 +147,7 @@ export const createLayersFromLinks = async (
       source: {
         type: "TileWMS",
         url: wmsLink.href,
-        projection: projectionCode,
+        projection: linkProjectionCode,
         tileGrid: {
           tileSize: [512, 512],
         },
@@ -185,7 +186,7 @@ export const createLayersFromLinks = async (
       collectionId,
       item.id,
       wmtsLink,
-      projectionCode,
+      viewProjectionCode,
     );
     if (wmtsLink.title === "wmts capabilities") {
       log.debug(
@@ -255,7 +256,7 @@ export const createLayersFromLinks = async (
       collectionId,
       item.id,
       xyzLink,
-      projectionCode,
+      viewProjectionCode,
     );
     log.debug("XYZ Layer added", linkId);
     let json = {

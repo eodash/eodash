@@ -369,11 +369,19 @@ export class EodashCollection {
       /** @type {Record<string,import('stac-ts').StacAsset>} */ ({}),
     );
 
+    const viewProjection =
+      /** @type {number | string | {name: string, def: string} | undefined} */
+      (
+        indicator["eodash:mapProjection"] ||
+        indicator["proj:epsg"] ||
+        indicator["eodash:proj4_def"]
+      );
+      const viewProjectionCode = getProjectionCode(viewProjection || "EPSG:4326");
     return [
       ...(await createLayersFromLinks(
         indicator?.id ?? "",
         indicator?.title || indicator.id,
-        "",
+        viewProjectionCode,
         //@ts-expect-error indicator instead of item
         indicator,
         // layerDatetime,
