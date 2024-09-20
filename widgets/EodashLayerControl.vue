@@ -33,9 +33,9 @@ const props = defineProps({
 const showControls = computed(() => {
   const { selectedCompareStac, selectedStac } = storeToRefs(useSTAcStore());
   if (props.map === "second") {
-    return mapCompareEl && selectedCompareStac.value !== null;
+    return mapCompareEl.value !== null && selectedCompareStac.value !== null;
   }
-  if (mapEl && selectedStac) {
+  if (mapEl.value !== null && selectedStac.value !== null) {
     return true;
   }
   return false;
