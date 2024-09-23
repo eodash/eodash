@@ -1,6 +1,14 @@
 # Changelog
 
 
+## [5.0.0-alpha.2.19](https://github.com/eodash/eodash/compare/eodash-v5.0.0-alpha.2.18...eodash-v5.0.0-alpha.2.19) (2024-09-23)
+
+
+### Bug Fixes
+
+* issues with map and comparison map race conditions ([#121](https://github.com/eodash/eodash/issues/121)) ([32f7b96](https://github.com/eodash/eodash/commit/32f7b963487f2ec65aee7172053457628b026e3c))
+* wmts style parsing from dimensions ([#119](https://github.com/eodash/eodash/issues/119)) ([00a8f6b](https://github.com/eodash/eodash/commit/00a8f6b14dd5e5b9f33e275a414b6acff50d2a98))
+
 ## [5.0.0-alpha.2.18](https://github.com/eodash/eodash/compare/eodash-v5.0.0-alpha.2.17...eodash-v5.0.0-alpha.2.18) (2024-09-16)
 
 
