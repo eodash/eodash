@@ -183,8 +183,9 @@ export const createLayersFromLinks = async (
       wmtsLink,
       projectionCode,
     );
-    const dimensions = /** @type { Object } */ (wmtsLink["wmts:dimensions"] || {});
-    //@ts-expect-error Property 'style' does not exist on type 'Object'.
+    const dimensions = /** @type { {style:any} & Record<string,any> } */ (
+      wmtsLink["wmts:dimensions"] || {}
+    );
     let { style, ...dimensionsWithoutStyle } = { ...dimensions };
     let extractedStyle = /** @type { string } */ (style || "default");
 
