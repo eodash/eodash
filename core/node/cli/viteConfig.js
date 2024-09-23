@@ -17,13 +17,13 @@ import {
   clientModules,
 } from "./globals.js";
 import { readFile } from "fs/promises";
-import { defineConfig, searchForWorkspaceRoot } from "vite";
+import { defineConfig, mergeConfig, searchForWorkspaceRoot } from "vite";
 import { existsSync } from "fs";
 import path from "path";
 
 export const viteConfig = /** @type {import("vite").UserConfigFn} */ (
   defineConfig(({ mode, command }) => {
-    return {
+    const eodashViteConfig = {
       base: userConfig.base ?? "",
       cacheDir: cachePath,
       plugins: [
@@ -119,6 +119,10 @@ export const viteConfig = /** @type {import("vite").UserConfigFn} */ (
         target: "esnext",
       },
     };
+
+    return userConfig.vite
+      ? mergeConfig(userConfig.vite, eodashViteConfig)
+      : eodashViteConfig;
   })
 );
 

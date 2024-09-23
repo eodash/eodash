@@ -146,6 +146,7 @@ async function getUserConfig(options, command) {
     runtime: options.runtime ?? config?.runtime,
     widgets: options.widgets ?? config?.widgets,
     lib: options.lib ?? config?.lib,
+    vite: config.vite,
   };
 }
 
