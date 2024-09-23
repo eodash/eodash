@@ -230,7 +230,7 @@ export const createLayersFromLinks = async (
         },
         source: {
           type: "WMTS",
-          url: wmtsLink,
+          url: wmtsLink.href,
           layer: wmtsLink["wmts:layer"],
           style: extractedStyle,
           matrixSet: wmtsLink.matrixSet || "EPSG:3857",
