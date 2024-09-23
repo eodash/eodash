@@ -6,7 +6,7 @@
       .tools="['datetime', 'info', 'config', 'opacity']"
       @datetime:updated="debouncedHandleDateTime"
       class="fill-height"
-      disableTabs="true"
+      toolsAsList="true"
       ref="eoxLayercontrol"
     />
   </span>
