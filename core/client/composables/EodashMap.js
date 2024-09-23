@@ -297,23 +297,26 @@ export const useInitMap = (
           datetime.value = endInterval.toISOString();
         }
 
-        // Try to move map view to extent
-        // Sanitize extent,
-        const b = updatedStac.extent?.spatial.bbox[0];
-        const sanitizedExtent = [
-          b[0] > -180 ? b[0] : -180,
-          b[1] > -90 ? b[1] : -90,
-          b[2] < 180 ? b[2] : 180,
-          b[3] < 90 ? b[3] : 90,
-        ];
+        // Try to move map view to extent only when main
+        // indicator and map changes
+        if (mapElement?.value?.id === "main") {
+          // Sanitize extent,
+          const b = updatedStac.extent?.spatial.bbox[0];
+          const sanitizedExtent = [
+            b[0] > -180 ? b[0] : -180,
+            b[1] > -90 ? b[1] : -90,
+            b[2] < 180 ? b[2] : 180,
+            b[3] < 90 ? b[3] : 90,
+          ];
 
-        const reprojExtent = mapElement.value?.transformExtent(
-          sanitizedExtent,
-          "EPSG:4326",
-          mapElement.value?.map?.getView().getProjection(),
-        );
-        /** @type {any} */
-        (mapElement.value).zoomExtent = reprojExtent;
+          const reprojExtent = mapElement.value?.transformExtent(
+            sanitizedExtent,
+            "EPSG:4326",
+            mapElement.value?.map?.getView().getProjection(),
+          );
+          /** @type {any} */
+          (mapElement.value).zoomExtent = reprojExtent;
+        }
 
         log.debug(
           "Assigned layers",
