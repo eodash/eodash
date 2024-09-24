@@ -1,7 +1,7 @@
 <template>
   <v-app>
     <Suspense>
-      <Dashboard :is-web-component="!!$host" :config="config" />
+      <Dashboard :is-web-component="isWebComponent" :config="config" />
 
       <template #fallback>
         <ErrorAlert v-model="error" />
@@ -13,7 +13,7 @@
 <script setup>
 import Dashboard from "@/views/Dashboard.vue";
 import ErrorAlert from "./components/ErrorAlert.vue";
-import { onErrorCaptured, ref, useHost } from "vue";
+import { onErrorCaptured, ref } from "vue";
 
 defineProps({
   config: {
@@ -26,7 +26,7 @@ defineProps({
 // window.setEodashLoglevel("DEBUG")
 
 const error = ref("");
-const $host = useHost();
+const isWebComponent = !!document.querySelector("eo-dash");
 
 onErrorCaptured((e, inst, info) => {
   error.value = `

@@ -17,13 +17,13 @@ import {
   clientModules,
 } from "./globals.js";
 import { readFile } from "fs/promises";
-import { defineConfig, searchForWorkspaceRoot } from "vite";
+import { defineConfig, mergeConfig, searchForWorkspaceRoot } from "vite";
 import { existsSync } from "fs";
 import path from "path";
 
-export const viteConfig = /** @type {import("vite").UserConfigFn} */ (
-  defineConfig(({ mode, command }) => {
-    return {
+export const eodashViteConfig = /** @type {import("vite").UserConfigFn} */ (
+  defineConfig(async ({ mode, command }) => {
+    return /** @type {import("vite").UserConfig} */ ({
       base: userConfig.base ?? "",
       cacheDir: cachePath,
       plugins: [
@@ -68,8 +68,8 @@ export const viteConfig = /** @type {import("vite").UserConfigFn} */ (
         host: userConfig.host,
       },
       root: appPath,
-      optimizeDeps: {
-        ...(mode === "development" && {
+      ...(mode === "development" && {
+        optimizeDeps: {
           include: [
             "webfontloader",
             "vuetify",
@@ -79,29 +79,27 @@ export const viteConfig = /** @type {import("vite").UserConfigFn} */ (
             "urijs",
             "loglevel",
           ],
-        }),
-      },
-
+          noDiscovery: true,
+        },
+      }),
+      // false only if the user explicitly sets it to false
       /** @type {string | false} */
       publicDir: userConfig.publicDir === false ? false : publicPath,
       build: {
+        outDir: buildTargetPath,
+        emptyOutDir: true,
+        target: "esnext",
+        cssMinify: true,
         ...(userConfig.lib &&
           command === "build" && {
             minify: false,
-          }),
-        cssMinify: true,
-        lib: userConfig.lib &&
-          command === "build" && {
-            entry: path.join(appPath, "core/client/asWebComponent.js"),
-            fileName: "eo-dash",
-            formats: ["es"],
-            name: "@eodash/eodash",
-          },
-        outDir: buildTargetPath,
-        emptyOutDir: true,
-        rollupOptions: {
-          ...(userConfig.lib &&
-            command === "build" && {
+            lib: {
+              entry: path.join(appPath, "core/client/asWebComponent.js"),
+              fileName: "eo-dash",
+              formats: ["es"],
+              name: "@eodash/eodash",
+            },
+            rollupOptions: {
               input: path.join(appPath, "core/client/asWebComponent.js"),
               // vuetify is compiled by "vite-plugin-vuetify"
               external: (source) => {
@@ -114,11 +112,18 @@ export const viteConfig = /** @type {import("vite").UserConfigFn} */ (
                 );
                 return !isCssOrVuetify && isClientDep;
               },
-            }),
-        },
-        target: "esnext",
+            },
+          }),
       },
-    };
+    });
+  })
+);
+
+export const viteConfig = /** @type {import("vite").UserConfigFn} */ (
+  defineConfig(async (env) => {
+    return userConfig.vite
+      ? mergeConfig(await eodashViteConfig(env), userConfig.vite)
+      : eodashViteConfig(env);
   })
 );
 
