@@ -1,6 +1,13 @@
 # Changelog
 
 
+## [5.0.0-alpha.2.20](https://github.com/eodash/eodash/compare/eodash-v5.0.0-alpha.2.19...eodash-v5.0.0-alpha.2.20) (2024-09-24)
+
+
+### Bug Fixes
+
+* Remove shadow root from `eo-dash` ([#98](https://github.com/eodash/eodash/issues/98)) ([0f36495](https://github.com/eodash/eodash/commit/0f36495d67fa89aeefebf4e8f50ee020074dd206))
+
 ## [5.0.0-alpha.2.19](https://github.com/eodash/eodash/compare/eodash-v5.0.0-alpha.2.18...eodash-v5.0.0-alpha.2.19) (2024-09-23)
 
 
