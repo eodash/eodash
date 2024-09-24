@@ -141,9 +141,9 @@ export const extractRoles = (properties, linkOrAsset) => {
       properties.group = role;
       //remove all the properties and replace the random ID with baselayer
       // provided ID
-      const [_colId, _itemId, _isAsset, _random, proj] =
-        properties.id.split(";:;");
-      properties.id = ["", "", "", "", linkOrAsset.id, proj].join(";:;");
+      // const [_colId, _itemId, _isAsset, _random, proj] =
+      //   properties.id.split(";:;");
+      // properties.id = ["", "", "", "", linkOrAsset.id, proj].join(";:;");
     }
 
     return properties;

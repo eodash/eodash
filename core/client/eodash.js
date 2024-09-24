@@ -10,7 +10,8 @@ import { currentUrl } from "./store/States";
 export const eodash = reactive({
   id: "demo",
   stacEndpoint:
-    "https://eodashcatalog.eox.at/test-style/trilateral/catalog.json",
+    // "https://eodashcatalog.eox.at/test-style/trilateral/catalog.json",
+    "https://gtif-cerulean.github.io/catalog/cerulean/catalog.json",
   brand: {
     noLayout: true,
     name: "Demo",
@@ -45,7 +46,7 @@ export const eodash = reactive({
       widget: {
         name: "EodashMap",
         properties: {
-          // enableCompare: true,
+          enableCompare: true,
         },
       },
     },
@@ -58,7 +59,7 @@ export const eodash = reactive({
         widget: {
           name: "EodashItemFilter",
           properties: {
-            // enableCompare: true,
+            enableCompare: true,
             aggregateResults: "collection_group",
           },
         },
@@ -72,13 +73,33 @@ export const eodash = reactive({
           name: "EodashLayerControl",
         },
       },
+      /*
+      {
+        defineWidget: (selectedCompareStac) => {
+          return selectedCompareStac
+            ? {
+                id: Symbol(),
+                title: "Layer Control Comparison",
+                layout: { x: 9, y: 6, w: 3, h: 6 },
+                type: "internal",
+                widget: {
+                  name: "EodashLayerControl",
+                  properties: {
+                    map: "second",
+                  },
+                },
+              }
+            : null;
+        },
+      },
+      */
       {
         defineWidget: (selectedSTAC) => {
           return selectedSTAC
             ? {
                 id: "Information",
                 title: "Information",
-                layout: { x: 9, y: 0, w: 3, h: 12 },
+                layout: { x: 9, y: 0, w: 3, h: 6 },
                 type: "web-component",
                 widget: {
                   link: async () => await import("@eox/stacinfo"),

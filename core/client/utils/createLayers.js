@@ -1,4 +1,5 @@
 import { registerProjection } from "@/store/Actions";
+import { mapEl } from "@/store/States";
 import {
   extractRoles,
   getProjectionCode,
@@ -116,6 +117,10 @@ export const createLayersFromLinks = async (
   const wmtsArray = item.links.filter((l) => l.rel === "wmts");
   const xyzArray = item.links.filter((l) => l.rel === "xyz") ?? [];
 
+  // Taking projection code from main map view, as main view defines
+  // projection for comparison map
+  const viewProjectionCode = mapEl?.value?.projection || "EPSG:3857";
+
   for (const wmsLink of wmsArray ?? []) {
     // Registering setting sub wms link projection
 
@@ -124,12 +129,16 @@ export const createLayersFromLinks = async (
       (wmsLink?.["proj:epsg"] || wmsLink?.["eodash:proj4_def"]);
 
     await registerProjection(wmsLinkProjection);
-    const projectionCode = getProjectionCode(wmsLinkProjection || "EPSG:4326");
+
+    const linkProjectionCode =
+      getProjectionCode(wmsLinkProjection) || "EPSG:4326";
+    // Projection code need to be based on map view projection to make sure
+    // tiles are reloaded when changing projection
     const linkId = createLayerID(
       collectionId,
       item.id,
       wmsLink,
-      projectionCode,
+      viewProjectionCode,
     );
     log.debug("WMS Layer added", linkId);
     let json = {
@@ -142,7 +151,7 @@ export const createLayersFromLinks = async (
       source: {
         type: "TileWMS",
         url: wmsLink.href,
-        projection: projectionCode,
+        projection: linkProjectionCode,
         tileGrid: {
           tileSize: [512, 512],
         },
@@ -181,8 +190,14 @@ export const createLayersFromLinks = async (
       collectionId,
       item.id,
       wmtsLink,
-      projectionCode,
+      viewProjectionCode,
     );
+    const dimensions = /** @type { {style:any} & Record<string,any> } */ (
+      wmtsLink["wmts:dimensions"] || {}
+    );
+    let { style, ...dimensionsWithoutStyle } = { ...dimensions };
+    let extractedStyle = /** @type { string } */ (style || "default");
+
     if (wmtsLink.title === "wmts capabilities") {
       log.debug(
         "Warning: WMTS Layer from capabilities added, function needs to be updated",
@@ -200,14 +215,14 @@ export const createLayersFromLinks = async (
           // TODO: Hard coding url as the current one set is for capabilities
           url: "https://wmts.marine.copernicus.eu/teroWmts",
           layer: wmtsLink["wmts:layer"],
-          style: wmtsLink.style || "default",
+          style: extractedStyle,
           // TODO: Hard coding matrixSet until we find solution to wmts creation from capabilities
           matrixSet: "EPSG:3857",
           projection: projectionCode,
           tileGrid: {
             tileSize: [128, 128],
           },
-          dimensions: wmtsLink["wmts:dimensions"],
+          dimensions: dimensionsWithoutStyle,
         },
       };
     } else {
@@ -224,15 +239,15 @@ export const createLayersFromLinks = async (
         },
         source: {
           type: "WMTS",
-          url: wmtsLink,
+          url: wmtsLink.href,
           layer: wmtsLink["wmts:layer"],
-          style: wmtsLink.style || "default",
+          style: extractedStyle,
           matrixSet: wmtsLink.matrixSet || "EPSG:3857",
           projection: projectionCode,
           tileGrid: {
             tileSize: [512, 512],
           },
-          dimensions: wmtsLink["wmts:dimensions"],
+          dimensions: dimensionsWithoutStyle,
         },
       };
     }
@@ -251,7 +266,7 @@ export const createLayersFromLinks = async (
       collectionId,
       item.id,
       xyzLink,
-      projectionCode,
+      viewProjectionCode,
     );
     log.debug("XYZ Layer added", linkId);
     let json = {
