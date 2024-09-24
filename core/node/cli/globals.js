@@ -6,11 +6,30 @@ import { createLogger } from "vite";
 import { Command } from "commander";
 import { fileURLToPath } from "url";
 
-export const rootPath = searchForPackageRoot(process.cwd());
 const cli = new Command("eodash");
 
-const pkg = JSON.parse(
-  readFileSync(path.join(rootPath, "package.json"), "utf-8"),
+/** eodash root path */
+export const appPath = searchForPackageRoot();
+
+/** Root path to the host application */
+export const rootPath = searchForPackageRoot(process.cwd());
+
+/** host application  package.json */
+export const rootPkgJSON =
+  JSON.parse(readFileSync(path.join(rootPath, "package.json"), "utf-8")) ?? {};
+/** eodash package.json */
+export const appPkgJSON =
+  JSON.parse(readFileSync(path.join(appPath, "package.json"), "utf-8")) ?? {};
+
+export const nodeModules = [
+  "commander",
+  "vite",
+  "@vitejs/plugin-vue",
+  "vite-plugin-vuetify",
+  "axios",
+];
+export const clientModules = Object.keys(appPkgJSON?.dependencies).filter(
+  (m) => !nodeModules.includes(m),
 );
 
 /**
@@ -31,7 +50,7 @@ const pkg = JSON.parse(
  * @property {boolean} lib
  */
 
-cli.version(pkg.version, "-v, --version", "output the current version");
+cli.version(appPkgJSON.version, "-v, --version", "output the current version");
 
 cli
   .option("--publicDir <path>", "path to statically served assets folder")
@@ -62,8 +81,7 @@ cli
 
 export const userConfig = await getUserConfig(cli.opts(), process.argv?.[2]);
 
-export const appPath = searchForPackageRoot(),
-  publicPath = userConfig.publicDir
+export const publicPath = userConfig.publicDir
     ? path.resolve(rootPath, userConfig.publicDir)
     : path.join(rootPath, "./public"),
   srcPath = path.join(rootPath, "/src"),
@@ -128,6 +146,7 @@ async function getUserConfig(options, command) {
     runtime: options.runtime ?? config?.runtime,
     widgets: options.widgets ?? config?.widgets,
     lib: options.lib ?? config?.lib,
+    vite: config.vite,
   };
 }
 
@@ -144,3 +163,27 @@ function searchForPackageRoot(
     throw new Error("no package root found from " + from);
   }
 }
+
+export const indexHtml = `
+<!DOCTYPE html>
+<html lang="en" style="overflow: hidden">
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" href="/favicon.ico" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Welcome to Eodash v5</title>
+</head>
+
+<body>
+${
+  userConfig.lib
+    ? `<eo-dash style="height:100dvh;"/>
+<script type="module" src="${path.resolve(`/@fs/${appPath}`, `core/client/asWebComponent.js`)}"></script>
+`
+    : ` <div id="app" />
+<script type="module" src="${path.resolve(`/@fs/${appPath}`, `core/client/render.js`)}"></script>
+`
+}
+</body>
+</html>`;

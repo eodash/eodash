@@ -7,9 +7,10 @@ import {
   buildTargetPath,
   userConfig,
   runtimeConfigPath,
+  indexHtml,
 } from "./globals.js";
 import { writeFile, rm, cp } from "fs/promises";
-import { indexHtml, viteConfig } from "./viteConfig.js";
+import { viteConfig } from "./viteConfig.js";
 import path from "path";
 import { existsSync } from "fs";
 
