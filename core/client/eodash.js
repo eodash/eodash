@@ -174,7 +174,7 @@ export const eodash = reactive({
           return indicator
             ? {
                 id: "process",
-                layout: { x: 9, y: 8, w: 3, h: 4 },
+                layout: { x: 9, y: 6, w: 3, h: 6 },
                 title: "Process",
                 type: "internal",
                 widget: {

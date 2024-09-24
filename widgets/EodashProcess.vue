@@ -1,18 +1,18 @@
 <template>
-  <span ref="rootEl">
-    <v-card class="d-flex flex-column pa-2">
-      <!-- <v-expand-transition> -->
-        <EodashChart v-if="isProcessed && chartSpec" :spec="chartSpec" />
-        <span v-show="!isProcessed">
-          <v-card-text> start {{ indicatorTitle }} processing </v-card-text>
-          <v-btn @click="startProcess" color="primary"> start</v-btn>
-        </span>
-      <!-- </v-expand-transition> -->
-    </v-card>
-  </span>
+  <div class="processContainer">
+    <eox-jsonform v-if="jsonFormSchema"
+    .schema="jsonFormSchema"
+    .noShadow="true"
+    ></eox-jsonform>
+    <EodashChart v-if="isProcessed && chartSpec" :spec="chartSpec" />
+    <span v-show="!isProcessed">
+      <v-card-text> start {{ indicatorTitle }} processing </v-card-text>
+      <v-btn @click="startProcess" color="primary"> start</v-btn>
+    </span>
+  </div>
 </template>
 <script setup>
-// import "@eox/jsonform"
+import "@eox/jsonform"
 import { computed, ref, watch } from "vue";
 import EodashChart from "./EodashChart.vue";
 import axios from "@/plugins/axios";
@@ -32,66 +32,44 @@ const indicatorTitle = computed(() =>
 /** @type {import("vue").Ref<import("vega").Spec|undefined>} */
 const chartSpec = ref();
 const isProcessed = ref(false);
+const jsonFormSchema = ref(null);
 
-const _seaIceProcess = {
-  stac_version: "1.1.0",
-  type: "Collection",
-  // "auth:schemes": {...},
-  // "eodash:jsonform": "<link jsonform>",
-  links: [
-    {
-      id: "featuresonmap_process",
-      href: "https://gist.githubusercontent.com/wavded/1200773/raw/e122cf709898c09758aecfef349964a8d73a83f3/sample.json",
-      rel: "service",
-      method: "GET",
-      // "headers": {...},
-      body: "...",
-      type: "application/geo+json",
-      "eox:flatstyle":
-        "https://raw.githubusercontent.com/eurodatacube/eodash-assets/c08ecb89e64badd2057465282c427966d90a36a5/collections/Polartep_SeaIce_demo/style.json",
-      // "auth:refs": [...]
-    },
-  ],
-};
 
-const _chart = {
-  stac_version: "1.1.0",
-  type: "Collection",
-  // "auth:schemes": {...},
-  // "eodash:jsonform": "<link jsonform>",
-  "eodash:vegadefinition":
-    "https://vega.github.io/editor/spec/vega-lite/line.vl.json",
-  links: [
-    {
-      id: "dataset_process",
-      href: "https://vega.github.io/vega-lite/data/stocks.csv",
-      rel: "service",
-      method: "GET",
-      // "headers": {...},
-      body: "...",
-      type: "text/csv",
-      // "auth:refs": [...]
-    },
-  ],
-};
+watch(
+  selectedStac,
+  async (updatedStac, previousStac) => {
+    if (updatedStac && previousStac?.id !== updatedStac.id) {
+      if (updatedStac["eodash:jsonform"]) {
+        jsonFormSchema.value = await axios
+          //@ts-expect-error eodash extention
+          .get(updatedStac["eodash:jsonform"])
+          .then((resp) => resp.data);
+      }
+    }
+  },
+  { immediate: true },
+);
+
 
 const startProcess = async () => {
   await handleProcesses(
-    selectedStac.value?.id !== "temperature" ? _chart : _seaIceProcess,
+    // selectedStac.value?.id !== "temperature" ? _chart : _seaIceProcess,
   );
   isProcessed.value = true;
 };
 
 /**
  *
- * @param {typeof _chart|typeof _seaIceProcess} updatedSTAC
+ * @param {import("stac-ts").StacCollection} updatedSTAC
  */
 async function handleProcesses(updatedSTAC) {
   const serviceLinks = updatedSTAC?.links.filter((l) => l.rel === "service");
   // const process = updatedSTAC["api:request"]
+  debugger;
+  
+
   /** @type {import("vega").Spec} */
   let spec;
-  //@ts-expect-error eodash extention
   if (updatedSTAC["eodash:vegadefinition"]) {
     spec = await axios
       //@ts-expect-error eodash extention
@@ -154,13 +132,17 @@ const reset = () => {
   chartSpec.value = undefined;
 };
 
-makePanelTransparent(rootEl);
+// makePanelTransparent(rootEl);
 
 watch(selectedStac, () => {
   reset();
 });
 </script>
 <style>
+.processContainer{
+  height: 100%;
+  overflow-y: auto;
+}
 .slide-enter-active,
 .slide-leave-active {
   transition: all 0.2s;
