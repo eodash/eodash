@@ -11,7 +11,8 @@ export const eodash = reactive({
   id: "demo",
   stacEndpoint:
     // "https://eodashcatalog.eox.at/test-style/trilateral/catalog.json",
-    "https://gtif-cerulean.github.io/catalog/cerulean/catalog.json",
+    // "https://gtif-cerulean.github.io/catalog/cerulean/catalog.json",
+    "https://santilland.github.io/process_example/catalog.json",
   brand: {
     noLayout: true,
     name: "Demo",
