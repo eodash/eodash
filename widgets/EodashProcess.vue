@@ -1,18 +1,19 @@
 <template>
   <div class="processContainer">
     <eox-jsonform v-if="jsonFormSchema"
+    ref="jsonformEl"
     .schema="jsonFormSchema"
     .noShadow="true"
     ></eox-jsonform>
     <EodashChart v-if="isProcessed && chartSpec" :spec="chartSpec" />
     <span v-show="!isProcessed">
-      <v-card-text> start {{ indicatorTitle }} processing </v-card-text>
-      <v-btn @click="startProcess" color="primary"> start</v-btn>
+      <v-btn style="float: right; margin-right: 20px;" @click="startProcess" color="primary"> Execute</v-btn>
     </span>
   </div>
 </template>
 <script setup>
-import "@eox/jsonform"
+import "@eox/drawtools";
+import "@eox/jsonform";
 import { computed, ref, watch } from "vue";
 import EodashChart from "./EodashChart.vue";
 import axios from "@/plugins/axios";
@@ -21,6 +22,7 @@ import { storeToRefs } from "pinia";
 import { mapEl } from "@/store/States";
 import { getLayers } from "@/store/Actions";
 import { makePanelTransparent } from "@/composables";
+import { h } from 'vue'
 
 /** @type {import("vue").Ref<HTMLSpanElement | null>} */
 const rootEl = ref(null);
@@ -33,7 +35,7 @@ const indicatorTitle = computed(() =>
 const chartSpec = ref();
 const isProcessed = ref(false);
 const jsonFormSchema = ref(null);
-
+const jsonformEl = ref(null);
 
 watch(
   selectedStac,
@@ -52,32 +54,27 @@ watch(
 
 
 const startProcess = async () => {
-  await handleProcesses(
-    // selectedStac.value?.id !== "temperature" ? _chart : _seaIceProcess,
-  );
+  await handleProcesses();
   isProcessed.value = true;
 };
 
 /**
  *
- * @param {import("stac-ts").StacCollection} updatedSTAC
  */
-async function handleProcesses(updatedSTAC) {
-  const serviceLinks = updatedSTAC?.links.filter((l) => l.rel === "service");
-  // const process = updatedSTAC["api:request"]
-  debugger;
-  
+async function handleProcesses() {
+  const coll = selectedStac.value;
+  const serviceLinks = coll?.links?.filter((l) => l.rel === "service");
 
   /** @type {import("vega").Spec} */
   let spec;
-  if (updatedSTAC["eodash:vegadefinition"]) {
+  if (coll && coll["eodash:vegadefinition"]) {
     spec = await axios
       //@ts-expect-error eodash extention
-      .get(updatedSTAC["eodash:vegadefinition"])
+      .get(coll["eodash:vegadefinition"])
       .then((resp) => resp.data);
   }
 
-  serviceLinks.forEach(async (link) => {
+  serviceLinks?.forEach(async (link) => {
     // const requesttype = /** @type {RequestType} */(l.requesttype)
     if (link.type === "text/csv" && spec) {
       // @ts-expect-error url
@@ -86,7 +83,6 @@ async function handleProcesses(updatedSTAC) {
     } else if (link.type === "application/geo+json") {
       let flatStyleJSON;
       const flatStyleURL = /** @type {string | undefined} */ (
-        //@ts-expect-error flatstyles
         link["eox:flatstyle"]
       );
 
@@ -95,11 +91,17 @@ async function handleProcesses(updatedSTAC) {
       }
 
       if (mapEl.value) {
+        // Apply template to url
+        const tmp = h("{{'hello'}}");
+        debugger;
+
+        console.log(jsonformEl);
+        const template = link.href;
         const processLayer = {
           type: "Vector",
           properties: {
             id: link.id,
-            title: "Sea Ice Demo",
+            title: "Processing results",
           },
           source: {
             type: "Vector",
