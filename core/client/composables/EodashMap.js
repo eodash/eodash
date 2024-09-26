@@ -299,7 +299,10 @@ export const useInitMap = (
 
         // Try to move map view to extent only when main
         // indicator and map changes
-        if (mapElement?.value?.id === "main" && updatedStac.extent?.spatial.bbox) {
+        if (
+          mapElement?.value?.id === "main" &&
+          updatedStac.extent?.spatial.bbox
+        ) {
           // Sanitize extent,
           const b = updatedStac.extent?.spatial.bbox[0];
           const sanitizedExtent = [

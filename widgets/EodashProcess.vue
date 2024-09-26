@@ -1,13 +1,21 @@
 <template>
   <div class="processContainer">
-    <eox-jsonform v-if="jsonFormSchema"
-    ref="jsonformEl"
-    .schema="jsonFormSchema"
-    .noShadow="true"
+    <eox-jsonform
+      v-if="jsonFormSchema"
+      ref="jsonformEl"
+      .schema="jsonFormSchema"
+      .noShadow="true"
     ></eox-jsonform>
     <EodashChart v-if="isProcessed && chartSpec" :spec="chartSpec" />
-    <span v-show="!isProcessed">
-      <v-btn style="float: right; margin-right: 20px;" @click="startProcess" color="primary"> Execute</v-btn>
+    <span>
+      <v-btn
+        :loading="loading"
+        style="float: right; margin-right: 20px"
+        @click="startProcess"
+        color="primary"
+      >
+        Execute</v-btn
+      >
     </span>
   </div>
 </template>
@@ -22,7 +30,7 @@ import { storeToRefs } from "pinia";
 import { mapEl } from "@/store/States";
 import { getLayers } from "@/store/Actions";
 import { makePanelTransparent } from "@/composables";
-import { h } from 'vue'
+import mustache from "mustache";
 
 /** @type {import("vue").Ref<HTMLSpanElement | null>} */
 const rootEl = ref(null);
@@ -36,6 +44,7 @@ const chartSpec = ref();
 const isProcessed = ref(false);
 const jsonFormSchema = ref(null);
 const jsonformEl = ref(null);
+const loading = ref(false);
 
 watch(
   selectedStac,
@@ -51,7 +60,6 @@ watch(
   },
   { immediate: true },
 );
-
 
 const startProcess = async () => {
   await handleProcesses();
@@ -73,13 +81,37 @@ async function handleProcesses() {
       .get(coll["eodash:vegadefinition"])
       .then((resp) => resp.data);
   }
-
+  const origBbox = jsonformEl.value.value.bbox;
   serviceLinks?.forEach(async (link) => {
+    let currentLayers = [...getLayers()];
+    let analysisGroup = currentLayers.find((l) =>
+      l.properties.id.includes("AnalysisGroup"),
+    );
     // const requesttype = /** @type {RequestType} */(l.requesttype)
     if (link.type === "text/csv" && spec) {
       // @ts-expect-error url
       spec.data.url = link.href;
       chartSpec.value = spec;
+    } else if (link.type === "image/png") {
+      const prevLayerIdx = analysisGroup?.layers.findIndex(
+        (l) => l.id === link.id,
+      );
+      if (prevLayerIdx !== -1) {
+        analysisGroup?.layers.splice(prevLayerIdx, 1);
+      }
+      analysisGroup?.layers.unshift({
+        type: "Image",
+        properties: {
+          id: link.id,
+          title: "Results " + link.id,
+        },
+        source: {
+          type: "ImageStatic",
+          imageExtent: origBbox,
+          url: mustache.render(link.href, jsonformEl.value.value),
+        },
+      });
+      mapEl.value.layers = [...currentLayers];
     } else if (link.type === "application/geo+json") {
       let flatStyleJSON;
       const flatStyleURL = /** @type {string | undefined} */ (
@@ -92,38 +124,50 @@ async function handleProcesses() {
 
       if (mapEl.value) {
         // Apply template to url
-        const tmp = h("{{'hello'}}");
-        debugger;
 
-        console.log(jsonformEl);
-        const template = link.href;
-        const processLayer = {
-          type: "Vector",
-          properties: {
-            id: link.id,
-            title: "Processing results",
-          },
-          source: {
-            type: "Vector",
-            url: link.href,
-            format: "GeoJSON",
-          },
-          ...(flatStyleJSON && { style: flatStyleJSON }),
-        };
-
-        const currentLayers = [...getLayers()];
-        const analysisGroup = currentLayers.find((l) =>
-          l.properties.id.includes("AnalysisGroup"),
+        // We need to convert map projection based coordinates to 4326
+        const mapproj = mapEl.value.projection || "EPSG:3857";
+        jsonformEl.value.value.bbox = mapEl.value.transformExtent(
+          origBbox,
+          mapproj,
         );
-
-        if (!analysisGroup) {
-          console.log("no analysis group found");
-        }
-
-        analysisGroup?.layers.unshift(processLayer);
-
-        mapEl.value.layers = [];
-        mapEl.value.layers = [...currentLayers];
+        const url = mustache.render(link.href, jsonformEl.value.value);
+        loading.value = true;
+        axios.get(url).then((resp) => {
+          // Refetch current state on load finished
+          currentLayers = [...getLayers()];
+          analysisGroup = currentLayers.find((l) =>
+            l.properties.id.includes("AnalysisGroup"),
+          );
+          const dataStr =
+            "data:text/json;charset=utf-8," +
+            encodeURIComponent(JSON.stringify(resp.data));
+          const processLayer = {
+            type: "Vector",
+            properties: {
+              id: link.id,
+              title: "Results " + link.id,
+            },
+            source: {
+              type: "Vector",
+              url: dataStr,
+              format: "GeoJSON",
+            },
+            ...(flatStyleJSON && { style: flatStyleJSON }),
+          };
+          if (!analysisGroup) {
+            console.log("no analysis group found");
+          }
+          const prevLayerIdx = analysisGroup?.layers.findIndex(
+            (l) => l.id === link.id,
+          );
+          if (prevLayerIdx !== -1) {
+            analysisGroup?.layers.splice(prevLayerIdx, 1);
+          }
+          analysisGroup?.layers.push(processLayer);
+          mapEl.value.layers = [...currentLayers];
+          loading.value = false;
+        });
       }
     }
   });
@@ -141,7 +185,7 @@ watch(selectedStac, () => {
 });
 </script>
 <style>
-.processContainer{
+.processContainer {
   height: 100%;
   overflow-y: auto;
 }

@@ -88,6 +88,7 @@
     "cypress": "^13.14.2",
     "eslint": "^9.10.0",
     "eslint-plugin-vue": "^9.28.0",
+    "mustache": "^4.2.0",
     "prettier": "^3.3.3",
     "rollup": "^4.21.3",
     "terminate": "^2.8.0",
