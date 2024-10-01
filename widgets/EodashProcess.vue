@@ -92,6 +92,39 @@ async function handleProcesses() {
       // @ts-expect-error url
       spec.data.url = link.href;
       chartSpec.value = spec;
+    } else if (link.type === "image/tiff") {
+      let flatStyleJSON;
+      const flatStyleURL = /** @type {string | undefined} */ (
+        link["eox:flatstyle"]
+      );
+
+      if (flatStyleURL) {
+        flatStyleJSON = await axios.get(flatStyleURL).then((resp) => resp.data);
+      }
+      const geotiffLayer = {
+        type: "WebGLTile",
+        source: {
+          type: "GeoTIFF",
+          normalize: false,
+          sources: [ { "url": link.href }],
+        },
+        properties: {
+          id: link.id,
+          title: "Results " + link.id,
+          layerConfig: { schema: flatStyleJSON.jsonform, type: "style" }
+        },
+        style: flatStyleJSON,
+      }
+      const prevLayerIdx = analysisGroup?.layers.findIndex(
+        (l) => l.id === link.id,
+      );
+      if (prevLayerIdx !== -1) {
+        analysisGroup?.layers.splice(prevLayerIdx, 1);
+      }
+      analysisGroup?.layers.push(geotiffLayer);
+      mapEl.value.layers = [...currentLayers];
+      
+
     } else if (link.type === "image/png") {
       const prevLayerIdx = analysisGroup?.layers.findIndex(
         (l) => l.id === link.id,
