@@ -80,6 +80,7 @@ export async function createLayersFromAssets(
       source: {
         type: "GeoTIFF",
         normalize: !style,
+        interpolate: false,
         sources: geoTIFFSources,
       },
       properties: {
