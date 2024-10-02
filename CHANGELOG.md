@@ -1,6 +1,13 @@
 # Changelog
 
 
+## [5.0.0-alpha.2.21](https://github.com/eodash/eodash/compare/eodash-v5.0.0-alpha.2.20...eodash-v5.0.0-alpha.2.21) (2024-10-02)
+
+
+### Bug Fixes
+
+* disabled interpolation by default, as in my it falsifies the shown data ([#127](https://github.com/eodash/eodash/issues/127)) ([102323b](https://github.com/eodash/eodash/commit/102323ba002a0cd1a946c46af78e7473310e8bd2))
+
 ## [5.0.0-alpha.2.20](https://github.com/eodash/eodash/compare/eodash-v5.0.0-alpha.2.19...eodash-v5.0.0-alpha.2.20) (2024-09-24)
 
 
