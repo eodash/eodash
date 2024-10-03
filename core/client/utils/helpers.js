@@ -113,9 +113,9 @@ export function extractCollectionUrls(stacObject, basepath) {
   // Indicator assumes Catalog-Collection-Collection-Item
   // TODO: this is not the most stable test approach,
   // we should discuss potential other approaches
-  if (stacObject?.links && stacObject?.links[1].rel === "item") {
+  if (stacObject?.links && stacObject?.links[1]?.rel === "item") {
     collectionUrls.push(basepath);
-  } else if (stacObject?.links[1].rel === "child") {
+  } else if (stacObject?.links[1]?.rel === "child") {
     // TODO: Iterate through all children to create collections
     stacObject.links.forEach((link) => {
       if (link.rel === "child") {

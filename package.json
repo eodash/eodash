@@ -2,7 +2,7 @@
   "name": "@eodash/eodash",
   "version": "5.0.0-alpha.2.21",
   "type": "module",
-  "types": "./core/client/types.d.ts",
+  "types": "./dist/types/core/client/types.d.ts",
   "files": [
     "core/client",
     "widgets",
@@ -10,11 +10,11 @@
   ],
   "exports": {
     ".": {
-      "types": "./core/client/types.d.ts",
+      "types": "./dist/types/core/client/main.d.ts",
       "default": "./core/client/main.js"
     },
     "./webcomponent": {
-      "types": "./core/client/asWebComponent.d.ts",
+      "types": "./dist/types/core/client/asWebComponent.d.ts",
       "default": "./dist/client/eo-dash.js"
     },
     "./webcomponent.css": "./dist/client/style.css",
@@ -27,12 +27,13 @@
   "scripts": {
     "start": "npx eodash dev --entryPoint core/client/eodash.js",
     "prepare": "rollup -c",
-    "prepack": "npm run build:lib",
+    "prepack": "npm run build:lib && npm run build:types",
     "dev": "npx eodash dev --entryPoint core/client/eodash.js",
     "dev:lib": "npx eodash dev --entryPoint core/client/eodash.js --lib",
     "build": "npx eodash build --entryPoint core/client/eodash.js",
     "build:lib": "npx eodash build --entryPoint core/client/eodash.js --lib --outDir dist/client",
     "build:cli": "rollup -c",
+    "build:types": "vue-tsc --declaration  --emitDeclarationOnly && cp -rf ./core/client/types.d.ts ./dist/types/core/client/types.d.ts && tsc-alias",
     "check": "vue-tsc --noEmit --skipLibCheck && eslint .",
     "format": "prettier . --write --ignore-unknown",
     "preview": "npx eodash preview",
@@ -87,6 +88,7 @@
     "prettier": "^3.3.3",
     "rollup": "^4.21.3",
     "terminate": "^2.8.0",
+    "tsc-alias": "^1.8.10",
     "typedoc": "^0.26.7",
     "typedoc-plugin-markdown": "^4.2.7",
     "typedoc-plugin-vue": "^1.2.0",

@@ -3,7 +3,7 @@
     <eox-layout :gap="eodash.template.gap ?? 2">
       <eox-layout-item
         v-if="bgWidget.component"
-        class="bg-panel"
+        class="bg-panel bg-surface"
         x="0"
         y="0"
         h="12"
