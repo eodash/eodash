@@ -1,6 +1,13 @@
 # Changelog
 
 
+## [5.0.0-alpha.2.22](https://github.com/eodash/eodash/compare/eodash-v5.0.0-alpha.2.21...eodash-v5.0.0-alpha.2.22) (2024-10-03)
+
+
+### Bug Fixes
+
+* Minor fixes including building and exporting types  ([#129](https://github.com/eodash/eodash/issues/129)) ([927229a](https://github.com/eodash/eodash/commit/927229ac63698663fc24105486631bddbce16eca))
+
 ## [5.0.0-alpha.2.21](https://github.com/eodash/eodash/compare/eodash-v5.0.0-alpha.2.20...eodash-v5.0.0-alpha.2.21) (2024-10-02)
 
 
