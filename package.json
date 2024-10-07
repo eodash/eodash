@@ -2,7 +2,6 @@
   "name": "@eodash/eodash",
   "version": "5.0.0-alpha.2.22",
   "type": "module",
-  "types": "./dist/types/core/client/types.d.ts",
   "files": [
     "core/client",
     "widgets",
@@ -10,7 +9,7 @@
   ],
   "exports": {
     ".": {
-      "types": "./dist/types/core/client/main.d.ts",
+      "types": "./dist/types/core/client/types.d.ts",
       "default": "./core/client/main.js"
     },
     "./webcomponent": {
