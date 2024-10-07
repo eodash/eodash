@@ -1,6 +1,13 @@
 # Changelog
 
 
+## [5.0.0-alpha.2.23](https://github.com/eodash/eodash/compare/eodash-v5.0.0-alpha.2.22...eodash-v5.0.0-alpha.2.23) (2024-10-07)
+
+
+### Bug Fixes
+
+* ".d.ts" file extension ([#132](https://github.com/eodash/eodash/issues/132)) ([0c8d1f2](https://github.com/eodash/eodash/commit/0c8d1f2df56b6564a8ed9a8a9ffe38f6e0e09659))
+
 ## [5.0.0-alpha.2.22](https://github.com/eodash/eodash/compare/eodash-v5.0.0-alpha.2.21...eodash-v5.0.0-alpha.2.22) (2024-10-03)
 
 
