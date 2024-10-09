@@ -167,9 +167,18 @@ export class EodashCollection {
     // will try to extract anything it supports but for which we have
     // less control.
 
-    const { layerConfig, style } = extractLayerConfig(
+    let { layerConfig, style } = extractLayerConfig(
       await fetchStyle(item, itemUrl),
     );
+
+    // Check if collection has eox:colorlegend definition
+    if (this.#collectionStac && this.#collectionStac["eox:colorlegend"]) {
+      if (layerConfig) {
+        layerConfig.legend = this.#collectionStac["eox:colorlegend"];
+      } else {
+        layerConfig = { legend: this.#collectionStac["eox:colorlegend"] };
+      }
+    }
 
     const layerDatetime = extractLayerDatetime(
       this.getItems(),
