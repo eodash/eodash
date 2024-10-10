@@ -43,7 +43,7 @@ export function generateFeatures(links) {
   return geojsonObject;
 }
 
-/** @param { import("ol/layer/WebGLTile").Style & { jsonform?: Record<string,any> } } [style] */
+/** @param { import("ol/layer/WebGLTile").Style & { jsonform?: Record<string,any> } & { legend?: Record<string,any> } } [style] */
 export function extractLayerConfig(style) {
   /** @type {Record<string,unknown> | undefined} */
   let layerConfig = undefined;
@@ -51,6 +51,10 @@ export function extractLayerConfig(style) {
     layerConfig = { schema: style.jsonform, type: "style" };
     style = { ...style };
     delete style.jsonform;
+    if (style?.legend) {
+      layerConfig.legend = style.legend;
+      delete style.legend;
+    }
   }
   log.debug(
     "extracted layerConfig",
