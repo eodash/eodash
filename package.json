@@ -48,6 +48,7 @@
     "docs:generate": "typedoc --options typedoc.config.json"
   },
   "dependencies": {
+    "@eox/chart": "^0.1.0",
     "@eox/drawtools": "0.9.0",
     "@eox/itemfilter": "^1.1.1",
     "@eox/jsonform": "0.8.3-dev.1727275716.0",
