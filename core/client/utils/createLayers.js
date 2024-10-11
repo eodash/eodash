@@ -16,6 +16,7 @@ import log from "loglevel";
  * @param {import("ol/layer/WebGLTile").Style} [style]
  * @param {Record<string, unknown>} [layerConfig]
  * @param {Record<string, unknown>} [layerDatetime]
+ * @param {object | null} [extraProperties]
  **/
 export async function createLayersFromAssets(
   collectionId,
@@ -25,6 +26,7 @@ export async function createLayersFromAssets(
   style,
   layerConfig,
   layerDatetime,
+  extraProperties,
 ) {
   log.debug("Creating layers from assets");
   let jsonArray = [];
@@ -64,6 +66,9 @@ export async function createLayersFromAssets(
         ...(!style?.variables && { style }),
       };
       extractRoles(layer.properties, assets[ast]);
+      if (extraProperties !== null) {
+        layer.properties = { ...layer.properties, ...extraProperties };
+      }
       jsonArray.push(layer);
     } else if (assets[ast]?.type === "image/tiff") {
       geoTIFFIdx = idx;
@@ -102,14 +107,14 @@ export async function createLayersFromAssets(
  * @param {import('stac-ts').StacItem} item
  * @param {string} title
  * @param {Record<string,any>} [layerDatetime]
- * @param {string | null} [legendInfo]
+ * @param {object | null} [extraProperties]
  */
 export const createLayersFromLinks = async (
   collectionId,
   title,
   item,
   layerDatetime,
-  legendInfo,
+  extraProperties,
 ) => {
   log.debug("Creating layers from links");
   /** @type {Record<string,any>[]} */
@@ -167,9 +172,8 @@ export const createLayersFromLinks = async (
       // Expand all dimensions into the params attribute
       Object.assign(json.source.params, wmsLink["wms:dimensions"]);
     }
-    if (legendInfo !== null) {
-      // @ts-expect-error once we have a eox-map config type we can remove this
-      json.properties.description = legendInfo;
+    if (extraProperties !== null) {
+      json.properties = { ...json.properties, ...extraProperties };
     }
     jsonArray.push(json);
   }
@@ -253,6 +257,9 @@ export const createLayersFromLinks = async (
       };
     }
     extractRoles(json.properties, wmtsLink);
+    if (extraProperties !== null) {
+      json.properties = { ...json.properties, ...extraProperties };
+    }
     jsonArray.push(json);
   }
 
@@ -286,6 +293,9 @@ export const createLayersFromLinks = async (
     };
 
     extractRoles(json.properties, xyzLink);
+    if (extraProperties !== null) {
+      json.properties = { ...json.properties, ...extraProperties };
+    }
     jsonArray.push(json);
   }
   return jsonArray;
