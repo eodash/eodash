@@ -1,6 +1,6 @@
 {
   "name": "@eodash/eodash",
-  "version": "5.0.0-alpha.2.23",
+  "version": "5.0.0-alpha.2.24",
   "type": "module",
   "files": [
     "core/client",
