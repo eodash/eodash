@@ -78,6 +78,7 @@ export const eodashViteConfig = /** @type {import("vite").UserConfigFn} */ (
             "stac-js",
             "urijs",
             "loglevel",
+            "color-legend-element",
           ],
           noDiscovery: true,
         },

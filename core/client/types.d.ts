@@ -276,4 +276,4 @@ export interface EodashStore {
   };
 }
 ///////
-export * from "./main"
+export * from "./main";

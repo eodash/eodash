@@ -50,7 +50,7 @@
   "dependencies": {
     "@eox/itemfilter": "^1.1.1",
     "@eox/jsonform": "^0.8.2",
-    "@eox/layercontrol": "^0.21.0",
+    "@eox/layercontrol": "^0.22.0",
     "@eox/layout": "^0.1.0",
     "@eox/map": "^1.13.1",
     "@eox/stacinfo": "^0.3.3",
@@ -60,6 +60,7 @@
     "animated-details": "gist:2912bb049fa906671807415eb0e87188",
     "axios": "^1.7.7",
     "axios-cache-interceptor": "^1.6.0",
+    "color-legend-element": "^1.3.0",
     "commander": "^12.1.0",
     "core-js": "^3.38.1",
     "loglevel": "^1.9.2",
