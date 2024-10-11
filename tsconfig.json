@@ -39,6 +39,7 @@
     "widgets/**/*.ts",
     "widgets/**/*.js",
     "widgets/**/*.d.ts",
-    "widgets/**/*.tsx"
+    "widgets/**/*.tsx",
+    "core/node/**/*.d.ts"
   ]
 }

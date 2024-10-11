@@ -258,7 +258,7 @@ export interface EodashStore {
     getLayers: (el?: string) => object[];
 
     /**
-     * Register EPSG projection in `eox-map` and adds it to {@link EodashStore.states.availableMapProjection `availableMapProjection`` }
+     * Register EPSG projection in `eox-map` and adds it to  `availableMapProjection`
      * */
     registerProjection: (
       code?: number | string | { name: string; def: string },
@@ -276,4 +276,4 @@ export interface EodashStore {
   };
 }
 ///////
-export * from "./main";
+export { createEodash, store } from "./main.js";
