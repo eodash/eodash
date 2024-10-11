@@ -1,6 +1,18 @@
 # Changelog
 
 
+## [5.0.0-alpha.2.24](https://github.com/eodash/eodash/compare/eodash-v5.0.0-alpha.2.23...eodash-v5.0.0-alpha.2.24) (2024-10-11)
+
+
+### Features
+
+* integration of colorlegend creation from style or stac information ([#134](https://github.com/eodash/eodash/issues/134)) ([357ccb3](https://github.com/eodash/eodash/commit/357ccb38a322f9063fdb3e2eb5a0c75d0742d502))
+
+
+### Bug Fixes
+
+* docs generation ([#136](https://github.com/eodash/eodash/issues/136)) ([a6cbfd5](https://github.com/eodash/eodash/commit/a6cbfd5a344289965d3abd0f739ef5cb775b0985))
+
 ## [5.0.0-alpha.2.23](https://github.com/eodash/eodash/compare/eodash-v5.0.0-alpha.2.22...eodash-v5.0.0-alpha.2.23) (2024-10-07)
 
 
