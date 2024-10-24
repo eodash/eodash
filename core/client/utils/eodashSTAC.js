@@ -157,6 +157,7 @@ export class EodashCollection {
             "fill-color": "#00417077",
             "stroke-color": "#004170",
           },
+          interactions: [],
         },
       ];
     }

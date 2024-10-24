@@ -23,7 +23,7 @@
 </template>
 <script setup>
 import "@eox/map";
-import "@eox/map/dist/eox-map-advanced-layers-and-sources.js";
+import "@eox/map/src/plugins/advancedLayersAndSources";
 import { computed, onMounted, ref } from "vue";
 import { datetime, mapEl, mapPosition, mapCompareEl } from "@/store/States";
 import { storeToRefs } from "pinia";
