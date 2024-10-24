@@ -19,8 +19,8 @@
         @click="startProcess"
         color="primary"
       >
-        Execute</v-btn
-      >
+        Execute
+        </v-btn>
     </span>
   </div>
 </template>
@@ -28,7 +28,7 @@
 import "@eox/chart";
 import "@eox/drawtools";
 import "@eox/jsonform";
-import { ref, watch, toRaw } from "vue";
+import { ref, toRaw } from "vue";
 import axios from "@/plugins/axios";
 import { useSTAcStore } from "@/store/stac";
 import { storeToRefs } from "pinia";
@@ -36,6 +36,9 @@ import { mapEl } from "@/store/States";
 import { getLayers } from "@/store/Actions";
 import mustache from "mustache";
 import { extractLayerConfig } from "@/utils/helpers";
+import { useOnLayersUpdate } from "@/composables";
+
+
 const { selectedStac } = storeToRefs(useSTAcStore());
 /** @type {import("vue").Ref<import("vega").Spec|null>} */
 const chartSpec = ref(null);
@@ -48,19 +51,18 @@ const jsonFormSchema = ref(null);
 const jsonformEl = ref(null);
 const loading = ref(false);
 
-watch(
-  selectedStac,
-  async (updatedStac, previousStac) => {
-    if (updatedStac && previousStac?.id !== updatedStac.id) {
+
+useOnLayersUpdate(async()=>{
+    if (selectedStac.value) {
       reset();
-      if (updatedStac["eodash:jsonform"]) {
+      if (selectedStac.value["eodash:jsonform"]) {
         // wait for the layers to be rendered
-        setTimeout(async () => {
+        // setTimeout(async () => {
           jsonFormSchema.value = await axios
-            //@ts-expect-error eodash extention
-            .get(updatedStac["eodash:jsonform"])
-            .then((resp) => resp.data);
-        }, 200);
+          //@ts-expect-error eodash extention
+          .get(selectedStac.value["eodash:jsonform"])
+          .then((resp) => resp.data);
+        // }, 200);
       } else {
         if (!jsonFormSchema.value) {
           return;
@@ -68,9 +70,7 @@ watch(
         jsonFormSchema.value.value = null;
       }
     }
-  },
-  { immediate: true },
-);
+});
 
 const startProcess = async () => {
   await handleProcesses();
@@ -83,10 +83,13 @@ const startProcess = async () => {
 async function handleProcesses() {
   const coll = selectedStac.value;
   const serviceLinks = coll?.links?.filter((l) => l.rel === "service");
+  // update bbox based on the current map projection
+  const origBbox = updateBbox();
+
   [chartSpec.value, chartData.value] = await getChartValues(serviceLinks);
   const geotiffLayer = await processGeoTiff(serviceLinks);
   const vectorLayers = await processVector(serviceLinks);
-  const imageLayers = processImage(serviceLinks);
+  const imageLayers = processImage(serviceLinks,origBbox);
   console.log("layers", geotiffLayer, vectorLayers, imageLayers);
   if (geotiffLayer || vectorLayers?.length || imageLayers?.length) {
     // const prevLayerIdx = analysisGroup?.layers.findIndex(
@@ -254,28 +257,14 @@ async function processVector(links) {
 }
 /**
  * @param {import("stac-ts").StacLink[] | undefined} links
+ * @param {number[]} origBbox
  */
-function processImage(links) {
+function processImage(links,origBbox) {
   if (!links) return;
   const imageLinks = links.filter(
     (link) => link.rel === "service" && link.type === "image/png",
   );
-  const bBoxProperty = /** @type {string} */ (
-    Object.keys(jsonFormSchema.value?.properties ?? {}).find(
-      (key) => jsonFormSchema.value?.properties[key].format === "bounding-box",
-    )
-  );
-  const origBbox = jsonformEl.value?.value[bBoxProperty][0];
   const layers = [];
-  // We need to convert map projection based coordinates to 4326
-  const mapproj = mapEl.value?.getAttribute("projection") || "EPSG:3857";
-  console.log("🚀 ~ processImage ~ mapproj:", mapproj);
-  //@ts-expect-error TODO
-  jsonformEl.value.value[bBoxProperty] = mapEl.value?.transformExtent(
-    origBbox,
-    mapproj,
-  );
-
   for (const link of imageLinks) {
     layers.push({
       type: "Image",
@@ -288,12 +277,30 @@ function processImage(links) {
         imageExtent: origBbox,
         url: mustache.render(link.href, {
           ...(jsonformEl.value?.value ?? {}),
-          bbox: origBbox,
         }),
       },
     });
   }
   return layers;
+}
+function updateBbox(){
+  const bBoxProperty = /** @type {string} */ (
+    Object.keys(jsonFormSchema.value?.properties ?? {}).find(
+      (key) => jsonFormSchema.value?.properties[key].format === "bounding-box",
+    )
+  );
+  const origBbox = jsonformEl.value?.value[bBoxProperty]?.[0];
+
+  // We need to convert map projection based coordinates to 4326
+  const mapproj = mapEl.value?.getAttribute("projection") || "EPSG:3857";
+  if (origBbox && mapproj) {
+    //@ts-expect-error TODO
+    jsonformEl.value.value[bBoxProperty] = mapEl.value?.transformExtent(
+      origBbox,
+      mapproj,
+    );
+  }
+  return origBbox;
 }
 </script>
 <style>
