@@ -20,7 +20,7 @@
         color="primary"
       >
         Execute
-        </v-btn>
+      </v-btn>
     </span>
   </div>
 </template>
@@ -28,7 +28,7 @@
 import "@eox/chart";
 import "@eox/drawtools";
 import "@eox/jsonform";
-import { ref, toRaw } from "vue";
+import { nextTick, onMounted, ref, toRaw } from "vue";
 import axios from "@/plugins/axios";
 import { useSTAcStore } from "@/store/stac";
 import { storeToRefs } from "pinia";
@@ -37,60 +37,109 @@ import { getLayers } from "@/store/Actions";
 import mustache from "mustache";
 import { extractLayerConfig } from "@/utils/helpers";
 import { useOnLayersUpdate } from "@/composables";
-
+import log from "loglevel";
 
 const { selectedStac } = storeToRefs(useSTAcStore());
-/** @type {import("vue").Ref<import("vega").Spec|null>} */
+/** @type {import("vue").Ref<import("vega-embed").VisualizationSpec|null>} */
 const chartSpec = ref(null);
 /** @type {import("vue").Ref<Record<string,any>|null>}  */
 const chartData = ref(null);
 const isProcessed = ref(false);
 /** @type {import("vue").Ref<Record<string,any>|null>} */
 const jsonFormSchema = ref(null);
-/** @type {import("vue").Ref<Record<string,any>|null>} */
+/** @type {import("vue").Ref<HTMLElement & Record<string,any>|null>} */
 const jsonformEl = ref(null);
 const loading = ref(false);
+/** @type {(HTMLElement & Record<string,any>)| null} */
+let eoxDrawTools = null;
 
-
-useOnLayersUpdate(async()=>{
-    if (selectedStac.value) {
-      reset();
-      if (selectedStac.value["eodash:jsonform"]) {
-        // wait for the layers to be rendered
-        // setTimeout(async () => {
-          jsonFormSchema.value = await axios
-          //@ts-expect-error eodash extention
-          .get(selectedStac.value["eodash:jsonform"])
-          .then((resp) => resp.data);
-        // }, 200);
-      } else {
-        if (!jsonFormSchema.value) {
-          return;
-        }
-        jsonFormSchema.value.value = null;
+const initProcess = async () => {
+  if (selectedStac.value) {
+    resetProcess(eoxDrawTools);
+    if (selectedStac.value["eodash:jsonform"]) {
+      // wait for the layers to be rendered
+      jsonFormSchema.value = await axios
+        //@ts-expect-error eodash extention
+        .get(selectedStac.value["eodash:jsonform"])
+        .then((resp) => resp.data);
+      await nextTick(async () => {
+        jsonformEl.value?.addEventListener(
+          "change",
+          async () => {
+            eoxDrawTools =
+              jsonformEl.value?.querySelector("eox-drawtools") ?? null;
+            await nextTick(async () => {
+              if (eoxDrawTools?.getAttribute("layer-id")) {
+                // setTimeout(() => {
+                eoxDrawTools?.startDrawing();
+                // }, 1000);
+              }
+            });
+          },
+          { once: true },
+        );
+      });
+    } else {
+      if (!jsonFormSchema.value) {
+        return;
       }
+      jsonFormSchema.value = null;
     }
-});
+  }
+};
+
+onMounted(initProcess);
+useOnLayersUpdate(initProcess);
 
 const startProcess = async () => {
   await handleProcesses();
   isProcessed.value = true;
 };
 
-/**
- *
- */
 async function handleProcesses() {
-  const coll = selectedStac.value;
-  const serviceLinks = coll?.links?.filter((l) => l.rel === "service");
-  // update bbox based on the current map projection
-  const origBbox = updateBbox();
+  log.debug("Processing...");
 
-  [chartSpec.value, chartData.value] = await getChartValues(serviceLinks);
-  const geotiffLayer = await processGeoTiff(serviceLinks);
-  const vectorLayers = await processVector(serviceLinks);
-  const imageLayers = processImage(serviceLinks,origBbox);
-  console.log("layers", geotiffLayer, vectorLayers, imageLayers);
+  const serviceLinks = selectedStac.value?.links?.filter(
+    (l) => l.rel === "service",
+  );
+  const bboxProperty = getBboxProperty(jsonFormSchema.value);
+  const origBbox = jsonformEl.value?.value[bboxProperty];
+  // update bbox based on the current map projection
+  const updatedValue = updateBbox(
+    jsonformEl.value?.value,
+    mapEl.value,
+    bboxProperty,
+  );
+
+  const specUrl = /** @type {string} */ (
+    selectedStac.value?.["eodash:vegadefinition"]
+  );
+
+  [chartSpec.value, chartData.value] = await getChartValues(
+    serviceLinks,
+    { ...(updatedValue ?? {}) },
+    specUrl,
+  );
+  const geotiffLayer = await processGeoTiff(
+    serviceLinks,
+    updatedValue,
+    selectedStac.value?.id ?? "",
+  );
+  const vectorLayers = await processVector(
+    serviceLinks,
+    updatedValue,
+    selectedStac.value?.id ?? "",
+  );
+
+  const imageLayers = processImage(serviceLinks, updatedValue, origBbox);
+
+  log.debug(
+    "rendered layers after processing:",
+    geotiffLayer,
+    vectorLayers,
+    imageLayers,
+  );
+
   if (geotiffLayer || vectorLayers?.length || imageLayers?.length) {
     // const prevLayerIdx = analysisGroup?.layers.findIndex(
     //   //@ts-expect-error TODO
@@ -114,46 +163,53 @@ async function handleProcesses() {
   }
 }
 
-function reset() {
+/**
+ * @param {(HTMLElement & Record<string,any>) | null} [eoxDrawTools]
+ */
+function resetProcess(eoxDrawTools) {
   isProcessed.value = false;
   chartSpec.value = null;
   jsonFormSchema.value = null;
+  eoxDrawTools?.discardDrawing();
 }
 
 /**
  * @param {import("stac-ts").StacLink[] | undefined} links
- * @returns {Promise<[import("vega").Spec|null,Record<string,any>|null]>}
+ * @param {Record<string,any> | undefined} jsonformValue
+ * @param {string} specUrl
+ * @returns {Promise<[import("vega-embed").VisualizationSpec|null,Record<string,any>|null]>}
  **/
-async function getChartValues(links) {
-  const specUrl = /** @type {string} */ (
-    selectedStac.value?.["eodash:vegadefinition"]
-  );
+async function getChartValues(links, jsonformValue, specUrl) {
   if (!specUrl || !links) return [null, null];
+  /** @type {import("vega-embed").VisualizationSpec} */
   const spec = await axios.get(specUrl).then((resp) => {
     return resp.data;
   });
-  const dataName = spec.data.name;
+  //@ts-expect-error NamedData
+  const dataName = spec?.data?.name;
   const dataLinks = links.filter(
-    (link) => link.rel === "service" && link.id === dataName,
+    (link) => link.rel === "service" && dataName && link.id === dataName,
   );
+
   /** @type {Record<string,any>}  */
   const dataValues = {};
   for (const link of dataLinks ?? []) {
-    let url = link.href;
-    if (jsonFormSchema.value) {
-      if ("eox:flatstyle" in (link ?? {})) {
-        url = mustache.render(url, { ...(link["eox:flatstyle"] ?? {}) });
-      } else {
-        if ("feature" in (jsonFormSchema.value.value ?? {}))
-          url = mustache.render(url, {
-            ...(jsonformEl.value?.value ?? {}),
-            feature: jsonformEl.value?.value.feature[0],
-          });
-        else url = mustache.render(url, { ...(jsonformEl.value?.value ?? {}) });
-      }
+    if (link.type === "text/csv") {
+      //@ts-expect-error UrlData
+      spec.data.url = mustache.render(link.href, {
+        ...(jsonformValue ?? {}),
+        ...(link["eox:flatstyle"] ?? {}),
+      });
+      continue;
     }
+
     dataValues[/** @type {string} */ (link.id)] = await axios
-      .get(url)
+      .get(
+        mustache.render(link.href, {
+          ...(jsonformValue ?? {}),
+          ...(link["eox:flatstyle"] ?? {}),
+        }),
+      )
       .then((resp) => resp.data);
   }
   return [spec, dataValues];
@@ -161,8 +217,10 @@ async function getChartValues(links) {
 
 /**
  * @param {import("stac-ts").StacLink[] | undefined} links
+ * @param {Record<string,any> | undefined} jsonformValue
+ * @param {string} layerId
  */
-async function processGeoTiff(links) {
+async function processGeoTiff(links, jsonformValue, layerId) {
   if (!links) return;
   const geotiffLinks = links.filter(
     (link) => link.rel === "service" && link.type === "image/tiff",
@@ -170,9 +228,7 @@ async function processGeoTiff(links) {
   let urls = [];
   let flatStyleJSON = null;
   for (const link of geotiffLinks ?? []) {
-    urls.push(
-      mustache.render(link.href, { ...(jsonformEl.value?.value ?? {}) }),
-    );
+    urls.push(mustache.render(link.href, { ...(jsonformValue ?? {}) }));
 
     if ("eox:flatstyle" in (link ?? {})) {
       flatStyleJSON = await axios
@@ -194,12 +250,12 @@ async function processGeoTiff(links) {
         type: "WebGLTile",
         source: {
           type: "GeoTIFF",
-          normalize: false,
+          normalize: !style,
           sources: urls.map((url) => ({ url })),
         },
         properties: {
-          id: selectedStac.value?.id + "_geotiff_process",
-          title: "Results " + selectedStac.value?.id,
+          id: layerId + "_geotiff_process",
+          title: "Results " + layerId,
           ...(layerConfig && { layerConfig: layerConfig }),
         },
         ...(style && { style: style }),
@@ -208,14 +264,17 @@ async function processGeoTiff(links) {
 }
 /**
  * @param {import("stac-ts").StacLink[] | undefined} links
+ * @param {Record<string,any> | undefined} jsonformValue
+ * @param {string} layerId
  */
-async function processVector(links) {
+async function processVector(links, jsonformValue, layerId) {
   if (!links) return;
+  /** @type {Record<string,any>[]} */
   const layers = [];
   const vectorLinks = links.filter(
     (link) => link.rel === "service" && link.type === "application/geo+json",
   );
-  if (vectorLinks.length === 0) return;
+  if (vectorLinks.length === 0) return layers;
 
   let flatStyleJSON = null;
 
@@ -241,14 +300,13 @@ async function processVector(links) {
       source: {
         type: "Vector",
         url: mustache.render(link.href, {
-          ...(jsonformEl.value?.value ?? {}),
-          bbox: jsonformEl.value?.value.bbox[0],
+          ...(jsonformValue ?? {}),
         }),
         format: "GeoJSON",
       },
       properties: {
-        id: selectedStac.value?.id + "_vector_process",
-        title: "Results " + selectedStac.value?.id,
+        id: layerId + "_vector_process",
+        title: "Results " + layerId,
         ...(layerConfig && { ...layerConfig, ...(style && { style: style }) }),
       },
     });
@@ -257,9 +315,10 @@ async function processVector(links) {
 }
 /**
  * @param {import("stac-ts").StacLink[] | undefined} links
+ * @param {Record<string,any>|undefined} jsonformValue
  * @param {number[]} origBbox
  */
-function processImage(links,origBbox) {
+function processImage(links, jsonformValue, origBbox) {
   if (!links) return;
   const imageLinks = links.filter(
     (link) => link.rel === "service" && link.type === "image/png",
@@ -276,31 +335,46 @@ function processImage(links,origBbox) {
         type: "ImageStatic",
         imageExtent: origBbox,
         url: mustache.render(link.href, {
-          ...(jsonformEl.value?.value ?? {}),
+          ...(jsonformValue ?? {}),
         }),
       },
     });
   }
   return layers;
 }
-function updateBbox(){
-  const bBoxProperty = /** @type {string} */ (
-    Object.keys(jsonFormSchema.value?.properties ?? {}).find(
-      (key) => jsonFormSchema.value?.properties[key].format === "bounding-box",
-    )
-  );
-  const origBbox = jsonformEl.value?.value[bBoxProperty]?.[0];
+
+/**
+ * @param {Record<string,any>} jsonformValue
+ * @param {(HTMLElement & Record<string,any>)| null} mapElement
+ * @param {string} bboxProperty
+ **/
+function updateBbox(jsonformValue, mapElement, bboxProperty) {
+  if (!jsonformValue) {
+    return;
+  }
+  /** @type {number[]} */
+  const origBbox = jsonformValue[bboxProperty];
 
   // We need to convert map projection based coordinates to 4326
-  const mapproj = mapEl.value?.getAttribute("projection") || "EPSG:3857";
+  const mapproj = mapElement?.getAttribute("projection") || "EPSG:3857";
   if (origBbox && mapproj) {
-    //@ts-expect-error TODO
-    jsonformEl.value.value[bBoxProperty] = mapEl.value?.transformExtent(
-      origBbox,
-      mapproj,
-    );
+    const transformed = mapElement?.transformExtent(origBbox, mapproj);
+
+    if (transformed) {
+      jsonformValue[bboxProperty] = transformed;
+    }
   }
-  return origBbox;
+  return jsonformValue;
+}
+/**
+ * @param {Record<string,any> |null} [jsonformSchema]
+ **/
+function getBboxProperty(jsonformSchema) {
+  return /** @type {string} */ (
+    Object.keys(jsonformSchema?.properties ?? {}).find(
+      (key) => jsonformSchema?.properties[key].format === "bounding-box",
+    )
+  );
 }
 </script>
 <style>

@@ -1,10 +1,10 @@
 import { EodashCollection } from "@/utils/eodashSTAC";
 import { setMapProjFromCol } from "@/utils/helpers";
-import { onMounted, onUnmounted, watch } from "vue";
+import { nextTick, onMounted, onUnmounted, watch } from "vue";
 import log from "loglevel";
 import { useSTAcStore } from "@/store/stac";
 import { storeToRefs } from "pinia";
-import {useEventBus} from "@vueuse/core";
+import { useEventBus } from "@vueuse/core";
 import { eoxLayersKey } from "@/utils/keys";
 /**
  * Holder for previous compare map view as it is overwritten by sync
@@ -218,7 +218,7 @@ export const useInitMap = (
     eodashCols.values,
     datetime.value,
   );
-  const layersEvent = useEventBus(eoxLayersKey)
+  const layersEvent = useEventBus(eoxLayersKey);
 
   const stopIndicatorWatcher = watch(
     [selectedIndicator, datetime],
@@ -271,6 +271,9 @@ export const useInitMap = (
             JSON.parse(JSON.stringify(layersCollection)),
           );
           mapLayers.value = layersCollection;
+          await nextTick(() => {
+            layersEvent.emit("time:updated", mapLayers.value);
+          });
           return;
         }
 
@@ -329,7 +332,12 @@ export const useInitMap = (
         );
 
         mapLayers.value = layersCollection;
-        layersEvent.emit("layers:updated", layersCollection);
+        // Emit event to update layers
+        await nextTick(() => {
+          mapElement.value?.updateComplete.then(() => {
+            layersEvent.emit("layers:updated", mapLayers.value);
+          });
+        });
       }
     },
     { immediate: true },

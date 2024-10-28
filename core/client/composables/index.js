@@ -205,15 +205,17 @@ export const makePanelTransparent = (root) => {
 /**
  * Description placeholder
  *
- * @param {(layers?:Record<string, any>) => void|Promise<void>} callback
+ * @param {import("@vueuse/core").EventBusListener<
+ * "layers:updated"|"time:updated",
+ * {layers:Record<string,any>[]| undefined}
+ * >} listener
  */
-export const useOnLayersUpdate = (callback) =>{
+export const useOnLayersUpdate = (listener) => {
   const layersEvents = useEventBus(eoxLayersKey);
-  //@ts-expect-error to do
-  const unsubscribe = layersEvents.on(callback);
 
-  onUnmounted(()=>{
+  const unsubscribe = layersEvents.on(listener);
+
+  onUnmounted(() => {
     unsubscribe();
-  })
-
-}
+  });
+};

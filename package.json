@@ -51,7 +51,7 @@
     "@eox/chart": "^0.1.0",
     "@eox/drawtools": "^0.11.0",
     "@eox/itemfilter": "^1.1.1",
-    "@eox/jsonform": "^0.9.1-dev.1729606458.0",
+    "@eox/jsonform": "^0.9.1-dev.1729842199.0",
     "@eox/layercontrol": "^0.21.0",
     "@eox/layout": "^0.1.0",
     "@eox/map": "^1.13.1",
