@@ -38,7 +38,10 @@ import mustache from "mustache";
 import { extractLayerConfig } from "@/utils/helpers";
 import { useOnLayersUpdate } from "@/composables";
 import log from "loglevel";
+import { useEventBus } from "@vueuse/core";
+import { eoxLayersKey } from "@/utils/keys";
 
+const layersEvents = useEventBus(eoxLayersKey);
 const { selectedStac } = storeToRefs(useSTAcStore());
 /** @type {import("vue").Ref<import("vega-embed").VisualizationSpec|null>} */
 const chartSpec = ref(null);
@@ -70,9 +73,7 @@ const initProcess = async () => {
               jsonformEl.value?.querySelector("eox-drawtools") ?? null;
             await nextTick(async () => {
               if (eoxDrawTools?.getAttribute("layer-id")) {
-                // setTimeout(() => {
                 eoxDrawTools?.startDrawing();
-                // }, 1000);
               }
             });
           },
@@ -88,12 +89,24 @@ const initProcess = async () => {
   }
 };
 
-onMounted(initProcess);
+onMounted(async () => {
+  // wait for the layers to be rendered
+  if (!mapEl.value) {
+    layersEvents.once(async () => {
+      await initProcess();
+    });
+  } else {
+    await initProcess();
+  }
+});
+
 useOnLayersUpdate(initProcess);
 
 const startProcess = async () => {
-  await handleProcesses();
-  isProcessed.value = true;
+  if (!isProcessed.value) {
+    await handleProcesses();
+    isProcessed.value = true;
+  }
 };
 
 async function handleProcesses() {
