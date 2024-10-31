@@ -1,10 +1,11 @@
 <template>
   <div class="processContainer">
     <eox-jsonform
-      v-if="jsonFormSchema"
-      ref="jsonformEl"
-      .schema="jsonFormSchema"
-      .noShadow="true"
+    v-if="jsonFormSchema"
+    ref="jsonformEl"
+    .schema="jsonFormSchema"
+    .noShadow="true"
+    @change="onJsonFormChange"
     ></eox-jsonform>
     <eox-chart
       class="chart"
@@ -388,6 +389,18 @@ function getBboxProperty(jsonformSchema) {
       (key) => jsonformSchema?.properties[key].format === "bounding-box",
     )
   );
+}
+
+/**
+ * @param {CustomEvent} _e
+ **/
+const onJsonFormChange = async (_e) => {
+  const errors = jsonformEl.value?.editor.validate()
+  const execute = jsonFormSchema.value?.options?.["execute"]
+  if(!isProcessed.value && !errors?.length && execute){
+    await startProcess()
+  }
+
 }
 </script>
 <style>
