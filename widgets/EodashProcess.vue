@@ -1,11 +1,10 @@
 <template>
-  <div class="processContainer">
+  <div class="process-container">
     <eox-jsonform
-    v-if="jsonFormSchema"
-    ref="jsonformEl"
-    .schema="jsonFormSchema"
-    .noShadow="true"
-    @change="onJsonFormChange"
+      v-if="jsonFormSchema"
+      ref="jsonformEl"
+      .schema="jsonFormSchema"
+      @change="onJsonFormChange"
     ></eox-jsonform>
     <eox-chart
       class="chart"
@@ -29,6 +28,7 @@
 import "@eox/chart";
 import "@eox/drawtools";
 import "@eox/jsonform";
+
 import { nextTick, onMounted, ref, toRaw } from "vue";
 import axios from "@/plugins/axios";
 import { useSTAcStore } from "@/store/stac";
@@ -44,17 +44,22 @@ import { eoxLayersKey } from "@/utils/keys";
 
 const layersEvents = useEventBus(eoxLayersKey);
 const { selectedStac } = storeToRefs(useSTAcStore());
-/** @type {import("vue").Ref<import("vega-embed").VisualizationSpec|null>} */
+
+/** @type {import("vue").Ref<import("vega").Spec|null>} */
 const chartSpec = ref(null);
+
 /** @type {import("vue").Ref<Record<string,any>|null>}  */
 const chartData = ref(null);
 const isProcessed = ref(false);
+
 /** @type {import("vue").Ref<Record<string,any>|null>} */
 const jsonFormSchema = ref(null);
-/** @type {import("vue").Ref<HTMLElement & Record<string,any>|null>} */
+
+/** @type {import("vue").Ref<import("@eox/jsonform").EOxJSONForm | null>} */
 const jsonformEl = ref(null);
 const loading = ref(false);
-/** @type {(HTMLElement & Record<string,any>)| null} */
+
+/** @type {import("@eox/drawtools").EOxDrawTools| null} */
 let eoxDrawTools = null;
 
 const initProcess = async () => {
@@ -66,12 +71,18 @@ const initProcess = async () => {
         //@ts-expect-error eodash extention
         .get(selectedStac.value["eodash:jsonform"])
         .then((resp) => resp.data);
+      // remove borders from jsonform
+      await nextTick(() => {
+        injectJsonformCSS(jsonformEl.value);
+      });
+
       await nextTick(async () => {
         jsonformEl.value?.addEventListener(
           "change",
           async () => {
             eoxDrawTools =
-              jsonformEl.value?.querySelector("eox-drawtools") ?? null;
+              jsonformEl.value?.shadowRoot?.querySelector("eox-drawtools") ??
+              null;
             await nextTick(async () => {
               if (eoxDrawTools?.getAttribute("layer-id")) {
                 eoxDrawTools?.startDrawing();
@@ -117,13 +128,11 @@ async function handleProcesses() {
     (l) => l.rel === "service",
   );
   const bboxProperty = getBboxProperty(jsonFormSchema.value);
-  const origBbox = jsonformEl.value?.value[bboxProperty];
-  // update bbox based on the current map projection
-  const updatedValue = updateBbox(
-    jsonformEl.value?.value,
-    mapEl.value,
-    bboxProperty,
+  const jsonformValue = /** @type {Record<string,any>} */ (
+    jsonformEl.value?.value
   );
+  const origBbox = jsonformValue[bboxProperty];
+  // update bbox based on the current map projection
 
   const specUrl = /** @type {string} */ (
     selectedStac.value?.["eodash:vegadefinition"]
@@ -131,21 +140,21 @@ async function handleProcesses() {
 
   [chartSpec.value, chartData.value] = await getChartValues(
     serviceLinks,
-    { ...(updatedValue ?? {}) },
+    { ...(jsonformValue ?? {}) },
     specUrl,
   );
   const geotiffLayer = await processGeoTiff(
     serviceLinks,
-    updatedValue,
+    jsonformValue,
     selectedStac.value?.id ?? "",
   );
   const vectorLayers = await processVector(
     serviceLinks,
-    updatedValue,
+    jsonformValue,
     selectedStac.value?.id ?? "",
   );
 
-  const imageLayers = processImage(serviceLinks, updatedValue, origBbox);
+  const imageLayers = processImage(serviceLinks, jsonformValue, origBbox);
 
   log.debug(
     "rendered layers after processing:",
@@ -191,11 +200,11 @@ function resetProcess(eoxDrawTools) {
  * @param {import("stac-ts").StacLink[] | undefined} links
  * @param {Record<string,any> | undefined} jsonformValue
  * @param {string} specUrl
- * @returns {Promise<[import("vega-embed").VisualizationSpec|null,Record<string,any>|null]>}
+ * @returns {Promise<[import("vega").Spec|null,Record<string,any>|null]>}
  **/
 async function getChartValues(links, jsonformValue, specUrl) {
   if (!specUrl || !links) return [null, null];
-  /** @type {import("vega-embed").VisualizationSpec} */
+  /** @type {import("vega").Spec} */
   const spec = await axios.get(specUrl).then((resp) => {
     return resp.data;
   });
@@ -358,29 +367,6 @@ function processImage(links, jsonformValue, origBbox) {
 }
 
 /**
- * @param {Record<string,any>} jsonformValue
- * @param {(HTMLElement & Record<string,any>)| null} mapElement
- * @param {string} bboxProperty
- **/
-function updateBbox(jsonformValue, mapElement, bboxProperty) {
-  if (!jsonformValue) {
-    return;
-  }
-  /** @type {number[]} */
-  const origBbox = jsonformValue[bboxProperty];
-
-  // We need to convert map projection based coordinates to 4326
-  const mapproj = mapElement?.getAttribute("projection") || "EPSG:3857";
-  if (origBbox && mapproj) {
-    const transformed = mapElement?.transformExtent(origBbox, mapproj);
-
-    if (transformed) {
-      jsonformValue[bboxProperty] = transformed;
-    }
-  }
-  return jsonformValue;
-}
-/**
  * @param {Record<string,any> |null} [jsonformSchema]
  **/
 function getBboxProperty(jsonformSchema) {
@@ -395,12 +381,26 @@ function getBboxProperty(jsonformSchema) {
  * @param {CustomEvent} _e
  **/
 const onJsonFormChange = async (_e) => {
-  const errors = jsonformEl.value?.editor.validate()
-  const execute = jsonFormSchema.value?.options?.["execute"]
-  if(!isProcessed.value && !errors?.length && execute){
-    await startProcess()
+  const errors = jsonformEl.value?.editor.validate();
+  const execute = jsonFormSchema.value?.options?.["execute"];
+  if (!isProcessed.value && !errors?.length && execute) {
+    await startProcess();
   }
+};
 
+/**
+ * @param {import("@eox/jsonform").EOxJSONForm | null} jsonFormEl
+ **/
+function injectJsonformCSS(jsonFormEl) {
+  if (!jsonFormEl?.shadowRoot) {
+    console.error("jsonform has no shadowRoot");
+    return;
+  }
+  const stylesheet = new CSSStyleSheet();
+  stylesheet.replaceSync(`.je-indented-panel {
+    border: none !important;
+  }`);
+  jsonFormEl.shadowRoot.adoptedStyleSheets = [stylesheet];
 }
 </script>
 <style>
@@ -409,7 +409,7 @@ const onJsonFormChange = async (_e) => {
   width: 100%;
 }
 
-.processContainer {
+.process-container {
   height: 100%;
   overflow-y: auto;
 }
