@@ -4,7 +4,6 @@
       v-if="jsonFormSchema"
       ref="jsonformEl"
       .schema="jsonFormSchema"
-      @change="onJsonFormChange"
     ></eox-jsonform>
     <eox-chart
       class="chart"
@@ -14,6 +13,7 @@
     />
     <span>
       <v-btn
+        v-if="!autoExec"
         :loading="loading"
         style="float: right; margin-right: 20px"
         @click="startProcess"
@@ -29,7 +29,7 @@ import "@eox/chart";
 import "@eox/drawtools";
 import "@eox/jsonform";
 
-import { nextTick, onMounted, ref, toRaw } from "vue";
+import { nextTick, onMounted, ref, toRaw, watch } from "vue";
 import axios from "@/plugins/axios";
 import { useSTAcStore } from "@/store/stac";
 import { storeToRefs } from "pinia";
@@ -61,6 +61,9 @@ const loading = ref(false);
 
 /** @type {import("@eox/drawtools").EOxDrawTools| null} */
 let eoxDrawTools = null;
+
+const autoExec = ref(false);
+useAutoExec(autoExec, jsonformEl, jsonFormSchema);
 
 const initProcess = async () => {
   if (selectedStac.value) {
@@ -115,10 +118,8 @@ onMounted(async () => {
 useOnLayersUpdate(initProcess);
 
 const startProcess = async () => {
-  if (!isProcessed.value) {
-    await handleProcesses();
-    isProcessed.value = true;
-  }
+  await handleProcesses();
+  isProcessed.value = true;
 };
 
 async function handleProcesses() {
@@ -378,15 +379,49 @@ function getBboxProperty(jsonformSchema) {
 }
 
 /**
- * @param {CustomEvent} _e
+ * Auto execute the process when the jsonform has the execute option
+ *
+ * @param {import("vue").Ref<boolean>} autoExec
+ * @param {import("vue").Ref<import("@eox/jsonform").EOxJSONForm | null>} jsonformEl
+ * @param {import("vue").Ref<Record<string,any> | null>} jsonformSchema
  **/
-const onJsonFormChange = async (_e) => {
-  const errors = jsonformEl.value?.editor.validate();
-  const execute = jsonFormSchema.value?.options?.["execute"];
-  if (!isProcessed.value && !errors?.length && execute) {
-    await startProcess();
-  }
-};
+function useAutoExec(autoExec, jsonformEl, jsonformSchema) {
+  /**
+   * @param {CustomEvent} _e
+   **/
+  const onJsonFormChange = async (_e) => {
+    const errors = jsonformEl.value?.editor.validate();
+
+    if (!isProcessed.value && !errors?.length) {
+      await startProcess();
+    }
+  };
+
+  const addEventListener = async () => {
+    await nextTick(() => {
+      //@ts-expect-error TODO
+      jsonformEl.value?.addEventListener("change", onJsonFormChange);
+    });
+  };
+  const removeEventListener = () => {
+    //@ts-expect-error TODO
+    jsonformEl.value?.removeEventListener("change", onJsonFormChange);
+  };
+
+  watch(jsonformSchema, (updatedSchema) => {
+    autoExec.value = updatedSchema?.options?.["execute"] || false;
+  });
+
+  onMounted(() => {
+    watch(autoExec, async (exec) => {
+      if (exec) {
+        await addEventListener();
+      } else {
+        removeEventListener();
+      }
+    },{ immediate: true });
+  });
+}
 
 /**
  * @param {import("@eox/jsonform").EOxJSONForm | null} jsonFormEl
