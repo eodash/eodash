@@ -1,6 +1,13 @@
 # Changelog
 
 
+## [5.0.0-alpha.2.25](https://github.com/eodash/eodash/compare/eodash-v5.0.0-alpha.2.24...eodash-v5.0.0-alpha.2.25) (2024-11-12)
+
+
+### Features
+
+* added extraction of optional wms parameters ([#138](https://github.com/eodash/eodash/issues/138)) ([65fed53](https://github.com/eodash/eodash/commit/65fed53432489db6151f7292ab4c098c82bd9c7b))
+
 ## [5.0.0-alpha.2.24](https://github.com/eodash/eodash/compare/eodash-v5.0.0-alpha.2.23...eodash-v5.0.0-alpha.2.24) (2024-10-11)
 
 
