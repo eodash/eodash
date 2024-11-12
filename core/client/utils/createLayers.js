@@ -147,6 +147,10 @@ export const createLayersFromLinks = async (
       viewProjectionCode,
     );
     log.debug("WMS Layer added", linkId);
+    const tileSize =
+      "wms:tilesize" in wmsLink
+        ? [wmsLink["wms:tilesize"], wmsLink["wms:tilesize"]]
+        : [512, 512];
     let json = {
       type: "Tile",
       properties: {
@@ -159,7 +163,7 @@ export const createLayersFromLinks = async (
         url: wmsLink.href,
         projection: linkProjectionCode,
         tileGrid: {
-          tileSize: [512, 512],
+          tileSize,
         },
         params: {
           LAYERS: wmsLink["wms:layers"],
@@ -167,6 +171,10 @@ export const createLayersFromLinks = async (
         },
       },
     };
+    if ("wms:version" in wmsLink) {
+      // @ts-expect-error no type for eox-map
+      json.source.params["VERSION"] = wmsLink["wms:version"];
+    }
     extractRoles(json.properties, wmsLink);
     if ("wms:dimensions" in wmsLink) {
       // Expand all dimensions into the params attribute
