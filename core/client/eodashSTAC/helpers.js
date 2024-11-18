@@ -1,5 +1,5 @@
-import { changeMapProjection, registerProjection } from "@/store/Actions";
-import { availableMapProjection } from "@/store/States";
+import { changeMapProjection, registerProjection } from "@/store/actions.js";
+import { availableMapProjection } from "@/store/states.js";
 import { toAbsolute } from "stac-js/src/http.js";
 import axios from "@/plugins/axios";
 import log from "loglevel";
@@ -293,7 +293,7 @@ export const replaceLayer = (currentLayers, oldLayer, newLayers) => {
   }
 };
 /**
- * @param {import('./eodashSTAC.js').EodashCollection[]} indicators
+ * @param {import('../eodashSTAC/EodashCollection.js').EodashCollection[]} indicators
  * @param {import('ol/layer').Layer} layer
  */
 export const getColFromLayer = async (indicators, layer) => {
