@@ -2,7 +2,7 @@
   "$schema": "https://typedoc.org/schema.json",
   "entryPoints": [
     "core/node/types.d.ts",
-    "core/client/types.d.ts",
+    "core/client/types.ts",
     "core/client/asWebComponent.d.ts"
   ],
   "sortEntryPoints": false,
