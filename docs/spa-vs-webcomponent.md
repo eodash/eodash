@@ -16,4 +16,4 @@ Utilizing [Vue](https://vuejs.org/guide/extras/ways-of-using-vue.html#embedded-w
 
 The `eodash` web component `<eo-dash/>` comes with a reactive `config` attribute. This attribute accepts the path to the runtime configuration and loads it automatically when the dashboard page loads.
 
-Additionally, `@eodash/eodash` provides a pre-built web component library within the `/webcomponent` package, which can be used if you only want to use the runtime configuration. Checkout [Installing Eodash Web Component In Your Project](/#installing-eodash-web-component-in-your-project)
+Additionally, `@eodash/eodash` provides a pre-built web component library within the package under  `/webcomponent`, which can be used if you only want to use the runtime configuration. Checkout [Installing Eodash Web Component In Your Project](/#installing-eodash-web-component-in-your-project)
