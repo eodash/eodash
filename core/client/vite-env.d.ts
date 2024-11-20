@@ -6,7 +6,7 @@ declare module "*.vue" {
   export default component;
 }
 declare interface Window {
-  eodashStore: import("@/types").EodashStore;
+  eodashStore: typeof import("@/store").default;
   setEodashLoglevel: typeof import("loglevel").setLevel;
 }
 declare module "user:config" {

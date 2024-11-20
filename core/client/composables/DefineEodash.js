@@ -54,7 +54,7 @@ export const useEodashRuntime = async (runtimeConfig) => {
 
 /**
  * @param {((
- *       store: import("@/types").EodashStore,
+ *       store: typeof import("@/store").default,
  *     ) => (Promise<import("@/types").Eodash> | import("@/types").Eodash))
  *   | import("@/types").Eodash} config
  */
