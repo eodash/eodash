@@ -43,7 +43,10 @@ export function generateFeatures(links) {
   return geojsonObject;
 }
 
-/** @param { import("ol/layer/WebGLTile").Style & { jsonform?: Record<string,any> } & { legend?: Record<string,any> } } [style] */
+/**
+ * Sperates and extracts layerConfig (jsonform schema & legend) from a style json
+ *
+ *  @param { import("ol/layer/WebGLTile").Style & { jsonform?: Record<string,any> } & { legend?: Record<string,any> } } [style] */
 export function extractLayerConfig(style) {
   /** @type {Record<string,unknown> | undefined} */
   let layerConfig = undefined;
@@ -108,25 +111,24 @@ export const setMapProjFromCol = async (STAcCollection) => {
  *   | null
  * } stacObject
  * @param {string} basepath
- * @returns {string[]}
  */
 export function extractCollectionUrls(stacObject, basepath) {
+  /** @type {string[]} */
   const collectionUrls = [];
   // Support for two structure types, flat and indicator, simplified here:
   // Flat assumes Catalog-Collection-Item
   // Indicator assumes Catalog-Collection-Collection-Item
-  // TODO: this is not the most stable test approach,
-  // we should discuss potential other approaches
-  if (stacObject?.links && stacObject?.links[1]?.rel === "item") {
+
+  const children = stacObject?.links?.filter(
+    (link) => link.rel === "child" && link.type?.includes("json"),
+  );
+  if (!children?.length) {
     collectionUrls.push(basepath);
-  } else if (stacObject?.links[1]?.rel === "child") {
-    // TODO: Iterate through all children to create collections
-    stacObject.links.forEach((link) => {
-      if (link.rel === "child") {
-        collectionUrls.push(toAbsolute(link.href, basepath));
-      }
-    });
+    return collectionUrls;
   }
+  children.forEach((link) => {
+    collectionUrls.push(toAbsolute(link.href, basepath));
+  });
   return collectionUrls;
 }
 
