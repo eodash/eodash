@@ -57,7 +57,7 @@ export class EodashCollection {
      **/
     let stac;
     // TODO get auxiliary layers from collection
-    /** @type {import("@eox/map").EoxLayer[]} */
+    /** @type {Record<string,any>[]} */
     let layersJson = [];
 
     // Load collectionstac if not yet initialized
@@ -84,7 +84,7 @@ export class EodashCollection {
       this.selectedItem = this.getItem();
 
       if (this.selectedItem) {
-        layersJson = await this.createLayersJson(this.selectedItem)
+        layersJson = await this.createLayersJson(this.selectedItem);
       } else {
         console.warn(
           "[eodash] the selected collection does not include any items",
@@ -110,7 +110,7 @@ export class EodashCollection {
    * @param {string} title
    * @param {boolean} isGeoDB
    * @param {string} [itemDatetime]
-   * @returns {Promise<import("@eox/map").EoxLayer[]>} layers
+   * @returns {Promise<Record<string,any>[]>} layers
    * */
   async buildJsonArray(item, itemUrl, title, isGeoDB, itemDatetime) {
     log.debug(
@@ -141,12 +141,10 @@ export class EodashCollection {
           type: "Vector",
           properties: {
             id: this.#collectionStac?.id ?? "",
-             //@ts-expect-error "title" is not included in EoxLayer
             title: this.#collectionStac?.title || item.id,
           },
           source: {
             type: "Vector",
-            //@ts-expect-error "url" is not included in EoxLayer
             url: "data:," + encodeURIComponent(JSON.stringify(allFeatures)),
             format: "GeoJSON",
           },
@@ -345,12 +343,16 @@ export class EodashCollection {
       currentLayers = getCompareLayers();
     }
 
-    const oldLayer = findLayer(currentLayers, layer);
+    /** @type {string | undefined} */
+    const oldLayerID = findLayer(currentLayers, layer)?.properties.id;
+
+    if (!oldLayerID) {
+      return
+    }
 
     const updatedLayers = replaceLayer(
       currentLayers,
-      /** @type {Record<string,any> & { properties:{ id:string; title:string } } } */
-      (oldLayer),
+      oldLayerID,
       newLayers,
     );
 

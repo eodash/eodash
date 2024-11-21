@@ -67,9 +67,9 @@ export async function createLayersFromAssets(
       };
 
       extractRoles(layer.properties, assets[ast]);
-      if (extraProperties !== null) {
-        layer.properties = { ...layer.properties, ...extraProperties };
-      }
+
+      layer.properties = { ...layer.properties, ...(extraProperties ?? {}) };
+
       jsonArray.push(layer);
     } else if (assets[ast]?.type === "image/tiff") {
       geoTIFFIdx = idx;
@@ -118,7 +118,7 @@ export const createLayersFromLinks = async (
   extraProperties,
 ) => {
   log.debug("Creating layers from links");
-  /** @type {import("@eox/map").EoxLayer[]} */
+  /** @type {Record<string,any>[]} */
   const jsonArray = [];
   const wmsArray = item.links.filter((l) => l.rel === "wms");
   const wmtsArray = item.links.filter((l) => l.rel === "wmts");
@@ -148,10 +148,11 @@ export const createLayersFromLinks = async (
       viewProjectionCode,
     );
     log.debug("WMS Layer added", linkId);
-    const tileSize =/** @type {number[]} */(
+    const tileSize = /** @type {number[]} */ (
       "wms:tilesize" in wmsLink
         ? [wmsLink["wms:tilesize"], wmsLink["wms:tilesize"]]
-        : [512, 512]);
+        : [512, 512]
+    );
     let json = {
       type: "Tile",
       properties: {
