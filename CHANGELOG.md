@@ -1,6 +1,13 @@
 # Changelog
 
 
+## [5.0.0-alpha.2.26](https://github.com/eodash/eodash/compare/eodash-v5.0.0-alpha.2.25...eodash-v5.0.0-alpha.2.26) (2024-11-22)
+
+
+### Bug Fixes
+
+* making sure additional properties are also added to layers created from tiff assets ([#141](https://github.com/eodash/eodash/issues/141)) ([e9a6b37](https://github.com/eodash/eodash/commit/e9a6b376f66c7f2eba5f2cee038a328694954bb0))
+
 ## [5.0.0-alpha.2.25](https://github.com/eodash/eodash/compare/eodash-v5.0.0-alpha.2.24...eodash-v5.0.0-alpha.2.25) (2024-11-12)
 
 
