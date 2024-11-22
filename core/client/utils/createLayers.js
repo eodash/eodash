@@ -96,6 +96,9 @@ export async function createLayersFromAssets(
       },
       style,
     };
+    if (extraProperties !== null) {
+      layer.properties = { ...layer.properties, ...extraProperties };
+    }
     jsonArray.push(layer);
   }
 
