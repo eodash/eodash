@@ -1,5 +1,5 @@
 // functions of this folder can only be consumed inside setup stores,
-// setup functions or vue composition api components
+// setup functions or vue composition api components https://vuejs.org/guide/reusability/composables
 
 import {
   currentCompareUrl,
@@ -7,7 +7,7 @@ import {
   datetime,
   indicator,
   mapPosition,
-} from "@/store/States";
+} from "@/store/states";
 import eodash from "@/eodash";
 import { useTheme } from "vuetify/lib/framework.mjs";
 import { onMounted, watch } from "vue";
@@ -25,7 +25,7 @@ import log from "loglevel";
  */
 export const useAbsoluteUrl = (rel = "", base = eodash.stacEndpoint) => {
   if (!rel || rel.includes("http")) {
-    currentUrl.value = base;
+    currentUrl.value = rel;
     return currentUrl;
   }
 
@@ -188,7 +188,10 @@ export const useURLSearchParametersSync = () => {
   });
 };
 
-/** @param {import("vue").Ref<HTMLElement|null>} root - components root element ref*/
+/**
+ * Converts eox-layout-item to transparent
+ *
+ *  @param {import("vue").Ref<HTMLElement|null>} root - components root element ref*/
 export const makePanelTransparent = (root) => {
   onMounted(() => {
     const eoxItem = root.value?.parentElement;

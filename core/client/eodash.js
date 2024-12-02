@@ -1,5 +1,5 @@
 import { reactive } from "vue";
-import { currentUrl } from "./store/States";
+import { currentUrl } from "./store/states";
 
 /**
  * Reactive Edoash Instance Object. provided globally in the app, and used as an
@@ -10,8 +10,10 @@ import { currentUrl } from "./store/States";
 export const eodash = reactive({
   id: "demo",
   stacEndpoint:
-    "https://eodashcatalog.eox.at/test-style/trilateral/catalog.json",
-  // "https://gtif-cerulean.github.io/catalog/cerulean/catalog.json",
+    // "https://eodashcatalog.eox.at/test-style/trilateral/catalog.json",
+    "https://gtif-cerulean.github.io/catalog/cerulean/catalog.json",
+    // "https://esa-eodash.github.io/RACE-catalog/RACE/catalog.json",
+    // "https://eurodatacube.github.io/eodash-catalog/RACE/catalog.json",
   brand: {
     noLayout: true,
     name: "Demo",
@@ -55,7 +57,7 @@ export const eodash = reactive({
         id: Symbol(),
         type: "internal",
         title: "Indicators",
-        layout: { x: 0, y: 0, w: 3, h: 6 },
+        layout: { x: 0, y: 0, w: 4, h: 6 },
         widget: {
           name: "EodashItemFilter",
           properties: {
@@ -68,7 +70,7 @@ export const eodash = reactive({
         id: Symbol(),
         type: "internal",
         title: "Layer Control",
-        layout: { x: 0, y: 6, w: 3, h: 6 },
+        layout: { x: 0, y: 6, w: 4, h: 6 },
         widget: {
           name: "EodashLayerControl",
         },

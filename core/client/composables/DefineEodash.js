@@ -3,8 +3,7 @@ import { eodashKey } from "@/utils/keys";
 import { inject } from "vue";
 
 /**
- * Sets user defined instance on runtime. Consumes `/@fs/config.js` and assign
- * it to `eodash`
+ * Handles importing user defined instance of Eodash
  *
  * @async
  * @param {string | undefined} runtimeConfig

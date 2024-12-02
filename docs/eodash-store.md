@@ -79,7 +79,7 @@ export default {
 
   <body>
     <script type="module" src="/.eodash/dist/eo-dash.js"></script>
-     <eo-dash config="/config.js"></eo-dash> // [!code focus]
+    <eo-dash config="/config.js"></eo-dash> // [!code focus]
   </body>
 </html>
 ```
