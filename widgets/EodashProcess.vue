@@ -41,6 +41,7 @@ import { useOnLayersUpdate } from "@/composables";
 import log from "loglevel";
 import { useEventBus } from "@vueuse/core";
 import { eoxLayersKey } from "@/utils/keys";
+import { isMulti } from "@eox/jsonform/src/custom-inputs/spatial/utils";
 
 const layersEvents = useEventBus(eoxLayersKey);
 const { selectedStac } = storeToRefs(useSTAcStore());
@@ -59,16 +60,14 @@ const jsonFormSchema = ref(null);
 const jsonformEl = ref(null);
 const loading = ref(false);
 
-/** @type {import("@eox/drawtools").EOxDrawTools| null} */
-let eoxDrawTools = null;
-
 const autoExec = ref(false);
 useAutoExec(autoExec, jsonformEl, jsonFormSchema);
 
 const initProcess = async () => {
   if (selectedStac.value) {
-    resetProcess(eoxDrawTools);
+    resetProcess();
     if (selectedStac.value["eodash:jsonform"]) {
+      jsonformEl.value?.editor.destroy();
       // wait for the layers to be rendered
       jsonFormSchema.value = await axios
         //@ts-expect-error eodash extention
@@ -77,23 +76,6 @@ const initProcess = async () => {
       // remove borders from jsonform
       await nextTick(() => {
         injectJsonformCSS(jsonformEl.value);
-      });
-
-      await nextTick(async () => {
-        jsonformEl.value?.addEventListener(
-          "change",
-          async () => {
-            eoxDrawTools =
-              jsonformEl.value?.shadowRoot?.querySelector("eox-drawtools") ??
-              null;
-            await nextTick(async () => {
-              if (eoxDrawTools?.getAttribute("layer-id")) {
-                eoxDrawTools?.startDrawing();
-              }
-            });
-          },
-          { once: true },
-        );
       });
     } else {
       if (!jsonFormSchema.value) {
@@ -132,8 +114,10 @@ async function handleProcesses() {
   const jsonformValue = /** @type {Record<string,any>} */ (
     jsonformEl.value?.value
   );
+
+  extractGeometries(jsonformValue, jsonFormSchema.value);
+
   const origBbox = jsonformValue[bboxProperty];
-  // update bbox based on the current map projection
 
   const specUrl = /** @type {string} */ (
     selectedStac.value?.["eodash:vegadefinition"]
@@ -187,14 +171,10 @@ async function handleProcesses() {
   }
 }
 
-/**
- * @param {(HTMLElement & Record<string,any>) | null} [eoxDrawTools]
- */
-function resetProcess(eoxDrawTools) {
+function resetProcess() {
   isProcessed.value = false;
   chartSpec.value = null;
   jsonFormSchema.value = null;
-  eoxDrawTools?.discardDrawing();
 }
 
 /**
@@ -218,7 +198,7 @@ async function getChartValues(links, jsonformValue, specUrl) {
   /** @type {Record<string,any>}  */
   const dataValues = {};
   for (const link of dataLinks ?? []) {
-    if (link.type === "text/csv") {
+    if (link.type && ["application/json", "text/csv"].includes(link.type)) {
       //@ts-expect-error UrlData
       spec.data.url = mustache.render(link.href, {
         ...(jsonformValue ?? {}),
@@ -413,14 +393,56 @@ function useAutoExec(autoExec, jsonformEl, jsonformSchema) {
   });
 
   onMounted(() => {
-    watch(autoExec, async (exec) => {
-      if (exec) {
-        await addEventListener();
-      } else {
-        removeEventListener();
-      }
-    },{ immediate: true });
+    watch(
+      autoExec,
+      async (exec) => {
+        if (exec) {
+          await addEventListener();
+        } else {
+          removeEventListener();
+        }
+      },
+      { immediate: true },
+    );
   });
+}
+
+/**
+ * Extracts the keys of type "geojson" from the jsonform schema
+ * @param {Record<string,any> |null} [jsonformSchema]
+ **/
+function getGeoJsonProperties(jsonformSchema) {
+  return /** @type {string[]} */ (
+    Object.keys(jsonformSchema?.properties ?? {}).filter(
+      (key) => jsonformSchema?.properties[key].type === "geojson",
+    )
+  );
+}
+
+/**
+ * Converts jsonform geojson values to stringified geometries
+ * @param {Record<string,any> |null} [jsonformSchema]
+ * @param {Record<string,any>} jsonformValue
+ **/
+function extractGeometries(jsonformValue, jsonformSchema) {
+  const geojsonKeys = getGeoJsonProperties(jsonformSchema);
+
+  for (const key of geojsonKeys) {
+    if (!jsonformValue[key]) {
+      continue;
+    }
+
+    if (isMulti(jsonformSchema?.properties[key])) {
+      // jsonformValue[key] is a feature collection
+      jsonformValue[key] =
+        /** @type {import("ol/format/GeoJSON").GeoJSONFeatureCollection} */ (
+          jsonformValue[key]
+        ).features.map((feature) => JSON.stringify(feature.geometry));
+    } else {
+      // jsonformValue[key] is a single feature
+      jsonformValue[key] = JSON.stringify(jsonformValue[key].geometry);
+    }
+  }
 }
 
 /**
