@@ -10,9 +10,11 @@ import {
 } from "@/store/States";
 import eodash from "@/eodash";
 import { useTheme } from "vuetify/lib/framework.mjs";
-import { onMounted, watch } from "vue";
+import { onMounted, onUnmounted, watch } from "vue";
 import { useSTAcStore } from "@/store/stac";
 import log from "loglevel";
+import { useEventBus } from "@vueuse/core";
+import { eoxLayersKey } from "@/utils/keys";
 
 /**
  * Creates an absolute URL from a relative link and assignes it to `currentUrl`
@@ -197,5 +199,23 @@ export const makePanelTransparent = (root) => {
       eoxItem.style.background = "transparent";
       eoxItem.style.border = "transparent";
     }
+  });
+};
+
+/**
+ * Description placeholder
+ *
+ * @param {import("@vueuse/core").EventBusListener<
+ * "layers:updated"|"time:updated",
+ * {layers:Record<string,any>[]| undefined}
+ * >} listener
+ */
+export const useOnLayersUpdate = (listener) => {
+  const layersEvents = useEventBus(eoxLayersKey);
+
+  const unsubscribe = layersEvents.on(listener);
+
+  onUnmounted(() => {
+    unsubscribe();
   });
 };

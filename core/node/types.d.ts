@@ -37,6 +37,8 @@ export interface EodashConfig {
   widgets?: string;
   /** Builds eodash as a web component library */
   lib?: boolean;
+  /** User Config that is merged to eodash Vite Config*/
+  vite?: Omit<import("vite").UserConfig, "root">;
 }
 /**
  * Helper function that provides intellisense without the need for JSDOC for

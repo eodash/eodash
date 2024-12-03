@@ -7,13 +7,7 @@ import log from "loglevel";
 /** @param {import("stac-ts").StacLink[]} [links] */
 export function generateFeatures(links) {
   /**
-   * @type {{
-   *   type: string;
-   *   geometry: {
-   *     type: string;
-   *     coordinates: [number, number];
-   *   };
-   * }[]}
+   * @type {import("geojson").Feature[]}
    */
   const features = [];
   links?.forEach((element) => {
@@ -27,6 +21,7 @@ export function generateFeatures(links) {
           type: "Point",
           coordinates: [lon, lat],
         },
+        properties: { id: element.id },
       });
     }
   });
@@ -49,8 +44,14 @@ export function extractLayerConfig(style) {
   let layerConfig = undefined;
   if (style?.jsonform) {
     layerConfig = { schema: style.jsonform, type: "style" };
+    style = { ...style };
     delete style.jsonform;
   }
+  log.debug(
+    "extracted layerConfig",
+    JSON.parse(JSON.stringify({ layerConfig, style })),
+  );
+
   return { layerConfig, style };
 }
 
@@ -107,15 +108,17 @@ export function extractCollectionUrls(stacObject, basepath) {
   // Indicator assumes Catalog-Collection-Collection-Item
   // TODO: this is not the most stable test approach,
   // we should discuss potential other approaches
-  if (stacObject?.links && stacObject?.links[1].rel === "item") {
-    collectionUrls.push(basepath);
-  } else if (stacObject?.links[1].rel === "child") {
-    // TODO: Iterate through all children to create collections
-    stacObject.links.forEach((link) => {
-      if (link.rel === "child") {
-        collectionUrls.push(toAbsolute(link.href, basepath));
-      }
-    });
+  if (stacObject?.links && stacObject?.links.length > 1) {
+    if (stacObject?.links[1].rel === "item") {
+      collectionUrls.push(basepath);
+    } else if (stacObject?.links[1].rel === "child") {
+      // TODO: Iterate through all children to create collections
+      stacObject.links.forEach((link) => {
+        if (link.rel === "child") {
+          collectionUrls.push(toAbsolute(link.href, basepath));
+        }
+      });
+    }
   }
   return collectionUrls;
 }
@@ -135,9 +138,9 @@ export const extractRoles = (properties, linkOrAsset) => {
       properties.group = role;
       //remove all the properties and replace the random ID with baselayer
       // provided ID
-      const [_colId, _itemId, _isAsset, _random, proj] =
-        properties.id.split(";:;");
-      properties.id = ["", "", "", "", linkOrAsset.id, proj].join(";:;");
+      // const [_colId, _itemId, _isAsset, _random, proj] =
+      //   properties.id.split(";:;");
+      // properties.id = ["", "", "", "", linkOrAsset.id, proj].join(";:;");
     }
 
     return properties;
@@ -160,7 +163,9 @@ export const fetchStyle = async (item, itemUrl) => {
 
     /** @type {import("ol/layer/WebGLTile").Style & {jsonform?:Record<string,any>}} */
     const styleJson = await axios.get(url).then((resp) => resp.data);
-    return styleJson;
+
+    log.debug("fetched styles JSON", JSON.parse(JSON.stringify(styleJson)));
+    return { ...styleJson };
   }
 };
 

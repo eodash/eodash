@@ -1,10 +1,12 @@
 <template>
   <span class="d-flex flex-column fill-height overflow-auto">
     <eox-layercontrol
-      v-if="mapElement"
+      v-if="showControls"
       :for="mapElement"
+      .tools="['datetime', 'info', 'config', 'opacity']"
       @datetime:updated="debouncedHandleDateTime"
       class="fill-height"
+      toolsAsList="true"
       ref="eoxLayercontrol"
     />
   </span>
@@ -14,16 +16,29 @@ import "@eox/layercontrol";
 import "@eox/jsonform";
 import "@eox/timecontrol";
 
-import { ref } from "vue";
+import { computed, ref } from "vue";
 import { mapEl, mapCompareEl } from "@/store/States";
 import { getColFromLayer } from "@/utils/helpers";
 import { eodashCollections, eodashCompareCollections } from "@/utils/states";
+import { storeToRefs } from "pinia";
+import { useSTAcStore } from "@/store/stac";
 
 const props = defineProps({
   map: {
     type: String,
     default: "first",
   },
+});
+
+const showControls = computed(() => {
+  const { selectedCompareStac, selectedStac } = storeToRefs(useSTAcStore());
+  if (props.map === "second") {
+    return mapCompareEl.value !== null && selectedCompareStac.value !== null;
+  }
+  if (mapEl.value !== null && selectedStac.value !== null) {
+    return true;
+  }
+  return false;
 });
 
 const eodashCols =
@@ -44,7 +59,11 @@ const handleDatetimeUpdate = async (evt) => {
 
   if (ec) {
     await ec.fetchCollection();
-    updatedLayers = await ec.updateLayerJson(datetime, layer.get("id"));
+    updatedLayers = await ec.updateLayerJson(
+      datetime,
+      layer.get("id"),
+      props.map,
+    );
   }
   /** @type {Record<String,any>[] | undefined} */
   const dataLayers = updatedLayers?.find(

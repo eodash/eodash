@@ -13,45 +13,21 @@ import {
   logger,
   rootPath,
   internalWidgetsPath,
+  indexHtml,
+  clientModules,
 } from "./globals.js";
 import { readFile } from "fs/promises";
-import { defineConfig, searchForWorkspaceRoot } from "vite";
+import { defineConfig, mergeConfig, searchForWorkspaceRoot } from "vite";
 import { existsSync } from "fs";
 import path from "path";
 
-export const indexHtml = `
-<!DOCTYPE html>
-<html lang="en">
-
-<head>
-  <meta charset="UTF-8" />
-  <link rel="icon" href="/favicon.ico" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Welcome to Eodash v5</title>
-</head>
-
-<body>
-${
-  userConfig.lib
-    ? `<eo-dash style="height:100dvh;"/>
-<script type="module" src="${path.resolve(`/@fs/${appPath}`, `core/client/asWebComponent.js`)}"></script>
-`
-    : ` <div id="app"/>
-<script type="module" src="${path.resolve(`/@fs/${appPath}`, `core/client/render.js`)}"></script>
-`
-}
-</body>
-</html>`;
-
-export const viteConfig = /** @type {import("vite").UserConfigFnPromise} */ (
-  defineConfig(({ mode, command }) => {
-    return {
+export const eodashViteConfig = /** @type {import("vite").UserConfigFn} */ (
+  defineConfig(async ({ mode, command }) => {
+    return /** @type {import("vite").UserConfig} */ ({
       base: userConfig.base ?? "",
       cacheDir: cachePath,
       plugins: [
         vue({
-          // to do: inject styles to web component directly
-          customElement: false,
           template: {
             transformAssetUrls,
             compilerOptions: {
@@ -82,7 +58,7 @@ export const viteConfig = /** @type {import("vite").UserConfigFnPromise} */ (
       },
       server: {
         warmup: {
-          clientFiles: [path.join(appPath, "core/client/**")],
+          clientFiles: [path.join(appPath, "core/client/**"), entryPath],
         },
         port: userConfig.port ?? 3000,
         open: userConfig.open,
@@ -92,45 +68,74 @@ export const viteConfig = /** @type {import("vite").UserConfigFnPromise} */ (
         host: userConfig.host,
       },
       root: appPath,
-      optimizeDeps:
-        mode === "development"
-          ? {
-              include: [
-                "webfontloader",
-                "vuetify",
-                "vue",
-                "pinia",
-                "stac-js",
-                "urijs",
-                "loglevel",
-                "vega",
-                "vega-lite",
-                "vega-embed",
-              ],
-              noDiscovery: true,
-            }
-          : {},
+      ...(mode === "development" && {
+        optimizeDeps: {
+          include: [
+            "webfontloader",
+            "vuetify",
+            "vue",
+            "pinia",
+            "stac-js",
+            "urijs",
+            "loglevel",
+            "vega",
+            "vega-lite",
+            "vega-embed",
+            "@eox/map",
+            "@eox/map/src/plugins/advancedLayersAndSources",
+            "@eox/drawtools",
+            "@eox/jsonform",
+            "@eox/chart",
+            "@eox/layercontrol",
+            "@eox/itemfilter",
+            "@eox/timecontrol",
+            "@eox/stacinfo",
+          ],
+          noDiscovery: true,
+        },
+      }),
+      // false only if the user explicitly sets it to false
       /** @type {string | false} */
       publicDir: userConfig.publicDir === false ? false : publicPath,
       build: {
-        lib: userConfig.lib &&
-          command === "build" && {
-            entry: path.join(appPath, "core/client/asWebComponent.js"),
-            fileName: "eo-dash",
-            formats: ["es"],
-            name: "@eodash/eodash",
-          },
         outDir: buildTargetPath,
         emptyOutDir: true,
-        rollupOptions:
-          userConfig.lib && command === "build"
-            ? {
-                input: path.join(appPath, "core/client/asWebComponent.js"),
-              }
-            : undefined,
         target: "esnext",
+        cssMinify: true,
+        ...(userConfig.lib &&
+          command === "build" && {
+            minify: false,
+            lib: {
+              entry: path.join(appPath, "core/client/asWebComponent.js"),
+              fileName: "eo-dash",
+              formats: ["es"],
+              name: "@eodash/eodash",
+            },
+            rollupOptions: {
+              input: path.join(appPath, "core/client/asWebComponent.js"),
+              // vuetify is compiled by "vite-plugin-vuetify"
+              external: (source) => {
+                const isCssOrVuetify =
+                  source.includes("vuetify") ||
+                  source.endsWith(".css") ||
+                  source.endsWith("styles");
+                const isClientDep = clientModules.some((m) =>
+                  source.startsWith(m),
+                );
+                return !isCssOrVuetify && isClientDep;
+              },
+            },
+          }),
       },
-    };
+    });
+  })
+);
+
+export const viteConfig = /** @type {import("vite").UserConfigFn} */ (
+  defineConfig(async (env) => {
+    return userConfig.vite
+      ? mergeConfig(await eodashViteConfig(env), userConfig.vite)
+      : eodashViteConfig(env);
   })
 );
 
@@ -159,9 +164,9 @@ async function configureServer(server) {
   server.watcher.on("change", async (path) => {
     updatedPath = path;
     if (path === runtimeConfigPath) {
-      server.hot.send({
+      server.ws.send({
         type: "full-reload",
-        path: path,
+        path,
       });
     }
   });
