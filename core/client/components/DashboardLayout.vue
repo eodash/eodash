@@ -1,9 +1,13 @@
 <template>
   <v-main>
-    <eox-layout :gap="eodash.template.gap ?? 2">
+    <eox-layout
+      :gap="eodash.template.gap ?? 16"
+      :style="`padding: ${eodash.template.gap || 16}px`"
+    >
       <eox-layout-item
         v-if="bgWidget.component"
         class="bg-panel bg-surface"
+        :style="`margin: -${eodash.template.gap ?? 16}px;`"
         x="0"
         y="0"
         h="12"
