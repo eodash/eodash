@@ -1,5 +1,5 @@
 <template>
-  <v-card>
+  <v-card class="d-flex flex-column fill-height overflow-auto">
     <v-card-title class="bg-indigo-darken-4">
       <v-dialog eager>
         <template v-slot:activator="{ props: activatorProps }">
