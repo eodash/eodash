@@ -1,13 +1,13 @@
 <template>
   <v-card class="d-flex flex-column fill-height overflow-auto">
     <v-card-title class="bg-indigo-darken-4">
-      <v-dialog eager>
+      <v-dialog>
         <template v-slot:activator="{ props: activatorProps }">
           <v-btn
             v-bind="activatorProps"
             color="blue-darken-4"
-            append-icon="mdi-plus"
-            text="Add indicators"
+            append-icon="plus"
+            text="Choose indicator"
           ></v-btn>
         </template>
 
@@ -21,6 +21,7 @@
               .imageProperty="'assets.thumbnail.href'"
               .subTitleProperty="'subtitle'"
               .filterProperties="[]"
+              .items='store.stac?.filter((item) => item.rel === "child")'
               result-type="cards"
               @select="onSelect"
             >
@@ -202,26 +203,26 @@ const injectCompareButtons = () => {
   }, 100);
 };
 
-onMounted(() => {
-  const style = document.createElement("style");
-  style.innerHTML = `
-    section {
-      margin: 0 !important;
-    }
-    section button#filter-reset {
-      padding: 0 8px;
-      top: 8px;
-      right: 8px;
-    }
-  `;
-  eoxItemFilter.value?.shadowRoot?.appendChild(style);
+// onMounted(() => {
+//   const style = document.createElement("style");
+//   style.innerHTML = `
+//     section {
+//       margin: 0 !important;
+//     }
+//     section button#filter-reset {
+//       padding: 0 8px;
+//       top: 8px;
+//       right: 8px;
+//     }
+//   `;
+//   eoxItemFilter.value?.shadowRoot?.appendChild(style);
 
-  // Only list child elements in list
-  const items = store.stac?.filter((item) => item.rel === "child");
-  /** @type {any} */
-  (eoxItemFilter.value).items = items;
-  if (props.enableCompare) {
-    injectCompareButtons();
-  }
-});
+//   // Only list child elements in list
+//   const items = store.stac?.filter((item) => item.rel === "child");
+//   /** @type {any} */
+//   (eoxItemFilter.value).items = items;
+//   if (props.enableCompare) {
+//     injectCompareButtons();
+//   }
+// });
 </script>
