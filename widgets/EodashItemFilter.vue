@@ -1,19 +1,65 @@
 <template>
-  <eox-itemfilter
-    class="fill-height"
-    v-bind="config"
-    ref="eoxItemFilter"
-    style="overflow: auto"
-    @select="onSelect"
-  >
-    <h4 slot="filterstitle" style="margin: 14px 8px">{{ filtersTitle }}</h4>
+  <v-card>
+    <v-card-title class="bg-indigo-darken-4">
+      <v-dialog eager>
+        <template v-slot:activator="{ props: activatorProps }">
+          <v-btn
+            v-bind="activatorProps"
+            color="blue-darken-4"
+            append-icon="mdi-plus"
+            text="Add indicators"
+          ></v-btn>
+        </template>
 
-    <h4 slot="resultstitle" style="margin: 14px 8px">{{ resultsTitle }}</h4>
-  </eox-itemfilter>
+        <template v-slot:default="{ isActive }">
+          <v-card>
+            <eox-itemfilter
+              class="fill-height light-itemfilter"
+              v-bind="config"
+              ref="eoxItemFilter"
+              style="overflow: auto"
+              .imageProperty="'assets.thumbnail.href'"
+              .subTitleProperty="'subtitle'"
+              .filterProperties="[]"
+              result-type="cards"
+              @select="onSelect"
+            >
+              <h4 slot="filterstitle" style="margin: 14px 8px">{{ filtersTitle }}</h4>
+
+              <h4 slot="resultstitle" style="margin: 14px 8px">{{ resultsTitle }}</h4>
+            </eox-itemfilter>
+
+            <v-card-actions>
+              <v-spacer></v-spacer>
+
+              <v-btn
+                text="Close Dialog"
+                @click="isActive.value = false"
+              ></v-btn>
+            </v-card-actions>
+          </v-card>
+        </template>
+      </v-dialog>
+    </v-card-title>
+    <v-card-text style="padding: 0 !important;">
+      <eox-stacinfo
+        .for="currentUrl"
+        allowHtml="true"
+        properties='["description"]'
+        styleOverride=""
+      >
+      </eox-stacinfo>
+    </v-card-text>
+  </v-card>
 </template>
 <script setup>
 import { useSTAcStore } from "@/store/stac";
-import "@eox/itemfilter";
+import "../node_modules/@eox/itemfilter/dist/eox-itemfilter";
+import "@eox/stacinfo"
+import { currentUrl } from "../core/client/store/States";
+
+// import "@eox/itemfilter";
+
 import { onMounted, ref } from "vue";
 
 const props = defineProps({
@@ -23,11 +69,11 @@ const props = defineProps({
   },
   filtersTitle: {
     type: String,
-    default: "Indicators",
+    default: "",
   },
   resultsTitle: {
     type: String,
-    default: "",
+    default: "Explore more indicators",
   },
   titleProperty: {
     type: String,
