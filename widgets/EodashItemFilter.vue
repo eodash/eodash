@@ -1,20 +1,67 @@
 <template>
-  <eox-itemfilter
-    class="fill-height"
-    v-bind="config"
-    ref="eoxItemFilter"
-    style="overflow: auto"
-    @select="onSelect"
-  >
-    <h4 slot="filterstitle" style="margin: 14px 8px">{{ filtersTitle }}</h4>
+  <v-card class="d-flex flex-column fill-height overflow-auto">
+    <v-card-title class="bg-indigo-darken-4">
+      <v-dialog>
+        <template v-slot:activator="{ props: activatorProps }">
+          <v-btn
+            v-bind="activatorProps"
+            color="blue-darken-4"
+            append-icon="plus"
+            text="Choose indicator"
+          ></v-btn>
+        </template>
 
-    <h4 slot="resultstitle" style="margin: 14px 8px">{{ resultsTitle }}</h4>
-  </eox-itemfilter>
+        <template v-slot:default="{ isActive }">
+          <v-card>
+            <eox-itemfilter
+              class="fill-height light-itemfilter"
+              v-bind="config"
+              ref="eoxItemFilter"
+              style="overflow: auto"
+              .imageProperty="'assets.thumbnail.href'"
+              .subTitleProperty="'subtitle'"
+              .filterProperties="[]"
+              .items='store.stac?.filter((item) => item.rel === "child")'
+              result-type="cards"
+              @select="onSelect"
+            >
+              <h4 slot="filterstitle" style="margin: 14px 8px">{{ filtersTitle }}</h4>
+
+              <h4 slot="resultstitle" style="margin: 14px 8px">{{ resultsTitle }}</h4>
+            </eox-itemfilter>
+
+            <v-card-actions>
+              <v-spacer></v-spacer>
+
+              <v-btn
+                text="Close Dialog"
+                @click="isActive.value = false"
+              ></v-btn>
+            </v-card-actions>
+          </v-card>
+        </template>
+      </v-dialog>
+    </v-card-title>
+    <v-card-text style="padding: 0 !important;">
+      <eox-stacinfo
+        .for="currentUrl"
+        allowHtml="true"
+        properties='["description"]'
+        styleOverride=""
+      >
+      </eox-stacinfo>
+    </v-card-text>
+  </v-card>
 </template>
 <script setup>
 import { useSTAcStore } from "@/store/stac";
-import "@eox/itemfilter";
-import { onMounted, ref } from "vue";
+import "../node_modules/@eox/itemfilter/dist/eox-itemfilter";
+import "@eox/stacinfo"
+import { currentUrl } from "../core/client/store/States";
+
+// import "@eox/itemfilter";
+
+import { ref } from "vue";
 
 const props = defineProps({
   enableCompare: {
@@ -23,11 +70,11 @@ const props = defineProps({
   },
   filtersTitle: {
     type: String,
-    default: "Indicators",
+    default: "",
   },
   resultsTitle: {
     type: String,
-    default: "",
+    default: "Explore more indicators",
   },
   titleProperty: {
     type: String,
@@ -98,6 +145,7 @@ const defaultStyle =
 const highlightStyle =
   "float:right; height:15px; padding:4px;  margin-top:-4px; background-color:#9bcaeb;";
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const injectCompareButtons = () => {
   setTimeout(() => {
     /** @type {any} */
@@ -156,26 +204,26 @@ const injectCompareButtons = () => {
   }, 100);
 };
 
-onMounted(() => {
-  const style = document.createElement("style");
-  style.innerHTML = `
-    section {
-      margin: 0 !important;
-    }
-    section button#filter-reset {
-      padding: 0 8px;
-      top: 8px;
-      right: 8px;
-    }
-  `;
-  eoxItemFilter.value?.shadowRoot?.appendChild(style);
+// onMounted(() => {
+//   const style = document.createElement("style");
+//   style.innerHTML = `
+//     section {
+//       margin: 0 !important;
+//     }
+//     section button#filter-reset {
+//       padding: 0 8px;
+//       top: 8px;
+//       right: 8px;
+//     }
+//   `;
+//   eoxItemFilter.value?.shadowRoot?.appendChild(style);
 
-  // Only list child elements in list
-  const items = store.stac?.filter((item) => item.rel === "child");
-  /** @type {any} */
-  (eoxItemFilter.value).items = items;
-  if (props.enableCompare) {
-    injectCompareButtons();
-  }
-});
+//   // Only list child elements in list
+//   const items = store.stac?.filter((item) => item.rel === "child");
+//   /** @type {any} */
+//   (eoxItemFilter.value).items = items;
+//   if (props.enableCompare) {
+//     injectCompareButtons();
+//   }
+// });
 </script>

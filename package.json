@@ -48,9 +48,9 @@
     "docs:generate": "typedoc --options typedoc.config.json"
   },
   "dependencies": {
-    "@eox/itemfilter": "^1.1.1",
+    "@eox/itemfilter": "^1.6.1",
     "@eox/jsonform": "^0.8.2",
-    "@eox/layercontrol": "^0.22.0",
+    "@eox/layercontrol": "^0.25.2",
     "@eox/layout": "^0.1.0",
     "@eox/map": "^1.13.1",
     "@eox/stacinfo": "^0.3.3",

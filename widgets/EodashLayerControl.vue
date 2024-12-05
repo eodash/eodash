@@ -3,7 +3,7 @@
     <eox-layercontrol
       v-if="showControls"
       :for="mapElement"
-      .tools="['datetime', 'info', 'config', 'legend', 'opacity']"
+      .tools="['datetime', 'info','legend']"
       @datetime:updated="debouncedHandleDateTime"
       class="fill-height"
       toolsAsList="true"
@@ -12,7 +12,9 @@
   </span>
 </template>
 <script setup>
-import "@eox/layercontrol";
+// import "@eox/layercontrol";
+import "../node_modules/@eox/layercontrol/dist/eox-layercontrol";
+
 import "@eox/jsonform";
 import "@eox/timecontrol";
 import "color-legend-element";
