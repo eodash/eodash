@@ -61,7 +61,7 @@ import { currentUrl } from "../core/client/store/States";
 
 // import "@eox/itemfilter";
 
-import { onMounted, ref } from "vue";
+import { ref } from "vue";
 
 const props = defineProps({
   enableCompare: {
@@ -145,6 +145,7 @@ const defaultStyle =
 const highlightStyle =
   "float:right; height:15px; padding:4px;  margin-top:-4px; background-color:#9bcaeb;";
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const injectCompareButtons = () => {
   setTimeout(() => {
     /** @type {any} */
