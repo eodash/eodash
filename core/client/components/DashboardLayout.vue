@@ -1,13 +1,10 @@
 <template>
   <v-main>
-    <eox-layout
-      :gap="eodash.template.gap ?? 16"
-      :style="`padding: ${eodash.template.gap || 16}px`"
-    >
+    <eox-layout :gap="gap" :style="`padding: ${gap}px`">
       <eox-layout-item
-        v-if="bgWidget.component"
+        v-if="bgWidget?.component"
         class="bg-panel bg-surface"
-        :style="`margin: -${eodash.template.gap ?? 16}px;`"
+        :style="`margin: -${gap}px;`"
         x="0"
         y="0"
         h="12"
@@ -16,8 +13,8 @@
         <Suspense suspensible>
           <component
             id="bg-widget"
-            :is="bgWidget.component"
-            v-bind="bgWidget.props"
+            :is="bgWidget?.component"
+            v-bind="bgWidget?.props"
           />
         </Suspense>
       </eox-layout-item>
@@ -46,16 +43,10 @@
   </v-main>
 </template>
 <script setup>
-import { eodashKey } from "@/utils/keys";
-import { inject } from "vue";
-import { useDefineWidgets } from "@/composables/DefineWidgets";
 import "@eox/layout";
+import { useTemplate } from "@/composables/DefineTemplate";
 
-const eodash = /** @type {import("@/types").Eodash} */ (inject(eodashKey));
-
-const [bgWidget] = useDefineWidgets([eodash.template?.background]);
-
-const importedWidgets = useDefineWidgets(eodash.template?.widgets);
+const { bgWidget, importedWidgets, gap } = useTemplate();
 </script>
 <style scoped>
 .panel {

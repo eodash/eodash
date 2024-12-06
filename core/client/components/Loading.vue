@@ -4,9 +4,9 @@
       <ErrorAlert v-model="error" />
       <Suspense>
         <component
-          v-if="loading.component"
-          :is="loading.component"
-          v-bind="loading.props"
+          v-if="loading?.component"
+          :is="loading?.component"
+          v-bind="loading?.props"
         ></component>
         <div v-else class="text-center">Loading...</div>
         <template #fallback>
@@ -17,14 +17,11 @@
   </v-row>
 </template>
 <script setup>
-import { inject, onErrorCaptured, ref } from "vue";
-import { eodashKey } from "@/utils/keys";
-import { useDefineWidgets } from "@/composables/DefineWidgets";
+import {  onErrorCaptured, ref } from "vue";
 import ErrorAlert from "./ErrorAlert.vue";
+import { useTemplate } from "@/composables/DefineTemplate";
 
-const eodash = /** @type {import("@/types").Eodash} */ (inject(eodashKey));
-
-const [loading] = useDefineWidgets([eodash.template.loading]);
+const { loading } = useTemplate()
 
 const error = ref("");
 onErrorCaptured((e, inst, info) => {
