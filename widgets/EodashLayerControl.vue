@@ -8,6 +8,7 @@
       class="fill-height"
       toolsAsList="true"
       ref="eoxLayercontrol"
+      style="--list-padding: 0; --layer-visibility: none; --layer-tools-button-visibility: none; --padding: 0"
     />
   </span>
 </template>
