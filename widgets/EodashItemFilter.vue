@@ -5,6 +5,7 @@
     ref="eoxItemFilter"
     style="overflow: auto"
     @select="onSelect"
+    .items='store.stac?.filter((item) => item.rel === "child")'
   >
     <h4 slot="filterstitle" style="margin: 14px 8px">{{ filtersTitle }}</h4>
 
@@ -13,8 +14,11 @@
 </template>
 <script setup>
 import { useSTAcStore } from "@/store/stac";
-import "@eox/itemfilter";
-import { onMounted, ref } from "vue";
+import "../node_modules/@eox/itemfilter/dist/eox-itemfilter";
+
+// import "@eox/itemfilter";
+
+import { ref } from "vue";
 
 const props = defineProps({
   enableCompare: {
@@ -23,11 +27,11 @@ const props = defineProps({
   },
   filtersTitle: {
     type: String,
-    default: "Indicators",
+    default: "",
   },
   resultsTitle: {
     type: String,
-    default: "",
+    default: "Explore more indicators",
   },
   titleProperty: {
     type: String,
@@ -37,6 +41,18 @@ const props = defineProps({
   aggregateResults: {
     type: String,
     default: "themes",
+  },
+  imageProperty: {
+    type: String,
+    default: "",
+  },
+  subTitleProperty: {
+    type: String,
+    default: "",
+  },
+  resultType: {
+    type: String,
+    default: "",
   },
   enableHighlighting: { type: Boolean, default: true },
   expandMultipleFilters: { type: Boolean, default: true },
@@ -87,6 +103,9 @@ const config = {
   enableHighlighting: props.enableHighlighting,
   expandMultipleFilters: props.expandMultipleFilters,
   expandMultipleResults: props.expandMultipleResults,
+  imageProperty: props.imageProperty,
+  subTitleProperty: props.subTitleProperty,
+  resultType: props.resultType,
 };
 /** @type {import("vue").Ref<HTMLElement & Record<string,any> | null>} */
 const eoxItemFilter = ref(null);
@@ -98,6 +117,7 @@ const defaultStyle =
 const highlightStyle =
   "float:right; height:15px; padding:4px;  margin-top:-4px; background-color:#9bcaeb;";
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const injectCompareButtons = () => {
   setTimeout(() => {
     /** @type {any} */
@@ -156,26 +176,26 @@ const injectCompareButtons = () => {
   }, 100);
 };
 
-onMounted(() => {
-  const style = document.createElement("style");
-  style.innerHTML = `
-    section {
-      margin: 0 !important;
-    }
-    section button#filter-reset {
-      padding: 0 8px;
-      top: 8px;
-      right: 8px;
-    }
-  `;
-  eoxItemFilter.value?.shadowRoot?.appendChild(style);
+// onMounted(() => {
+//   const style = document.createElement("style");
+//   style.innerHTML = `
+//     section {
+//       margin: 0 !important;
+//     }
+//     section button#filter-reset {
+//       padding: 0 8px;
+//       top: 8px;
+//       right: 8px;
+//     }
+//   `;
+//   eoxItemFilter.value?.shadowRoot?.appendChild(style);
 
-  // Only list child elements in list
-  const items = store.stac?.filter((item) => item.rel === "child");
-  /** @type {any} */
-  (eoxItemFilter.value).items = items;
-  if (props.enableCompare) {
-    injectCompareButtons();
-  }
-});
+//   // Only list child elements in list
+//   const items = store.stac?.filter((item) => item.rel === "child");
+//   /** @type {any} */
+//   (eoxItemFilter.value).items = items;
+//   if (props.enableCompare) {
+//     injectCompareButtons();
+//   }
+// });
 </script>
