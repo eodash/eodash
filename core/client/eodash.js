@@ -1,7 +1,7 @@
 import { reactive, ref } from "vue";
 import { currentUrl } from "./store/States";
 
-const show = ref(true)
+const show = ref(false)
 
 /**
  * Reactive Edoash Instance Object. provided globally in the app, and used as an
@@ -54,33 +54,45 @@ export const eodash = reactive({
     },
     widgets: [
       {
-        id: Symbol(),
+        id: "indicator",
         type: "internal",
         title: "Indicators",
-        layout: { x: 0, y: 0, w: 0, h: 1 },
+        layout: { x: 0, y: 0, w: 3, h: 1 },
         widget: {
-          name: "PopUp",
+          name: "EodashIndicatorBtn",
           properties: {
-            modelValue:show,
-            "onUpdate:modelValue": (newVal) => show.value = newVal,
+            "onClick": (newVal) => show.value = newVal,
             widget: {
               id: Symbol(),
               type: "internal",
-              title: "Indicators",
-              layout: { x: 0, y: 0, w: 0, h: 1 },
+              title: "PopUp",
+              layout: { x: 0, y: 0, w: 0, h: 0 },
               widget: {
-                name: "EodashItemFilter",
+                name: "PopUp",
                 properties: {
-                  enableCompare: true,
-                  aggregateResults: "collection_group",
-                  imageProperty: "assets.thumbnail.href",
-                  subTitleProperty: "subtitle",
-                  resultType: "cards",
-                  filterProperties: []
+                  modelValue:show,
+                  "onUpdate:modelValue": (newVal) => show.value = newVal,
+                  widget: {
+                    id: Symbol(),
+                    type: "internal",
+                    title: "Indicators",
+                    layout: { x: 0, y: 0, w: 0, h: 1 },
+                    widget: {
+                      name: "EodashItemFilter",
+                      properties: {
+                        enableCompare: true,
+                        aggregateResults: "collection_group",
+                        imageProperty: "assets.thumbnail.href",
+                        subTitleProperty: "subtitle",
+                        resultType: "cards",
+                        filterProperties: []
+                      },
+                    },
+                  }
                 },
-              },
+              }
             }
-          },
+          }
         },
       },
       {
