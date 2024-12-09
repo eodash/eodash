@@ -61,7 +61,7 @@ export const eodash = reactive({
         widget: {
           name: "EodashIndicatorBtn",
           properties: {
-            "onClick": (newVal) => show.value = newVal,
+            "onClick": (/** @type {boolean} */ newVal) => show.value = newVal,
             widget: {
               id: Symbol(),
               type: "internal",
@@ -71,7 +71,7 @@ export const eodash = reactive({
                 name: "PopUp",
                 properties: {
                   modelValue:show,
-                  "onUpdate:modelValue": (newVal) => show.value = newVal,
+                  "onUpdate:modelValue": (/** @type {boolean} */ newVal) => show.value = newVal,
                   widget: {
                     id: Symbol(),
                     type: "internal",
