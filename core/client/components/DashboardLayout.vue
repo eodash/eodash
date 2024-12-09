@@ -44,9 +44,9 @@
 </template>
 <script setup>
 import "@eox/layout";
-import { useTemplate } from "@/composables/DefineTemplate";
+import { useDefineTemplate } from "@/composables/DefineTemplate";
 
-const { bgWidget, importedWidgets, gap } = useTemplate();
+const { bgWidget, importedWidgets, gap } = useDefineTemplate();
 </script>
 <style scoped>
 .panel {

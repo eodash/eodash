@@ -1,4 +1,9 @@
-import { mapEl, mapCompareEl, registeredProjections, activeTemplate } from "@/store/States";
+import {
+  mapEl,
+  mapCompareEl,
+  registeredProjections,
+  activeTemplate,
+} from "@/store/States";
 import { getProjectionCode } from "@/utils/helpers";
 import log from "loglevel";
 
@@ -70,6 +75,5 @@ export const changeMapProjection = async (projection) => {
  */
 export const setActiveTemplate = (template) => {
   activeTemplate.value = template;
-  console.log("active template set to", template);
-
-}
+  log.debug("Setting active template to", template);
+};

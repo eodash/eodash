@@ -17,11 +17,11 @@
   </v-row>
 </template>
 <script setup>
-import {  onErrorCaptured, ref } from "vue";
+import { onErrorCaptured, ref } from "vue";
 import ErrorAlert from "./ErrorAlert.vue";
-import { useTemplate } from "@/composables/DefineTemplate";
+import { useDefineTemplate } from "@/composables/DefineTemplate";
 
-const { loading } = useTemplate()
+const { loading } = useDefineTemplate();
 
 const error = ref("");
 onErrorCaptured((e, inst, info) => {

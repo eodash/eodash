@@ -26,7 +26,6 @@ export const eodash = reactive({
   },
   templates: {
     main: {
-      gap:3,
       loading: {
         id: Symbol(),
         type: "web-component",
@@ -153,7 +152,7 @@ export const eodash = reactive({
       ],
     },
     compare: {
-      gap:32,
+      gap: 16,
       loading: {
         id: Symbol(),
         type: "web-component",
@@ -203,19 +202,16 @@ export const eodash = reactive({
           },
         },
         {
-
-
-                  id: Symbol(),
-                  title: "Layer Control Comparison",
-                  layout: { x: 9, y: 6, w: 3, h: 6 },
-                  type: "internal",
-                  widget: {
-                    name: "EodashLayerControl",
-                    properties: {
-                      map: "second",
-                    },
-                  },
-
+          id: Symbol(),
+          title: "Layer Control Comparison",
+          layout: { x: 9, y: 6, w: 3, h: 6 },
+          type: "internal",
+          widget: {
+            name: "EodashLayerControl",
+            properties: {
+              map: "second",
+            },
+          },
         },
         {
           defineWidget: (selectedSTAC) => {
