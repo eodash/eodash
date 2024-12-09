@@ -1,5 +1,7 @@
-import { reactive } from "vue";
-// import { currentUrl } from "./store/States";
+import { reactive, ref } from "vue";
+import { currentUrl } from "./store/States";
+
+const show = ref(true)
 
 /**
  * Reactive Edoash Instance Object. provided globally in the app, and used as an
@@ -55,16 +57,67 @@ export const eodash = reactive({
         id: Symbol(),
         type: "internal",
         title: "Indicators",
-        layout: { x: 0, y: 0, w: 3, h: 6 },
+        layout: { x: 0, y: 0, w: 0, h: 1 },
         widget: {
-          name: "EodashItemFilter",
+          name: "PopUp",
           properties: {
-            enableCompare: true,
-            aggregateResults: "collection_group",
-            resultType: "cards"
+            modelValue:show,
+            "onUpdate:modelValue": (newVal) => show.value = newVal,
+            widget: {
+              id: Symbol(),
+              type: "internal",
+              title: "Indicators",
+              layout: { x: 0, y: 0, w: 0, h: 1 },
+              widget: {
+                name: "EodashItemFilter",
+                properties: {
+                  enableCompare: true,
+                  aggregateResults: "collection_group",
+                  imageProperty: "assets.thumbnail.href",
+                  subTitleProperty: "subtitle",
+                  resultType: "cards",
+                  filterProperties: []
+                },
+              },
+            }
           },
         },
       },
+      {
+        defineWidget: (selectedSTAC) => {
+          return selectedSTAC
+            ? {
+                id: "Information",
+                title: "Information",
+                layout: { x: 0, y: 1, w: 3, h: 4 },
+                type: "web-component",
+                widget: {
+                  link: async () => await import("@eox/stacinfo"),
+                  properties: {
+                    for: currentUrl,
+                    allowHtml: "true",
+                    properties: '["description"]',
+                  },
+                  tagName: "eox-stacinfo",
+                },
+              }
+            : null;
+        },
+      },
+      // {
+      //   id: Symbol(),
+      //   type: "internal",
+      //   title: "Indicators",
+      //   layout: { x: 0, y: 0, w: 3, h: 6 },
+      //   widget: {
+      //     name: "EodashItemFilter",
+      //     properties: {
+      //       enableCompare: true,
+      //       aggregateResults: "collection_group",
+      //       resultType: "cards"
+      //     },
+      //   },
+      // },
       {
         id: Symbol(),
         type: "internal",
