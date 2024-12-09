@@ -1,4 +1,9 @@
-import { mapEl, mapCompareEl, registeredProjections } from "@/store/States";
+import {
+  mapEl,
+  mapCompareEl,
+  registeredProjections,
+  activeTemplate,
+} from "@/store/States";
 import { getProjectionCode } from "@/utils/helpers";
 import log from "loglevel";
 
@@ -62,4 +67,13 @@ export const changeMapProjection = async (projection) => {
   code = mapEl.value?.getAttribute("projection") === code ? "EPSG:3857" : code;
   mapEl.value?.setAttribute("projection", code);
   mapCompareEl.value?.setAttribute("projection", code);
+};
+
+/**
+ *
+ * @param {string} template
+ */
+export const setActiveTemplate = (template) => {
+  activeTemplate.value = template;
+  log.debug("Setting active template to", template);
 };

@@ -12,3 +12,117 @@ export const registerPlugins = async (app, options) => {
   options.pinia = options.pinia ?? createTestingPinia({ createSpy: cy.stub() });
   app.use(options.pinia);
 };
+
+/** @type {import("../../../core/client/types").Eodash} */
+export const mockEodash = {
+  id: "mocked",
+  stacEndpoint:
+    "https://eodashcatalog.eox.at/test-style/trilateral/catalog.json",
+  brand: {
+    name: "Mock Dashboard",
+    theme: {
+      colors: {
+        primary: "#fff",
+        secondary: "#fff",
+        surface: "#fff",
+      },
+    },
+    footerText: "Mock",
+  },
+  template: {
+    loading: {
+      id: Symbol(),
+      type: "web-component",
+      widget: {
+        link: "https://cdn.jsdelivr.net/npm/ldrs/dist/auto/mirage.js",
+        tagName: "l-mirage",
+        properties: {
+          class: "align-self-center justify-self-center",
+          size: "120",
+          speed: "2.5",
+          color: "#004170",
+        },
+      },
+    },
+    background: {
+      id: Symbol(),
+      type: "internal",
+      widget: {
+        name: "EodashMap",
+      },
+    },
+    widgets: [
+      {
+        id: Symbol(),
+        type: "internal",
+        title: "Indicators",
+        layout: { x: 0, y: 0, w: 3, h: 6 },
+        widget: {
+          name: "EodashItemFilter",
+          properties: {
+            aggregateResults: "collection_group",
+          },
+        },
+      },
+      {
+        id: Symbol(),
+        type: "internal",
+        title: "Layer Control",
+        layout: { x: 0, y: 6, w: 3, h: 6 },
+        widget: {
+          name: "EodashLayerControl",
+        },
+      },
+      {
+        defineWidget: (selectedSTAC) => {
+          return selectedSTAC
+            ? {
+                id: "Information",
+                title: "Information",
+                layout: { x: 9, y: 0, w: 3, h: 6 },
+                type: "web-component",
+                widget: {
+                  link: async () => await import("@eox/stacinfo"),
+                  properties: {
+                    for: "https://eodashcatalog.eox.at/test-style/trilateral/catalog.json",
+                    allowHtml: "true",
+                  },
+                  tagName: "eox-stacinfo",
+                },
+              }
+            : null;
+        },
+      },
+      {
+        defineWidget: (selectedSTAC) => {
+          return selectedSTAC
+            ? {
+                id: "Datepicker",
+                type: "internal",
+                layout: { x: 5, y: 10, w: 1, h: 1 },
+                title: "Datepicker",
+                widget: {
+                  name: "EodashDatePicker",
+                },
+              }
+            : null;
+        },
+      },
+      {
+        defineWidget: (selected) => {
+          return selected
+            ? {
+                id: "Buttons",
+                layout: { x: 8, y: 0, w: 1, h: 1 },
+                title: "Buttons",
+                type: "internal",
+                widget: {
+                  name: "EodashMapBtns",
+                },
+              }
+            : null;
+        },
+      },
+    ],
+  },
+};

@@ -2,6 +2,7 @@
 // setup functions or vue composition api components
 
 import {
+  activeTemplate,
   currentCompareUrl,
   currentUrl,
   datetime,
@@ -117,6 +118,10 @@ export const useURLSearchParametersSync = () => {
         z;
       for (const [key, value] of searchParams) {
         switch (key) {
+          case "template": {
+            activeTemplate.value = value;
+            break;
+          }
           case "indicator": {
             log.debug("Found indicator key in url");
             const { loadSelectedSTAC, stac } = useSTAcStore();
@@ -162,8 +167,13 @@ export const useURLSearchParametersSync = () => {
     }
 
     watch(
-      [indicator, mapPosition, datetime],
-      ([updatedIndicator, updatedMapPosition, updatedDatetime]) => {
+      [indicator, mapPosition, datetime, activeTemplate],
+      ([
+        updatedIndicator,
+        updatedMapPosition,
+        updatedDatetime,
+        updatedTemplate,
+      ]) => {
         if ("URLSearchParams" in window) {
           const searchParams = new URLSearchParams(window.location.search);
           if (updatedIndicator !== "") {
@@ -178,6 +188,9 @@ export const useURLSearchParametersSync = () => {
 
           if (updatedDatetime) {
             searchParams.set("datetime", updatedDatetime.split("T")?.[0] ?? "");
+          }
+          if (updatedTemplate) {
+            searchParams.set("template", updatedTemplate);
           }
           const newRelativePathQuery =
             window.location.pathname + "?" + searchParams.toString();
