@@ -1,5 +1,5 @@
 import { eodashKey } from "@/utils/keys";
-import { inject, ref, shallowReactive, toRefs, watch } from "vue";
+import { inject, ref, shallowReactive, shallowRef, toRefs, watch } from "vue";
 import { useDefineWidgets } from "./DefineWidgets";
 import { activeTemplate } from "@/store/States";
 import { createSharedComposable } from "@vueuse/core";
@@ -7,8 +7,8 @@ import log from "loglevel";
 
 /**
  * @typedef {{
- * bgWidget:ReturnType< typeof import("./DefineWidgets").useDefineWidgets>[number]| null
- * loading: ReturnType< typeof import("./DefineWidgets").useDefineWidgets>[number]| null
+ * bgWidget:ReturnType< typeof import("./DefineWidgets").useDefineWidgets>[number]| import("vue").ShallowRef<null>
+ * loading: ReturnType< typeof import("./DefineWidgets").useDefineWidgets>[number]| import("vue").ShallowRef<null>
  * importedWidgets:ReturnType< typeof import("./DefineWidgets").useDefineWidgets>
  * gap: import("vue").Ref<number>
  * }} DefinedTemplate
@@ -19,9 +19,9 @@ const useTemplate = () => {
 
   /** @type {DefinedTemplate} */
   const definedTemplate = shallowReactive({
-    bgWidget: null,
+    bgWidget: shallowRef(null),
     importedWidgets: [],
-    loading: null,
+    loading: shallowRef(null),
     gap: ref(16),
   });
 
