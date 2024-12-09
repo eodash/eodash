@@ -2,13 +2,12 @@
   <span class="d-flex flex-column fill-height overflow-auto">
     <eox-layercontrol
       v-if="showControls"
+      v-bind="config"
       :for="mapElement"
-      .tools="['datetime', 'info','legend']"
       @datetime:updated="debouncedHandleDateTime"
       class="fill-height"
       toolsAsList="true"
       ref="eoxLayercontrol"
-      style="--list-padding: 0; --layer-visibility: none; --layer-tools-button-visibility: none; --padding: 0"
     />
   </span>
 </template>
@@ -32,7 +31,20 @@ const props = defineProps({
     type: String,
     default: "first",
   },
+  tools: {
+    type: Array,
+    default: () => [],
+  },
+  style: {
+    type: String,
+    default: ""
+  }
 });
+
+const config = {
+  tools: props.tools,
+  style: props.style
+}
 
 const showControls = computed(() => {
   const { selectedCompareStac, selectedStac } = storeToRefs(useSTAcStore());

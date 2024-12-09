@@ -15,7 +15,6 @@
 <script setup>
 import { useSTAcStore } from "@/store/stac";
 import "../node_modules/@eox/itemfilter/dist/eox-itemfilter";
-import { currentUrl } from "../core/client/store/States";
 
 // import "@eox/itemfilter";
 

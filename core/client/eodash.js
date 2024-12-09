@@ -104,20 +104,6 @@ export const eodash = reactive({
             : null;
         },
       },
-      // {
-      //   id: Symbol(),
-      //   type: "internal",
-      //   title: "Indicators",
-      //   layout: { x: 0, y: 0, w: 3, h: 6 },
-      //   widget: {
-      //     name: "EodashItemFilter",
-      //     properties: {
-      //       enableCompare: true,
-      //       aggregateResults: "collection_group",
-      //       resultType: "cards"
-      //     },
-      //   },
-      // },
       {
         id: Symbol(),
         type: "internal",
@@ -125,6 +111,10 @@ export const eodash = reactive({
         layout: { x: 8, y: 6, w: 3, h: 6 },
         widget: {
           name: "EodashLayerControl",
+          properties: {
+            tools: ['datetime', 'info','legend'],
+            style: "--list-padding: 0; --layer-visibility: none; --layer-tools-button-visibility: none; --padding: 0",
+          }
         },
       },
       /*
