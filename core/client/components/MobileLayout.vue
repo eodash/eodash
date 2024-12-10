@@ -3,7 +3,7 @@
     <Suspense suspensible>
       <component
         id="bg-widget"
-        v-if="bgWidget.component"
+        v-if="bgWidget?.component"
         :is="bgWidget.component"
         v-bind="bgWidget.props"
       ></component>
@@ -48,18 +48,11 @@
   </v-main>
 </template>
 <script setup>
-import { eodashKey } from "@/utils/keys";
-import { inject, ref, onMounted } from "vue";
-import { useDefineWidgets } from "@/composables/DefineWidgets";
+import { useDefineTemplate } from "@/composables/DefineTemplate";
+import { ref, onMounted } from "vue";
 import { useLayout } from "vuetify";
 
-const eodash = /** @type {import("@/types").Eodash} */ (inject(eodashKey));
-
-//import widgets
-const widgetsConfig = eodash.template.widgets;
-const importedWidgets = useDefineWidgets(widgetsConfig);
-const [bgWidget] = useDefineWidgets([eodash.template?.background]);
-
+const { bgWidget, importedWidgets } = useDefineTemplate();
 const { mainRect } = useLayout();
 
 const activeIdx = ref(-1);
