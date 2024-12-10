@@ -71,6 +71,8 @@ export const eodash = reactive({
                 name: "PopUp",
                 properties: {
                   modelValue:show,
+                  maxWidth: "1000px",
+                  width: "1000px",
                   "onUpdate:modelValue": (/** @type {boolean} */ newVal) => show.value = newVal,
                   widget: {
                     id: Symbol(),
