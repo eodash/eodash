@@ -295,7 +295,9 @@ export const eodash = reactive({
                           imageProperty: "assets.thumbnail.href",
                           subTitleProperty: "subtitle",
                           resultType: "cards",
-                          filterProperties: []
+                          filterProperties: [],
+                          filtersTitle: "",
+                          resultsTitle: "Explore more indicators"
                         },
                       },
                     }

@@ -12,8 +12,7 @@
   </span>
 </template>
 <script setup>
-// import "@eox/layercontrol";
-import "../node_modules/@eox/layercontrol/dist/eox-layercontrol";
+import "@eox/layercontrol";
 
 import "@eox/jsonform";
 import "@eox/timecontrol";

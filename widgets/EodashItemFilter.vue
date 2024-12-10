@@ -14,9 +14,7 @@
 </template>
 <script setup>
 import { useSTAcStore } from "@/store/stac";
-import "../node_modules/@eox/itemfilter/dist/eox-itemfilter";
-
-// import "@eox/itemfilter";
+import "@eox/itemfilter";
 
 import { ref } from "vue";
 
@@ -27,11 +25,11 @@ const props = defineProps({
   },
   filtersTitle: {
     type: String,
-    default: "",
+    default: "Indicators",
   },
   resultsTitle: {
     type: String,
-    default: "Explore more indicators",
+    default: "",
   },
   titleProperty: {
     type: String,
