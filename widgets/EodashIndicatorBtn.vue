@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div ref="rootRef" class="d-flex flex-column my-3 pa-2">
     <v-btn
       color="blue-darken-4"
       :append-icon="[mdiPlus]"
@@ -15,6 +15,8 @@
 </template>
 <script setup>
 import { useDefineWidgets } from "@/composables/DefineWidgets";
+import { makePanelTransparent } from "@/composables";
+import { ref } from "vue";
 import { mdiPlus } from "@mdi/js";
 
 const props = defineProps({
@@ -26,4 +28,8 @@ const props = defineProps({
 });
 
 const [definedWidget] = useDefineWidgets([props?.widget]);
+
+/** @type {import("vue").Ref<HTMLDivElement|null>} */
+const rootRef = ref(null);
+makePanelTransparent(rootRef);
 </script>
