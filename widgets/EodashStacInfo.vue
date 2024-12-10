@@ -15,8 +15,7 @@
         class="text-none font-weight-bold"
         variant="text"
         :append-icon="[mdiDoor]"
-        text="Choose indicator"
-        @click="dialog = !dialog"
+        @click="activeTemplate = 'main'"
       >
         Expert mode
       </v-btn>
@@ -50,7 +49,7 @@
 import "@eox/stacinfo"
 import PopUp from "./PopUp.vue";
 import EodashItemFilter from "./EodashItemFilter.vue"
-import { currentUrl } from "../core/client/store/States";
+import { currentUrl, activeTemplate } from "../core/client/store/States";
 import { mdiPlus, mdiDoor } from "@mdi/js";
 
 const dialog = defineModel({ type: Boolean, required: true, default: false });
