@@ -1,6 +1,6 @@
-import { reactive } from "vue";
+import { reactive, ref } from "vue";
 import { currentUrl } from "./store/States";
-
+const show = ref(false)
 /**
  * Reactive Edoash Instance Object. provided globally in the app, and used as an
  * intermediate object to make user defined instances config reactive.
