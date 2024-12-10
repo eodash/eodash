@@ -80,7 +80,7 @@ export const eodashViteConfig = /** @type {import("vite").UserConfigFn} */ (
             "loglevel",
             "color-legend-element",
             "@eox/map",
-            "@eox/map/src/eox-map-advanced-layers-and-sources",
+            "@eox/map/src/plugins/advancedLayersAndSources",
             "@eox/layercontrol",
             "@eox/timecontrol",
             "@eox/jsonform",
