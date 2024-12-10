@@ -1,6 +1,6 @@
 import { reactive, ref } from "vue";
 import { currentUrl } from "./store/States";
-const show = ref(false)
+
 /**
  * Reactive Edoash Instance Object. provided globally in the app, and used as an
  * intermediate object to make user defined instances config reactive.
@@ -235,6 +235,7 @@ export const eodash = reactive({
       ],
     },
     light: {
+      gap: 6,
       loading: {
         id: Symbol(),
         type: "web-component",
@@ -262,77 +263,19 @@ export const eodash = reactive({
       },
       widgets: [
         {
-          id: "indicator",
+          id: Symbol(),
           type: "internal",
-          title: "Indicators",
-          layout: { x: 0, y: 0, w: 3, h: 1 },
+          title: "Stac info",
+          layout: { x: 0, y: 0, w: 3, h: 6},
           widget: {
-            name: "EodashIndicatorBtn",
-            properties: {
-              "onClick": (/** @type {boolean} */ newVal) => show.value = newVal,
-              widget: {
-                id: Symbol(),
-                type: "internal",
-                title: "PopUp",
-                layout: { x: 0, y: 0, w: 0, h: 0 },
-                widget: {
-                  name: "PopUp",
-                  properties: {
-                    modelValue:show,
-                    maxWidth: "1000px",
-                    width: "1000px",
-                    "onUpdate:modelValue": (/** @type {boolean} */ newVal) => show.value = newVal,
-                    widget: {
-                      id: Symbol(),
-                      type: "internal",
-                      title: "Indicators",
-                      layout: { x: 0, y: 0, w: 0, h: 1 },
-                      widget: {
-                        name: "EodashItemFilter",
-                        properties: {
-                          enableCompare: true,
-                          aggregateResults: "collection_group",
-                          imageProperty: "assets.thumbnail.href",
-                          subTitleProperty: "subtitle",
-                          resultType: "cards",
-                          filterProperties: [],
-                          filtersTitle: "",
-                          resultsTitle: "Explore more indicators"
-                        },
-                      },
-                    }
-                  },
-                }
-              }
-            }
-          },
-        },
-        {
-          defineWidget: (selectedSTAC) => {
-            return selectedSTAC
-              ? {
-                  id: "Information",
-                  title: "Information",
-                  layout: { x: 0, y: 1, w: 3, h: 4 },
-                  type: "web-component",
-                  widget: {
-                    link: async () => await import("@eox/stacinfo"),
-                    properties: {
-                      for: currentUrl,
-                      allowHtml: "true",
-                      properties: '["description"]',
-                    },
-                    tagName: "eox-stacinfo",
-                  },
-                }
-              : null;
-          },
+            name: "EodashStacInfo"
+          }
         },
         {
           id: Symbol(),
           type: "internal",
           title: "Layer Control",
-          layout: { x: 8, y: 6, w: 3, h: 6 },
+          layout: { x: 0, y: 6, w: 3, h: 3 },
           widget: {
             name: "EodashLayerControl",
             properties: {
