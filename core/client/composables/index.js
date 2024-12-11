@@ -11,9 +11,10 @@ import {
 } from "@/store/States";
 import eodash from "@/eodash";
 import { useTheme } from "vuetify/lib/framework.mjs";
-import { onMounted, watch } from "vue";
+import { inject, onMounted, watch } from "vue";
 import { useSTAcStore } from "@/store/stac";
 import log from "loglevel";
+import { eodashKey } from "@/utils/keys";
 
 /**
  * Creates an absolute URL from a relative link and assignes it to `currentUrl`
@@ -210,3 +211,9 @@ export const makePanelTransparent = (root) => {
     }
   });
 };
+
+
+export const useGetTemplates = () => {
+  const eodash  = /** @type {import("@/types").Eodash} */ (inject(eodashKey))
+  return "template" in eodash ? []: Object.keys(eodash.templates)
+}
