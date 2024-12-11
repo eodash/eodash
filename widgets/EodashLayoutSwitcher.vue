@@ -1,7 +1,6 @@
 <template>
   <div ref="rootRef">
     <v-btn
-      color="white"
       class="text-none font-weight-bold text-capitalize pa-2"
       :variant="props.variant"
       :append-icon="[mdiDoor]"

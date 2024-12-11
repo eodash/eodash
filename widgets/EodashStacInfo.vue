@@ -1,9 +1,9 @@
 <template>
   <div class="d-flex flex-column fill-height overflow-auto">
-    <div class="d-flex flex-row justify-space-between pa-4 bg-indigo-darken-4" style="position: sticky">
+    <div class="d-flex flex-row justify-space-between pa-4 bg-primary align-center">
       <v-btn
-        color="blue-darken-4"
-        class="text-none font-weight-bold"
+        color="secondary"
+        class="text-none font-weight-bold pa-2"
         :append-icon="[mdiPlus]"
         text="Choose indicator"
         @click="dialog = !dialog"
@@ -44,8 +44,8 @@ import "@eox/stacinfo"
 import PopUp from "./PopUp.vue";
 import EodashItemFilter from "./EodashItemFilter.vue"
 import EodashLayoutSwitcher from "./EodashLayoutSwitcher.vue"
-import { currentUrl, activeTemplate } from "../core/client/store/States";
-import { mdiPlus, mdiDoor } from "@mdi/js";
+import { currentUrl } from "../core/client/store/States";
+import { mdiPlus } from "@mdi/js";
 
 const dialog = defineModel({ type: Boolean, required: true, default: false });
 

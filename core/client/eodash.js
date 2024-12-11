@@ -1,4 +1,4 @@
-import { reactive, ref } from "vue";
+import { reactive } from "vue";
 import { currentUrl } from "./store/States";
 
 /**
@@ -17,8 +17,8 @@ export const eodash = reactive({
     name: "Demo",
     theme: {
       colors: {
-        primary: "#fff",
-        secondary: "#fff",
+        primary: "#002742",
+        secondary: "#004170",
         surface: "#fff",
       },
     },
