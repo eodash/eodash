@@ -1,5 +1,4 @@
 import { reactive } from "vue";
-import { currentUrl } from "./store/States";
 
 /**
  * Reactive Edoash Instance Object. provided globally in the app, and used as an
@@ -99,7 +98,7 @@ export const eodash = reactive({
                     name: "EodashStacInfo",
                     properties: {
                       showIndicatorsBtn: false,
-                      showLayoutSwitcher: true,
+                      showLayoutSwitcher: false,
 
                     },
                   },
@@ -191,14 +190,6 @@ export const eodash = reactive({
           layout: { x: 0, y: 6, w: 3, h: 6 },
           widget: {
             name: "EodashLayerControl",
-            properties:{
-              cssVars:{
-                padding:"0",
-                "--list-padding":"0",
-                "--tools-button-visibility":"none",
-                "--layer-visibility":"none",
-              }
-            }
           },
         },
         {
@@ -288,6 +279,11 @@ export const eodash = reactive({
             name: "EodashLayerControl",
             properties: {
               tools: ["datetime", "info", "legend"],
+              cssVars:{
+                "--list-padding":"0",
+                "--tools-button-visibility":"none",
+                "--layer-visibility":"none",
+              }
             },
           },
         },

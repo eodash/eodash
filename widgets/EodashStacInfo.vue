@@ -1,14 +1,13 @@
 <template>
-  <div class="d-flex flex-column fill-height overflow-auto">
+  <div class="d-flex flex-column fill-height overflow-hidden">
     <div
       v-if="showHeader"
-      class="d-flex flex-row justify-space-between pa-4 bg-primary align-center"
-      style="position: sticky"
+      class="d-flex flex-row flex-shrink-0 justify-space-between pa-4 bg-primary align-center"
     >
       <v-btn
         v-if="showIndicatorsBtn"
         color="secondary"
-        class="text-none font-weight-bold pa-2"
+        class="text-none font-weight-bold py-2 px-4"
         :append-icon="[mdiPlus]"
         text="Choose indicator"
         @click="dialog = !dialog"
@@ -30,18 +29,20 @@
         @select="dialog = !dialog"
       />
     </PopUp>
-    <eox-stacinfo
-      .for="currentUrl"
-      .allowHtml="allowHtml"
-      .body="body"
-      .featured="featured"
-      .footer="footer"
-      .styleOverride="styleOverride"
-      .header="header"
-      .subheader="subheader"
-      .tags="tags"
-    >
-    </eox-stacinfo>
+    <div class="flex-grow-1 fill-height overflow-auto">
+      <eox-stacinfo
+        .for="currentUrl"
+        .allowHtml="allowHtml"
+        .body="body"
+        .featured="featured"
+        .footer="footer"
+        .styleOverride="styleOverride"
+        .header="header"
+        .subheader="subheader"
+        .tags="tags"
+      >
+      </eox-stacinfo>
+    </div>
   </div>
 </template>
 
