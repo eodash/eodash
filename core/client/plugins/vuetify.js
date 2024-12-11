@@ -8,7 +8,7 @@
 import "vuetify/styles";
 
 import { createVuetify } from "vuetify";
-import { mdiChevronLeft, mdiChevronRight, mdiMenuDown } from "@mdi/js";
+import { mdiChevronLeft, mdiChevronRight, mdiMenuDown, mdiPlus } from "@mdi/js";
 
 const vuetify = createVuetify({
   icons: {
@@ -17,6 +17,7 @@ const vuetify = createVuetify({
       next: [mdiChevronRight],
       prev: [mdiChevronLeft],
       subgroup: [mdiMenuDown],
+      plus: [mdiPlus],
     },
   },
   theme: {
