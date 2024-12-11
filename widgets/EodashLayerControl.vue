@@ -32,7 +32,7 @@ const props = defineProps({
   },
   tools: {
     type: Array,
-    default: () => [],
+    default: () => ['datetime', 'info', 'config', 'legend', 'opacity'],
   },
   style: {
     type: String,
