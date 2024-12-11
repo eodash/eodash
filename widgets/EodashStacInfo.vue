@@ -10,15 +10,9 @@
       >
         Replace indicator
       </v-btn>
-      <v-btn
-        color="white"
-        class="text-none font-weight-bold"
-        variant="text"
-        :append-icon="[mdiDoor]"
-        @click="activeTemplate = 'main'"
-      >
-        Expert mode
-      </v-btn>
+      <EodashLayoutSwitcher
+        target="main"
+      />
     </div>
     <PopUp
       v-model="dialog"
@@ -49,6 +43,7 @@
 import "@eox/stacinfo"
 import PopUp from "./PopUp.vue";
 import EodashItemFilter from "./EodashItemFilter.vue"
+import EodashLayoutSwitcher from "./EodashLayoutSwitcher.vue"
 import { currentUrl, activeTemplate } from "../core/client/store/States";
 import { mdiPlus, mdiDoor } from "@mdi/js";
 

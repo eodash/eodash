@@ -68,6 +68,19 @@ export const eodash = reactive({
         {
           id: Symbol(),
           type: "internal",
+          title: "LayoutSwitcher",
+          layout: { x: 3, y: 0, w: 1, h: 1 },
+          widget: {
+            name: "EodashLayoutSwitcher",
+            properties: {
+              target: "light",
+              variant: "flat"
+            }
+          }
+        },
+        {
+          id: Symbol(),
+          type: "internal",
           title: "Layer Control",
           layout: { x: 0, y: 6, w: 3, h: 6 },
           widget: {
