@@ -115,8 +115,6 @@ const debouncedHandleDateTime = (evt) => {
 
 eox-layercontrol {
   --list-padding: 0;
-  /* --layer-visibility: none;
-  --layer-tools-button-visibility: none; */
   --padding: 0;
 }
 </style>

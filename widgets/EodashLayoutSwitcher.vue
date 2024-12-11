@@ -1,7 +1,7 @@
 <template>
   <div ref="rootRef">
     <v-btn
-      class="text-none font-weight-bold text-capitalize pa-2"
+      class="text-none font-weight-bold text-capitalize py-2 px-4"
       :variant="props.variant"
       :append-icon="[mdiDoor]"
       @click="activeTemplate = props.target"

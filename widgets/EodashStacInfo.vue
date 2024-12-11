@@ -3,12 +3,11 @@
     <div
       v-if="showHeader"
       class="d-flex flex-row flex-shrink-0 justify-space-between pa-4 bg-primary align-center"
-      style="position: sticky"
     >
       <v-btn
         v-if="showIndicatorsBtn"
         color="secondary"
-        class="text-none font-weight-bold pa-2"
+        class="text-none font-weight-bold py-2 px-4"
         :append-icon="[mdiPlus]"
         text="Choose indicator"
         @click="dialog = !dialog"
