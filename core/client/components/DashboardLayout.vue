@@ -53,7 +53,6 @@ const { bgWidget, importedWidgets, gap } = useDefineTemplate();
   position: relative;
   overflow: visible;
   z-index: 1;
-  border-radius: 0px;
 }
 
 .bg-panel {
@@ -68,5 +67,14 @@ const { bgWidget, importedWidgets, gap } = useDefineTemplate();
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
+}
+
+.bg-surface {
+  backdrop-filter: blur(9.5px) !important;
+  background-color: #ffffff99 !important;
+  border-radius: 8px;
+  border-style: solid;
+  border-width: 1px;
+  border-color: rgb(var(--v-theme-secondary));
 }
 </style>

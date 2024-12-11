@@ -7,7 +7,7 @@
       <v-btn
         v-if="showIndicatorsBtn"
         color="secondary"
-        class="text-none font-weight-bold py-2 px-4"
+        class="text-none py-2 px-4"
         :append-icon="[mdiPlus]"
         text="Choose indicator"
         @click="dialog = !dialog"
@@ -16,10 +16,9 @@
       </v-btn>
       <EodashLayoutSwitcher v-if="showLayoutSwitcher" target="main" />
     </div>
-    <PopUp v-model="dialog" maxWidth="1000px">
+    <PopUp v-model="dialog" maxWidth="1000px" width="1000px">
       <EodashItemFilter
         .enableCompare="true"
-        aggregateResults="collection_group"
         imageProperty="assets.thumbnail.href"
         subTitleProperty="subtitle"
         resultType="cards"

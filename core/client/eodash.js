@@ -226,7 +226,7 @@ export const eodash = reactive({
       ],
     },
     light: {
-      gap: 6,
+      gap: 16,
       loading: {
         id: Symbol(),
         type: "web-component",

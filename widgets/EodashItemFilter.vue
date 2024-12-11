@@ -40,7 +40,7 @@ const props = defineProps({
 
   aggregateResults: {
     type: String,
-    default: "themes",
+    default: undefined,
   },
   imageProperty: {
     type: String,
@@ -108,6 +108,7 @@ const config = {
   imageProperty: props.imageProperty,
   subTitleProperty: props.subTitleProperty,
   resultType: props.resultType,
+  style: "--padding: 72px"
 };
 /** @type {import("vue").Ref<HTMLElement & Record<string,any> | null>} */
 const eoxItemFilter = ref(null);
