@@ -1,8 +1,8 @@
 <template>
-  <div class="d-flex flex-column fill-height overflow-auto">
+  <div class="d-flex flex-column fill-height overflow-hidden">
     <div
       v-if="showHeader"
-      class="d-flex flex-row justify-space-between pa-4 bg-primary align-center"
+      class="d-flex flex-row flex-shrink-0 justify-space-between pa-4 bg-primary align-center"
       style="position: sticky"
     >
       <v-btn
@@ -30,18 +30,20 @@
         @select="dialog = !dialog"
       />
     </PopUp>
-    <eox-stacinfo
-      .for="currentUrl"
-      .allowHtml="allowHtml"
-      .body="body"
-      .featured="featured"
-      .footer="footer"
-      .styleOverride="styleOverride"
-      .header="header"
-      .subheader="subheader"
-      .tags="tags"
-    >
-    </eox-stacinfo>
+    <div class="flex-grow-1 fill-height overflow-auto">
+      <eox-stacinfo
+        .for="currentUrl"
+        .allowHtml="allowHtml"
+        .body="body"
+        .featured="featured"
+        .footer="footer"
+        .styleOverride="styleOverride"
+        .header="header"
+        .subheader="subheader"
+        .tags="tags"
+      >
+      </eox-stacinfo>
+    </div>
   </div>
 </template>
 
