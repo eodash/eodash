@@ -79,6 +79,7 @@ const props = defineProps({
     ],
   },
 });
+
 /** @param {any} evt*/
 const onSelect = async (evt) => {
   // reset the style of all compare buttons

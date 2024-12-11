@@ -48,7 +48,7 @@ const props = defineProps({
   height: {
     type: String,
     default: "500px",
-  }
+  },
 });
 
 const config = {
@@ -56,7 +56,7 @@ const config = {
   maxHeight: props.maxHeight,
   width: props.width,
   height: props.height,
-}
+};
 
 const [definedWidget] = useDefineWidgets([props?.widget]);
 </script>

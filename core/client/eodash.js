@@ -74,9 +74,9 @@ export const eodash = reactive({
             name: "EodashLayoutSwitcher",
             properties: {
               target: "light",
-              variant: "flat"
-            }
-          }
+              variant: "flat",
+            },
+          },
         },
         {
           id: Symbol(),
@@ -94,35 +94,14 @@ export const eodash = reactive({
                   id: "Information",
                   title: "Information",
                   layout: { x: 9, y: 0, w: 3, h: 6 },
-                  type: "web-component",
+                  type: "internal",
                   widget: {
-                    link: async () => await import("@eox/stacinfo"),
+                    name: "EodashStacInfo",
                     properties: {
-                      for: currentUrl,
-                      allowHtml: "true",
-                      styleOverride: `.single-property {columns: 1!important;}
-                            h1 {margin:0px!important;font-size:16px!important;}
-                            header h1:after {
-                              content:' ';
-                              display:block;
-                              border:1px solid #d0d0d0;
-                            }
-                            h2 {font-size:15px}
-                            h3 {font-size:14px}
-                            summary {cursor: pointer;}
-                            #properties li > .value { font-weight: normal !important;}
-                            main {padding-bottom: 10px;}
-                            .footer-container {line-height:1;}
-                            .footer-container button {margin-top: -10px;}
-                            .footer-container small {font-size:10px;line-height:1;}`,
-                      header: '["title"]',
-                      tags: '["themes"]',
-                      subheader: "[]",
-                      properties: '["satellite","sensor","agency","extent"]',
-                      featured: '["description","providers","assets","links"]',
-                      footer: '["sci:citation"]',
+                      showIndicatorsBtn: false,
+                      showLayoutSwitcher: true,
+
                     },
-                    tagName: "eox-stacinfo",
                   },
                 }
               : null;
@@ -212,6 +191,14 @@ export const eodash = reactive({
           layout: { x: 0, y: 6, w: 3, h: 6 },
           widget: {
             name: "EodashLayerControl",
+            properties:{
+              cssVars:{
+                padding:"0",
+                "--list-padding":"0",
+                "--tools-button-visibility":"none",
+                "--layer-visibility":"none",
+              }
+            }
           },
         },
         {
@@ -279,10 +266,18 @@ export const eodash = reactive({
           id: Symbol(),
           type: "internal",
           title: "Stac info",
-          layout: { x: 0, y: 0, w: 3, h: 6},
+          layout: { x: 0, y: 0, w: 3, h: 6 },
           widget: {
-            name: "EodashStacInfo"
-          }
+            name: "EodashStacInfo",
+            properties: {
+              tags: [],
+              header: [],
+              footer: [],
+              body: ["description"],
+              styleOverride: "",
+              featured: [],
+            },
+          },
         },
         {
           id: Symbol(),
@@ -292,9 +287,8 @@ export const eodash = reactive({
           widget: {
             name: "EodashLayerControl",
             properties: {
-              tools: ['datetime', 'info','legend'],
-              style: "--list-padding: 0; --layer-visibility: none; --layer-tools-button-visibility: none; --padding: 0",
-            }
+              tools: ["datetime", "info", "legend"],
+            },
           },
         },
         {
@@ -313,7 +307,7 @@ export const eodash = reactive({
           },
         },
       ],
-    }
+    },
   },
 });
 

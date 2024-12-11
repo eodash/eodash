@@ -6,7 +6,7 @@
       :append-icon="[mdiDoor]"
       @click="activeTemplate = props.target"
     >
-      {{props.target}} mode
+      {{ props.target }} mode
     </v-btn>
   </div>
 </template>
@@ -20,16 +20,15 @@ import { ref } from "vue";
 const props = defineProps({
   target: {
     type: String,
-    default: "main"
+    default: "main",
   },
   variant: {
     type: String,
-    default: "text"
-  }
-})
+    default: "text",
+  },
+});
 
 /** @type {import("vue").Ref<HTMLDivElement|null>} */
 const rootRef = ref(null);
 makePanelTransparent(rootRef);
-
 </script>

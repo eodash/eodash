@@ -32,18 +32,17 @@ const props = defineProps({
   },
   tools: {
     type: Array,
-    default: () => ['datetime', 'info', 'config', 'legend', 'opacity'],
+    default: () => ["datetime", "info", "config", "legend", "opacity"],
   },
-  style: {
-    type: String,
-    default: ""
+  cssVars:{
+    type: Object,
   }
 });
 
 const config = {
   tools: props.tools,
-  style: props.style
-}
+  style: props.cssVars,
+};
 
 const showControls = computed(() => {
   const { selectedCompareStac, selectedStac } = storeToRefs(useSTAcStore());
@@ -112,3 +111,12 @@ const debouncedHandleDateTime = (evt) => {
 };
 // ------
 </script>
+<style scoped>
+
+eox-layercontrol {
+  --list-padding: 0;
+  /* --layer-visibility: none;
+  --layer-tools-button-visibility: none; */
+  --padding: 0;
+}
+</style>
