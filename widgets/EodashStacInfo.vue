@@ -28,6 +28,7 @@
         .filterProperties= "[]"
         filtersTitle= ""
         resultsTitle= "Explore more indicators"
+        @select="dialog = !dialog"
       />
     </PopUp>
     <eox-stacinfo
