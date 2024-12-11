@@ -256,8 +256,25 @@ export const eodash = reactive({
         {
           id: Symbol(),
           type: "internal",
+          title: "Tools",
+          layout: { x: 0, y: 0, w: 3, h: 1 },
+          widget: {
+            name: "EodashTools",
+            properties: {
+              tags: [],
+              header: [],
+              footer: [],
+              body: ["description"],
+              styleOverride: "",
+              featured: [],
+            },
+          },
+        },
+        {
+          id: Symbol(),
+          type: "internal",
           title: "Stac info",
-          layout: { x: 0, y: 0, w: 3, h: 6 },
+          layout: { x: 0, y: 1, w: 3, h: 6 },
           widget: {
             name: "EodashStacInfo",
             properties: {
@@ -274,7 +291,7 @@ export const eodash = reactive({
           id: Symbol(),
           type: "internal",
           title: "Layer Control",
-          layout: { x: 0, y: 6, w: 3, h: 3 },
+          layout: { x: 0, y: 7, w: 3, h: 3 },
           widget: {
             name: "EodashLayerControl",
             properties: {
