@@ -18,7 +18,7 @@
     <PopUp v-model="dialog" maxWidth="1000px" width="1000px">
       <EodashItemFilter
         .enableCompare="true"
-        imageProperty="assets.thumbnail.href"
+        imageProperty="thumbnail"
         subTitleProperty="subtitle"
         resultType="cards"
         .filterProperties="[]"
