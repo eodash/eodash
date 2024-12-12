@@ -31,9 +31,9 @@
 </template>
 
 <script setup>
-import PopUp from "./PopUp.vue";
-import EodashItemFilter from "./EodashItemFilter.vue";
-import EodashLayoutSwitcher from "./EodashLayoutSwitcher.vue";
+import PopUp from "^/PopUp.vue";
+import EodashItemFilter from "^/EodashItemFilter.vue";
+import EodashLayoutSwitcher from "^/EodashLayoutSwitcher.vue";
 import { mdiPlus } from "@mdi/js";
 import { ref } from "vue";
 
