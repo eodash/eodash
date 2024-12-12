@@ -24,7 +24,7 @@ export const eodash = reactive({
     footerText: "Demo configuration of eodash client",
   },
   templates: {
-    main: {
+    expert: {
       loading: {
         id: Symbol(),
         type: "web-component",
@@ -252,7 +252,7 @@ export const eodash = reactive({
           widget: {
             name: "EodashTools",
             properties: {
-              layoutTarget: "main",
+              layoutTarget: "expert",
               itemFilterConfig: {
                 enableCompare: true,
                 resultType: "cards",
@@ -295,6 +295,7 @@ export const eodash = reactive({
                 "--list-padding":"0",
                 "--tools-button-visibility":"none",
                 "--layer-visibility":"none",
+                "--padding": "0",
               }
             },
           },

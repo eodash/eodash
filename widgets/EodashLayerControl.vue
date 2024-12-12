@@ -112,10 +112,3 @@ const debouncedHandleDateTime = (evt) => {
 };
 // ------
 </script>
-<style scoped>
-
-eox-layercontrol {
-  --list-padding: 0;
-  --padding: 0;
-}
-</style>
