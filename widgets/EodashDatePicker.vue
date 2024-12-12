@@ -13,7 +13,7 @@
           :value="inputValue"
           v-on="inputEvents"
           style="margin: 1px"
-          class="flex-grow px-1 py-1 bg-white dark:bg-gray-700"
+          class="flex-grow px-1 py-1 dark:bg-gray-700"
         />
       </div>
     </template>

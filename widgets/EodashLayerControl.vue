@@ -7,6 +7,7 @@
       @datetime:updated="debouncedHandleDateTime"
       class="fill-height"
       toolsAsList="true"
+      style="--background-color: none"
       ref="eoxLayercontrol"
     />
   </span>

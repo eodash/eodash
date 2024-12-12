@@ -10,6 +10,7 @@
         .header="header"
         .subheader="subheader"
         .tags="tags"
+        style="--color-primary-lighter: none"
       >
       </eox-stacinfo>
     </div>

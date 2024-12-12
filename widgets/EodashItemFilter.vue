@@ -3,7 +3,7 @@
     class="fill-height"
     v-bind="config"
     ref="eoxItemFilter"
-    style="overflow: auto"
+    style="overflow: auto; --background-color: none"
     @select="onSelect"
     .items='store.stac?.filter((item) => item.rel === "child")'
   >
