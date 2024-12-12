@@ -12,17 +12,11 @@
         @click="dialog = !dialog"
       >
       </v-btn>
-      <EodashLayoutSwitcher v-if="props.showLayoutSwitcher" target="main" />
+      <EodashLayoutSwitcher v-if="props.showLayoutSwitcher" :target="layoutTarget" />
     </div>
     <PopUp v-model="dialog" maxWidth="1000px" width="1000px">
       <EodashItemFilter
-        .enableCompare="true"
-        imageProperty="thumbnail"
-        subTitleProperty="subtitle"
-        resultType="cards"
-        .filterProperties="[]"
-        filtersTitle=""
-        resultsTitle="Explore more indicators"
+        v-bind="props.itemFilterConfig"
         @select="dialog = !dialog"
       />
     </PopUp>
@@ -47,9 +41,17 @@ const props = defineProps({
     type: Boolean,
     default: true,
   },
+  layoutTarget: {
+    type: String,
+    default: "light"
+  },
   indicatorBtnText: {
     type: String,
     default: "Select indicator"
+  },
+  itemFilterConfig: {
+    type: Object,
+    default: () => {}
   }
 })
 </script>

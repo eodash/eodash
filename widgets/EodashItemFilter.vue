@@ -31,7 +31,7 @@ const props = defineProps({
   },
   resultsTitle: {
     type: String,
-    default: "",
+    default: "Results",
   },
   titleProperty: {
     type: String,
@@ -51,6 +51,10 @@ const props = defineProps({
     default: "",
   },
   resultType: {
+    type: String,
+    default: "",
+  },
+  style: {
     type: String,
     default: "",
   },
@@ -108,7 +112,7 @@ const config = {
   imageProperty: props.imageProperty,
   subTitleProperty: props.subTitleProperty,
   resultType: props.resultType,
-  style: "--padding: 72px"
+  style: props.style,
 };
 /** @type {import("vue").Ref<HTMLElement & Record<string,any> | null>} */
 const eoxItemFilter = ref(null);

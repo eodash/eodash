@@ -54,26 +54,17 @@ export const eodash = reactive({
         {
           id: Symbol(),
           type: "internal",
-          title: "Indicators",
-          layout: { x: 0, y: 0, w: 3, h: 6 },
+          title: "Tools",
+          layout: { x: 0, y: 0, w: 3, h: 1 },
           widget: {
-            name: "EodashItemFilter",
+            name: "EodashTools",
             properties: {
-              enableCompare: true,
-              aggregateResults: "collection_group",
-            },
-          },
-        },
-        {
-          id: Symbol(),
-          type: "internal",
-          title: "LayoutSwitcher",
-          layout: { x: 3, y: 0, w: 1, h: 1 },
-          widget: {
-            name: "EodashLayoutSwitcher",
-            properties: {
-              target: "light",
-              variant: "flat",
+              layoutTarget: "light",
+              itemFilterConfig: {
+                enableCompare: true,
+                aggregateResults: "collection_group",
+                style: "--form-flex-direction: row"
+              }
             },
           },
         },
@@ -81,7 +72,7 @@ export const eodash = reactive({
           id: Symbol(),
           type: "internal",
           title: "Layer Control",
-          layout: { x: 0, y: 6, w: 3, h: 6 },
+          layout: { x: 0, y: 1, w: 3, h: 6 },
           widget: {
             name: "EodashLayerControl",
           },
@@ -260,13 +251,25 @@ export const eodash = reactive({
           layout: { x: 0, y: 0, w: 3, h: 1 },
           widget: {
             name: "EodashTools",
+            properties: {
+              layoutTarget: "main",
+              itemFilterConfig: {
+                enableCompare: true,
+                resultType: "cards",
+                filtersTitle: "",
+                style: "--padding: 72px",
+                filterProperties: [],
+                resultsTitle: "Explore more indicators",
+                subTitleProperty: "subtitle",
+              }
+            },
           },
         },
         {
           id: Symbol(),
           type: "internal",
           title: "Stac info",
-          layout: { x: 0, y: 1, w: 3, h: 6 },
+          layout: { x: 9, y: 0, w: 3, h: 6 },
           widget: {
             name: "EodashStacInfo",
             properties: {
@@ -283,7 +286,7 @@ export const eodash = reactive({
           id: Symbol(),
           type: "internal",
           title: "Layer Control",
-          layout: { x: 0, y: 7, w: 3, h: 3 },
+          layout: { x: 0, y: 1, w: 3, h: 3 },
           widget: {
             name: "EodashLayerControl",
             properties: {
@@ -301,7 +304,7 @@ export const eodash = reactive({
             return selected
               ? {
                   id: "Buttons",
-                  layout: { x: 11, y: 0, w: 1, h: 1 },
+                  layout: { x: 8, y: 0, w: 1, h: 1 },
                   title: "Buttons",
                   type: "internal",
                   widget: {

@@ -75,6 +75,6 @@ const { bgWidget, importedWidgets, gap } = useDefineTemplate();
   border-radius: 8px;
   border-style: solid;
   border-width: 1px;
-  border-color: rgb(var(--v-theme-secondary));
+  border-color: #fff;
 }
 </style>
