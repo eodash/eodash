@@ -8,10 +8,9 @@
         color="secondary"
         class="text-none py-2 px-4"
         :append-icon="[mdiPlus]"
-        text="Choose indicator"
+        :text="indicatorBtnText"
         @click="dialog = !dialog"
       >
-        Replace indicator
       </v-btn>
       <EodashLayoutSwitcher v-if="props.showLayoutSwitcher" target="main" />
     </div>
@@ -48,5 +47,9 @@ const props = defineProps({
     type: Boolean,
     default: true,
   },
+  indicatorBtnText: {
+    type: String,
+    default: "Select indicator"
+  }
 })
 </script>

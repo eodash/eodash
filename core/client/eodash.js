@@ -260,14 +260,6 @@ export const eodash = reactive({
           layout: { x: 0, y: 0, w: 3, h: 1 },
           widget: {
             name: "EodashTools",
-            properties: {
-              tags: [],
-              header: [],
-              footer: [],
-              body: ["description"],
-              styleOverride: "",
-              featured: [],
-            },
           },
         },
         {
