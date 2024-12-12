@@ -30,6 +30,7 @@ import "@eox/drawtools";
 import "@eox/jsonform";
 
 import { nextTick, onMounted, ref, toRaw, watch } from "vue";
+import { pollProcessStatus } from "@/utils/helpers";
 import axios from "@/plugins/axios";
 import { useSTAcStore } from "@/store/stac";
 import { storeToRefs } from "pinia";
@@ -232,8 +233,48 @@ async function processGeoTiff(links, jsonformValue, layerId) {
   let urls = [];
   let flatStyleJSON = null;
   for (const link of geotiffLinks ?? []) {
-    urls.push(mustache.render(link.href, { ...(jsonformValue ?? {}) }));
+    if (link.endpoint === "eoxhub_workspaces") {
+      // TODO: prove of concept, needs to be reworked for sure
+      // Special handling for eoxhub workspace process endpoints
+      const postBody = await axios
+        .get(/** @type {string} */ (link["body"]),{responseType: 'text'})
+        .then((resp) => resp.data);
+      const jsonData = JSON.parse(mustache.render(postBody, { ...(jsonformValue ?? {}) }));
+      try {
+        const responseProcess = await axios.post(link.href, jsonData, {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+        console.log(responseProcess.headers.location);
+        await pollProcessStatus({
+          processUrl: responseProcess.headers.location
+        })
+          .then(resultItem => {
+            console.log('Final result file:', resultItem);
+            // Further processing of the file can go here
+            urls.push(resultItem.urls[0]);
 
+          })
+          .catch(error => {
+            if (error instanceof Error) {
+              console.error('Polling failed:', error.message);
+            } else {
+              console.error('Unknown error occurred during polling:', error);
+            }
+          });
+      } catch (error) {
+        if (error instanceof Error) {
+          console.error('Error sending POST request:', error.message);
+        } else {
+          console.error('Unknown error occurred:', error);
+        }
+      }
+
+      
+    } else {
+      urls.push(mustache.render(link.href, { ...(jsonformValue ?? {}) }));
+    }
     if ("eox:flatstyle" in (link ?? {})) {
       flatStyleJSON = await axios
         .get(/** @type {string} */ (link["eox:flatstyle"]))
