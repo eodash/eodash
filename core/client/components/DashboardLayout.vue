@@ -21,6 +21,7 @@
       <template v-for="(importedWidget, idx) in importedWidgets" :key="idx">
         <Transition name="fade">
           <eox-layout-item
+           :id="importedWidget.value.id.toString()"
             v-if="importedWidget.value.component"
             :key="importedWidget.value.id"
             class="panel bg-surface"
