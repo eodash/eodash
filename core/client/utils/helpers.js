@@ -397,27 +397,31 @@ export const removeUnneededProperties = (layers) => {
 
 /**
  * Polls the process status and fetches a result item when the process is successful.
- * 
+ *
  * @param {Object} params - Parameters for polling the process status.
  * @param {string} params.processUrl - The URL of the process JSON report.
  * @param {number} [params.pollInterval=5000] - The interval (in milliseconds) between polling attempts.
  * @param {number} [params.maxRetries=60] - The maximum number of polling attempts.
- * @returns {Promise<Blob>} The fetched result file as a blob.
+ * @returns {Promise<JSON>} The fetched results JSON.
  * @throws {Error} If the process does not complete successfully within the maximum retries.
  */
-export async function pollProcessStatus({ processUrl, pollInterval = 5000, maxRetries = 60 }) {
+export async function pollProcessStatus({
+  processUrl,
+  pollInterval = 5000,
+  maxRetries = 60,
+}) {
   let retries = 0;
-  
+
   while (retries < maxRetries) {
     try {
       // Fetch the process JSON report
-      const cacheBuster = new Date().getTime();  // Add a timestamp for cache busting
+      const cacheBuster = new Date().getTime(); // Add a timestamp for cache busting
       const response = await axios.get(`${processUrl}?t=${cacheBuster}`);
       const processReport = response.data;
 
       // Check if the status is "successful"
-      if (processReport.status === 'successful') {
-        console.log('Process completed successfully. Fetching result item...');
+      if (processReport.status === "successful") {
+        console.log("Process completed successfully. Fetching result item...");
 
         // Extract the result item URL
         const resultsUrl = processReport.links[1].href;
@@ -427,24 +431,28 @@ export async function pollProcessStatus({ processUrl, pollInterval = 5000, maxRe
 
         // Fetch the result item
         const resultResponse = await axios.get(resultsUrl);
-        console.log('Result file fetched successfully:', resultResponse.data);
+        console.log("Result file fetched successfully:", resultResponse.data);
         return resultResponse.data; // Return the json result list
       }
 
       // Log the current status if not successful
-      console.log(`Status: ${processReport.status}. Retrying in ${pollInterval / 1000} seconds...`);
+      console.log(
+        `Status: ${processReport.status}. Retrying in ${pollInterval / 1000} seconds...`,
+      );
     } catch (error) {
       if (error instanceof Error) {
-        console.error('Error while polling process status:', error.message);
+        console.error("Error while polling process status:", error.message);
       } else {
-        console.error('Unknown error occurred:', error);
+        console.error("Unknown error occurred:", error);
       }
     }
 
     // Wait for the next poll
-    await new Promise(resolve => setTimeout(resolve, pollInterval));
+    await new Promise((resolve) => setTimeout(resolve, pollInterval));
     retries++;
   }
 
-  throw new Error('Max retries reached. Process did not complete successfully.');
+  throw new Error(
+    "Max retries reached. Process did not complete successfully.",
+  );
 }
