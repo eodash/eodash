@@ -68,13 +68,30 @@ const { bgWidget, importedWidgets, gap } = useDefineTemplate();
 .fade-leave-to {
   opacity: 0;
 }
-
-.bg-surface {
+:deep(.bg-surface) {
   backdrop-filter: blur(9.5px) !important;
-  background-color: #ffffff99 !important;
+  background-color: rgba(
+    var(--v-theme-surface),
+    var(--v-surface-opacity)
+  ) !important;
   border-radius: 8px;
   border-style: solid;
   border-width: 1px;
-  border-color: #fff;
+  border-color: rgb(var(--v-theme-surface));
+  scrollbar-color: rgba(var(--v-theme-on-surface), 0.2) transparent;
+  scrollbar-width: thin;
+}
+:deep(.bg-primary) {
+  backdrop-filter: blur(9.5px) !important;
+  background-color: rgba(
+    var(--v-theme-primary),
+    var(--v-primary-opacity)
+  ) !important;
+  border-radius: 8px;
+  border-style: solid;
+  border-width: 1px;
+  border-color: rgb(var(--v-theme-primary));
+  scrollbar-color: rgba(var(--v-theme-on-primary), 0.2) transparent;
+  scrollbar-width: thin;
 }
 </style>

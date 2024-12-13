@@ -212,8 +212,7 @@ export const makePanelTransparent = (root) => {
   });
 };
 
-
 export const useGetTemplates = () => {
-  const eodash  = /** @type {import("@/types").Eodash} */ (inject(eodashKey))
-  return "template" in eodash ? []: Object.keys(eodash.templates)
-}
+  const eodash = /** @type {import("@/types").Eodash} */ (inject(eodashKey));
+  return "template" in eodash ? [] : Object.keys(eodash.templates);
+};

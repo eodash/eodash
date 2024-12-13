@@ -18,7 +18,7 @@ import "@eox/itemfilter";
 
 import { ref } from "vue";
 
-const emit = defineEmits(['select']);
+const emit = defineEmits(["select"]);
 
 const props = defineProps({
   enableCompare: {
@@ -95,7 +95,7 @@ const onSelect = async (evt) => {
     // Reset compare stac to empty
     store.resetSelectedCompareSTAC();
     await store.loadSelectedSTAC(item.href);
-    emit('select', item);
+    emit("select", item);
   } else {
     // TODO: it is possible to unselect items now
     // we need to consider how to reset to "default"

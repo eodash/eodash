@@ -35,9 +35,9 @@ const props = defineProps({
     type: Array,
     default: () => ["datetime", "info", "config", "legend", "opacity"],
   },
-  cssVars:{
+  cssVars: {
     type: Object,
-  }
+  },
 });
 
 const config = {

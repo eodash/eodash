@@ -18,7 +18,11 @@ export const eodash = reactive({
       colors: {
         primary: "#002742",
         secondary: "#004170",
-        surface: "#fff",
+        surface: "#ffff",
+      },
+      variables: {
+        "surface-opacity": 0.6,
+        "primary-opacity": 0.8,
       },
     },
     footerText: "Demo configuration of eodash client",
@@ -63,8 +67,8 @@ export const eodash = reactive({
               itemFilterConfig: {
                 enableCompare: true,
                 aggregateResults: "collection_group",
-                style: "--form-flex-direction: row"
-              }
+                style: "--form-flex-direction: row",
+              },
             },
           },
         },
@@ -90,7 +94,6 @@ export const eodash = reactive({
                     properties: {
                       showIndicatorsBtn: false,
                       showLayoutSwitcher: false,
-
                     },
                   },
                 }
@@ -261,43 +264,55 @@ export const eodash = reactive({
                 filterProperties: [],
                 resultsTitle: "Explore more indicators",
                 subTitleProperty: "subtitle",
-              }
+              },
             },
           },
         },
         {
-          id: Symbol(),
-          type: "internal",
-          title: "Stac info",
-          layout: { x: 9, y: 0, w: 3, h: 6 },
-          widget: {
-            name: "EodashStacInfo",
-            properties: {
-              tags: [],
-              header: [],
-              footer: [],
-              body: ["description"],
-              styleOverride: "",
-              featured: [],
-            },
+          defineWidget: (selectedSTAC) => {
+            return selectedSTAC
+              ? {
+                  id: "stacinfo-light",
+                  type: "internal",
+                  title: "Stac info",
+                  layout: { x: 9, y: 0, w: 3, h: 6 },
+                  widget: {
+                    name: "EodashStacInfo",
+                    properties: {
+                      tags: [],
+                      header: [],
+                      footer: [],
+                      body: ["description"],
+                      styleOverride: "",
+                      featured: [],
+                    },
+                  },
+                }
+              : null;
           },
         },
         {
-          id: Symbol(),
-          type: "internal",
-          title: "Layer Control",
-          layout: { x: 0, y: 1, w: 3, h: 3 },
-          widget: {
-            name: "EodashLayerControl",
-            properties: {
-              tools: ["datetime", "info", "legend"],
-              cssVars:{
-                "--list-padding":"0",
-                "--tools-button-visibility":"none",
-                "--layer-visibility":"none",
-                "--padding": "0",
-              }
-            },
+          defineWidget: (selectedSTAC) => {
+            return selectedSTAC
+              ? {
+                  id: "layercontrol-light",
+                  type: "internal",
+                  title: "Layer Control",
+                  layout: { x: 0, y: 1, w: 3, h: 3 },
+                  widget: {
+                    name: "EodashLayerControl",
+                    properties: {
+                      tools: ["datetime", "info", "legend"],
+                      cssVars: {
+                        "--list-padding": "0",
+                        "--tools-button-visibility": "none",
+                        "--layer-visibility": "none",
+                        "--padding": "0",
+                      },
+                    },
+                  },
+                }
+              : null;
           },
         },
         {

@@ -1,8 +1,9 @@
 <template>
-  <div class="d-flex flex-column fill-height overflow-auto bg-primary">
-    <div
-      class="d-flex flex-row justify-space-between pa-4 align-center"
-    >
+  <div
+    ref="rootEl"
+    class="d-flex flex-column fill-height overflow-auto bg-primary"
+  >
+    <div class="d-flex flex-row justify-space-between pa-4 align-center">
       <v-btn
         v-if="props.showIndicatorsBtn"
         color="secondary"
@@ -12,7 +13,10 @@
         @click="dialog = !dialog"
       >
       </v-btn>
-      <EodashLayoutSwitcher v-if="props.showLayoutSwitcher" :target="layoutTarget" />
+      <EodashLayoutSwitcher
+        v-if="props.showLayoutSwitcher"
+        :target="layoutTarget"
+      />
     </div>
     <PopUp v-model="dialog" maxWidth="1000px" width="1000px">
       <EodashItemFilter
@@ -29,6 +33,7 @@ import EodashItemFilter from "^/EodashItemFilter.vue";
 import EodashLayoutSwitcher from "^/EodashLayoutSwitcher.vue";
 import { mdiPlus } from "@mdi/js";
 import { ref } from "vue";
+import { makePanelTransparent } from "@/composables";
 
 const dialog = ref(false);
 
@@ -43,15 +48,17 @@ const props = defineProps({
   },
   layoutTarget: {
     type: String,
-    default: "light"
+    default: "light",
   },
   indicatorBtnText: {
     type: String,
-    default: "Select indicator"
+    default: "Select indicator",
   },
   itemFilterConfig: {
     type: Object,
-    default: () => {}
-  }
-})
+    default: () => {},
+  },
+});
+const rootEl = ref(null);
+makePanelTransparent(rootEl);
 </script>

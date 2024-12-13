@@ -1,19 +1,19 @@
 <template>
-    <div class="flex-grow-1 fill-height overflow-auto">
-      <eox-stacinfo
-        .for="currentUrl"
-        .allowHtml="allowHtml"
-        .body="body"
-        .featured="featured"
-        .footer="footer"
-        .styleOverride="styleOverride"
-        .header="header"
-        .subheader="subheader"
-        .tags="tags"
-        style="--color-primary-lighter: none"
-      >
-      </eox-stacinfo>
-    </div>
+  <div class="flex-grow-1 fill-height overflow-auto">
+    <eox-stacinfo
+      .for="currentUrl"
+      .allowHtml="allowHtml"
+      .body="body"
+      .featured="featured"
+      .footer="footer"
+      .styleOverride="styleOverride"
+      .header="header"
+      .subheader="subheader"
+      .tags="tags"
+      style="--color-primary-lighter: none"
+    >
+    </eox-stacinfo>
+  </div>
 </template>
 
 <script setup>
