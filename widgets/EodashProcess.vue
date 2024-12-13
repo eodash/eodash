@@ -88,7 +88,7 @@ const initProcess = async () => {
 
 onMounted(async () => {
   // wait for the layers to be rendered
-  if (mapEl.value?.layers.length < 1 ) {
+  if (mapEl.value?.layers.length < 1) {
     layersEvents.once(async () => {
       await initProcess();
     });
@@ -101,7 +101,8 @@ useOnLayersUpdate(initProcess);
 
 const startProcess = async () => {
   const errors = jsonformEl.value?.editor.validate();
-  if(errors?.length) {
+  if (errors?.length) {
+    console.warn("[eodash] Form validation failed", errors);
     return;
   }
   await handleProcesses();
