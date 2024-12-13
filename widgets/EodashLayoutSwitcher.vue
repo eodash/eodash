@@ -1,7 +1,7 @@
 <template>
   <div ref="rootRef">
     <v-btn
-      class="text-none text-capitalize py-2 px-4"
+      class="text-capitalize py-2 px-4"
       :variant="props.variant"
       :append-icon="[mdiDoor]"
       @click="activeTemplate = props.target"
@@ -22,7 +22,9 @@ const props = defineProps({
     type: String,
     default: "main",
   },
+  /** @type {import("vue").PropType<import("vuetify/components").VBtn["variant"]>} */
   variant: {
+    //@ts-expect-error TODO
     type: String,
     default: "text",
   },

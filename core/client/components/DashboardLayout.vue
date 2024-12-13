@@ -72,7 +72,7 @@ const { bgWidget, importedWidgets, gap } = useDefineTemplate();
   backdrop-filter: blur(9.5px) !important;
   background-color: rgba(
     var(--v-theme-surface),
-    var(--v-surface-opacity)
+    var(--v-surface-opacity,0.8)
   ) !important;
   border-radius: 8px;
   border-style: solid;
@@ -85,7 +85,7 @@ const { bgWidget, importedWidgets, gap } = useDefineTemplate();
   backdrop-filter: blur(9.5px) !important;
   background-color: rgba(
     var(--v-theme-primary),
-    var(--v-primary-opacity)
+    var(--v-primary-opacity,0.8)
   ) !important;
   border-radius: 8px;
   border-style: solid;
