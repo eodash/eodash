@@ -88,7 +88,7 @@ const initProcess = async () => {
 
 onMounted(async () => {
   // wait for the layers to be rendered
-  if (mapEl.value?.layers.length < 1) {
+  if (mapEl.value?.layers.length <= 1) {
     layersEvents.once(async () => {
       await initProcess();
     });
