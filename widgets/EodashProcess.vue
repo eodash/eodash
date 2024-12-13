@@ -88,7 +88,7 @@ const initProcess = async () => {
 
 onMounted(async () => {
   // wait for the layers to be rendered
-  if (!mapEl.value) {
+  if (mapEl.value?.layers.length < 1 ) {
     layersEvents.once(async () => {
       await initProcess();
     });
@@ -100,6 +100,10 @@ onMounted(async () => {
 useOnLayersUpdate(initProcess);
 
 const startProcess = async () => {
+  const errors = jsonformEl.value?.editor.validate();
+  if(errors?.length) {
+    return;
+  }
   await handleProcesses();
   isProcessed.value = true;
 };
@@ -370,9 +374,7 @@ function useAutoExec(autoExec, jsonformEl, jsonformSchema) {
    * @param {CustomEvent} _e
    **/
   const onJsonFormChange = async (_e) => {
-    const errors = jsonformEl.value?.editor.validate();
-
-    if (!isProcessed.value && !errors?.length) {
+    if (!isProcessed.value) {
       await startProcess();
     }
   };
