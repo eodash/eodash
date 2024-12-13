@@ -21,7 +21,7 @@
       <template v-for="(importedWidget, idx) in importedWidgets" :key="idx">
         <Transition name="fade">
           <eox-layout-item
-           :id="importedWidget.value.id.toString()"
+            :id="importedWidget.value.id.toString()"
             v-if="importedWidget.value.component"
             :key="importedWidget.value.id"
             class="panel bg-surface"
@@ -73,7 +73,7 @@ const { bgWidget, importedWidgets, gap } = useDefineTemplate();
   backdrop-filter: blur(9.5px) !important;
   background-color: rgba(
     var(--v-theme-surface),
-    var(--v-surface-opacity,0.8)
+    var(--v-surface-opacity, 0.8)
   ) !important;
   border-radius: 8px;
   border-style: solid;
@@ -86,7 +86,7 @@ const { bgWidget, importedWidgets, gap } = useDefineTemplate();
   backdrop-filter: blur(9.5px) !important;
   background-color: rgba(
     var(--v-theme-primary),
-    var(--v-primary-opacity,0.8)
+    var(--v-primary-opacity, 0.8)
   ) !important;
   border-radius: 8px;
   border-style: solid;

@@ -20,6 +20,8 @@
     </div>
     <PopUp v-model="dialog" maxWidth="1000px" width="1000px">
       <EodashItemFilter
+        class="pa-4"
+        results-title=""
         v-bind="props.itemFilterConfig"
         @select="dialog = !dialog"
       />
