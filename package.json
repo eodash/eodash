@@ -30,7 +30,7 @@
       "types": "./dist/types/core/client/asWebComponent.d.ts",
       "default": "./dist/client/eo-dash.js"
     },
-    "./webcomponent.css": "./dist/client/style.css",
+    "./webcomponent.css": "./dist/client/eo-dash.css",
     "./config": {
       "types": "./dist/node/types.d.ts",
       "default": "./dist/node/main.js"
