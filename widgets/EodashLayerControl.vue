@@ -3,7 +3,7 @@
     <eox-layercontrol
       v-if="showControls"
       :for="mapElement"
-      .tools="['datetime', 'info', 'config', 'opacity']"
+      .tools="['datetime', 'info', 'config', 'legend', 'opacity']"
       @datetime:updated="debouncedHandleDateTime"
       class="fill-height"
       toolsAsList="true"
@@ -15,6 +15,7 @@
 import "@eox/layercontrol";
 import "@eox/jsonform";
 import "@eox/timecontrol";
+import "color-legend-element";
 
 import { computed, ref } from "vue";
 import { mapEl, mapCompareEl } from "@/store/States";

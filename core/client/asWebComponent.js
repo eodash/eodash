@@ -2,7 +2,10 @@ import App from "./App.vue";
 import { defineCustomElement } from "vue";
 import { registerPlugins } from "./plugins";
 
-/** @type {import("./asWebComponent").EodashConstructor} */
+/**
+ *  @type {import("vue").VueElementConstructor<
+ *  import("vue").ExtractPropTypes<{ config: string }>>}
+ * */
 export const Eodash = defineCustomElement(App, {
   shadowRoot: false,
   configureApp(app) {

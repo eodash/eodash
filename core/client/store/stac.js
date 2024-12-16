@@ -46,7 +46,6 @@ export const useSTAcStore = defineStore("stac", () => {
   /**
    * Fetches root stac catalog and assign it to `stac`
    *
-   * @async
    * @param {import("@/types").StacEndpoint} [url=eodash.stacEndpoint] Default
    *   is `eodash.stacEndpoint`
    * @returns {Promise<void>}
@@ -76,7 +75,6 @@ export const useSTAcStore = defineStore("stac", () => {
   /**
    * Fetches selected stac object and assign it to `selectedStac`
    *
-   * @async
    * @param {string} relativePath - Stac link href
    * @returns {Promise<void>}
    * @see {@link selectedStac}
@@ -117,7 +115,6 @@ export const useSTAcStore = defineStore("stac", () => {
   /**
    * Fetches selected stac object and assign it to `selectedCompareStac`
    *
-   * @async
    * @param {string} relativePath - Stac link href
    * @returns {Promise<void>}
    * @see {@link selectedCompareStac}

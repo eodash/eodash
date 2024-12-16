@@ -1,6 +1,60 @@
 # Changelog
 
 
+## [5.0.0-alpha.2.26](https://github.com/eodash/eodash/compare/eodash-v5.0.0-alpha.2.25...eodash-v5.0.0-alpha.2.26) (2024-11-22)
+
+
+### Bug Fixes
+
+* making sure additional properties are also added to layers created from tiff assets ([#141](https://github.com/eodash/eodash/issues/141)) ([e9a6b37](https://github.com/eodash/eodash/commit/e9a6b376f66c7f2eba5f2cee038a328694954bb0))
+
+## [5.0.0-alpha.2.25](https://github.com/eodash/eodash/compare/eodash-v5.0.0-alpha.2.24...eodash-v5.0.0-alpha.2.25) (2024-11-12)
+
+
+### Features
+
+* added extraction of optional wms parameters ([#138](https://github.com/eodash/eodash/issues/138)) ([65fed53](https://github.com/eodash/eodash/commit/65fed53432489db6151f7292ab4c098c82bd9c7b))
+
+## [5.0.0-alpha.2.24](https://github.com/eodash/eodash/compare/eodash-v5.0.0-alpha.2.23...eodash-v5.0.0-alpha.2.24) (2024-10-11)
+
+
+### Features
+
+* integration of colorlegend creation from style or stac information ([#134](https://github.com/eodash/eodash/issues/134)) ([357ccb3](https://github.com/eodash/eodash/commit/357ccb38a322f9063fdb3e2eb5a0c75d0742d502))
+
+
+### Bug Fixes
+
+* docs generation ([#136](https://github.com/eodash/eodash/issues/136)) ([a6cbfd5](https://github.com/eodash/eodash/commit/a6cbfd5a344289965d3abd0f739ef5cb775b0985))
+
+## [5.0.0-alpha.2.23](https://github.com/eodash/eodash/compare/eodash-v5.0.0-alpha.2.22...eodash-v5.0.0-alpha.2.23) (2024-10-07)
+
+
+### Bug Fixes
+
+* ".d.ts" file extension ([#132](https://github.com/eodash/eodash/issues/132)) ([0c8d1f2](https://github.com/eodash/eodash/commit/0c8d1f2df56b6564a8ed9a8a9ffe38f6e0e09659))
+
+## [5.0.0-alpha.2.22](https://github.com/eodash/eodash/compare/eodash-v5.0.0-alpha.2.21...eodash-v5.0.0-alpha.2.22) (2024-10-03)
+
+
+### Bug Fixes
+
+* Minor fixes including building and exporting types  ([#129](https://github.com/eodash/eodash/issues/129)) ([927229a](https://github.com/eodash/eodash/commit/927229ac63698663fc24105486631bddbce16eca))
+
+## [5.0.0-alpha.2.21](https://github.com/eodash/eodash/compare/eodash-v5.0.0-alpha.2.20...eodash-v5.0.0-alpha.2.21) (2024-10-02)
+
+
+### Bug Fixes
+
+* disabled interpolation by default, as in my it falsifies the shown data ([#127](https://github.com/eodash/eodash/issues/127)) ([102323b](https://github.com/eodash/eodash/commit/102323ba002a0cd1a946c46af78e7473310e8bd2))
+
+## [5.0.0-alpha.2.20](https://github.com/eodash/eodash/compare/eodash-v5.0.0-alpha.2.19...eodash-v5.0.0-alpha.2.20) (2024-09-24)
+
+
+### Bug Fixes
+
+* Remove shadow root from `eo-dash` ([#98](https://github.com/eodash/eodash/issues/98)) ([0f36495](https://github.com/eodash/eodash/commit/0f36495d67fa89aeefebf4e8f50ee020074dd206))
+
 ## [5.0.0-alpha.2.19](https://github.com/eodash/eodash/compare/eodash-v5.0.0-alpha.2.18...eodash-v5.0.0-alpha.2.19) (2024-09-23)
 
 

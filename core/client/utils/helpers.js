@@ -38,7 +38,7 @@ export function generateFeatures(links) {
   return geojsonObject;
 }
 
-/** @param { import("ol/layer/WebGLTile").Style & { jsonform?: Record<string,any> } } [style] */
+/** @param { import("ol/layer/WebGLTile").Style & { jsonform?: Record<string,any> } & { legend?: Record<string,any> } } [style] */
 export function extractLayerConfig(style) {
   /** @type {Record<string,unknown> | undefined} */
   let layerConfig = undefined;
@@ -46,6 +46,10 @@ export function extractLayerConfig(style) {
     layerConfig = { schema: style.jsonform, type: "style" };
     style = { ...style };
     delete style.jsonform;
+    if (style?.legend) {
+      layerConfig.legend = style.legend;
+      delete style.legend;
+    }
   }
   log.debug(
     "extracted layerConfig",
@@ -108,17 +112,15 @@ export function extractCollectionUrls(stacObject, basepath) {
   // Indicator assumes Catalog-Collection-Collection-Item
   // TODO: this is not the most stable test approach,
   // we should discuss potential other approaches
-  if (stacObject?.links && stacObject?.links.length > 1) {
-    if (stacObject?.links[1].rel === "item") {
-      collectionUrls.push(basepath);
-    } else if (stacObject?.links[1].rel === "child") {
-      // TODO: Iterate through all children to create collections
-      stacObject.links.forEach((link) => {
-        if (link.rel === "child") {
-          collectionUrls.push(toAbsolute(link.href, basepath));
-        }
-      });
-    }
+  if (stacObject?.links && stacObject?.links[1]?.rel === "item") {
+    collectionUrls.push(basepath);
+  } else if (stacObject?.links[1]?.rel === "child") {
+    // TODO: Iterate through all children to create collections
+    stacObject.links.forEach((link) => {
+      if (link.rel === "child") {
+        collectionUrls.push(toAbsolute(link.href, basepath));
+      }
+    });
   }
   return collectionUrls;
 }

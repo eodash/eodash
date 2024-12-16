@@ -32,7 +32,7 @@ export interface WebComponentProps<T extends ExecutionTime = "compiletime"> {
    */
   onMounted?: (
     el: Element | null,
-    store: ReturnType<typeof import("./store/stac").useSTAcStore>,
+    store: ReturnType<typeof import("./store/stac.js").useSTAcStore>,
   ) => Promise<void> | void;
   /**
    * Triggered when the web component is unmounted from the DOM.
@@ -43,7 +43,7 @@ export interface WebComponentProps<T extends ExecutionTime = "compiletime"> {
    */
   onUnmounted?: (
     el: Element | null,
-    store: ReturnType<typeof import("./store/stac").useSTAcStore>,
+    store: ReturnType<typeof import("./store/stac.js").useSTAcStore>,
   ) => Promise<void> | void;
 }
 
@@ -258,7 +258,7 @@ export interface EodashStore {
     getLayers: (el?: string) => object[];
 
     /**
-     * Register EPSG projection in `eox-map` and adds it to {@link EodashStore.states.availableMapProjection `availableMapProjection`` }
+     * Register EPSG projection in `eox-map` and adds it to  `availableMapProjection`
      * */
     registerProjection: (
       code?: number | string | { name: string; def: string },
@@ -276,16 +276,4 @@ export interface EodashStore {
   };
 }
 ///////
-/**
- * The project's entry point should export this function as a default to
- * instantiate eodash
- *
- * @param config
- * @group Eodash
- */
-export declare const createEodash: (
-  config: ((store: EodashStore) => Eodash | Promise<Eodash>) | Eodash,
-) => Eodash | Promise<Eodash>;
-
-/** @group EodashStore */
-export declare const store: EodashStore;
+export { createEodash, store } from "./main.js";

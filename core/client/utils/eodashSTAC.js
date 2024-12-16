@@ -168,7 +168,7 @@ export class EodashCollection {
     // will try to extract anything it supports but for which we have
     // less control.
 
-    const { layerConfig, style } = extractLayerConfig(
+    let { layerConfig, style } = extractLayerConfig(
       await fetchStyle(item, itemUrl),
     );
 
@@ -189,19 +189,26 @@ export class EodashCollection {
 
     if (isSupported) {
       // Checking for potential legend asset
-      let legendInfo = null;
+      let extraProperties = null;
       if (this.#collectionStac?.assets?.legend?.href) {
-        legendInfo = `
-          <div style="text-align:center; width: 100%">
+        extraProperties = {
+          description: `<div style="text-align:center; width: 100%">
             <img src="${this.#collectionStac.assets.legend.href}" style="max-height:70px; margin-top:-15px; margin-bottom:-20px;" />
-          </div>`;
+          </div>`,
+        };
+      }
+      // Check if collection has eox:colorlegend definition, if yes overwrite legend description
+      if (this.#collectionStac && this.#collectionStac["eox:colorlegend"]) {
+        extraProperties = {
+          layerLegend: this.#collectionStac["eox:colorlegend"],
+        };
       }
       const links = await createLayersFromLinks(
         this.#collectionStac?.id ?? "",
         title,
         item,
         layerDatetime,
-        legendInfo,
+        extraProperties,
       );
       jsonArray.push(
         ...links,
@@ -213,6 +220,7 @@ export class EodashCollection {
           style,
           layerConfig,
           layerDatetime,
+          extraProperties,
         )),
       );
     } else {

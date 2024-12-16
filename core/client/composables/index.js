@@ -196,8 +196,6 @@ export const makePanelTransparent = (root) => {
     const eoxItem = root.value?.parentElement;
     if (eoxItem?.tagName === "EOX-LAYOUT-ITEM") {
       eoxItem.classList.remove("bg-surface");
-      eoxItem.style.background = "transparent";
-      eoxItem.style.border = "transparent";
     }
   });
 };
