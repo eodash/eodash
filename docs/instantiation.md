@@ -77,7 +77,6 @@ export default createEodash({
       {
         type: "web-component",
         id: Symbol(),
-        slidable: true,
         layout: { x: 4, y: 0, h: 1, w: 3 },
         title: "Iframe",
         widget: {

@@ -1,5 +1,5 @@
-import { registerProjection } from "@/store/Actions";
-import { mapEl } from "@/store/States";
+import { registerProjection } from "@/store/actions";
+import { mapEl } from "@/store/states";
 import {
   extractRoles,
   getProjectionCode,
@@ -65,10 +65,11 @@ export async function createLayersFromAssets(
         },
         ...(!style?.variables && { style }),
       };
+
       extractRoles(layer.properties, assets[ast]);
-      if (extraProperties !== null) {
-        layer.properties = { ...layer.properties, ...extraProperties };
-      }
+
+      layer.properties = { ...layer.properties, ...(extraProperties ?? {}) };
+
       jsonArray.push(layer);
     } else if (assets[ast]?.type === "image/tiff") {
       geoTIFFIdx = idx;
@@ -96,7 +97,7 @@ export async function createLayersFromAssets(
       },
       style,
     };
-    if (extraProperties !== null) {
+    if (extraProperties) {
       layer.properties = { ...layer.properties, ...extraProperties };
     }
     jsonArray.push(layer);
@@ -150,10 +151,11 @@ export const createLayersFromLinks = async (
       viewProjectionCode,
     );
     log.debug("WMS Layer added", linkId);
-    const tileSize =
+    const tileSize = /** @type {number[]} */ (
       "wms:tilesize" in wmsLink
         ? [wmsLink["wms:tilesize"], wmsLink["wms:tilesize"]]
-        : [512, 512];
+        : [512, 512]
+    );
     let json = {
       type: "Tile",
       properties: {

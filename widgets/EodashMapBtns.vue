@@ -17,8 +17,8 @@
 </template>
 <script setup>
 import { makePanelTransparent } from "@/composables";
-import { changeMapProjection } from "@/store/Actions";
-import { availableMapProjection } from "@/store/States";
+import { changeMapProjection } from "@/store/actions";
+import { availableMapProjection } from "@/store/states";
 import { mdiEarthBox, mdiMapPlus } from "@mdi/js";
 import ExportState from "^/ExportState.vue";
 import { ref } from "vue";

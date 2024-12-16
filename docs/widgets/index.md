@@ -30,7 +30,6 @@ export default createEodash({
              {
                id: Symbol(),
                type: "iframe",
-               slidable: false,
                layout: { x: 4, y: 0, h: 3, w: 3 },
                title: "Iframe Example",
                widget: {

@@ -96,24 +96,7 @@ export default createEodash({
 
 ## Font Customization
 
-eodash utilizes [typekit/webfontloader](https://github.com/typekit/webfontloader) which applies the specified font across the dashboard.
-Supporting loading [Google Fonts](https://fonts.google.com) out of the box by adding the font's family name only.
-
-```js
-import { createEodash } from "@eodash/eodash"
-
-export default createEodash({
-    ...
-    brand: {
-        ...
-        font: {
-          family: "Poppins"
-        }
-    }
-})
-```
-
-or loading custom fonts by adding a link to the stylesheet that defines the font-face. Could be either a relative or an absolute URL.
+eodash utilizes [typekit/webfontloader](https://github.com/typekit/webfontloader) which applies the specified font across the dashboard. Fonts can be loaded by adding a link to the stylesheet that defines the font-face. Could be either a relative or an absolute URL.
 
 ```js
 import { createEodash } from "@eodash/eodash"

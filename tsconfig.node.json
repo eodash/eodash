@@ -12,6 +12,7 @@
   "include": [
     "core/node/**/*.js",
     "core/node/**/*.d.ts",
+    "core/node/**/*.ts",
     "tests/cli/**/*.js",
     "tests/cli/**/*.spec.js",
     "tests/cli/**/*.test.js",

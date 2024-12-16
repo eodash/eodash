@@ -13,7 +13,9 @@ import { storeToRefs } from "pinia";
  */
 
 /** @typedef {import("vue").ShallowRef<DefinedWidget>} ReactiveDefinedWidget */
-
+/**
+ * Widgets import map that is created from eodash internals and user defined widgets
+ */
 const internalWidgets = (() => {
   /** @type {Record<string, () => Promise<import("vue").Component>>} */
   const importMap = {

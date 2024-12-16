@@ -3,10 +3,10 @@ import { inject, ref } from "vue";
 import axios from "@/plugins/axios";
 import { useAbsoluteUrl, useCompareAbsoluteUrl } from "@/composables/index";
 import { eodashKey } from "@/utils/keys";
-import { indicator } from "@/store/States";
-import { extractCollectionUrls } from "@/utils/helpers";
+import { indicator } from "@/store/states";
+import { extractCollectionUrls } from "@/eodashSTAC/helpers";
 import { eodashCollections, eodashCompareCollections } from "@/utils/states";
-import { EodashCollection } from "@/utils/eodashSTAC";
+import { EodashCollection } from "@/eodashSTAC/EodashCollection";
 import log from "loglevel";
 
 export const useSTAcStore = defineStore("stac", () => {
@@ -126,7 +126,7 @@ export const useSTAcStore = defineStore("stac", () => {
       .get(absoluteUrl.value)
       .then(async (resp) => {
         // init eodash collections
-        const collectionUrls = extractCollectionUrls(
+        const collectionUrls = await extractCollectionUrls(
           resp.data,
           absoluteUrl.value,
         );

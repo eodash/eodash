@@ -14,7 +14,7 @@
 <script setup>
 import { useSTAcStore } from "@/store/stac";
 import "@eox/itemfilter";
-import { onMounted, ref } from "vue";
+import { onMounted, ref, toRaw } from "vue";
 
 const props = defineProps({
   enableCompare: {
@@ -63,6 +63,25 @@ const props = defineProps({
     ],
   },
 });
+
+const config = {
+  titleProperty: props.titleProperty,
+  filterProperties: props.filterProperties,
+  aggregateResults: props.aggregateResults,
+  enableHighlighting: props.enableHighlighting,
+  expandMultipleFilters: props.expandMultipleFilters,
+  expandMultipleResults: props.expandMultipleResults,
+};
+/** @type {import("vue").Ref<import("@eox/itemfilter").EOxItemFilter | null>} */
+const eoxItemFilter = ref(null);
+
+const store = useSTAcStore();
+
+const defaultStyle =
+  "float:right; height:15px; padding:4px;  margin-top:-4px; background-color:white;";
+const highlightStyle =
+  "float:right; height:15px; padding:4px;  margin-top:-4px; background-color:#9bcaeb;";
+
 /** @param {any} evt*/
 const onSelect = async (evt) => {
   // reset the style of all compare buttons
@@ -75,28 +94,9 @@ const onSelect = async (evt) => {
     store.resetSelectedCompareSTAC();
     await store.loadSelectedSTAC(item.href);
   } else {
-    // TODO: it is possible to unselect items now
-    // we need to consider how to reset to "default"
-    // if that happens here
+    store.selectedStac = null;
   }
 };
-const config = {
-  titleProperty: props.titleProperty,
-  filterProperties: props.filterProperties,
-  aggregateResults: props.aggregateResults,
-  enableHighlighting: props.enableHighlighting,
-  expandMultipleFilters: props.expandMultipleFilters,
-  expandMultipleResults: props.expandMultipleResults,
-};
-/** @type {import("vue").Ref<HTMLElement & Record<string,any> | null>} */
-const eoxItemFilter = ref(null);
-
-const store = useSTAcStore();
-
-const defaultStyle =
-  "float:right; height:15px; padding:4px;  margin-top:-4px; background-color:white;";
-const highlightStyle =
-  "float:right; height:15px; padding:4px;  margin-top:-4px; background-color:#9bcaeb;";
 
 const injectCompareButtons = () => {
   setTimeout(() => {
@@ -159,21 +159,31 @@ const injectCompareButtons = () => {
 onMounted(() => {
   const style = document.createElement("style");
   style.innerHTML = `
-    section {
-      margin: 0 !important;
+  section {
+    margin: 0 !important;
     }
     section button#filter-reset {
       padding: 0 8px;
       top: 8px;
       right: 8px;
-    }
-  `;
+      }
+      `;
   eoxItemFilter.value?.shadowRoot?.appendChild(style);
 
   // Only list child elements in list
-  const items = store.stac?.filter((item) => item.rel === "child");
-  /** @type {any} */
+  const items = store.stac
+    ?.filter((item) => item.rel === "child")
+    .map((item) => toRaw(item));
+  if (!items) {
+    return;
+  }
+  /** @type {import("@eox/itemfilter").EOxItemFilter} */
   (eoxItemFilter.value).items = items;
+
+  /** @type {import("@eox/itemfilter").EOxItemFilter} */
+  (eoxItemFilter.value).selectedResult = items?.find(
+    (item) => item.id === store.selectedStac?.id,
+  );
   if (props.enableCompare) {
     injectCompareButtons();
   }

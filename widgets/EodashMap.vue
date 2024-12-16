@@ -7,8 +7,9 @@
       class="fill-height fill-width overflow-none"
       slot="first"
       ref="eoxMap"
-      .config="eoxMapConfig"
       id="main"
+      .animationOptions="animationOptions"
+      .config="eoxMapConfig"
       .layers="eoxMapLayers"
     />
     <eox-map
@@ -25,12 +26,12 @@
 import "@eox/map";
 import "@eox/map/dist/eox-map-advanced-layers-and-sources.js";
 import { computed, onMounted, ref } from "vue";
-import { datetime, mapEl, mapPosition, mapCompareEl } from "@/store/States";
+import { datetime, mapEl, mapPosition, mapCompareEl } from "@/store/states";
 import { storeToRefs } from "pinia";
 import { useSTAcStore } from "@/store/stac";
 import { eodashCollections, eodashCompareCollections } from "@/utils/states";
 import { useHandleMapMoveEnd, useInitMap } from "@/composables/EodashMap";
-
+import { inAndOut } from "ol/easing.js";
 const props = defineProps({
   enableCompare: {
     type: Boolean,
@@ -61,6 +62,12 @@ const eoxMapCompareLayers = ref([
     },
   },
 ]);
+
+const animationOptions = {
+    duration: 1200,
+    easing: inAndOut,
+  };
+
 
 /** @type {import("vue").Ref<(HTMLElement & Record<string,any> & { map:import("ol").Map }) | null>} */
 const eoxMap = ref(null);

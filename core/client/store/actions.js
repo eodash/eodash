@@ -1,5 +1,5 @@
-import { mapEl, mapCompareEl, registeredProjections } from "@/store/States";
-import { getProjectionCode } from "@/utils/helpers";
+import { mapEl, mapCompareEl, registeredProjections } from "@/store/states";
+import { getProjectionCode } from "@/eodashSTAC/helpers";
 import log from "loglevel";
 
 /**

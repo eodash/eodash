@@ -1,5 +1,5 @@
-import { EodashCollection } from "@/utils/eodashSTAC";
-import { setMapProjFromCol } from "@/utils/helpers";
+import { EodashCollection } from "@/eodashSTAC/EodashCollection";
+import { setMapProjFromCol } from "@/eodashSTAC/triggers";
 import { onMounted, onUnmounted, watch } from "vue";
 import log from "loglevel";
 import { useSTAcStore } from "@/store/stac";
@@ -12,7 +12,7 @@ import { storeToRefs } from "pinia";
 let viewHolder = null;
 
 /**
- * Description placeholder
+ * Handles updating {@link mapPosition} on movement on the map
  *
  * @param {import("vue").Ref<HTMLElement & Record<string,any> & {map:import("ol").Map } | null>} mapElement
  * @param {import("vue").Ref<(number | undefined)[]>} mapPosition
@@ -193,7 +193,7 @@ const createLayersConfig = async (
 };
 
 /**
- * Description placeholder
+ * Initializes the map and updates it based on changes in the selected indicator and datetime,
  *
  * @param {import("vue").Ref<HTMLElement & Record<string,any> | null>} mapElement
  * @param {import("vue").Ref<import("stac-ts").StacCollection | null>} selectedIndicator
@@ -303,10 +303,10 @@ export const useInitMap = (
           // Sanitize extent,
           const b = updatedStac.extent?.spatial.bbox[0];
           const sanitizedExtent = [
-            b[0] > -180 ? b[0] : -180,
-            b[1] > -90 ? b[1] : -90,
-            b[2] < 180 ? b[2] : 180,
-            b[3] < 90 ? b[3] : 90,
+            b?.[0] > -180 ? b?.[0] : -180,
+            b?.[1] > -90 ? b?.[1] : -90,
+            b?.[2] < 180 ? b?.[2] : 180,
+            b?.[3] < 90 ? b?.[3] : 90,
           ];
 
           const reprojExtent = mapElement.value?.transformExtent(
@@ -314,7 +314,7 @@ export const useInitMap = (
             "EPSG:4326",
             mapElement.value?.map?.getView().getProjection(),
           );
-          /** @type {any} */
+          /** @type {import("@eox/map").EOxMap} */
           (mapElement.value).zoomExtent = reprojExtent;
         }
 

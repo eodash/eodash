@@ -53,9 +53,9 @@ import { mdiClipboardCheckOutline, mdiContentCopy } from "@mdi/js";
 import PopUp from "./PopUp.vue";
 import { copyToClipBoard } from "@/utils";
 import { computed, ref } from "vue";
-import { getLayers as getLayerAction } from "@/store/Actions";
-import { mapPosition } from "@/store/States";
-import { removeUnneededProperties } from "@/utils/helpers";
+import { getLayers as getLayerAction } from "@/store/actions";
+import { mapPosition } from "@/store/states";
+import { removeUnneededProperties } from "@/eodashSTAC/helpers";
 
 const dialog = defineModel({ type: Boolean, required: true, default: false });
 

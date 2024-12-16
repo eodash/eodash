@@ -6,23 +6,8 @@ declare module "*.vue" {
   export default component;
 }
 declare interface Window {
-  eodashStore: import("@/types").EodashStore;
+  eodashStore: typeof import("@/store").default;
   setEodashLoglevel: typeof import("loglevel").setLevel;
-}
-declare module "@eox/stacinfo" {
-  export const EOxStacInfo: CustomElementConstructor;
-}
-declare module "@eox/layercontrol" {
-  export const EOxLayerControl: CustomElementConstructor;
-}
-declare module "@eox/jsonform" {
-  export const EOxJSONForm: CustomElementConstructor;
-}
-declare module "@eox/map" {
-  export const EOxMap: CustomElementConstructor;
-}
-declare module "@eox/itemfilter" {
-  export const EOxItemFilter: CustomElementConstructor;
 }
 declare module "user:config" {
   const eodash: import("@/types").Eodash | Promise<import("@/types").Eodash>;
