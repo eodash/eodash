@@ -1,6 +1,28 @@
 # Changelog
 
 
+## [5.0.0-alpha.2.19](https://github.com/eodash/eodash/compare/eodash-v5.0.0-alpha.2.18...eodash-v5.0.0-alpha.2.19) (2024-09-23)
+
+
+### Bug Fixes
+
+* issues with map and comparison map race conditions ([#121](https://github.com/eodash/eodash/issues/121)) ([32f7b96](https://github.com/eodash/eodash/commit/32f7b963487f2ec65aee7172053457628b026e3c))
+* wmts style parsing from dimensions ([#119](https://github.com/eodash/eodash/issues/119)) ([00a8f6b](https://github.com/eodash/eodash/commit/00a8f6b14dd5e5b9f33e275a414b6acff50d2a98))
+
+## [5.0.0-alpha.2.18](https://github.com/eodash/eodash/compare/eodash-v5.0.0-alpha.2.17...eodash-v5.0.0-alpha.2.18) (2024-09-16)
+
+
+### Features
+
+* Review of time selection and showing of legends ([#108](https://github.com/eodash/eodash/issues/108)) ([3fdc68c](https://github.com/eodash/eodash/commit/3fdc68cafa95441f2f9dd9b6a33fa3e84ea5b9a3))
+
+
+### Bug Fixes
+
+* deleting jsonfrom schema reference from styles ([#113](https://github.com/eodash/eodash/issues/113)) ([ec8aaa7](https://github.com/eodash/eodash/commit/ec8aaa7022d8ee8f10170c0a6354deab349ca933))
+* potential fix for incorrect layer updating when loading indicator ([#104](https://github.com/eodash/eodash/issues/104)) ([fb2d5c6](https://github.com/eodash/eodash/commit/fb2d5c6e4200d513e0530f6ad34fed7f98d0c27d))
+* potential fix for map sync issues ([#111](https://github.com/eodash/eodash/issues/111)) ([25c2ac7](https://github.com/eodash/eodash/commit/25c2ac70f0ff52f7ce0637764a783311e2d6dee0))
+
 ## [5.0.0-alpha.2.17](https://github.com/eodash/eodash/compare/eodash-v5.0.0-alpha.2.16...eodash-v5.0.0-alpha.2.17) (2024-09-06)
 
 

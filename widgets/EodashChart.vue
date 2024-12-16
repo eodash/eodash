@@ -1,36 +1,23 @@
 <template>
   <span>
-    <div id="vega-container" ref="vegaChart"></div>
+    <eox-chart
+      v-if="spec && dataValues"
+      .spec="spec"
+      .dataValues="dataValues"
+    />
   </span>
 </template>
 <script setup>
-import vegaEmbed from "vega-embed";
-import { onMounted, toRaw, watch } from "vue";
-import { ref } from "vue";
-
-const props = defineProps({
+defineProps({
   spec: {
     /** @type {import("vue").PropType<import("vega").Spec>} */
     type: Object,
     default: () => ({}),
   },
-});
-
-/** @type {import("vue").Ref<HTMLDivElement|null>} */
-const vegaChart = ref(null);
-
-onMounted(() => {
-  watch(
-    props.spec,
-    async () => {
-      if (props.spec) {
-        await vegaEmbed(
-          /** @type {HTMLDivElement} */ (vegaChart.value),
-          toRaw(props.spec),
-        );
-      }
-    },
-    { immediate: true },
-  );
+  dataValues: {
+    /** @type {import("vue").PropType<import("vega").Spec>} */
+    type: Object,
+    default: () => ({}),
+  },
 });
 </script>

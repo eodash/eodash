@@ -9,7 +9,11 @@ import {
   generateFeatures,
   replaceLayer,
 } from "./helpers";
-import { getLayers, registerProjection } from "@/store/Actions";
+import {
+  getLayers,
+  getCompareLayers,
+  registerProjection,
+} from "@/store/Actions";
 import { createLayersFromAssets, createLayersFromLinks } from "./createLayers";
 import axios from "@/plugins/axios";
 import log from "loglevel";
@@ -153,6 +157,7 @@ export class EodashCollection {
             "fill-color": "#00417077",
             "stroke-color": "#004170",
           },
+          interactions: [],
         },
       ];
     }
@@ -183,11 +188,20 @@ export class EodashCollection {
       Object.keys(dataAssets).length;
 
     if (isSupported) {
+      // Checking for potential legend asset
+      let legendInfo = null;
+      if (this.#collectionStac?.assets?.legend?.href) {
+        legendInfo = `
+          <div style="text-align:center; width: 100%">
+            <img src="${this.#collectionStac.assets.legend.href}" style="max-height:70px; margin-top:-15px; margin-bottom:-20px;" />
+          </div>`;
+      }
       const links = await createLayersFromLinks(
         this.#collectionStac?.id ?? "",
         title,
         item,
         layerDatetime,
+        legendInfo,
       );
       jsonArray.push(
         ...links,
@@ -296,8 +310,9 @@ export class EodashCollection {
    *
    * @param {string} datetime
    * @param {string} layer
+   * @param {string} map
    */
-  async updateLayerJson(datetime, layer) {
+  async updateLayerJson(datetime, layer, map) {
     await this.fetchCollection();
 
     // get the link of the specified date
@@ -318,12 +333,15 @@ export class EodashCollection {
     // create json layers from the item
     const newLayers = await this.createLayersJson(specifiedLink);
 
-    const curentLayers = getLayers();
+    let currentLayers = getLayers();
+    if (map === "second") {
+      currentLayers = getCompareLayers();
+    }
 
-    const oldLayer = findLayer(curentLayers, layer);
+    const oldLayer = findLayer(currentLayers, layer);
 
     const updatedLayers = replaceLayer(
-      curentLayers,
+      currentLayers,
       /** @type {Record<string,any> & { properties:{ id:string; title:string } } } */
       (oldLayer),
       newLayers,

@@ -7,13 +7,7 @@ import log from "loglevel";
 /** @param {import("stac-ts").StacLink[]} [links] */
 export function generateFeatures(links) {
   /**
-   * @type {{
-   *   type: string;
-   *   geometry: {
-   *     type: string;
-   *     coordinates: [number, number];
-   *   };
-   * }[]}
+   * @type {import("geojson").Feature[]}
    */
   const features = [];
   links?.forEach((element) => {
@@ -27,6 +21,7 @@ export function generateFeatures(links) {
           type: "Point",
           coordinates: [lon, lat],
         },
+        properties: { id: element.id },
       });
     }
   });
@@ -49,8 +44,14 @@ export function extractLayerConfig(style) {
   let layerConfig = undefined;
   if (style?.jsonform) {
     layerConfig = { schema: style.jsonform, type: "style" };
+    style = { ...style };
     delete style.jsonform;
   }
+  log.debug(
+    "extracted layerConfig",
+    JSON.parse(JSON.stringify({ layerConfig, style })),
+  );
+
   return { layerConfig, style };
 }
 
@@ -107,15 +108,17 @@ export function extractCollectionUrls(stacObject, basepath) {
   // Indicator assumes Catalog-Collection-Collection-Item
   // TODO: this is not the most stable test approach,
   // we should discuss potential other approaches
-  if (stacObject?.links && stacObject?.links[1].rel === "item") {
-    collectionUrls.push(basepath);
-  } else if (stacObject?.links[1].rel === "child") {
-    // TODO: Iterate through all children to create collections
-    stacObject.links.forEach((link) => {
-      if (link.rel === "child") {
-        collectionUrls.push(toAbsolute(link.href, basepath));
-      }
-    });
+  if (stacObject?.links && stacObject?.links.length > 1) {
+    if (stacObject?.links[1].rel === "item") {
+      collectionUrls.push(basepath);
+    } else if (stacObject?.links[1].rel === "child") {
+      // TODO: Iterate through all children to create collections
+      stacObject.links.forEach((link) => {
+        if (link.rel === "child") {
+          collectionUrls.push(toAbsolute(link.href, basepath));
+        }
+      });
+    }
   }
   return collectionUrls;
 }
@@ -135,9 +138,9 @@ export const extractRoles = (properties, linkOrAsset) => {
       properties.group = role;
       //remove all the properties and replace the random ID with baselayer
       // provided ID
-      const [_colId, _itemId, _isAsset, _random, proj] =
-        properties.id.split(";:;");
-      properties.id = ["", "", "", "", linkOrAsset.id, proj].join(";:;");
+      // const [_colId, _itemId, _isAsset, _random, proj] =
+      //   properties.id.split(";:;");
+      // properties.id = ["", "", "", "", linkOrAsset.id, proj].join(";:;");
     }
 
     return properties;
@@ -160,7 +163,9 @@ export const fetchStyle = async (item, itemUrl) => {
 
     /** @type {import("ol/layer/WebGLTile").Style & {jsonform?:Record<string,any>}} */
     const styleJson = await axios.get(url).then((resp) => resp.data);
-    return styleJson;
+
+    log.debug("fetched styles JSON", JSON.parse(JSON.stringify(styleJson)));
+    return { ...styleJson };
   }
 };
 
@@ -389,3 +394,65 @@ export const removeUnneededProperties = (layers) => {
   });
   return cloned;
 };
+
+/**
+ * Polls the process status and fetches a result item when the process is successful.
+ *
+ * @param {Object} params - Parameters for polling the process status.
+ * @param {string} params.processUrl - The URL of the process JSON report.
+ * @param {number} [params.pollInterval=5000] - The interval (in milliseconds) between polling attempts.
+ * @param {number} [params.maxRetries=60] - The maximum number of polling attempts.
+ * @returns {Promise<JSON>} The fetched results JSON.
+ * @throws {Error} If the process does not complete successfully within the maximum retries.
+ */
+export async function pollProcessStatus({
+  processUrl,
+  pollInterval = 5000,
+  maxRetries = 60,
+}) {
+  let retries = 0;
+
+  while (retries < maxRetries) {
+    try {
+      // Fetch the process JSON report
+      const cacheBuster = new Date().getTime(); // Add a timestamp for cache busting
+      const response = await axios.get(`${processUrl}?t=${cacheBuster}`);
+      const processReport = response.data;
+
+      // Check if the status is "successful"
+      if (processReport.status === "successful") {
+        console.log("Process completed successfully. Fetching result item...");
+
+        // Extract the result item URL
+        const resultsUrl = processReport.links[1].href;
+        if (!resultsUrl) {
+          throw new Error(`Result links not found in the process report.`);
+        }
+
+        // Fetch the result item
+        const resultResponse = await axios.get(resultsUrl);
+        console.log("Result file fetched successfully:", resultResponse.data);
+        return resultResponse.data; // Return the json result list
+      }
+
+      // Log the current status if not successful
+      console.log(
+        `Status: ${processReport.status}. Retrying in ${pollInterval / 1000} seconds...`,
+      );
+    } catch (error) {
+      if (error instanceof Error) {
+        console.error("Error while polling process status:", error.message);
+      } else {
+        console.error("Unknown error occurred:", error);
+      }
+    }
+
+    // Wait for the next poll
+    await new Promise((resolve) => setTimeout(resolve, pollInterval));
+    retries++;
+  }
+
+  throw new Error(
+    "Max retries reached. Process did not complete successfully.",
+  );
+}

@@ -1,171 +1,537 @@
 <template>
-  <span ref="rootEl">
-    <v-card class="d-flex flex-column pa-2">
-      <!-- <v-expand-transition> -->
-        <EodashChart v-if="isProcessed && chartSpec" :spec="chartSpec" />
-        <span v-show="!isProcessed">
-          <v-card-text> start {{ indicatorTitle }} processing </v-card-text>
-          <v-btn @click="startProcess" color="primary"> start</v-btn>
-        </span>
-      <!-- </v-expand-transition> -->
-    </v-card>
-  </span>
+  <div class="process-container">
+    <eox-jsonform
+      v-if="jsonFormSchema"
+      ref="jsonformEl"
+      .schema="jsonFormSchema"
+    ></eox-jsonform>
+    <eox-chart
+      class="chart"
+      v-if="isProcessed && chartSpec"
+      .spec="toRaw(chartSpec)"
+      .dataValues="toRaw(chartData)"
+    />
+    <span>
+      <v-btn
+        v-if="!autoExec"
+        :loading="loading"
+        style="float: right; margin-right: 20px"
+        @click="startProcess"
+        color="primary"
+      >
+        Execute
+      </v-btn>
+    </span>
+  </div>
 </template>
 <script setup>
-// import "@eox/jsonform"
-import { computed, ref, watch } from "vue";
-import EodashChart from "./EodashChart.vue";
+import "@eox/chart";
+import "@eox/drawtools";
+import "@eox/jsonform";
+
+import { nextTick, onMounted, ref, toRaw, watch } from "vue";
+import { pollProcessStatus } from "@/utils/helpers";
 import axios from "@/plugins/axios";
 import { useSTAcStore } from "@/store/stac";
 import { storeToRefs } from "pinia";
 import { mapEl } from "@/store/States";
 import { getLayers } from "@/store/Actions";
-import { makePanelTransparent } from "@/composables";
+import mustache from "mustache";
+import { extractLayerConfig } from "@/utils/helpers";
+import { useOnLayersUpdate } from "@/composables";
+import log from "loglevel";
+import { useEventBus } from "@vueuse/core";
+import { eoxLayersKey } from "@/utils/keys";
+import { isMulti } from "@eox/jsonform/src/custom-inputs/spatial/utils";
 
-/** @type {import("vue").Ref<HTMLSpanElement | null>} */
-const rootEl = ref(null);
+const layersEvents = useEventBus(eoxLayersKey);
 const { selectedStac } = storeToRefs(useSTAcStore());
-const indicatorTitle = computed(() =>
-  /** @type {string} */ (selectedStac.value?.title)?.toLowerCase(),
-);
 
-/** @type {import("vue").Ref<import("vega").Spec|undefined>} */
-const chartSpec = ref();
+/** @type {import("vue").Ref<import("vega").Spec|null>} */
+const chartSpec = ref(null);
+
+/** @type {import("vue").Ref<Record<string,any>|null>}  */
+const chartData = ref(null);
 const isProcessed = ref(false);
 
-const _seaIceProcess = {
-  stac_version: "1.1.0",
-  type: "Collection",
-  // "auth:schemes": {...},
-  // "eodash:jsonform": "<link jsonform>",
-  links: [
-    {
-      id: "featuresonmap_process",
-      href: "https://gist.githubusercontent.com/wavded/1200773/raw/e122cf709898c09758aecfef349964a8d73a83f3/sample.json",
-      rel: "service",
-      method: "GET",
-      // "headers": {...},
-      body: "...",
-      type: "application/geo+json",
-      "eox:flatstyle":
-        "https://raw.githubusercontent.com/eurodatacube/eodash-assets/c08ecb89e64badd2057465282c427966d90a36a5/collections/Polartep_SeaIce_demo/style.json",
-      // "auth:refs": [...]
-    },
-  ],
+/** @type {import("vue").Ref<Record<string,any>|null>} */
+const jsonFormSchema = ref(null);
+
+/** @type {import("vue").Ref<import("@eox/jsonform").EOxJSONForm | null>} */
+const jsonformEl = ref(null);
+const loading = ref(false);
+
+const autoExec = ref(false);
+useAutoExec(autoExec, jsonformEl, jsonFormSchema);
+
+const initProcess = async () => {
+  if (selectedStac.value) {
+    resetProcess();
+    if (selectedStac.value["eodash:jsonform"]) {
+      jsonformEl.value?.editor.destroy();
+      // wait for the layers to be rendered
+      jsonFormSchema.value = await axios
+        //@ts-expect-error eodash extention
+        .get(selectedStac.value["eodash:jsonform"])
+        .then((resp) => resp.data);
+      // remove borders from jsonform
+      await nextTick(() => {
+        injectJsonformCSS(jsonformEl.value);
+      });
+    } else {
+      if (!jsonFormSchema.value) {
+        return;
+      }
+      jsonFormSchema.value = null;
+    }
+  }
 };
 
-const _chart = {
-  stac_version: "1.1.0",
-  type: "Collection",
-  // "auth:schemes": {...},
-  // "eodash:jsonform": "<link jsonform>",
-  "eodash:vegadefinition":
-    "https://vega.github.io/editor/spec/vega-lite/line.vl.json",
-  links: [
-    {
-      id: "dataset_process",
-      href: "https://vega.github.io/vega-lite/data/stocks.csv",
-      rel: "service",
-      method: "GET",
-      // "headers": {...},
-      body: "...",
-      type: "text/csv",
-      // "auth:refs": [...]
-    },
-  ],
-};
+onMounted(async () => {
+  // wait for the layers to be rendered
+  if (mapEl.value?.layers.length <= 1) {
+    layersEvents.once(async () => {
+      await initProcess();
+    });
+  } else {
+    await initProcess();
+  }
+});
+
+useOnLayersUpdate(initProcess);
 
 const startProcess = async () => {
-  await handleProcesses(
-    selectedStac.value?.id !== "temperature" ? _chart : _seaIceProcess,
-  );
+  const errors = jsonformEl.value?.editor.validate();
+  if (errors?.length) {
+    console.warn("[eodash] Form validation failed", errors);
+    return;
+  }
+  await handleProcesses();
   isProcessed.value = true;
 };
 
+async function handleProcesses() {
+  log.debug("Processing...");
+  loading.value = true;
+  try {
+    const serviceLinks = selectedStac.value?.links?.filter(
+      (l) => l.rel === "service",
+    );
+    const bboxProperty = getBboxProperty(jsonFormSchema.value);
+    const jsonformValue = /** @type {Record<string,any>} */ (
+      jsonformEl.value?.value
+    );
+
+    extractGeometries(jsonformValue, jsonFormSchema.value);
+
+    const origBbox = jsonformValue[bboxProperty];
+
+    const specUrl = /** @type {string} */ (
+      selectedStac.value?.["eodash:vegadefinition"]
+    );
+
+    [chartSpec.value, chartData.value] = await getChartValues(
+      serviceLinks,
+      { ...(jsonformValue ?? {}) },
+      specUrl,
+    );
+    const geotiffLayer = await processGeoTiff(
+      serviceLinks,
+      jsonformValue,
+      selectedStac.value?.id ?? "",
+    );
+    const vectorLayers = await processVector(
+      serviceLinks,
+      jsonformValue,
+      selectedStac.value?.id ?? "",
+    );
+
+    const imageLayers = processImage(serviceLinks, jsonformValue, origBbox);
+
+    log.debug(
+      "rendered layers after processing:",
+      geotiffLayer,
+      vectorLayers,
+      imageLayers,
+    );
+
+    if (geotiffLayer || vectorLayers?.length || imageLayers?.length) {
+      // const prevLayerIdx = analysisGroup?.layers.findIndex(
+      //   //@ts-expect-error TODO
+      //   (l) => l.id === link.id,
+      // );
+      // if (prevLayerIdx !== -1) {
+      //   analysisGroup?.layers.splice(prevLayerIdx, 1);
+      // }
+      const layers = [
+        ...(geotiffLayer ? [geotiffLayer] : []),
+        ...(vectorLayers ?? []),
+        ...(imageLayers ?? []),
+      ];
+      let currentLayers = [...getLayers()];
+      let analysisGroup = currentLayers.find((l) =>
+        l.properties.id.includes("AnalysisGroup"),
+      );
+      analysisGroup?.layers.push(...layers);
+      //@ts-expect-error TODO
+      mapEl.value.layers = [...currentLayers];
+    }
+    loading.value = false;
+  } catch (error) {
+    console.error("Error while running process:", error);
+    loading.value = false;
+    throw error;
+  }
+}
+
+function resetProcess() {
+  loading.value = false;
+  isProcessed.value = false;
+  chartSpec.value = null;
+  jsonFormSchema.value = null;
+}
+
 /**
- *
- * @param {typeof _chart|typeof _seaIceProcess} updatedSTAC
- */
-async function handleProcesses(updatedSTAC) {
-  const serviceLinks = updatedSTAC?.links.filter((l) => l.rel === "service");
-  // const process = updatedSTAC["api:request"]
+ * @param {import("stac-ts").StacLink[] | undefined} links
+ * @param {Record<string,any> | undefined} jsonformValue
+ * @param {string} specUrl
+ * @returns {Promise<[import("vega").Spec|null,Record<string,any>|null]>}
+ **/
+async function getChartValues(links, jsonformValue, specUrl) {
+  if (!specUrl || !links) return [null, null];
   /** @type {import("vega").Spec} */
-  let spec;
-  //@ts-expect-error eodash extention
-  if (updatedSTAC["eodash:vegadefinition"]) {
-    spec = await axios
-      //@ts-expect-error eodash extention
-      .get(updatedSTAC["eodash:vegadefinition"])
+  const spec = await axios.get(specUrl).then((resp) => {
+    return resp.data;
+  });
+  //@ts-expect-error NamedData
+  const dataName = spec?.data?.name;
+  const dataLinks = links.filter(
+    (link) => link.rel === "service" && dataName && link.id === dataName,
+  );
+
+  /** @type {Record<string,any>}  */
+  const dataValues = {};
+  for (const link of dataLinks ?? []) {
+    if (link.type && ["application/json", "text/csv"].includes(link.type)) {
+      const dataUrl = mustache.render(link.href, {
+        ...(jsonformValue ?? {}),
+        ...(link["eox:flatstyle"] ?? {}),
+      });
+      // Wait for data to be retrieved
+      const data = await axios.get(dataUrl).then((resp) => {
+        return resp.data;
+      });
+      // @ts-expect-error we assume data to exist in spec
+      spec.data.values = data;
+      continue;
+    }
+
+    dataValues[/** @type {string} */ (link.id)] = await axios
+      .get(
+        mustache.render(link.href, {
+          ...(jsonformValue ?? {}),
+          ...(link["eox:flatstyle"] ?? {}),
+        }),
+      )
       .then((resp) => resp.data);
   }
+  return [spec, dataValues];
+}
 
-  serviceLinks.forEach(async (link) => {
-    // const requesttype = /** @type {RequestType} */(l.requesttype)
-    if (link.type === "text/csv" && spec) {
-      // @ts-expect-error url
-      spec.data.url = link.href;
-      chartSpec.value = spec;
-    } else if (link.type === "application/geo+json") {
-      let flatStyleJSON;
-      const flatStyleURL = /** @type {string | undefined} */ (
-        //@ts-expect-error flatstyles
-        link["eox:flatstyle"]
+/**
+ * @param {import("stac-ts").StacLink[] | undefined} links
+ * @param {Record<string,any> | undefined} jsonformValue
+ * @param {string} layerId
+ */
+async function processGeoTiff(links, jsonformValue, layerId) {
+  if (!links) return;
+  const geotiffLinks = links.filter(
+    (link) => link.rel === "service" && link.type === "image/tiff",
+  );
+  let urls = [];
+  let flatStyleJSON = null;
+  for (const link of geotiffLinks ?? []) {
+    if (link.endpoint === "eoxhub_workspaces") {
+      // TODO: prove of concept, needs to be reworked for sure
+      // Special handling for eoxhub workspace process endpoints
+      const postBody = await axios
+        .get(/** @type {string} */ (link["body"]), { responseType: "text" })
+        .then((resp) => resp.data);
+      const jsonData = JSON.parse(
+        mustache.render(postBody, { ...(jsonformValue ?? {}) }),
       );
-
-      if (flatStyleURL) {
-        flatStyleJSON = await axios.get(flatStyleURL).then((resp) => resp.data);
-      }
-
-      if (mapEl.value) {
-        const processLayer = {
-          type: "Vector",
-          properties: {
-            id: link.id,
-            title: "Sea Ice Demo",
+      try {
+        const responseProcess = await axios.post(link.href, jsonData, {
+          headers: {
+            "Content-Type": "application/json",
           },
-          source: {
-            type: "Vector",
-            url: link.href,
-            format: "GeoJSON",
-          },
-          ...(flatStyleJSON && { style: flatStyleJSON }),
-        };
-
-        const currentLayers = [...getLayers()];
-        const analysisGroup = currentLayers.find((l) =>
-          l.properties.id.includes("AnalysisGroup"),
-        );
-
-        if (!analysisGroup) {
-          console.log("no analysis group found");
+        });
+        console.log(responseProcess.headers.location);
+        await pollProcessStatus({
+          processUrl: responseProcess.headers.location,
+        })
+          .then((resultItem) => {
+            // @ts-expect-error we have currently no definition of what is allowed as response
+            urls.push(resultItem.urls[0]);
+          })
+          .catch((error) => {
+            if (error instanceof Error) {
+              console.error("Polling failed:", error.message);
+            } else {
+              console.error("Unknown error occurred during polling:", error);
+            }
+          });
+      } catch (error) {
+        if (error instanceof Error) {
+          console.error("Error sending POST request:", error.message);
+        } else {
+          console.error("Unknown error occurred:", error);
         }
-
-        analysisGroup?.layers.unshift(processLayer);
-
-        mapEl.value.layers = [];
-        mapEl.value.layers = [...currentLayers];
       }
+    } else {
+      urls.push(mustache.render(link.href, { ...(jsonformValue ?? {}) }));
     }
+    if ("eox:flatstyle" in (link ?? {})) {
+      flatStyleJSON = await axios
+        .get(/** @type {string} */ (link["eox:flatstyle"]))
+        .then((resp) => resp.data);
+    }
+  }
+  /** @type {Record<string,any>|undefined} */
+  let layerConfig;
+  /** @type {Record<string,any>|undefined} */
+  let style;
+  if (flatStyleJSON) {
+    const extracted = extractLayerConfig(flatStyleJSON);
+    layerConfig = extracted.layerConfig;
+    style = extracted.style;
+  }
+  return urls.length
+    ? {
+        type: "WebGLTile",
+        source: {
+          type: "GeoTIFF",
+          normalize: !style,
+          sources: urls.map((url) => ({ url })),
+        },
+        properties: {
+          id: layerId + "_geotiff_process",
+          title: "Results " + layerId,
+          ...(layerConfig && { layerConfig: layerConfig }),
+        },
+        ...(style && { style: style }),
+      }
+    : undefined;
+}
+/**
+ * @param {import("stac-ts").StacLink[] | undefined} links
+ * @param {Record<string,any> | undefined} jsonformValue
+ * @param {string} layerId
+ */
+async function processVector(links, jsonformValue, layerId) {
+  if (!links) return;
+  /** @type {Record<string,any>[]} */
+  const layers = [];
+  const vectorLinks = links.filter(
+    (link) => link.rel === "service" && link.type === "application/geo+json",
+  );
+  if (vectorLinks.length === 0) return layers;
+
+  let flatStyleJSON = null;
+
+  for (const link of vectorLinks) {
+    if ("eox:flatstyle" in (link ?? {})) {
+      flatStyleJSON = await axios
+        .get(/** @type {string} */ (link["eox:flatstyle"]))
+        .then((resp) => resp.data);
+    }
+
+    /** @type {Record<string,any>|undefined} */
+    let layerConfig;
+    /** @type {Record<string,any>|undefined} */
+    let style;
+    if (flatStyleJSON) {
+      const extracted = extractLayerConfig(flatStyleJSON);
+      layerConfig = extracted.layerConfig;
+      style = extracted.style;
+    }
+
+    layers.push({
+      type: "Vector",
+      source: {
+        type: "Vector",
+        url: mustache.render(link.href, {
+          ...(jsonformValue ?? {}),
+        }),
+        format: "GeoJSON",
+      },
+      properties: {
+        id: layerId + "_vector_process",
+        title: "Results " + layerId,
+        ...(layerConfig && { ...layerConfig, ...(style && { style: style }) }),
+      },
+    });
+  }
+  return layers;
+}
+/**
+ * @param {import("stac-ts").StacLink[] | undefined} links
+ * @param {Record<string,any>|undefined} jsonformValue
+ * @param {number[]} origBbox
+ */
+function processImage(links, jsonformValue, origBbox) {
+  if (!links) return;
+  const imageLinks = links.filter(
+    (link) => link.rel === "service" && link.type === "image/png",
+  );
+  const layers = [];
+  for (const link of imageLinks) {
+    layers.push({
+      type: "Image",
+      properties: {
+        id: link.id,
+        title: "Results " + link.id,
+      },
+      source: {
+        type: "ImageStatic",
+        imageExtent: origBbox,
+        url: mustache.render(link.href, {
+          ...(jsonformValue ?? {}),
+        }),
+      },
+    });
+  }
+  return layers;
+}
+
+/**
+ * @param {Record<string,any> |null} [jsonformSchema]
+ **/
+function getBboxProperty(jsonformSchema) {
+  return /** @type {string} */ (
+    Object.keys(jsonformSchema?.properties ?? {}).find(
+      (key) => jsonformSchema?.properties[key].format === "bounding-box",
+    )
+  );
+}
+
+/**
+ * Auto execute the process when the jsonform has the execute option
+ *
+ * @param {import("vue").Ref<boolean>} autoExec
+ * @param {import("vue").Ref<import("@eox/jsonform").EOxJSONForm | null>} jsonformEl
+ * @param {import("vue").Ref<Record<string,any> | null>} jsonformSchema
+ **/
+function useAutoExec(autoExec, jsonformEl, jsonformSchema) {
+  /**
+   * @param {CustomEvent} _e
+   **/
+  const onJsonFormChange = async (_e) => {
+    if (!isProcessed.value) {
+      await startProcess();
+    }
+  };
+
+  const addEventListener = async () => {
+    await nextTick(() => {
+      //@ts-expect-error TODO
+      jsonformEl.value?.addEventListener("change", onJsonFormChange);
+    });
+  };
+  const removeEventListener = () => {
+    //@ts-expect-error TODO
+    jsonformEl.value?.removeEventListener("change", onJsonFormChange);
+  };
+
+  watch(jsonformSchema, (updatedSchema) => {
+    autoExec.value = updatedSchema?.options?.["execute"] || false;
+  });
+
+  onMounted(() => {
+    watch(
+      autoExec,
+      async (exec) => {
+        if (exec) {
+          await addEventListener();
+        } else {
+          removeEventListener();
+        }
+      },
+      { immediate: true },
+    );
   });
 }
 
-const reset = () => {
-  isProcessed.value = false;
-  chartSpec.value = undefined;
-};
+/**
+ * Extracts the keys of type "geojson" from the jsonform schema
+ * @param {Record<string,any> |null} [jsonformSchema]
+ **/
+function getGeoJsonProperties(jsonformSchema) {
+  return /** @type {string[]} */ (
+    Object.keys(jsonformSchema?.properties ?? {}).filter(
+      (key) => jsonformSchema?.properties[key].type === "geojson",
+    )
+  );
+}
 
-makePanelTransparent(rootEl);
+/**
+ * Converts jsonform geojson values to stringified geometries
+ * @param {Record<string,any> |null} [jsonformSchema]
+ * @param {Record<string,any>} jsonformValue
+ **/
+function extractGeometries(jsonformValue, jsonformSchema) {
+  const geojsonKeys = getGeoJsonProperties(jsonformSchema);
 
-watch(selectedStac, () => {
-  reset();
-});
+  for (const key of geojsonKeys) {
+    if (!jsonformValue[key]) {
+      continue;
+    }
+
+    if (isMulti(jsonformSchema?.properties[key])) {
+      // jsonformValue[key] is a feature collection
+      jsonformValue[key] =
+        /** @type {import("ol/format/GeoJSON").GeoJSONFeatureCollection} */ (
+          jsonformValue[key]
+        ).features.map((feature) => JSON.stringify(feature.geometry));
+    } else {
+      // jsonformValue[key] is a single feature
+      jsonformValue[key] = JSON.stringify(jsonformValue[key].geometry);
+    }
+  }
+}
+
+/**
+ * @param {import("@eox/jsonform").EOxJSONForm | null} jsonFormEl
+ **/
+function injectJsonformCSS(jsonFormEl) {
+  if (!jsonFormEl?.shadowRoot) {
+    console.error("jsonform has no shadowRoot");
+    return;
+  }
+  const stylesheet = new CSSStyleSheet();
+  stylesheet.replaceSync(`.je-indented-panel {
+    border: none !important;
+  }`);
+  jsonFormEl.shadowRoot.adoptedStyleSheets = [stylesheet];
+}
 </script>
 <style>
+.chart {
+  height: 400px;
+  width: 100%;
+}
+
+.process-container {
+  height: 100%;
+  overflow-y: auto;
+}
+
 .slide-enter-active,
 .slide-leave-active {
   transition: all 0.2s;
   max-height: 30px;
 }
+
 .slide-enter,
 .slide-leave-to {
   max-height: 0px;
