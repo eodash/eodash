@@ -16,7 +16,7 @@
 import { useEodashRuntime } from "@/composables/DefineEodash";
 import { useURLSearchParametersSync, useUpdateTheme } from "@/composables";
 import { useSTAcStore } from "@/store/stac";
-import { defineAsyncComponent, onErrorCaptured, ref } from "vue";
+import { computed, defineAsyncComponent, onErrorCaptured, ref } from "vue";
 import { useDisplay } from "vuetify/lib/framework.mjs";
 import { loadFont } from "@/utils";
 import Loading from "@/components/Loading.vue";
@@ -48,9 +48,9 @@ const { loadSTAC } = useSTAcStore();
 await loadSTAC();
 
 const { smAndDown } = useDisplay();
-const TemplateComponent = smAndDown.value
+const TemplateComponent = computed(()=>smAndDown.value
   ? defineAsyncComponent(() => import(`@/components/MobileLayout.vue`))
-  : defineAsyncComponent(() => import(`@/components/DashboardLayout.vue`));
+  : defineAsyncComponent(() => import(`@/components/DashboardLayout.vue`)));
 
 const HeaderComponent = defineAsyncComponent(
   () => import(`@/components/Header.vue`),
