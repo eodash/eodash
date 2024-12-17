@@ -16,6 +16,7 @@
       <EodashLayoutSwitcher
         v-if="props.showLayoutSwitcher"
         :target="layoutTarget"
+        :icon="layoutIcon"
       />
     </div>
     <PopUp v-model="dialog" maxWidth="1000px" width="1000px">
@@ -33,7 +34,7 @@
 import PopUp from "^/PopUp.vue";
 import EodashItemFilter from "^/EodashItemFilter.vue";
 import EodashLayoutSwitcher from "^/EodashLayoutSwitcher.vue";
-import { mdiPlus } from "@mdi/js";
+import { mdiPlus, mdiViewDashboard } from "@mdi/js";
 import { ref } from "vue";
 import { makePanelTransparent } from "@/composables";
 
@@ -51,6 +52,11 @@ const props = defineProps({
   layoutTarget: {
     type: String,
     default: "light",
+  },
+  // mdi/js icon
+  layoutIcon: {
+    type: String,
+    default: mdiViewDashboard,
   },
   indicatorBtnText: {
     type: String,

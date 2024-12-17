@@ -1,32 +1,32 @@
 <template>
   <div ref="rootRef">
-    <v-btn
-      class="text-capitalize py-2 px-4"
-      :variant="props.variant"
-      :append-icon="[mdiDoor]"
-      @click="activeTemplate = props.target"
-    >
-      {{ props.target }} mode
-    </v-btn>
+    <v-tooltip :text="`Switch to ${target} mode`">
+      <template v-slot:activator="{ props }">
+        <v-icon
+          v-bind="props"
+          @click="activeTemplate = target"
+          :icon="[icon]"
+        ></v-icon>
+      </template>
+    </v-tooltip>
   </div>
 </template>
 
 <script setup>
 import { activeTemplate } from "@/store/States";
-import { mdiDoor } from "@mdi/js";
+import { mdiViewDashboard } from "@mdi/js";
 import { makePanelTransparent } from "@/composables";
 import { ref } from "vue";
 
-const props = defineProps({
+defineProps({
   target: {
     type: String,
     default: "main",
   },
-  /** @type {import("vue").PropType<import("vuetify/components").VBtn["variant"]>} */
-  variant: {
-    //@ts-expect-error TODO
+  // mdi/js icon
+  icon: {
     type: String,
-    default: "text",
+    default: mdiViewDashboard,
   },
 });
 
