@@ -4,7 +4,7 @@
       <eox-layout-item
         v-if="bgWidget?.component"
         class="bg-panel bg-surface"
-        :style="`margin: -${gap}px;`"
+        :style="`margin: -${gap + 1}px;`"
         x="0"
         y="0"
         h="12"
@@ -58,6 +58,7 @@ const { bgWidget, importedWidgets, gap } = useDefineTemplate();
 
 .bg-panel {
   z-index: 0;
+  border-radius: 0px !important;
 }
 
 .fade-enter-active,
