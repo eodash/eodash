@@ -75,7 +75,7 @@ const { bgWidget, importedWidgets, gap } = useDefineTemplate();
     var(--v-theme-surface),
     var(--v-surface-opacity, 0.8)
   ) !important;
-  border-radius: 8px;
+  border-radius: 4px;
   border-style: solid;
   border-width: 1px;
   border-color: rgb(var(--v-theme-surface));
@@ -88,7 +88,7 @@ const { bgWidget, importedWidgets, gap } = useDefineTemplate();
     var(--v-theme-primary),
     var(--v-primary-opacity, 0.8)
   ) !important;
-  border-radius: 8px;
+  border-radius: 4px;
   border-style: solid;
   border-width: 1px;
   border-color: rgb(var(--v-theme-primary));
