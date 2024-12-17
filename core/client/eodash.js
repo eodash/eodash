@@ -17,7 +17,7 @@ export const eodash = reactive({
     theme: {
       colors: {
         primary: "#002742",
-        secondary: "#004170",
+        secondary: "#0071C2",
         surface: "#ffff",
       },
       variables: {
@@ -80,9 +80,33 @@ export const eodash = reactive({
           defineWidget: (selectedSTAC) => {
             return selectedSTAC
               ? {
+                  id: "layercontrol-light",
+                  type: "internal",
+                  title: "Layer Control",
+                  layout: { x: 0, y: 1, w: 3, h: 3 },
+                  widget: {
+                    name: "EodashLayerControl",
+                    properties: {
+                      tools: ["datetime", "info", "legend"],
+                      cssVars: {
+                        "--list-padding": "0",
+                        "--tools-button-visibility": "none",
+                        "--layer-visibility": "none",
+                        "--padding": "0",
+                      },
+                    },
+                  },
+                }
+              : null;
+          },
+        },
+        {
+          defineWidget: (selectedSTAC) => {
+            return selectedSTAC
+              ? {
                   id: "stacinfo-light",
                   type: "internal",
-                  title: "Stac info",
+                  title: "Information",
                   layout: { x: 9, y: 0, w: 3, h: 6 },
                   widget: {
                     name: "EodashStacInfo",
@@ -103,20 +127,17 @@ export const eodash = reactive({
           defineWidget: (selectedSTAC) => {
             return selectedSTAC
               ? {
-                  id: "layercontrol-light",
+                  id: "Datepicker",
                   type: "internal",
-                  title: "Layer Control",
-                  layout: { x: 0, y: 1, w: 3, h: 3 },
+                  layout: { x: 5, y: 10, w: 2, h: 1 },
+                  title: "Datepicker",
                   widget: {
-                    name: "EodashLayerControl",
+                    name: "EodashDatePicker",
                     properties: {
-                      tools: ["datetime", "info", "legend"],
-                      cssVars: {
-                        "--list-padding": "0",
-                        "--tools-button-visibility": "none",
-                        "--layer-visibility": "none",
-                        "--padding": "0",
-                      },
+                      hideArrows: true,
+                      hideInputField: true,
+                      hintText: `<b>Hint:</b> closest available date is displayed <br />
+                            on map (see Analysis Layers)`,
                     },
                   },
                 }
@@ -222,7 +243,7 @@ export const eodash = reactive({
               ? {
                   id: "Datepicker",
                   type: "internal",
-                  layout: { x: 5, y: 10, w: 1, h: 1 },
+                  layout: { x: 5, y: 8, w: 2, h: 2 },
                   title: "Datepicker",
                   widget: {
                     name: "EodashDatePicker",
@@ -365,7 +386,7 @@ export const eodash = reactive({
               ? {
                   id: "Datepicker",
                   type: "internal",
-                  layout: { x: 5, y: 10, w: 1, h: 1 },
+                  layout: { x: 5, y: 8, w: 1, h: 2 },
                   title: "Datepicker",
                   widget: {
                     name: "EodashDatePicker",
