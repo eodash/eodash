@@ -3,13 +3,12 @@
     <VCalendar
       :attributes="attributes"
       :masks="masks"
-      v-model.number="currentDate"
       expanded
       class="fill-height"
       style="background-color: transparent"
     >
       <template #footer>
-        <v-row>
+        <v-row align="center" justify="center" style="margin-top: 6px">
           <v-btn
             v-if="!hideArrows"
             density="compact"
@@ -23,7 +22,6 @@
             v-if="!hideInputField"
             v-model.number="currentDate"
             :masks="masks"
-            :attributes="attributes"
           >
             <template #default="{ inputValue, inputEvents }">
               <div
