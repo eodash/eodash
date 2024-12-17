@@ -22,8 +22,6 @@
     />
     <PopUp
       v-model="showCompareIndicators"
-      :width="popupWidth"
-      :height="popupHeight"
       :maxWidth="popupWidth"
       :maxHeight="popupHeight"
     >
@@ -63,7 +61,7 @@ defineProps({
   },
 });
 const { smAndDown } = useDisplay();
-const popupWidth = computed(() => (smAndDown ? "70%" : "1000px"));
+const popupWidth = computed(() => (smAndDown ? "70%" : "100px"));
 const popupHeight = computed(() => (smAndDown ? "90%" : "500px"));
 
 const showMapState = ref(false);

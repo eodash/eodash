@@ -129,7 +129,7 @@ const config = computed(() => ({
   imageProperty: props.imageProperty,
   aggregateResults: props.aggregateResults,
   style: props.cssVars,
-  filterProperties: smAndDown ? "" : props.filterProperties,
+  filterProperties: smAndDown.value ? "" : props.filterProperties,
 }));
 /** @type {import("vue").Ref<HTMLElement & Record<string,any> | null>} */
 const eoxItemFilter = ref(null);
