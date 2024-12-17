@@ -61,7 +61,7 @@ defineProps({
   },
 });
 const { smAndDown } = useDisplay();
-const popupWidth = computed(() => (smAndDown ? "70%" : "100px"));
+const popupWidth = computed(() => (smAndDown ? "70%" : "500px"));
 const popupHeight = computed(() => (smAndDown ? "90%" : "500px"));
 
 const showMapState = ref(false);
