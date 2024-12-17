@@ -61,6 +61,8 @@ const loading = ref(false);
 
 const autoExec = ref(false);
 
+const isPolling = ref(false);
+
 onMounted(async () => {
   // wait for the layers to be rendered
   if (mapEl.value?.layers.length <= 1) {
@@ -73,6 +75,7 @@ onMounted(async () => {
         chartSpec,
         isProcessed,
         loading,
+        isPolling,
       });
     });
   } else {
@@ -84,10 +87,11 @@ onMounted(async () => {
       chartSpec,
       isProcessed,
       loading,
+      isPolling,
     });
   }
 });
-////@ts-expect-error TODO
+
 useOnLayersUpdate(
   async () =>
     await initProcess({
@@ -98,6 +102,7 @@ useOnLayersUpdate(
       chartSpec,
       isProcessed,
       loading,
+      isPolling,
     }),
 );
 
@@ -116,6 +121,7 @@ const startProcess = async () => {
     //@ts-expect-error TODO
     selectedStac,
     isProcessed,
+    isPolling,
   });
   isProcessed.value = true;
 };

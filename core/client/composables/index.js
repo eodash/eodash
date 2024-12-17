@@ -201,7 +201,7 @@ export const makePanelTransparent = (root) => {
 };
 
 /**
- * Description placeholder
+ * Listens to the `layers:updated` and `time:updated` events and calls
  *
  * @param {import("@vueuse/core").EventBusListener<
  * "layers:updated"|"time:updated",

@@ -6,11 +6,13 @@ import { extractLayerConfig } from "@/utils/helpers";
 import log from "loglevel";
 import { getLayers } from "@/store/Actions";
 import { mapEl } from "@/store/States";
+
 /**
  * Polls the process status and fetches a result item when the process is successful.
  *
  * @param {Object} params - Parameters for polling the process status.
  * @param {string} params.processUrl - The URL of the process JSON report.
+ * @param {import("vue").Ref<boolean>} params.isPolling - checks wether the polling should continue
  * @param {number} [params.pollInterval=5000] - The interval (in milliseconds) between polling attempts.
  * @param {number} [params.maxRetries=60] - The maximum number of polling attempts.
  * @returns {Promise<JSON>} The fetched results JSON.
@@ -18,12 +20,13 @@ import { mapEl } from "@/store/States";
  */
 export async function pollProcessStatus({
   processUrl,
+  isPolling,
   pollInterval = 5000,
   maxRetries = 60,
 }) {
   let retries = 0;
-
-  while (retries < maxRetries) {
+  isPolling.value = true;
+  while (retries < maxRetries && isPolling.value) {
     try {
       // Fetch the process JSON report
       const cacheBuster = new Date().getTime(); // Add a timestamp for cache busting
@@ -61,6 +64,10 @@ export async function pollProcessStatus({
     // Wait for the next poll
     await new Promise((resolve) => setTimeout(resolve, pollInterval));
     retries++;
+  }
+  if (!isPolling.value) {
+    console.warn("Polling was stopped before the process was completed.");
+    return JSON.parse("{}");
   }
 
   throw new Error(
@@ -273,9 +280,10 @@ export async function processVector(links, jsonformValue, layerId) {
 /**
  * @param {import("stac-ts").StacLink[] | undefined} links
  * @param {Record<string,any> | undefined} jsonformValue
+ * @param {import("vue").Ref<boolean>} isPolling
  * @param {string} layerId
  */
-export async function processGeoTiff(links, jsonformValue, layerId) {
+export async function processGeoTiff(links, jsonformValue, layerId, isPolling) {
   if (!links) return;
   const geotiffLinks = links.filter(
     (link) => link.rel === "service" && link.type === "image/tiff",
@@ -301,10 +309,16 @@ export async function processGeoTiff(links, jsonformValue, layerId) {
         console.log(responseProcess.headers.location);
         await pollProcessStatus({
           processUrl: responseProcess.headers.location,
+          isPolling,
         })
           .then((resultItem) => {
             // @ts-expect-error we have currently no definition of what is allowed as response
-            urls.push(resultItem.urls[0]);
+            const resultUrls = resultItem?.urls;
+            if (!resultUrls?.length) {
+              return;
+            }
+
+            urls.push(resultUrls[0]);
           })
           .catch((error) => {
             if (error instanceof Error) {
@@ -411,6 +425,7 @@ export async function getChartValues(links, jsonformValue, specUrl) {
  * @param {import("vue").Ref<Record<string,any>|null>} params.jsonformSchema
  * @param {import("vue").Ref<import("@eox/chart").EOxChart["spec"]>} params.chartSpec
  * @param {import("vue").Ref<Record<string, any> | null>} params.chartData
+ * @param {import("vue").Ref<boolean>} params.isPolling
  */
 export async function handleProcesses({
   loading,
@@ -419,6 +434,7 @@ export async function handleProcesses({
   jsonformSchema,
   chartSpec,
   chartData,
+  isPolling,
 }) {
   log.debug("Processing...");
   loading.value = true;
@@ -448,6 +464,7 @@ export async function handleProcesses({
       serviceLinks,
       jsonformValue,
       selectedStac.value?.id ?? "",
+      isPolling,
     );
     const vectorLayers = await processVector(
       serviceLinks,
@@ -493,7 +510,8 @@ export async function handleProcesses({
  * @param {Object} params
  * @param {import("vue").Ref<boolean>} params.loading
  * @param {import("vue").Ref<boolean>} params.isProcessed
- * @param {*} params.chartSpec
+ * @param {import("vue").Ref<import("@eox/chart").EOxChart["spec"]>} params.chartSpec
+ * @param {import("vue").Ref<boolean>} params.isPolling
  * @param {import("vue").Ref<Record<string,any>|null>} params.jsonformSchema
  */
 export function resetProcess({
@@ -501,9 +519,11 @@ export function resetProcess({
   isProcessed,
   chartSpec,
   jsonformSchema,
+  isPolling,
 }) {
   loading.value = false;
   isProcessed.value = false;
+  isPolling.value = false;
   chartSpec.value = null;
   jsonformSchema.value = null;
 }
@@ -520,6 +540,7 @@ export function resetProcess({
  * @param {import("vue").Ref<import("@eox/chart").EOxChart["spec"]>} params.chartSpec
  * @param {import("vue").Ref<boolean>} params.isProcessed
  * @param {import("vue").Ref<boolean>} params.loading
+ * @param {import("vue").Ref<boolean>} params.isPolling
  */
 export async function initProcess({
   selectedStac,
@@ -528,25 +549,27 @@ export async function initProcess({
   chartSpec,
   isProcessed,
   loading,
+  isPolling,
 }) {
-  if (selectedStac.value) {
-    resetProcess({ loading, isProcessed, chartSpec, jsonformSchema });
-    if (selectedStac.value["eodash:jsonform"]) {
-      jsonformEl.value?.editor.destroy();
-      // wait for the layers to be rendered
-      jsonformSchema.value = await axios
-        //@ts-expect-error eodash extention
-        .get(selectedStac.value["eodash:jsonform"])
-        .then((resp) => resp.data);
-      // remove borders from jsonform
-      await nextTick(() => {
-        injectJsonformCSS(jsonformEl.value);
-      });
-    } else {
-      if (!jsonformSchema.value) {
-        return;
-      }
-      jsonformSchema.value = null;
+  if (!selectedStac.value) {
+    return;
+  }
+  resetProcess({ loading, isProcessed, chartSpec, jsonformSchema, isPolling });
+  if (selectedStac.value["eodash:jsonform"]) {
+    jsonformEl.value?.editor.destroy();
+    // wait for the layers to be rendered
+    jsonformSchema.value = await axios
+      //@ts-expect-error eodash extention
+      .get(selectedStac.value["eodash:jsonform"])
+      .then((resp) => resp.data);
+    // remove borders from jsonform
+    await nextTick(() => {
+      injectJsonformCSS(jsonformEl.value);
+    });
+  } else {
+    if (!jsonformSchema.value) {
+      return;
     }
+    jsonformSchema.value = null;
   }
 }
