@@ -99,4 +99,11 @@ onMounted(() => {
   position: relative;
   z-index: 10;
 }
+:deep(.bg-surface) {
+  backdrop-filter: blur(9.5px) !important;
+  background-color: rgba(
+    var(--v-theme-surface),
+    var(--v-surface-opacity, 0.8)
+  ) !important;
+}
 </style>
