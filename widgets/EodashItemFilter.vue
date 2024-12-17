@@ -16,7 +16,8 @@
 import { useSTAcStore } from "@/store/stac";
 import "@eox/itemfilter";
 
-import { ref } from "vue";
+import { computed, ref } from "vue";
+import { useDisplay } from "vuetify/lib/framework.mjs";
 
 const emit = defineEmits(["select"]);
 
@@ -117,18 +118,19 @@ const onSelect = async (evt) => {
     selectIndicator(item);
   }
 };
-const config = {
+const { smAndDown } = useDisplay();
+const config = computed(() => ({
   titleProperty: props.titleProperty,
-  filterProperties: props.filterProperties,
-  aggregateResults: props.aggregateResults,
   enableHighlighting: props.enableHighlighting,
   expandMultipleFilters: props.expandMultipleFilters,
   expandMultipleResults: props.expandMultipleResults,
-  imageProperty: props.imageProperty,
   subTitleProperty: props.subTitleProperty,
   resultType: props.resultType,
+  imageProperty: props.imageProperty,
+  aggregateResults: props.aggregateResults,
   style: props.cssVars,
-};
+  filterProperties: smAndDown ? "" : props.filterProperties,
+}));
 /** @type {import("vue").Ref<HTMLElement & Record<string,any> | null>} */
 const eoxItemFilter = ref(null);
 

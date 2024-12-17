@@ -48,9 +48,11 @@ const { loadSTAC } = useSTAcStore();
 await loadSTAC();
 
 const { smAndDown } = useDisplay();
-const TemplateComponent = computed(()=>smAndDown.value
-  ? defineAsyncComponent(() => import(`@/components/MobileLayout.vue`))
-  : defineAsyncComponent(() => import(`@/components/DashboardLayout.vue`)));
+const TemplateComponent = computed(() =>
+  smAndDown.value
+    ? defineAsyncComponent(() => import(`@/components/MobileLayout.vue`))
+    : defineAsyncComponent(() => import(`@/components/DashboardLayout.vue`)),
+);
 
 const HeaderComponent = defineAsyncComponent(
   () => import(`@/components/Header.vue`),

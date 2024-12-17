@@ -32,7 +32,12 @@
             </div>
           </template>
         </VCDatePicker>
-        <v-row v-if="!hideArrows" align="center" justify="center" style="margin-top: 6px">
+        <v-row
+          v-if="!hideArrows"
+          align="center"
+          justify="center"
+          style="margin-top: 6px"
+        >
           <v-btn
             style="padding: 0px; margin-right: 4px"
             density="compact"
@@ -97,7 +102,7 @@ defineProps({
   hideInputField: {
     type: Boolean,
     default: false,
-  }
+  },
 });
 
 /**
