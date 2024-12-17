@@ -16,9 +16,11 @@
         id="overlay"
         class="pa-2 panel bg-surface"
       >
-        <v-btn icon variant="text" class="close-btn" @click="activeIdx = -1"
-          >&#x2715;</v-btn
-        >
+        <div class="d-flex py-2 justify-end align-end">
+          <v-btn icon variant="text" class="close-btn" @click="activeIdx = -1"
+            >&#x2715;</v-btn
+          >
+        </div>
         <Suspense suspensible>
           <div class="component-container" v-show="activeIdx === idx">
             <component
