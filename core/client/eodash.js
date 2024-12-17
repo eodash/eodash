@@ -9,7 +9,8 @@ import { reactive } from "vue";
 export const eodash = reactive({
   id: "demo",
   stacEndpoint:
-    "https://eodashcatalog.eox.at/test-style/trilateral/catalog.json",
+  "https://eodashcatalog.eox.at/samplecatalog/samples/catalog.json",
+    // "https://eodashcatalog.eox.at/test-style/trilateral/catalog.json",
   // "https://gtif-cerulean.github.io/catalog/cerulean/catalog.json",
   brand: {
     noLayout: true,
@@ -72,6 +73,7 @@ export const eodash = reactive({
                 filterProperties: [],
                 resultsTitle: "Explore more indicators",
                 subTitleProperty: "subtitle",
+                imageProperty: "thumbnail"
               },
             },
           },
@@ -129,7 +131,7 @@ export const eodash = reactive({
               ? {
                   id: "Datepicker",
                   type: "internal",
-                  layout: { x: 5, y: 10, w: 2, h: 1 },
+                  layout: { x: 5, y: 8, w: 2, h: 4 },
                   title: "Datepicker",
                   widget: {
                     name: "EodashDatePicker",
@@ -243,7 +245,7 @@ export const eodash = reactive({
               ? {
                   id: "Datepicker",
                   type: "internal",
-                  layout: { x: 5, y: 8, w: 2, h: 2 },
+                  layout: { x: 5, y: 8, w: 2, h: 4 },
                   title: "Datepicker",
                   widget: {
                     name: "EodashDatePicker",
@@ -386,7 +388,7 @@ export const eodash = reactive({
               ? {
                   id: "Datepicker",
                   type: "internal",
-                  layout: { x: 5, y: 8, w: 1, h: 2 },
+                  layout: { x: 5, y: 8, w: 2, h: 4 },
                   title: "Datepicker",
                   widget: {
                     name: "EodashDatePicker",

@@ -1,39 +1,17 @@
 <template>
-  <div>
+  <div class="flex-grow-1 fill-height">
     <VCalendar
       :attributes="attributes"
       :masks="masks"
       v-model.number="currentDate"
       expanded
+      class="fill-height"
+      style="background-color: transparent"
     >
       <template #footer>
-        <VCDatePicker
-          v-if="!hideInputField"
-          v-model.number="currentDate"
-          :masks="masks"
-          :attributes="attributes"
-        >
-          <template #default="{ inputValue, inputEvents }">
-            <div
-              class="flex rounded-lg border border-gray-300 dark:border-gray-600"
-              style="margin: 2px"
-            >
-              <input
-                :value="inputValue"
-                v-on="inputEvents"
-                style="margin: 1px"
-                class="flex-grow px-1 py-1 dark:bg-gray-700"
-              />
-            </div>
-          </template>
-          <template #footer v-if="hintText">
-            <div class="w-full px-4 pb-3" style="font-size: 12px">
-              <span v-html="hintText" />
-            </div>
-          </template>
-        </VCDatePicker>
-        <v-row v-if="!hideArrows" align="center" justify="center" style="margin-top: 6px">
+        <v-row align="center" justify="center" style="margin-top: 6px">
           <v-btn
+            v-if="!hideArrows"
             style="padding: 0px; margin-right: 4px"
             density="compact"
             v-tooltip:bottom="'Set date to oldest available dataset'"
@@ -42,7 +20,33 @@
           >
             <v-icon :icon="[mdiRayEndArrow]" />
           </v-btn>
+          <VCDatePicker
+            v-if="!hideInputField"
+            v-model.number="currentDate"
+            :masks="masks"
+            :attributes="attributes"
+          >
+            <template #default="{ inputValue, inputEvents }">
+              <div
+                class="flex rounded-lg border border-gray-300 dark:border-gray-600"
+                style="margin: 2px"
+              >
+                <input
+                  :value="inputValue"
+                  v-on="inputEvents"
+                  style="margin: 1px"
+                  class="flex-grow px-1 py-1 dark:bg-gray-700"
+                />
+              </div>
+            </template>
+            <template #footer v-if="hintText">
+              <div class="w-full px-4 pb-3" style="font-size: 12px">
+                <span v-html="hintText" />
+              </div>
+            </template>
+          </VCDatePicker>
           <v-btn
+            v-if="!hideArrows"
             style="padding: 0px; margin-left: 4px"
             density="compact"
             variant="text"
@@ -57,7 +61,7 @@
   </div>
 </template>
 <script setup>
-import { DatePicker as VCDatePicker } from "v-calendar";
+import { DatePicker as VCDatePicker, Calendar as VCalendar } from "v-calendar";
 import "v-calendar/style.css";
 import { watch, reactive, ref, customRef, onMounted } from "vue";
 import { storeToRefs } from "pinia";
