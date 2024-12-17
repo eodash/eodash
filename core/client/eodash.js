@@ -86,7 +86,7 @@ export const eodash = reactive({
               ? {
                   id: "layercontrol-light",
                   type: "internal",
-                  title: "Layer Control",
+                  title: "Layers",
                   layout: { x: 0, y: 1, w: 3, h: 3 },
                   widget: {
                     name: "EodashLayerControl",
@@ -134,7 +134,7 @@ export const eodash = reactive({
                   id: "Datepicker",
                   type: "internal",
                   layout: { x: 5, y: 8, w: 2, h: 4 },
-                  title: "Datepicker",
+                  title: "Date",
                   widget: {
                     name: "EodashDatePicker",
                     properties: {
@@ -217,7 +217,7 @@ export const eodash = reactive({
         {
           id: Symbol(),
           type: "internal",
-          title: "Layer Control",
+          title: "Layers",
           layout: { x: 0, y: 1, w: 3, h: 6 },
           widget: {
             name: "EodashLayerControl",
@@ -249,7 +249,7 @@ export const eodash = reactive({
                   id: "Datepicker",
                   type: "internal",
                   layout: { x: 5, y: 8, w: 2, h: 4 },
-                  title: "Datepicker",
+                  title: "Date",
                   widget: {
                     name: "EodashDatePicker",
                     properties: {
@@ -350,7 +350,7 @@ export const eodash = reactive({
         {
           id: Symbol(),
           type: "internal",
-          title: "Layer Control",
+          title: "Layers",
           layout: { x: 0, y: 1, w: 3, h: 6 },
           widget: {
             name: "EodashLayerControl",
@@ -358,7 +358,7 @@ export const eodash = reactive({
         },
         {
           id: Symbol(),
-          title: "Layer Control Comparison",
+          title: "Layers Comparison",
           layout: { x: 9, y: 1, w: 3, h: 6 },
           type: "internal",
           widget: {
@@ -393,7 +393,7 @@ export const eodash = reactive({
                   id: "Datepicker",
                   type: "internal",
                   layout: { x: 5, y: 8, w: 2, h: 4 },
-                  title: "Datepicker",
+                  title: "Date",
                   widget: {
                     name: "EodashDatePicker",
                     properties: {

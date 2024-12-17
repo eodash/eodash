@@ -12,7 +12,6 @@
         <v-row>
           <v-btn
             v-if="!hideArrows"
-            style="padding: 0px; margin-right: 4px"
             density="compact"
             v-tooltip:bottom="'Set date to oldest available dataset'"
             variant="text"
@@ -47,7 +46,6 @@
           </VCDatePicker>
           <v-btn
             v-if="!hideArrows"
-            style="padding: 0px; margin-left: 4px"
             density="compact"
             variant="text"
             v-tooltip:bottom="'Set date to latest available dataset'"
