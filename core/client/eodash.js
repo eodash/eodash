@@ -1,3 +1,4 @@
+import { mdiViewDashboard, mdiViewDashboardVariant } from "@mdi/js";
 import { reactive } from "vue";
 
 /**
@@ -66,6 +67,7 @@ export const eodash = reactive({
             name: "EodashTools",
             properties: {
               layoutTarget: "expert",
+              layoutIcon: mdiViewDashboardVariant,
               itemFilterConfig: {
                 resultType: "cards",
                 filtersTitle: "",
@@ -202,6 +204,7 @@ export const eodash = reactive({
             name: "EodashTools",
             properties: {
               layoutTarget: "light",
+              layoutIcon: mdiViewDashboard,
               itemFilterConfig: {
                 aggregateResults: "collection_group",
                 style: {
@@ -312,6 +315,7 @@ export const eodash = reactive({
             name: "EodashTools",
             properties: {
               layoutTarget: "expert",
+              layoutIcon: mdiViewDashboardVariant,
               itemFilterConfig: {
                 cssVars: {
                   "--form-flex-direction": "row",

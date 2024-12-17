@@ -16,9 +16,16 @@
       <EodashLayoutSwitcher
         v-if="props.showLayoutSwitcher"
         :target="layoutTarget"
+        :icon="layoutIcon"
       />
     </div>
-    <PopUp v-model="dialog" maxWidth="1000px" width="1000px">
+    <PopUp
+      v-model="dialog"
+      :maxWidth="popupWidth"
+      :width="popupWidth"
+      :max-height="popupHeight"
+      :height="popupHeight"
+    >
       <EodashItemFilter
         class="pa-4"
         results-title=""
@@ -33,11 +40,16 @@
 import PopUp from "^/PopUp.vue";
 import EodashItemFilter from "^/EodashItemFilter.vue";
 import EodashLayoutSwitcher from "^/EodashLayoutSwitcher.vue";
-import { mdiPlus } from "@mdi/js";
-import { ref } from "vue";
+import { mdiPlus, mdiViewDashboard } from "@mdi/js";
+import { computed, ref } from "vue";
 import { makePanelTransparent } from "@/composables";
+import { useDisplay } from "vuetify/lib/framework.mjs";
 
 const dialog = ref(false);
+
+const { smAndDown } = useDisplay();
+const popupWidth = computed(() => (smAndDown ? "70%" : "1000px"));
+const popupHeight = computed(() => (smAndDown ? "90%" : "500px"));
 
 const props = defineProps({
   showIndicatorsBtn: {
@@ -51,6 +63,11 @@ const props = defineProps({
   layoutTarget: {
     type: String,
     default: "light",
+  },
+  // mdi/js icon
+  layoutIcon: {
+    type: String,
+    default: mdiViewDashboard,
   },
   indicatorBtnText: {
     type: String,

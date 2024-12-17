@@ -9,7 +9,7 @@
       style="background-color: transparent"
     >
       <template #footer>
-        <v-row align="center" justify="center" style="margin-top: 6px">
+        <v-row>
           <v-btn
             v-if="!hideArrows"
             style="padding: 0px; margin-right: 4px"
@@ -101,7 +101,7 @@ defineProps({
   hideInputField: {
     type: Boolean,
     default: false,
-  }
+  },
 });
 
 /**

@@ -20,7 +20,11 @@
       v-if="compareIndicators"
       @click="showCompareIndicators = !showCompareIndicators"
     />
-    <PopUp v-model="showCompareIndicators">
+    <PopUp
+      v-model="showCompareIndicators"
+      :maxWidth="popupWidth"
+      :maxHeight="popupHeight"
+    >
       <EodashItemFilter
         :enableCompare="true"
         filters-title=""
@@ -37,9 +41,10 @@ import { changeMapProjection, setActiveTemplate } from "@/store/Actions";
 import { availableMapProjection } from "@/store/States";
 import { mdiCompare, mdiEarthBox, mdiMapPlus } from "@mdi/js";
 import ExportState from "^/ExportState.vue";
-import { ref } from "vue";
+import { computed, ref } from "vue";
 import PopUp from "./PopUp.vue";
 import EodashItemFilter from "./EodashItemFilter.vue";
+import { useDisplay } from "vuetify/lib/framework.mjs";
 
 defineProps({
   exportMap: {
@@ -55,6 +60,9 @@ defineProps({
     default: true,
   },
 });
+const { smAndDown } = useDisplay();
+const popupWidth = computed(() => (smAndDown ? "70%" : "500px"));
+const popupHeight = computed(() => (smAndDown ? "90%" : "500px"));
 
 const showMapState = ref(false);
 const showCompareIndicators = ref(false);
