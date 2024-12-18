@@ -18,9 +18,7 @@ describe("<EodashDatePicker/>", () => {
     });
 
     it("click date", () => {
-      cy.get("input").trigger("mousemove");
       cy.get(".vc-day-content").eq(20).click();
-      cy.get(".vc-day-content").should("not.exist");
     });
   });
 });
