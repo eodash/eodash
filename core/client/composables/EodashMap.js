@@ -6,6 +6,7 @@ import { useSTAcStore } from "@/store/stac";
 import { storeToRefs } from "pinia";
 import { useEventBus } from "@vueuse/core";
 import { eoxLayersKey } from "@/utils/keys";
+import { posIsSetFromUrl } from "@/utils/states";
 /**
  * Holder for previous compare map view as it is overwritten by sync
  * @type { {map:import("ol").View } | null} mapElement
@@ -33,6 +34,9 @@ export const useHandleMapMoveEnd = (mapElement, mapPosition) => {
       !Number.isNaN(z)
     ) {
       mapPosition.value = [lonlat[0], lonlat[1], z];
+      if (posIsSetFromUrl.value) {
+        posIsSetFromUrl.value = false;
+      }
     }
   };
 
@@ -306,7 +310,8 @@ export const useInitMap = (
         // indicator and map changes
         if (
           mapElement?.value?.id === "main" &&
-          updatedStac.extent?.spatial.bbox
+          updatedStac.extent?.spatial.bbox &&
+          !posIsSetFromUrl.value
         ) {
           // Sanitize extent,
           const b = updatedStac.extent?.spatial.bbox[0];
@@ -324,6 +329,9 @@ export const useInitMap = (
           );
           /** @type {any} */
           (mapElement.value).zoomExtent = reprojExtent;
+        }
+        if (posIsSetFromUrl.value) {
+          posIsSetFromUrl.value = false;
         }
 
         log.debug(

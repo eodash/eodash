@@ -15,6 +15,7 @@ import { useSTAcStore } from "@/store/stac";
 import log from "loglevel";
 import { useEventBus } from "@vueuse/core";
 import { eoxLayersKey } from "@/utils/keys";
+import { posIsSetFromUrl } from "@/utils/states";
 
 /**
  * Creates an absolute URL from a relative link and assignes it to `currentUrl`
@@ -160,6 +161,9 @@ export const useURLSearchParametersSync = () => {
       if (x && y && z) {
         log.debug("Coordinates found, applying map poisition", x, y, z);
         mapPosition.value = [x, y, z];
+        if (!posIsSetFromUrl.value) {
+          posIsSetFromUrl.value = true;
+        }
       }
     }
 
