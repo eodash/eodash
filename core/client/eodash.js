@@ -148,24 +148,6 @@ export const eodash = reactive({
               : null;
           },
         },
-        {
-          defineWidget: (selected) => {
-            return selected
-              ? {
-                  id: "Buttons",
-                  layout: { x: 8, y: 0, w: 1, h: 2 },
-                  title: "Buttons",
-                  type: "internal",
-                  widget: {
-                    name: "EodashMapBtns",
-                    properties: {
-                      compareIndicators: false,
-                    },
-                  },
-                }
-              : null;
-          },
-        },
       ],
     },
     expert: {
