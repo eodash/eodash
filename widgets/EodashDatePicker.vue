@@ -1,13 +1,13 @@
 <template>
   <div class="flex-grow-1 fill-height">
-    <VCalendar
+    <VCDatePicker
+      v-if="!hideInputField"
+      v-model.number="currentDate"
       :attributes="attributes"
       :masks="masks"
       expanded
-      class="fill-height"
-      style="background-color: transparent"
     >
-      <template #footer>
+      <template #footer="{ inputValue, inputEvents }">
         <v-row align="center" justify="center" style="margin-top: 6px">
           <v-btn
             v-if="!hideArrows"
@@ -18,30 +18,17 @@
           >
             <v-icon :icon="[mdiRayEndArrow]" />
           </v-btn>
-          <VCDatePicker
-            v-if="!hideInputField"
-            v-model.number="currentDate"
-            :masks="masks"
+          <div
+            class="flex rounded-lg border border-gray-300 dark:border-gray-600"
+            style="margin: 2px"
           >
-            <template #default="{ inputValue, inputEvents }">
-              <div
-                class="flex rounded-lg border border-gray-300 dark:border-gray-600"
-                style="margin: 2px"
-              >
-                <input
-                  :value="inputValue"
-                  v-on="inputEvents"
-                  style="margin: 1px"
-                  class="flex-grow px-1 py-1 dark:bg-gray-700"
-                />
-              </div>
-            </template>
-            <template #footer v-if="hintText">
-              <div class="w-full px-4 pb-3" style="font-size: 12px">
-                <span v-html="hintText" />
-              </div>
-            </template>
-          </VCDatePicker>
+            <input
+              :value="inputValue"
+              v-on="inputEvents"
+              style="margin: 1px"
+              class="flex-grow px-1 py-1 dark:bg-gray-700"
+            />
+          </div>
           <v-btn
             v-if="!hideArrows"
             density="compact"
@@ -53,11 +40,11 @@
           </v-btn>
         </v-row>
       </template>
-    </VCalendar>
+    </VCDatePicker>
   </div>
 </template>
 <script setup>
-import { DatePicker as VCDatePicker, Calendar as VCalendar } from "v-calendar";
+import { DatePicker as VCDatePicker } from "v-calendar";
 import "v-calendar/style.css";
 import { watch, reactive, ref, customRef, onMounted } from "vue";
 import { storeToRefs } from "pinia";
