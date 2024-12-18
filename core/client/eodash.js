@@ -12,7 +12,9 @@ export const eodash = reactive({
   stacEndpoint:
     // "https://eodashcatalog.eox.at/test-style/trilateral/catalog.json",
     // "https://gtif-cerulean.github.io/catalog/cerulean/catalog.json",
-    "https://santilland.github.io/process_example/catalog.json",
+    // "https://santilland.github.io/process_example/catalog.json",
+    "https://eodashcatalog.eox.at/samplecatalog/samples/catalog.json",
+
   brand: {
     noLayout: true,
     name: "Demo",

@@ -382,10 +382,10 @@ export async function getChartValues(links, jsonformValue, specUrl) {
   const spec = await axios.get(specUrl).then((resp) => {
     return resp.data;
   });
-  //@ts-expect-error NamedData
-  const dataName = spec?.data?.name;
+  // //@ts-expect-error NamedData
+  // const dataName = spec?.data?.name;
   const dataLinks = links.filter(
-    (link) => link.rel === "service" && dataName && link.id === dataName,
+    (link) => link.rel === "service", // && dataName && link.id === dataName,
   );
 
   /** @type {Record<string,any>}  */
