@@ -8,7 +8,7 @@
       class="bg-surface"
       style="background-color: transparent; max-width: 100%"
     >
-      <template #footer="{ inputValue, inputEvents }">
+      <template #footer>
         <div class="d-flex flex-row align-center justify-center py-2">
           <v-btn
             v-if="!hideArrows"
