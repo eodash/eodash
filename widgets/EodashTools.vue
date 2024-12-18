@@ -48,7 +48,7 @@ import { useDisplay } from "vuetify/lib/framework.mjs";
 const dialog = ref(false);
 
 const { smAndDown } = useDisplay();
-const popupWidth = computed(() => (smAndDown ? "70%" : "1000px"));
+const popupWidth = computed(() => (smAndDown ? "80%" : "1000px"));
 const popupHeight = computed(() => (smAndDown ? "90%" : "500px"));
 
 const props = defineProps({

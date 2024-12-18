@@ -133,7 +133,7 @@ export const eodash = reactive({
               ? {
                   id: "Datepicker",
                   type: "internal",
-                  layout: { x: 5, y: 8, w: 2, h: 4 },
+                  layout: { x: 5, y: 8, w: 2, h: 4},
                   title: "Date",
                   widget: {
                     name: "EodashDatePicker",
@@ -188,6 +188,9 @@ export const eodash = reactive({
               layoutTarget: "light",
               layoutIcon: mdiViewDashboard,
               itemFilterConfig: {
+                resultType: "cards",
+                subTitleProperty: "subtitle",
+                imageProperty: "thumbnail",
                 aggregateResults: "collection_group",
                 style: {
                   "--form-flex-direction": "row",
@@ -230,7 +233,7 @@ export const eodash = reactive({
               ? {
                   id: "Datepicker",
                   type: "internal",
-                  layout: { x: 5, y: 8, w: 2, h: 4 },
+                  layout: { x: 5, y: 8, w: 2, h: 4},
                   title: "Date",
                   widget: {
                     name: "EodashDatePicker",
@@ -374,7 +377,7 @@ export const eodash = reactive({
               ? {
                   id: "Datepicker",
                   type: "internal",
-                  layout: { x: 5, y: 8, w: 2, h: 4 },
+                  layout: { x: 5, y: 8, w: 2, h: 4},
                   title: "Date",
                   widget: {
                     name: "EodashDatePicker",
