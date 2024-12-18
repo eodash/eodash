@@ -95,8 +95,9 @@ export const eodash = reactive({
                       cssVars: {
                         "--list-padding": "0",
                         "--tools-button-visibility": "none",
-                        "--layer-visibility": "none",
-                        "--padding": "0",
+                        "--layer-input-visibility": "none",
+                        "--layer-type-visibility": "none",
+                        "--padding": "16px",
                       },
                     },
                   },
