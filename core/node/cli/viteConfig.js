@@ -90,6 +90,7 @@ export const eodashViteConfig = /** @type {import("vite").UserConfigFn} */ (
             "@eox/itemfilter",
             "@eox/timecontrol",
             "@eox/stacinfo",
+            "color-legend-element",
           ],
           noDiscovery: true,
         },
