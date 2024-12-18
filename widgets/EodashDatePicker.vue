@@ -1,14 +1,15 @@
 <template>
-  <div class="flex-grow-1 fill-height">
+  <div ref="rootRef">
     <VCDatePicker
-      v-if="!hideInputField"
       v-model.number="currentDate"
       :attributes="attributes"
       :masks="masks"
       expanded
+      class="bg-surface"
+      style="background-color: transparent; max-width: 100%"
     >
       <template #footer="{ inputValue, inputEvents }">
-        <v-row align="center" justify="center" style="margin-top: 6px">
+        <div class="d-flex flex-row align-center justify-center py-2">
           <v-btn
             v-if="!hideArrows"
             density="compact"
@@ -23,8 +24,8 @@
             style="margin: 2px"
           >
             <input
-              :value="inputValue"
-              v-on="inputEvents"
+              v-if="!hideInputField"
+              :value="new Date(currentDate).toLocaleDateString()"
               style="margin: 1px"
               class="flex-grow px-1 py-1 dark:bg-gray-700"
             />
@@ -38,7 +39,7 @@
           >
             <v-icon :icon="[mdiRayStartArrow]" />
           </v-btn>
-        </v-row>
+        </div>
       </template>
     </VCDatePicker>
   </div>
@@ -53,6 +54,8 @@ import { datetime } from "@/store/States";
 import { mdiRayStartArrow, mdiRayEndArrow } from "@mdi/js";
 import { eodashCollections } from "@/utils/states";
 import log from "loglevel";
+import { makePanelTransparent } from "@/composables";
+
 
 // holds the number value of the datetime
 const currentDate = customRef((track, trigger) => ({
@@ -98,6 +101,9 @@ defineProps({
  * >}
  */
 const attributes = reactive([]);
+
+/** @type {import("vue").Ref<HTMLDivElement|null>} */
+const rootRef = ref(null);
 
 const { selectedStac } = storeToRefs(useSTAcStore());
 
@@ -185,6 +191,9 @@ onMounted(() => {
     ? "translate3d(50px,-80px,0)"
     : "translate3d(0px,-80px,0)";
 });
+
+makePanelTransparent(rootRef);
+
 </script>
 <style>
 .vc-day-content {
