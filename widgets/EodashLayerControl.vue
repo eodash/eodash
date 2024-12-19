@@ -31,15 +31,13 @@ const props = defineProps({
   },
 });
 
+const { selectedCompareStac, selectedStac } = storeToRefs(useSTAcStore());
+
 const showControls = computed(() => {
-  const { selectedCompareStac, selectedStac } = storeToRefs(useSTAcStore());
   if (props.map === "second") {
     return mapCompareEl.value !== null && selectedCompareStac.value !== null;
   }
-  if (mapEl.value !== null && selectedStac.value !== null) {
-    return true;
-  }
-  return false;
+  return mapEl.value !== null && selectedStac.value !== null;
 });
 
 const eodashCols =

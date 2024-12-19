@@ -1,4 +1,4 @@
-import { shallowReactive } from "vue";
+import { ref, shallowReactive } from "vue";
 
 /**
  * Array of eodash STAC Collections extracted from the current selected indicator.
@@ -15,3 +15,6 @@ export const eodashCollections = shallowReactive([]);
  * @private
  */
 export const eodashCompareCollections = shallowReactive([]);
+
+/** whether the map postion was set in URL params on first load */
+export const posIsSetFromUrl = ref(false);
