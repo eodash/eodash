@@ -10,7 +10,8 @@ import { reactive } from "vue";
 export const eodash = reactive({
   id: "demo",
   stacEndpoint:
-  "https://eodashcatalog.eox.at/samplecatalog/samples/catalog.json",
+  "https://gtif-cerulean.github.io/catalog/cerulean/catalog.json",
+  // "https://eodashcatalog.eox.at/samplecatalog/samples/catalog.json",
     // "https://eodashcatalog.eox.at/test-style/trilateral/catalog.json",
   // "https://gtif-cerulean.github.io/catalog/cerulean/catalog.json",
   brand: {
@@ -91,6 +92,7 @@ export const eodash = reactive({
                   widget: {
                     name: "EodashLayerControl",
                     properties: {
+                      slider: false,
                       tools: ["datetime", "info", "legend"],
                       cssVars: {
                         "--list-padding": "0",
