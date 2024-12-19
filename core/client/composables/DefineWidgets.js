@@ -44,7 +44,6 @@ const internalWidgets = (() => {
  *       | undefined
  *     )[]
  *   | undefined} widgetConfigs
- * @returns {ReactiveDefinedWidget[]}
  */
 export const useDefineWidgets = (widgetConfigs) => {
   /** @type {ReactiveDefinedWidget[]} */

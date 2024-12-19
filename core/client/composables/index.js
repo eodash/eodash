@@ -2,6 +2,7 @@
 // setup functions or vue composition api components
 
 import {
+  activeTemplate,
   currentCompareUrl,
   currentUrl,
   datetime,
@@ -10,9 +11,10 @@ import {
 } from "@/store/States";
 import eodash from "@/eodash";
 import { useTheme } from "vuetify/lib/framework.mjs";
-import { onMounted, watch } from "vue";
+import { inject, onMounted, watch } from "vue";
 import { useSTAcStore } from "@/store/stac";
 import log from "loglevel";
+import { eodashKey } from "@/utils/keys";
 
 /**
  * Creates an absolute URL from a relative link and assignes it to `currentUrl`
@@ -117,6 +119,10 @@ export const useURLSearchParametersSync = () => {
         z;
       for (const [key, value] of searchParams) {
         switch (key) {
+          case "template": {
+            activeTemplate.value = value;
+            break;
+          }
           case "indicator": {
             log.debug("Found indicator key in url");
             const { loadSelectedSTAC, stac } = useSTAcStore();
@@ -162,8 +168,13 @@ export const useURLSearchParametersSync = () => {
     }
 
     watch(
-      [indicator, mapPosition, datetime],
-      ([updatedIndicator, updatedMapPosition, updatedDatetime]) => {
+      [indicator, mapPosition, datetime, activeTemplate],
+      ([
+        updatedIndicator,
+        updatedMapPosition,
+        updatedDatetime,
+        updatedTemplate,
+      ]) => {
         if ("URLSearchParams" in window) {
           const searchParams = new URLSearchParams(window.location.search);
           if (updatedIndicator !== "") {
@@ -178,6 +189,9 @@ export const useURLSearchParametersSync = () => {
 
           if (updatedDatetime) {
             searchParams.set("datetime", updatedDatetime.split("T")?.[0] ?? "");
+          }
+          if (updatedTemplate) {
+            searchParams.set("template", updatedTemplate);
           }
           const newRelativePathQuery =
             window.location.pathname + "?" + searchParams.toString();
@@ -196,4 +210,9 @@ export const makePanelTransparent = (root) => {
       eoxItem.classList.remove("bg-surface");
     }
   });
+};
+
+export const useGetTemplates = () => {
+  const eodash = /** @type {import("@/types").Eodash} */ (inject(eodashKey));
+  return "template" in eodash ? [] : Object.keys(eodash.templates);
 };

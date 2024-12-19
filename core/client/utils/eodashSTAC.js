@@ -191,7 +191,7 @@ export class EodashCollection {
       let extraProperties = null;
       if (this.#collectionStac?.assets?.legend?.href) {
         extraProperties = {
-          description: `<div style="text-align:center; width: 100%">
+          description: `<div style="width: 100%">
             <img src="${this.#collectionStac.assets.legend.href}" style="max-height:70px; margin-top:-15px; margin-bottom:-20px;" />
           </div>`,
         };
