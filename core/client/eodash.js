@@ -10,8 +10,9 @@ import { reactive } from "vue";
 export const eodash = reactive({
   id: "demo",
   stacEndpoint:
-  "https://gtif-cerulean.github.io/catalog/cerulean/catalog.json",
-  // "https://eodashcatalog.eox.at/samplecatalog/samples/catalog.json",
+  // "https://eurodatacube.github.io/eodash-catalog/RACE/catalog.json",
+  // "https://gtif-cerulean.github.io/catalog/cerulean/catalog.json",
+  "https://eodashcatalog.eox.at/samplecatalog/samples/catalog.json",
     // "https://eodashcatalog.eox.at/test-style/trilateral/catalog.json",
   // "https://gtif-cerulean.github.io/catalog/cerulean/catalog.json",
   brand: {
