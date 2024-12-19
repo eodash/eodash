@@ -244,6 +244,18 @@ export class EodashCollection {
       jsonArray.push(json);
     }
 
+    const bankWongPalette = [
+      "#009E73",
+      "#0072B2",
+      "#E69F00",
+      "#CC79A7",
+      "#56B4E9",
+      "#D55E00",
+    ];
+
+    // Set the `color` property for each layer
+    jsonArray.forEach((layer, i) => layer.color = bankWongPalette[i]);
+
     return jsonArray;
   }
 
