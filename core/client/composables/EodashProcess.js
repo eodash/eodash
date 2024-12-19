@@ -95,9 +95,7 @@ export function useAutoExec(
    * @param {CustomEvent} _e
    **/
   const onJsonFormChange = async (_e) => {
-    if (!isProcessed.value) {
       await startProcess();
-    }
   };
 
   const addEventListener = async () => {
