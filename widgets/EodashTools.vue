@@ -48,8 +48,8 @@ import { useDisplay } from "vuetify/lib/framework.mjs";
 const dialog = ref(false);
 
 const { smAndDown } = useDisplay();
-const popupWidth = computed(() => (smAndDown ? "80%" : "1000px"));
-const popupHeight = computed(() => (smAndDown ? "90%" : "500px"));
+const popupWidth = computed(() => (smAndDown.value ? "80%" : "1500px"));
+const popupHeight = computed(() => (smAndDown.value ? "90%" : "800px"));
 
 const props = defineProps({
   showIndicatorsBtn: {
