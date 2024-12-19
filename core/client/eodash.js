@@ -26,6 +26,15 @@ export const eodash = reactive({
         "surface-opacity": 0.6,
         "primary-opacity": 0.8,
       },
+      // Bank-Wong palette
+      palette: [
+        "#009E73",
+        "#0072B2",
+        "#E69F00",
+        "#CC79A7",
+        "#56B4E9",
+        "#D55E00",
+      ],
     },
     footerText: "Demo configuration of eodash client",
   },
