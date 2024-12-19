@@ -104,7 +104,6 @@ const createLayersConfig = async (
     properties: {
       id: "BaseLayersGroup",
       title: "Base Layers",
-      layerControlHide: true,
     },
     layers: /** @type {Record<string,any>[]}*/ ([]),
   };

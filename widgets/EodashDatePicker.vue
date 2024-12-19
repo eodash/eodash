@@ -204,4 +204,8 @@ makePanelTransparent(rootRef);
 .vc-popover-content-wrapper {
   transform: v-bind("transform") !important;
 }
+
+.vc-highlight-content-solid {
+  color: white !important;
+}
 </style>
