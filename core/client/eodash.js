@@ -98,6 +98,9 @@ export const eodash = reactive({
                         "--layer-input-visibility": "none",
                         "--layer-type-visibility": "none",
                         "--padding": "16px",
+                        "--padding-vertical": "16px",
+                        "--layer-tools-button-visibility": "none",
+                        "--layer-summary-visibility": "none"
                       },
                     },
                   },

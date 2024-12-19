@@ -242,7 +242,7 @@ export const extractLayerDatetime = (links, currentStep) => {
     controlValues,
     currentStep,
     slider: true,
-    disablePlay: true,
+    play: false,
   };
 };
 
