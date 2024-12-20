@@ -456,6 +456,9 @@ export async function handleProcesses({
       { ...(jsonformValue ?? {}) },
       specUrl,
     );
+    if (chartSpec.value && !("background" in chartSpec.value)) {
+      chartSpec.value["background"] = "transparent";
+    }
     const geotiffLayer = await processGeoTiff(
       serviceLinks,
       jsonformValue,

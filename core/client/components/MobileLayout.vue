@@ -3,7 +3,7 @@
     <Suspense suspensible>
       <component
         id="bg-widget"
-        v-if="bgWidget.component"
+        v-if="bgWidget?.component"
         :is="bgWidget.component"
         v-bind="bgWidget.props"
       ></component>
@@ -16,9 +16,11 @@
         id="overlay"
         class="pa-2 panel bg-surface"
       >
-        <v-btn icon variant="text" class="close-btn" @click="activeIdx = -1"
-          >&#x2715;</v-btn
-        >
+        <div class="d-flex py-2 justify-end align-end">
+          <v-btn icon variant="text" class="close-btn" @click="activeIdx = -1"
+            >&#x2715;</v-btn
+          >
+        </div>
         <Suspense suspensible>
           <div class="component-container" v-show="activeIdx === idx">
             <component
@@ -48,18 +50,11 @@
   </v-main>
 </template>
 <script setup>
-import { eodashKey } from "@/utils/keys";
-import { inject, ref, onMounted } from "vue";
-import { useDefineWidgets } from "@/composables/DefineWidgets";
+import { useDefineTemplate } from "@/composables/DefineTemplate";
+import { ref, onMounted } from "vue";
 import { useLayout } from "vuetify";
 
-const eodash = /** @type {import("@/types").Eodash} */ (inject(eodashKey));
-
-//import widgets
-const widgetsConfig = eodash.template.widgets;
-const importedWidgets = useDefineWidgets(widgetsConfig);
-const [bgWidget] = useDefineWidgets([eodash.template?.background]);
-
+const { bgWidget, importedWidgets } = useDefineTemplate();
 const { mainRect } = useLayout();
 
 const activeIdx = ref(-1);
@@ -105,5 +100,12 @@ onMounted(() => {
   bottom: v-bind("mainRectBtmPx");
   position: relative;
   z-index: 10;
+}
+:deep(.bg-surface) {
+  backdrop-filter: blur(9.5px) !important;
+  background-color: rgba(
+    var(--v-theme-surface),
+    var(--v-surface-opacity, 0.8)
+  ) !important;
 }
 </style>

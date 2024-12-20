@@ -1,8 +1,7 @@
 <template>
   <span>
     <v-dialog
-      max-width="500px"
-      max-height="500px"
+      v-bind="config"
       absolute
       scrollable
       scroll-strategy="block"
@@ -34,7 +33,30 @@ const props = defineProps({
     type: Object,
     default: undefined,
   },
+  maxWidth: {
+    type: String,
+    default: "500px",
+  },
+  maxHeight: {
+    type: String,
+    default: "500px",
+  },
+  width: {
+    type: String,
+    default: "500px",
+  },
+  height: {
+    type: String,
+    default: "500px",
+  },
 });
+
+const config = {
+  maxWidth: props.maxWidth,
+  maxHeight: props.maxHeight,
+  width: props.width,
+  height: props.height,
+};
 
 const [definedWidget] = useDefineWidgets([props?.widget]);
 </script>

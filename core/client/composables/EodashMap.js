@@ -78,7 +78,7 @@ const createLayersConfig = async (
     type: "Group",
     properties: {
       id: "AnalysisGroup",
-      title: "Analysis Layers",
+      title: "Data Layers",
       layerControlExpand: true,
     },
     layers: /** @type {Record<string,any>[]}*/ ([]),

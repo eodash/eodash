@@ -170,7 +170,7 @@ export type BackgroundWidget<T extends ExecutionTime = "compiletime"> =
  *
  * @group Eodash
  */
-export interface Template<T extends ExecutionTime = "compiletime"> {
+export interface SingleTemplate<T extends ExecutionTime = "compiletime"> {
   /** Gap between widgets */
   gap?: number;
   /** Loading widget */
@@ -184,6 +184,11 @@ export interface Template<T extends ExecutionTime = "compiletime"> {
   widgets: Widget<T>[];
 }
 
+export type MultiTemplates<T extends ExecutionTime = "compiletime"> = Record<
+  string,
+  SingleTemplate<T>
+>;
+
 /** @ignore */
 export type StacEndpoint = `${string}/catalog.json`;
 
@@ -195,7 +200,7 @@ type ExecutionTime = "runtime" | "compiletime";
  *
  * @group Eodash
  */
-export interface Eodash<T extends ExecutionTime = "compiletime"> {
+export type Eodash<T extends ExecutionTime = "compiletime"> = {
   /** Instance ID. */
   id?: string;
   /** Root STAC catalog endpoint */
@@ -228,9 +233,16 @@ export interface Eodash<T extends ExecutionTime = "compiletime"> {
     /** Text applied to the footer. */
     footerText?: string;
   };
-  /** Template configuration */
-  template: Template<T>;
-}
+} & (
+  | {
+      /** Template configuration */
+      template: SingleTemplate<T>;
+    }
+  | {
+      /** Multiple templates configuration */
+      templates: MultiTemplates<T>;
+    }
+);
 /////////
 
 /// eodash store types

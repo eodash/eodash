@@ -1,56 +1,59 @@
 <template>
-  <VCDatePicker
-    v-model.number="currentDate"
-    :masks="masks"
-    :attributes="attributes"
-  >
-    <template #default="{ inputValue, inputEvents }">
-      <div
-        class="flex rounded-lg border border-gray-300 dark:border-gray-600"
-        style="margin: 2px"
-      >
-        <input
-          :value="inputValue"
-          v-on="inputEvents"
-          style="margin: 1px"
-          class="flex-grow px-1 py-1 bg-white dark:bg-gray-700"
-        />
-      </div>
-    </template>
-    <template #footer v-if="hintText">
-      <div class="w-full px-4 pb-3" style="font-size: 12px">
-        <span v-html="hintText" />
-      </div>
-    </template>
-  </VCDatePicker>
-  <v-row align="center" justify="center" style="margin-top: 6px">
-    <v-btn
-      style="padding: 0px; margin-right: 4px"
-      density="compact"
-      v-tooltip:bottom="'Set date to oldest available dataset'"
-      @click="jumpDate(true)"
+  <div ref="rootRef" class="datePicker">
+    <VCDatePicker
+      v-model.number="currentDate"
+      :attributes="attributes"
+      :masks="masks"
+      expanded
+      class="bg-surface overflow-auto"
+      style="background-color: transparent; max-width: 100%"
     >
-      <v-icon :icon="[mdiRayEndArrow]" />
-    </v-btn>
-    <v-btn
-      style="padding: 0px; margin-left: 4px"
-      density="compact"
-      v-tooltip:bottom="'Set date to latest available dataset'"
-      @click="jumpDate(false)"
-    >
-      <v-icon :icon="[mdiRayStartArrow]" />
-    </v-btn>
-  </v-row>
+      <template #footer>
+        <div class="d-flex flex-row align-center justify-center pb-1">
+          <v-btn
+            v-if="!hideArrows"
+            density="compact"
+            v-tooltip:bottom="'Set date to oldest available dataset'"
+            variant="text"
+            @click="jumpDate(true)"
+          >
+            <v-icon :icon="[mdiRayEndArrow]" />
+          </v-btn>
+          <div
+            class="flex rounded-lg border border-gray-300 dark:border-gray-600"
+            style="margin: 2px"
+          >
+            <input
+              v-if="!hideInputField"
+              :value="new Date(currentDate).toLocaleDateString()"
+              style="margin: 1px"
+              class="flex-grow px-1 py-1 dark:bg-gray-700"
+            />
+          </div>
+          <v-btn
+            v-if="!hideArrows"
+            density="compact"
+            variant="text"
+            v-tooltip:bottom="'Set date to latest available dataset'"
+            @click="jumpDate(false)"
+          >
+            <v-icon :icon="[mdiRayStartArrow]" />
+          </v-btn>
+        </div>
+      </template>
+    </VCDatePicker>
+  </div>
 </template>
 <script setup>
 import { DatePicker as VCDatePicker } from "v-calendar";
 import "v-calendar/style.css";
-import { watch, reactive, ref, customRef, toRef, onMounted } from "vue";
+import { watch, reactive, ref, customRef, toRef } from "vue";
 import { useSTAcStore } from "@/store/stac";
 import { datetime } from "@/store/states";
 import { mdiRayStartArrow, mdiRayEndArrow } from "@mdi/js";
 import { eodashCollections } from "@/utils/states";
 import log from "loglevel";
+import { makePanelTransparent } from "@/composables";
 
 // holds the number value of the datetime
 const currentDate = customRef((track, trigger) => ({
@@ -75,6 +78,14 @@ defineProps({
     type: String,
     default: null,
   },
+  hideArrows: {
+    type: Boolean,
+    default: false,
+  },
+  hideInputField: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 /**
@@ -89,8 +100,10 @@ defineProps({
  */
 const attributes = reactive([]);
 
-const store = useSTAcStore();
-const selectedStac = toRef(store, "selectedStac");
+/** @type {import("vue").Ref<HTMLDivElement|null>} */
+const rootRef = ref(null);
+
+const selectedStac = toRef(useSTAcStore(), "selectedStac");
 
 watch(
   selectedStac,
@@ -169,21 +182,22 @@ function jumpDate(reverse) {
   }
 }
 
-// fixes calendar dispalcement on lib mode
-const transform = ref("");
-onMounted(() => {
-  transform.value = document.querySelector("eo-dash")
-    ? "translate3d(50px,-80px,0)"
-    : "translate3d(0px,-80px,0)";
-});
+makePanelTransparent(rootRef);
 </script>
 <style>
+@media (min-width: 960px) {
+  .datePicker {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+  }
+}
 .vc-day-content {
   color: #5e5e5e;
   font-weight: normal;
 }
 
-.vc-popover-content-wrapper {
-  transform: v-bind("transform") !important;
+.vc-highlight-content-solid {
+  color: white !important;
 }
 </style>

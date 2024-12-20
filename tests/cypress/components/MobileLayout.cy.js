@@ -43,7 +43,7 @@ describe("<MobileLayout />", () => {
   });
 
   it("close opened tab", () => {
-    cy.get("#overlay > .close-btn").then(($el) => {
+    cy.get("#overlay > .d-flex > .close-btn").then(($el) => {
       $el[0].click();
     });
     cy.get(".v-slide-group-item--active").should("not.exist");

@@ -200,7 +200,8 @@ export const extractLayerDatetime = (links, currentStep) => {
     controlValues,
     currentStep,
     slider: true,
-    disablePlay: true,
+    play: false,
+    displayFormat: "DD MMMM YYYY",
   };
 };
 
@@ -234,11 +235,16 @@ export const findLayer = (layers, layer) => {
  */
 export const replaceLayer = (currentLayers, oldLayer, newLayers) => {
   const oldLayerIdx = currentLayers.findIndex(
-    (l) => l.properties.id === oldLayer
+    (l) => l.properties.id === oldLayer,
   );
 
   if (oldLayerIdx !== -1) {
-    log.debug("Replacing layer",oldLayer, "with", newLayers.map((l) => l.properties.id));
+    log.debug(
+      "Replacing layer",
+      oldLayer,
+      "with",
+      newLayers.map((l) => l.properties.id),
+    );
     currentLayers.splice(oldLayerIdx, 1, ...newLayers);
     return currentLayers;
   }
@@ -294,7 +300,7 @@ export const createLayerID = (collectionId, itemId, link, projectionCode) => {
   // If we are looking at base layers and overlays we remove the collection and item part
   // as we want to make sure tiles are not reloaded when switching layers
   if (
-  /** @type {string[]} */
+    /** @type {string[]} */
     (link.roles)?.find((r) => ["baselayer", "overlay"].includes(r))
   ) {
     lId = `${linkId ?? ""};:;${projectionCode ?? ""}`;

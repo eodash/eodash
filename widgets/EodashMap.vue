@@ -79,10 +79,9 @@ const eoxMapCompareLayers = ref([
 ]);
 
 const animationOptions = {
-    duration: 1200,
-    easing: inAndOut,
-  };
-
+  duration: 1200,
+  easing: inAndOut,
+};
 
 /** @type {import("vue").Ref<(HTMLElement & Record<string,any> & { map:import("ol").Map }) | null>} */
 const eoxMap = ref(null);

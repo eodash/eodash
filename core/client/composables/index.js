@@ -2,6 +2,7 @@
 // setup functions or vue composition api components https://vuejs.org/guide/reusability/composables
 
 import {
+  activeTemplate,
   currentCompareUrl,
   currentUrl,
   datetime,
@@ -10,11 +11,11 @@ import {
 } from "@/store/states";
 import eodash from "@/eodash";
 import { useTheme } from "vuetify/lib/framework.mjs";
-import { onMounted, onUnmounted, watch } from "vue";
+import { inject, onMounted, onUnmounted, watch } from "vue";
 import { useSTAcStore } from "@/store/stac";
 import log from "loglevel";
+import { eodashKey, eoxLayersKey } from "@/utils/keys";
 import { useEventBus } from "@vueuse/core";
-import { eoxLayersKey } from "@/utils/keys";
 import { posIsSetFromUrl } from "@/utils/states";
 
 /**
@@ -24,7 +25,7 @@ import { posIsSetFromUrl } from "@/utils/states";
  * @param {string} [base=eodash.stacEndpoint] - Base URL, default value is the
  *   root stac catalog. Default is `eodash.stacEndpoint`
  * @returns {import("vue").Ref<string>} - Returns `currentUrl`
- * @see {@link '@/store/States.js'}
+ * @see {@link '@/store/states.js'}
  */
 export const useAbsoluteUrl = (rel = "", base = eodash.stacEndpoint) => {
   if (!rel || rel.includes("http")) {
@@ -53,7 +54,7 @@ export const useAbsoluteUrl = (rel = "", base = eodash.stacEndpoint) => {
  * @param {string} [base=eodash.stacEndpoint] - Base URL, default value is the
  *   root stac catalog. Default is `eodash.stacEndpoint`
  * @returns {import("vue").Ref<string>} - Returns `currentUrl`
- * @see {@link '@/store/States.js'}
+ * @see {@link '@/store/states.js'}
  */
 export const useCompareAbsoluteUrl = (rel = "", base = eodash.stacEndpoint) => {
   if (!rel || rel.includes("http")) {
@@ -120,6 +121,10 @@ export const useURLSearchParametersSync = () => {
         z;
       for (const [key, value] of searchParams) {
         switch (key) {
+          case "template": {
+            activeTemplate.value = value;
+            break;
+          }
           case "indicator": {
             log.debug("Found indicator key in url");
             const { loadSelectedSTAC, stac } = useSTAcStore();
@@ -168,8 +173,13 @@ export const useURLSearchParametersSync = () => {
     }
 
     watch(
-      [indicator, mapPosition, datetime],
-      ([updatedIndicator, updatedMapPosition, updatedDatetime]) => {
+      [indicator, mapPosition, datetime, activeTemplate],
+      ([
+        updatedIndicator,
+        updatedMapPosition,
+        updatedDatetime,
+        updatedTemplate,
+      ]) => {
         if ("URLSearchParams" in window) {
           const searchParams = new URLSearchParams(window.location.search);
           if (updatedIndicator !== "") {
@@ -184,6 +194,9 @@ export const useURLSearchParametersSync = () => {
 
           if (updatedDatetime) {
             searchParams.set("datetime", updatedDatetime.split("T")?.[0] ?? "");
+          }
+          if (updatedTemplate) {
+            searchParams.set("template", updatedTemplate);
           }
           const newRelativePathQuery =
             window.location.pathname + "?" + searchParams.toString();
@@ -205,6 +218,11 @@ export const makePanelTransparent = (root) => {
       eoxItem.classList.remove("bg-surface");
     }
   });
+};
+
+export const useGetTemplates = () => {
+  const eodash = /** @type {import("@/types").Eodash} */ (inject(eodashKey));
+  return "template" in eodash ? [] : Object.keys(eodash.templates);
 };
 
 /**

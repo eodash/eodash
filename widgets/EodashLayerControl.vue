@@ -2,17 +2,19 @@
   <span class="d-flex flex-column fill-height overflow-auto">
     <eox-layercontrol
       v-if="showControls"
+      v-bind="config"
       :for="mapElement"
-      .tools="['datetime', 'info', 'config', 'legend', 'opacity']"
       @datetime:updated="debouncedHandleDateTime"
       class="fill-height"
       toolsAsList="true"
+      style="--eox-background-color: transparent"
       ref="eoxLayercontrol"
     />
   </span>
 </template>
 <script setup>
 import "@eox/layercontrol";
+
 import "@eox/jsonform";
 import "@eox/timecontrol";
 import "color-legend-element";
@@ -29,7 +31,19 @@ const props = defineProps({
     type: String,
     default: "first",
   },
+  tools: {
+    type: Array,
+    default: () => ["datetime", "info", "config", "legend", "opacity"],
+  },
+  cssVars: {
+    type: Object,
+  },
 });
+
+const config = {
+  tools: props.tools,
+  style: props.cssVars,
+};
 
 const { selectedCompareStac, selectedStac } = storeToRefs(useSTAcStore());
 const showControls = computed(() => {
