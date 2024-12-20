@@ -5,13 +5,7 @@ import log from "loglevel";
 /** @param {import("stac-ts").StacLink[]} [links] */
 export function generateFeatures(links) {
   /**
-   * @type {{
-   *   type: string;
-   *   geometry: {
-   *     type: string;
-   *     coordinates: [number, number];
-   *   };
-   * }[]}
+   * @type {import("geojson").Feature[]}
    */
   const features = [];
   links?.forEach((element) => {
@@ -25,6 +19,7 @@ export function generateFeatures(links) {
           type: "Point",
           coordinates: [lon, lat],
         },
+        properties: { id: element.id },
       });
     }
   });

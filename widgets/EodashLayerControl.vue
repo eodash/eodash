@@ -36,10 +36,7 @@ const showControls = computed(() => {
   if (props.map === "second") {
     return mapCompareEl.value !== null && selectedCompareStac.value !== null;
   }
-  if (mapEl.value !== null && selectedStac.value !== null) {
-    return true;
-  }
-  return false;
+  return mapEl.value !== null && selectedStac.value !== null;
 });
 
 const eodashCols =

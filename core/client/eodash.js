@@ -11,9 +11,11 @@ export const eodash = reactive({
   id: "demo",
   stacEndpoint:
     // "https://eodashcatalog.eox.at/test-style/trilateral/catalog.json",
-    "https://gtif-cerulean.github.io/catalog/cerulean/catalog.json",
+    // "https://gtif-cerulean.github.io/catalog/cerulean/catalog.json",
     // "https://esa-eodash.github.io/RACE-catalog/RACE/catalog.json",
     // "https://eurodatacube.github.io/eodash-catalog/RACE/catalog.json",
+    "https://eodashcatalog.eox.at/samplecatalog/samples/catalog.json",
+
   brand: {
     noLayout: true,
     name: "Demo",
@@ -75,26 +77,6 @@ export const eodash = reactive({
           name: "EodashLayerControl",
         },
       },
-      /*
-      {
-        defineWidget: (selectedCompareStac) => {
-          return selectedCompareStac
-            ? {
-                id: Symbol(),
-                title: "Layer Control Comparison",
-                layout: { x: 9, y: 6, w: 3, h: 6 },
-                type: "internal",
-                widget: {
-                  name: "EodashLayerControl",
-                  properties: {
-                    map: "second",
-                  },
-                },
-              }
-            : null;
-        },
-      },
-      */
       {
         defineWidget: (selectedSTAC) => {
           return selectedSTAC
@@ -165,6 +147,21 @@ export const eodash = reactive({
                 type: "internal",
                 widget: {
                   name: "EodashMapBtns",
+                },
+              }
+            : null;
+        },
+      },
+      {
+        defineWidget: (indicator) => {
+          return indicator?.links.some((link) => link.rel === "service")
+            ? {
+                id: "process",
+                layout: { x: 9, y: 6, w: 3, h: 6 },
+                title: "Process",
+                type: "internal",
+                widget: {
+                  name: "EodashProcess",
                 },
               }
             : null;

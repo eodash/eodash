@@ -134,29 +134,8 @@ export class EodashCollection {
     const jsonArray = [];
 
     if (isGeoDB) {
-      const allFeatures = generateFeatures(this.#collectionStac?.links);
-
-      return [
-        {
-          type: "Vector",
-          properties: {
-            id: this.#collectionStac?.id ?? "",
-            title: this.#collectionStac?.title || item.id,
-          },
-          source: {
-            type: "Vector",
-            url: "data:," + encodeURIComponent(JSON.stringify(allFeatures)),
-            format: "GeoJSON",
-          },
-          style: {
-            "circle-radius": 10,
-            "circle-fill-color": "#00417077",
-            "circle-stroke-color": "#004170",
-            "fill-color": "#00417077",
-            "stroke-color": "#004170",
-          },
-        },
-      ];
+      // handled by getGeoDBLayer
+      return [];
     }
 
     // I propose following approach, we "manually" create configurations
@@ -396,5 +375,62 @@ export class EodashCollection {
         // layerDatetime,
       )),
     ];
+  }
+
+  /**
+   * Returns GeoDB layer from a list of EodashCollections
+   *
+   * @param {EodashCollection[]} eodashCollections
+   *
+   **/
+  static getGeoDBLayer(eodashCollections) {
+    const allFeatures = [];
+    for (const collection of eodashCollections) {
+      const isGeoDB = collection.#collectionStac?.endpointtype === "GeoDB";
+      if (!isGeoDB) {
+        continue;
+      }
+      const collectionFeatures = generateFeatures(
+        collection.#collectionStac?.links,
+      ).features;
+      if (collectionFeatures.length) {
+        allFeatures.push(
+          generateFeatures(collection.#collectionStac?.links).features,
+        );
+      }
+    }
+    if (allFeatures.length) {
+      const featureCollection = {
+        type: "FeatureCollection",
+        crs: {
+          type: "name",
+          properties: {
+            name: "EPSG:4326",
+          },
+        },
+        features: allFeatures.flat(),
+      };
+      return {
+        type: "Vector",
+        properties: {
+          id: "geodb-collection",
+          title: "GeoDB Collection",
+        },
+        source: {
+          type: "Vector",
+          url: "data:," + encodeURIComponent(JSON.stringify(featureCollection)),
+          format: "GeoJSON",
+        },
+        style: {
+          "circle-radius": 5,
+          "circle-fill-color": "#00417077",
+          "circle-stroke-color": "#004170",
+          "fill-color": "#00417077",
+          "stroke-color": "#004170",
+        },
+        interactions: [],
+      };
+    }
+    return null;
   }
 }

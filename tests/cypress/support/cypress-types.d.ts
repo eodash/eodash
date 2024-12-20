@@ -2,7 +2,7 @@
 import { vMountComponent as _vMount } from "./component";
 import { mount as _mount } from "cypress/vue";
 
-type VueMountOptions = Parameters<typeof mount<object, object>>["1"] & {
+type VueMountOptions = Parameters<typeof _mount<object, object>>["1"] & {
   vuetify?: import("vuetify/lib/framework.mjs").VuetifyOptions;
   pinia?: import("@pinia/testing").TestingPinia | import("pinia").Pinia;
 };

@@ -45,8 +45,7 @@
 <script setup>
 import { DatePicker as VCDatePicker } from "v-calendar";
 import "v-calendar/style.css";
-import { watch, reactive, ref, customRef, onMounted } from "vue";
-import { storeToRefs } from "pinia";
+import { watch, reactive, ref, customRef, toRef, onMounted } from "vue";
 import { useSTAcStore } from "@/store/stac";
 import { datetime } from "@/store/states";
 import { mdiRayStartArrow, mdiRayEndArrow } from "@mdi/js";
@@ -90,7 +89,8 @@ defineProps({
  */
 const attributes = reactive([]);
 
-const { selectedStac } = storeToRefs(useSTAcStore());
+const store = useSTAcStore();
+const selectedStac = toRef(store, "selectedStac");
 
 watch(
   selectedStac,
