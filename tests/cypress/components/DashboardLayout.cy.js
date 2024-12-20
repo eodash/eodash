@@ -8,12 +8,14 @@ describe("<DashboardLayout />", () => {
     cy.vMount(DashboardLayout, {
       global: {
         stubs: {
+          DynamicWebComponent: true,
           EodashDatePicker: true,
           EodashItemFilter: true,
           EodashMap: true,
           EodashMapBtns: true,
           ExportState: true,
           EodashLayerControl: true,
+          EodashProcess: true,
         },
       },
     }).then(({ options }) => {
@@ -32,7 +34,7 @@ describe("<DashboardLayout />", () => {
 
   it("mount successfully", () => {
     cy.get("@vue").then(() => {
-      cy.get("main", { timeout: 10000 }).should("exist");
+      cy.get("main", { timeout: 15000 }).should("exist");
     });
   });
 

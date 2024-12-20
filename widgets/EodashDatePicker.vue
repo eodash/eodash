@@ -48,13 +48,13 @@
 import { DatePicker as VCDatePicker } from "v-calendar";
 import "v-calendar/style.css";
 import { watch, reactive, ref, customRef, onMounted } from "vue";
-import { storeToRefs } from "pinia";
 import { useSTAcStore } from "@/store/stac";
-import { datetime } from "@/store/States";
+import { datetime } from "@/store/states";
 import { mdiRayStartArrow, mdiRayEndArrow } from "@mdi/js";
 import { eodashCollections } from "@/utils/states";
 import log from "loglevel";
 import { makePanelTransparent } from "@/composables";
+import { storeToRefs } from "pinia";
 
 
 // holds the number value of the datetime

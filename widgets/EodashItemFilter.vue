@@ -93,9 +93,7 @@ const selectIndicator = async (item) => {
     await store.loadSelectedSTAC(item.href);
     emit("select", item);
   } else {
-    // TODO: it is possible to unselect items now
-    // we need to consider how to reset to "default"
-    // if that happens here
+    store.selectedStac = null;
   }
 };
 /**

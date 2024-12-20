@@ -190,7 +190,7 @@ export type MultiTemplates<T extends ExecutionTime = "compiletime"> = Record<
 >;
 
 /** @ignore */
-export type StacEndpoint = `${"https://" | "http://"}${string}/catalog.json`;
+export type StacEndpoint = `${string}/catalog.json`;
 
 /** @group Eodash */
 type ExecutionTime = "runtime" | "compiletime";
@@ -276,7 +276,7 @@ export interface EodashStore {
       code?: number | string | { name: string; def: string },
     ) => Promise<void>;
 
-    /** Change `eox-map` projection from an `EPSG` code */
+    /** Change `eox-map` projection from an EPSG code or a registered projection code */
     changeMapProjection: (
       code?: number | string | { name: string; def: string },
     ) => Promise<void>;
@@ -288,4 +288,31 @@ export interface EodashStore {
   };
 }
 ///////
-export { createEodash, store } from "./main.js";
+
+/** @group WebComponent */
+type EodashConstructor = import("vue").VueElementConstructor<
+  import("vue").ExtractPropTypes<{ config: string }>
+>;
+/**
+ * Eodash Web Component constructor
+ *
+ * @group WebComponent
+ */
+export declare const Eodash: EodashConstructor;
+/**
+ * Registers `eo-dash` as Custom Element in the window
+ *
+ * @group WebComponent
+ */
+export declare function register(): void;
+
+/**
+ * Eodash store @see EodashStore
+ *
+ * @group WebComponent
+ */
+export declare const store: typeof import("@/store").default;
+
+/////
+
+export * from "./main.js";

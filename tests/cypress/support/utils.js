@@ -74,53 +74,35 @@ export const mockEodash = {
         },
       },
       {
-        defineWidget: (selectedSTAC) => {
-          return selectedSTAC
-            ? {
-                id: "Information",
-                title: "Information",
-                layout: { x: 9, y: 0, w: 3, h: 6 },
-                type: "web-component",
-                widget: {
-                  link: async () => await import("@eox/stacinfo"),
-                  properties: {
-                    for: "https://eodashcatalog.eox.at/test-style/trilateral/catalog.json",
-                    allowHtml: "true",
-                  },
-                  tagName: "eox-stacinfo",
-                },
-              }
-            : null;
+        id: "Information",
+        title: "Information",
+        layout: { x: 9, y: 0, w: 3, h: 6 },
+        type: "web-component",
+        widget: {
+          link: async () => await import("@eox/stacinfo"),
+          properties: {
+            for: "https://eodashcatalog.eox.at/test-style/trilateral/catalog.json",
+            allowHtml: "true",
+          },
+          tagName: "eox-stacinfo",
         },
       },
       {
-        defineWidget: (selectedSTAC) => {
-          return selectedSTAC
-            ? {
-                id: "Datepicker",
-                type: "internal",
-                layout: { x: 5, y: 10, w: 1, h: 1 },
-                title: "Datepicker",
-                widget: {
-                  name: "EodashDatePicker",
-                },
-              }
-            : null;
+        id: "Datepicker",
+        type: "internal",
+        layout: { x: 5, y: 10, w: 1, h: 1 },
+        title: "Datepicker",
+        widget: {
+          name: "EodashDatePicker",
         },
       },
       {
-        defineWidget: (selected) => {
-          return selected
-            ? {
-                id: "Buttons",
-                layout: { x: 8, y: 0, w: 1, h: 1 },
-                title: "Buttons",
-                type: "internal",
-                widget: {
-                  name: "EodashMapBtns",
-                },
-              }
-            : null;
+        id: "Buttons",
+        layout: { x: 8, y: 0, w: 1, h: 1 },
+        title: "Buttons",
+        type: "internal",
+        widget: {
+          name: "EodashMapBtns",
         },
       },
     ],

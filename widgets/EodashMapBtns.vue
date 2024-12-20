@@ -37,8 +37,8 @@
 </template>
 <script setup>
 import { makePanelTransparent } from "@/composables";
-import { changeMapProjection, setActiveTemplate } from "@/store/Actions";
-import { availableMapProjection } from "@/store/States";
+import { changeMapProjection, setActiveTemplate } from "@/store/actions";
+import { availableMapProjection } from "@/store/states";
 import { mdiCompare, mdiEarthBox, mdiMapPlus } from "@mdi/js";
 import ExportState from "^/ExportState.vue";
 import { computed, ref } from "vue";
