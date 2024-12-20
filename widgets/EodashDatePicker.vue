@@ -54,7 +54,6 @@ import { mdiRayStartArrow, mdiRayEndArrow } from "@mdi/js";
 import { eodashCollections } from "@/utils/states";
 import log from "loglevel";
 import { makePanelTransparent } from "@/composables";
-import { storeToRefs } from "pinia";
 
 // holds the number value of the datetime
 const currentDate = customRef((track, trigger) => ({
