@@ -76,26 +76,6 @@ export const eodash = reactive({
           name: "EodashLayerControl",
         },
       },
-      /*
-      {
-        defineWidget: (selectedCompareStac) => {
-          return selectedCompareStac
-            ? {
-                id: Symbol(),
-                title: "Layer Control Comparison",
-                layout: { x: 9, y: 6, w: 3, h: 6 },
-                type: "internal",
-                widget: {
-                  name: "EodashLayerControl",
-                  properties: {
-                    map: "second",
-                  },
-                },
-              }
-            : null;
-        },
-      },
-      */
       {
         defineWidget: (selectedSTAC) => {
           return selectedSTAC

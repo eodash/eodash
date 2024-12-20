@@ -8,12 +8,14 @@ describe("<DashboardLayout />", () => {
     cy.vMount(DashboardLayout, {
       global: {
         stubs: {
+          DynamicWebComponent: true,
           EodashDatePicker: true,
           EodashItemFilter: true,
           EodashMap: true,
           EodashMapBtns: true,
           ExportState: true,
           EodashLayerControl: true,
+          EodashProcess: true,
         },
       },
     }).then(({ options }) => {

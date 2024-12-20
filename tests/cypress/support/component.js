@@ -2,9 +2,8 @@ import { mount } from "cypress/vue";
 import { Suspense, h } from "vue";
 import "./commands";
 import { VApp } from "vuetify/components";
-import { registerPlugins } from "./utils";
+import { mockEodash, registerPlugins } from "./utils";
 import { eodashKey } from "@/utils/keys";
-import eodash from "@/eodash";
 import "vuetify/styles";
 /**
  * @param {import("vue").DefineComponent<{}, {}, any> | Element} OriginalComponent
@@ -26,7 +25,7 @@ export const vMountComponent = (OriginalComponent, options = {}) => {
   });
 
   options.global.provide = {
-    [eodashKey]: eodash,
+    [eodashKey]: mockEodash,
   };
 
   return mount(
