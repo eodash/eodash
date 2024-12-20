@@ -1,6 +1,14 @@
 # Changelog
 
 
+## [5.0.0-alpha.2.27](https://github.com/eodash/eodash/compare/eodash-v5.0.0-alpha.2.26...eodash-v5.0.0-alpha.2.27) (2024-12-20)
+
+
+### Features
+
+* Introduce multiple templates ([#145](https://github.com/eodash/eodash/issues/145)) ([9e6aa68](https://github.com/eodash/eodash/commit/9e6aa68d6f21fead0173effcabff68deabe91800))
+* Processing widget ([#110](https://github.com/eodash/eodash/issues/110)) ([e4b1b61](https://github.com/eodash/eodash/commit/e4b1b61f55df73346e01cd147c580060d0efa636))
+
 ## [5.0.0-alpha.2.26](https://github.com/eodash/eodash/compare/eodash-v5.0.0-alpha.2.25...eodash-v5.0.0-alpha.2.26) (2024-11-22)
 
 
