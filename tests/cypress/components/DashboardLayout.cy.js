@@ -34,7 +34,7 @@ describe("<DashboardLayout />", () => {
 
   it("mount successfully", () => {
     cy.get("@vue").then(() => {
-      cy.get("main", { timeout: 150000 }).should("exist");
+      cy.get("main", { timeout: 15000 }).should("exist");
     });
   });
 
