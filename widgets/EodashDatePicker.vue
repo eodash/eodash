@@ -1,15 +1,15 @@
 <template>
-  <div ref="rootRef">
+  <div ref="rootRef" class="datePicker">
     <VCDatePicker
       v-model.number="currentDate"
       :attributes="attributes"
       :masks="masks"
       expanded
-      class="bg-surface"
+      class="bg-surface overflow-auto"
       style="background-color: transparent; max-width: 100%"
     >
       <template #footer>
-        <div class="d-flex flex-row align-center justify-center py-2">
+        <div class="d-flex flex-row align-center justify-center pb-1">
           <v-btn
             v-if="!hideArrows"
             density="compact"
@@ -196,6 +196,13 @@ makePanelTransparent(rootRef);
 
 </script>
 <style>
+@media (min-width: 960px) {
+  .datePicker {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+  }
+}
 .vc-day-content {
   color: #5e5e5e;
   font-weight: normal;
