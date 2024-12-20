@@ -1,5 +1,3 @@
-import { changeMapProjection, registerProjection } from "@/store/Actions";
-import { availableMapProjection } from "@/store/States";
 import { toAbsolute } from "stac-js/src/http.js";
 import axios from "@/plugins/axios";
 import log from "loglevel";
@@ -38,7 +36,10 @@ export function generateFeatures(links) {
   return geojsonObject;
 }
 
-/** @param { import("ol/layer/WebGLTile").Style & { jsonform?: Record<string,any> } & { legend?: Record<string,any> } } [style] */
+/**
+ * Sperates and extracts layerConfig (jsonform schema & legend) from a style json
+ *
+ *  @param { import("ol/layer/WebGLTile").Style & { jsonform?: Record<string,any> } & { legend?: Record<string,any> } } [style] */
 export function extractLayerConfig(style) {
   /** @type {Record<string,unknown> | undefined} */
   let layerConfig = undefined;
@@ -60,42 +61,6 @@ export function extractLayerConfig(style) {
 }
 
 /**
- * checks if there's a projection on the Collection and
- * updates {@link availableMapProjection}
- * @param {import('stac-ts').StacCollection} [STAcCollection]
- */
-export const setMapProjFromCol = async (STAcCollection) => {
-  // if a projection exists on the collection level
-  log.debug("Checking for available map projection in indicator");
-  const projection =
-    /** @type {number | string | {name: string, def: string} | undefined} */
-    (
-      STAcCollection?.["eodash:mapProjection"] ||
-        STAcCollection?.["proj:epsg"] ||
-        STAcCollection?.["eodash:proj4_def"]
-    );
-  if (projection) {
-    log.debug("Projection found", projection);
-    await registerProjection(projection);
-    const projectionCode = getProjectionCode(projection);
-    if (availableMapProjection.value !== projectionCode) {
-      log.debug(
-        "Changing map projection",
-        availableMapProjection.value,
-        projectionCode,
-      );
-      await changeMapProjection(projection);
-    }
-    // set it for `EodashMapBtns`
-    availableMapProjection.value = /** @type {string} */ (projectionCode);
-  } else {
-    // reset to default projection
-    log.debug("Resetting projection to default EPSG:3857");
-    await changeMapProjection((availableMapProjection.value = ""));
-  }
-};
-
-/**
  * Function to extract collection urls from an indicator
  * @param {import("stac-ts").StacCatalog
  *   | import("stac-ts").StacCollection
@@ -103,25 +68,24 @@ export const setMapProjFromCol = async (STAcCollection) => {
  *   | null
  * } stacObject
  * @param {string} basepath
- * @returns {string[]}
  */
 export function extractCollectionUrls(stacObject, basepath) {
+  /** @type {string[]} */
   const collectionUrls = [];
   // Support for two structure types, flat and indicator, simplified here:
   // Flat assumes Catalog-Collection-Item
   // Indicator assumes Catalog-Collection-Collection-Item
-  // TODO: this is not the most stable test approach,
-  // we should discuss potential other approaches
-  if (stacObject?.links && stacObject?.links[1]?.rel === "item") {
+
+  const children = stacObject?.links?.filter(
+    (link) => link.rel === "child" && link.type?.includes("json"),
+  );
+  if (!children?.length) {
     collectionUrls.push(basepath);
-  } else if (stacObject?.links[1]?.rel === "child") {
-    // TODO: Iterate through all children to create collections
-    stacObject.links.forEach((link) => {
-      if (link.rel === "child") {
-        collectionUrls.push(toAbsolute(link.href, basepath));
-      }
-    });
+    return collectionUrls;
   }
+  children.forEach((link) => {
+    collectionUrls.push(toAbsolute(link.href, basepath));
+  });
   return collectionUrls;
 }
 
@@ -138,11 +102,6 @@ export const extractRoles = (properties, linkOrAsset) => {
     }
     if (role === "overlay" || role === "baselayer") {
       properties.group = role;
-      //remove all the properties and replace the random ID with baselayer
-      // provided ID
-      // const [_colId, _itemId, _isAsset, _random, proj] =
-      //   properties.id.split(";:;");
-      // properties.id = ["", "", "", "", linkOrAsset.id, proj].join(";:;");
     }
 
     return properties;
@@ -150,8 +109,10 @@ export const extractRoles = (properties, linkOrAsset) => {
 };
 
 /**
+ * Extracts style JSON from a STAC Item
  * @param {import("stac-ts").StacItem} item
  * @param {string} itemUrl
+ * @returns
  **/
 export const fetchStyle = async (item, itemUrl) => {
   const styleLink = item.links.find((link) => link.rel.includes("style"));
@@ -192,6 +153,7 @@ export const getProjectionCode = (projection) => {
 };
 
 /**
+ * Extracts layercontrol LayerDatetime property from STAC Links
  * @param {import("stac-ts").StacLink[]} [links]
  * @param {string|null} [currentStep]
  **/
@@ -201,6 +163,7 @@ export const extractLayerDatetime = (links, currentStep) => {
   }
 
   // check if links has a datetime value
+  // TODO: consider datetime ranges
   const hasDatetime = links.some((l) => typeof l.datetime === "string");
   if (!hasDatetime) {
     return undefined;
@@ -242,7 +205,7 @@ export const extractLayerDatetime = (links, currentStep) => {
 };
 
 /**
- * Find layer by ID
+ * Find JSON layer by ID
  *  @param {string} layer
  *  @param {Record<string, any>[]} layers
  *  @returns {Record<string,any> | undefined}
@@ -263,16 +226,19 @@ export const findLayer = (layers, layer) => {
 };
 
 /**
+ * Removes the layer with the id provided and injects an array of layers in its position
  * @param {Record<string,any>[]} currentLayers
- * @param {Record<string,any>} oldLayer
- * @param {Record<string,any>[]} newLayers
+ * @param {string} oldLayer - id of the layer to be replaced
+ * @param {Record<string,any>[]} newLayers - array of layers to replace the old layer
  * @returns {Record<string,any>[] | undefined}
  */
 export const replaceLayer = (currentLayers, oldLayer, newLayers) => {
   const oldLayerIdx = currentLayers.findIndex(
-    (l) => l.properties.id === oldLayer.properties.id,
+    (l) => l.properties.id === oldLayer
   );
+
   if (oldLayerIdx !== -1) {
+    log.debug("Replacing layer",oldLayer, "with", newLayers.map((l) => l.properties.id));
     currentLayers.splice(oldLayerIdx, 1, ...newLayers);
     return currentLayers;
   }
@@ -287,8 +253,11 @@ export const replaceLayer = (currentLayers, oldLayer, newLayers) => {
     }
   }
 };
+
 /**
- * @param {import('./eodashSTAC.js').EodashCollection[]} indicators
+ * Extracts the STAC collection which the layer was created from.
+ *
+ * @param {import('../eodashSTAC/EodashCollection.js').EodashCollection[]} indicators
  * @param {import('ol/layer').Layer} layer
  */
 export const getColFromLayer = async (indicators, layer) => {
@@ -304,13 +273,15 @@ export const getColFromLayer = async (indicators, layer) => {
       col.links?.some(
         (link) => link.rel === "item" && link.href.includes(itemId),
       );
-    return isInd ?? false;
+    return isInd;
   });
   return indicators.find((ind) => ind.collectionStac?.id === chosen?.id);
 };
 
 /**
- * generates layer specific ID, related functions are: {@link assignProjID} & {@link extractRoles}
+ * Generates layer specific ID from STAC Links
+ * related functions are: {@link assignProjID} & {@link createAssetID}
+ *
  * @param {string} collectionId
  * @param {string} itemId
  * @param {import('stac-ts').StacLink} link
@@ -323,9 +294,8 @@ export const createLayerID = (collectionId, itemId, link, projectionCode) => {
   // If we are looking at base layers and overlays we remove the collection and item part
   // as we want to make sure tiles are not reloaded when switching layers
   if (
-    link.roles &&
-    // @ts-expect-error it seems roles it not defined for links yet
-    link.roles.find((r) => ["baselayer", "overlay"].includes(r))
+  /** @type {string[]} */
+    (link.roles)?.find((r) => ["baselayer", "overlay"].includes(r))
   ) {
     lId = `${linkId ?? ""};:;${projectionCode ?? ""}`;
   }
@@ -334,7 +304,8 @@ export const createLayerID = (collectionId, itemId, link, projectionCode) => {
 };
 
 /**
- * generates layer specific ID, related functions are: {@link assignProjID} & {@link extractRoles}
+ * Generates layer specific ID from STAC assets, related functions are: {@link assignProjID} & {@link createLayerID}
+ *
  * @param {string} collectionId
  * @param {string} itemId
  * @param {number} index
@@ -347,7 +318,7 @@ export const createAssetID = (collectionId, itemId, index) => {
 };
 
 /**
- *
+ * Assigns projection code to the layer ID
  * @param {import("stac-ts").StacItem} item
  * @param {import("stac-ts").StacLink | import("stac-ts").StacAsset} linkOrAsset
  * @param {string} id - {@link createLayerID} & {@link extractRoles}

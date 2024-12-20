@@ -13,7 +13,7 @@ import {
   getLayers,
   getCompareLayers,
   registerProjection,
-} from "@/store/Actions";
+} from "@/store/actions";
 import { createLayersFromAssets, createLayersFromLinks } from "./createLayers";
 import axios from "@/plugins/axios";
 import log from "loglevel";
@@ -24,17 +24,17 @@ export class EodashCollection {
   /** @type {import("stac-ts").StacCollection | undefined} */
   #collectionStac;
 
-  //  read only
-  get collectionStac() {
-    return this.#collectionStac;
-  }
-
   /**
    * @type {import("stac-ts").StacLink
    *   | import("stac-ts").StacItem
    *   | undefined}
    */
   selectedItem;
+
+  //  read only
+  get collectionStac() {
+    return this.#collectionStac;
+  }
 
   /** @param {string} collectionUrl */
   constructor(collectionUrl) {
@@ -84,9 +84,7 @@ export class EodashCollection {
       this.selectedItem = this.getItem();
 
       if (this.selectedItem) {
-        layersJson = /** @type {Record<string,any>[]} */ (
-          await this.createLayersJson(this.selectedItem)
-        );
+        layersJson = await this.createLayersJson(this.selectedItem);
       } else {
         console.warn(
           "[eodash] the selected collection does not include any items",
@@ -112,7 +110,7 @@ export class EodashCollection {
    * @param {string} title
    * @param {boolean} isGeoDB
    * @param {string} [itemDatetime]
-   * @returns {Promise<Record<string,any>[]>} arrays
+   * @returns {Promise<Record<string,any>[]>} layers
    * */
   async buildJsonArray(item, itemUrl, title, isGeoDB, itemDatetime) {
     log.debug(
@@ -324,12 +322,16 @@ export class EodashCollection {
       currentLayers = getCompareLayers();
     }
 
-    const oldLayer = findLayer(currentLayers, layer);
+    /** @type {string | undefined} */
+    const oldLayerID = findLayer(currentLayers, layer)?.properties.id;
+
+    if (!oldLayerID) {
+      return
+    }
 
     const updatedLayers = replaceLayer(
       currentLayers,
-      /** @type {Record<string,any> & { properties:{ id:string; title:string } } } */
-      (oldLayer),
+      oldLayerID,
       newLayers,
     );
 

@@ -137,7 +137,6 @@ export default {
         type: "internal",
         title: "itemfilter",
         layout: { x: 0, y: 0, w: 3, h: 12 },
-        slidable: true,
         widget: {
           name: "EodashItemFilter",
         },
@@ -147,7 +146,6 @@ export default {
         type: "internal",
         title: "datepicker",
         layout: { x: 5, y: 11, w: 2, h: 1 },
-        slidable: false,
         widget: {
           name: "EodashDatePicker",
           properties: {

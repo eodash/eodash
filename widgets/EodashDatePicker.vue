@@ -47,7 +47,7 @@ import { DatePicker as VCDatePicker } from "v-calendar";
 import "v-calendar/style.css";
 import { watch, reactive, ref, customRef, toRef, onMounted } from "vue";
 import { useSTAcStore } from "@/store/stac";
-import { datetime } from "@/store/States";
+import { datetime } from "@/store/states";
 import { mdiRayStartArrow, mdiRayEndArrow } from "@mdi/js";
 import { eodashCollections } from "@/utils/states";
 import log from "loglevel";

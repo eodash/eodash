@@ -2,10 +2,10 @@ import { isMulti } from "@eox/jsonform/src/custom-inputs/spatial/utils";
 import { nextTick, onMounted, watch } from "vue";
 import mustache from "mustache";
 import axios from "axios";
-import { extractLayerConfig } from "@/utils/helpers";
+import { extractLayerConfig } from "@/eodashSTAC/helpers";
 import log from "loglevel";
-import { getLayers } from "@/store/Actions";
-import { mapEl } from "@/store/States";
+import { getLayers } from "@/store/actions";
+import { mapEl } from "@/store/states";
 
 /**
  * Polls the process status and fetches a result item when the process is successful.
