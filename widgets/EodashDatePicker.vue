@@ -47,7 +47,7 @@
 <script setup>
 import { DatePicker as VCDatePicker } from "v-calendar";
 import "v-calendar/style.css";
-import { watch, reactive, ref, customRef, onMounted } from "vue";
+import { watch, reactive, ref, customRef, toRef } from "vue";
 import { useSTAcStore } from "@/store/stac";
 import { datetime } from "@/store/states";
 import { mdiRayStartArrow, mdiRayEndArrow } from "@mdi/js";
@@ -104,7 +104,7 @@ const attributes = reactive([]);
 /** @type {import("vue").Ref<HTMLDivElement|null>} */
 const rootRef = ref(null);
 
-const { selectedStac } = storeToRefs(useSTAcStore());
+const selectedStac = toRef(useSTAcStore(), "selectedStac");
 
 watch(
   selectedStac,
@@ -183,14 +183,6 @@ function jumpDate(reverse) {
   }
 }
 
-// fixes calendar dispalcement on lib mode
-const transform = ref("");
-onMounted(() => {
-  transform.value = document.querySelector("eo-dash")
-    ? "translate3d(50px,-80px,0)"
-    : "translate3d(0px,-80px,0)";
-});
-
 makePanelTransparent(rootRef);
 </script>
 <style>
@@ -204,10 +196,6 @@ makePanelTransparent(rootRef);
 .vc-day-content {
   color: #5e5e5e;
   font-weight: normal;
-}
-
-.vc-popover-content-wrapper {
-  transform: v-bind("transform") !important;
 }
 
 .vc-highlight-content-solid {
