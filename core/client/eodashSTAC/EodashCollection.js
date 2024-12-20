@@ -326,14 +326,10 @@ export class EodashCollection {
     const oldLayerID = findLayer(currentLayers, layer)?.properties.id;
 
     if (!oldLayerID) {
-      return
+      return;
     }
 
-    const updatedLayers = replaceLayer(
-      currentLayers,
-      oldLayerID,
-      newLayers,
-    );
+    const updatedLayers = replaceLayer(currentLayers, oldLayerID, newLayers);
 
     return updatedLayers;
   }

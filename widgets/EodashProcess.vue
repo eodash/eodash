@@ -32,7 +32,7 @@ import "@eox/jsonform";
 import { onMounted, ref, toRaw } from "vue";
 import { useSTAcStore } from "@/store/stac";
 import { storeToRefs } from "pinia";
-import { mapEl } from "@/store/States";
+import { mapEl } from "@/store/states";
 import { useOnLayersUpdate } from "@/composables";
 import { useEventBus } from "@vueuse/core";
 import { eoxLayersKey } from "@/utils/keys";
@@ -136,5 +136,8 @@ useAutoExec(autoExec, jsonformEl, jsonformSchema, startProcess);
 .process-container {
   height: 100%;
   overflow-y: auto;
+}
+eox-chart {
+  --background-color: transparent;
 }
 </style>

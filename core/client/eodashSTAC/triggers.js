@@ -1,10 +1,10 @@
 /*
  * eodashSTAC helpers that utilizes the app states or actions
  */
-import { changeMapProjection, registerProjection } from '@/store/actions';
-import log  from 'loglevel';
-import { getProjectionCode } from './helpers';
-import { availableMapProjection } from '@/store/states';
+import { changeMapProjection, registerProjection } from "@/store/actions";
+import log from "loglevel";
+import { getProjectionCode } from "./helpers";
+import { availableMapProjection } from "@/store/states";
 
 /**
  * checks if there's a projection on the Collection and

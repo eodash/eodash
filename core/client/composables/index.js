@@ -25,7 +25,7 @@ import { posIsSetFromUrl } from "@/utils/states";
  * @param {string} [base=eodash.stacEndpoint] - Base URL, default value is the
  *   root stac catalog. Default is `eodash.stacEndpoint`
  * @returns {import("vue").Ref<string>} - Returns `currentUrl`
- * @see {@link '@/store/States.js'}
+ * @see {@link '@/store/states.js'}
  */
 export const useAbsoluteUrl = (rel = "", base = eodash.stacEndpoint) => {
   if (!rel || rel.includes("http")) {
@@ -54,7 +54,7 @@ export const useAbsoluteUrl = (rel = "", base = eodash.stacEndpoint) => {
  * @param {string} [base=eodash.stacEndpoint] - Base URL, default value is the
  *   root stac catalog. Default is `eodash.stacEndpoint`
  * @returns {import("vue").Ref<string>} - Returns `currentUrl`
- * @see {@link '@/store/States.js'}
+ * @see {@link '@/store/states.js'}
  */
 export const useCompareAbsoluteUrl = (rel = "", base = eodash.stacEndpoint) => {
   if (!rel || rel.includes("http")) {
@@ -223,7 +223,7 @@ export const makePanelTransparent = (root) => {
 export const useGetTemplates = () => {
   const eodash = /** @type {import("@/types").Eodash} */ (inject(eodashKey));
   return "template" in eodash ? [] : Object.keys(eodash.templates);
-}
+};
 
 /**
  * Listens to the `layers:updated` and `time:updated` events and calls

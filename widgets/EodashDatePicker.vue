@@ -56,7 +56,6 @@ import log from "loglevel";
 import { makePanelTransparent } from "@/composables";
 import { storeToRefs } from "pinia";
 
-
 // holds the number value of the datetime
 const currentDate = customRef((track, trigger) => ({
   get() {
@@ -193,7 +192,6 @@ onMounted(() => {
 });
 
 makePanelTransparent(rootRef);
-
 </script>
 <style>
 @media (min-width: 960px) {
