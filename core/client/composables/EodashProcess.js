@@ -81,21 +81,19 @@ export async function pollProcessStatus({
  * @param {import("vue").Ref<boolean>} autoExec
  * @param {import("vue").Ref<import("@eox/jsonform").EOxJSONForm | null>} jsonformEl
  * @param {import("vue").Ref<Record<string,any> | null>} jsonformSchema
- * @param {import("vue").Ref<boolean>} isProcessed
  * @param {() => Promise<void>} startProcess
  **/
 export function useAutoExec(
   autoExec,
   jsonformEl,
   jsonformSchema,
-  isProcessed,
   startProcess,
 ) {
   /**
    * @param {CustomEvent} _e
    **/
   const onJsonFormChange = async (_e) => {
-      await startProcess();
+    await startProcess();
   };
 
   const addEventListener = async () => {

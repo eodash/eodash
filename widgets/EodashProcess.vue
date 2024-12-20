@@ -125,7 +125,7 @@ const startProcess = async () => {
   });
   isProcessed.value = true;
 };
-useAutoExec(autoExec, jsonformEl, jsonformSchema, isProcessed, startProcess);
+useAutoExec(autoExec, jsonformEl, jsonformSchema, startProcess);
 </script>
 <style>
 .chart {
@@ -136,16 +136,5 @@ useAutoExec(autoExec, jsonformEl, jsonformSchema, isProcessed, startProcess);
 .process-container {
   height: 100%;
   overflow-y: auto;
-}
-
-.slide-enter-active,
-.slide-leave-active {
-  transition: all 0.2s;
-  max-height: 30px;
-}
-
-.slide-enter,
-.slide-leave-to {
-  max-height: 0px;
 }
 </style>

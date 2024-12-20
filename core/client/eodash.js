@@ -173,7 +173,7 @@ export const eodash = reactive({
       },
       {
         defineWidget: (indicator) => {
-          return indicator
+          return indicator?.links.some((link) => link.rel === "service")
             ? {
                 id: "process",
                 layout: { x: 9, y: 6, w: 3, h: 6 },
