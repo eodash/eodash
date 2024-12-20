@@ -1,6 +1,6 @@
 # Branding
 
-eodash allows you to configure your own brand. Check out the [API](/api/client/types/interfaces/Eodash.html#brand) and the guide below to learn more.
+eodash allows you to configure your own brand. Check out the [API](/api/client/types/type-aliases/Eodash.html#brand) and the guide below to learn more.
 
 ### No Layout
 

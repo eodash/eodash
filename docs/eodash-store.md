@@ -1,6 +1,6 @@
 # Eodash Store
 
-eodash fetches the SpatioTemporal Asset Catalog (STAC) endpoint [assigned in the client configuration](/api/client/types/interfaces/Eodash.html#stacendpoint), navigate through its links, and assign values to its store. This store is then exposed to users, giving them the ability to read or modify the state of the dashboard.
+eodash fetches the SpatioTemporal Asset Catalog (STAC) endpoint [assigned in the client configuration](/api/client/types/type-aliases/Eodash.html#stacendpoint), navigate through its links, and assign values to its store. This store is then exposed to users, giving them the ability to read or modify the state of the dashboard.
 
 The store is divided into three main areas. The first area is the reactive `states`. These states are designed to respond to changes in the dashboard and update the interface accordingly, leveraging the [Vue reactivity system](https://vuejs.org/guide/essentials/reactivity-fundamentals).
 
