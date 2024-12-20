@@ -10,9 +10,12 @@ import {
 } from "@/store/States";
 import eodash from "@/eodash";
 import { useTheme } from "vuetify/lib/framework.mjs";
-import { onMounted, watch } from "vue";
+import { onMounted, onUnmounted, watch } from "vue";
 import { useSTAcStore } from "@/store/stac";
 import log from "loglevel";
+import { useEventBus } from "@vueuse/core";
+import { eoxLayersKey } from "@/utils/keys";
+import { posIsSetFromUrl } from "@/utils/states";
 
 /**
  * Creates an absolute URL from a relative link and assignes it to `currentUrl`
@@ -158,6 +161,9 @@ export const useURLSearchParametersSync = () => {
       if (x && y && z) {
         log.debug("Coordinates found, applying map poisition", x, y, z);
         mapPosition.value = [x, y, z];
+        if (!posIsSetFromUrl.value) {
+          posIsSetFromUrl.value = true;
+        }
       }
     }
 
@@ -195,5 +201,23 @@ export const makePanelTransparent = (root) => {
     if (eoxItem?.tagName === "EOX-LAYOUT-ITEM") {
       eoxItem.classList.remove("bg-surface");
     }
+  });
+};
+
+/**
+ * Listens to the `layers:updated` and `time:updated` events and calls
+ *
+ * @param {import("@vueuse/core").EventBusListener<
+ * "layers:updated"|"time:updated",
+ * {layers:Record<string,any>[]| undefined}
+ * >} listener
+ */
+export const useOnLayersUpdate = (listener) => {
+  const layersEvents = useEventBus(eoxLayersKey);
+
+  const unsubscribe = layersEvents.on(listener);
+
+  onUnmounted(() => {
+    unsubscribe();
   });
 };

@@ -10,6 +10,8 @@ describe("<MobileLayout />", () => {
           EodashItemFilter: true,
           EodashMap: true,
           DynamicWebComponent: true,
+          EodashLayerControl: true,
+          EodashProcess: true,
         },
       },
     });

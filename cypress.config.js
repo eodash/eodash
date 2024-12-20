@@ -28,7 +28,10 @@ export default defineConfig({
         define: { "process.env": {} },
         server: {
           warmup: {
-            clientFiles: ["./core/client/**", "./tests/cypress/**"],
+            clientFiles: [
+              "./core/client/**/*.{js,ts,vue}",
+              "./tests/cypress/**/*.{js,ts,vue}",
+            ],
           },
         },
         resolve: {
@@ -43,6 +46,9 @@ export default defineConfig({
             ),
           },
           extensions: [".js", ".json", ".jsx", ".mjs", ".ts", ".tsx", ".vue"],
+        },
+        optimizeDeps: {
+          exclude: ["vuetify"],
         },
         build: {
           outDir: "./.eodash/dist",
