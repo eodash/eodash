@@ -1,6 +1,13 @@
 # Changelog
 
 
+## [5.0.0-rc](https://github.com/eodash/eodash/compare/eodash-v5.0.0-alpha.2.27...eodash-v5.0.0-rc) (2024-12-20)
+
+
+### Miscellaneous Chores
+
+* release 5.0.0-rc ([#151](https://github.com/eodash/eodash/issues/151)) ([8e7a798](https://github.com/eodash/eodash/commit/8e7a798db9b0bb15addec52c5ae92c4320418fae))
+
 ## [5.0.0-alpha.2.27](https://github.com/eodash/eodash/compare/eodash-v5.0.0-alpha.2.26...eodash-v5.0.0-alpha.2.27) (2024-12-20)
 
 
