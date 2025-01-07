@@ -23,16 +23,13 @@
   },
   "exports": {
     ".": {
-      "types": "./dist/types/core/client/types.d.ts",
       "default": "./core/client/main.js"
     },
     "./webcomponent": {
-      "types": "./dist/types/core/client/asWebComponent.d.ts",
       "default": "./dist/client/eo-dash.js"
     },
     "./webcomponent.css": "./dist/client/eo-dash.css",
     "./config": {
-      "types": "./dist/node/types.d.ts",
       "default": "./dist/node/main.js"
     }
   },
@@ -81,6 +78,7 @@
     "commander": "^12.1.0",
     "core-js": "^3.39.0",
     "loglevel": "^1.9.2",
+    "mustache": "^4.2.0",
     "pinia": "^2.3.0",
     "sass": "^1.83.0",
     "stac-js": "^0.0.9",
@@ -105,7 +103,6 @@
     "cypress": "^13.17.0",
     "eslint": "^9.17.0",
     "eslint-plugin-vue": "^9.32.0",
-    "mustache": "^4.2.0",
     "prettier": "^3.4.2",
     "rollup": "^4.28.1",
     "stac-ts": "^1.0.4",
