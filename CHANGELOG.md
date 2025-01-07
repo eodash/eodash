@@ -1,6 +1,13 @@
 # Changelog
 
 
+## [5.0.0-rc.1](https://github.com/eodash/eodash/compare/eodash-v5.0.0-rc...eodash-v5.0.0-rc.1) (2025-01-07)
+
+
+### Bug Fixes
+
+* update time in export state + depenedecy resolution ([#153](https://github.com/eodash/eodash/issues/153)) ([18456b7](https://github.com/eodash/eodash/commit/18456b742538836860ccc73ad7d47357f5721daa))
+
 ## [5.0.0-rc](https://github.com/eodash/eodash/compare/eodash-v5.0.0-alpha.2.27...eodash-v5.0.0-rc) (2024-12-20)
 
 
