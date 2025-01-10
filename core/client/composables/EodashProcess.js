@@ -48,6 +48,11 @@ export async function pollProcessStatus({
         console.log("Result file fetched successfully:", resultResponse.data);
         return resultResponse.data; // Return the json result list
       }
+      if (processReport.status === "failed") {
+        isPolling.value = false;
+        throw new Error("Process failed.", processReport);
+
+      }
 
       // Log the current status if not successful
       console.log(
