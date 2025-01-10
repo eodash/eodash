@@ -85,6 +85,9 @@ const downloadResults = () => {
       url = result;
       //@ts-expect-error TODO
       downloadFile = url.includes("/") ? url.split("/").pop() : url;
+      downloadFile = downloadFile.includes("?")
+        ? downloadFile.split("?")[0]
+        : downloadFile;
     } else {
       result = JSON.stringify(result);
       const blob = new Blob([result], { type: "text" });
@@ -92,7 +95,7 @@ const downloadResults = () => {
       downloadFile = selectedStac.value?.id + "_process_results.json";
     }
     const link = document.createElement("a");
-    if (confirm("Would you like to download the results?")) {
+    if (confirm(`Would you like to download ${downloadFile}?`)) {
       link.href = url;
       link.download = downloadFile;
       link.click();

@@ -51,7 +51,6 @@ export async function pollProcessStatus({
       if (processReport.status === "failed") {
         isPolling.value = false;
         throw new Error("Process failed.", processReport);
-
       }
 
       // Log the current status if not successful
