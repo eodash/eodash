@@ -1,5 +1,5 @@
 import { isMulti } from "@eox/jsonform/src/custom-inputs/spatial/utils";
-import { nextTick, onMounted, ref, watch } from "vue";
+import { nextTick, onMounted, watch } from "vue";
 import mustache from "mustache";
 import axios from "axios";
 import { extractLayerConfig } from "@/eodashSTAC/helpers";
@@ -370,7 +370,7 @@ export async function processGeoTiff(links, jsonformValue, layerId, isPolling) {
  * @param {import("stac-ts").StacLink[] | undefined} links
  * @param {Record<string,any> | undefined} jsonformValue
  * @param {string} specUrl
- * @returns {Promise<[import("vega").Spec|null,Record<string,any>|null]>}
+ * @returns {Promise<[import("@eox/chart").EOxChart["spec"] | null,Record<string,any>|null]>}
  **/
 export async function getChartValues(links, jsonformValue, specUrl) {
   if (!specUrl || !links) return [null, null];
@@ -419,7 +419,7 @@ export async function getChartValues(links, jsonformValue, specUrl) {
  * @param {import("vue").Ref<import("stac-ts").StacCollection | null>} params.selectedStac
  * @param {import("vue").Ref<import("@eox/jsonform").EOxJSONForm | null>} params.jsonformEl
  * @param {import("vue").Ref<Record<string,any>|null>} params.jsonformSchema
- * @param {import("vue").Ref<import("@eox/chart").EOxChart["spec"]>} params.chartSpec
+ * @param {import("vue").Ref<import("@eox/chart").EOxChart["spec"] | null>} params.chartSpec
  * @param {import("vue").Ref<Record<string, any> | null>} params.chartData
  * @param {import("vue").Ref<boolean>} params.isPolling
  * @param {import("vue").Ref<any[]>} params.processResults
@@ -461,8 +461,9 @@ export async function handleProcesses({
     if (Object.keys(chartData.value ?? {}).length) {
       processResults.value.push(chartData.value);
     }
-
-    if (chartSpec.value?.data.values?.length) {
+    //@ts-expect-error we assume that the spec data is of type InlineData
+    if (chartSpec.value?.data?.values?.length) {
+      //@ts-expect-error we assume that the spec data is of type InlineData
       processResults.value.push(chartSpec.value?.data.values);
     }
 
@@ -479,7 +480,7 @@ export async function handleProcesses({
 
     if (geotiffLayer && geotiffLayer.source?.sources.length) {
       processResults.value.push(
-        geotiffLayer.source?.sources?.map((source) => source.url),
+        ...(geotiffLayer.source?.sources?.map((source) => source.url) ?? []),
       );
     }
     // 3. vector geojson
@@ -490,12 +491,16 @@ export async function handleProcesses({
     );
 
     if (vectorLayers?.length) {
-      processResults.value.push(vectorLayers.map((layer) => layer.source?.url));
+      processResults.value.push(
+        ...vectorLayers.map((layer) => layer.source?.url),
+      );
     }
 
     const imageLayers = processImage(serviceLinks, jsonformValue, origBbox);
     if (imageLayers?.length) {
-      processResults.value.push(imageLayers.map((layer) => layer.source?.url));
+      processResults.value.push(
+        ...imageLayers.map((layer) => layer.source?.url),
+      );
     }
 
     log.debug(
@@ -534,8 +539,9 @@ export async function handleProcesses({
  * @param {Object} params
  * @param {import("vue").Ref<boolean>} params.loading
  * @param {import("vue").Ref<boolean>} params.isProcessed
- * @param {import("vue").Ref<import("@eox/chart").EOxChart["spec"]>} params.chartSpec
+ * @param {import("vue").Ref<import("@eox/chart").EOxChart["spec"] | null>} params.chartSpec
  * @param {import("vue").Ref<boolean>} params.isPolling
+ * @param {import("vue").Ref<any[]>} params.processResults
  * @param {import("vue").Ref<Record<string,any>|null>} params.jsonformSchema
  */
 export function resetProcess({
@@ -543,12 +549,14 @@ export function resetProcess({
   isProcessed,
   chartSpec,
   jsonformSchema,
+  processResults,
   isPolling,
 }) {
   loading.value = false;
   isProcessed.value = false;
   isPolling.value = false;
   chartSpec.value = null;
+  processResults.value = [];
   jsonformSchema.value = null;
 }
 
@@ -562,6 +570,7 @@ export function resetProcess({
  * @param {import("vue").Ref<import("@eox/jsonform").EOxJSONForm | null>} params.jsonformEl
  * @param {import("vue").Ref<Record<string,any> | null>} params.jsonformSchema
  * @param {import("vue").Ref<import("@eox/chart").EOxChart["spec"]>} params.chartSpec
+ * @param {import("vue").Ref<any[]>} params.processResults
  * @param {import("vue").Ref<boolean>} params.isProcessed
  * @param {import("vue").Ref<boolean>} params.loading
  * @param {import("vue").Ref<boolean>} params.isPolling
@@ -572,13 +581,21 @@ export async function initProcess({
   jsonformSchema,
   chartSpec,
   isProcessed,
+  processResults,
   loading,
   isPolling,
 }) {
   if (!selectedStac.value) {
     return;
   }
-  resetProcess({ loading, isProcessed, chartSpec, jsonformSchema, isPolling });
+  resetProcess({
+    loading,
+    isProcessed,
+    chartSpec,
+    jsonformSchema,
+    isPolling,
+    processResults,
+  });
   if (selectedStac.value["eodash:jsonform"]) {
     jsonformEl.value?.editor.destroy();
     // wait for the layers to be rendered

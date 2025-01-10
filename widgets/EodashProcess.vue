@@ -92,16 +92,14 @@ const downloadResults = () => {
       downloadFile = selectedStac.value?.id + "_process_results.json";
     }
     const link = document.createElement("a");
-    link.href = url;
-    link.download = downloadFile;
-    // document.body.appendChild(link);
-    link.click();
-    // document.body.removeChild(link);
-    console.log(link);
-
+    if (confirm("Would you like to download the results?")) {
+      link.href = url;
+      link.download = downloadFile;
+      link.click();
+    }
     URL.revokeObjectURL(url);
+    link.remove();
   });
-  console.log("Download results", processResults.value);
 };
 onMounted(async () => {
   // wait for the layers to be rendered
@@ -115,6 +113,7 @@ onMounted(async () => {
         chartSpec,
         isProcessed,
         loading,
+        processResults,
         isPolling,
       });
     });
@@ -126,6 +125,7 @@ onMounted(async () => {
       jsonformSchema,
       chartSpec,
       isProcessed,
+      processResults,
       loading,
       isPolling,
     });
@@ -141,6 +141,7 @@ useOnLayersUpdate(
       jsonformSchema,
       chartSpec,
       isProcessed,
+      processResults,
       loading,
       isPolling,
     }),
@@ -152,6 +153,7 @@ const startProcess = async () => {
     console.warn("[eodash] Form validation failed", errors);
     return;
   }
+  processResults.value = [];
   await handleProcesses({
     jsonformEl,
     jsonformSchema,
