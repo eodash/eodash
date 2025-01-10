@@ -573,7 +573,7 @@ export function resetProcess({
  * @param {import("vue").Ref<import("stac-ts").StacCollection>} params.selectedStac
  * @param {import("vue").Ref<import("@eox/jsonform").EOxJSONForm | null>} params.jsonformEl
  * @param {import("vue").Ref<Record<string,any> | null>} params.jsonformSchema
- * @param {import("vue").Ref<import("@eox/chart").EOxChart["spec"]>} params.chartSpec
+ * @param {import("vue").Ref<import("@eox/chart").EOxChart["spec"] | null>} params.chartSpec
  * @param {import("vue").Ref<any[]>} params.processResults
  * @param {import("vue").Ref<boolean>} params.isProcessed
  * @param {import("vue").Ref<boolean>} params.loading
