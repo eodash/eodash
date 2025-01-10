@@ -1,5 +1,5 @@
 import { isMulti } from "@eox/jsonform/src/custom-inputs/spatial/utils";
-import { nextTick, onMounted, watch } from "vue";
+import { nextTick, onMounted, ref, watch } from "vue";
 import mustache from "mustache";
 import axios from "axios";
 import { extractLayerConfig } from "@/eodashSTAC/helpers";
@@ -422,6 +422,7 @@ export async function getChartValues(links, jsonformValue, specUrl) {
  * @param {import("vue").Ref<import("@eox/chart").EOxChart["spec"]>} params.chartSpec
  * @param {import("vue").Ref<Record<string, any> | null>} params.chartData
  * @param {import("vue").Ref<boolean>} params.isPolling
+ * @param {import("vue").Ref<any[]>} params.processResults
  */
 export async function handleProcesses({
   loading,
@@ -431,6 +432,7 @@ export async function handleProcesses({
   chartSpec,
   chartData,
   isPolling,
+  processResults,
 }) {
   log.debug("Processing...");
   loading.value = true;
@@ -456,22 +458,45 @@ export async function handleProcesses({
       { ...(jsonformValue ?? {}) },
       specUrl,
     );
+    if (Object.keys(chartData.value ?? {}).length) {
+      processResults.value.push(chartData.value);
+    }
+
+    if (chartSpec.value?.data.values?.length) {
+      processResults.value.push(chartSpec.value?.data.values);
+    }
+
     if (chartSpec.value && !("background" in chartSpec.value)) {
       chartSpec.value["background"] = "transparent";
     }
+
     const geotiffLayer = await processGeoTiff(
       serviceLinks,
       jsonformValue,
       selectedStac.value?.id ?? "",
       isPolling,
     );
+
+    if (geotiffLayer && geotiffLayer.source?.sources.length) {
+      processResults.value.push(
+        geotiffLayer.source?.sources?.map((source) => source.url),
+      );
+    }
+    // 3. vector geojson
     const vectorLayers = await processVector(
       serviceLinks,
       jsonformValue,
       selectedStac.value?.id ?? "",
     );
 
+    if (vectorLayers?.length) {
+      processResults.value.push(vectorLayers.map((layer) => layer.source?.url));
+    }
+
     const imageLayers = processImage(serviceLinks, jsonformValue, origBbox);
+    if (imageLayers?.length) {
+      processResults.value.push(imageLayers.map((layer) => layer.source?.url));
+    }
 
     log.debug(
       "rendered layers after processing:",

@@ -11,17 +11,26 @@
       .spec="toRaw(chartSpec)"
       .dataValues="toRaw(chartData)"
     />
-    <span>
-      <v-btn
-        v-if="!autoExec"
-        :loading="loading"
-        style="float: right; margin-right: 20px"
-        @click="startProcess"
-        color="primary"
-      >
-        Execute
-      </v-btn>
-    </span>
+    <v-container>
+      <span>
+        <v-btn
+          v-if="!autoExec"
+          :loading="loading"
+          style="float: right; margin-right: 20px"
+          @click="startProcess"
+          color="primary"
+        >
+          Execute
+        </v-btn>
+        <v-btn
+          v-if="processResults.length && isProcessed"
+          color="primary"
+          @click="downloadResults"
+        >
+          Download
+        </v-btn>
+      </span>
+    </v-container>
   </div>
 </template>
 <script setup>
@@ -62,7 +71,38 @@ const loading = ref(false);
 const autoExec = ref(false);
 
 const isPolling = ref(false);
+/** @type {import("vue").Ref<any[]>} */
+const processResults = ref([]);
 
+const downloadResults = () => {
+  processResults.value.forEach((result) => {
+    if (!result) {
+      return;
+    }
+    let url = "";
+    let downloadFile = "";
+    if (typeof result === "string") {
+      url = result;
+      //@ts-expect-error TODO
+      downloadFile = url.includes("/") ? url.split("/").pop() : url;
+    } else {
+      result = JSON.stringify(result);
+      const blob = new Blob([result], { type: "text" });
+      url = URL.createObjectURL(blob);
+      downloadFile = selectedStac.value?.id + "_process_results.json";
+    }
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = downloadFile;
+    // document.body.appendChild(link);
+    link.click();
+    // document.body.removeChild(link);
+    console.log(link);
+
+    URL.revokeObjectURL(url);
+  });
+  console.log("Download results", processResults.value);
+};
 onMounted(async () => {
   // wait for the layers to be rendered
   if (mapEl.value?.layers.length <= 1) {
@@ -122,6 +162,7 @@ const startProcess = async () => {
     selectedStac,
     isProcessed,
     isPolling,
+    processResults,
   });
   isProcessed.value = true;
 };
