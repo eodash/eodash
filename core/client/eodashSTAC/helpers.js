@@ -383,12 +383,14 @@ export async function mergeGeojsons(geojsonUrls) {
     /** @type {import("ol").Feature[]} */
     features: [],
   };
-  for (const url of geojsonUrls) {
-    /** @type {import("ol/format/GeoJSON.js").GeoJSONFeatureCollection} */
-    const goejson = await axios.get(url).then((resp) => resp.data);
-    //@ts-expect-error TODO
-    merged.features.push(...(goejson.features ?? []));
-  }
+  await Promise.all(
+    geojsonUrls.map((url) =>
+      axios.get(url).then((resp) => {
+        const geojson = resp.data;
+        merged.features.push(...(geojson.features ?? []));
+      }),
+    ),
+  );
 
   return encodeURI(
     "data:application/json;charset=utf-8," + JSON.stringify(merged),
