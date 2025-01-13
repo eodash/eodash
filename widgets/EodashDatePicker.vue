@@ -9,7 +9,7 @@
       style="background-color: transparent; max-width: 100%"
     >
       <template v-if="toggleCalendar" #default="{ inputValue, inputEvents }">
-        <div class="d-flex flex-row align-center justify-center pb-1" style="overflow: hidden; width: 100%;">
+        <div class="bg-surface d-flex flex-row align-center justify-center pb-1" style="overflow: hidden; width: 100%;">
           <v-btn
             v-if="!hideArrows"
             density="compact"
@@ -17,6 +17,7 @@
             v-tooltip:bottom="'Set date to oldest available dataset'"
             variant="text"
             @click="jumpDate(true)"
+            class="py-2"
             style="flex-shrink: 1;"
           >
             <v-icon :icon="[mdiRayEndArrow]" />
@@ -40,6 +41,7 @@
             variant="text"
             v-tooltip:bottom="'Set date to latest available dataset'"
             @click="jumpDate(false)"
+            class="py-2"
             style="flex-shrink: 1;"
           >
             <v-icon :icon="[mdiRayStartArrow]" />
@@ -55,6 +57,7 @@
             v-tooltip:bottom="'Set date to oldest available dataset'"
             variant="text"
             @click="jumpDate(true)"
+            class="py-2"
             style="flex-shrink: 1;"
           >
             <v-icon :icon="[mdiRayEndArrow]" />
@@ -77,6 +80,7 @@
             variant="text"
             v-tooltip:bottom="'Set date to latest available dataset'"
             @click="jumpDate(false)"
+            class="py-2"
             style="flex-shrink: 1;"
           >
             <v-icon :icon="[mdiRayStartArrow]" />
