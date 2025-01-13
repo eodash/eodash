@@ -31,7 +31,7 @@ export class EodashCollection {
    */
   selectedItem;
 
-  /** @type {string[]} */
+  /** @type {import("@/types").EodashStyleJson["tooltip"]} */
   #tooltipProperties = [];
 
   //  read only

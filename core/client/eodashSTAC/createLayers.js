@@ -13,7 +13,7 @@ import log from "loglevel";
  * @param {string} title
  * @param {Record<string,import("stac-ts").StacAsset>} assets
  * @param {import("stac-ts").StacItem } item
- * @param {import("ol/layer/WebGLTile").Style} [style]
+ * @param {import("@/types").EodashStyleJson} [style]
  * @param {Record<string, unknown>} [layerConfig]
  * @param {Record<string, unknown>} [layerDatetime]
  * @param {object | null} [extraProperties]

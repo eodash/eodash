@@ -14,7 +14,7 @@
       .layers="eoxMapLayers"
     >
       <eox-map-tooltip
-        v-if="tooltipProperties.length"
+        v-if="tooltipProperties?.length"
         .propertyTransform="tooltipPropertyTransform"
       />
     </eox-map>
@@ -57,7 +57,7 @@ const props = defineProps({
     default: 4,
   },
 });
-/** @type {import("vue").Ref<string[]>} */
+/** @type {import("vue").Ref<import("@/types").EodashStyleJson["tooltip"]>} */
 const tooltipProperties = ref([]);
 
 const initialCenter = toRaw([
@@ -142,11 +142,22 @@ useUpdateTooltipProperties(eodashCollections, tooltipProperties);
  * @returns {{key:string; value:string} | undefined}
  */
 const tooltipPropertyTransform = (param) => {
-  if (tooltipProperties.value.includes(param.key)) {
-    if (typeof param.value === "object") {
-      param.value = JSON.stringify(param.value);
-    }
-    return param;
+  const tooltipProp = tooltipProperties.value?.find(
+    (prop) => prop.id === param.key,
+  );
+  if (!tooltipProp) {
+    return undefined;
   }
+  if (typeof param.value === "object") {
+    param.value = JSON.stringify(param.value);
+  }
+  if (!isNaN(Number(param.value))) {
+    param.value = Number(param.value).toFixed(4).toString();
+  }
+
+  return {
+    key: tooltipProp.title || tooltipProp.id,
+    value: param.value + " " + (tooltipProp.appendix || ""),
+  };
 };
 </script>
