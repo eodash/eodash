@@ -13,7 +13,7 @@
           <v-btn
             v-if="!hideArrows"
             density="compact"
-            :size="lgAndDown ? 'x-small' : 'medium'"
+            :size="lgAndDown ? 'x-small' : 'large'"
             v-tooltip:bottom="'Set date to oldest available dataset'"
             variant="text"
             @click="jumpDate(true)"
@@ -37,7 +37,7 @@
           <v-btn
             v-if="!hideArrows"
             density="compact"
-            :size="lgAndDown ? 'x-small' : 'medium'"
+            :size="lgAndDown ? 'x-small' : 'large'"
             variant="text"
             v-tooltip:bottom="'Set date to latest available dataset'"
             @click="jumpDate(false)"
