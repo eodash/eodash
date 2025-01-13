@@ -14,7 +14,7 @@
       .layers="eoxMapLayers"
     >
       <eox-map-tooltip
-        v-if="tooltipProperties?.length"
+        v-show="tooltipProperties?.length"
         .propertyTransform="tooltipPropertyTransform"
       />
     </eox-map>
