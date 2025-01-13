@@ -12,7 +12,12 @@
       .center="initialCenter"
       .zoom="initialZoom"
       .layers="eoxMapLayers"
-    />
+    >
+      <eox-map-tooltip
+        v-if="tooltipProperties.length"
+        .propertyTransform="tooltipPropertyTransform"
+      />
+    </eox-map>
     <eox-map
       class="fill-height fill-width overflow-none"
       id="compare"
@@ -30,7 +35,11 @@ import { datetime, mapEl, mapPosition, mapCompareEl } from "@/store/states";
 import { storeToRefs } from "pinia";
 import { useSTAcStore } from "@/store/stac";
 import { eodashCollections, eodashCompareCollections } from "@/utils/states";
-import { useHandleMapMoveEnd, useInitMap } from "@/composables/EodashMap";
+import {
+  useHandleMapMoveEnd,
+  useInitMap,
+  useUpdateTooltipProperties,
+} from "@/composables/EodashMap";
 import { inAndOut } from "ol/easing.js";
 const props = defineProps({
   enableCompare: {
@@ -48,6 +57,8 @@ const props = defineProps({
     default: 4,
   },
 });
+/** @type {import("vue").Ref<string[]>} */
+const tooltipProperties = ref([]);
 
 const initialCenter = toRaw([
   mapPosition.value?.[0] ?? props.center?.[0],
@@ -83,9 +94,9 @@ const animationOptions = {
   easing: inAndOut,
 };
 
-/** @type {import("vue").Ref<(HTMLElement & Record<string,any> & { map:import("ol").Map }) | null>} */
+/** @type {import("vue").Ref<import("@eox/map").EOxMap | null>} */
 const eoxMap = ref(null);
-/** @type {import("vue").Ref<(HTMLElement & Record<string,any> & { map:import("ol").Map }) | null>} */
+/** @type {import("vue").Ref<import("@eox/map").EOxMap | null>} */
 const compareMap = ref(null);
 const { selectedCompareStac } = storeToRefs(useSTAcStore());
 const showCompare = computed(() =>
@@ -125,4 +136,17 @@ onMounted(() => {
     compareMap,
   );
 });
+useUpdateTooltipProperties(eodashCollections, tooltipProperties);
+/**
+ * @param {{key:string; value:string}} param
+ * @returns {{key:string; value:string} | undefined}
+ */
+const tooltipPropertyTransform = (param) => {
+  if (tooltipProperties.value.includes(param.key)) {
+    if (typeof param.value === "object") {
+      param.value = JSON.stringify(param.value);
+    }
+    return param;
+  }
+};
 </script>

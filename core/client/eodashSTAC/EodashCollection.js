@@ -31,6 +31,9 @@ export class EodashCollection {
    */
   selectedItem;
 
+  /** @type {string[]} */
+  #tooltipProperties = [];
+
   //  read only
   get collectionStac() {
     return this.#collectionStac;
@@ -288,6 +291,19 @@ export class EodashCollection {
           return distanceA - distanceB;
         })[0]
       : this.getItems()?.at(-1);
+  }
+
+  async getToolTipProperties() {
+    if (!(this.selectedItem instanceof Item)) {
+      return [];
+    }
+    let styles = await fetchStyle(
+      this.selectedItem,
+      `${this.#collectionUrl}/${this.selectedItem.id}`,
+    );
+    const { tooltip } = styles || { tooltip: [] };
+    this.#tooltipProperties = tooltip ?? [];
+    return this.#tooltipProperties;
   }
 
   /**

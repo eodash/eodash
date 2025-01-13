@@ -41,11 +41,15 @@ export function generateFeatures(links) {
  *
  *  @param { import("ol/layer/WebGLTile").Style & { jsonform?: Record<string,any> } & { legend?: Record<string,any> } } [style] */
 export function extractLayerConfig(style) {
+  if (!style) {
+    return { layerConfig: undefined, style: undefined };
+  }
+  style = { ...style };
   /** @type {Record<string,unknown> | undefined} */
   let layerConfig = undefined;
+
   if (style?.jsonform) {
     layerConfig = { schema: style.jsonform, type: "style" };
-    style = { ...style };
     delete style.jsonform;
     if (style?.legend) {
       layerConfig.legend = style.legend;
@@ -124,7 +128,7 @@ export const fetchStyle = async (item, itemUrl) => {
       url = toAbsolute(styleLink.href, itemUrl);
     }
 
-    /** @type {import("ol/layer/WebGLTile").Style & {jsonform?:Record<string,any>}} */
+    /** @type {import("ol/layer/WebGLTile").Style & {jsonform?:Record<string,any>; tooltip?:string[]; legend?:Record<string,any>}} */
     const styleJson = await axios.get(url).then((resp) => resp.data);
 
     log.debug("fetched styles JSON", JSON.parse(JSON.stringify(styleJson)));

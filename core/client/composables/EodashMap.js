@@ -7,9 +7,10 @@ import { storeToRefs } from "pinia";
 import { useEventBus } from "@vueuse/core";
 import { eoxLayersKey } from "@/utils/keys";
 import { posIsSetFromUrl } from "@/utils/states";
+import { useOnLayersUpdate } from ".";
 /**
  * Holder for previous compare map view as it is overwritten by sync
- * @type { {map:import("ol").View } | null} mapElement
+ * @type { import("ol").View | null} mapElement
  */
 let viewHolder = null;
 
@@ -203,12 +204,12 @@ const createLayersConfig = async (
 /**
  * Initializes the map and updates it based on changes in the selected indicator and datetime,
  *
- * @param {import("vue").Ref<HTMLElement & Record<string,any> | null>} mapElement
+ * @param {import("vue").Ref<import("@eox/map").EOxMap| null>} mapElement
  * @param {import("vue").Ref<import("stac-ts").StacCollection | null>} selectedIndicator
  * @param {EodashCollection[]} eodashCols
  * @param {import("vue").Ref<string>} datetime
  * @param {import("vue").Ref<Record<string,any>[]>} mapLayers
- * @param {import("vue").Ref<HTMLElement & Record<string,any> | null>} partnerMap
+ * @param {import("vue").Ref<import("@eox/map").EOxMap| null>} partnerMap
  */
 export const useInitMap = (
   mapElement,
@@ -260,7 +261,7 @@ export const useInitMap = (
           // Compare map being initialized
           if (selectedCompareStac.value !== null) {
             // save view of compare map
-            viewHolder = mapElement?.value?.map.getView();
+            viewHolder = mapElement?.value?.map.getView() ?? null;
             /** @type {any} */
             (mapElement.value).sync = partnerMap.value;
           }
@@ -341,7 +342,6 @@ export const useInitMap = (
           "Assigned layers",
           JSON.parse(JSON.stringify(layersCollection)),
         );
-
         mapLayers.value = layersCollection;
         // Emit event to update layers
         await nextTick(() => {
@@ -356,5 +356,18 @@ export const useInitMap = (
 
   onUnmounted(() => {
     stopIndicatorWatcher();
+  });
+};
+/**
+ *
+ * @param {EodashCollection[]} eodashCols
+ * @param {import("vue").Ref<string[]>} tooltipProperties
+ */
+export const useUpdateTooltipProperties = (eodashCols, tooltipProperties) => {
+  useOnLayersUpdate(async () => {
+    tooltipProperties.value = [];
+    for (const ec of eodashCols) {
+      tooltipProperties.value.push(...(await ec.getToolTipProperties()));
+    }
   });
 };
