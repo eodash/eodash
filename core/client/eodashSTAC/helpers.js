@@ -378,6 +378,13 @@ export const removeUnneededProperties = (layers) => {
  * @param {string[]} geojsonUrls
  */
 export async function mergeGeojsons(geojsonUrls) {
+  if (!geojsonUrls.length) {
+    return undefined;
+  }
+  if (geojsonUrls.length === 1) {
+    return geojsonUrls[0];
+  }
+
   const merged = {
     type: "FeatureCollection",
     /** @type {import("ol").Feature[]} */

@@ -51,13 +51,12 @@ export async function createLayersFromAssets(
       extractRoles(geoJsonRoles, assets[ast]);
     } else if (assets[ast]?.type === "application/vnd.flatgeobuf") {
       const assetId = createAssetID(collectionId, item.id, idx);
-      const sourceType = "FlatGeoBuf";
-      log.debug(`Creating Vector layer from ${sourceType}`, assetId);
+      log.debug(`Creating Vector layer from FlatGeoBuf`, assetId);
 
       const layer = {
         type: "Vector",
         source: {
-          type: sourceType,
+          type: "FlatGeoBuf",
           url: assets[ast].href,
           format: "GeoJSON",
         },
@@ -88,7 +87,7 @@ export async function createLayersFromAssets(
 
   if (geoJsonSources.length) {
     const assetId = createAssetID(collectionId, item.id, geoJsonIdx);
-    log.debug(`Creating Vector layer`, assetId);
+    log.debug(`Creating Vector layer from GeoJsons`, assetId);
 
     const layer = {
       type: "Vector",
