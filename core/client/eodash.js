@@ -12,9 +12,10 @@ export const eodash = reactive({
   stacEndpoint:
     // "https://eurodatacube.github.io/eodash-catalog/RACE/catalog.json",
     // "https://gtif-cerulean.github.io/catalog/cerulean/catalog.json",
-    "https://eodashcatalog.eox.at/samplecatalog/samples/catalog.json",
-  // "https://eodashcatalog.eox.at/test-style/trilateral/catalog.json",
-  // "https://gtif-cerulean.github.io/catalog/cerulean/catalog.json",
+    // "https://eodashcatalog.eox.at/samplecatalog/samples/catalog.json",
+    // "https://eodashcatalog.eox.at/test-style/trilateral/catalog.json",
+    // "https://gtif-cerulean.github.io/catalog/cerulean/catalog.json",
+    "https://gtif-cerulean.github.io/deside-catalog/deside/catalog.json",
   brand: {
     noLayout: true,
     name: "Demo",

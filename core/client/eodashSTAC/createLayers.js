@@ -5,6 +5,7 @@ import {
   getProjectionCode,
   createLayerID,
   createAssetID,
+  mergeGeojsons,
 } from "./helpers";
 import log from "loglevel";
 
@@ -31,6 +32,9 @@ export async function createLayersFromAssets(
   log.debug("Creating layers from assets");
   let jsonArray = [];
   let geoTIFFSources = [];
+  const geoJsonSources = [];
+  let geoJsonIdx = 0;
+  let geoJsonRoles = {};
   /** @type {number|null} */
   let geoTIFFIdx = null;
 
@@ -41,11 +45,15 @@ export async function createLayersFromAssets(
         assets[ast]?.["proj:epsg"] || assets[ast]?.["eodash:proj4_def"]
       );
     await registerProjection(assetProjection);
-
-    if (assets[ast]?.type === "application/geo+json" || assets[ast]?.type === "application/vnd.flatgeobuf") {
+    if (assets[ast]?.type === "application/geo+json") {
+      geoJsonSources.push(assets[ast].href);
+      geoJsonIdx = idx;
+      extractRoles(geoJsonRoles, assets[ast]);
+    } else if (assets[ast]?.type === "application/vnd.flatgeobuf") {
       const assetId = createAssetID(collectionId, item.id, idx);
-      const sourceType = assets[ast]?.type === "application/geo+json" ? "GeoJSON" : "FlatGeoBuf";
+      const sourceType = "FlatGeoBuf";
       log.debug(`Creating Vector layer from ${sourceType}`, assetId);
+
       const layer = {
         type: "Vector",
         source: {
@@ -76,6 +84,37 @@ export async function createLayersFromAssets(
       geoTIFFIdx = idx;
       geoTIFFSources.push({ url: assets[ast].href });
     }
+  }
+
+  if (geoJsonSources.length) {
+    const assetId = createAssetID(collectionId, item.id, geoJsonIdx);
+    log.debug(`Creating Vector layer`, assetId);
+
+    const layer = {
+      type: "Vector",
+      source: {
+        type: "Vector",
+        url: await mergeGeojsons(geoJsonSources),
+        format: "GeoJSON",
+      },
+      properties: {
+        ...geoJsonRoles,
+        id: assetId,
+        title,
+        layerDatetime,
+        ...(layerConfig && {
+          layerConfig: {
+            ...layerConfig,
+            style,
+          },
+        }),
+      },
+      ...(!style?.variables && { style }),
+    };
+
+    layer.properties = { ...layer.properties, ...(extraProperties ?? {}) };
+
+    jsonArray.push(layer);
   }
 
   if (geoTIFFSources.length && typeof geoTIFFIdx === "number") {

@@ -373,3 +373,24 @@ export const removeUnneededProperties = (layers) => {
   });
   return cloned;
 };
+
+/**
+ * @param {string[]} geojsonUrls
+ */
+export async function mergeGeojsons(geojsonUrls) {
+  const merged = {
+    type: "FeatureCollection",
+    /** @type {import("ol").Feature[]} */
+    features: [],
+  };
+  for (const url of geojsonUrls) {
+    /** @type {import("ol/format/GeoJSON.js").GeoJSONFeatureCollection} */
+    const goejson = await axios.get(url).then((resp) => resp.data);
+    //@ts-expect-error TODO
+    merged.features.push(...(goejson.features ?? []));
+  }
+
+  return encodeURI(
+    "data:application/json;charset=utf-8," + JSON.stringify(merged),
+  );
+}
