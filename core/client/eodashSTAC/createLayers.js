@@ -32,11 +32,13 @@ export async function createLayersFromAssets(
   log.debug("Creating layers from assets");
   let jsonArray = [];
   let geoTIFFSources = [];
-  const geoJsonSources = [];
-  let geoJsonIdx = 0;
-  let geoJsonRoles = {};
   /** @type {number|null} */
   let geoTIFFIdx = null;
+  // let geoJsonLayers = [];
+  let geoJsonIdx = 0;
+
+  const geoJsonSources = [];
+  let geoJsonRoles = {};
 
   for (const [idx, ast] of Object.keys(assets).entries()) {
     // register projection if exists
@@ -49,6 +51,37 @@ export async function createLayersFromAssets(
       geoJsonSources.push(assets[ast].href);
       geoJsonIdx = idx;
       extractRoles(geoJsonRoles, assets[ast]);
+      // const assetId = createAssetID(collectionId, item.id, idx);
+      // log.debug(`Creating Vector layer from GeoJson`, assetId);
+
+      // const layer = {
+      //   type: "Vector",
+      //   source: {
+      //     type: "Vector",
+      //     url: assets[ast].href,
+      //     format: "GeoJSON",
+      //   },
+      //   properties: {
+      //     id: assetId,
+      //     title,
+      //     layerDatetime,
+      //     ...(layerConfig && {
+      //       layerConfig: {
+      //         ...layerConfig,
+      //         style,
+      //       },
+      //     }),
+      //   },
+      //   ...(!style?.variables && { style }),
+      // };
+
+      // extractRoles(layer.properties, assets[ast]);
+
+      // layer.properties = { ...layer.properties, ...(extraProperties ?? {}) };
+
+      // jsonArray.push(layer);
+      // // geoJsonLayers.push(layer)
+      // // geoJsonIdx = idx
     } else if (assets[ast]?.type === "application/vnd.flatgeobuf") {
       const assetId = createAssetID(collectionId, item.id, idx);
       log.debug(`Creating Vector layer from FlatGeoBuf`, assetId);
@@ -85,6 +118,28 @@ export async function createLayersFromAssets(
     }
   }
 
+  // switch (geoJsonLayers.length) {
+  //   case 0:
+  //     break;
+  //    case 1:
+  //     jsonArray.push(geoJsonLayers[0])
+  //     break;
+  //   default:
+  //     jsonArray.push({
+  //       type: "Group",
+  //       properties: {
+  //         id: createAssetID(collectionId, item.id, undefined),
+  //         title: "Vector Group",
+  //         layerControlExpand: true,
+  //         // ...extraProperties,
+  //         ...layerConfig,
+  //         ...layerDatetime
+  //       },
+  //       layers: geoJsonLayers,
+  //     })
+  //     break;
+  // }
+
   if (geoJsonSources.length) {
     const assetId = createAssetID(collectionId, item.id, geoJsonIdx);
     log.debug(`Creating Vector layer from GeoJsons`, assetId);
@@ -115,7 +170,6 @@ export async function createLayersFromAssets(
 
     jsonArray.push(layer);
   }
-
   if (geoTIFFSources.length && typeof geoTIFFIdx === "number") {
     const geotiffSourceID = collectionId + ";:;GeoTIFF";
     log.debug("Creating WebGLTile layer from GeoTIFF", geotiffSourceID);

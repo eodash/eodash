@@ -200,8 +200,9 @@ export const extractLayerDatetime = (links, currentStep) => {
     controlValues,
     currentStep,
     slider: true,
+    navigation: true,
     play: false,
-    displayFormat: "DD MMMM YYYY",
+    displayFormat: "DD.MM.YYYY HH:MM",
   };
 };
 
