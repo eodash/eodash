@@ -70,6 +70,23 @@ export async function createLayersFromAssets(
         },
         ...(!style?.variables && { style }),
       };
+      // add tooltip interaction if style has tooltip
+      if (style?.tooltip) {
+        // @ts-expect-error no type for eox-map layer
+        layer.interactions = [
+          {
+            type: "select",
+            options: {
+              id: "selectInteraction",
+              condition: "pointermove",
+              style: {
+                "stroke-color": "#335267",
+                "stroke-width": 4
+              }
+            }
+          }
+        ];
+      }
 
       extractRoles(layer.properties, assets[ast]);
 
