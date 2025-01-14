@@ -81,10 +81,10 @@ export async function createLayersFromAssets(
               condition: "pointermove",
               style: {
                 "stroke-color": "#335267",
-                "stroke-width": 4
-              }
-            }
-          }
+                "stroke-width": 4,
+              },
+            },
+          },
         ];
       }
 
