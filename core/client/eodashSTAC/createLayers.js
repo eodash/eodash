@@ -51,37 +51,6 @@ export async function createLayersFromAssets(
       geoJsonSources.push(assets[ast].href);
       geoJsonIdx = idx;
       extractRoles(geoJsonRoles, assets[ast]);
-      // const assetId = createAssetID(collectionId, item.id, idx);
-      // log.debug(`Creating Vector layer from GeoJson`, assetId);
-
-      // const layer = {
-      //   type: "Vector",
-      //   source: {
-      //     type: "Vector",
-      //     url: assets[ast].href,
-      //     format: "GeoJSON",
-      //   },
-      //   properties: {
-      //     id: assetId,
-      //     title,
-      //     layerDatetime,
-      //     ...(layerConfig && {
-      //       layerConfig: {
-      //         ...layerConfig,
-      //         style,
-      //       },
-      //     }),
-      //   },
-      //   ...(!style?.variables && { style }),
-      // };
-
-      // extractRoles(layer.properties, assets[ast]);
-
-      // layer.properties = { ...layer.properties, ...(extraProperties ?? {}) };
-
-      // jsonArray.push(layer);
-      // // geoJsonLayers.push(layer)
-      // // geoJsonIdx = idx
     } else if (assets[ast]?.type === "application/vnd.flatgeobuf") {
       const assetId = createAssetID(collectionId, item.id, idx);
       log.debug(`Creating Vector layer from FlatGeoBuf`, assetId);
@@ -117,28 +86,6 @@ export async function createLayersFromAssets(
       geoTIFFSources.push({ url: assets[ast].href });
     }
   }
-
-  // switch (geoJsonLayers.length) {
-  //   case 0:
-  //     break;
-  //    case 1:
-  //     jsonArray.push(geoJsonLayers[0])
-  //     break;
-  //   default:
-  //     jsonArray.push({
-  //       type: "Group",
-  //       properties: {
-  //         id: createAssetID(collectionId, item.id, undefined),
-  //         title: "Vector Group",
-  //         layerControlExpand: true,
-  //         // ...extraProperties,
-  //         ...layerConfig,
-  //         ...layerDatetime
-  //       },
-  //       layers: geoJsonLayers,
-  //     })
-  //     break;
-  // }
 
   if (geoJsonSources.length) {
     const assetId = createAssetID(collectionId, item.id, geoJsonIdx);
