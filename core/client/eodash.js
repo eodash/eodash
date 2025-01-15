@@ -12,9 +12,10 @@ export const eodash = reactive({
   stacEndpoint:
     // "https://eurodatacube.github.io/eodash-catalog/RACE/catalog.json",
     // "https://gtif-cerulean.github.io/catalog/cerulean/catalog.json",
-    "https://eodashcatalog.eox.at/samplecatalog/samples/catalog.json",
-  // "https://eodashcatalog.eox.at/test-style/trilateral/catalog.json",
-  // "https://gtif-cerulean.github.io/catalog/cerulean/catalog.json",
+    // "https://eodashcatalog.eox.at/samplecatalog/samples/catalog.json",
+    // "https://eodashcatalog.eox.at/test-style/trilateral/catalog.json",
+    // "https://gtif-cerulean.github.io/catalog/cerulean/catalog.json",
+    "https://gtif-cerulean.github.io/deside-catalog/deside/catalog.json",
   brand: {
     noLayout: true,
     name: "Demo",
@@ -145,10 +146,9 @@ export const eodash = reactive({
                   widget: {
                     name: "EodashDatePicker",
                     properties: {
-                      hideArrows: true,
-                      hideInputField: true,
                       hintText: `<b>Hint:</b> closest available date is displayed <br />
                             on map (see Analysis Layers)`,
+                      toggleCalendar: true,
                     },
                   },
                 }
@@ -272,10 +272,10 @@ export const eodash = reactive({
           defineWidget: (selectedSTAC) =>
             selectedSTAC?.links.some((l) => l.rel === "service")
               ? {
-                  id: Symbol(),
+                  id: "Processes",
                   type: "internal",
                   title: "Processes",
-                  layout: { x: 0, y: 7, w: 3, h: 5 },
+                  layout: { x: 9, y: 7, w: 3, h: 5 },
                   widget: {
                     name: "EodashProcess",
                   },
