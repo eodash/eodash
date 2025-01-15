@@ -190,7 +190,7 @@ watch(
         ];
         attributes.push({
           key: "id-" + idx.toString() + Math.random().toString(16).slice(2),
-          bar: {
+          dot: {
             style: {
               backgroundColor: wongPalette[idx % wongPalette.length],
             },

@@ -44,7 +44,7 @@ npm run build -- --lib
     ├── core               # CLI & Client source code
     ├── docs               # Documentation files
     ├── tests              # CLI & Client component tests folder
-    ├── widgets            # Vue componenets as internal widgets.
+    ├── widgets            # Vue components as internal widgets.
     ├── public             # Statically served directory
     └── README.md
 

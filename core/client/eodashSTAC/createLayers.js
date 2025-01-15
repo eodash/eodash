@@ -5,6 +5,7 @@ import {
   getProjectionCode,
   createLayerID,
   createAssetID,
+  mergeGeojsons,
 } from "./helpers";
 import log from "loglevel";
 
@@ -33,6 +34,11 @@ export async function createLayersFromAssets(
   let geoTIFFSources = [];
   /** @type {number|null} */
   let geoTIFFIdx = null;
+  // let geoJsonLayers = [];
+  let geoJsonIdx = 0;
+
+  const geoJsonSources = [];
+  let geoJsonRoles = {};
 
   for (const [idx, ast] of Object.keys(assets).entries()) {
     // register projection if exists
@@ -41,19 +47,18 @@ export async function createLayersFromAssets(
         assets[ast]?.["proj:epsg"] || assets[ast]?.["eodash:proj4_def"]
       );
     await registerProjection(assetProjection);
-
-    if (
-      assets[ast]?.type === "application/geo+json" ||
-      assets[ast]?.type === "application/vnd.flatgeobuf"
-    ) {
+    if (assets[ast]?.type === "application/geo+json") {
+      geoJsonSources.push(assets[ast].href);
+      geoJsonIdx = idx;
+      extractRoles(geoJsonRoles, assets[ast]);
+    } else if (assets[ast]?.type === "application/vnd.flatgeobuf") {
       const assetId = createAssetID(collectionId, item.id, idx);
-      const sourceType =
-        assets[ast]?.type === "application/geo+json" ? "Vector" : "FlatGeoBuf";
-      log.debug(`Creating Vector layer from ${sourceType}`, assetId);
+      log.debug(`Creating Vector layer from FlatGeoBuf`, assetId);
+
       const layer = {
         type: "Vector",
         source: {
-          type: sourceType,
+          type: "FlatGeoBuf",
           url: assets[ast].href,
           format: "GeoJSON",
         },
@@ -82,6 +87,36 @@ export async function createLayersFromAssets(
     }
   }
 
+  if (geoJsonSources.length) {
+    const assetId = createAssetID(collectionId, item.id, geoJsonIdx);
+    log.debug(`Creating Vector layer from GeoJsons`, assetId);
+
+    const layer = {
+      type: "Vector",
+      source: {
+        type: "Vector",
+        url: await mergeGeojsons(geoJsonSources),
+        format: "GeoJSON",
+      },
+      properties: {
+        ...geoJsonRoles,
+        id: assetId,
+        title,
+        layerDatetime,
+        ...(layerConfig && {
+          layerConfig: {
+            ...layerConfig,
+            style,
+          },
+        }),
+      },
+      ...(!style?.variables && { style }),
+    };
+
+    layer.properties = { ...layer.properties, ...(extraProperties ?? {}) };
+
+    jsonArray.push(layer);
+  }
   if (geoTIFFSources.length && typeof geoTIFFIdx === "number") {
     const geotiffSourceID = collectionId + ";:;GeoTIFF";
     log.debug("Creating WebGLTile layer from GeoTIFF", geotiffSourceID);
