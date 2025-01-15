@@ -42,9 +42,13 @@ export async function createLayersFromAssets(
       );
     await registerProjection(assetProjection);
 
-    if (assets[ast]?.type === "application/geo+json" || assets[ast]?.type === "application/vnd.flatgeobuf") {
+    if (
+      assets[ast]?.type === "application/geo+json" ||
+      assets[ast]?.type === "application/vnd.flatgeobuf"
+    ) {
       const assetId = createAssetID(collectionId, item.id, idx);
-      const sourceType = assets[ast]?.type === "application/geo+json" ? "GeoJSON" : "FlatGeoBuf";
+      const sourceType =
+        assets[ast]?.type === "application/geo+json" ? "Vector" : "FlatGeoBuf";
       log.debug(`Creating Vector layer from ${sourceType}`, assetId);
       const layer = {
         type: "Vector",

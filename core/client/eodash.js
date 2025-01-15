@@ -271,10 +271,10 @@ export const eodash = reactive({
           defineWidget: (selectedSTAC) =>
             selectedSTAC?.links.some((l) => l.rel === "service")
               ? {
-                  id: Symbol(),
+                  id: "Processes",
                   type: "internal",
                   title: "Processes",
-                  layout: { x: 0, y: 7, w: 3, h: 5 },
+                  layout: { x: 9, y: 7, w: 3, h: 5 },
                   widget: {
                     name: "EodashProcess",
                   },
