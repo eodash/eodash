@@ -145,10 +145,10 @@ onMounted(() => {
 useUpdateTooltipProperties(eodashCollections, tooltipProperties);
 /**
  * @param {{key:string; value:string}} param
- * @returns {{key:string; value:string} | undefined}
+ * @returns {{key:string; value?:string} | undefined}
  */
 const tooltipPropertyTransform = (param) => {
-  /** @type {{key:string; value:string}[]} */
+  /** @type {typeof tooltipProperties.value} */
   const updatedProperties = JSON.parse(
     mustache.render(JSON.stringify(tooltipProperties.value), {
       ...(layerControlFormValue.value ?? {}),
