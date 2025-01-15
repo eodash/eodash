@@ -15,7 +15,8 @@ export const eodash = reactive({
     // "https://eodashcatalog.eox.at/samplecatalog/samples/catalog.json",
     // "https://eodashcatalog.eox.at/test-style/trilateral/catalog.json",
     // "https://gtif-cerulean.github.io/catalog/cerulean/catalog.json",
-    "https://gtif-cerulean.github.io/deside-catalog/deside/catalog.json",
+    // "https://gtif-cerulean.github.io/deside-catalog/deside/catalog.json",
+    "https://gtif-cerulean.github.io/cerulean-catalog/cerulean/catalog.json",
   brand: {
     noLayout: true,
     name: "Demo",

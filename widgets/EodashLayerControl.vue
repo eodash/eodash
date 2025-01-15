@@ -9,6 +9,7 @@
       toolsAsList="true"
       style="--eox-background-color: transparent"
       ref="eoxLayercontrol"
+      @layerConfig:change="onLayerConfigChange"
     />
   </span>
 </template>
@@ -22,7 +23,11 @@ import "color-legend-element";
 import { computed, ref } from "vue";
 import { mapEl, mapCompareEl } from "@/store/states";
 import { getColFromLayer } from "@/eodashSTAC/helpers";
-import { eodashCollections, eodashCompareCollections } from "@/utils/states";
+import {
+  eodashCollections,
+  eodashCompareCollections,
+  layerControlFormValue,
+} from "@/utils/states";
 import { storeToRefs } from "pinia";
 import { useSTAcStore } from "@/store/stac";
 
@@ -108,4 +113,11 @@ const debouncedHandleDateTime = (evt) => {
   }, 500);
 };
 // ------
+/**
+ *
+ * @param {Event & {detail:{layer:import("ol/layer").Layer;jsonformValue:Record<string,any>}}} evt
+ */
+const onLayerConfigChange = (evt) => {
+  layerControlFormValue.value = evt.detail.jsonformValue;
+};
 </script>

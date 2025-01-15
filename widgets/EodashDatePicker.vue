@@ -9,7 +9,10 @@
       style="background-color: transparent; max-width: 100%"
     >
       <template v-if="toggleCalendar" #default="{ inputValue, inputEvents }">
-        <div class="bg-surface d-flex flex-row align-center justify-center pb-1" style="overflow: hidden; width: 100%;">
+        <div
+          class="bg-surface d-flex flex-row align-center justify-center pb-1"
+          style="overflow: hidden; width: 100%"
+        >
           <v-btn
             v-if="!hideArrows"
             density="compact"
@@ -18,20 +21,26 @@
             variant="text"
             @click="jumpDate(true)"
             class="py-2"
-            style="flex-shrink: 1;"
+            style="flex-shrink: 1"
           >
             <v-icon :icon="[mdiRayEndArrow]" />
           </v-btn>
           <div
             class="flex rounded-lg border border-gray-300 dark:border-gray-600"
-            style="margin: 2px; min-width: 0;"
+            style="margin: 2px; min-width: 0"
           >
             <input
               v-if="!hideInputField"
               :value="inputValue"
               v-on="inputEvents"
               class="flex-grow px-1 py-1 dark:bg-gray-700"
-              style="margin: 1px; width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"
+              style="
+                margin: 1px;
+                width: 100%;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+              "
             />
           </div>
           <v-btn
@@ -42,14 +51,17 @@
             v-tooltip:bottom="'Set date to latest available dataset'"
             @click="jumpDate(false)"
             class="py-2"
-            style="flex-shrink: 1;"
+            style="flex-shrink: 1"
           >
             <v-icon :icon="[mdiRayStartArrow]" />
           </v-btn>
         </div>
       </template>
       <template v-else #footer>
-        <div class="d-flex flex-row align-center justify-center pb-1" style="overflow: hidden; width: 100%;">
+        <div
+          class="d-flex flex-row align-center justify-center pb-1"
+          style="overflow: hidden; width: 100%"
+        >
           <v-btn
             v-if="!hideArrows"
             density="compact"
@@ -58,19 +70,25 @@
             variant="text"
             @click="jumpDate(true)"
             class="py-2"
-            style="flex-shrink: 1;"
+            style="flex-shrink: 1"
           >
             <v-icon :icon="[mdiRayEndArrow]" />
           </v-btn>
           <div
             class="flex rounded-lg border border-gray-300 dark:border-gray-600"
-            style="margin: 2px; min-width: 0;"
+            style="margin: 2px; min-width: 0"
           >
             <input
               v-if="!hideInputField"
               :value="new Date(currentDate).toLocaleDateString()"
               class="flex-grow px-1 py-1 dark:bg-gray-700"
-              style="margin: 1px; width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"
+              style="
+                margin: 1px;
+                width: 100%;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+              "
             />
           </div>
           <v-btn
@@ -81,7 +99,7 @@
             v-tooltip:bottom="'Set date to latest available dataset'"
             @click="jumpDate(false)"
             class="py-2"
-            style="flex-shrink: 1;"
+            style="flex-shrink: 1"
           >
             <v-icon :icon="[mdiRayStartArrow]" />
           </v-btn>
@@ -92,7 +110,7 @@
 </template>
 <script setup>
 import { DatePicker as VCDatePicker } from "v-calendar";
-import { useDisplay } from 'vuetify'
+import { useDisplay } from "vuetify";
 import "v-calendar/style.css";
 import { watch, reactive, ref, customRef, toRef, onMounted } from "vue";
 import { useSTAcStore } from "@/store/stac";
@@ -102,7 +120,7 @@ import { eodashCollections } from "@/utils/states";
 import log from "loglevel";
 import { makePanelTransparent } from "@/composables";
 
-const { lgAndDown } = useDisplay()
+const { lgAndDown } = useDisplay();
 
 // holds the number value of the datetime
 const currentDate = customRef((track, trigger) => ({
@@ -137,8 +155,8 @@ defineProps({
   },
   toggleCalendar: {
     type: Boolean,
-    default: false
-  }
+    default: false,
+  },
 });
 
 /**

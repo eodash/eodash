@@ -34,13 +34,19 @@ import { computed, onMounted, ref, toRaw } from "vue";
 import { datetime, mapEl, mapPosition, mapCompareEl } from "@/store/states";
 import { storeToRefs } from "pinia";
 import { useSTAcStore } from "@/store/stac";
-import { eodashCollections, eodashCompareCollections } from "@/utils/states";
+import {
+  eodashCollections,
+  eodashCompareCollections,
+  layerControlFormValue,
+} from "@/utils/states";
 import {
   useHandleMapMoveEnd,
   useInitMap,
   useUpdateTooltipProperties,
 } from "@/composables/EodashMap";
 import { inAndOut } from "ol/easing.js";
+import mustache from "mustache";
+
 const props = defineProps({
   enableCompare: {
     type: Boolean,
@@ -142,9 +148,14 @@ useUpdateTooltipProperties(eodashCollections, tooltipProperties);
  * @returns {{key:string; value:string} | undefined}
  */
 const tooltipPropertyTransform = (param) => {
-  const tooltipProp = tooltipProperties.value?.find(
-    (prop) => prop.id === param.key,
+  /** @type {{key:string; value:string}[]} */
+  const updatedProperties = JSON.parse(
+    mustache.render(JSON.stringify(tooltipProperties.value), {
+      ...(layerControlFormValue.value ?? {}),
+    }),
   );
+
+  const tooltipProp = updatedProperties?.find((prop) => prop.id === param.key);
   if (!tooltipProp) {
     return undefined;
   }

@@ -20,3 +20,6 @@ export const eodashCompareCollections = shallowReactive([]);
 
 /** whether the map postion was set in URL params on first load */
 export const posIsSetFromUrl = ref(false);
+
+/** @type {import("vue").Ref<Record<string,any>|undefined>} */
+export const layerControlFormValue = ref({});
