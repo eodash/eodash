@@ -146,10 +146,9 @@ export const eodash = reactive({
                   widget: {
                     name: "EodashDatePicker",
                     properties: {
-                      hideArrows: true,
-                      hideInputField: true,
                       hintText: `<b>Hint:</b> closest available date is displayed <br />
                             on map (see Analysis Layers)`,
+                      toggleCalendar: true,
                     },
                   },
                 }
