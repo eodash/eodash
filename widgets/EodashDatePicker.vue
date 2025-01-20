@@ -1,6 +1,7 @@
 <template>
   <div ref="rootRef" class="datePicker">
     <VCDatePicker
+      ref="datePicker"
       v-model.number="currentDate"
       :attributes="attributes"
       :masks="masks"
@@ -121,6 +122,7 @@ import {
   toRef,
   onMounted,
   computed,
+  useTemplateRef,
 } from "vue";
 import { useSTAcStore } from "@/store/stac";
 import { datetime } from "@/store/states";
@@ -130,6 +132,10 @@ import log from "loglevel";
 import { makePanelTransparent } from "@/composables";
 
 const { lgAndDown } = useDisplay();
+
+const rootEl = useTemplateRef("rootRef");
+
+const datePickerEl = useTemplateRef("datePicker");
 
 // holds the number value of the datetime
 const currentDate = customRef((track, trigger) => ({
@@ -141,7 +147,13 @@ const currentDate = customRef((track, trigger) => ({
   set(num) {
     trigger();
     log.debug("Datepicker setting currentDate", datetime.value);
-    datetime.value = new Date(num).toISOString();
+    const date = new Date(num);
+    datetime.value = date.toISOString();
+    //@ts-expect-error supports move method https://vcalendar.io/datepicker/basics.html#basics
+    datePickerEl.value?.move({
+      month: date.getMonth() + 1,
+      year: date.getFullYear(),
+    });
   },
 }));
 
@@ -201,9 +213,6 @@ defineProps({
  * >}
  */
 const attributes = reactive([]);
-
-/** @type {import("vue").Ref<HTMLDivElement|null>} */
-const rootRef = ref(null);
 
 const selectedStac = toRef(useSTAcStore(), "selectedStac");
 
@@ -286,7 +295,7 @@ onMounted(() => {
     : "translate3d(0px,-80px,0)";
 });
 
-makePanelTransparent(rootRef);
+makePanelTransparent(rootEl);
 </script>
 <style>
 @media (min-width: 960px) {
