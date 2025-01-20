@@ -361,14 +361,15 @@ export const useInitMap = (
 /**
  *
  * @param {EodashCollection[]} eodashCols
- * @param {import("vue").Ref<import("@/types").EodashStyleJson["tooltip"]>} tooltipProperties
+ * @param {import("vue").Ref<Exclude<import("@/types").EodashStyleJson["tooltip"],undefined>>} tooltipProperties
  */
 export const useUpdateTooltipProperties = (eodashCols, tooltipProperties) => {
   useOnLayersUpdate(async () => {
-    tooltipProperties.value = [];
+    const tooltips = [];
     for (const ec of eodashCols) {
-      tooltipProperties.value.push(...(await ec.getToolTipProperties()));
+      tooltips.push(...(await ec.getToolTipProperties()));
     }
+    tooltipProperties.value = tooltips;
     log.debug("Updated tooltip properties", tooltipProperties.value);
   });
 };

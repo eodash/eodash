@@ -14,7 +14,7 @@
       .layers="eoxMapLayers"
     >
       <eox-map-tooltip
-        v-show="tooltipProperties?.length"
+        :style="tooltipStyles"
         .propertyTransform="tooltipPropertyTransform"
       />
     </eox-map>
@@ -63,7 +63,8 @@ const props = defineProps({
     default: 4,
   },
 });
-/** @type {import("vue").Ref<import("@/types").EodashStyleJson["tooltip"]>} */
+
+/** @type {import("vue").Ref<Exclude<import("@/types").EodashStyleJson["tooltip"], undefined>>} */
 const tooltipProperties = ref([]);
 
 const initialCenter = toRaw([
@@ -142,7 +143,12 @@ onMounted(() => {
     compareMap,
   );
 });
+
 useUpdateTooltipProperties(eodashCollections, tooltipProperties);
+
+const tooltipStyles = computed(() => ({
+  visibility: tooltipProperties.value.length ? "visible" : "hidden",
+}));
 /**
  * @param {{key:string; value:string}} param
  * @returns {{key:string; value?:string} | undefined}
