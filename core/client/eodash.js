@@ -160,7 +160,6 @@ export const eodash = reactive({
                     properties: {
                       hintText: `<b>Hint:</b> closest available date is displayed <br />
                             on map (see Analysis Layers)`,
-                      toggleCalendar: true,
                     },
                   },
                 }
@@ -259,6 +258,7 @@ export const eodash = reactive({
                     properties: {
                       hintText: `<b>Hint:</b> closest available date is displayed <br />
                             on map (see Analysis Layers)`,
+                      toggleCalendar: true,
                     },
                   },
                 }
@@ -431,6 +431,7 @@ export const eodash = reactive({
                     properties: {
                       hintText: `<b>Hint:</b> closest available date is displayed <br />
                                 on map (see Analysis Layers)`,
+                      toggleCalendar: true,
                     },
                   },
                 }
