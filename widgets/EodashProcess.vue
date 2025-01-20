@@ -1,5 +1,5 @@
 <template>
-  <div class="process-container">
+  <div ref="container" class="process-container">
     <eox-jsonform
       v-if="jsonformSchema"
       ref="jsonformEl"
@@ -10,6 +10,7 @@
       v-if="isProcessed && chartSpec"
       .spec="toRaw(chartSpec)"
       .dataValues="toRaw(chartData)"
+      :style="chartStyles"
     />
     <v-container>
       <span>
@@ -38,7 +39,7 @@ import "@eox/chart";
 import "@eox/drawtools";
 import "@eox/jsonform";
 
-import { onMounted, ref, toRaw } from "vue";
+import { computed, onMounted, ref, toRaw, useTemplateRef } from "vue";
 import { useSTAcStore } from "@/store/stac";
 import { storeToRefs } from "pinia";
 import { mapEl } from "@/store/states";
@@ -66,6 +67,9 @@ const jsonformSchema = ref(null);
 
 /** @type {import("vue").Ref<import("@eox/jsonform").EOxJSONForm | null>} */
 const jsonformEl = ref(null);
+
+const containerEl = useTemplateRef("container");
+
 const loading = ref(false);
 
 const autoExec = ref(false);
@@ -172,13 +176,22 @@ const startProcess = async () => {
   isProcessed.value = true;
 };
 useAutoExec(autoExec, jsonformEl, jsonformSchema, startProcess);
+
+const chartStyles = computed(() => {
+  /** @type {Record<string,string> }*/
+  const styles = {};
+  if (!chartSpec.value?.["height"]) {
+    styles["height"] =
+      Math.max(
+        (containerEl.value?.offsetHeight ?? 0) -
+          (jsonformEl.value?.offsetHeight ?? 0),
+        200,
+      ) + "px";
+  }
+  return styles;
+});
 </script>
 <style>
-.chart {
-  height: 400px;
-  width: 100%;
-}
-
 .process-container {
   height: 100%;
   overflow-y: auto;
