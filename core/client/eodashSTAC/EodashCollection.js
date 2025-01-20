@@ -31,6 +31,9 @@ export class EodashCollection {
    */
   selectedItem;
 
+  /** @type {string | undefined} */
+  color;
+
   //  read only
   get collectionStac() {
     return this.#collectionStac;
@@ -179,6 +182,10 @@ export class EodashCollection {
           layerLegend: this.#collectionStac["eox:colorlegend"],
         };
       }
+      extraProperties = {
+        ...extraProperties,
+        ...(this.color && { color: this.color }),
+      };
       const links = await createLayersFromLinks(
         this.#collectionStac?.id ?? "",
         title,
@@ -220,18 +227,6 @@ export class EodashCollection {
       );
       jsonArray.push(json);
     }
-
-    const bankWongPalette = [
-      "#009E73",
-      "#0072B2",
-      "#E69F00",
-      "#CC79A7",
-      "#56B4E9",
-      "#D55E00",
-    ];
-
-    // Set the `color` property for each layer
-    jsonArray.forEach((layer, i) => layer.color = bankWongPalette[i]);
 
     return jsonArray;
   }

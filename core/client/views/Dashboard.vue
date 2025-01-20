@@ -35,7 +35,9 @@ const eodash = await useEodashRuntime(props.config);
 
 useURLSearchParametersSync();
 
-const theme = useUpdateTheme("dashboardTheme", eodash.brand?.theme);
+const theme = useUpdateTheme("dashboardTheme", {
+  ...(eodash.brand?.theme ?? {}),
+});
 theme.global.name.value = "dashboardTheme";
 
 await loadFont(

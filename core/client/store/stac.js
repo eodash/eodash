@@ -5,7 +5,11 @@ import { useAbsoluteUrl, useCompareAbsoluteUrl } from "@/composables/index";
 import { eodashKey } from "@/utils/keys";
 import { indicator } from "@/store/states";
 import { extractCollectionUrls } from "@/eodashSTAC/helpers";
-import { eodashCollections, eodashCompareCollections } from "@/utils/states";
+import {
+  eodashCollections,
+  eodashCompareCollections,
+  collectionsPalette,
+} from "@/utils/states";
 import { EodashCollection } from "@/eodashSTAC/EodashCollection";
 import log from "loglevel";
 
@@ -92,9 +96,10 @@ export const useSTAcStore = defineStore("stac", () => {
         );
 
         await Promise.all(
-          collectionUrls.map((cu) => {
+          collectionUrls.map((cu, idx) => {
             const ec = new EodashCollection(cu);
             ec.fetchCollection();
+            ec.color = collectionsPalette[idx % collectionsPalette.length];
             return ec;
           }),
         ).then((collections) => {

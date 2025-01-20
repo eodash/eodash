@@ -1,3 +1,5 @@
+import log from "loglevel";
+import { collectionsPalette } from "./states";
 /**
  * Loads font in the app using `webfontloader`
  *
@@ -48,4 +50,14 @@ export const copyToClipBoard = async (text, showIcon) => {
   setTimeout(() => {
     showIcon.value = false;
   }, 2000);
+};
+
+/**
+ * Sets the color palette for STAC indicators
+ * @param {string[]} colors
+ **/
+export const setCollectionsPalette = (colors) => {
+  log.debug("Setting collections color palette", colors);
+  collectionsPalette.splice(0, collectionsPalette.length);
+  collectionsPalette.push(...colors);
 };
