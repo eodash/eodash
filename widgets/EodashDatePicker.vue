@@ -80,7 +80,8 @@
           >
             <input
               v-if="!hideInputField"
-              :value="new Date(currentDate).toLocaleDateString()"
+              :value="maskedCurrentDate"
+              @change="onInputChange"
               class="flex-grow px-1 py-1 dark:bg-gray-700"
               style="
                 margin: 1px;
@@ -112,7 +113,15 @@
 import { DatePicker as VCDatePicker } from "v-calendar";
 import { useDisplay } from "vuetify";
 import "v-calendar/style.css";
-import { watch, reactive, ref, customRef, toRef, onMounted } from "vue";
+import {
+  watch,
+  reactive,
+  ref,
+  customRef,
+  toRef,
+  onMounted,
+  computed,
+} from "vue";
 import { useSTAcStore } from "@/store/stac";
 import { datetime } from "@/store/states";
 import { mdiRayStartArrow, mdiRayEndArrow } from "@mdi/js";
@@ -139,6 +148,28 @@ const currentDate = customRef((track, trigger) => ({
 const masks = ref({
   input: "YYYY-MM-DD",
 });
+
+/** @param {Date} date */
+const formatDate = (date) => {
+  const years = date.getFullYear();
+  const month = date.getMonth() + 1;
+  const day = date.getDate();
+  return `${years}-${month < 10 ? "0" + month : month}-${
+    day < 10 ? "0" + day : day
+  }`;
+};
+/**
+ *
+ * @param e {Event}
+ */
+const onInputChange = (e) => {
+  currentDate.value = new Date(
+    /** @type {HTMLInputElement} */ (e.target)?.value,
+  ).getTime();
+};
+const maskedCurrentDate = computed(() =>
+  formatDate(new Date(currentDate.value)),
+);
 
 defineProps({
   hintText: {
