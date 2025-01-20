@@ -35,7 +35,6 @@ export default createEodash({
              type: "internal",
              title: "datepicker",
              layout: { x: 5, y: 11, w: 2, h: 1 },
-             slidable: false,
              widget: {
                name: "EodashDatePicker",
                properties: {

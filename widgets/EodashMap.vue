@@ -7,8 +7,10 @@
       class="fill-height fill-width overflow-none"
       slot="first"
       ref="eoxMap"
-      .config="eoxMapConfig"
       id="main"
+      .animationOptions="animationOptions"
+      .center="initialCenter"
+      .zoom="initialZoom"
       .layers="eoxMapLayers"
     />
     <eox-map
@@ -16,28 +18,42 @@
       id="compare"
       slot="second"
       ref="compareMap"
-      .config="eoxCompareMapConfig"
       .layers="eoxMapCompareLayers"
     />
   </eox-map-compare>
 </template>
 <script setup>
 import "@eox/map";
-import "@eox/map/dist/eox-map-advanced-layers-and-sources.js";
-import { computed, onMounted, ref } from "vue";
-import { datetime, mapEl, mapPosition, mapCompareEl } from "@/store/States";
+import "@eox/map/src/plugins/advancedLayersAndSources";
+import { computed, onMounted, ref, toRaw } from "vue";
+import { datetime, mapEl, mapPosition, mapCompareEl } from "@/store/states";
 import { storeToRefs } from "pinia";
 import { useSTAcStore } from "@/store/stac";
 import { eodashCollections, eodashCompareCollections } from "@/utils/states";
 import { useHandleMapMoveEnd, useInitMap } from "@/composables/EodashMap";
-
+import { inAndOut } from "ol/easing.js";
 const props = defineProps({
   enableCompare: {
     type: Boolean,
     default: false,
   },
+  /** @type {import("vue").PropType<[number,number]>} */
+  center: {
+    //@ts-expect-error todo
+    type: Array,
+    default: () => [15, 48],
+  },
+  zoom: {
+    type: Number,
+    default: 4,
+  },
 });
 
+const initialCenter = toRaw([
+  mapPosition.value?.[0] ?? props.center?.[0],
+  mapPosition.value?.[1] ?? props.center?.[1],
+]);
+const initialZoom = toRaw(mapPosition.value?.[2] ?? props.zoom);
 /** @type {import("vue").Ref<Record<string,any>[]>} */
 const eoxMapLayers = ref([
   {
@@ -62,32 +78,15 @@ const eoxMapCompareLayers = ref([
   },
 ]);
 
+const animationOptions = {
+  duration: 1200,
+  easing: inAndOut,
+};
+
 /** @type {import("vue").Ref<(HTMLElement & Record<string,any> & { map:import("ol").Map }) | null>} */
 const eoxMap = ref(null);
 /** @type {import("vue").Ref<(HTMLElement & Record<string,any> & { map:import("ol").Map }) | null>} */
 const compareMap = ref(null);
-
-const eoxMapConfig = {
-  /** @type {(number|undefined)[] | undefined} */
-  center: [15, 48],
-  /** @type {number | undefined} */
-  zoom: 4,
-};
-
-const eoxCompareMapConfig = {
-  /** @type {(number|undefined)[] | undefined} */
-  center: [15, 48],
-  /** @type {number | undefined} */
-  zoom: 4,
-};
-
-// Check if selected indicator was already set in store
-if (mapPosition && mapPosition.value && mapPosition.value.length === 3) {
-  // TODO: do further checks for invalid values?
-  // TODO: can we expect the values to be in a specific projection
-  eoxMapConfig.center = [mapPosition.value?.[0], mapPosition.value[1]];
-  eoxMapConfig.zoom = mapPosition.value[2];
-}
 const { selectedCompareStac } = storeToRefs(useSTAcStore());
 const showCompare = computed(() =>
   props.enableCompare && !!selectedCompareStac.value ? "" : "first",

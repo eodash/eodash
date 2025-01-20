@@ -1,5 +1,5 @@
 // functions of this folder can only be consumed inside setup stores,
-// setup functions or vue composition api components
+// setup functions or vue composition api components https://vuejs.org/guide/reusability/composables
 
 import {
   activeTemplate,
@@ -8,13 +8,15 @@ import {
   datetime,
   indicator,
   mapPosition,
-} from "@/store/States";
+} from "@/store/states";
 import eodash from "@/eodash";
 import { useTheme } from "vuetify/lib/framework.mjs";
-import { inject, onMounted, watch } from "vue";
+import { inject, onMounted, onUnmounted, watch } from "vue";
 import { useSTAcStore } from "@/store/stac";
 import log from "loglevel";
-import { eodashKey } from "@/utils/keys";
+import { eodashKey, eoxLayersKey } from "@/utils/keys";
+import { useEventBus } from "@vueuse/core";
+import { posIsSetFromUrl } from "@/utils/states";
 
 /**
  * Creates an absolute URL from a relative link and assignes it to `currentUrl`
@@ -23,11 +25,11 @@ import { eodashKey } from "@/utils/keys";
  * @param {string} [base=eodash.stacEndpoint] - Base URL, default value is the
  *   root stac catalog. Default is `eodash.stacEndpoint`
  * @returns {import("vue").Ref<string>} - Returns `currentUrl`
- * @see {@link '@/store/States.js'}
+ * @see {@link '@/store/states.js'}
  */
 export const useAbsoluteUrl = (rel = "", base = eodash.stacEndpoint) => {
   if (!rel || rel.includes("http")) {
-    currentUrl.value = base;
+    currentUrl.value = rel;
     return currentUrl;
   }
 
@@ -52,7 +54,7 @@ export const useAbsoluteUrl = (rel = "", base = eodash.stacEndpoint) => {
  * @param {string} [base=eodash.stacEndpoint] - Base URL, default value is the
  *   root stac catalog. Default is `eodash.stacEndpoint`
  * @returns {import("vue").Ref<string>} - Returns `currentUrl`
- * @see {@link '@/store/States.js'}
+ * @see {@link '@/store/states.js'}
  */
 export const useCompareAbsoluteUrl = (rel = "", base = eodash.stacEndpoint) => {
   if (!rel || rel.includes("http")) {
@@ -164,6 +166,9 @@ export const useURLSearchParametersSync = () => {
       if (x && y && z) {
         log.debug("Coordinates found, applying map poisition", x, y, z);
         mapPosition.value = [x, y, z];
+        if (!posIsSetFromUrl.value) {
+          posIsSetFromUrl.value = true;
+        }
       }
     }
 
@@ -202,7 +207,10 @@ export const useURLSearchParametersSync = () => {
   });
 };
 
-/** @param {import("vue").Ref<HTMLElement|null>} root - components root element ref*/
+/**
+ * Converts eox-layout-item to transparent
+ *
+ *  @param {import("vue").Ref<HTMLElement|null>} root - components root element ref*/
 export const makePanelTransparent = (root) => {
   onMounted(() => {
     const eoxItem = root.value?.parentElement;
@@ -215,4 +223,22 @@ export const makePanelTransparent = (root) => {
 export const useGetTemplates = () => {
   const eodash = /** @type {import("@/types").Eodash} */ (inject(eodashKey));
   return "template" in eodash ? [] : Object.keys(eodash.templates);
+};
+
+/**
+ * Listens to the `layers:updated` and `time:updated` events and calls
+ *
+ * @param {import("@vueuse/core").EventBusListener<
+ * "layers:updated"|"time:updated",
+ * {layers:Record<string,any>[]| undefined}
+ * >} listener
+ */
+export const useOnLayersUpdate = (listener) => {
+  const layersEvents = useEventBus(eoxLayersKey);
+
+  const unsubscribe = layersEvents.on(listener);
+
+  onUnmounted(() => {
+    unsubscribe();
+  });
 };

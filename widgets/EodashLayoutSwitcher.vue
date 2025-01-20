@@ -13,7 +13,7 @@
 </template>
 
 <script setup>
-import { activeTemplate } from "@/store/States";
+import { activeTemplate } from "@/store/states";
 import { mdiViewDashboard } from "@mdi/js";
 import { makePanelTransparent } from "@/composables";
 import { ref } from "vue";

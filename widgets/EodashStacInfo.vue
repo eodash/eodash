@@ -18,7 +18,7 @@
 
 <script setup>
 import "@eox/stacinfo";
-import { currentUrl } from "@/store/States";
+import { currentUrl } from "@/store/states";
 
 const {
   allowHtml,

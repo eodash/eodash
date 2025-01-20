@@ -3,8 +3,8 @@ import {
   mapCompareEl,
   registeredProjections,
   activeTemplate,
-} from "@/store/States";
-import { getProjectionCode } from "@/utils/helpers";
+} from "@/store/states";
+import { getProjectionCode } from "@/eodashSTAC/helpers";
 import log from "loglevel";
 
 /**

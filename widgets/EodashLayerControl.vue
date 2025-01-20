@@ -20,8 +20,8 @@ import "@eox/timecontrol";
 import "color-legend-element";
 
 import { computed, ref } from "vue";
-import { mapEl, mapCompareEl } from "@/store/States";
-import { getColFromLayer } from "@/utils/helpers";
+import { mapEl, mapCompareEl } from "@/store/states";
+import { getColFromLayer } from "@/eodashSTAC/helpers";
 import { eodashCollections, eodashCompareCollections } from "@/utils/states";
 import { storeToRefs } from "pinia";
 import { useSTAcStore } from "@/store/stac";
@@ -45,15 +45,12 @@ const config = {
   style: props.cssVars,
 };
 
+const { selectedCompareStac, selectedStac } = storeToRefs(useSTAcStore());
 const showControls = computed(() => {
-  const { selectedCompareStac, selectedStac } = storeToRefs(useSTAcStore());
   if (props.map === "second") {
     return mapCompareEl.value !== null && selectedCompareStac.value !== null;
   }
-  if (mapEl.value !== null && selectedStac.value !== null) {
-    return true;
-  }
-  return false;
+  return mapEl.value !== null && selectedStac.value !== null;
 });
 
 const eodashCols =

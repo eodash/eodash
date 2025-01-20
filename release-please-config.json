@@ -4,7 +4,7 @@
     ".": {}
   },
   "prerelease": true,
-  "prerelease-type": "alpha",
+  "prerelease-type": "rc",
   "versioning": "prerelease",
   "release-type": "node"
 }

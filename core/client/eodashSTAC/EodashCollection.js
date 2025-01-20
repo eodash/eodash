@@ -13,7 +13,7 @@ import {
   getLayers,
   getCompareLayers,
   registerProjection,
-} from "@/store/Actions";
+} from "@/store/actions";
 import { createLayersFromAssets, createLayersFromLinks } from "./createLayers";
 import axios from "@/plugins/axios";
 import log from "loglevel";
@@ -24,17 +24,17 @@ export class EodashCollection {
   /** @type {import("stac-ts").StacCollection | undefined} */
   #collectionStac;
 
-  //  read only
-  get collectionStac() {
-    return this.#collectionStac;
-  }
-
   /**
    * @type {import("stac-ts").StacLink
    *   | import("stac-ts").StacItem
    *   | undefined}
    */
   selectedItem;
+
+  //  read only
+  get collectionStac() {
+    return this.#collectionStac;
+  }
 
   /** @param {string} collectionUrl */
   constructor(collectionUrl) {
@@ -84,9 +84,7 @@ export class EodashCollection {
       this.selectedItem = this.getItem();
 
       if (this.selectedItem) {
-        layersJson = /** @type {Record<string,any>[]} */ (
-          await this.createLayersJson(this.selectedItem)
-        );
+        layersJson = await this.createLayersJson(this.selectedItem);
       } else {
         console.warn(
           "[eodash] the selected collection does not include any items",
@@ -112,7 +110,7 @@ export class EodashCollection {
    * @param {string} title
    * @param {boolean} isGeoDB
    * @param {string} [itemDatetime]
-   * @returns {Promise<Record<string,any>[]>} arrays
+   * @returns {Promise<Record<string,any>[]>} layers
    * */
   async buildJsonArray(item, itemUrl, title, isGeoDB, itemDatetime) {
     log.debug(
@@ -136,29 +134,8 @@ export class EodashCollection {
     const jsonArray = [];
 
     if (isGeoDB) {
-      const allFeatures = generateFeatures(this.#collectionStac?.links);
-
-      return [
-        {
-          type: "Vector",
-          properties: {
-            id: this.#collectionStac?.id ?? "",
-            title: this.#collectionStac?.title || item.id,
-          },
-          source: {
-            type: "Vector",
-            url: "data:," + encodeURIComponent(JSON.stringify(allFeatures)),
-            format: "GeoJSON",
-          },
-          style: {
-            "circle-radius": 5,
-            "circle-fill-color": "#00417077",
-            "circle-stroke-color": "#004170",
-            "fill-color": "#00417077",
-            "stroke-color": "#004170",
-          },
-        },
-      ];
+      // handled by getGeoDBLayer
+      return [];
     }
 
     // I propose following approach, we "manually" create configurations
@@ -191,7 +168,7 @@ export class EodashCollection {
       let extraProperties = null;
       if (this.#collectionStac?.assets?.legend?.href) {
         extraProperties = {
-          description: `<div style="text-align:center; width: 100%">
+          description: `<div style="width: 100%">
             <img src="${this.#collectionStac.assets.legend.href}" style="max-height:70px; margin-top:-15px; margin-bottom:-20px;" />
           </div>`,
         };
@@ -357,14 +334,14 @@ export class EodashCollection {
       currentLayers = getCompareLayers();
     }
 
-    const oldLayer = findLayer(currentLayers, layer);
+    /** @type {string | undefined} */
+    const oldLayerID = findLayer(currentLayers, layer)?.properties.id;
 
-    const updatedLayers = replaceLayer(
-      currentLayers,
-      /** @type {Record<string,any> & { properties:{ id:string; title:string } } } */
-      (oldLayer),
-      newLayers,
-    );
+    if (!oldLayerID) {
+      return;
+    }
+
+    const updatedLayers = replaceLayer(currentLayers, oldLayerID, newLayers);
 
     return updatedLayers;
   }
@@ -406,5 +383,62 @@ export class EodashCollection {
         // layerDatetime,
       )),
     ];
+  }
+
+  /**
+   * Returns GeoDB layer from a list of EodashCollections
+   *
+   * @param {EodashCollection[]} eodashCollections
+   *
+   **/
+  static getGeoDBLayer(eodashCollections) {
+    const allFeatures = [];
+    for (const collection of eodashCollections) {
+      const isGeoDB = collection.#collectionStac?.endpointtype === "GeoDB";
+      if (!isGeoDB) {
+        continue;
+      }
+      const collectionFeatures = generateFeatures(
+        collection.#collectionStac?.links,
+      ).features;
+      if (collectionFeatures.length) {
+        allFeatures.push(
+          generateFeatures(collection.#collectionStac?.links).features,
+        );
+      }
+    }
+    if (allFeatures.length) {
+      const featureCollection = {
+        type: "FeatureCollection",
+        crs: {
+          type: "name",
+          properties: {
+            name: "EPSG:4326",
+          },
+        },
+        features: allFeatures.flat(),
+      };
+      return {
+        type: "Vector",
+        properties: {
+          id: "geodb-collection",
+          title: "GeoDB Collection",
+        },
+        source: {
+          type: "Vector",
+          url: "data:," + encodeURIComponent(JSON.stringify(featureCollection)),
+          format: "GeoJSON",
+        },
+        style: {
+          "circle-radius": 5,
+          "circle-fill-color": "#00417077",
+          "circle-stroke-color": "#004170",
+          "fill-color": "#00417077",
+          "stroke-color": "#004170",
+        },
+        interactions: [],
+      };
+    }
+    return null;
   }
 }

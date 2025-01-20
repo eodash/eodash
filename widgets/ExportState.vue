@@ -52,10 +52,10 @@
 import { mdiClipboardCheckOutline, mdiContentCopy } from "@mdi/js";
 import PopUp from "./PopUp.vue";
 import { copyToClipBoard } from "@/utils";
-import { computed, ref } from "vue";
-import { getLayers as getLayerAction } from "@/store/Actions";
-import { mapPosition } from "@/store/States";
-import { removeUnneededProperties } from "@/utils/helpers";
+import { ref } from "vue";
+import { getLayers as getLayerAction } from "@/store/actions";
+import { mapPosition, availableMapProjection } from "@/store/states";
+import { removeUnneededProperties } from "@/eodashSTAC/helpers";
 
 const dialog = defineModel({ type: Boolean, required: true, default: false });
 
@@ -71,7 +71,7 @@ const copySuccess = ref(false);
 const copyBtns = [
   {
     id: Symbol(),
-    copyFn: async () => await copyToClipBoard(mapEntryCode.value, copySuccess),
+    copyFn: async () => await copyToClipBoard(getMapEntryCode(), copySuccess),
     copyAs: "simple map",
   },
   {
@@ -82,28 +82,28 @@ const copyBtns = [
   },
   {
     id: Symbol(),
-    copyFn: async () => await copyToClipBoard(mapStepCode.value, copySuccess),
+    copyFn: async () => await copyToClipBoard(getMapStepCode(), copySuccess),
     copyAs: "map tour section",
   },
 ];
 
-const mapStepCode = computed(() => {
+const getMapStepCode = () => {
   const [x, y, z] = mapPosition.value;
   const preTag = "### <!" + "--{ layers=";
-  const endTag = `zoom="${z}" center=[${[x, y]}] animationOptions={duration:500}}-->
+  const endTag = `zoom="${z}" center=[${[x, y]}] projection="${availableMapProjection.value}" animationOptions={duration:500}}-->
 #### Tour step title
 Text describing the current step of the tour and why it is interesting what the map shows currently
 `;
   return `${preTag}'${JSON.stringify(removeUnneededProperties(props.getLayers()))}' ${endTag}`;
-});
-const mapEntryCode = computed(() => {
+};
+const getMapEntryCode = () => {
   const [x, y, z] = mapPosition.value;
   const preTag =
     "## Map Example <!" +
     '--{as="eox-map" style="width: 100%; height: 500px;" layers=';
-  const endTag = `zoom="${z}" center=[${[x, y]}] }-->`;
+  const endTag = `zoom="${z}" center=[${[x, y]}] projection="${availableMapProjection.value}" }-->`;
   return `${preTag}'${JSON.stringify(removeUnneededProperties(props.getLayers()))}' ${endTag}`;
-});
+};
 </script>
 <style scoped>
 .code-block {

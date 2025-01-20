@@ -1,6 +1,6 @@
 # Instantiating Eodash
 
-Eodash client is configured through two primary methods. Check out the [API](/api/client/types/interfaces/Eodash.html) and the guide below:
+Eodash client is configured through two primary methods. Check out the [API](/api/client/types/type-aliases/Eodash.html) and the guide below:
 
 ## Compile-time (Build-time) Configuration
 
@@ -77,7 +77,6 @@ export default createEodash({
       {
         type: "web-component",
         id: Symbol(),
-        slidable: true,
         layout: { x: 4, y: 0, h: 1, w: 3 },
         title: "Iframe",
         widget: {
@@ -92,7 +91,7 @@ export default createEodash({
 
 ## Runtime Configuration
 
-This provides a way to modify Eodash settings after it has been built, which is optional but allows for greater flexibility. In development, you'll typically create a file named `src/runtime.js` and export an [`Eodash<"runtime">`](/api/client/types/interfaces/Eodash.html) object as a default. The runtime config file is moved to `.eodash/dist/config.js` in production. However, it is important to note that runtime configuration has certain limitations compared to compile-time configuration. It doesn't support packages and file imports nor refrencing [user-defined internal wigets](/widgets/internal-widgets), and is shipped to the browser without being processed, hence the name `runtime`. A runtime configuration can also be set to `<eo-dash/>` web component using the `config` attribute, check out this [example](/#installing-eodash-web-component-in-your-project) to learn more.
+This provides a way to modify Eodash settings after it has been built, which is optional but allows for greater flexibility. In development, you'll typically create a file named `src/runtime.js` and export an [`Eodash<"runtime">`](/api/client/types/type-aliases/Eodash.html) object as a default. The runtime config file is moved to `.eodash/dist/config.js` in production. However, it is important to note that runtime configuration has certain limitations compared to compile-time configuration. It doesn't support packages and file imports nor refrencing [user-defined internal wigets](/widgets/internal-widgets), and is shipped to the browser without being processed, hence the name `runtime`. A runtime configuration can also be set to `<eo-dash/>` web component using the `config` attribute, check out this [example](/#installing-eodash-web-component-in-your-project) to learn more.
 
 ### example
 

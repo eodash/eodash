@@ -1,41 +1,87 @@
 <template>
-  <div ref="rootRef">
+  <div ref="rootRef" class="datePicker">
     <VCDatePicker
       v-model.number="currentDate"
       :attributes="attributes"
       :masks="masks"
       expanded
-      class="bg-surface"
+      class="bg-surface overflow-auto"
       style="background-color: transparent; max-width: 100%"
     >
-      <template #footer>
-        <div class="d-flex flex-row align-center justify-center py-2">
+      <template v-if="toggleCalendar" #default="{ inputValue, inputEvents }">
+        <div class="bg-surface d-flex flex-row align-center justify-center pb-1" style="overflow: hidden; width: 100%;">
           <v-btn
             v-if="!hideArrows"
             density="compact"
+            :size="lgAndDown ? 'x-small' : 'large'"
             v-tooltip:bottom="'Set date to oldest available dataset'"
             variant="text"
             @click="jumpDate(true)"
+            class="py-2"
+            style="flex-shrink: 1;"
           >
             <v-icon :icon="[mdiRayEndArrow]" />
           </v-btn>
           <div
             class="flex rounded-lg border border-gray-300 dark:border-gray-600"
-            style="margin: 2px"
+            style="margin: 2px; min-width: 0;"
           >
             <input
               v-if="!hideInputField"
-              :value="new Date(currentDate).toLocaleDateString()"
-              style="margin: 1px"
+              :value="inputValue"
+              v-on="inputEvents"
               class="flex-grow px-1 py-1 dark:bg-gray-700"
+              style="margin: 1px; width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"
             />
           </div>
           <v-btn
             v-if="!hideArrows"
             density="compact"
+            :size="lgAndDown ? 'x-small' : 'large'"
             variant="text"
             v-tooltip:bottom="'Set date to latest available dataset'"
             @click="jumpDate(false)"
+            class="py-2"
+            style="flex-shrink: 1;"
+          >
+            <v-icon :icon="[mdiRayStartArrow]" />
+          </v-btn>
+        </div>
+      </template>
+      <template v-else #footer>
+        <div class="d-flex flex-row align-center justify-center pb-1" style="overflow: hidden; width: 100%;">
+          <v-btn
+            v-if="!hideArrows"
+            density="compact"
+            :size="lgAndDown ? 'x-small' : 'large'"
+            v-tooltip:bottom="'Set date to oldest available dataset'"
+            variant="text"
+            @click="jumpDate(true)"
+            class="py-2"
+            style="flex-shrink: 1;"
+          >
+            <v-icon :icon="[mdiRayEndArrow]" />
+          </v-btn>
+          <div
+            class="flex rounded-lg border border-gray-300 dark:border-gray-600"
+            style="margin: 2px; min-width: 0;"
+          >
+            <input
+              v-if="!hideInputField"
+              :value="new Date(currentDate).toLocaleDateString()"
+              class="flex-grow px-1 py-1 dark:bg-gray-700"
+              style="margin: 1px; width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"
+            />
+          </div>
+          <v-btn
+            v-if="!hideArrows"
+            density="compact"
+            :size="lgAndDown ? 'x-small' : 'large'"
+            variant="text"
+            v-tooltip:bottom="'Set date to latest available dataset'"
+            @click="jumpDate(false)"
+            class="py-2"
+            style="flex-shrink: 1;"
           >
             <v-icon :icon="[mdiRayStartArrow]" />
           </v-btn>
@@ -46,16 +92,17 @@
 </template>
 <script setup>
 import { DatePicker as VCDatePicker } from "v-calendar";
+import { useDisplay } from 'vuetify'
 import "v-calendar/style.css";
-import { watch, reactive, ref, customRef, onMounted } from "vue";
-import { storeToRefs } from "pinia";
+import { watch, reactive, ref, customRef, toRef, onMounted } from "vue";
 import { useSTAcStore } from "@/store/stac";
-import { datetime } from "@/store/States";
+import { datetime } from "@/store/states";
 import { mdiRayStartArrow, mdiRayEndArrow } from "@mdi/js";
 import { eodashCollections } from "@/utils/states";
 import log from "loglevel";
 import { makePanelTransparent } from "@/composables";
 
+const { lgAndDown } = useDisplay()
 
 // holds the number value of the datetime
 const currentDate = customRef((track, trigger) => ({
@@ -88,6 +135,10 @@ defineProps({
     type: Boolean,
     default: false,
   },
+  toggleCalendar: {
+    type: Boolean,
+    default: false
+  }
 });
 
 /**
@@ -105,7 +156,7 @@ const attributes = reactive([]);
 /** @type {import("vue").Ref<HTMLDivElement|null>} */
 const rootRef = ref(null);
 
-const { selectedStac } = storeToRefs(useSTAcStore());
+const selectedStac = toRef(useSTAcStore(), "selectedStac");
 
 watch(
   selectedStac,
@@ -139,7 +190,7 @@ watch(
         ];
         attributes.push({
           key: "id-" + idx.toString() + Math.random().toString(16).slice(2),
-          bar: {
+          dot: {
             style: {
               backgroundColor: wongPalette[idx % wongPalette.length],
             },
@@ -193,12 +244,22 @@ onMounted(() => {
 });
 
 makePanelTransparent(rootRef);
-
 </script>
 <style>
+@media (min-width: 960px) {
+  .datePicker {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+  }
+}
 .vc-day-content {
   color: #5e5e5e;
   font-weight: normal;
+}
+
+.vc-highlight-content-solid {
+  color: white !important;
 }
 
 .vc-popover-content-wrapper {

@@ -1,6 +1,28 @@
 # Changelog
 
 
+## [5.0.0-rc.1](https://github.com/eodash/eodash/compare/eodash-v5.0.0-rc...eodash-v5.0.0-rc.1) (2025-01-07)
+
+
+### Bug Fixes
+
+* ensure exporting updated map layers & projection ([#153](https://github.com/eodash/eodash/issues/153)) ([18456b7](https://github.com/eodash/eodash/commit/18456b742538836860ccc73ad7d47357f5721daa))
+
+## [5.0.0-rc](https://github.com/eodash/eodash/compare/eodash-v5.0.0-alpha.2.27...eodash-v5.0.0-rc) (2024-12-20)
+
+
+### Miscellaneous Chores
+
+* release 5.0.0-rc ([#151](https://github.com/eodash/eodash/issues/151)) ([8e7a798](https://github.com/eodash/eodash/commit/8e7a798db9b0bb15addec52c5ae92c4320418fae))
+
+## [5.0.0-alpha.2.27](https://github.com/eodash/eodash/compare/eodash-v5.0.0-alpha.2.26...eodash-v5.0.0-alpha.2.27) (2024-12-20)
+
+
+### Features
+
+* Introduce multiple templates ([#145](https://github.com/eodash/eodash/issues/145)) ([9e6aa68](https://github.com/eodash/eodash/commit/9e6aa68d6f21fead0173effcabff68deabe91800))
+* Processing widget ([#110](https://github.com/eodash/eodash/issues/110)) ([e4b1b61](https://github.com/eodash/eodash/commit/e4b1b61f55df73346e01cd147c580060d0efa636))
+
 ## [5.0.0-alpha.2.26](https://github.com/eodash/eodash/compare/eodash-v5.0.0-alpha.2.25...eodash-v5.0.0-alpha.2.26) (2024-11-22)
 
 

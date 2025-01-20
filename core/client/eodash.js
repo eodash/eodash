@@ -10,9 +10,12 @@ import { reactive } from "vue";
 export const eodash = reactive({
   id: "demo",
   stacEndpoint:
-  "https://eodashcatalog.eox.at/samplecatalog/samples/catalog.json",
+    // "https://eurodatacube.github.io/eodash-catalog/RACE/catalog.json",
+    // "https://gtif-cerulean.github.io/catalog/cerulean/catalog.json",
+    // "https://eodashcatalog.eox.at/samplecatalog/samples/catalog.json",
     // "https://eodashcatalog.eox.at/test-style/trilateral/catalog.json",
-  // "https://gtif-cerulean.github.io/catalog/cerulean/catalog.json",
+    // "https://gtif-cerulean.github.io/catalog/cerulean/catalog.json",
+    "https://gtif-cerulean.github.io/deside-catalog/deside/catalog.json",
   brand: {
     noLayout: true,
     name: "Demo",
@@ -21,6 +24,10 @@ export const eodash = reactive({
         primary: "#002742",
         secondary: "#0071C2",
         surface: "#ffff",
+      },
+      variables: {
+        "surface-opacity": 0.6,
+        "primary-opacity": 0.8,
       },
       variables: {
         "surface-opacity": 0.6,
@@ -84,7 +91,7 @@ export const eodash = reactive({
                 filterProperties: [],
                 resultsTitle: "Explore more indicators",
                 subTitleProperty: "subtitle",
-                imageProperty: "thumbnail"
+                imageProperty: "thumbnail",
               },
             },
           },
@@ -100,6 +107,7 @@ export const eodash = reactive({
                   widget: {
                     name: "EodashLayerControl",
                     properties: {
+                      slider: false,
                       tools: ["datetime", "info", "legend"],
                       cssVars: {
                         "--list-padding": "0",
@@ -107,6 +115,9 @@ export const eodash = reactive({
                         "--layer-input-visibility": "none",
                         "--layer-type-visibility": "none",
                         "--padding": "16px",
+                        "--padding-vertical": "16px",
+                        "--layer-tools-button-visibility": "none",
+                        "--layer-summary-visibility": "none",
                       },
                     },
                   },
@@ -143,15 +154,14 @@ export const eodash = reactive({
               ? {
                   id: "Datepicker",
                   type: "internal",
-                  layout: { x: 5, y: 8, w: 2, h: 4},
+                  layout: { x: 5, y: 8, w: 2, h: 4 },
                   title: "Date",
                   widget: {
                     name: "EodashDatePicker",
                     properties: {
-                      hideArrows: true,
-                      hideInputField: true,
                       hintText: `<b>Hint:</b> closest available date is displayed <br />
                             on map (see Analysis Layers)`,
+                      toggleCalendar: true,
                     },
                   },
                 }
@@ -243,7 +253,7 @@ export const eodash = reactive({
               ? {
                   id: "Datepicker",
                   type: "internal",
-                  layout: { x: 5, y: 8, w: 2, h: 4},
+                  layout: { x: 5, y: 8, w: 2, h: 4 },
                   title: "Date",
                   widget: {
                     name: "EodashDatePicker",
@@ -270,6 +280,20 @@ export const eodash = reactive({
                 }
               : null;
           },
+        },
+        {
+          defineWidget: (selectedSTAC) =>
+            selectedSTAC?.links.some((l) => l.rel === "service")
+              ? {
+                  id: "Processes",
+                  type: "internal",
+                  title: "Processes",
+                  layout: { x: 9, y: 7, w: 3, h: 5 },
+                  widget: {
+                    name: "EodashProcess",
+                  },
+                }
+              : null,
         },
       ],
     },
@@ -353,7 +377,7 @@ export const eodash = reactive({
         },
         {
           id: Symbol(),
-          title: "Layers Comparison",
+          title: "Comparison Layers",
           layout: { x: 9, y: 1, w: 3, h: 6 },
           type: "internal",
           widget: {
@@ -362,6 +386,20 @@ export const eodash = reactive({
               map: "second",
             },
           },
+        },
+        {
+          defineWidget: (selectedSTAC) =>
+            selectedSTAC?.links.some((l) => l.rel === "service")
+              ? {
+                  id: Symbol(),
+                  type: "internal",
+                  title: "Processes",
+                  layout: { x: 0, y: 7, w: 3, h: 5 },
+                  widget: {
+                    name: "EodashProcess",
+                  },
+                }
+              : null,
         },
         {
           defineWidget: (selected) => {
@@ -387,7 +425,7 @@ export const eodash = reactive({
               ? {
                   id: "Datepicker",
                   type: "internal",
-                  layout: { x: 5, y: 8, w: 2, h: 4},
+                  layout: { x: 5, y: 8, w: 2, h: 4 },
                   title: "Date",
                   widget: {
                     name: "EodashDatePicker",
