@@ -62,6 +62,10 @@ const props = defineProps({
     type: Number,
     default: 4,
   },
+  zoomToExtent: {
+    type: Boolean,
+    default: true,
+  },
 });
 
 /** @type {import("vue").Ref<Exclude<import("@/types").EodashStyleJson["tooltip"], undefined>>} */
@@ -130,6 +134,7 @@ onMounted(() => {
       datetime,
       eoxMapCompareLayers,
       eoxMap,
+      false,
     );
   }
 
@@ -141,6 +146,7 @@ onMounted(() => {
     datetime,
     eoxMapLayers,
     compareMap,
+    props.zoomToExtent,
   );
 });
 

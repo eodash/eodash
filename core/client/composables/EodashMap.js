@@ -210,6 +210,7 @@ const createLayersConfig = async (
  * @param {import("vue").Ref<string>} datetime
  * @param {import("vue").Ref<Record<string,any>[]>} mapLayers
  * @param {import("vue").Ref<import("@eox/map").EOxMap| null>} partnerMap
+ * @param {boolean} zoomToExtent
  */
 export const useInitMap = (
   mapElement,
@@ -218,6 +219,7 @@ export const useInitMap = (
   datetime,
   mapLayers,
   partnerMap,
+  zoomToExtent,
 ) => {
   log.debug(
     "InitMap",
@@ -310,29 +312,31 @@ export const useInitMap = (
           datetime.value = endInterval.toISOString();
         }
 
-        // Try to move map view to extent only when main
-        // indicator and map changes
-        if (
-          mapElement?.value?.id === "main" &&
-          updatedStac.extent?.spatial.bbox &&
-          !posIsSetFromUrl.value
-        ) {
-          // Sanitize extent,
-          const b = updatedStac.extent?.spatial.bbox[0];
-          const sanitizedExtent = [
-            b?.[0] > -180 ? b?.[0] : -180,
-            b?.[1] > -90 ? b?.[1] : -90,
-            b?.[2] < 180 ? b?.[2] : 180,
-            b?.[3] < 90 ? b?.[3] : 90,
-          ];
+        if (zoomToExtent) {
+          // Try to move map view to extent only when main
+          // indicator and map changes
+          if (
+            mapElement?.value?.id === "main" &&
+            updatedStac.extent?.spatial.bbox &&
+            !posIsSetFromUrl.value
+          ) {
+            // Sanitize extent,
+            const b = updatedStac.extent?.spatial.bbox[0];
+            const sanitizedExtent = [
+              b?.[0] > -180 ? b?.[0] : -180,
+              b?.[1] > -90 ? b?.[1] : -90,
+              b?.[2] < 180 ? b?.[2] : 180,
+              b?.[3] < 90 ? b?.[3] : 90,
+            ];
 
-          const reprojExtent = mapElement.value?.transformExtent(
-            sanitizedExtent,
-            "EPSG:4326",
-            mapElement.value?.map?.getView().getProjection(),
-          );
-          /** @type {import("@eox/map").EOxMap} */
-          (mapElement.value).zoomExtent = reprojExtent;
+            const reprojExtent = mapElement.value?.transformExtent(
+              sanitizedExtent,
+              "EPSG:4326",
+              mapElement.value?.map?.getView().getProjection(),
+            );
+            /** @type {import("@eox/map").EOxMap} */
+            (mapElement.value).zoomExtent = reprojExtent;
+          }
         }
         if (posIsSetFromUrl.value) {
           posIsSetFromUrl.value = false;
