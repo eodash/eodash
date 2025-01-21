@@ -139,8 +139,8 @@ onMounted(async () => {
   }
 });
 
-useOnLayersUpdate(
-  async () =>
+useOnLayersUpdate(async (evt, _payload) => {
+  if (evt === "layers:updated") {
     await initProcess({
       //@ts-expect-error TODO
       selectedStac,
@@ -151,8 +151,9 @@ useOnLayersUpdate(
       processResults,
       loading,
       isPolling,
-    }),
-);
+    });
+  }
+});
 
 const startProcess = async () => {
   const errors = jsonformEl.value?.editor.validate();
