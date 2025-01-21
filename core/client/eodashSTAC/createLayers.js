@@ -82,7 +82,7 @@ export async function createLayersFromAssets(
           {
             type: "select",
             options: {
-              id: "selectInteraction",
+              id: (Math.random() * 10000).toFixed() + "_selectInteraction",
               condition: "pointermove",
               style: {
                 "stroke-color": "#335267",
