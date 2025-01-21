@@ -1,6 +1,7 @@
 import { toAbsolute } from "stac-js/src/http.js";
 import axios from "@/plugins/axios";
 import log from "loglevel";
+import { getStyleVariablesState } from "./triggers.js";
 
 /** @param {import("stac-ts").StacLink[]} [links] */
 export function generateFeatures(links) {
@@ -39,12 +40,19 @@ export function generateFeatures(links) {
 /**
  * Sperates and extracts layerConfig (jsonform schema & legend) from a style json
  *
- *  @param { import("@/types").EodashStyleJson} [style] */
-export function extractLayerConfig(style) {
+ * @param {string} collectionId
+ *  @param { import("@/types").EodashStyleJson} [style]
+ * */
+export function extractLayerConfig(collectionId, style) {
   if (!style) {
     return { layerConfig: undefined, style: undefined };
   }
   style = { ...style };
+
+  if (Object.keys(style.variables ?? {}).length) {
+    style.variables = getStyleVariablesState(collectionId, style.variables);
+  }
+
   /** @type {Record<string,unknown> | undefined} */
   let layerConfig = undefined;
 

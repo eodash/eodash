@@ -34,6 +34,9 @@ export class EodashCollection {
   /** @type {Exclude<import("@/types").EodashStyleJson["tooltip"],undefined>} */
   #tooltipProperties = [];
 
+  /** @type {import("@/types").EodashStyleJson|null} */
+  style = null;
+
   //  read only
   get collectionStac() {
     return this.#collectionStac;
@@ -148,6 +151,7 @@ export class EodashCollection {
     // less control.
 
     let { layerConfig, style } = extractLayerConfig(
+      this.#collectionStac?.id ?? "",
       await fetchStyle(item, itemUrl),
     );
 
