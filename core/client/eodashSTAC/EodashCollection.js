@@ -31,6 +31,9 @@ export class EodashCollection {
    */
   selectedItem;
 
+  /** @type {string | undefined} */
+  color;
+
   //  read only
   get collectionStac() {
     return this.#collectionStac;
@@ -179,6 +182,10 @@ export class EodashCollection {
           layerLegend: this.#collectionStac["eox:colorlegend"],
         };
       }
+      extraProperties = {
+        ...extraProperties,
+        ...(this.color && { color: this.color }),
+      };
       const links = await createLayersFromLinks(
         this.#collectionStac?.id ?? "",
         title,
