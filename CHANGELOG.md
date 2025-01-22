@@ -1,6 +1,21 @@
 # Changelog
 
 
+## [5.0.0-rc.2](https://github.com/eodash/eodash/compare/eodash-v5.0.0-rc.1...eodash-v5.0.0-rc.2) (2025-01-22)
+
+
+### Features
+
+* added support for flatgeobuf vector asset sources ([#156](https://github.com/eodash/eodash/issues/156)) ([46a0efb](https://github.com/eodash/eodash/commit/46a0efb10be56d29615bf27475b01008ead93bc3))
+* Configurable map tooltip ([#160](https://github.com/eodash/eodash/issues/160)) ([50a7f4a](https://github.com/eodash/eodash/commit/50a7f4a29c3f866b1d99ec3025abd54b3b5f46a0))
+* Download processing results ([#159](https://github.com/eodash/eodash/issues/159)) ([2bcdbf9](https://github.com/eodash/eodash/commit/2bcdbf903fbd18def862d8f97ca8882cf1f1ccfe))
+* Introduce collections color palette ([#163](https://github.com/eodash/eodash/issues/163)) ([2ff04e8](https://github.com/eodash/eodash/commit/2ff04e8888e57d52539bbf5324e7df3f0175c393))
+
+
+### Bug Fixes
+
+* Merge item assets geojsons into one vector layer ([#161](https://github.com/eodash/eodash/issues/161)) ([f2729b1](https://github.com/eodash/eodash/commit/f2729b180f9b3818cc27fbfe2046e455ff87914a))
+
 ## [5.0.0-rc.1](https://github.com/eodash/eodash/compare/eodash-v5.0.0-rc...eodash-v5.0.0-rc.1) (2025-01-07)
 
 
