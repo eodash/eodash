@@ -22,7 +22,12 @@ export const eodashCompareCollections = shallowReactive([]);
 export const posIsSetFromUrl = ref(false);
 
 /**
- *  color palette for STAC indicators, defaults to Bank-Wong palette
+ * Current value of the layer control JSON form for the latest layer the user interacted with.
+ * @type {import("vue").Ref<Record<string, any> | undefined>}
+ */
+export const layerControlFormValue = ref({});
+/**
+ * STAC indicators color palette, defaults to Bank-Wong palette
  *  @type {string[]} */
 export const collectionsPalette = reactive([
   "#009E73",

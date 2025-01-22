@@ -1,6 +1,7 @@
 import { toAbsolute } from "stac-js/src/http.js";
 import axios from "@/plugins/axios";
 import log from "loglevel";
+import { getStyleVariablesState } from "./triggers.js";
 
 /** @param {import("stac-ts").StacLink[]} [links] */
 export function generateFeatures(links) {
@@ -39,13 +40,24 @@ export function generateFeatures(links) {
 /**
  * Sperates and extracts layerConfig (jsonform schema & legend) from a style json
  *
- *  @param { import("ol/layer/WebGLTile").Style & { jsonform?: Record<string,any> } & { legend?: Record<string,any> } } [style] */
-export function extractLayerConfig(style) {
+ * @param {string} collectionId
+ *  @param { import("@/types").EodashStyleJson} [style]
+ * */
+export function extractLayerConfig(collectionId, style) {
+  if (!style) {
+    return { layerConfig: undefined, style: undefined };
+  }
+  style = { ...style };
+
+  if (Object.keys(style.variables ?? {}).length) {
+    style.variables = getStyleVariablesState(collectionId, style.variables);
+  }
+
   /** @type {Record<string,unknown> | undefined} */
   let layerConfig = undefined;
+
   if (style?.jsonform) {
     layerConfig = { schema: style.jsonform, type: "style" };
-    style = { ...style };
     delete style.jsonform;
     if (style?.legend) {
       layerConfig.legend = style.legend;
@@ -124,7 +136,7 @@ export const fetchStyle = async (item, itemUrl) => {
       url = toAbsolute(styleLink.href, itemUrl);
     }
 
-    /** @type {import("ol/layer/WebGLTile").Style & {jsonform?:Record<string,any>}} */
+    /** @type {import("@/types").EodashStyleJson} */
     const styleJson = await axios.get(url).then((resp) => resp.data);
 
     log.debug("fetched styles JSON", JSON.parse(JSON.stringify(styleJson)));

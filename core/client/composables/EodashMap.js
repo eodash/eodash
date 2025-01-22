@@ -7,9 +7,10 @@ import { storeToRefs } from "pinia";
 import { useEventBus } from "@vueuse/core";
 import { eoxLayersKey } from "@/utils/keys";
 import { posIsSetFromUrl } from "@/utils/states";
+import { useOnLayersUpdate } from ".";
 /**
  * Holder for previous compare map view as it is overwritten by sync
- * @type { {map:import("ol").View } | null} mapElement
+ * @type { import("ol").View | null} mapElement
  */
 let viewHolder = null;
 
@@ -203,12 +204,13 @@ const createLayersConfig = async (
 /**
  * Initializes the map and updates it based on changes in the selected indicator and datetime,
  *
- * @param {import("vue").Ref<HTMLElement & Record<string,any> | null>} mapElement
+ * @param {import("vue").Ref<import("@eox/map").EOxMap| null>} mapElement
  * @param {import("vue").Ref<import("stac-ts").StacCollection | null>} selectedIndicator
  * @param {EodashCollection[]} eodashCols
  * @param {import("vue").Ref<string>} datetime
  * @param {import("vue").Ref<Record<string,any>[]>} mapLayers
- * @param {import("vue").Ref<HTMLElement & Record<string,any> | null>} partnerMap
+ * @param {import("vue").Ref<import("@eox/map").EOxMap| null>} partnerMap
+ * @param {boolean} zoomToExtent
  */
 export const useInitMap = (
   mapElement,
@@ -217,6 +219,7 @@ export const useInitMap = (
   datetime,
   mapLayers,
   partnerMap,
+  zoomToExtent,
 ) => {
   log.debug(
     "InitMap",
@@ -260,7 +263,7 @@ export const useInitMap = (
           // Compare map being initialized
           if (selectedCompareStac.value !== null) {
             // save view of compare map
-            viewHolder = mapElement?.value?.map.getView();
+            viewHolder = mapElement?.value?.map.getView() ?? null;
             /** @type {any} */
             (mapElement.value).sync = partnerMap.value;
           }
@@ -309,29 +312,31 @@ export const useInitMap = (
           datetime.value = endInterval.toISOString();
         }
 
-        // Try to move map view to extent only when main
-        // indicator and map changes
-        if (
-          mapElement?.value?.id === "main" &&
-          updatedStac.extent?.spatial.bbox &&
-          !posIsSetFromUrl.value
-        ) {
-          // Sanitize extent,
-          const b = updatedStac.extent?.spatial.bbox[0];
-          const sanitizedExtent = [
-            b?.[0] > -180 ? b?.[0] : -180,
-            b?.[1] > -90 ? b?.[1] : -90,
-            b?.[2] < 180 ? b?.[2] : 180,
-            b?.[3] < 90 ? b?.[3] : 90,
-          ];
+        if (zoomToExtent) {
+          // Try to move map view to extent only when main
+          // indicator and map changes
+          if (
+            mapElement?.value?.id === "main" &&
+            updatedStac.extent?.spatial.bbox &&
+            !posIsSetFromUrl.value
+          ) {
+            // Sanitize extent,
+            const b = updatedStac.extent?.spatial.bbox[0];
+            const sanitizedExtent = [
+              b?.[0] > -180 ? b?.[0] : -180,
+              b?.[1] > -90 ? b?.[1] : -90,
+              b?.[2] < 180 ? b?.[2] : 180,
+              b?.[3] < 90 ? b?.[3] : 90,
+            ];
 
-          const reprojExtent = mapElement.value?.transformExtent(
-            sanitizedExtent,
-            "EPSG:4326",
-            mapElement.value?.map?.getView().getProjection(),
-          );
-          /** @type {import("@eox/map").EOxMap} */
-          (mapElement.value).zoomExtent = reprojExtent;
+            const reprojExtent = mapElement.value?.transformExtent(
+              sanitizedExtent,
+              "EPSG:4326",
+              mapElement.value?.map?.getView().getProjection(),
+            );
+            /** @type {import("@eox/map").EOxMap} */
+            (mapElement.value).zoomExtent = reprojExtent;
+          }
         }
         if (posIsSetFromUrl.value) {
           posIsSetFromUrl.value = false;
@@ -341,7 +346,6 @@ export const useInitMap = (
           "Assigned layers",
           JSON.parse(JSON.stringify(layersCollection)),
         );
-
         mapLayers.value = layersCollection;
         // Emit event to update layers
         await nextTick(() => {
@@ -356,5 +360,20 @@ export const useInitMap = (
 
   onUnmounted(() => {
     stopIndicatorWatcher();
+  });
+};
+/**
+ *
+ * @param {EodashCollection[]} eodashCols
+ * @param {import("vue").Ref<Exclude<import("@/types").EodashStyleJson["tooltip"],undefined>>} tooltipProperties
+ */
+export const useUpdateTooltipProperties = (eodashCols, tooltipProperties) => {
+  useOnLayersUpdate(async () => {
+    const tooltips = [];
+    for (const ec of eodashCols) {
+      tooltips.push(...(await ec.getToolTipProperties()));
+    }
+    tooltipProperties.value = tooltips;
+    log.debug("Updated tooltip properties", tooltipProperties.value);
   });
 };

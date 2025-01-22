@@ -12,7 +12,12 @@
       .center="initialCenter"
       .zoom="initialZoom"
       .layers="eoxMapLayers"
-    />
+    >
+      <eox-map-tooltip
+        :style="tooltipStyles"
+        .propertyTransform="tooltipPropertyTransform"
+      />
+    </eox-map>
     <eox-map
       class="fill-height fill-width overflow-none"
       id="compare"
@@ -29,9 +34,19 @@ import { computed, onMounted, ref, toRaw } from "vue";
 import { datetime, mapEl, mapPosition, mapCompareEl } from "@/store/states";
 import { storeToRefs } from "pinia";
 import { useSTAcStore } from "@/store/stac";
-import { eodashCollections, eodashCompareCollections } from "@/utils/states";
-import { useHandleMapMoveEnd, useInitMap } from "@/composables/EodashMap";
+import {
+  eodashCollections,
+  eodashCompareCollections,
+  layerControlFormValue,
+} from "@/utils/states";
+import {
+  useHandleMapMoveEnd,
+  useInitMap,
+  useUpdateTooltipProperties,
+} from "@/composables/EodashMap";
 import { inAndOut } from "ol/easing.js";
+import mustache from "mustache";
+
 const props = defineProps({
   enableCompare: {
     type: Boolean,
@@ -47,7 +62,14 @@ const props = defineProps({
     type: Number,
     default: 4,
   },
+  zoomToExtent: {
+    type: Boolean,
+    default: true,
+  },
 });
+
+/** @type {import("vue").Ref<Exclude<import("@/types").EodashStyleJson["tooltip"], undefined>>} */
+const tooltipProperties = ref([]);
 
 const initialCenter = toRaw([
   mapPosition.value?.[0] ?? props.center?.[0],
@@ -83,9 +105,9 @@ const animationOptions = {
   easing: inAndOut,
 };
 
-/** @type {import("vue").Ref<(HTMLElement & Record<string,any> & { map:import("ol").Map }) | null>} */
+/** @type {import("vue").Ref<import("@eox/map").EOxMap | null>} */
 const eoxMap = ref(null);
-/** @type {import("vue").Ref<(HTMLElement & Record<string,any> & { map:import("ol").Map }) | null>} */
+/** @type {import("vue").Ref<import("@eox/map").EOxMap | null>} */
 const compareMap = ref(null);
 const { selectedCompareStac } = storeToRefs(useSTAcStore());
 const showCompare = computed(() =>
@@ -112,6 +134,7 @@ onMounted(() => {
       datetime,
       eoxMapCompareLayers,
       eoxMap,
+      false,
     );
   }
 
@@ -123,6 +146,41 @@ onMounted(() => {
     datetime,
     eoxMapLayers,
     compareMap,
+    props.zoomToExtent,
   );
 });
+
+useUpdateTooltipProperties(eodashCollections, tooltipProperties);
+
+const tooltipStyles = computed(() => ({
+  visibility: tooltipProperties.value.length ? "visible" : "hidden",
+}));
+/**
+ * @param {{key:string; value:string}} param
+ * @returns {{key:string; value?:string} | undefined}
+ */
+const tooltipPropertyTransform = (param) => {
+  /** @type {typeof tooltipProperties.value} */
+  const updatedProperties = JSON.parse(
+    mustache.render(JSON.stringify(tooltipProperties.value), {
+      ...(layerControlFormValue.value ?? {}),
+    }),
+  );
+
+  const tooltipProp = updatedProperties?.find((prop) => prop.id === param.key);
+  if (!tooltipProp) {
+    return undefined;
+  }
+  if (typeof param.value === "object") {
+    param.value = JSON.stringify(param.value);
+  }
+  if (!isNaN(Number(param.value))) {
+    param.value = Number(param.value).toFixed(4).toString();
+  }
+
+  return {
+    key: tooltipProp.title || tooltipProp.id,
+    value: param.value + " " + (tooltipProp.appendix || ""),
+  };
+};
 </script>

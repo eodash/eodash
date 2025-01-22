@@ -14,7 +14,7 @@ import log from "loglevel";
  * @param {string} title
  * @param {Record<string,import("stac-ts").StacAsset>} assets
  * @param {import("stac-ts").StacItem } item
- * @param {import("ol/layer/WebGLTile").Style} [style]
+ * @param {import("@/types").EodashStyleJson} [style]
  * @param {Record<string, unknown>} [layerConfig]
  * @param {Record<string, unknown>} [layerDatetime]
  * @param {object | null} [extraProperties]
@@ -75,6 +75,23 @@ export async function createLayersFromAssets(
         },
         ...(!style?.variables && { style }),
       };
+      // add tooltip interaction if style has tooltip
+      if (style?.tooltip) {
+        // @ts-expect-error no type for eox-map layer
+        layer.interactions = [
+          {
+            type: "select",
+            options: {
+              id: (Math.random() * 10000).toFixed() + "_selectInteraction",
+              condition: "pointermove",
+              style: {
+                "stroke-color": "#335267",
+                "stroke-width": 4,
+              },
+            },
+          },
+        ];
+      }
 
       extractRoles(layer.properties, assets[ast]);
 

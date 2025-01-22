@@ -31,6 +31,9 @@ export class EodashCollection {
    */
   selectedItem;
 
+  /** @type {Exclude<import("@/types").EodashStyleJson["tooltip"],undefined>} */
+  #tooltipProperties = [];
+
   /** @type {string | undefined} */
   color;
 
@@ -148,6 +151,7 @@ export class EodashCollection {
     // less control.
 
     let { layerConfig, style } = extractLayerConfig(
+      this.#collectionStac?.id ?? "",
       await fetchStyle(item, itemUrl),
     );
 
@@ -297,6 +301,19 @@ export class EodashCollection {
       : this.getItems()?.at(-1);
   }
 
+  async getToolTipProperties() {
+    if (!(this.selectedItem instanceof Item)) {
+      return [];
+    }
+    let styles = await fetchStyle(
+      this.selectedItem,
+      `${this.#collectionUrl}/${this.selectedItem.id}`,
+    );
+    const { tooltip } = styles || { tooltip: [] };
+    this.#tooltipProperties = tooltip ?? [];
+    return this.#tooltipProperties;
+  }
+
   /**
    *
    * @param {string} datetime
@@ -365,7 +382,6 @@ export class EodashCollection {
         indicator?.title || indicator.id,
         //@ts-expect-error indicator instead of item
         indicator,
-        // layerDatetime,
       )),
       ...(await createLayersFromAssets(
         indicator?.id ?? "",
@@ -373,9 +389,6 @@ export class EodashCollection {
         indicatorAssets,
         //@ts-expect-error indicator instead of item
         indicator,
-        // style,
-        // layerConfig,
-        // layerDatetime,
       )),
     ];
   }

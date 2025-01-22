@@ -4,7 +4,7 @@
 import { changeMapProjection, registerProjection } from "@/store/actions";
 import log from "loglevel";
 import { getProjectionCode } from "./helpers";
-import { availableMapProjection } from "@/store/states";
+import { availableMapProjection, mapEl } from "@/store/states";
 
 /**
  * checks if there's a projection on the Collection and
@@ -41,3 +41,54 @@ export const setMapProjFromCol = async (STAcCollection) => {
     await changeMapProjection((availableMapProjection.value = ""));
   }
 };
+/**
+ *
+ * @param {string} collectionId
+ * @param {import("@/types").EodashStyleJson["variables"]} variables
+ */
+export function getStyleVariablesState(collectionId, variables) {
+  const mapElement = /** @type {import("@eox/map").EOxMap} */ (mapEl.value);
+  if (!mapElement || !mapElement.layers.length || !variables) {
+    return variables;
+  }
+
+  const analysisGroup = mapElement.layers.find(
+    (layer) => layer.properties?.id === "AnalysisGroup",
+  );
+  if (!analysisGroup) {
+    return variables;
+  }
+  const matchingLayer = analysisGroup.layers?.find((layer) => {
+    const [collection, ..._other] = layer.properties?.id.split(";:;") ?? [
+      "",
+      "",
+      "",
+    ];
+    return (
+      collection === collectionId &&
+      ["Vector", "WebGLTile"].includes(layer?.type ?? "")
+    );
+  });
+
+  if (!matchingLayer) {
+    return variables;
+  }
+
+  const olLayer = mapElement.getLayerById(matchingLayer.properties?.id ?? "");
+  const oldVariablesState = /** @type {import("ol/layer").WebGLTile} */ (
+    olLayer
+    //@ts-expect-error todo
+  ).getStyle()?.variables;
+  if (!oldVariablesState) {
+    return variables;
+  }
+  const styleVariablesKeys = Object.keys(variables);
+  const matchingKeys =
+    Object.keys(oldVariablesState).every((key) =>
+      styleVariablesKeys.includes(key),
+    ) &&
+    styleVariablesKeys.every((key) =>
+      Object.keys(oldVariablesState).includes(key),
+    );
+  return matchingKeys ? oldVariablesState : variables;
+}

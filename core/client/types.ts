@@ -318,3 +318,10 @@ export declare const store: typeof import("@/store").default;
 /////
 
 export * from "./main.js";
+
+export type EodashStyleJson = import("ol/style/webgl.js").WebGLStyle & {
+  variables?: Record<string, any>;
+  legend?: Record<string, any>;
+  jsonform?: Record<string, any>;
+  tooltip?: { id: string; title?: string; appendix?: string }[];
+};

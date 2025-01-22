@@ -57,6 +57,7 @@ export const eodashViteConfig = /** @type {import("vite").UserConfigFn} */ (
         extensions: [".js", ".json", ".jsx", ".mjs", ".ts", ".tsx", ".vue"],
       },
       server: {
+        allowedHosts: true,
         warmup: {
           clientFiles: [path.join(appPath, "core/client/**"), entryPath],
         },
