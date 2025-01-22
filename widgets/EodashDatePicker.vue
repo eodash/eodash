@@ -1,6 +1,7 @@
 <template>
   <div ref="rootRef" class="datePicker">
     <VCDatePicker
+      ref="datePicker"
       v-model.number="currentDate"
       :attributes="attributes"
       :masks="masks"
@@ -80,7 +81,8 @@
           >
             <input
               v-if="!hideInputField"
-              :value="new Date(currentDate).toLocaleDateString()"
+              :value="maskedCurrentDate"
+              @change="onInputChange"
               class="flex-grow px-1 py-1 dark:bg-gray-700"
               style="
                 margin: 1px;
@@ -112,15 +114,28 @@
 import { DatePicker as VCDatePicker } from "v-calendar";
 import { useDisplay } from "vuetify";
 import "v-calendar/style.css";
-import { watch, reactive, ref, customRef, toRef, onMounted } from "vue";
+import {
+  watch,
+  reactive,
+  ref,
+  customRef,
+  toRef,
+  onMounted,
+  computed,
+  useTemplateRef,
+} from "vue";
 import { useSTAcStore } from "@/store/stac";
 import { datetime } from "@/store/states";
 import { mdiRayStartArrow, mdiRayEndArrow } from "@mdi/js";
-import { eodashCollections } from "@/utils/states";
+import { eodashCollections, collectionsPalette } from "@/utils/states";
 import log from "loglevel";
 import { makePanelTransparent } from "@/composables";
 
 const { lgAndDown } = useDisplay();
+
+const rootEl = useTemplateRef("rootRef");
+
+const datePickerEl = useTemplateRef("datePicker");
 
 // holds the number value of the datetime
 const currentDate = customRef((track, trigger) => ({
@@ -132,13 +147,41 @@ const currentDate = customRef((track, trigger) => ({
   set(num) {
     trigger();
     log.debug("Datepicker setting currentDate", datetime.value);
-    datetime.value = new Date(num).toISOString();
+    const date = new Date(num);
+    datetime.value = date.toISOString();
+    //@ts-expect-error supports move method https://vcalendar.io/datepicker/basics.html#basics
+    datePickerEl.value?.move({
+      month: date.getMonth() + 1,
+      year: date.getFullYear(),
+    });
   },
 }));
 
 const masks = ref({
   input: "YYYY-MM-DD",
 });
+
+/** @param {Date} date */
+const formatDate = (date) => {
+  const years = date.getFullYear();
+  const month = date.getMonth() + 1;
+  const day = date.getDate();
+  return `${years}-${month < 10 ? "0" + month : month}-${
+    day < 10 ? "0" + day : day
+  }`;
+};
+/**
+ *
+ * @param e {Event}
+ */
+const onInputChange = (e) => {
+  currentDate.value = new Date(
+    /** @type {HTMLInputElement} */ (e.target)?.value,
+  ).getTime();
+};
+const maskedCurrentDate = computed(() =>
+  formatDate(new Date(currentDate.value)),
+);
 
 defineProps({
   hintText: {
@@ -171,9 +214,6 @@ defineProps({
  */
 const attributes = reactive([]);
 
-/** @type {import("vue").Ref<HTMLDivElement|null>} */
-const rootRef = ref(null);
-
 const selectedStac = toRef(useSTAcStore(), "selectedStac");
 
 watch(
@@ -181,20 +221,13 @@ watch(
   async (updatedStac, previousStac) => {
     if (updatedStac && previousStac?.id !== updatedStac.id) {
       log.debug("Datepicker selected STAC change triggered");
-      const wongPalette = [
-        "#009E73",
-        "#0072B2",
-        "#E69F00",
-        "#CC79A7",
-        "#56B4E9",
-        "#D55E00",
-      ];
       // remove old values
       attributes.splice(0, attributes.length);
 
       for (let idx = 0; idx < eodashCollections.length; idx++) {
         log.debug("Retrieving dates", eodashCollections[idx]);
         await eodashCollections[idx].fetchCollection();
+
         const dates = [
           ...new Set(
             eodashCollections[idx].getItems()?.reduce((valid, it) => {
@@ -210,7 +243,8 @@ watch(
           key: "id-" + idx.toString() + Math.random().toString(16).slice(2),
           dot: {
             style: {
-              backgroundColor: wongPalette[idx % wongPalette.length],
+              backgroundColor:
+                collectionsPalette[idx % collectionsPalette.length],
             },
           },
           dates,
@@ -261,7 +295,7 @@ onMounted(() => {
     : "translate3d(0px,-80px,0)";
 });
 
-makePanelTransparent(rootRef);
+makePanelTransparent(rootEl);
 </script>
 <style>
 @media (min-width: 960px) {

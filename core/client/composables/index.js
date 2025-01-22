@@ -17,6 +17,7 @@ import log from "loglevel";
 import { eodashKey, eoxLayersKey } from "@/utils/keys";
 import { useEventBus } from "@vueuse/core";
 import { posIsSetFromUrl } from "@/utils/states";
+import { setCollectionsPalette } from "@/utils";
 
 /**
  * Creates an absolute URL from a relative link and assignes it to `currentUrl`
@@ -81,12 +82,18 @@ export const useCompareAbsoluteUrl = (rel = "", base = eodash.stacEndpoint) => {
  * `ThemeDefinition`
  *
  * @param {string} themeName - Name of the theme to be updated
- * @param {import("vuetify").ThemeDefinition} [themeDefinition={}] - New
+ * @param {import("@/types").Eodash["brand"]["theme"]} [themeDefinition={}] - New
  *   defintion to be updated to. Default is `{}`
  * @returns {import("vuetify").ThemeInstance}
  */
 export const useUpdateTheme = (themeName, themeDefinition = {}) => {
   const theme = useTheme();
+
+  // extract collections palette from the theme
+  if (themeDefinition.collectionsPalette?.length) {
+    setCollectionsPalette(themeDefinition.collectionsPalette);
+    delete themeDefinition.collectionsPalette;
+  }
 
   /** @type {(keyof import("vuetify").ThemeDefinition)[]} */ (
     Object.keys(themeDefinition)

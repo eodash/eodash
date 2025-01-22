@@ -34,8 +34,8 @@ export class EodashCollection {
   /** @type {Exclude<import("@/types").EodashStyleJson["tooltip"],undefined>} */
   #tooltipProperties = [];
 
-  /** @type {import("@/types").EodashStyleJson|null} */
-  style = null;
+  /** @type {string | undefined} */
+  color;
 
   //  read only
   get collectionStac() {
@@ -186,6 +186,10 @@ export class EodashCollection {
           layerLegend: this.#collectionStac["eox:colorlegend"],
         };
       }
+      extraProperties = {
+        ...extraProperties,
+        ...(this.color && { color: this.color }),
+      };
       const links = await createLayersFromLinks(
         this.#collectionStac?.id ?? "",
         title,
@@ -378,7 +382,6 @@ export class EodashCollection {
         indicator?.title || indicator.id,
         //@ts-expect-error indicator instead of item
         indicator,
-        // layerDatetime,
       )),
       ...(await createLayersFromAssets(
         indicator?.id ?? "",
@@ -386,9 +389,6 @@ export class EodashCollection {
         indicatorAssets,
         //@ts-expect-error indicator instead of item
         indicator,
-        // style,
-        // layerConfig,
-        // layerDatetime,
       )),
     ];
   }
