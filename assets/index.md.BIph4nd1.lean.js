@@ -1,0 +1,1 @@
+import{_ as i,c as a,ag as n,o as t}from"./chunks/framework.DmpuTMbk.js";const o=JSON.parse('{"title":"Get Started","description":"","frontmatter":{},"headers":[],"relativePath":"index.md","filePath":"index.md"}'),h={name:"index.md"};function l(p,s,e,k,E,d){return t(),a("div",null,s[0]||(s[0]=[n("",33)]))}const g=i(h,[["render",l]]);export{o as __pageData,g as default};
