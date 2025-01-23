@@ -75,6 +75,10 @@ export function getStyleVariablesState(collectionId, variables) {
   }
 
   const olLayer = mapElement.getLayerById(matchingLayer.properties?.id ?? "");
+  //@ts-expect-error todo
+  if (olLayer && typeof olLayer.getSyle !== 'function'){
+    return variables;
+  }
   const oldVariablesState = /** @type {import("ol/layer").WebGLTile} */ (
     olLayer
     //@ts-expect-error todo
