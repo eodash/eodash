@@ -348,7 +348,7 @@ export async function processGeoTiff(links, jsonformValue, layerId, isPolling) {
   /** @type {Record<string,any>|undefined} */
   let style;
   if (flatStyleJSON) {
-    const extracted = extractLayerConfig(flatStyleJSON);
+    const extracted = extractLayerConfig(layerId ?? "", flatStyleJSON);
     layerConfig = extracted.layerConfig;
     style = extracted.style;
   }
