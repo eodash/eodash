@@ -75,14 +75,14 @@ export function getStyleVariablesState(collectionId, variables) {
   }
 
   const olLayer = mapElement.getLayerById(matchingLayer.properties?.id ?? "");
-  //@ts-expect-error todo
-  if (olLayer && typeof olLayer.getSyle !== 'function'){
-    return variables;
-  }
-  const oldVariablesState = /** @type {import("ol/layer").WebGLTile} */ (
-    olLayer
-    //@ts-expect-error todo
-  ).getStyle()?.variables;
+  const oldVariablesState =
+    /** @type {import("ol/layer").Vector} */ (
+      olLayer
+      //@ts-expect-error variables doesn't exist in non-flat style
+    ).getStyle?.()?.variables ??
+    //@ts-expect-error (styleVariables_ is a private property)
+    /** @type {import("ol/layer").WebGLTile} */ (olLayer).styleVariables_;
+
   if (!oldVariablesState) {
     return variables;
   }
