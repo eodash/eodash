@@ -14,7 +14,7 @@
 
 <script setup>
 import { useEodashRuntime } from "@/composables/DefineEodash";
-import { useUpdateTheme } from "@/composables";
+import { useURLSearchParametersSync, useUpdateTheme } from "@/composables";
 import { useSTAcStore } from "@/store/stac";
 import { computed, defineAsyncComponent, onErrorCaptured, ref } from "vue";
 import { useDisplay } from "vuetify/lib/framework.mjs";
@@ -31,6 +31,9 @@ const props = defineProps({
     default: false,
   },
 });
+
+useURLSearchParametersSync();
+
 const eodash = await useEodashRuntime(props.config);
 
 const theme = useUpdateTheme("dashboardTheme", {
@@ -81,5 +84,25 @@ div.v-application__wrap {
 }
 eo-dash {
   overflow: hidden;
+}
+/* set eox-elements colors css vars to match the theme */
+eox-layercontrol,
+eox-map,
+eox-drawtools,
+eox-timecontrol,
+eox-jsonform,
+eox-chart,
+eox-stacinfo,
+eox-itemfilter {
+  --primary-color: rgb(var(--v-theme-primary));
+  --eox-primary-color: rgb(var(--v-theme-primary));
+  --eox-secondary-color: rgb(var(--v-theme-secondary));
+  --eox-accent-color: rgb(var(--v-theme-accent));
+  --eox-error-color: rgb(var(--v-theme-error));
+  --eox-info-color: rgb(var(--v-theme-info));
+  --eox-success-color: rgb(var(--v-theme-success));
+  --eox-warning-color: rgb(var(--v-theme-warning));
+  --range-slider-color: rgb(var(--v-theme-primary));
+  --range-slider-track-color: rgb(var(--v-theme-on-primary));
 }
 </style>

@@ -14,7 +14,6 @@
 import Dashboard from "@/views/Dashboard.vue";
 import ErrorAlert from "./components/ErrorAlert.vue";
 import { onErrorCaptured, ref } from "vue";
-import { useURLSearchParametersSync } from "./composables";
 
 defineProps({
   config: {
@@ -25,7 +24,6 @@ defineProps({
 });
 
 // window.setEodashLoglevel("DEBUG")
-useURLSearchParametersSync();
 
 const error = ref("");
 const isWebComponent = !!document.querySelector("eo-dash");
