@@ -1,16 +1,8 @@
 import { eodashKey } from "@/utils/keys";
-import {
-  getCurrentInstance,
-  inject,
-  ref,
-  shallowReactive,
-  shallowRef,
-  toRefs,
-  watch,
-} from "vue";
+import { inject, ref, shallowReactive, shallowRef, toRefs, watch } from "vue";
 import { useDefineWidgets } from "./DefineWidgets";
 import { activeTemplate } from "@/store/states";
-import { createSharedComposable, debouncedWatch } from "@vueuse/core";
+import { createSharedComposable } from "@vueuse/core";
 import log from "loglevel";
 
 /**

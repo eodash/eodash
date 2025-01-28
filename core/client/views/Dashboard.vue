@@ -38,11 +38,7 @@ const theme = useUpdateTheme("dashboardTheme", {
 });
 theme.global.name.value = "dashboardTheme";
 
-await loadFont(
-  eodash.brand?.font?.family,
-  eodash.brand?.font?.link,
-  props.isWebComponent,
-);
+await loadFont(eodash.brand?.font, props.isWebComponent);
 
 const { loadSTAC } = useSTAcStore();
 await loadSTAC();

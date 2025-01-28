@@ -20,6 +20,16 @@ export const eodash = reactive({
   brand: {
     noLayout: true,
     name: "Demo",
+    font: {
+      headers: {
+        family: "Poppins",
+        link: "https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&display=swap",
+      },
+      body: {
+        family: "Roboto",
+        link: "https://fonts.googleapis.com/css2?family=Roboto:wght@400;300;500&display=swap",
+      },
+    },
     theme: {
       colors: {
         primary: "#002742",
@@ -64,7 +74,7 @@ export const eodash = reactive({
         },
       },
       background: {
-        id: Symbol(),
+        id: "background-map",
         type: "internal",
         widget: {
           name: "EodashMap",
@@ -186,7 +196,7 @@ export const eodash = reactive({
         },
       },
       background: {
-        id: Symbol(),
+        id: "background-map",
         type: "internal",
         widget: {
           name: "EodashMap",
@@ -315,7 +325,7 @@ export const eodash = reactive({
         },
       },
       background: {
-        id: Symbol(),
+        id: "background-map",
         type: "internal",
         widget: {
           name: "EodashMap",
