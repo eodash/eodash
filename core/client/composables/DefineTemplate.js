@@ -1,8 +1,16 @@
 import { eodashKey } from "@/utils/keys";
-import { inject, ref, shallowReactive, shallowRef, toRefs, watch } from "vue";
+import {
+  getCurrentInstance,
+  inject,
+  ref,
+  shallowReactive,
+  shallowRef,
+  toRefs,
+  watch,
+} from "vue";
 import { useDefineWidgets } from "./DefineWidgets";
 import { activeTemplate } from "@/store/states";
-import { createSharedComposable } from "@vueuse/core";
+import { createSharedComposable, debouncedWatch } from "@vueuse/core";
 import log from "loglevel";
 
 /**
@@ -47,11 +55,22 @@ const useTemplate = () => {
         }
 
         const templateConfig = eodash.templates[template];
-        [definedTemplate.bgWidget] = useDefineWidgets([
+        const [importedBgWidget] = useDefineWidgets([
           templateConfig.background,
         ]);
+        if (importedBgWidget.value.id !== definedTemplate.bgWidget.value?.id) {
+          definedTemplate.bgWidget.value = importedBgWidget.value;
+        }
 
-        [definedTemplate.loading] = useDefineWidgets([templateConfig.loading]);
+        const [importedLoadingWidget] = useDefineWidgets([
+          templateConfig.loading,
+        ]);
+
+        if (
+          importedLoadingWidget.value.id !== definedTemplate.loading.value?.id
+        ) {
+          definedTemplate.loading.value = importedLoadingWidget.value;
+        }
 
         definedTemplate.importedWidgets = useDefineWidgets(
           templateConfig.widgets,

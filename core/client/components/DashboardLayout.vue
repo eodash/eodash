@@ -3,6 +3,7 @@
     <eox-layout :gap="gap" :style="`padding: ${gap}px`">
       <eox-layout-item
         v-if="bgWidget?.component"
+        :key="bgWidget.id"
         class="bg-panel bg-surface"
         :style="`margin: -${gap + 1}px;`"
         x="0"
