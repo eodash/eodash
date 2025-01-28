@@ -78,7 +78,8 @@ export const loadFont = async (fontConfig, isWebComponent) => {
             eo-dash h2,
             eo-dash h3,
             eo-dash h4,
-            eo-dash h5
+            eo-dash h5,
+            eo-dash .header
             `
                : `
             h1,

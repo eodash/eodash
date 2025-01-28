@@ -297,7 +297,7 @@ onMounted(() => {
 
 makePanelTransparent(rootEl);
 </script>
-<style scoped>
+<style>
 @media (min-width: 960px) {
   .datePicker {
     position: absolute;

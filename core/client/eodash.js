@@ -22,12 +22,12 @@ export const eodash = reactive({
     name: "Demo",
     font: {
       headers: {
-        family: "Poppins",
-        link: "https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&display=swap",
+        family: "Montserrat",
+        link: "https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;700&display=swap",
       },
       body: {
-        family: "Roboto",
-        link: "https://fonts.googleapis.com/css2?family=Roboto:wght@400;300;500&display=swap",
+        family: "Open Sans",
+        link: "https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap",
       },
     },
     theme: {
