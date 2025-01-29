@@ -68,7 +68,11 @@ export const loadFont = async (fontConfig, isWebComponent) => {
             --eox-body-font-family: ${bodyFamily};
              font-family: ${bodyFamily}
             ;
-           }`;
+           }
+            *[class*="text-body"]{
+              font-family: ${bodyFamily}
+            }
+            `;
 
       const headersRule = `
            ${
@@ -79,7 +83,7 @@ export const loadFont = async (fontConfig, isWebComponent) => {
             eo-dash h3,
             eo-dash h4,
             eo-dash h5,
-            eo-dash .header
+            eo-dash *[class*="header"]
             `
                : `
             h1,
@@ -87,7 +91,7 @@ export const loadFont = async (fontConfig, isWebComponent) => {
             h3,
             h4,
             h5,
-            .header`
+            *[class*="header"]`
            } {
            font-family: ${headerFamily} !important;
          }
