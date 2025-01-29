@@ -100,8 +100,12 @@ export const loadFont = async (fontConfig, isWebComponent) => {
            eox-stacinfo {
           --eox-header-font-family: ${headerFamily};
           `;
-
-      const styles = familyName == bodyFamily ? bodyRule : headersRule;
+      const isOne = headerFamily && headerFamily === bodyFamily;
+      const styles = isOne
+        ? bodyRule + "\n" + headersRule
+        : familyName == bodyFamily
+          ? bodyRule
+          : headersRule;
       stylesheet.replaceSync(styles);
       document?.adoptedStyleSheets?.push(stylesheet);
     },
