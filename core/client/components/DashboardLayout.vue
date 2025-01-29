@@ -11,7 +11,7 @@
         h="12"
         w="12"
       >
-        <Suspense suspensible>
+        <Suspense>
           <component
             id="bg-widget"
             :is="bgWidget?.component"
@@ -31,7 +31,7 @@
             :x="importedWidget.value.layout.x"
             :y="importedWidget.value.layout.y"
           >
-            <Suspense suspensible>
+            <Suspense>
               <component
                 :key="importedWidget.value.id"
                 :is="importedWidget.value.component"
