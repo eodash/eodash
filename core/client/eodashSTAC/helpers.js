@@ -279,7 +279,7 @@ export const replaceLayer = (currentLayers, oldLayer, newLayers) => {
  * @param {import('../eodashSTAC/EodashCollection.js').EodashCollection[]} indicators
  * @param {import('ol/layer').Layer} layer
  */
-export const getColFromLayer = async (indicators, layer) => {
+export const getColFromLayer = (indicators, layer) => {
   // init cols
   const collections = indicators.map((ind) => ind.collectionStac);
   const [collectionId, itemId, ..._other] = layer.get("id").split(";:;");
@@ -288,7 +288,12 @@ export const getColFromLayer = async (indicators, layer) => {
     const isInd =
       col?.id === collectionId &&
       col?.links?.some(
-        (link) => link.rel === "item" && link.href.includes(itemId),
+        (link) =>
+          link.rel === "item" &&
+          (link.href.includes(itemId) ||
+            link.id === itemId ||
+            //@ts-expect-error attaching the item in link when parsing .parquet items, see @/eodashSTAC/parquet.js
+            (link["item"] && link["item"].id === itemId)),
       );
     return isInd;
   });

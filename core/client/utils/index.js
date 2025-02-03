@@ -97,7 +97,6 @@ export const updateEodashCollections = async (
               link.rel === "items" &&
               link.type === "application/vnd.apache.parquet",
           );
-          console.log("parquetItems", parquetLink);
           if (parquetLink) {
             readParquetItems(toAbsolute(parquetLink.href, cu)).then((items) => {
               c.links.push(...generateLinksFromItems(items));
