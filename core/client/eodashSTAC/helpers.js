@@ -426,7 +426,10 @@ export function generateLinksFromItems(items) {
       title: item.id,
       href: "",
       item,
-      datetime: item.properties?.datetime,
+      datetime:
+        /** @type {*} */ (item.properties.datetime) instanceof Date
+          ? item.properties.datetime.toISOString()
+          : item.properties.datetime,
       ...(item.geometry?.type == "Point" &&
         item.geometry?.coordinates.length && {
           latlng: item.geometry.coordinates.join(","),
