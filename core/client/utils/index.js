@@ -1,5 +1,12 @@
 import log from "loglevel";
 import { collectionsPalette } from "./states";
+import {
+  extractCollectionUrls,
+  generateLinksFromItems,
+} from "@/eodashSTAC/helpers";
+import { EodashCollection } from "@/eodashSTAC/EodashCollection";
+import { toAbsolute } from "stac-js/src/http.js";
+import { readParquetItems } from "@/eodashSTAC/parquet";
 /**
  * Loads font in the app using `webfontloader`
  *
@@ -60,4 +67,54 @@ export const setCollectionsPalette = (colors) => {
   log.debug("Setting collections color palette", colors);
   collectionsPalette.splice(0, collectionsPalette.length);
   collectionsPalette.push(...colors);
+};
+
+
+/**
+ * Updates the eodash collections by fetching and processing collection data from specified URLs
+ * @param {import("stac-ts").StacCollection} indicator - The indicator object
+ * @param {string} indicatorUrl - The absolute indicator URL
+ * @param {import('@/eodashSTAC/EodashCollection').EodashCollection[]} eodashCollections  - The array of existing eodash collections to be updated
+ * @async
+ * @description This function extracts collection URLs from the indicator, fetches collection data,
+ * processes parquet items if available, and updates the eodashCollections array with new collection data.
+ * Each collection is assigned a color from a predefined palette.
+ */
+export const updateEodashCollections = async (
+  eodashCollections,
+  indicator,
+  indicatorUrl,
+) => {
+  // init eodash collections
+  const collectionUrls = extractCollectionUrls(indicator, indicatorUrl);
+
+  await Promise.all(
+    collectionUrls.map((cu, idx) => {
+      return new Promise((resolve) => {
+        const ec = new EodashCollection(cu);
+        ec.fetchCollection().then((c) => {
+          const parquetLink = c.links.find(
+            (link) =>
+              link.rel === "items" &&
+              link.type === "application/vnd.apache.parquet",
+          );
+          console.log("parquetItems", parquetLink);
+          if (parquetLink) {
+            readParquetItems(toAbsolute(parquetLink.href, cu)).then((items) => {
+              c.links.push(...generateLinksFromItems(items));
+              ec.color = collectionsPalette[idx % collectionsPalette.length];
+              resolve(ec);
+            });
+          } else {
+            // resolve(ec);
+          }
+        });
+      });
+    }),
+  ).then(async (collections) => {
+    // empty array from old collections
+    eodashCollections.splice(0, eodashCollections.length);
+    // update eodashCollections
+    eodashCollections.push(...collections);
+  });
 };

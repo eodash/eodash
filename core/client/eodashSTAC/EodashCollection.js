@@ -56,35 +56,37 @@ export class EodashCollection {
     /**
      * @type {import("stac-ts").StacLink | undefined}
      **/
-    let stacItem;
+    let itemLink;
 
     /**
-     * @type {import("stac-ts").StacCollection | undefined}
+     * @type {import("stac-ts").StacCollection | import("stac-ts").StacItem | undefined}
      **/
     let stac;
     // TODO get auxiliary layers from collection
     /** @type {Record<string,any>[]} */
     let layersJson = [];
 
-    // Load collectionstac if not yet initialized
-    stac = await this.fetchCollection();
-
     const isGeoDB = stac?.endpointtype === "GeoDB";
 
     if (linkOrDate instanceof Date) {
       // if collectionStac not yet initialized we do it here
-      stacItem = this.getItem(linkOrDate);
+      itemLink = this.getItem(linkOrDate);
     } else {
-      stacItem = linkOrDate;
+      itemLink = linkOrDate;
+    }
+    let stacItemUrl = "";
+
+    if (itemLink?.["item"]) {
+      stac = /** @type {import("stac-ts").StacItem} */ (itemLink["item"]);
+    } else {
+      stacItemUrl = itemLink
+        ? toAbsolute(itemLink.href, this.#collectionUrl)
+        : this.#collectionUrl;
+
+      stac = await axios.get(stacItemUrl).then((resp) => resp.data);
     }
 
-    const stacItemUrl = stacItem
-      ? toAbsolute(stacItem.href, this.#collectionUrl)
-      : this.#collectionUrl;
-
-    stac = await axios.get(stacItemUrl).then((resp) => resp.data);
-
-    if (!stacItem) {
+    if (!itemLink) {
       // no specific item was requested; render last item
       this.#collectionStac = new Collection(stac);
       this.selectedItem = this.getItem();
@@ -127,7 +129,6 @@ export class EodashCollection {
       isGeoDB,
       itemDatetime,
     );
-    await this.fetchCollection();
     // registering top level indicator projection
     const indicatorProjection =
       item?.["proj:epsg"] || item?.["eodash:proj4_def"];
@@ -246,6 +247,9 @@ export class EodashCollection {
     return this.#collectionStac;
   }
 
+  /**
+   * Returns all item links sorted by datetime ascendingly
+   */
   getItems() {
     return (
       this.#collectionStac?.links
@@ -261,22 +265,12 @@ export class EodashCollection {
   }
 
   getDates() {
-    return (
-      this.#collectionStac?.links
-        .filter((i) => i.rel === "item")
-        // sort by `datetime`, where oldest is first in array
-        .sort((a, b) =>
-          /** @type {number} */ (a.datetime) <
-          /** @type {number} */ (b.datetime)
-            ? -1
-            : 1,
-        )
-        .map((i) => new Date(/** @type {number} */ (i.datetime)))
+    return this.getItems()?.map(
+      (i) => new Date(/** @type {number} */ (i.datetime)),
     );
   }
 
   async getExtent() {
-    await this.fetchCollection();
     return this.#collectionStac?.extent;
   }
 
@@ -321,8 +315,6 @@ export class EodashCollection {
    * @param {string} map
    */
   async updateLayerJson(datetime, layer, map) {
-    await this.fetchCollection();
-
     // get the link of the specified date
     const specifiedLink = this.getItems()?.find(
       (item) =>

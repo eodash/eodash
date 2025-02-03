@@ -281,15 +281,13 @@ export const replaceLayer = (currentLayers, oldLayer, newLayers) => {
  */
 export const getColFromLayer = async (indicators, layer) => {
   // init cols
-  const collections = await Promise.all(
-    indicators.map((ind) => ind.fetchCollection()),
-  );
+  const collections = indicators.map((ind) => ind.collectionStac)
   const [collectionId, itemId, ..._other] = layer.get("id").split(";:;");
 
   const chosen = collections.find((col) => {
     const isInd =
-      col.id === collectionId &&
-      col.links?.some(
+      col?.id === collectionId &&
+      col?.links?.some(
         (link) => link.rel === "item" && link.href.includes(itemId),
       );
     return isInd;
@@ -415,4 +413,24 @@ export async function mergeGeojsons(geojsonUrls) {
   return encodeURI(
     "data:application/json;charset=utf-8," + JSON.stringify(merged),
   );
+}
+/**
+ *
+ * @param {import("stac-ts").StacItem[]} items
+ */
+export function generateLinksFromItems(items) {
+  return items.map((item) => {
+    return {
+      rel: "item",
+      type: "application/geo+json",
+      title: item.id,
+      href: "",
+      item,
+      datetime: item.properties?.datetime,
+      ...(item.geometry?.type == "Point" &&
+        item.geometry?.coordinates.length && {
+          latlng: item.geometry.coordinates.join(","),
+        }),
+    };
+  });
 }
