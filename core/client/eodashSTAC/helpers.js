@@ -281,7 +281,7 @@ export const replaceLayer = (currentLayers, oldLayer, newLayers) => {
  */
 export const getColFromLayer = async (indicators, layer) => {
   // init cols
-  const collections = indicators.map((ind) => ind.collectionStac)
+  const collections = indicators.map((ind) => ind.collectionStac);
   const [collectionId, itemId, ..._other] = layer.get("id").split(";:;");
 
   const chosen = collections.find((col) => {

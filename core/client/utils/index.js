@@ -69,7 +69,6 @@ export const setCollectionsPalette = (colors) => {
   collectionsPalette.push(...colors);
 };
 
-
 /**
  * Updates the eodash collections by fetching and processing collection data from specified URLs
  * @param {import("stac-ts").StacCollection} indicator - The indicator object
