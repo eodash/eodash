@@ -104,7 +104,7 @@ export const updateEodashCollections = async (
               resolve(ec);
             });
           } else {
-            // resolve(ec);
+            resolve(ec);
           }
         });
       });
