@@ -407,12 +407,16 @@ export class EodashCollection {
         continue;
       }
       const collectionFeatures = generateFeatures(
-        collection.#collectionStac?.links,
+        JSON.parse(JSON.stringify(collection.#collectionStac?.links)),
+        {
+          collection_id: collection.#collectionStac?.id,
+          geoDBID: collection.#collectionStac?.geoDBID,
+          themes: collection.#collectionStac?.themes ?? [],
+        },
       ).features;
+
       if (collectionFeatures.length) {
-        allFeatures.push(
-          generateFeatures(collection.#collectionStac?.links).features,
-        );
+        allFeatures.push(collectionFeatures);
       }
     }
     if (allFeatures.length) {
