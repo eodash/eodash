@@ -89,23 +89,26 @@ export const updateEodashCollections = async (
 
   await Promise.all(
     collectionUrls.map((cu, idx) => {
-      return new Promise((resolve) => {
+      return new Promise((resolve, _reject) => {
         const ec = new EodashCollection(cu);
-        ec.fetchCollection().then((c) => {
-          const parquetLink = c.links.find(
+        ec.fetchCollection().then((col) => {
+          const parquetLink = col.links.find(
             (link) =>
               link.rel === "items" &&
               link.type === "application/vnd.apache.parquet",
           );
-          if (parquetLink) {
-            readParquetItems(toAbsolute(parquetLink.href, cu)).then((items) => {
-              c.links.push(...generateLinksFromItems(items));
-              ec.color = collectionsPalette[idx % collectionsPalette.length];
-              resolve(ec);
-            });
-          } else {
+
+          ec.color = collectionsPalette[idx % collectionsPalette.length];
+
+          if (!parquetLink) {
             resolve(ec);
+            return;
           }
+
+          readParquetItems(toAbsolute(parquetLink.href, cu)).then((items) => {
+            col.links.push(...generateLinksFromItems(items));
+            resolve(ec);
+          });
         });
       });
     }),
