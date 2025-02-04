@@ -75,7 +75,6 @@ const handleDatetimeUpdate = async (evt) => {
   let updatedLayers = [];
 
   if (ec) {
-    await ec.fetchCollection();
     updatedLayers = await ec.updateLayerJson(
       datetime,
       layer.get("id"),

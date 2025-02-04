@@ -4,14 +4,9 @@ import axios from "@/plugins/axios";
 import { useAbsoluteUrl, useCompareAbsoluteUrl } from "@/composables/index";
 import { eodashKey } from "@/utils/keys";
 import { indicator } from "@/store/states";
-import { extractCollectionUrls } from "@/eodashSTAC/helpers";
-import {
-  eodashCollections,
-  eodashCompareCollections,
-  collectionsPalette,
-} from "@/utils/states";
-import { EodashCollection } from "@/eodashSTAC/EodashCollection";
+import { eodashCollections, eodashCompareCollections } from "@/utils/states";
 import log from "loglevel";
+import { updateEodashCollections } from "@/utils";
 
 export const useSTAcStore = defineStore("stac", () => {
   /**
@@ -89,28 +84,13 @@ export const useSTAcStore = defineStore("stac", () => {
     await axios
       .get(absoluteUrl.value)
       .then(async (resp) => {
-        // init eodash collections
-        const collectionUrls = extractCollectionUrls(
+        await updateEodashCollections(
+          eodashCollections,
           resp.data,
           absoluteUrl.value,
         );
-
-        await Promise.all(
-          collectionUrls.map((cu, idx) => {
-            const ec = new EodashCollection(cu);
-            ec.fetchCollection();
-            ec.color = collectionsPalette[idx % collectionsPalette.length];
-            return ec;
-          }),
-        ).then((collections) => {
-          // empty array from old collections
-          eodashCollections.splice(0, eodashCollections.length);
-          // update eodashCollections
-          eodashCollections.push(...collections);
-
-          selectedStac.value = resp.data;
-          indicator.value = selectedStac.value?.id ?? "";
-        });
+        selectedStac.value = resp.data;
+        indicator.value = selectedStac.value?.id ?? "";
       })
       .catch((err) => {
         throw new Error("error loading the selected STAC", err);
@@ -130,26 +110,12 @@ export const useSTAcStore = defineStore("stac", () => {
     await axios
       .get(absoluteUrl.value)
       .then(async (resp) => {
-        // init eodash collections
-        const collectionUrls = await extractCollectionUrls(
+        await updateEodashCollections(
+          eodashCompareCollections,
           resp.data,
           absoluteUrl.value,
         );
-
-        await Promise.all(
-          collectionUrls.map((cu) => {
-            const ec = new EodashCollection(cu);
-            ec.fetchCollection();
-            return ec;
-          }),
-        ).then((collections) => {
-          // empty array from old collections
-          eodashCompareCollections.splice(0, eodashCompareCollections.length);
-          // update eodashCompareCollections
-          eodashCompareCollections.push(...collections);
-
-          selectedCompareStac.value = resp.data;
-        });
+        selectedCompareStac.value = resp.data;
       })
       .catch((err) => {
         throw new Error("error loading the selected comparison STAC", err);
