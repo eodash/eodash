@@ -111,11 +111,16 @@ const getWidgetDefinition = (config) => {
   switch (config?.type) {
     case "internal":
       importedWidget.component = defineAsyncComponent({
-        loader:
-          internalWidgets[
+        loader: () => {
+          const widgetName =
             /** @type {import("@/types").InternalComponentWidget} * */ (config)
-              ?.widget.name
-          ],
+              ?.widget.name;
+
+          return (
+            internalWidgets[widgetName]?.() ??
+            Promise.reject(`Widget ${widgetName} not found`)
+          );
+        },
         suspensible: true,
       });
       importedWidget.props = reactive(

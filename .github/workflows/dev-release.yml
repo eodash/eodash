@@ -1,0 +1,28 @@
+name: Create dev release
+
+on:
+  workflow_dispatch:
+    inputs:
+      comment:
+        description: "Optional comment"
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  dev-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout 🛎️
+        uses: actions/checkout@v4
+      - name: Set up NPM 🔧
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install dependencies 🔧
+        run: npm ci
+      - name: Build and publish package 🚀
+        run: |
+          npx pkg-pr-new publish --compact --comment=${{ inputs.comment }}

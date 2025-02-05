@@ -31,20 +31,17 @@ const props = defineProps({
     default: false,
   },
 });
-const eodash = await useEodashRuntime(props.config);
 
 useURLSearchParametersSync();
+
+const eodash = await useEodashRuntime(props.config);
 
 const theme = useUpdateTheme("dashboardTheme", {
   ...(eodash.brand?.theme ?? {}),
 });
 theme.global.name.value = "dashboardTheme";
 
-await loadFont(
-  eodash.brand?.font?.family,
-  eodash.brand?.font?.link,
-  props.isWebComponent,
-);
+await loadFont(eodash.brand?.font, props.isWebComponent);
 
 const { loadSTAC } = useSTAcStore();
 await loadSTAC();
@@ -87,5 +84,25 @@ div.v-application__wrap {
 }
 eo-dash {
   overflow: hidden;
+}
+/* set eox-elements colors css vars to match the theme */
+eox-layercontrol,
+eox-map,
+eox-drawtools,
+eox-timecontrol,
+eox-jsonform,
+eox-chart,
+eox-stacinfo,
+eox-itemfilter {
+  --primary-color: rgb(var(--v-theme-primary));
+  --eox-primary-color: rgb(var(--v-theme-primary));
+  --eox-secondary-color: rgb(var(--v-theme-secondary));
+  --eox-accent-color: rgb(var(--v-theme-accent));
+  --eox-error-color: rgb(var(--v-theme-error));
+  --eox-info-color: rgb(var(--v-theme-info));
+  --eox-success-color: rgb(var(--v-theme-success));
+  --eox-warning-color: rgb(var(--v-theme-warning));
+  --range-slider-color: rgb(var(--v-theme-primary));
+  --range-slider-track-color: rgb(var(--v-theme-on-primary));
 }
 </style>

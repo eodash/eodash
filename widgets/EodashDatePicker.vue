@@ -298,6 +298,24 @@ onMounted(() => {
 makePanelTransparent(rootEl);
 </script>
 <style>
+.vc-popover-content {
+  --vc-nav-hover-bg: rgba(var(--v-theme-on-surface), 0.1);
+  --vc-nav-item-active-color: rgb(var(--v-theme-on-secondary));
+  --vc-nav-item-active-bg: rgba(var(--v-theme-secondary), 0.8);
+  --vc-focus-ring: 0 0 0 2px rgba(var(--v-theme-secondary), 0.5);
+}
+.vc-container {
+  --vc-day-content-hover-bg: rgba(var(--v-theme-on-surface), 0.2);
+  --vc-focus-ring: 0 0 0 2px rgba(var(--v-theme-secondary), 0.4);
+  --vc-header-arrow-hover-bg: rgba(var(--v-theme-secondary), 0.1);
+}
+.vc-attr {
+  --vc-accent-600: rgba(var(--v-theme-secondary), 0.8);
+}
+.datePicker {
+  --vc-day-content-hover-bg: red;
+}
+
 @media (min-width: 960px) {
   .datePicker {
     position: absolute;

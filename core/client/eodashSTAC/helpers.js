@@ -3,8 +3,11 @@ import axios from "@/plugins/axios";
 import log from "loglevel";
 import { getStyleVariablesState } from "./triggers.js";
 
-/** @param {import("stac-ts").StacLink[]} [links] */
-export function generateFeatures(links) {
+/**
+ *  @param {import("stac-ts").StacLink[]} [links]
+ *  @param {Record<string,any>} [extraProperties]
+ **/
+export function generateFeatures(links, extraProperties = {}) {
   /**
    * @type {import("geojson").Feature[]}
    */
@@ -20,7 +23,7 @@ export function generateFeatures(links) {
           type: "Point",
           coordinates: [lon, lat],
         },
-        properties: { id: element.id },
+        properties: { ...element, ...extraProperties },
       });
     }
   });

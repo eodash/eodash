@@ -14,7 +14,7 @@ export interface WebComponentProps<T extends ExecutionTime = "compiletime"> {
    *   import maps are not available in runtime config
    *   :::
    */
-  link: T extends "runtime" ? string : string | (() => Promise<unknown>);
+  link?: T extends "runtime" ? string : string | (() => Promise<unknown>);
   /**
    * Exported Constructor, needs to be provided if the web component is not
    * registered in by the [link](#link) provided
@@ -194,7 +194,15 @@ export type StacEndpoint = `${string}/catalog.json`;
 
 /** @group Eodash */
 type ExecutionTime = "runtime" | "compiletime";
-
+type EodashFont = {
+  /**
+   * Link to stylesheet that defines font-face. Could be either a relative
+   * or absolute URL.
+   */
+  link?: string;
+  /** Font family name. */
+  family: string;
+};
 /**
  * Eodash instance API
  *
@@ -212,15 +220,12 @@ export type Eodash<T extends ExecutionTime = "compiletime"> = {
     /** Custom error message to alert the users if something crashes */
     errorMessage?: string;
     /** Fetches the specified font family from the specified `link` property. */
-    font?: {
-      /**
-       * Link to stylesheet that defines font-face. Could be either a relative
-       * or absolute URL.
-       */
-      link: string;
-      /** Font family name. */
-      family: string;
-    };
+    font?:
+      | EodashFont
+      | {
+          body: EodashFont;
+          headers: EodashFont;
+        };
     /** Title that will be shown in the app header */
     name: string;
     /** Brand logo */
@@ -320,8 +325,8 @@ export declare const store: typeof import("@/store").default;
 export * from "./main.js";
 
 export type EodashStyleJson = import("ol/style/webgl.js").WebGLStyle & {
-  variables?: Record<string, any>;
-  legend?: Record<string, any>;
+  variables?: Record<string, string | number | boolean | null | undefined>;
+  legend?: import("@eox/layercontrol/src/components/layer-config.js").EOxLayerControlLayerConfig["layerConfig"]["legend"];
   jsonform?: Record<string, any>;
   tooltip?: { id: string; title?: string; appendix?: string }[];
 };
