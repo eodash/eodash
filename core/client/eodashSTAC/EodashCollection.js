@@ -434,7 +434,7 @@ export class EodashCollection {
         type: "Vector",
         properties: {
           id: "geodb-collection",
-          title: "GeoDB Collection",
+          title: "Observation Points",
         },
         source: {
           type: "Vector",
