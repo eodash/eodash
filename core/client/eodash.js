@@ -22,12 +22,12 @@ export const eodash = reactive({
     name: "Demo",
     font: {
       headers: {
-        family: "Montserrat",
-        link: "https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;700&display=swap",
+        family: "Open Sans",
+        link: "https://eox.at/fonts/opensans/opensans.css",
       },
       body: {
-        family: "Open Sans",
-        link: "https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap",
+        family: "Sintony",
+        link: "https://eox.at/fonts/sintony/sintony.css",
       },
     },
     theme: {
