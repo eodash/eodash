@@ -110,7 +110,19 @@ const downloadResults = () => {
 };
 onMounted(async () => {
   // wait for the layers to be rendered
-  if (mapEl.value?.layers.length <= 1) {
+  if (mapEl.value?.layers.length > 1) {
+    await initProcess({
+      //@ts-expect-error TODO
+      selectedStac,
+      jsonformEl,
+      jsonformSchema,
+      chartSpec,
+      isProcessed,
+      processResults,
+      loading,
+      isPolling,
+    });
+  } else {
     layersEvents.once(async () => {
       await initProcess({
         //@ts-expect-error TODO
@@ -123,18 +135,6 @@ onMounted(async () => {
         processResults,
         isPolling,
       });
-    });
-  } else {
-    await initProcess({
-      //@ts-expect-error TODO
-      selectedStac,
-      jsonformEl,
-      jsonformSchema,
-      chartSpec,
-      isProcessed,
-      processResults,
-      loading,
-      isPolling,
     });
   }
 });
