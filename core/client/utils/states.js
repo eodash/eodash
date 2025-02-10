@@ -1,3 +1,12 @@
+import {
+  mdiBarley,
+  mdiCurrencyEur,
+  mdiHospitalBoxOutline,
+  mdiImageFilterHdr,
+  mdiSetCenter,
+  mdiWater,
+  mdiWeatherWindy,
+} from "@mdi/js";
 import { reactive, ref, shallowReactive } from "vue";
 
 /**
@@ -37,3 +46,37 @@ export const collectionsPalette = reactive([
   "#56B4E9",
   "#D55E00",
 ]);
+
+/**
+ * Object containing data themes and their associated brand properties (icon and color).
+ */
+export const dataThemesBrands = {
+  agriculture: {
+    icon: mdiBarley,
+    color: "#F2AF25",
+  },
+  water: {
+    icon: mdiWater,
+    color: "#73A6C7",
+  },
+  land: {
+    icon: mdiImageFilterHdr,
+    color: "#019E73",
+  },
+  health: {
+    icon: mdiHospitalBoxOutline,
+    color: "#497FA9",
+  },
+  combined: {
+    icon: mdiSetCenter,
+    color: "#56B4E9",
+  },
+  air: {
+    icon: mdiWeatherWindy,
+    color: "#475faf",
+  },
+  economy: {
+    icon: mdiCurrencyEur,
+    color: "#8E81AF",
+  },
+};

@@ -17,6 +17,7 @@ import {
 import { createLayersFromAssets, createLayersFromLinks } from "./createLayers";
 import axios from "@/plugins/axios";
 import log from "loglevel";
+import { dataThemesBrands } from "@/utils/states";
 
 export class EodashCollection {
   #collectionUrl = "";
@@ -419,38 +420,68 @@ export class EodashCollection {
         allFeatures.push(collectionFeatures);
       }
     }
-    if (allFeatures.length) {
-      const featureCollection = {
-        type: "FeatureCollection",
-        crs: {
-          type: "name",
-          properties: {
-            name: "EPSG:4326",
-          },
-        },
-        features: allFeatures.flat(),
-      };
-      return {
-        type: "Vector",
-        properties: {
-          id: "geodb-collection",
-          title: "Observation Points",
-        },
-        source: {
-          type: "Vector",
-          url: "data:," + encodeURIComponent(JSON.stringify(featureCollection)),
-          format: "GeoJSON",
-        },
-        style: {
-          "circle-radius": 5,
-          "circle-fill-color": "#00417077",
-          "circle-stroke-color": "#004170",
-          "fill-color": "#00417077",
-          "stroke-color": "#004170",
-        },
-        interactions: [],
-      };
+    if (!allFeatures.length) {
+      return null;
     }
-    return null;
+
+    const featureCollection = {
+      type: "FeatureCollection",
+      crs: {
+        type: "name",
+        properties: {
+          name: "EPSG:4326",
+        },
+      },
+      features: allFeatures.flat(),
+    };
+    return {
+      type: "Vector",
+      properties: {
+        id: "geodb-collection",
+        title: "Observation Points",
+      },
+      source: {
+        type: "Vector",
+        url: "data:," + encodeURIComponent(JSON.stringify(featureCollection)),
+        format: "GeoJSON",
+      },
+      style: (() => {
+        // generate flat style rules for each theme
+        /** @param {*} theme */
+        const generateIconSrc = (theme) => {
+          const svgString = `
+            <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 70 70">
+              <circle cx="35" cy="35" r="30" stroke="white" fill="${theme.color}" stroke-width="4"/>
+              <path d="${theme.icon}" fill="#fff" transform="translate(19.5, 20) scale(1.3) "/>
+            </svg>
+            `;
+          return `data:image/svg+xml,${encodeURIComponent(svgString)}`;
+        };
+
+        return [
+          ...Object.keys(dataThemesBrands).map((theme, idx) => {
+            return {
+              ...(idx !== 0 && { else: true }),
+              filter: ["==", ["get", "themes", 0], theme],
+              style: {
+                //@ts-expect-error string index
+                "icon-src": generateIconSrc(dataThemesBrands[theme]),
+              },
+            };
+          }),
+          {
+            else: true,
+            style: {
+              "circle-radius": 10,
+              "circle-fill-color": "#00417077",
+              "circle-stroke-color": "#004170",
+              "fill-color": "#0417077",
+              "stroke-color": "#004170",
+            },
+          },
+        ];
+      })(),
+      interactions: [],
+    };
   }
 }
