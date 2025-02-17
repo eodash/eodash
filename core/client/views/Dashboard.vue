@@ -1,6 +1,7 @@
 <template>
   <HeaderComponent v-if="!eodash.brand.noLayout" />
   <ErrorAlert v-model="error" />
+  <EodashOverlay />
   <Suspense>
     <TemplateComponent :style="{ height: templateHeight }" />
     <template #fallback>
@@ -21,6 +22,7 @@ import { useDisplay } from "vuetify/lib/framework.mjs";
 import { loadFont } from "@/utils";
 import Loading from "@/components/Loading.vue";
 import ErrorAlert from "@/components/ErrorAlert.vue";
+import EodashOverlay from "@/components/EodashOverlay.vue";
 
 const props = defineProps({
   config: {
