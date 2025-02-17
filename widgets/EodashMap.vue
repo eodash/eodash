@@ -12,6 +12,7 @@
       .center="initialCenter"
       .zoom="initialZoom"
       .layers="eoxMapLayers"
+      .controls="controls"
     >
       <eox-map-tooltip
         :style="tooltipStyles"
@@ -40,6 +41,7 @@ import {
   layerControlFormValue,
 } from "@/utils/states";
 import {
+  useAttribitionPosition,
   useHandleMapMoveEnd,
   useInitMap,
   useUpdateTooltipProperties,
@@ -70,7 +72,12 @@ const props = defineProps({
 
 /** @type {import("vue").Ref<Exclude<import("@/types").EodashStyleJson["tooltip"], undefined>>} */
 const tooltipProperties = ref([]);
-
+/** @type {import("@eox/map").EOxMap["controls"]} */
+const controls = {
+  Attribution: {
+    collapsible: true,
+  },
+};
 const initialCenter = toRaw([
   mapPosition.value?.[0] ?? props.center?.[0],
   mapPosition.value?.[1] ?? props.center?.[1],
@@ -183,4 +190,6 @@ const tooltipPropertyTransform = (param) => {
     value: param.value + " " + (tooltipProp.appendix || ""),
   };
 };
+
+useAttribitionPosition(eoxMap);
 </script>

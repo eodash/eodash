@@ -118,9 +118,8 @@ export const extractRoles = (properties, linkOrAsset) => {
     if (role === "overlay" || role === "baselayer") {
       properties.group = role;
     }
-
-    return properties;
   });
+  return properties;
 };
 
 /**
