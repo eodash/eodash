@@ -6,7 +6,7 @@
       >
       by
       <a href="https://eox.at" target="_blank">
-        <img :src="`data:image/svg+xml;base64,${base64Logo}`" height="11px" />
+        <img :src="`data:image/svg+xml;base64,${base64Logo}`" height="9px" />
       </a>
     </p>
   </div>
@@ -31,8 +31,10 @@ const base64Logo = btoa(eoxLogo);
   left: 0;
   width: 100%;
   height: 100%;
+  font-size: 0.7em;
+  font-weight: bold;
   background: linear-gradient(
-    178deg,
+    181deg,
     transparent 97%,
     rgba(var(--v-theme-secondary), 0.5)
   );
@@ -41,7 +43,7 @@ const base64Logo = btoa(eoxLogo);
   p {
     position: absolute;
     bottom: -4px;
-    right: -49px;
+    left: 95px;
     transform: translate(-50%, -50%);
     color: rgba(var(--v-theme-on-secondary), 1);
   }
