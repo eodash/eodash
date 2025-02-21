@@ -88,6 +88,7 @@ eo-dash {
   overflow: hidden;
 }
 /* set eox-elements colors css vars to match the theme */
+/*
 eox-layercontrol,
 eox-map,
 eox-drawtools,
@@ -106,5 +107,5 @@ eox-itemfilter {
   --eox-warning-color: rgb(var(--v-theme-warning));
   --range-slider-color: rgb(var(--v-theme-primary));
   --range-slider-track-color: rgb(var(--v-theme-on-primary));
-}
+} */
 </style>
