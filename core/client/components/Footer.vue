@@ -4,7 +4,7 @@
     :height="mdAndDown ? '48px' : 'auto'"
     color="secondary"
     app
-    class="d-flex justify-space-between"
+    class="d-flex justify-end"
   >
     <p class="pt-0 footer-text">
       {{ eodash.brand.footerText ?? "" }}

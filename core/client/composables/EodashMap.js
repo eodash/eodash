@@ -1,6 +1,6 @@
 import { EodashCollection } from "@/eodashSTAC/EodashCollection";
 import { setMapProjFromCol } from "@/eodashSTAC/triggers";
-import { nextTick, onMounted, onUnmounted, onUpdated, watch } from "vue";
+import { nextTick, onMounted, onUnmounted, watch } from "vue";
 import log from "loglevel";
 import { useSTAcStore } from "@/store/stac";
 import { storeToRefs } from "pinia";
@@ -377,32 +377,4 @@ export const useUpdateTooltipProperties = (eodashCols, tooltipProperties) => {
     log.debug("Updated tooltip properties", tooltipProperties.value);
   });
 };
-/**
- *
- * @param {import("vue").Ref<import("@eox/map").EOxMap|null>} mapElement
- */
-export const useAttribitionPosition = (mapElement) => {
-  let updated = false;
-  onUpdated(() => {
-    if (updated || !mapElement.value) return;
-    /** @type {HTMLDivElement | null | undefined} */
-    const olAttributionEl =
-      mapElement.value.shadowRoot?.querySelector(".ol-attribution");
-    if (!olAttributionEl) return;
-    // the following is the styles applied to the element by openlayers
-    // .ol-attribution {
-    // text-align: right;
-    // bottom: .5em;
-    // left: .5em;
-    // max-width: calc(100% - 1.3em);
-    // display: flex;
-    // flex-flow: row-reverse;
-    // align-items: center;
-    // }
-    olAttributionEl.style.textAlign = "left";
-    olAttributionEl.style.right = "unset";
-    olAttributionEl.style.left = ".5em";
-    olAttributionEl.style.flexFlow = "row";
-    updated = true;
-  });
-};
+

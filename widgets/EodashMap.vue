@@ -41,7 +41,6 @@ import {
   layerControlFormValue,
 } from "@/utils/states";
 import {
-  useAttribitionPosition,
   useHandleMapMoveEnd,
   useInitMap,
   useUpdateTooltipProperties,
@@ -190,6 +189,4 @@ const tooltipPropertyTransform = (param) => {
     value: param.value + " " + (tooltipProp.appendix || ""),
   };
 };
-
-useAttribitionPosition(eoxMap);
 </script>
