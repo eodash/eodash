@@ -10,6 +10,7 @@
       style="--eox-background-color: transparent"
       ref="eoxLayercontrol"
       @layerConfig:change="onLayerConfigChange"
+      .styleOverride="styleOverride"
     />
   </span>
 </template>
@@ -120,4 +121,10 @@ const debouncedHandleDateTime = (evt) => {
 const onLayerConfigChange = (evt) => {
   layerControlFormValue.value = evt.detail.jsonformValue;
 };
+
+const styleOverride = `
+input[type="range"] {
+  background:transparent !important;
+}
+`;
 </script>
