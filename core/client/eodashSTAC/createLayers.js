@@ -78,11 +78,12 @@ export async function createLayersFromAssets(
           }),
         },
         ...(!style?.variables && { style }),
+        interactions: [],
       };
       // add tooltip interaction if style has tooltip
       if (style?.tooltip) {
-        // @ts-expect-error no type for eox-map layer
         layer.interactions = [
+          // @ts-expect-error no type for eox-map layer
           {
             type: "select",
             options: {
@@ -102,6 +103,12 @@ export async function createLayersFromAssets(
       layer.properties = { ...layer.properties, ...(extraProperties ?? {}) };
 
       jsonArray.push(layer);
+      const layer2 = structuredClone(layer)
+      // temporary solution to avoid selection of the same layer
+      // to be removed
+      layer2.interactions = []
+      layer2.properties.id = layer2.properties.id + "_selection"
+      jsonArray.push(layer2)
     } else if (assets[ast]?.type === "image/tiff") {
       geoTIFFIdx = idx;
       geoTIFFSources.push({
