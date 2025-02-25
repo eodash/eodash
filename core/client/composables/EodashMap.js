@@ -377,4 +377,3 @@ export const useUpdateTooltipProperties = (eodashCols, tooltipProperties) => {
     log.debug("Updated tooltip properties", tooltipProperties.value);
   });
 };
-

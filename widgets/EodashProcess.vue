@@ -200,4 +200,7 @@ const chartStyles = computed(() => {
 eox-chart {
   --background-color: transparent;
 }
+eox-jsonform {
+  padding: 0.7em;
+}
 </style>
