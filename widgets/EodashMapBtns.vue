@@ -47,6 +47,7 @@ import EodashItemFilter from "./EodashItemFilter.vue";
 import { useDisplay } from "vuetify/lib/framework.mjs";
 import { useSTAcStore } from "@/store/stac";
 import { storeToRefs } from "pinia";
+import { enableCompare } from "@/utils/states";
 
 const { compareIndicators, changeProjection, exportMap } = defineProps({
   exportMap: {
@@ -70,7 +71,6 @@ const popupHeight = computed(() => (smAndDown ? "90%" : "500px"));
 
 const showMapState = ref(false);
 const showCompareIndicators = ref(false);
-const enableCompare = ref(true);
 const compareIcon = computed(() =>
   enableCompare.value ? mdiCompare : mdiCompareRemove,
 );

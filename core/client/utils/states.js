@@ -80,3 +80,5 @@ export const dataThemesBrands = {
     color: "#8E81AF",
   },
 };
+
+export const enableCompare = ref(true);
