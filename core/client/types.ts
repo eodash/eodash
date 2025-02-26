@@ -324,7 +324,7 @@ export declare const store: typeof import("@/store").default;
 
 export * from "./main.js";
 
-export type EodashStyleJson = import("ol/style/webgl.js").WebGLStyle & {
+export type EodashStyleJson = import("ol/style/flat").FlatStyleLike & {
   variables?: Record<string, string | number | boolean | null | undefined>;
   legend?: import("@eox/layercontrol/src/components/layer-config.js").EOxLayerControlLayerConfig["layerConfig"]["legend"];
   jsonform?: Record<string, any>;
