@@ -438,6 +438,9 @@ export async function handleProcesses({
   isPolling,
   processResults,
 }) {
+  if (!jsonformEl.value || !jsonformSchema.value || !selectedStac.value) {
+    return;
+  }
   log.debug("Processing...");
   loading.value = true;
   try {

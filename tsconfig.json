@@ -15,7 +15,7 @@
     "sourceMap": false,
     "resolveJsonModule": true,
     "esModuleInterop": true,
-    "lib": ["esnext", "dom"],
+    "lib": ["esnext", "dom", "DOM.Iterable"],
     "types": ["node", "vuetify", "cypress"],
     "paths": {
       "@/*": ["core/client/*"],

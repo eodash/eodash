@@ -3,8 +3,11 @@ import axios from "@/plugins/axios";
 import log from "loglevel";
 import { getStyleVariablesState } from "./triggers.js";
 
-/** @param {import("stac-ts").StacLink[]} [links] */
-export function generateFeatures(links) {
+/**
+ *  @param {import("stac-ts").StacLink[]} [links]
+ *  @param {Record<string,any>} [extraProperties]
+ **/
+export function generateFeatures(links, extraProperties = {}) {
   /**
    * @type {import("geojson").Feature[]}
    */
@@ -20,7 +23,7 @@ export function generateFeatures(links) {
           type: "Point",
           coordinates: [lon, lat],
         },
-        properties: { id: element.id },
+        properties: { ...element, ...extraProperties },
       });
     }
   });
@@ -115,9 +118,8 @@ export const extractRoles = (properties, linkOrAsset) => {
     if (role === "overlay" || role === "baselayer") {
       properties.group = role;
     }
-
-    return properties;
   });
+  return properties;
 };
 
 /**
@@ -416,3 +418,26 @@ export async function mergeGeojsons(geojsonUrls) {
     "data:application/json;charset=utf-8," + JSON.stringify(merged),
   );
 }
+
+/**
+ * adds tooltip to the layer if the style has tooltip property
+ * @param {Record<string,any>} layer
+ * @param {import("@/types").EodashStyleJson} [style]
+ */
+export const addTooltipInteraction = (layer, style) => {
+  if (style?.tooltip) {
+    layer.interactions = [
+      {
+        type: "select",
+        options: {
+          id: (Math.random() * 10000).toFixed() + "_selectInteraction",
+          condition: "pointermove",
+          style: {
+            "stroke-color": "#335267",
+            "stroke-width": 4,
+          },
+        },
+      },
+    ];
+  }
+};
