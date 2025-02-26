@@ -327,6 +327,6 @@ export * from "./main.js";
 export type EodashStyleJson = import("ol/style/flat").FlatStyleLike & {
   variables?: Record<string, string | number | boolean | null | undefined>;
   legend?: import("@eox/layercontrol/src/components/layer-config.js").EOxLayerControlLayerConfig["layerConfig"]["legend"];
-  jsonform?: Record<string, any>;
+  jsonform?: import("json-schema").JSONSchema7;
   tooltip?: { id: string; title?: string; appendix?: string }[];
 };
