@@ -6,6 +6,7 @@ import {
   createLayerID,
   createAssetID,
   mergeGeojsons,
+  addTooltipInteraction,
 } from "./helpers";
 import log from "loglevel";
 
@@ -81,22 +82,7 @@ export async function createLayersFromAssets(
         interactions: [],
       };
       // add tooltip interaction if style has tooltip
-      if (style?.tooltip) {
-        layer.interactions = [
-          // @ts-expect-error no type for eox-map layer
-          {
-            type: "select",
-            options: {
-              id: (Math.random() * 10000).toFixed() + "_selectInteraction",
-              condition: "pointermove",
-              style: {
-                "stroke-color": "#335267",
-                "stroke-width": 4,
-              },
-            },
-          },
-        ];
-      }
+     addTooltipInteraction(layer, style);
 
       extractRoles(layer.properties, assets[ast]);
 
@@ -141,7 +127,7 @@ export async function createLayersFromAssets(
     };
 
     layer.properties = { ...layer.properties, ...(extraProperties ?? {}) };
-
+    addTooltipInteraction(layer, style);
     jsonArray.push(layer);
   }
   if (geoTIFFSources.length && typeof geoTIFFIdx === "number") {

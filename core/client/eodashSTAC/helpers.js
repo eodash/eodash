@@ -418,3 +418,26 @@ export async function mergeGeojsons(geojsonUrls) {
     "data:application/json;charset=utf-8," + JSON.stringify(merged),
   );
 }
+
+/**
+ * adds tooltip to the layer if the style has tooltip property
+ * @param {Record<string,any>} layer
+ * @param {import("@/types").EodashStyleJson} [style]
+ */
+export const addTooltipInteraction = (layer,style)=>{
+  if (style?.tooltip) {
+    layer.interactions = [
+      {
+        type: "select",
+        options: {
+          id: (Math.random() * 10000).toFixed() + "_selectInteraction",
+          condition: "pointermove",
+          style: {
+            "stroke-color": "#335267",
+            "stroke-width": 4,
+          },
+        },
+      },
+    ];
+  }
+}
