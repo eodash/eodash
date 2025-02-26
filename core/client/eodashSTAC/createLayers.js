@@ -82,7 +82,7 @@ export async function createLayersFromAssets(
         interactions: [],
       };
       // add tooltip interaction if style has tooltip
-     addTooltipInteraction(layer, style);
+      addTooltipInteraction(layer, style);
 
       extractRoles(layer.properties, assets[ast]);
 
@@ -123,7 +123,7 @@ export async function createLayersFromAssets(
         }),
       },
       ...(!style?.variables && { style }),
-      interactions:[],
+      interactions: [],
     };
 
     layer.properties = { ...layer.properties, ...(extraProperties ?? {}) };

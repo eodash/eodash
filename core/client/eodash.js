@@ -10,14 +10,14 @@ import { reactive } from "vue";
 export const eodash = reactive({
   id: "demo",
   stacEndpoint:
-  // "https://esa-eodash.github.io/RACE-catalog/RACE/catalog.json",
-  // "https://gtif-cerulean.github.io/catalog/cerulean/catalog.json",
-  // "https://eodashcatalog.eox.at/samplecatalog/samples/catalog.json",
-  // "https://eodashcatalog.eox.at/test-style/trilateral/catalog.json",
-  // "https://gtif-cerulean.github.io/catalog/cerulean/catalog.json",
-  // "https://gtif-cerulean.github.io/deside-catalog/deside/catalog.json",
-  // "https://gtif-cerulean.github.io/cerulean-catalog/cerulean/catalog.json",
-  "https://gtif-austria.github.io/public-catalog/GTIF-Austria/catalog.json",
+    // "https://esa-eodash.github.io/RACE-catalog/RACE/catalog.json",
+    // "https://gtif-cerulean.github.io/catalog/cerulean/catalog.json",
+    // "https://eodashcatalog.eox.at/samplecatalog/samples/catalog.json",
+    // "https://eodashcatalog.eox.at/test-style/trilateral/catalog.json",
+    // "https://gtif-cerulean.github.io/catalog/cerulean/catalog.json",
+    // "https://gtif-cerulean.github.io/deside-catalog/deside/catalog.json",
+    // "https://gtif-cerulean.github.io/cerulean-catalog/cerulean/catalog.json",
+    "https://gtif-austria.github.io/public-catalog/GTIF-Austria/catalog.json",
   brand: {
     noLayout: true,
     name: "Demo",
@@ -340,8 +340,7 @@ export const eodash = reactive({
           widget: {
             name: "EodashTools",
             properties: {
-              layoutTarget: "expert",
-              layoutIcon: mdiViewDashboardVariant,
+              showLayoutSwitcher: false,
               itemFilterConfig: {
                 cssVars: {
                   "--form-flex-direction": "row",
@@ -419,7 +418,9 @@ export const eodash = reactive({
                   widget: {
                     name: "EodashMapBtns",
                     properties: {
-                      compareIndicators: false,
+                      compareIndicators: {
+                        fallbackTemplate: "light",
+                      },
                     },
                   },
                 }

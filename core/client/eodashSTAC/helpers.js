@@ -424,7 +424,7 @@ export async function mergeGeojsons(geojsonUrls) {
  * @param {Record<string,any>} layer
  * @param {import("@/types").EodashStyleJson} [style]
  */
-export const addTooltipInteraction = (layer,style)=>{
+export const addTooltipInteraction = (layer, style) => {
   if (style?.tooltip) {
     layer.interactions = [
       {
@@ -440,4 +440,4 @@ export const addTooltipInteraction = (layer,style)=>{
       },
     ];
   }
-}
+};

@@ -26,11 +26,11 @@
       ref="compareMap"
       .layers="eoxMapCompareLayers"
     >
-    <eox-map-tooltip
+      <eox-map-tooltip
         :style="tooltipStyles"
         .propertyTransform="tooltipPropertyTransform"
       />
-  </eox-map>
+    </eox-map>
   </eox-map-compare>
 </template>
 <script setup>
