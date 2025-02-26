@@ -137,6 +137,7 @@ export async function createLayersFromAssets(
         }),
       },
       ...(!style?.variables && { style }),
+      interactions:[],
     };
 
     layer.properties = { ...layer.properties, ...(extraProperties ?? {}) };
