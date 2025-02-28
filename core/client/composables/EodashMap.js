@@ -106,7 +106,7 @@ const createLayersConfig = async (
     await EodashCollection.getIndicatorLayers(selectedIndicator);
   const geodbLayer = EodashCollection.getGeoDBLayer(eodashCols);
   if (geodbLayer) {
-    dataLayers.layers.push(geodbLayer);
+    dataLayers.layers.unshift(geodbLayer);
   }
   const baseLayers = {
     type: "Group",

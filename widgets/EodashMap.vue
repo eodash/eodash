@@ -12,6 +12,7 @@
       .center="initialCenter"
       .zoom="initialZoom"
       .layers="eoxMapLayers"
+      .controls="controls"
     >
       <eox-map-tooltip
         :style="tooltipStyles"
@@ -24,7 +25,12 @@
       slot="second"
       ref="compareMap"
       .layers="eoxMapCompareLayers"
-    />
+    >
+      <eox-map-tooltip
+        :style="tooltipStyles"
+        .propertyTransform="tooltipPropertyTransform"
+      />
+    </eox-map>
   </eox-map-compare>
 </template>
 <script setup>
@@ -70,7 +76,12 @@ const props = defineProps({
 
 /** @type {import("vue").Ref<Exclude<import("@/types").EodashStyleJson["tooltip"], undefined>>} */
 const tooltipProperties = ref([]);
-
+/** @type {import("@eox/map").EOxMap["controls"]} */
+const controls = {
+  Attribution: {
+    collapsible: true,
+  },
+};
 const initialCenter = toRaw([
   mapPosition.value?.[0] ?? props.center?.[0],
   mapPosition.value?.[1] ?? props.center?.[1],

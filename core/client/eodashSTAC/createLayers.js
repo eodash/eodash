@@ -6,6 +6,7 @@ import {
   createLayerID,
   createAssetID,
   mergeGeojsons,
+  addTooltipInteraction,
 } from "./helpers";
 import log from "loglevel";
 
@@ -36,6 +37,7 @@ export async function createLayersFromAssets(
   let geoTIFFIdx = null;
   // let geoJsonLayers = [];
   let geoJsonIdx = 0;
+  let geoJsonAttributions = [];
 
   const geoJsonSources = [];
   let geoJsonRoles = {};
@@ -50,6 +52,8 @@ export async function createLayersFromAssets(
     if (assets[ast]?.type === "application/geo+json") {
       geoJsonSources.push(assets[ast].href);
       geoJsonIdx = idx;
+      if (assets[ast].attribution)
+        geoJsonAttributions.push(assets[ast].attribution);
       extractRoles(geoJsonRoles, assets[ast]);
     } else if (assets[ast]?.type === "application/vnd.flatgeobuf") {
       const assetId = createAssetID(collectionId, item.id, idx);
@@ -61,6 +65,7 @@ export async function createLayersFromAssets(
           type: "FlatGeoBuf",
           url: assets[ast].href,
           format: "GeoJSON",
+          attributions: assets[ast].attribution,
         },
         properties: {
           id: assetId,
@@ -74,24 +79,10 @@ export async function createLayersFromAssets(
           }),
         },
         ...(!style?.variables && { style }),
+        interactions: [],
       };
       // add tooltip interaction if style has tooltip
-      if (style?.tooltip) {
-        // @ts-expect-error no type for eox-map layer
-        layer.interactions = [
-          {
-            type: "select",
-            options: {
-              id: (Math.random() * 10000).toFixed() + "_selectInteraction",
-              condition: "pointermove",
-              style: {
-                "stroke-color": "#335267",
-                "stroke-width": 4,
-              },
-            },
-          },
-        ];
-      }
+      addTooltipInteraction(layer, style);
 
       extractRoles(layer.properties, assets[ast]);
 
@@ -100,7 +91,10 @@ export async function createLayersFromAssets(
       jsonArray.push(layer);
     } else if (assets[ast]?.type === "image/tiff") {
       geoTIFFIdx = idx;
-      geoTIFFSources.push({ url: assets[ast].href });
+      geoTIFFSources.push({
+        url: assets[ast].href,
+        attributions: assets[ast].attribution,
+      });
     }
   }
 
@@ -114,6 +108,7 @@ export async function createLayersFromAssets(
         type: "Vector",
         url: await mergeGeojsons(geoJsonSources),
         format: "GeoJSON",
+        attributions: geoJsonAttributions,
       },
       properties: {
         ...geoJsonRoles,
@@ -128,10 +123,11 @@ export async function createLayersFromAssets(
         }),
       },
       ...(!style?.variables && { style }),
+      interactions: [],
     };
 
     layer.properties = { ...layer.properties, ...(extraProperties ?? {}) };
-
+    addTooltipInteraction(layer, style);
     jsonArray.push(layer);
   }
   if (geoTIFFSources.length && typeof geoTIFFIdx === "number") {
@@ -227,6 +223,7 @@ export const createLayersFromLinks = async (
         tileGrid: {
           tileSize,
         },
+        attributions: wmsLink.attribution,
         params: {
           LAYERS: wmsLink["wms:layers"],
           TILED: true,
@@ -297,6 +294,7 @@ export const createLayersFromLinks = async (
           tileGrid: {
             tileSize: [128, 128],
           },
+          attributions: wmtsLink.attribution,
           dimensions: dimensionsWithoutStyle,
         },
       };
@@ -322,6 +320,7 @@ export const createLayersFromLinks = async (
           tileGrid: {
             tileSize: [512, 512],
           },
+          attributions: wmtsLink.attribution,
           dimensions: dimensionsWithoutStyle,
         },
       };
@@ -359,6 +358,7 @@ export const createLayersFromLinks = async (
         type: "XYZ",
         url: xyzLink.href,
         projection: projectionCode,
+        attributions: xyzLink.attribution,
       },
     };
 

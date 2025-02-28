@@ -4,6 +4,7 @@
       <component
         id="bg-widget"
         v-if="bgWidget?.component"
+        :key="bgWidget.id"
         :is="bgWidget.component"
         v-bind="bgWidget.props"
       ></component>
