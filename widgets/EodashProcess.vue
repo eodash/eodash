@@ -156,6 +156,24 @@ useOnLayersUpdate(async (evt, _payload) => {
 });
 
 const startProcess = async () => {
+  /** @param {*} jsonformSchema */
+  const getDrawToolsProperty = (jsonformSchema) => {
+    for (const property in jsonformSchema.properties) {
+      if (jsonformSchema.properties[property]?.options?.drawtools) {
+        return property;
+      }
+    }
+  };
+  const drawToolsProperty = getDrawToolsProperty(jsonformSchema.value);
+  const propertyIsEmpty =
+  //@ts-expect-error TODO
+    drawToolsProperty && !jsonformEl.value?.value[drawToolsProperty].length;
+
+  if (propertyIsEmpty) {
+    isProcessed.value = false;
+    chartSpec.value = null;
+    return;
+  }
   const errors = jsonformEl.value?.editor.validate();
   if (errors?.length) {
     console.warn("[eodash] Form validation failed", errors);
