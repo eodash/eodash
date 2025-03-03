@@ -59,7 +59,7 @@ const { compareIndicators, changeProjection, exportMap } = defineProps({
     default: true,
   },
   compareIndicators: {
-    /** @type {import("vue").PropType<boolean | {compareTemplate:string;fallbackTemplate:string}> }*/
+    /** @type {import("vue").PropType<boolean | {compareTemplate?:string;fallbackTemplate?:string}> }*/
     type: [Boolean, Object],
     default: true,
   },
