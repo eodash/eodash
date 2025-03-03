@@ -166,8 +166,11 @@ const startProcess = async () => {
   };
   const drawToolsProperty = getDrawToolsProperty(jsonformSchema.value);
   const propertyIsEmpty =
-  //@ts-expect-error TODO
-    drawToolsProperty && !jsonformEl.value?.value[drawToolsProperty].length;
+    drawToolsProperty &&
+    //@ts-expect-error jsonfrom.value is not typed
+    Array.isArray(jsonformEl.value?.value[drawToolsProperty]) &&
+    //@ts-expect-error jsonfrom.value is not typed
+    !jsonformEl.value?.value[drawToolsProperty].length;
 
   if (propertyIsEmpty) {
     isProcessed.value = false;
