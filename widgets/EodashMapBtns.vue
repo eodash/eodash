@@ -47,7 +47,7 @@ import EodashItemFilter from "./EodashItemFilter.vue";
 import { useDisplay } from "vuetify/lib/framework.mjs";
 import { useSTAcStore } from "@/store/stac";
 import { storeToRefs } from "pinia";
-import { enableCompare } from "@/utils/states";
+import { switchToCompare } from "@/utils/states";
 
 const { compareIndicators, changeProjection, exportMap } = defineProps({
   exportMap: {
@@ -72,13 +72,13 @@ const popupHeight = computed(() => (smAndDown ? "90%" : "500px"));
 const showMapState = ref(false);
 const showCompareIndicators = ref(false);
 const compareIcon = computed(() =>
-  enableCompare.value ? mdiCompare : mdiCompareRemove,
+  switchToCompare.value ? mdiCompare : mdiCompareRemove,
 );
 const onCompareClick = () => {
-  if (enableCompare.value) {
+  if (switchToCompare.value) {
     showCompareIndicators.value = !showCompareIndicators.value;
   } else {
-    enableCompare.value = true;
+    switchToCompare.value = true;
     const fallbackTemplate =
       (typeof compareIndicators === "object" &&
         compareIndicators.fallbackTemplate) ||
@@ -99,7 +99,6 @@ const onSelectCompareIndicator = () => {
     "compare";
   setActiveTemplate(compareTemplate);
   showCompareIndicators.value = !showCompareIndicators.value;
-  enableCompare.value = false;
 };
 
 makePanelTransparent(rootRef);
