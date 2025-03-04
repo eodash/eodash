@@ -1,5 +1,5 @@
 /** @group Eodash */
-export interface WebComponentProps {
+export interface WebComponentProps<T extends ExecutionTime = "compiletime"> {
   /**
    * Imports web component file, either using a URL or an import function.
    *
@@ -14,7 +14,7 @@ export interface WebComponentProps {
    *   import maps are not available in runtime config
    *   :::
    */
-  link?: string | (() => Promise<unknown>);
+  link?: T extends "runtime" ? string : string | (() => Promise<unknown>);
   /**
    * Exported Constructor, needs to be provided if the web component is not
    * registered in by the [link](#link) provided
@@ -53,7 +53,10 @@ export interface WidgetsContainerProps {
 }
 
 // eodash types:
-/** Properties of EOxLayoutItem used for setting the position and size of panels */
+/**
+ * Properties of EOxLayoutItem used for setting the position and size of panels
+ * @group Eodash
+ * */
 export interface Layout {
   /** Horizontal start position. Integer between 1 and 12 */
   x: number;
@@ -69,156 +72,112 @@ export interface Layout {
  *
  * @group Eodash
  */
-export interface WebComponentWidget {
+export interface WebComponentWidget<T extends ExecutionTime = "compiletime"> {
   id: number | string | symbol;
   title: string;
   /** Widget position and size. */
   layout: Layout;
-  widget: WebComponentProps;
+  widget: WebComponentProps<T>;
   type: "web-component";
 }
 // Internal Widget Interfaces
-interface TEodashMap {
-  /**
-   * Internal Vue Components inside the
-   * [widgets](https://github.com/eodash/eodash/tree/main/widgets) folder.
-   * Referenced using their name without the .vue extention
-   */
+/** @group Widgets */
+export interface TEodashMap {
   name: "EodashMap";
   properties?: InstanceType<typeof import("^/EodashMap.vue").default>["$props"];
 }
 
-interface TEodashDatePicker {
-  /**
-   * Internal Vue Components inside the
-   * [widgets](https://github.com/eodash/eodash/tree/main/widgets) folder.
-   * Referenced using their name without the .vue extention
-   */
+/** @group Widgets */
+export interface TEodashDatePicker {
   name: "EodashDatePicker";
   properties?: InstanceType<
     typeof import("^/EodashDatePicker.vue").default
   >["$props"];
 }
 
-interface TEodashItemFilter {
-  /**
-   * Internal Vue Components inside the
-   * [widgets](https://github.com/eodash/eodash/tree/main/widgets) folder.
-   * Referenced using their name without the .vue extention
-   */
+/** @group Widgets */
+export interface TEodashItemFilter {
   name: "EodashItemFilter";
   properties?: InstanceType<
     typeof import("^/EodashItemFilter.vue").default
   >["$props"];
 }
 
-interface TEodashLayerControl {
-  /**
-   * Internal Vue Components inside the
-   * [widgets](https://github.com/eodash/eodash/tree/main/widgets) folder.
-   * Referenced using their name without the .vue extention
-   */
+/** @group Widgets */
+export interface TEodashLayerControl {
   name: "EodashLayerControl";
   properties?: InstanceType<
     typeof import("^/EodashLayerControl.vue").default
   >["$props"];
 }
 
-interface TEodashStacInfo {
-  /**
-   * Internal Vue Components inside the
-   * [widgets](https://github.com/eodash/eodash/tree/main/widgets) folder.
-   * Referenced using their name without the .vue extention
-   */
+/** @group Widgets */
+export interface TEodashStacInfo {
   name: "EodashStacInfo";
   properties?: InstanceType<
     typeof import("^/EodashStacInfo.vue").default
   >["$props"];
 }
 
-interface TEodashProcess {
-  /**
-   * Internal Vue Components inside the
-   * [widgets](https://github.com/eodash/eodash/tree/main/widgets) folder.
-   * Referenced using their name without the .vue extention
-   */
+/** @group Widgets */
+export interface TEodashProcess {
   name: "EodashProcess";
   properties?: InstanceType<
     typeof import("^/EodashProcess.vue").default
   >["$props"];
 }
 
-interface TEodashMapBtns {
-  /**
-   * Internal Vue Components inside the
-   * [widgets](https://github.com/eodash/eodash/tree/main/widgets) folder.
-   * Referenced using their name without the .vue extention
-   */
+/** @group Widgets */
+export interface TEodashMapBtns {
   name: "EodashMapBtns";
   properties?: InstanceType<
     typeof import("^/EodashMapBtns.vue").default
   >["$props"];
 }
 
-interface TEodashTools {
-  /**
-   * Internal Vue Components inside the
-   * [widgets](https://github.com/eodash/eodash/tree/main/widgets) folder.
-   * Referenced using their name without the .vue extention
-   */
+/** @group Widgets */
+export interface TEodashTools {
   name: "EodashTools";
   properties?: InstanceType<
     typeof import("^/EodashTools.vue").default
   >["$props"];
 }
 
-interface TEodashLayoutSwitcher {
-  /**
-   * Internal Vue Components inside the
-   * [widgets](https://github.com/eodash/eodash/tree/main/widgets) folder.
-   * Referenced using their name without the .vue extention
-   */
+/** @group Widgets */
+export interface TEodashLayoutSwitcher {
   name: "EodashLayoutSwitcher";
   properties?: InstanceType<
     typeof import("^/EodashLayoutSwitcher.vue").default
   >["$props"];
 }
 
-interface TExportState {
-  /**
-   * Internal Vue Components inside the
-   * [widgets](https://github.com/eodash/eodash/tree/main/widgets) folder.
-   * Referenced using their name without the .vue extention
-   */
+/** @group Widgets */
+export interface TExportState {
   name: "ExportState";
   properties?: InstanceType<
     typeof import("^/ExportState.vue").default
   >["$props"];
 }
 
-interface TPopUp {
-  /**
-   * Internal Vue Components inside the
-   * [widgets](https://github.com/eodash/eodash/tree/main/widgets) folder.
-   * Referenced using their name without the .vue extention
-   */
+/** @group Widgets */
+export interface TPopUp {
   name: "PopUp";
   properties?: InstanceType<typeof import("^/PopUp.vue").default>["$props"];
 }
-
-interface TWidgetsContainer {
-  /**
-   * Internal Vue Components inside the
-   * [widgets](https://github.com/eodash/eodash/tree/main/widgets) folder.
-   * Referenced using their name without the .vue extention
-   */
+/** @group Widgets */
+export interface TWidgetsContainer {
   name: "WidgetsContainer";
   properties?: InstanceType<
     typeof import("^/WidgetsContainer.vue").default
   >["$props"];
 }
-
-type ComponentWidget =
+/**
+ * Internal Vue Components inside the
+ * [widgets](https://github.com/eodash/eodash/tree/main/widgets) folder.
+ * Referenced using their name without the .vue extention
+ * @group Widgets
+ */
+export type ComponentWidget =
   | TEodashMap
   | TEodashDatePicker
   | TEodashItemFilter
@@ -260,7 +219,7 @@ export interface IFrameWidget {
   type: "iframe";
 }
 /** @group Eodash */
-export interface FunctionalWidget {
+export interface FunctionalWidget<T extends ExecutionTime = "compiletime"> {
   /**
    * Provides a functional definition of widgets, gets triggered whenever a STAC
    * object is selected, and only renders the returned configuration if the `id`
@@ -274,15 +233,15 @@ export interface FunctionalWidget {
       | import("stac-ts").StacCollection
       | import("stac-ts").StacItem
       | null,
-  ) => StaticWidget | undefined | null;
+  ) => StaticWidget<T> | undefined | null;
 }
 /**
  * There are 3 types of Widgets:
  *
  * @group Eodash
  */
-export type StaticWidget =
-  | WebComponentWidget
+export type StaticWidget<T extends ExecutionTime = "compiletime"> =
+  | WebComponentWidget<T>
   | InternalComponentWidget
   | IFrameWidget;
 /**
@@ -297,13 +256,16 @@ export type StaticWidget =
  *
  * @group Eodash
  */
-export type Widget = FunctionalWidget | StaticWidget;
+export type Widget<T extends ExecutionTime = "compiletime"> =
+  | StaticWidget<T>
+  | FunctionalWidget<T>;
+
 /** @group Eodash */
-export type BackgroundWidget =
-  | Omit<WebComponentWidget, "layout" | "title" | "slidable">
+export type BackgroundWidget<T extends ExecutionTime = "compiletime"> =
+  | Omit<WebComponentWidget<T>, "layout" | "title" | "slidable">
   | Omit<InternalComponentWidget, "layout" | "title" | "slidable">
   | Omit<IFrameWidget, "layout" | "title" | "slidable">
-  | Omit<FunctionalWidget, "layout" | "slidable">;
+  | Omit<FunctionalWidget<T>, "layout" | "slidable">;
 /**
  * Dashboard rendered widgets specification. 3 types of widgets are supported:
  * `"iframe"`, `"internal"`, and `"web-component"`. A specific object should be
@@ -311,26 +273,32 @@ export type BackgroundWidget =
  *
  * @group Eodash
  */
-export interface Template {
+export interface Template<T extends ExecutionTime = "compiletime"> {
   /** Gap between widgets */
   gap?: number;
   /** Loading widget */
-  loading?: BackgroundWidget;
+  loading?: BackgroundWidget<T>;
   /**
    * Widget rendered as the dashboard background. Has the same specifications of
    * {@link Widget} without the `title` and `layout` properties
    */
-  background?: BackgroundWidget;
+  background?: BackgroundWidget<T>;
   /** Array of widgets that will be rendered as dashboard panels. */
-  widgets: Widget[];
+  widgets: Widget<T>[];
 }
-
-export type MultiTemplates = Record<string, Template>;
+/** @group Eodash */
+export type MultiTemplates<T extends ExecutionTime = "compiletime"> = Record<
+  string,
+  Template<T>
+>;
 
 /** @ignore */
 export type StacEndpoint = `${string}/catalog.json`;
 
-type EodashFont = {
+/** @group Eodash */
+type ExecutionTime = "runtime" | "compiletime";
+/** @group Eodash */
+export interface EodashFont {
   /**
    * Link to stylesheet that defines font-face. Could be either a relative
    * or absolute URL.
@@ -338,13 +306,13 @@ type EodashFont = {
   link?: string;
   /** Font family name. */
   family: string;
-};
+}
 /**
  * Eodash instance API
  *
  * @group Eodash
  */
-export type Eodash = {
+export type Eodash<T extends ExecutionTime = "compiletime"> = {
   /** Instance ID. */
   id?: string;
   /** Root STAC catalog endpoint */
@@ -379,11 +347,11 @@ export type Eodash = {
 } & (
   | {
       /** Template configuration */
-      template: Template;
+      template: Template<T>;
     }
   | {
       /** Multiple templates configuration */
-      templates: MultiTemplates;
+      templates: MultiTemplates<T>;
     }
 );
 /////////
@@ -433,7 +401,7 @@ export interface EodashStore {
 ///////
 
 /** @group WebComponent */
-type EodashConstructor = import("vue").VueElementConstructor<
+export type EodashConstructor = import("vue").VueElementConstructor<
   import("vue").ExtractPropTypes<{ config: string }>
 >;
 /**
@@ -459,7 +427,9 @@ export declare const store: typeof import("@/store").default;
 /////
 
 export * from "./main.js";
-
+/**
+ * @group Eodash
+ */
 export type EodashStyleJson = import("ol/style/flat").FlatStyleLike & {
   variables?: Record<string, string | number | boolean | null | undefined>;
   legend?: import("@eox/layercontrol/src/components/layer-config.js").EOxLayerControlLayerConfig["layerConfig"]["legend"];

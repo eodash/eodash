@@ -1,7 +1,7 @@
 # Widgets
 
 Eodash client is a micro frontend host, that exposes a store to share stateful STAC related data and actions between the widgets.
-Eodash offers a grid based layout system and widgets can be set on the dashboard using `layout` property, The placement of the widgets is backed by the [EOxElement](https://github.com/EOX-A/EOxElements) `@eox/layout`. Refer to the [API](/api/client/types/type-aliases/Widget.html) to learn more.
+Eodash offers a grid based layout system and widgets can be set on the dashboard using `layout` property, The placement of the widgets is backed by the [EOxElement](https://github.com/EOX-A/EOxElements) `@eox/layout`. Refer to the [API](/api/types/core/client/types/type-aliases/Widget.html) to learn more.
 
 ## Type of Widgets:
 
@@ -9,11 +9,11 @@ eodash supports the integration of three widget types `iframes`, `web-components
 
 ### Web Component Widgets
 
-Learn how to integrate Web Components that are developed using Custom Elements specification by referring to the [guide](/widgets/webcomponent-widgets) and [API](/api/client/types/interfaces/WebComponentWidget.html).
+Learn how to integrate Web Components that are developed using Custom Elements specification by referring to the [guide](/widgets/webcomponent-widgets) and [API](/api/types/core/client/types/interfaces/WebComponentWidget.html).
 
 ### IFrame Widgets
 
-Integrating micro-frontend standalone apps and HTML files using an IFrame. Check out the [API](/api/client/types/interfaces/IFrameWidget.html) for further information.
+Integrating micro-frontend standalone apps and HTML files using an IFrame. Check out the [API](/api/types/core/client/types/interfaces/IFrameWidget.html) for further information.
 
 #### Example
 
@@ -44,11 +44,11 @@ export default createEodash({
 
 ### Internal Widgets
 
-Eodash provides Internal Widgets as extendable Vue Components that are maintained within the package. Along with these, users can also define their own Vue Components. A guide is available to [learn more](/widgets/internal-widgets). For further information, you can refer to the [API](/api/client/types/interfaces/InternalComponentWidget.html).
+Eodash provides Internal Widgets as extendable Vue Components that are maintained within the package. Along with these, users can also define their own Vue Components. A guide is available to [learn more](/widgets/internal-widgets). For further information, you can refer to the [API](/api/types/core/client/types/interfaces/InternalComponentWidget.html).
 
 ## Functional Widgets
 
-Functional widgets are a special form of widgets that are rendered using the [defineWidget](/api/client/types/interfaces/FunctionalWidget#definewidget) function on STAC object selection, and provides the selected STAC object as a parameter before render. The render of the widget is triggered when the `id` of the returned config changes. It gives the ability to switch and hide widgets based on a specific state or indicator.
+Functional widgets are a special form of widgets that are rendered using the [defineWidget](/api/types/core/client/types/interfaces/FunctionalWidget#definewidget) function on STAC object selection, and provides the selected STAC object as a parameter before render. The render of the widget is triggered when the `id` of the returned config changes. It gives the ability to switch and hide widgets based on a specific state or indicator.
 
 ### Example based on the existence of a WMS relation
 

@@ -34,6 +34,8 @@ import { useSTAcStore } from "@/store/stac";
 
 const props = defineProps({
   map: {
+    /** @type {import("vue").PropType<"first" | "second">} */
+    //@ts-expect-error todo
     type: String,
     default: "first",
   },

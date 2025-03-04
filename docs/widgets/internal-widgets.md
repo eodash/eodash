@@ -1,6 +1,6 @@
 # What are Internal Widgets
 
-Eodash provides Internal Widgets as extendable Vue Components that are maintained within the package. Along with these, users can also define their own Vue Components. For further information, you can refer to the [API](/api/client/types/interfaces/InternalComponentWidget.html).
+Eodash provides Internal Widgets as extendable Vue Components that are maintained within the package. Along with these, users can also define their own Vue Components. For further information, you can refer to the [API](/api/types/core/client/types/interfaces/InternalComponentWidget.html).
 
 ## Using Eodash Provided Internal Widgets
 
@@ -62,6 +62,7 @@ const dependencies = Object.keys(pkg.dependencies).filter(dep => !['commander',"
 </script>
 
 <table>
+    <tbody>
   <tr>
     <th>Package</th>
     <th>Version</th>
@@ -70,6 +71,7 @@ const dependencies = Object.keys(pkg.dependencies).filter(dep => !['commander',"
     <td><a  target="_blank" :href="`https://www.npmjs.com/package/${dependency}`"> {{dependency}} </a></td>
     <td>{{ pkg.dependencies[dependency]}}</td>
   </tr>
+  </tbody>
 </table>
 
 ### Example
