@@ -1,1 +1,0 @@
-import{_ as a,c as i,ag as n,o as t}from"./chunks/framework.DmpuTMbk.js";const E=JSON.parse('{"title":"Branding","description":"","frontmatter":{},"headers":[],"relativePath":"branding.md","filePath":"branding.md"}'),e={name:"branding.md"};function h(l,s,p,k,r,d){return t(),i("div",null,s[0]||(s[0]=[n("",21)]))}const g=a(e,[["render",h]]);export{E as __pageData,g as default};
