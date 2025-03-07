@@ -284,7 +284,13 @@ export async function processVector(links, jsonformValue, layerId) {
  * @param {string} layerId
  * @param {string} projection
  */
-export async function processGeoTiff(links, jsonformValue, layerId, isPolling, projection) {
+export async function processGeoTiff(
+  links,
+  jsonformValue,
+  layerId,
+  isPolling,
+  projection,
+) {
   if (!links) return;
   const geotiffLinks = links.filter(
     (link) => link.rel === "service" && link.type === "image/tiff",
@@ -308,7 +314,9 @@ export async function processGeoTiff(links, jsonformValue, layerId, isPolling, p
         });
         console.log(responseProcess.headers.location);
         // We save the process status url into localstorage assigning it to the indicator id
-        const currentJobs = JSON.parse(localStorage.getItem(indicator.value) || '[]');
+        const currentJobs = JSON.parse(
+          localStorage.getItem(indicator.value) || "[]",
+        );
         currentJobs.push(responseProcess.headers.location);
         localStorage.setItem(indicator.value, JSON.stringify(currentJobs));
 
@@ -341,7 +349,6 @@ export async function processGeoTiff(links, jsonformValue, layerId, isPolling, p
     } else {
       urls.push(mustache.render(link.href, { ...(jsonformValue ?? {}) }));
     }
-    
   }
 
   return createLayerDefinition(links[0], layerId, urls, projection);
@@ -367,25 +374,26 @@ export async function createLayerDefinition(link, layerId, urls, projection) {
   // We want to make sure the urls are alphabetically sorted
   urls = urls.sort();
 
-  const layerdef = urls.length > 0
-    ? {
-        type: "WebGLTile",
-        source: {
-          type: "GeoTIFF",
-          normalize: !style,
-          sources: urls.map((url) => ({ url })),
-        },
-        properties: {
-          id: layerId + "_geotiff_process",
-          title: "Results " + layerId,
-          ...(layerConfig && { layerConfig: layerConfig }),
-          layerControlToolsExpand: true,
-        },
-        ...(style && { style: style }),
-      }
-    : undefined;
-  
-  // We want to see if the currently selected indicator uses a 
+  const layerdef =
+    urls.length > 0
+      ? {
+          type: "WebGLTile",
+          source: {
+            type: "GeoTIFF",
+            normalize: !style,
+            sources: urls.map((url) => ({ url })),
+          },
+          properties: {
+            id: layerId + "_geotiff_process",
+            title: "Results " + layerId,
+            ...(layerConfig && { layerConfig: layerConfig }),
+            layerControlToolsExpand: true,
+          },
+          ...(style && { style: style }),
+        }
+      : undefined;
+
+  // We want to see if the currently selected indicator uses a
   // specific map projection if it does we want to apply it
   if (projection) {
     layerdef.source.projection = projection;
@@ -444,10 +452,7 @@ export async function getChartValues(links, jsonformValue, specUrl) {
  * @param {import("vue").Ref<import("stac-ts").StacCollection | null>} params.selectedStac
  * @param {import("vue").Ref<any[]>} params.results
  */
-export async function loadPreviousProcess({
-  selectedStac,
-  results,
-}) {
+export async function loadPreviousProcess({ selectedStac, results }) {
   const geotiffLinks = selectedStac.value.links.filter(
     (link) => link.rel === "service" && link.type === "image/tiff",
   );
@@ -458,16 +463,11 @@ export async function loadPreviousProcess({
     results[0].urls,
     selectedStac.value?.["eodash:mapProjection"]?.["name"] ?? null,
   );
-  
-  log.debug(
-    "rendered layers after loading previous process:",
-    geotiffLayer,
-  );
+
+  log.debug("rendered layers after loading previous process:", geotiffLayer);
 
   if (geotiffLayer) {
-    const layers = [
-      ...(geotiffLayer ? [geotiffLayer] : []),
-    ];
+    const layers = [...(geotiffLayer ? [geotiffLayer] : [])];
     let currentLayers = [...getLayers()];
     let analysisGroup = currentLayers.find((l) =>
       l.properties.id.includes("AnalysisGroup"),

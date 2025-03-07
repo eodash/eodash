@@ -12,7 +12,7 @@
       .dataValues="toRaw(chartData)"
       :style="chartStyles"
     />
-    <div style="text-align: right;">
+    <div style="text-align: right">
       <v-btn
         v-if="!autoExec"
         :loading="loading"
@@ -24,65 +24,61 @@
       </v-btn>
     </div>
     <div>
-      <v-table density="compact" v-if="jobs.length" style="background-color: #ffffff14; margin-top:10px">
-          <thead>
-            <tr>
-              <th class="text-left">
-                Executed on
-              </th>
-              <th class="text-left">
-                Status
-              </th>
-              <th class="text-left">
-              </th>
-              <th class="text-left">
-              </th>
-              <th class="text-left">
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr
-              v-for="item in jobs"
-              :key="item.date"
-            >
-              <td>{{ new Date(item.job_start_datetime).toISOString().slice(0, 16) }}</td>
-              <td>{{ item.status }}</td>
-              <td style="padding: 0px;">
-                <v-btn
-                  :disabled="item.status !== 'successful'"
-                  color="primary"
-                  @click="loadProcess(item)"
-                  :icon="[mdiUploadBox]"
-                  variant="text"
-                  v-tooltip="'Load results to map'"
-                >
-                </v-btn>
-              </td>
-              <td style="padding: 0px;">
-                <v-btn
-                  :disabled="item.status !== 'successful'"
-                  color="primary"
-                  @click="downloadPreviousResults(item)"
-                  :icon="[mdiDownloadBox]"
-                  variant="text"
-                  v-tooltip="'Download results'"
-                >
-                </v-btn>
-              </td>
-              <td style="padding: 0px;">
-                <v-btn
-                  color="#ff5252"
-                  @click="deleteJob(item)"
-                  :icon="[mdiTrashCanOutline]"
-                  variant="text"
-                  v-tooltip="'Remove job'"
-                >
-                </v-btn>
-              </td>
-            </tr>
-          </tbody>
-        </v-table>
+      <v-table
+        density="compact"
+        v-if="jobs.length"
+        style="background-color: #ffffff14; margin-top: 10px"
+      >
+        <thead>
+          <tr>
+            <th class="text-left">Executed on</th>
+            <th class="text-left">Status</th>
+            <th class="text-left"></th>
+            <th class="text-left"></th>
+            <th class="text-left"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="item in jobs" :key="item.date">
+            <td>
+              {{ new Date(item.job_start_datetime).toISOString().slice(0, 16) }}
+            </td>
+            <td>{{ item.status }}</td>
+            <td style="padding: 0px">
+              <v-btn
+                :disabled="item.status !== 'successful'"
+                color="primary"
+                @click="loadProcess(item)"
+                :icon="[mdiUploadBox]"
+                variant="text"
+                v-tooltip="'Load results to map'"
+              >
+              </v-btn>
+            </td>
+            <td style="padding: 0px">
+              <v-btn
+                :disabled="item.status !== 'successful'"
+                color="primary"
+                @click="downloadPreviousResults(item)"
+                :icon="[mdiDownloadBox]"
+                variant="text"
+                v-tooltip="'Download results'"
+              >
+              </v-btn>
+            </td>
+            <td style="padding: 0px">
+              <v-btn
+                color="#ff5252"
+                @click="deleteJob(item)"
+                :icon="[mdiTrashCanOutline]"
+                variant="text"
+                v-tooltip="'Remove job'"
+              >
+              </v-btn>
+            </td>
+          </tr>
+        </tbody>
+      </v-table>
     </div>
   </div>
 </template>
@@ -91,7 +87,7 @@ import "@eox/chart";
 import "@eox/drawtools";
 import "@eox/jsonform";
 
-import { mdiUploadBox, mdiDownloadBox, mdiTrashCanOutline } from '@mdi/js';
+import { mdiUploadBox, mdiDownloadBox, mdiTrashCanOutline } from "@mdi/js";
 
 import { computed, onMounted, ref, toRaw, useTemplateRef } from "vue";
 import { useSTAcStore } from "@/store/stac";
@@ -112,7 +108,7 @@ const layersEvents = useEventBus(eoxLayersKey);
 const { selectedStac } = storeToRefs(useSTAcStore());
 
 /** @type {import("vue").Ref<any[]>} */
-  const jobs = ref([]);
+const jobs = ref([]);
 
 /** @type {import("vue").Ref<import("vega").Spec|null>} */
 const chartSpec = ref(null);
@@ -139,7 +135,7 @@ const processResults = ref([]);
 
 const deleteJob = async (jobObject) => {
   const jobsUrls = JSON.parse(localStorage.getItem(indicator.value) || "[]");
-  const newJobs = jobsUrls.filter((url) => !url.includes(jobObject.jobID) );
+  const newJobs = jobsUrls.filter((url) => !url.includes(jobObject.jobID));
   localStorage.setItem(indicator.value, JSON.stringify(newJobs));
   updateJobsStatus();
 };
@@ -285,7 +281,7 @@ const loadProcess = async (jobObject) => {
     selectedStac,
     results,
   });
-}
+};
 
 const startProcess = async () => {
   /** @param {*} jsonformSchema */
