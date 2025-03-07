@@ -10,6 +10,7 @@
       v-if="isProcessed && chartSpec"
       .spec="toRaw(chartSpec)"
       .dataValues="toRaw(chartData)"
+      @click:item="onChartClick"
       :style="chartStyles"
     />
     <v-container>
@@ -49,6 +50,7 @@ import { eoxLayersKey } from "@/utils/keys";
 import {
   handleProcesses,
   initProcess,
+  onChartClick,
   useAutoExec,
 } from "@/composables/EodashProcess";
 
