@@ -16,8 +16,8 @@ export const eodash = reactive({
     // "https://eodashcatalog.eox.at/test-style/trilateral/catalog.json",
     // "https://gtif-cerulean.github.io/catalog/cerulean/catalog.json",
     // "https://gtif-cerulean.github.io/deside-catalog/deside/catalog.json",
-    // "https://gtif-cerulean.github.io/cerulean-catalog/cerulean/catalog.json",
-    "https://gtif-austria.github.io/public-catalog/GTIF-Austria/catalog.json",
+    "https://gtif-cerulean.github.io/cerulean-catalog/cerulean/catalog.json",
+  // "https://gtif-austria.github.io/public-catalog/GTIF-Austria/catalog.json",
   brand: {
     noLayout: true,
     name: "Demo",
@@ -163,7 +163,7 @@ export const eodash = reactive({
           defineWidget: (selectedSTAC) => {
             return selectedSTAC
               ? {
-                  id: "Datepicker",
+                  id: "light-datepicker",
                   type: "internal",
                   layout: { x: 5, y: 8, w: 2, h: 4 },
                   title: "Date",
@@ -257,7 +257,7 @@ export const eodash = reactive({
           defineWidget: (selectedSTAC) => {
             return selectedSTAC
               ? {
-                  id: "Datepicker",
+                  id: "expert-datepicker",
                   type: "internal",
                   layout: { x: 5, y: 11, w: 2, h: 1 },
                   title: "Date",
@@ -419,7 +419,7 @@ export const eodash = reactive({
                     name: "EodashMapBtns",
                     properties: {
                       compareIndicators: {
-                        fallbackTemplate: "light",
+                        fallbackTemplate: "expert",
                       },
                     },
                   },
@@ -431,7 +431,7 @@ export const eodash = reactive({
           defineWidget: (selectedSTAC) => {
             return selectedSTAC
               ? {
-                  id: "Datepicker",
+                  id: "expert-Datepicker",
                   type: "internal",
                   layout: { x: 5, y: 8, w: 2, h: 4 },
                   title: "Date",

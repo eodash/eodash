@@ -15,8 +15,8 @@
       .controls="controls"
     >
       <eox-map-tooltip
-        :style="tooltipStyles"
-        .propertyTransform="tooltipPropertyTransform"
+        :style="mainTooltipStyles"
+        .propertyTransform="tooltipPropertyTransform('main')"
       />
     </eox-map>
     <eox-map
@@ -27,8 +27,8 @@
       .layers="eoxMapCompareLayers"
     >
       <eox-map-tooltip
-        :style="tooltipStyles"
-        .propertyTransform="tooltipPropertyTransform"
+        :style="compareTooltipStyles"
+        .propertyTransform="tooltipPropertyTransform('compare')"
       />
     </eox-map>
   </eox-map-compare>
@@ -44,6 +44,7 @@ import {
   eodashCollections,
   eodashCompareCollections,
   layerControlFormValue,
+  layerControlFormValueCompare,
 } from "@/utils/states";
 import {
   useHandleMapMoveEnd,
@@ -76,6 +77,8 @@ const props = defineProps({
 
 /** @type {import("vue").Ref<Exclude<import("@/types").EodashStyleJson["tooltip"], undefined>>} */
 const tooltipProperties = ref([]);
+/** @type {import("vue").Ref<Exclude<import("@/types").EodashStyleJson["tooltip"], undefined>>} */
+const compareTooltipProperties = ref([]);
 /** @type {import("@eox/map").EOxMap["controls"]} */
 const controls = {
   Attribution: {
@@ -147,6 +150,8 @@ onMounted(() => {
       eoxMap,
       false,
     );
+
+    useUpdateTooltipProperties(eodashCollections, compareTooltipProperties);
   }
 
   useInitMap(
@@ -163,35 +168,50 @@ onMounted(() => {
 
 useUpdateTooltipProperties(eodashCollections, tooltipProperties);
 
-const tooltipStyles = computed(() => ({
+const mainTooltipStyles = computed(() => ({
   visibility: tooltipProperties.value.length ? "visible" : "hidden",
 }));
+
+const compareTooltipStyles = computed(() => ({
+  visibility: compareTooltipProperties.value.length ? "visible" : "hidden",
+}));
 /**
- * @param {{key:string; value:string}} param
- * @returns {{key:string; value?:string} | undefined}
- */
-const tooltipPropertyTransform = (param) => {
-  /** @type {typeof tooltipProperties.value} */
-  const updatedProperties = JSON.parse(
-    mustache.render(JSON.stringify(tooltipProperties.value), {
-      ...(layerControlFormValue.value ?? {}),
-    }),
-  );
+ * @param {"main" | "compare"} map
+ **/
+const tooltipPropertyTransform = (map) => {
+  const tooltipProps =
+    map === "main" ? tooltipProperties : compareTooltipProperties;
+  const layerControlFormVal =
+    map == "main" ? layerControlFormValue : layerControlFormValueCompare;
+  /**
+   * @param {{key:string; value:string}} param
+   * @returns {{key:string; value?:string} | undefined}
+   */
+  return (param) => {
+    /** @type {typeof tooltipProps.value} */
+    const updatedProperties = JSON.parse(
+      mustache.render(JSON.stringify(tooltipProps.value), {
+        ...(layerControlFormVal.value ?? {}),
+      }),
+    );
 
-  const tooltipProp = updatedProperties?.find((prop) => prop.id === param.key);
-  if (!tooltipProp) {
-    return undefined;
-  }
-  if (typeof param.value === "object") {
-    param.value = JSON.stringify(param.value);
-  }
-  if (!isNaN(Number(param.value))) {
-    param.value = Number(param.value).toFixed(4).toString();
-  }
+    const tooltipProp = updatedProperties?.find(
+      (prop) => prop.id === param.key,
+    );
+    if (!tooltipProp) {
+      return undefined;
+    }
+    if (typeof param.value === "object") {
+      param.value = JSON.stringify(param.value);
+    }
+    if (!isNaN(Number(param.value))) {
+      param.value = Number(param.value).toFixed(4).toString();
+    }
 
-  return {
-    key: tooltipProp.title || tooltipProp.id,
-    value: param.value + " " + (tooltipProp.appendix || ""),
+    return {
+      key: tooltipProp.title || tooltipProp.id,
+      value: param.value + " " + (tooltipProp.appendix || ""),
+    };
   };
 };
 </script>

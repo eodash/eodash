@@ -35,6 +35,13 @@ export const posIsSetFromUrl = ref(false);
  * @type {import("vue").Ref<Record<string, any> | undefined>}
  */
 export const layerControlFormValue = ref({});
+
+/**
+ * Current value of the layer control JSON form for the latest layer the user interacted with.
+ * @type {import("vue").Ref<Record<string, any> | undefined>}
+ */
+export const layerControlFormValueCompare = ref({});
+
 /**
  * STAC indicators color palette, defaults to Bank-Wong palette
  *  @type {string[]} */
