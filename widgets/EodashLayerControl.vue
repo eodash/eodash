@@ -10,6 +10,7 @@
       style="--eox-background-color: transparent"
       ref="eoxLayercontrol"
       @layerConfig:change="onLayerConfigChange"
+      .styleOverride="styleOverride"
     />
   </span>
 </template>
@@ -27,12 +28,15 @@ import {
   eodashCollections,
   eodashCompareCollections,
   layerControlFormValue,
+  layerControlFormValueCompare,
 } from "@/utils/states";
 import { storeToRefs } from "pinia";
 import { useSTAcStore } from "@/store/stac";
 
 const props = defineProps({
   map: {
+    /** @type {import("vue").PropType<"first" | "second">} */
+    //@ts-expect-error todo
     type: String,
     default: "first",
   },
@@ -118,6 +122,16 @@ const debouncedHandleDateTime = (evt) => {
  * @param {Event & {detail:{layer:import("ol/layer").Layer;jsonformValue:Record<string,any>}}} evt
  */
 const onLayerConfigChange = (evt) => {
-  layerControlFormValue.value = evt.detail.jsonformValue;
+  if (props.map === "second") {
+    layerControlFormValueCompare.value = evt.detail.jsonformValue;
+  } else {
+    layerControlFormValue.value = evt.detail.jsonformValue;
+  }
 };
+
+const styleOverride = `
+input[type="range"] {
+  background:transparent !important;
+}
+`;
 </script>

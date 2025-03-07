@@ -9,6 +9,7 @@ import {
   eodashCollections,
   eodashCompareCollections,
   collectionsPalette,
+  switchToCompare,
 } from "@/utils/states";
 import { EodashCollection } from "@/eodashSTAC/EodashCollection";
 import log from "loglevel";
@@ -110,6 +111,7 @@ export const useSTAcStore = defineStore("stac", () => {
 
           selectedStac.value = resp.data;
           indicator.value = selectedStac.value?.id ?? "";
+          switchToCompare.value = true;
         });
       })
       .catch((err) => {
@@ -126,7 +128,6 @@ export const useSTAcStore = defineStore("stac", () => {
    */
   async function loadSelectedCompareSTAC(relativePath = "") {
     const absoluteUrl = useCompareAbsoluteUrl(relativePath);
-
     await axios
       .get(absoluteUrl.value)
       .then(async (resp) => {
@@ -149,6 +150,7 @@ export const useSTAcStore = defineStore("stac", () => {
           eodashCompareCollections.push(...collections);
 
           selectedCompareStac.value = resp.data;
+          switchToCompare.value = false;
         });
       })
       .catch((err) => {

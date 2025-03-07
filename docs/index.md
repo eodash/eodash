@@ -70,9 +70,10 @@ npm install @eodash/eodash
   </head>
 
   <body>
-    <eo-dash></eo-dash> // [!code focus]
-    <script type="module" src="index.js"></script>
     // [!code focus]
+    <eo-dash></eo-dash>
+     // [!code focus]
+    <script type="module" src="index.js"></script> 
   </body>
 </html>
 ```

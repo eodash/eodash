@@ -1,6 +1,6 @@
 <template>
   <v-app-bar color="primary">
-    <v-app-bar-title>{{ title }}</v-app-bar-title>
+    <v-app-bar-title class="header">{{ title }}</v-app-bar-title>
     <v-img class="mx-12 logo" :src="eodash.brand?.logo" />
   </v-app-bar>
 </template>

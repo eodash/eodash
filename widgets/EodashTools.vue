@@ -74,6 +74,7 @@ const props = defineProps({
     default: "Select indicator",
   },
   itemFilterConfig: {
+    /** @type {import("vue").PropType<InstanceType<import("./EodashItemFilter.vue").default>["$props"]>} */
     type: Object,
     default: () => {},
   },

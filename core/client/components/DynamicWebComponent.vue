@@ -34,7 +34,7 @@ const props = /** @type {import("@/types").WebComponentProps} */ (
 const getWebComponent = async () =>
   typeof props.link === "string"
     ? await import(/* @vite-ignore */ props.link)
-    : await props.link();
+    : await props.link?.();
 
 const imported = !customElements.get(props.tagName)
   ? await getWebComponent().catch((e) => {
@@ -46,8 +46,15 @@ const defined = customElements.get(props.tagName);
 
 // if the imported link doesn't define the custom tag provided
 if (!defined && props.constructorProp) {
-  const Constructor = imported[props.constructorProp];
-  customElements.define(props.tagName, Constructor);
+  try {
+    const Constructor = imported[props.constructorProp];
+    customElements.define(props.tagName, Constructor);
+  } catch (e) {
+    console.error(
+      `[eodash] ${props.tagName} is not defined, please add a valid link or constructorProp`,
+    );
+    console.error(e);
+  }
 }
 
 const store = useSTAcStore();

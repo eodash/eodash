@@ -47,11 +47,22 @@ const useTemplate = () => {
         }
 
         const templateConfig = eodash.templates[template];
-        [definedTemplate.bgWidget] = useDefineWidgets([
+        const [importedBgWidget] = useDefineWidgets([
           templateConfig.background,
         ]);
+        if (importedBgWidget.value.id !== definedTemplate.bgWidget.value?.id) {
+          definedTemplate.bgWidget.value = importedBgWidget.value;
+        }
 
-        [definedTemplate.loading] = useDefineWidgets([templateConfig.loading]);
+        const [importedLoadingWidget] = useDefineWidgets([
+          templateConfig.loading,
+        ]);
+
+        if (
+          importedLoadingWidget.value.id !== definedTemplate.loading.value?.id
+        ) {
+          definedTemplate.loading.value = importedLoadingWidget.value;
+        }
 
         definedTemplate.importedWidgets = useDefineWidgets(
           templateConfig.widgets,
