@@ -5,7 +5,7 @@ import axios from "axios";
 import { extractLayerConfig } from "@/eodashSTAC/helpers";
 import log from "loglevel";
 import { getLayers } from "@/store/actions";
-import { mapEl } from "@/store/states";
+import { mapEl, indicator } from "@/store/states";
 
 /**
  * Polls the process status and fetches a result item when the process is successful.
@@ -21,8 +21,8 @@ import { mapEl } from "@/store/states";
 export async function pollProcessStatus({
   processUrl,
   isPolling,
-  pollInterval = 5000,
-  maxRetries = 60,
+  pollInterval = 10000,
+  maxRetries = 560,
 }) {
   let retries = 0;
   isPolling.value = true;
@@ -282,14 +282,14 @@ export async function processVector(links, jsonformValue, layerId) {
  * @param {Record<string,any> | undefined} jsonformValue
  * @param {import("vue").Ref<boolean>} isPolling
  * @param {string} layerId
+ * @param {string} projection
  */
-export async function processGeoTiff(links, jsonformValue, layerId, isPolling) {
+export async function processGeoTiff(links, jsonformValue, layerId, isPolling, projection) {
   if (!links) return;
   const geotiffLinks = links.filter(
     (link) => link.rel === "service" && link.type === "image/tiff",
   );
   let urls = [];
-  let flatStyleJSON = null;
   for (const link of geotiffLinks ?? []) {
     if (link.endpoint === "eoxhub_workspaces") {
       // TODO: prove of concept, needs to be reworked for sure
@@ -307,6 +307,11 @@ export async function processGeoTiff(links, jsonformValue, layerId, isPolling) {
           },
         });
         console.log(responseProcess.headers.location);
+        // We save the process status url into localstorage assigning it to the indicator id
+        const currentJobs = JSON.parse(localStorage.getItem(indicator.value) || '[]');
+        currentJobs.push(responseProcess.headers.location);
+        localStorage.setItem(indicator.value, JSON.stringify(currentJobs));
+
         await pollProcessStatus({
           processUrl: responseProcess.headers.location,
           isPolling,
@@ -314,11 +319,10 @@ export async function processGeoTiff(links, jsonformValue, layerId, isPolling) {
           .then((resultItem) => {
             // @ts-expect-error we have currently no definition of what is allowed as response
             const resultUrls = resultItem?.urls;
-            if (!resultUrls?.length) {
+            if (resultUrls?.length < 1) {
               return;
             }
-
-            urls.push(resultUrls[0]);
+            urls = resultUrls;
           })
           .catch((error) => {
             if (error instanceof Error) {
@@ -337,12 +341,20 @@ export async function processGeoTiff(links, jsonformValue, layerId, isPolling) {
     } else {
       urls.push(mustache.render(link.href, { ...(jsonformValue ?? {}) }));
     }
-    if ("eox:flatstyle" in (link ?? {})) {
-      flatStyleJSON = await axios
-        .get(/** @type {string} */ (link["eox:flatstyle"]))
-        .then((resp) => resp.data);
-    }
+    
   }
+
+  return createLayerDefinition(links[0], layerId, urls, projection);
+}
+
+export async function createLayerDefinition(link, layerId, urls, projection) {
+  let flatStyleJSON = null;
+  if ("eox:flatstyle" in (link ?? {})) {
+    flatStyleJSON = await axios
+      .get(/** @type {string} */ (link["eox:flatstyle"]))
+      .then((resp) => resp.data);
+  }
+
   /** @type {Record<string,any>|undefined} */
   let layerConfig;
   /** @type {Record<string,any>|undefined} */
@@ -352,7 +364,10 @@ export async function processGeoTiff(links, jsonformValue, layerId, isPolling) {
     layerConfig = extracted.layerConfig;
     style = extracted.style;
   }
-  return urls.length
+  // We want to make sure the urls are alphabetically sorted
+  urls = urls.sort();
+
+  const layerdef = urls.length > 0
     ? {
         type: "WebGLTile",
         source: {
@@ -364,10 +379,18 @@ export async function processGeoTiff(links, jsonformValue, layerId, isPolling) {
           id: layerId + "_geotiff_process",
           title: "Results " + layerId,
           ...(layerConfig && { layerConfig: layerConfig }),
+          layerControlToolsExpand: true,
         },
         ...(style && { style: style }),
       }
     : undefined;
+  
+  // We want to see if the currently selected indicator uses a 
+  // specific map projection if it does we want to apply it
+  if (projection) {
+    layerdef.source.projection = projection;
+  }
+  return layerdef;
 }
 
 /**
@@ -416,7 +439,46 @@ export async function getChartValues(links, jsonformValue, specUrl) {
   }
   return [spec, dataValues];
 }
+/**
+ * @param {Object} params
+ * @param {import("vue").Ref<import("stac-ts").StacCollection | null>} params.selectedStac
+ * @param {import("vue").Ref<any[]>} params.results
+ */
+export async function loadPreviousProcess({
+  selectedStac,
+  results,
+}) {
+  const geotiffLinks = selectedStac.value.links.filter(
+    (link) => link.rel === "service" && link.type === "image/tiff",
+  );
+  // const stacProjection = selectedStac
+  const geotiffLayer = await createLayerDefinition(
+    geotiffLinks[0],
+    selectedStac.value?.id ?? "",
+    results[0].urls,
+    selectedStac.value?.["eodash:mapProjection"]?.["name"] ?? null,
+  );
+  
+  log.debug(
+    "rendered layers after loading previous process:",
+    geotiffLayer,
+  );
 
+  if (geotiffLayer) {
+    const layers = [
+      ...(geotiffLayer ? [geotiffLayer] : []),
+    ];
+    let currentLayers = [...getLayers()];
+    let analysisGroup = currentLayers.find((l) =>
+      l.properties.id.includes("AnalysisGroup"),
+    );
+    analysisGroup?.layers.push(...layers);
+
+    if (mapEl.value) {
+      mapEl.value.layers = [...currentLayers];
+    }
+  }
+}
 /**
  * @param {Object} params
  * @param {import("vue").Ref<boolean>} params.loading
@@ -483,6 +545,7 @@ export async function handleProcesses({
       jsonformValue,
       selectedStac.value?.id ?? "",
       isPolling,
+      selectedStac.value?.["eodash:mapProjection"]?.["name"] ?? null,
     );
 
     if (geotiffLayer && geotiffLayer.source?.sources.length) {
