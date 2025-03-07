@@ -177,6 +177,8 @@ const downloadPreviousResults = async (jobObject) => {
   });
 };
 
+/*
+// TODO: we probably want to keep this for the non async cases?
 const downloadResults = () => {
   processResults.value.forEach((result) => {
     if (!result) {
@@ -207,6 +209,7 @@ const downloadResults = () => {
     link.remove();
   });
 };
+*/
 onMounted(async () => {
   updateJobsStatus();
   // wait for the layers to be rendered
