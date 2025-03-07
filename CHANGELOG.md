@@ -1,6 +1,19 @@
 # Changelog
 
 
+## [5.0.0-rc.3](https://github.com/eodash/eodash/compare/eodash-v5.0.0-rc.2...eodash-v5.0.0-rc.3) (2025-03-07)
+
+
+### Features
+
+* Widgets updates, Font management, Attributions, and Geodb points styling ([#168](https://github.com/eodash/eodash/issues/168)) ([0f9548f](https://github.com/eodash/eodash/commit/0f9548fba360ffaa373c15c06dc9cb73ba420aaf))
+
+
+### Bug Fixes
+
+* dev release ([677b2c1](https://github.com/eodash/eodash/commit/677b2c1b712355c6dbba461f75099abdf3295490))
+* minor issues loading cog styles ([#164](https://github.com/eodash/eodash/issues/164)) ([3503ae6](https://github.com/eodash/eodash/commit/3503ae60c60452076547fe4851b874bd631fd6e3))
+
 ## [5.0.0-rc.2](https://github.com/eodash/eodash/compare/eodash-v5.0.0-rc.1...eodash-v5.0.0-rc.2) (2025-01-22)
 
 
