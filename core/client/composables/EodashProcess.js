@@ -684,3 +684,40 @@ export async function initProcess({
     jsonformSchema.value = null;
   }
 }
+
+/**
+ * Handles the click event on a chart, extracting temporal information and setting the global datetime value.
+ *
+ * @param {object} evt - The click event object.
+ * @param {object} evt.target - The target of the event, expected to have a Vega-Lite specification (`spec`).
+ * @param {object} evt.target.spec - The Vega-Lite specification of the chart.
+ * @param {Record<string,{type?:string;field?:string;}>} [evt.target.spec.encoding] - The encoding specification of the chart.
+ * @param {object} evt.detail - The detail of the event, containing information about the clicked item.
+ * @param {import("vega").Item} evt.detail.item - The Vega item that was clicked.
+ */
+export const onChartClick = (evt) => {
+  const chartSpec = evt.target?.spec;
+  if (!chartSpec) {
+    return;
+  }
+  const encodingKey = Object.keys(chartSpec.encoding ?? {}).find(
+    (key) => chartSpec.encoding?.[key].type === "temporal",
+  );
+  if (!encodingKey) {
+    return;
+  }
+  const temporalKey = chartSpec.encoding?.[encodingKey].field;
+  if (!temporalKey) {
+    return;
+  }
+  try {
+    const vegaItem = evt.detail.item;
+    const temporalValue = new Date(vegaItem.datum.datum[temporalKey]);
+    datetime.value = temporalValue.toISOString();
+  } catch (error) {
+    console.warn(
+      "[eodash] Error while setting datetime from eox-chart:",
+      error,
+    );
+  }
+};
