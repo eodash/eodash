@@ -23,6 +23,13 @@
       >
         Execute
       </v-btn>
+      <v-btn
+          v-if="processResults.length && isProcessed"
+          color="primary"
+          @click="downloadResults"
+        >
+          Download
+        </v-btn>
     </div>
     <div>
       <v-table
@@ -179,8 +186,6 @@ const downloadPreviousResults = async (jobObject) => {
   });
 };
 
-/*
-// TODO: we probably want to keep this for the non async cases?
 const downloadResults = () => {
   processResults.value.forEach((result) => {
     if (!result) {
@@ -211,7 +216,7 @@ const downloadResults = () => {
     link.remove();
   });
 };
-*/
+
 onMounted(async () => {
   updateJobsStatus();
   // wait for the layers to be rendered
@@ -262,17 +267,17 @@ useOnLayersUpdate(async (evt, _payload) => {
 
 const updateJobsStatus = async () => {
   const jobsUrls = JSON.parse(localStorage.getItem(indicator.value) || "[]");
-  jobs.value = [];
-  jobsUrls.forEach((url) => {
-    fetch(url)
-      .then((response) => response.json())
-      .then((data) => {
-        jobs.value.push(data);
-      });
+  const jobResults = await Promise.all(
+    jobsUrls.map((url) =>
+      fetch(url)
+        .then((response) => response.json())
+    )
+  );
+  jobResults.sort((a, b) => {
+    return new Date(b.job_start_datetime).getTime() - new Date(a.job_start_datetime).getTime();
   });
-  jobs.value.sort((a, b) => {
-    return new Date(b.job_start_datetime) - new Date(a.job_start_datetime);
-  });
+  jobs.value = jobResults;
+  
 };
 
 const loadProcess = async (jobObject) => {
@@ -285,6 +290,7 @@ const loadProcess = async (jobObject) => {
   await loadPreviousProcess({
     selectedStac,
     results,
+    jobId: jobObject.jobID,
   });
 };
 
@@ -315,6 +321,10 @@ const startProcess = async () => {
     console.warn("[eodash] Form validation failed", errors);
     return;
   }
+  setTimeout(() => {
+    updateJobsStatus();
+  },1000);
+  
   processResults.value = [];
   await handleProcesses({
     jsonformEl,
@@ -328,7 +338,16 @@ const startProcess = async () => {
     isPolling,
     processResults,
   });
-  isProcessed.value = true;
+  // only set isprocessed true if it is not an async process
+  // the results from async processes are shown in the job result list
+  // so this way we hide the download button we want for sync processes
+  const asyncProcesses = selectedStac.value?.links?.filter(
+    (l) => l.endpoint === "eoxhub_workspaces",
+  );
+  // TODO: i think this is not working as expected for non async processes
+  if (asyncProcesses?.length === 0) {
+    isProcessed.value = true;
+  }
   updateJobsStatus();
 };
 useAutoExec(autoExec, jsonformEl, jsonformSchema, startProcess);

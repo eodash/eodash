@@ -296,6 +296,7 @@ export async function processGeoTiff(
     (link) => link.rel === "service" && link.type === "image/tiff",
   );
   let urls = [];
+  let processId = "";
   for (const link of geotiffLinks ?? []) {
     if (link.endpoint === "eoxhub_workspaces") {
       // TODO: prove of concept, needs to be reworked for sure
@@ -319,7 +320,6 @@ export async function processGeoTiff(
         );
         currentJobs.push(responseProcess.headers.location);
         localStorage.setItem(indicator.value, JSON.stringify(currentJobs));
-
         await pollProcessStatus({
           processUrl: responseProcess.headers.location,
           isPolling,
@@ -330,6 +330,7 @@ export async function processGeoTiff(
             if (resultUrls?.length < 1) {
               return;
             }
+            processId = resultItem?.id;
             urls = resultUrls;
           })
           .catch((error) => {
@@ -351,10 +352,10 @@ export async function processGeoTiff(
     }
   }
 
-  return createLayerDefinition(links[0], layerId, urls, projection);
+  return createLayerDefinition(links[0], layerId, urls, projection, processId);
 }
 
-export async function createLayerDefinition(link, layerId, urls, projection) {
+export async function createLayerDefinition(link, layerId, urls, projection, processId) {
   let flatStyleJSON = null;
   if ("eox:flatstyle" in (link ?? {})) {
     flatStyleJSON = await axios
@@ -373,7 +374,6 @@ export async function createLayerDefinition(link, layerId, urls, projection) {
   }
   // We want to make sure the urls are alphabetically sorted
   urls = urls.sort();
-
   const layerdef =
     urls.length > 0
       ? {
@@ -384,7 +384,7 @@ export async function createLayerDefinition(link, layerId, urls, projection) {
             sources: urls.map((url) => ({ url })),
           },
           properties: {
-            id: layerId + "_geotiff_process",
+            id: layerId + "_geotiff_process"+processId,
             title: "Results " + layerId,
             ...(layerConfig && { layerConfig: layerConfig }),
             layerControlToolsExpand: true,
@@ -452,7 +452,7 @@ export async function getChartValues(links, jsonformValue, specUrl) {
  * @param {import("vue").Ref<import("stac-ts").StacCollection | null>} params.selectedStac
  * @param {import("vue").Ref<any[]>} params.results
  */
-export async function loadPreviousProcess({ selectedStac, results }) {
+export async function loadPreviousProcess({ selectedStac, results, jobId }) {
   const geotiffLinks = selectedStac.value.links.filter(
     (link) => link.rel === "service" && link.type === "image/tiff",
   );
@@ -462,6 +462,7 @@ export async function loadPreviousProcess({ selectedStac, results }) {
     selectedStac.value?.id ?? "",
     results[0].urls,
     selectedStac.value?.["eodash:mapProjection"]?.["name"] ?? null,
+    jobId,
   );
 
   log.debug("rendered layers after loading previous process:", geotiffLayer);
