@@ -25,4 +25,4 @@ jobs:
         run: npm ci
       - name: Build and publish package 🚀
         run: |
-          npx pkg-pr-new publish --compact --comment=${{ inputs.comment }}
+          npx pkg-pr-new publish --comment=${{ inputs.comment }}

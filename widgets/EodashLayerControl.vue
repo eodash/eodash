@@ -28,6 +28,7 @@ import {
   eodashCollections,
   eodashCompareCollections,
   layerControlFormValue,
+  layerControlFormValueCompare,
 } from "@/utils/states";
 import { storeToRefs } from "pinia";
 import { useSTAcStore } from "@/store/stac";
@@ -121,7 +122,11 @@ const debouncedHandleDateTime = (evt) => {
  * @param {Event & {detail:{layer:import("ol/layer").Layer;jsonformValue:Record<string,any>}}} evt
  */
 const onLayerConfigChange = (evt) => {
-  layerControlFormValue.value = evt.detail.jsonformValue;
+  if (props.map === "second") {
+    layerControlFormValueCompare.value = evt.detail.jsonformValue;
+  } else {
+    layerControlFormValue.value = evt.detail.jsonformValue;
+  }
 };
 
 const styleOverride = `

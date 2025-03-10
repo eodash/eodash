@@ -5,7 +5,7 @@ import axios from "axios";
 import { extractLayerConfig } from "@/eodashSTAC/helpers";
 import log from "loglevel";
 import { getLayers } from "@/store/actions";
-import { mapEl, indicator } from "@/store/states";
+import { datetime, mapEl, indicator } from "@/store/states";
 
 /**
  * Polls the process status and fetches a result item when the process is successful.
