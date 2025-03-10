@@ -13,32 +13,89 @@
       @click:item="onChartClick"
       :style="chartStyles"
     />
-    <v-container>
-      <span>
-        <v-btn
-          v-if="!autoExec"
-          :loading="loading"
-          style="float: right; margin-right: 20px"
-          @click="startProcess"
-          color="primary"
-        >
-          Execute
-        </v-btn>
-        <v-btn
+    <div style="text-align: right">
+      <v-btn
+        v-if="!autoExec"
+        :loading="loading"
+        style="margin-right: 20px"
+        @click="startProcess"
+        color="primary"
+      >
+        Execute
+      </v-btn>
+      <v-btn
           v-if="processResults.length && isProcessed"
           color="primary"
           @click="downloadResults"
         >
           Download
         </v-btn>
-      </span>
-    </v-container>
+    </div>
+    <div>
+      <v-table
+        density="compact"
+        v-if="jobs.length"
+        style="background-color: #ffffff14; margin-top: 10px"
+      >
+        <thead>
+          <tr>
+            <th class="text-left">Executed on</th>
+            <th class="text-left">Status</th>
+            <th class="text-left"></th>
+            <th class="text-left"></th>
+            <th class="text-left"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="item in jobs" :key="item.date">
+            <td>
+              {{ new Date(item.job_start_datetime).toISOString().slice(0, 16) }}
+            </td>
+            <td>{{ item.status }}</td>
+            <td style="padding: 0px">
+              <v-btn
+                :disabled="item.status !== 'successful'"
+                color="primary"
+                @click="loadProcess(item)"
+                :icon="[mdiUploadBox]"
+                variant="text"
+                v-tooltip="'Load results to map'"
+              >
+              </v-btn>
+            </td>
+            <td style="padding: 0px">
+              <v-btn
+                :disabled="item.status !== 'successful'"
+                color="primary"
+                @click="downloadPreviousResults(item)"
+                :icon="[mdiDownloadBox]"
+                variant="text"
+                v-tooltip="'Download results'"
+              >
+              </v-btn>
+            </td>
+            <td style="padding: 0px">
+              <v-btn
+                color="#ff5252"
+                @click="deleteJob(item)"
+                :icon="[mdiTrashCanOutline]"
+                variant="text"
+                v-tooltip="'Remove job'"
+              >
+              </v-btn>
+            </td>
+          </tr>
+        </tbody>
+      </v-table>
+    </div>
   </div>
 </template>
 <script setup>
 import "@eox/chart";
 import "@eox/drawtools";
 import "@eox/jsonform";
+
+import { mdiUploadBox, mdiDownloadBox, mdiTrashCanOutline } from "@mdi/js";
 
 import { computed, onMounted, ref, toRaw, useTemplateRef } from "vue";
 import { useSTAcStore } from "@/store/stac";
@@ -52,10 +109,15 @@ import {
   initProcess,
   onChartClick,
   useAutoExec,
+  loadPreviousProcess,
 } from "@/composables/EodashProcess";
+import { indicator } from "@/store/states";
 
 const layersEvents = useEventBus(eoxLayersKey);
 const { selectedStac } = storeToRefs(useSTAcStore());
+
+/** @type {import("vue").Ref<any[]>} */
+const jobs = ref([]);
 
 /** @type {import("vue").Ref<import("vega").Spec|null>} */
 const chartSpec = ref(null);
@@ -79,6 +141,50 @@ const autoExec = ref(false);
 const isPolling = ref(false);
 /** @type {import("vue").Ref<any[]>} */
 const processResults = ref([]);
+
+const deleteJob = async (jobObject) => {
+  const jobsUrls = JSON.parse(localStorage.getItem(indicator.value) || "[]");
+  const newJobs = jobsUrls.filter((url) => !url.includes(jobObject.jobID));
+  localStorage.setItem(indicator.value, JSON.stringify(newJobs));
+  updateJobsStatus();
+};
+
+const downloadPreviousResults = async (jobObject) => {
+  const results = [];
+  await fetch(jobObject.links[1].href)
+    .then((response) => response.json())
+    .then((data) => {
+      results.push(...data.urls);
+    });
+  results.forEach((result) => {
+    if (!result) {
+      return;
+    }
+    let url = "";
+    let downloadFile = "";
+    if (typeof result === "string") {
+      url = result;
+      //@ts-expect-error TODO
+      downloadFile = url.includes("/") ? url.split("/").pop() : url;
+      downloadFile = downloadFile.includes("?")
+        ? downloadFile.split("?")[0]
+        : downloadFile;
+    } else {
+      result = JSON.stringify(result);
+      const blob = new Blob([result], { type: "text" });
+      url = URL.createObjectURL(blob);
+      downloadFile = selectedStac.value?.id + "_process_results.json";
+    }
+    const link = document.createElement("a");
+    if (confirm(`Would you like to download ${downloadFile}?`)) {
+      link.href = url;
+      link.download = downloadFile;
+      link.click();
+    }
+    URL.revokeObjectURL(url);
+    link.remove();
+  });
+};
 
 const downloadResults = () => {
   processResults.value.forEach((result) => {
@@ -110,7 +216,9 @@ const downloadResults = () => {
     link.remove();
   });
 };
+
 onMounted(async () => {
+  updateJobsStatus();
   // wait for the layers to be rendered
   if (mapEl.value?.layers.length > 1) {
     await initProcess({
@@ -157,6 +265,35 @@ useOnLayersUpdate(async (evt, _payload) => {
   }
 });
 
+const updateJobsStatus = async () => {
+  const jobsUrls = JSON.parse(localStorage.getItem(indicator.value) || "[]");
+  const jobResults = await Promise.all(
+    jobsUrls.map((url) =>
+      fetch(url)
+        .then((response) => response.json())
+    )
+  );
+  jobResults.sort((a, b) => {
+    return new Date(b.job_start_datetime).getTime() - new Date(a.job_start_datetime).getTime();
+  });
+  jobs.value = jobResults;
+  
+};
+
+const loadProcess = async (jobObject) => {
+  const results = [];
+  await fetch(jobObject.links[1].href)
+    .then((response) => response.json())
+    .then((data) => {
+      results.push(data);
+    });
+  await loadPreviousProcess({
+    selectedStac,
+    results,
+    jobId: jobObject.jobID,
+  });
+};
+
 const startProcess = async () => {
   /** @param {*} jsonformSchema */
   const getDrawToolsProperty = (jsonformSchema) => {
@@ -184,6 +321,10 @@ const startProcess = async () => {
     console.warn("[eodash] Form validation failed", errors);
     return;
   }
+  setTimeout(() => {
+    updateJobsStatus();
+  },1000);
+  
   processResults.value = [];
   await handleProcesses({
     jsonformEl,
@@ -197,7 +338,17 @@ const startProcess = async () => {
     isPolling,
     processResults,
   });
-  isProcessed.value = true;
+  // only set isprocessed true if it is not an async process
+  // the results from async processes are shown in the job result list
+  // so this way we hide the download button we want for sync processes
+  const asyncProcesses = selectedStac.value?.links?.filter(
+    (l) => l.endpoint === "eoxhub_workspaces",
+  );
+  // TODO: i think this is not working as expected for non async processes
+  if (asyncProcesses?.length === 0) {
+    isProcessed.value = true;
+  }
+  updateJobsStatus();
 };
 useAutoExec(autoExec, jsonformEl, jsonformSchema, startProcess);
 
