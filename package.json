@@ -110,7 +110,7 @@
     "rollup": "^4.34.9",
     "terminate": "^2.8.0",
     "tsc-alias": "^1.8.11",
-    "typedoc": "^0.27.9",
+    "typedoc": "^0.28.0",
     "typedoc-plugin-markdown": "^4.4.2",
     "typedoc-plugin-vue": "^1.5.0",
     "typedoc-vitepress-theme": "^1.1.2",

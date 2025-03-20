@@ -50,7 +50,7 @@ import {
   useHandleMapMoveEnd,
   useInitMap,
   useUpdateTooltipProperties,
-} from "^/EodashMap/composables";
+} from "^/EodashMap/methods";
 import { inAndOut } from "ol/easing.js";
 import mustache from "mustache";
 
