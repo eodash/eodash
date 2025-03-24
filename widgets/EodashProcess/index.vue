@@ -63,9 +63,11 @@ const jsonformEl =
   /** @type {Readonly<import("vue").ShallowRef<import("@eox/jsonform").EOxJSONForm | null>>} */ (
     useTemplateRef("jsonformEl")
   );
-const isAsync = computed(()=>selectedStac.value?.links.filter(
-  (l) => l.endpoint === "eoxhub_workspaces",
-).length);
+const isAsync = computed(
+  () =>
+    selectedStac.value?.links.filter((l) => l.endpoint === "eoxhub_workspaces")
+      .length,
+);
 const containerEl = useTemplateRef("container");
 
 const loading = ref(false);
@@ -152,8 +154,7 @@ const startProcess = async () => {
   });
 
   isProcessed.value = true;
-  if(isAsync.value) updateJobsStatus(jobs, indicator);
-
+  if (isAsync.value) updateJobsStatus(jobs, indicator);
 };
 useAutoExec(autoExec, jsonformEl, jsonformSchema, startProcess);
 

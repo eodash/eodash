@@ -74,3 +74,9 @@ const { selectedStac } = toRefs(useSTAcStore());
 
 onMounted(() => updateJobsStatus(jobs, indicator));
 </script>
+<style lang="scss">
+div.v-table__wrapper {
+  overflow: hidden !important;
+  height: max-content !important;
+}
+</style>
