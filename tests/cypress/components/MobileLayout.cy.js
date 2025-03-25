@@ -6,6 +6,7 @@ describe("<MobileLayout />", () => {
     cy.vMount(MobileLayout, {
       global: {
         stubs: {
+          index:true,
           EodashDatePicker: true,
           EodashItemFilter: true,
           EodashMap: true,

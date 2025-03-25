@@ -1,5 +1,7 @@
 <template>
   <div ref="container" class="process-container">
+    <ProcessList />
+
     <eox-jsonform
       v-if="jsonformSchema"
       ref="jsonformEl"
@@ -13,49 +15,39 @@
       @click:item="onChartClick"
       :style="chartStyles"
     />
-    <v-container>
-      <span>
-        <v-btn
-          v-if="!autoExec"
-          :loading="loading"
-          style="float: right; margin-right: 20px"
-          @click="startProcess"
-          color="primary"
-        >
-          Execute
-        </v-btn>
-        <v-btn
-          v-if="processResults.length && isProcessed"
-          color="primary"
-          @click="downloadResults"
-        >
-          Download
-        </v-btn>
-      </span>
-    </v-container>
+    <div style="text-align: right">
+      <v-btn
+        v-if="!autoExec"
+        :loading="loading"
+        style="margin-right: 20px"
+        @click="startProcess"
+        color="primary"
+      >
+        Execute
+      </v-btn>
+      <v-btn
+        v-if="processResults.length && isProcessed && !isAsync"
+        color="primary"
+        @click="downloadResults"
+      >
+        Download
+      </v-btn>
+    </div>
   </div>
 </template>
 <script setup>
 import "@eox/chart";
 import "@eox/drawtools";
 import "@eox/jsonform";
-
-import { computed, onMounted, ref, toRaw, useTemplateRef } from "vue";
 import { useSTAcStore } from "@/store/stac";
 import { storeToRefs } from "pinia";
-import { mapEl } from "@/store/states";
-import { useOnLayersUpdate } from "@/composables";
-import { useEventBus } from "@vueuse/core";
-import { eoxLayersKey } from "@/utils/keys";
-import {
-  handleProcesses,
-  initProcess,
-  onChartClick,
-  useAutoExec,
-} from "@/composables/EodashProcess";
-
-const layersEvents = useEventBus(eoxLayersKey);
-const { selectedStac } = storeToRefs(useSTAcStore());
+import { computed, ref, toRaw, useTemplateRef } from "vue";
+import ProcessList from "./ProcessList.vue";
+import { handleProcesses, onChartClick } from "./methods/handling";
+import { useInitProcess, useAutoExec } from "./methods/composables";
+import { jobs, updateJobsStatus } from "./methods/async";
+import { indicator } from "@/store/states";
+import { download } from "./methods/utils";
 
 /** @type {import("vue").Ref<import("vega").Spec|null>} */
 const chartSpec = ref(null);
@@ -67,9 +59,15 @@ const isProcessed = ref(false);
 /** @type {import("vue").Ref<Record<string,any>|null>} */
 const jsonformSchema = ref(null);
 
-/** @type {import("vue").Ref<import("@eox/jsonform").EOxJSONForm | null>} */
-const jsonformEl = ref(null);
-
+const jsonformEl =
+  /** @type {Readonly<import("vue").ShallowRef<import("@eox/jsonform").EOxJSONForm | null>>} */ (
+    useTemplateRef("jsonformEl")
+  );
+const isAsync = computed(
+  () =>
+    selectedStac.value?.links.filter((l) => l.endpoint === "eoxhub_workspaces")
+      .length,
+);
 const containerEl = useTemplateRef("container");
 
 const loading = ref(false);
@@ -80,82 +78,37 @@ const isPolling = ref(false);
 /** @type {import("vue").Ref<any[]>} */
 const processResults = ref([]);
 
+const { selectedStac } = storeToRefs(useSTAcStore());
+
+useInitProcess({
+  //@ts-expect-error TODO
+  selectedStac,
+  jsonformEl,
+  jsonformSchema,
+  chartSpec,
+  isProcessed,
+  processResults,
+  loading,
+  isPolling,
+});
+
 const downloadResults = () => {
   processResults.value.forEach((result) => {
     if (!result) {
       return;
     }
-    let url = "";
-    let downloadFile = "";
+    let fileName = "";
     if (typeof result === "string") {
-      url = result;
-      //@ts-expect-error TODO
-      downloadFile = url.includes("/") ? url.split("/").pop() : url;
-      downloadFile = downloadFile.includes("?")
-        ? downloadFile.split("?")[0]
-        : downloadFile;
+      fileName = result.includes("/")
+        ? (result.split("/").pop() ?? "")
+        : result;
+      fileName = fileName.includes("?") ? fileName.split("?")[0] : fileName;
     } else {
-      result = JSON.stringify(result);
-      const blob = new Blob([result], { type: "text" });
-      url = URL.createObjectURL(blob);
-      downloadFile = selectedStac.value?.id + "_process_results.json";
+      fileName = selectedStac.value?.id + "_process_results.json";
     }
-    const link = document.createElement("a");
-    if (confirm(`Would you like to download ${downloadFile}?`)) {
-      link.href = url;
-      link.download = downloadFile;
-      link.click();
-    }
-    URL.revokeObjectURL(url);
-    link.remove();
+    download(fileName, result);
   });
 };
-onMounted(async () => {
-  // wait for the layers to be rendered
-  if (mapEl.value?.layers.length > 1) {
-    await initProcess({
-      //@ts-expect-error TODO
-      selectedStac,
-      jsonformEl,
-      jsonformSchema,
-      chartSpec,
-      isProcessed,
-      processResults,
-      loading,
-      isPolling,
-    });
-  } else {
-    layersEvents.once(async () => {
-      await initProcess({
-        //@ts-expect-error TODO
-        selectedStac,
-        jsonformEl,
-        jsonformSchema,
-        chartSpec,
-        isProcessed,
-        loading,
-        processResults,
-        isPolling,
-      });
-    });
-  }
-});
-
-useOnLayersUpdate(async (evt, _payload) => {
-  if (evt === "layers:updated") {
-    await initProcess({
-      //@ts-expect-error TODO
-      selectedStac,
-      jsonformEl,
-      jsonformSchema,
-      chartSpec,
-      isProcessed,
-      processResults,
-      loading,
-      isPolling,
-    });
-  }
-});
 
 const startProcess = async () => {
   /** @param {*} jsonformSchema */
@@ -184,7 +137,9 @@ const startProcess = async () => {
     console.warn("[eodash] Form validation failed", errors);
     return;
   }
+
   processResults.value = [];
+
   await handleProcesses({
     jsonformEl,
     jsonformSchema,
@@ -197,7 +152,9 @@ const startProcess = async () => {
     isPolling,
     processResults,
   });
+
   isProcessed.value = true;
+  if (isAsync.value) updateJobsStatus(jobs, indicator);
 };
 useAutoExec(autoExec, jsonformEl, jsonformSchema, startProcess);
 

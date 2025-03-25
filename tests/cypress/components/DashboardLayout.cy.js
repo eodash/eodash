@@ -8,6 +8,7 @@ describe("<DashboardLayout />", () => {
     cy.vMount(DashboardLayout, {
       global: {
         stubs: {
+          index: true,
           DynamicWebComponent: true,
           EodashDatePicker: true,
           EodashItemFilter: true,
