@@ -23,7 +23,14 @@ const internalWidgets = (() => {
     ...import.meta.glob("user:widgets/**/*.vue"),
   };
   for (const key in importMap) {
-    const newKey = /** @type {string} */ (key.split("/").at(-1)).slice(0, -4);
+    // Remove the extention and "widgets" from the key path
+    const path = key.split("/");
+    path.splice(0, path.findIndex((el) => el === "widgets") + 1);
+    const lastIdx = path.length - 1;
+    path[lastIdx] = path[lastIdx].split(".")[0];
+    const newKey =
+      path[lastIdx] == "index" ? path[lastIdx - 1] : path.join("/");
+
     Object.defineProperty(
       importMap,
       newKey,
