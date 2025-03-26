@@ -1,6 +1,13 @@
 # Changelog
 
 
+## [5.0.0](https://github.com/eodash/eodash/compare/eodash-v5.0.0-rc.3...eodash-v5.0.0) (2025-03-26)
+
+
+### Miscellaneous Chores
+
+* release 5.0.0 ([91db070](https://github.com/eodash/eodash/commit/91db070fcd4f775b37a33d432fb5780ec100fb7d))
+
 ## [5.0.0-rc.3](https://github.com/eodash/eodash/compare/eodash-v5.0.0-rc.2...eodash-v5.0.0-rc.3) (2025-03-25)
 
 
