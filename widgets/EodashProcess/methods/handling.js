@@ -111,7 +111,6 @@ export async function handleProcesses({
       { ...(jsonformValue ?? {}) },
       specUrl,
     );
-    console.log("chartData", chartData.value);
     if (Object.keys(chartData.value ?? {}).length) {
       processResults.value.push(chartData.value);
     }
