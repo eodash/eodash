@@ -10,6 +10,7 @@ import {
   processVector,
 } from "./outputs";
 import { toAbsolute } from "stac-js/src/http.js";
+import { extractCollectionUrls } from "@/eodashSTAC/helpers";
 
 /**
  * Fetch and set the jsonform schema to initialize the process
@@ -119,7 +120,12 @@ export async function handleProcesses({
       jsonformValue,
       selectedStac.value,
     );
-    console.log("chartData", chartData.value);
+    await handleSentinelHubProcess(
+      serviceLinks,
+      jsonformValue,
+      selectedStac.value,
+    );
+
     if (Object.keys(chartData.value ?? {}).length) {
       processResults.value.push(chartData.value);
     }
@@ -278,55 +284,118 @@ export async function handleVedaEndpoint(
   const vedaLink = links.find(
     (link) => link.rel === "service" && link.endpoint === "veda",
   );
-  const _endpoint = vedaLink?.href;
+  if (!vedaLink) {
+    return;
+  }
+  const endpoint = vedaLink?.href;
   const bboxProperty = getBboxProperty(jsonformSchema);
 
   const bbox = jsonformValue[bboxProperty];
   console.log("bbox", bbox);
 
-  console.log("endpoint", _endpoint);
+  console.log("endpoint", endpoint);
   const endpoints = await fetchVedaCOGs(selectedStac);
   console.log("endpoints", endpoints);
-const data = await Promise.all(endpoints.map(endpoint => {
-
-  return axios.post(_endpoint + `?url=${endpoint}`, {
-      ...{
+  const data = await Promise.all(
+    endpoints.map((endpoint) => {
+      return axios
+        .post(endpoint + `?url=${endpoint}`, {
+          ...{
             type: "Feature",
-            properties:{},
+            properties: {},
             geometry: {
-                type: "Polygon",
-                coordinates: [[
-                    [bbox[0], bbox[1]],
-                    [bbox[2], bbox[1]],
-                    [bbox[2], bbox[3]],
-                    [bbox[0], bbox[3]],
-                    [bbox[0], bbox[1]],
-                  ]],
-                }
-            }
-          }
-          ).then(resp => resp.data).catch(resp => console.error("[eodash] Error while fetching data from veda endpoint:", resp))
-        }))
-        console.log("data", data);
+              type: "Polygon",
+              coordinates: [
+                [
+                  [bbox[0], bbox[1]],
+                  [bbox[2], bbox[1]],
+                  [bbox[2], bbox[3]],
+                  [bbox[0], bbox[3]],
+                  [bbox[0], bbox[1]],
+                ],
+              ],
+            },
+          },
+        })
+        .then((resp) => resp.data)
+        .catch((resp) =>
+          console.error(
+            "[eodash] Error while fetching data from veda endpoint:",
+            resp,
+          ),
+        );
+    }),
+  );
+  console.log("data", data);
+}
 
-  // console.log("fetch", data);
+/**
+ *
+ * @param {import("stac-ts").StacLink[]} links
+ * @param {Record<string,any>} jsonformValue
+ * @param {import("stac-ts").StacCollection} selectedStac
+ */
+export async function handleSentinelHubProcess(
+  links,
+  jsonformValue,
+  selectedStac,
+) {
+  const sentinelHubLink = links.find(
+    (link) => link.rel === "service" && link.endpoint === "sentinelhub",
+  );
+  const evalScriptLink = await getEvalScriptLink(selectedStac);
+  console.log("sentinelHubLink", sentinelHubLink);
+  console.log("evalScriptLink", evalScriptLink);
 
-  // console.log("clientId",clientId);
-  // console.log("clientSecret",clientSecret);
+  if (!sentinelHubLink || !evalScriptLink) {
+    return;
+  }
+  const endpoint = sentinelHubLink.href;
+  const bboxProperty = getBboxProperty(jsonformValue);
+  const bbox = jsonformValue[bboxProperty];
+  console.log("bbox", bbox);
 
-  // const bearer = await retrieveSentinelHubToken(clientId,clientSecret);
-  // console.log("bearer",bearer);
+  const clientId = import.meta.env.VITE_SENTINELHUB_CLIENT_ID;
+  const clientSecret = import.meta.env.VITE_SENTINELHUB_CLIENT_SECRET;
 
-  // const times = selectedStac.extent.temporal.interval[0]
-  // console.log("times",times);
+  console.log("clientId", clientId);
+  console.log("clientSecret", clientSecret);
 
-  // const start = times[0];
-  // const end = times[times.length - 1];
-  // const format = "yyyy-MM-dd'T'HH:mm:ss'Z'";
-  // // create a variable step based on the size of time array,
-  // // making a maximum of 30 requests to avoid rate limiting
-  // const step = end.diff(start, ['days']).toObject();
-  // step.days = Math.round(step.days / 30);
+  const bearer = await sentinelHubAuth(clientId, clientSecret);
+  if (!bearer) {
+    console.error(
+      "[eodash] Error while fetching bearer token from sentinel hub",
+    );
+    return;
+  }
+  console.log("bearer", bearer);
+
+  // generate 30 dates from the start and end date of the selected stac
+  // generate time pairs from the selected stac temporal extent
+  const timePairs = generateTimePairs(selectedStac.extent.temporal.interval);
+  console.log("timePairs", timePairs);
+
+  // fetch data from sentinel hub
+  const data = await Promise.all(
+    timePairs.map(([from, to]) => {
+      return fetchSentinelHubData({
+        url: endpoint,
+        clientId,
+        bearer,
+        bbox,
+        from,
+        to,
+        exampleLink: evalScriptLink,
+      }).catch((err) =>
+        console.error(
+          "[eodash] Error while fetching data from sentinel hub endpoint:",
+          err,
+        ),
+      );
+    }),
+  );
+  console.log("data", data);
+  return data;
 }
 
 /**
@@ -334,9 +403,6 @@ const data = await Promise.all(endpoints.map(endpoint => {
  * @param {import("stac-ts").StacCollection} selectedStac
  */
 export async function fetchVedaCOGs(selectedStac) {
-
-
-
   // retrieve the collections from the indicator
   const collectionLinks = selectedStac.links.filter(
     (link) => link.rel == "child",
@@ -347,27 +413,57 @@ export async function fetchVedaCOGs(selectedStac) {
     collections.push(selectedStac);
   } else {
     collections.push(
-      ...await Promise.all(
+      ...(await Promise.all(
         collectionLinks.map((link) =>
           axios
             .get(toAbsolute(link.href, currentUrl.value))
             .then((resp) => resp.data),
         ),
-      ),
+      )),
     );
   }
-   /** @type {string[]} */
+  /** @type {string[]} */
   const endpoints = [];
   for (const collection of collections) {
     let itemLinks = collection.links.filter((link) => link.rel == "item");
     endpoints.push(
-      ...itemLinks.map(link => toAbsolute(link.href.replace(/\/\d{4}\//g, "/").replace(".json",".tif"), "s3://veda-data-store/")),
-    )
+      ...itemLinks.map((link) =>
+        toAbsolute(
+          link.href.replace(/\/\d{4}\//g, "/").replace(".json", ".tif"),
+          "s3://veda-data-store/",
+        ),
+      ),
+    );
   }
-  endpoints.sort((a,b)=> b.localeCompare(a));
-  return endpoints.length > 365 ? endpoints.slice(0,365):endpoints;
+  endpoints.sort((a, b) => b.localeCompare(a));
+  return endpoints.length > 365 ? endpoints.slice(0, 365) : endpoints;
 }
 
+/**
+ * @param {string} clientId
+ * @param {string} clientSecret
+ * @returns {Promise<string | void>}
+ */
+async function sentinelHubAuth(clientId, clientSecret) {
+  const sessionToken = sessionStorage.getItem("sentinelhub_token");
+  const sessionTokenTime = /** @type {string} */ (
+    sessionStorage.getItem("sentinelhub_token_time")
+  );
+  const isValid =
+    new Date().getTime() - new Date(sessionTokenTime).getTime() < 3600 * 1000;
+
+  // if the token is still valid, return it
+  if (sessionToken && isValid) {
+    return sessionToken;
+  }
+  const token = await retrieveSentinelHubToken(clientId, clientSecret);
+  if (!token) {
+    return;
+  }
+  sessionStorage.setItem("sentinelhub_token", token);
+  sessionStorage.setItem("sentinelhub_token_time", new Date().toISOString());
+  return token;
+}
 /**
  * @param {string} clientId
  * @param {string} clientSecret
@@ -386,11 +482,131 @@ export async function retrieveSentinelHubToken(clientId, clientSecret) {
   });
   return await axios
     .post(url, body, { headers })
-    .then((resp) => resp.data.access_token)
-    .catch((error) => {
-      console.error(
-        "[eodash] Error while retrieving SentinelHub token:",
-        error,
+    .then((resp) => resp.data.access_token);
+}
+/**
+ *
+ * @param {object} param0
+ * @param {string} param0.url  - url to the sentinel hub endpoint
+ * @param {string} param0.bearer - bearer token for authentication
+ * @param {number[]} param0.bbox - bounding box of the area of interest
+ * @param {string} param0.from - start date of the time range
+ * @param {string} param0.to - end date of the time range
+ * @param {number} [param0.timeout = 20000] - timeout for the request
+ * @param {string} param0.clientId - client id for the sentinel hub
+ * @param {import("stac-ts").StacLink} [param0.exampleLink] - example link containing evalscript to use for the request
+ * @returns
+ */
+async function fetchSentinelHubData({
+  url,
+  bearer,
+  bbox,
+  from,
+  to,
+  clientId,
+  timeout = 20000,
+  exampleLink,
+}) {
+  console.log("fetching data from sentinel hub", exampleLink);
+
+  return await axios
+    .post(
+      url,
+      {
+        input: {
+          bounds: {
+            bbox,
+          },
+        },
+        data: [
+          {
+            dataFilter: {},
+            type: clientId,
+          },
+        ],
+        aggregation: {
+          timeRange: {
+            from,
+            to,
+          },
+          aggregationInterval: {
+            of: "P1D",
+          },
+          width: 100,
+          height: 100,
+        },
+        calculations: {
+          default: {},
+        },
+        ...(exampleLink && {
+          evalscript: await fetch(exampleLink.href).then((resp) => resp.text()),
+        }),
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${bearer}`,
+          "Content-Type": "application/json",
+        },
+        params: {
+          credentials: "same-origin",
+        },
+        timeout,
+      },
+    )
+    .then((resp) => resp.data);
+}
+/**
+ * @param {import("stac-ts").StacCollection} selectedStac
+ */
+async function getEvalScriptLink(selectedStac) {
+  const evalScriptLink = selectedStac.links.find(
+    (link) => link.rel === "example" && link.title === "evalscript",
+  );
+  if (evalScriptLink) {
+    return evalScriptLink;
+  }
+  for (const link of extractCollectionUrls(selectedStac, currentUrl.value)) {
+    const scriptLink = axios
+      .get(link)
+      .then((resp) =>
+        /** @type {import("stac-ts").StacCollection} */ (resp.data).links.find(
+          (link) => link.rel === "example" && link.title === "evalscript",
+        ),
       );
-    });
+
+    if (scriptLink) {
+      return scriptLink;
+    }
+  }
+}
+/**
+ * Generate time pairs from a temporal extent
+ * @param {import("stac-ts").TemporalExtents} temporalExtent - Array of temporal intervals [start, end]
+ */
+function generateTimePairs(temporalExtent) {
+  const [startDate, endDate] = /** @type {[string, string]} */ (
+    temporalExtent?.[0] ?? ["", ""]
+  );
+  if (!startDate || !endDate) {
+    return [];
+  }
+  const times = [];
+  let current = new Date(endDate);
+  const start = new Date(startDate);
+
+  // Use fixed step of 1 day (in milliseconds)
+  const step = 24 * 60 * 60 * 1000;
+
+  // Add dates, limiting to 31 dates (30 pairs maximum)
+  while (current >= start && times.length < 31) {
+    times.push(new Date(current));
+    current.setTime(current.getTime() - step);
+  }
+
+  const timePairs = [];
+  for (let i = 0; i < times.length - 1; i++) {
+    timePairs.push([times[i].toISOString(), times[i + 1].toISOString()]);
+  }
+
+  return timePairs;
 }
