@@ -10,12 +10,13 @@ import { reactive } from "vue";
 export const eodash = reactive({
   id: "demo",
   stacEndpoint:
+  "https://esa-eodashboards.github.io/eodashboard-catalog/trilateral/catalog.json",
     // "https://esa-eodash.github.io/RACE-catalog/RACE/catalog.json",
     // "https://gtif-cerulean.github.io/catalog/cerulean/catalog.json",
     // "https://eodashcatalog.eox.at/samplecatalog/samples/catalog.json",
     // "https://eodashcatalog.eox.at/test-style/trilateral/catalog.json",
     // "https://gtif-cerulean.github.io/deside-catalog/deside/catalog.json",
-    "https://gtif-cerulean.github.io/cerulean-catalog/cerulean/catalog.json",
+    // "https://gtif-cerulean.github.io/cerulean-catalog/cerulean/catalog.json",
   // "https://gtif-austria.github.io/public-catalog/GTIF-Austria/catalog.json",
   brand: {
     noLayout: true,

@@ -1,6 +1,6 @@
 import log from "loglevel";
 import { extractGeometries, getBboxProperty } from "./utils";
-import { datetime, mapEl } from "@/store/states";
+import { currentUrl, datetime, mapEl } from "@/store/states";
 import axios from "@/plugins/axios";
 import { getLayers } from "@/store/actions";
 import {
@@ -9,6 +9,7 @@ import {
   processImage,
   processVector,
 } from "./outputs";
+import { toAbsolute } from "stac-js/src/http.js";
 
 /**
  * Fetch and set the jsonform schema to initialize the process
@@ -87,6 +88,7 @@ export async function handleProcesses({
   if (!jsonformEl.value || !jsonformSchema.value || !selectedStac.value) {
     return;
   }
+
   log.debug("Processing...");
   loading.value = true;
   try {
@@ -111,6 +113,13 @@ export async function handleProcesses({
       { ...(jsonformValue ?? {}) },
       specUrl,
     );
+    await handleVedaEndpoint(
+      serviceLinks,
+      jsonformSchema.value,
+      jsonformValue,
+      selectedStac.value,
+    );
+    console.log("chartData", chartData.value);
     if (Object.keys(chartData.value ?? {}).length) {
       processResults.value.push(chartData.value);
     }
@@ -252,3 +261,136 @@ export const onChartClick = (evt) => {
     );
   }
 };
+
+/**
+ *
+ * @param {import("stac-ts").StacLink[]} links
+ * @param {Record<string,any>} jsonformSchema
+ * @param {Record<string,any>} jsonformValue
+ * @param {import("stac-ts").StacCollection} selectedStac
+ */
+export async function handleVedaEndpoint(
+  links,
+  jsonformSchema,
+  jsonformValue,
+  selectedStac,
+) {
+  const vedaLink = links.find(
+    (link) => link.rel === "service" && link.endpoint === "veda",
+  );
+  const _endpoint = vedaLink?.href;
+  const bboxProperty = getBboxProperty(jsonformSchema);
+
+  const bbox = jsonformValue[bboxProperty];
+  console.log("bbox", bbox);
+
+  console.log("endpoint", _endpoint);
+  const endpoints = await fetchVedaCOGs(selectedStac);
+  console.log("endpoints", endpoints);
+const data = await Promise.all(endpoints.map(endpoint => {
+
+  return axios.post(_endpoint + `?url=${endpoint}`, {
+      ...{
+            type: "Feature",
+            properties:{},
+            geometry: {
+                type: "Polygon",
+                coordinates: [[
+                    [bbox[0], bbox[1]],
+                    [bbox[2], bbox[1]],
+                    [bbox[2], bbox[3]],
+                    [bbox[0], bbox[3]],
+                    [bbox[0], bbox[1]],
+                  ]],
+                }
+            }
+          }
+          ).then(resp => resp.data).catch(resp => console.error("[eodash] Error while fetching data from veda endpoint:", resp))
+        }))
+        console.log("data", data);
+
+  // console.log("fetch", data);
+
+  // console.log("clientId",clientId);
+  // console.log("clientSecret",clientSecret);
+
+  // const bearer = await retrieveSentinelHubToken(clientId,clientSecret);
+  // console.log("bearer",bearer);
+
+  // const times = selectedStac.extent.temporal.interval[0]
+  // console.log("times",times);
+
+  // const start = times[0];
+  // const end = times[times.length - 1];
+  // const format = "yyyy-MM-dd'T'HH:mm:ss'Z'";
+  // // create a variable step based on the size of time array,
+  // // making a maximum of 30 requests to avoid rate limiting
+  // const step = end.diff(start, ['days']).toObject();
+  // step.days = Math.round(step.days / 30);
+}
+
+/**
+ *
+ * @param {import("stac-ts").StacCollection} selectedStac
+ */
+export async function fetchVedaCOGs(selectedStac) {
+
+
+
+  // retrieve the collections from the indicator
+  const collectionLinks = selectedStac.links.filter(
+    (link) => link.rel == "child",
+  );
+  /** @type {import("stac-ts").StacCollection[]} */
+  const collections = [];
+  if (!collectionLinks.length) {
+    collections.push(selectedStac);
+  } else {
+    collections.push(
+      ...await Promise.all(
+        collectionLinks.map((link) =>
+          axios
+            .get(toAbsolute(link.href, currentUrl.value))
+            .then((resp) => resp.data),
+        ),
+      ),
+    );
+  }
+   /** @type {string[]} */
+  const endpoints = [];
+  for (const collection of collections) {
+    let itemLinks = collection.links.filter((link) => link.rel == "item");
+    endpoints.push(
+      ...itemLinks.map(link => toAbsolute(link.href.replace(/\/\d{4}\//g, "/").replace(".json",".tif"), "s3://veda-data-store/")),
+    )
+  }
+  endpoints.sort((a,b)=> b.localeCompare(a));
+  return endpoints.length > 365 ? endpoints.slice(0,365):endpoints;
+}
+
+/**
+ * @param {string} clientId
+ * @param {string} clientSecret
+ * @returns {Promise<string | void>}
+ */
+export async function retrieveSentinelHubToken(clientId, clientSecret) {
+  const url = "https://services.sentinel-hub.com/oauth/token";
+  const headers = {
+    "Content-Type": "application/x-www-form-urlencoded",
+  };
+  const body = new URLSearchParams({
+    client_id: clientId,
+    client_secret: clientSecret,
+    response_type: "token",
+    grant_type: "client_credentials",
+  });
+  return await axios
+    .post(url, body, { headers })
+    .then((resp) => resp.data.access_token)
+    .catch((error) => {
+      console.error(
+        "[eodash] Error while retrieving SentinelHub token:",
+        error,
+      );
+    });
+}
