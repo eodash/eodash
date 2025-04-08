@@ -136,3 +136,35 @@ export const download = (fileName, content) => {
   URL.revokeObjectURL(url);
   link.remove();
 };
+
+/**
+ * Generate time pairs from a temporal extent
+ * @param {import("stac-ts").TemporalExtents} temporalExtent - Array of temporal intervals [start, end]
+ */
+export function generateTimePairs(temporalExtent) {
+  const [startDate, endDate] = /** @type {[string, string]} */ (
+    temporalExtent?.[0] ?? ["", ""]
+  );
+  if (!startDate || !endDate) {
+    return [];
+  }
+  const times = [];
+  let current = new Date(endDate);
+  const start = new Date(startDate);
+
+  // Use fixed step of 1 day (in milliseconds)
+  const step = 24 * 60 * 60 * 1000;
+
+  // Add dates, limiting to 31 dates (30 pairs maximum)
+  while (current >= start && times.length < 31) {
+    times.push(new Date(current));
+    current.setTime(current.getTime() - step);
+  }
+
+  const timePairs = [];
+  for (let i = 0; i < times.length - 1; i++) {
+    timePairs.push([times[i].toISOString(), times[i + 1].toISOString()]);
+  }
+
+  return timePairs;
+}
