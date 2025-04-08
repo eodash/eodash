@@ -126,6 +126,9 @@ export async function handleProcesses({
         selectedStac: selectedStac.value,
       },
     );
+    if (data) {
+      chartData.value = data;
+    }
 
     if (Object.keys(chartData.value ?? {}).length) {
       processResults.value.push(chartData.value);

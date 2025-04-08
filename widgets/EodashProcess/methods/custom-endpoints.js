@@ -3,6 +3,7 @@ import axios from "@/plugins/axios";
 import { currentUrl } from "@/store/states";
 import { toAbsolute } from "stac-js/src/http.js";
 import { generateTimePairs, getBboxProperty } from "./utils";
+import log from "loglevel";
 
 /**
  * @typedef {{
@@ -20,7 +21,15 @@ import { generateTimePairs, getBboxProperty } from "./utils";
 export const handleCustomEndpoints = async (callbacks, inputs) => {
   for (const callback of callbacks) {
     const data = await callback(inputs);
-    const isNotValid = data && data.length > 0 && data.some((item) => !item);
+    log.debug(
+      "Custom endpoint data:",
+      data,
+      "for callback:",
+      callback.name,
+      "inputs:",
+      inputs,
+    );
+    const isNotValid = !data || !data.length || data.some((item) => !item);
     if (isNotValid) {
       continue;
     }
@@ -134,7 +143,7 @@ export async function handleSentinelHubProcess({
         ),
       );
     }),
-  ).then((data) => data.flat());
+  ).then((data) => data.flat().map((data) => data.outputs.data));
 }
 
 /**
@@ -313,9 +322,7 @@ async function fetchSentinelHubData({
     timeout,
   };
 
-  return await axios
-    .post(url, body, config)
-    .then((resp) => resp.data.data.outputs.data);
+  return await axios.post(url, body, config).then((resp) => resp.data.data);
 }
 /**
  * @param {import("stac-ts").StacCollection} selectedStac

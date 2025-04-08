@@ -172,7 +172,6 @@ export async function processGeoTiff(
             "Content-Type": "application/json",
           },
         });
-        console.log(responseProcess.headers.location);
         // We save the process status url into localstorage assigning it to the indicator id
         const currentJobs = JSON.parse(
           localStorage.getItem(indicator.value) || "[]",
