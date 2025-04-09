@@ -110,32 +110,6 @@ export const useSTAcStore = defineStore("stac", () => {
           eodashCollections.push(...collections);
 
           selectedStac.value = resp.data;
-          // to be removed
-          if (selectedStac.value) {
-            selectedStac.value?.links.push({
-              rel: "service",
-              href: "https://services.sentinel-hub.com/api/v1/statistics",
-              endpoint: "sentinelhub",
-            });
-
-            const schema = {
-              type: "object",
-              properties: {
-                bbox: {
-                  type: "array",
-                  format: "bounding-box",
-                  options: {
-                    drawtools: {
-                      for: "eox-map#main",
-                    },
-                  },
-                },
-              },
-            };
-            selectedStac.value["eodash:jsonform"] = URL.createObjectURL(
-              new Blob([JSON.stringify(schema)], { type: "application/json" }),
-            );
-          }
 
           indicator.value = selectedStac.value?.id ?? "";
           switchToCompare.value = true;

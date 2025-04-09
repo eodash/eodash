@@ -60,7 +60,7 @@ export function extractGeometries(jsonformValue, jsonformSchema) {
  * @param {*} processId
  * @returns
  */
-export async function createLayerDefinition(
+export async function createTiffLayerDefinition(
   link,
   layerId,
   urls,
@@ -167,4 +167,33 @@ export function generateTimePairs(temporalExtent) {
   }
 
   return timePairs;
+}
+
+/**
+ * Filter links to separate those with and without endpoint property
+ * @param {import("stac-ts").StacLink[] | undefined} links
+ * @param {string} [relType] - Optional relationship type
+ * @param {string} [contentType] - Optional content type
+ * @returns {[import("stac-ts").StacLink[], import("stac-ts").StacLink[]]}
+ */
+export function separateEndpointLinks(links, relType, contentType) {
+  if (!links) return [[], []];
+  const standardLinks = [];
+  const endpointLinks = [];
+
+  for (const link of links) {
+    // Check if the link matches the specified relType and contentType (if provided)
+    const relTypeMatch = relType ? link.rel === relType : true;
+    const contentTypeMatch = contentType ? link.type === contentType : true;
+
+    if (relTypeMatch && contentTypeMatch) {
+      if (link.endpoint) {
+        endpointLinks.push(link);
+      } else {
+        standardLinks.push(link);
+      }
+    }
+  }
+
+  return [standardLinks, endpointLinks];
 }

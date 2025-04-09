@@ -1,9 +1,7 @@
 import mustache from "mustache";
 import { extractLayerConfig } from "@/eodashSTAC/helpers";
 import axios from "@/plugins/axios";
-import { createLayerDefinition } from "./utils";
-import { pollProcessStatus } from "./async";
-import { indicator } from "@/store/states";
+import { createTiffLayerDefinition, separateEndpointLinks } from "./utils";
 
 /**
  * @param {import("stac-ts").StacLink[] | undefined} links
@@ -88,24 +86,58 @@ export async function processVector(links, jsonformValue, layerId) {
 }
 
 /**
- * @param {import("stac-ts").StacLink[] | undefined} links
- * @param {Record<string,any> | undefined} jsonformValue
- * @param {string} specUrl
+ * @param {object} options
+ * @param {import("stac-ts").StacLink[] | undefined} options.links
+ * @param {Record<string,any> | undefined} options.jsonformValue
+ * @param {string} options.specUrl
+ * @param {(input:import("^/EodashProcess/types").CustomEnpointInput)=>Promise<Record<string,any>[] | undefined | null>} [options.customEndpointsHandler]
+ * @param {import("vue").Ref<boolean>} options.isPolling
+ * @param {import("stac-ts").StacCollection} options.selectedStac
+ * @param {Record<string,any>} options.jsonformSchema
  * @returns {Promise<[import("@eox/chart").EOxChart["spec"] | null,Record<string,any>|null]>}
  **/
-export async function getChartValues(links, jsonformValue, specUrl) {
+export async function getChartValues({
+  links,
+  jsonformValue,
+  specUrl,
+  customEndpointsHandler,
+  jsonformSchema,
+  selectedStac,
+  isPolling,
+}) {
+  console.log("getChartValues", links, specUrl, jsonformValue);
+
   if (!specUrl || !links) return [null, null];
   /** @type {import("vega").Spec} */
   const spec = await axios.get(specUrl).then((resp) => {
     return resp.data;
   });
-  // //@ts-expect-error NamedData
-  // const dataName = spec?.data?.name;
-  const dataLinks = links.filter(
-    (link) => link.rel === "service", // && dataName && link.id === dataName,
+
+  const [standardLinks, endpointLinks] = separateEndpointLinks(
+    links,
+    "service",
+    undefined,
   );
 
-  /** @type {Record<string,any>}  */
+  const data =
+    customEndpointsHandler &&
+    jsonformValue &&
+    (await customEndpointsHandler({
+      jsonformSchema,
+      jsonformValue,
+      links: endpointLinks,
+      selectedStac,
+      isPolling,
+    }));
+
+  if (data && data.length) {
+    //@ts-expect-error we assume data to exist in spec
+    spec.data.values = data;
+    return [spec, data];
+  }
+
+  const dataLinks = standardLinks.filter((link) => link.rel === "service");
+  /** @type {Record<string,any>} */
   const dataValues = {};
   for (const link of dataLinks ?? []) {
     if (link.type && ["application/json", "text/csv"].includes(link.type)) {
@@ -122,7 +154,8 @@ export async function getChartValues(links, jsonformValue, specUrl) {
       spec.data.values = data;
       continue;
     }
-
+    // not sure if this is used anymore, we need to revise our
+    // chart defs and which vega data type we are using
     dataValues[/** @type {string} */ (link.id)] = await axios
       .get(
         mustache.render(link.href, {
@@ -131,85 +164,70 @@ export async function getChartValues(links, jsonformValue, specUrl) {
         }),
       )
       .then((resp) => resp.data);
+      console.log("named data values", dataValues);
   }
 
   return [spec, dataValues];
 }
 
 /**
- * @param {import("stac-ts").StacLink[] | undefined} links
- * @param {Record<string,any> | undefined} jsonformValue
- * @param {import("vue").Ref<boolean>} isPolling
- * @param {string} layerId
- * @param {string} projection
+ * @param {object} options
+ * @param {import("stac-ts").StacLink[] | undefined} options.links
+ * @param {Record<string,any> | undefined} options.jsonformValue
+ * @param {string} options.layerId
+ * @param {import("vue").Ref<boolean>} options.isPolling
+ * @param {string} options.projection
+ * @param {import("stac-ts").StacCollection} options.selectedStac
+ * @param {import("json-schema").JSONSchema7} options.jsonformSchema
+ * @param {(input:import("^/EodashProcess/types").CustomEnpointInput)=>Promise<Record<string,any>[] | undefined | null>} [options.customEndpointsHandler]
  */
-export async function processGeoTiff(
+export async function processGeoTiff({
   links,
   jsonformValue,
   layerId,
   isPolling,
   projection,
-) {
+  selectedStac,
+  jsonformSchema,
+  customEndpointsHandler,
+}) {
   if (!links) return;
-  const geotiffLinks = links.filter(
-    (link) => link.rel === "service" && link.type === "image/tiff",
+
+  const [geotiffLinks, endpointLinks] = separateEndpointLinks(
+    links,
+    "service",
+    "image/tiff",
   );
+  const layers =
+    customEndpointsHandler &&
+    jsonformValue &&
+    (await customEndpointsHandler({
+      jsonformValue,
+      links: endpointLinks,
+      selectedStac,
+      isPolling,
+      jsonformSchema,
+    }));
+
+  if (layers && layers.length) {
+    return layers;
+  }
+
+  if (!geotiffLinks.length) {
+    return;
+  }
   let urls = [];
   let processId = "";
   for (const link of geotiffLinks ?? []) {
-    if (link.endpoint === "eoxhub_workspaces") {
-      // TODO: prove of concept, needs to be reworked for sure
-      // Special handling for eoxhub workspace process endpoints
-      const postBody = await axios
-        .get(/** @type {string} */ (link["body"]), { responseType: "text" })
-        .then((resp) => resp.data);
-      const jsonData = JSON.parse(
-        mustache.render(postBody, { ...(jsonformValue ?? {}) }),
-      );
-      try {
-        const responseProcess = await axios.post(link.href, jsonData, {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        });
-        // We save the process status url into localstorage assigning it to the indicator id
-        const currentJobs = JSON.parse(
-          localStorage.getItem(indicator.value) || "[]",
-        );
-        currentJobs.push(responseProcess.headers.location);
-        localStorage.setItem(indicator.value, JSON.stringify(currentJobs));
-        await pollProcessStatus({
-          processUrl: responseProcess.headers.location,
-          isPolling,
-        })
-          .then((resultItem) => {
-            // @ts-expect-error we have currently no definition of what is allowed as response
-            const resultUrls = resultItem?.urls;
-            if (resultUrls?.length < 1) {
-              return;
-            }
-            //@ts-expect-error todo
-            processId = resultItem?.id;
-            urls = resultUrls;
-          })
-          .catch((error) => {
-            if (error instanceof Error) {
-              console.error("Polling failed:", error.message);
-            } else {
-              console.error("Unknown error occurred during polling:", error);
-            }
-          });
-      } catch (error) {
-        if (error instanceof Error) {
-          console.error("Error sending POST request:", error.message);
-        } else {
-          console.error("Unknown error occurred:", error);
-        }
-      }
-    } else {
-      urls.push(mustache.render(link.href, { ...(jsonformValue ?? {}) }));
-    }
+    urls.push(mustache.render(link.href, { ...(jsonformValue ?? {}) }));
   }
-
-  return createLayerDefinition(links[0], layerId, urls, projection, processId);
+  return [
+    createTiffLayerDefinition(
+      geotiffLinks[0],
+      layerId,
+      urls,
+      projection,
+      processId,
+    ),
+  ];
 }

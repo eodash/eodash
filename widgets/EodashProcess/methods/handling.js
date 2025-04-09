@@ -9,12 +9,8 @@ import {
   processImage,
   processVector,
 } from "./outputs";
-import {
-  handleCustomEndpoints,
-  handleSentinelHubProcess,
-  handleVedaEndpoint,
-} from "./custom-endpoints";
-
+import { handleGeotiffCustomEndpoints } from "./custom-endpoints/geotiff";
+import { handleChartCustomEndpoints } from "./custom-endpoints/chart";
 /**
  * Fetch and set the jsonform schema to initialize the process
  *
@@ -112,23 +108,15 @@ export async function handleProcesses({
       selectedStac.value?.["eodash:vegadefinition"]
     );
 
-    [chartSpec.value, chartData.value] = await getChartValues(
-      serviceLinks,
-      { ...(jsonformValue ?? {}) },
+    [chartSpec.value, chartData.value] = await getChartValues({
+      links: serviceLinks,
+      jsonformValue: { ...(jsonformValue ?? {}) },
+      jsonformSchema: jsonformSchema.value,
+      selectedStac: selectedStac.value,
       specUrl,
-    );
-    const data = await handleCustomEndpoints(
-      [handleVedaEndpoint, handleSentinelHubProcess],
-      {
-        links: serviceLinks,
-        jsonformSchema: jsonformSchema.value,
-        jsonformValue: jsonformValue,
-        selectedStac: selectedStac.value,
-      },
-    );
-    if (data) {
-      chartData.value = data;
-    }
+      isPolling,
+      customEndpointsHandler: handleChartCustomEndpoints,
+    });
 
     if (Object.keys(chartData.value ?? {}).length) {
       processResults.value.push(chartData.value);
@@ -144,21 +132,27 @@ export async function handleProcesses({
       chartSpec.value["background"] = "transparent";
     }
 
-    const geotiffLayer = await processGeoTiff(
-      serviceLinks,
+    const geotiffLayers = await processGeoTiff({
+      links: serviceLinks,
       jsonformValue,
-      selectedStac.value?.id ?? "",
+      layerId: selectedStac.value?.id ?? "",
       isPolling,
+      projection:
       //@ts-expect-error TODO
-      selectedStac.value?.["eodash:mapProjection"]?.["name"] ?? null,
-    );
+        selectedStac.value?.["eodash:mapProjection"]?.["name"] ?? null,
+      jsonformSchema: jsonformSchema.value,
+      selectedStac: selectedStac.value,
+      customEndpointsHandler: handleGeotiffCustomEndpoints,
+    });
+    geotiffLayers?.forEach((geotiffLayer) => {
+      if (geotiffLayer && geotiffLayer.source?.sources.length) {
+        processResults.value.push(
+          //@ts-expect-error TODO
+          ...(geotiffLayer.source?.sources?.map((source) => source.url) ?? []),
+        );
+      }
+    });
 
-    if (geotiffLayer && geotiffLayer.source?.sources.length) {
-      processResults.value.push(
-        ...(geotiffLayer.source?.sources?.map((source) => source.url) ?? []),
-      );
-    }
-    // 3. vector geojson
     const vectorLayers = await processVector(
       serviceLinks,
       jsonformValue,
@@ -180,14 +174,14 @@ export async function handleProcesses({
 
     log.debug(
       "rendered layers after processing:",
-      geotiffLayer,
+      geotiffLayers,
       vectorLayers,
       imageLayers,
     );
 
-    if (geotiffLayer || vectorLayers?.length || imageLayers?.length) {
+    if (geotiffLayers?.length || vectorLayers?.length || imageLayers?.length) {
       const layers = [
-        ...(geotiffLayer ? [geotiffLayer] : []),
+        ...(geotiffLayers ?? []),
         ...(vectorLayers ?? []),
         ...(imageLayers ?? []),
       ];
