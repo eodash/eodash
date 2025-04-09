@@ -275,7 +275,7 @@ async function fetchSentinelHubData({
     .get(exampleLink.href, { responseType: "text" })
     .then((resp) => resp.data);
 
-  if (!evalscript) {
+  if (!evalscript || evalscript.error) {
     console.error(
       "[eodash] Error (sentinelhub): evalscript not found",
       evalscript,
