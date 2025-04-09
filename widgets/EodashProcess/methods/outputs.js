@@ -105,8 +105,6 @@ export async function getChartValues({
   selectedStac,
   isPolling,
 }) {
-  console.log("getChartValues", links, specUrl, jsonformValue);
-
   if (!specUrl || !links) return [null, null];
   /** @type {import("vega").Spec} */
   const spec = await axios.get(specUrl).then((resp) => {
@@ -164,7 +162,6 @@ export async function getChartValues({
         }),
       )
       .then((resp) => resp.data);
-      console.log("named data values", dataValues);
   }
 
   return [spec, dataValues];
@@ -208,7 +205,7 @@ export async function processGeoTiff({
       isPolling,
       jsonformSchema,
     }));
-
+  console.log("custom endpoint layers", layers);
   if (layers && layers.length) {
     return layers;
   }

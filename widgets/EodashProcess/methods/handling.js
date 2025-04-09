@@ -138,7 +138,7 @@ export async function handleProcesses({
       layerId: selectedStac.value?.id ?? "",
       isPolling,
       projection:
-      //@ts-expect-error TODO
+        //@ts-expect-error TODO
         selectedStac.value?.["eodash:mapProjection"]?.["name"] ?? null,
       jsonformSchema: jsonformSchema.value,
       selectedStac: selectedStac.value,

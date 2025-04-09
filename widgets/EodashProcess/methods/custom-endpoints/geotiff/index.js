@@ -1,4 +1,3 @@
-import log from "loglevel";
 import { handleEOxHubEndpoint } from "./eoxhub-workspaces-endpoint";
 
 export const handleGeotiffCustomEndpoints = createCustomGeoTiffEndpointsHandler(
@@ -7,38 +6,33 @@ export const handleGeotiffCustomEndpoints = createCustomGeoTiffEndpointsHandler(
 
 /**
  * @param {((input:import("^/EodashProcess/types").CustomEnpointInput)=> Promise<Record<string,any> | undefined | null>)[]} callbacks
+ * @returns {(inputs:import("^/EodashProcess/types").CustomEnpointInput)=>Promise<Record<string,any>[]>}
  */
 function createCustomGeoTiffEndpointsHandler(callbacks) {
-  /**
-   * @param {import("^/EodashProcess/types").CustomEnpointInput} inputs
-   */
   return async (inputs) => {
-    const layers = await Promise.all(
-      callbacks.map((callback) =>
-        callback(inputs).then((layer) => {
-          const isInvalidGeotiff =
-            !layer ||
-            !layer.source ||
-            layer.source.type !== "GeoTIFF" ||
-            !layer.source.sources ||
-            !layer.source.sources.length;
-          if (isInvalidGeotiff) {
-            return;
-          }
-
-          log.debug(
-            "Custom endpoint layer:",
-            layer,
-            "for callback:",
-            callback.name,
-            "inputs:",
-            inputs,
-          );
-          return layer;
-        }),
-      ),
+    // this allows multiple endpoints links to exist
+    // and return multiple layers
+    return await Promise.all(
+      callbacks.map((callback) => callback(inputs)),
+    ).then(
+      (layers) =>
+        /** @type {Record<string,any>[]} */ (
+          layers.filter((layer) => layer && isValidGeoTIFF(layer))
+        ),
     );
-
-    return layers.filter((result) => !!result) || undefined;
   };
+}
+
+/**
+ *
+ * @param {Record<string,any>} layer
+ * @returns
+ */
+function isValidGeoTIFF(layer) {
+  return (
+    layer &&
+    layer.source &&
+    layer.source.type === "GeoTIFF" &&
+    layer.source.sources?.length
+  );
 }

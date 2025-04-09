@@ -54,7 +54,7 @@ export async function handleEOxHubEndpoint({
       })
         .then((resultItem) => {
           const resultUrls = resultItem?.urls;
-          if (resultUrls?.length) {
+          if (!resultUrls?.length) {
             return { processId: "", urls: /** @type {string[]} */ ([]) };
           }
           /** @type {string} */
@@ -71,7 +71,7 @@ export async function handleEOxHubEndpoint({
           }
           return { processId: "", urls: /** @type {string[]} */ ([]) };
         });
-      if (!processId || !urls.length) {
+      if (!urls.length) {
         return;
       }
       return await createTiffLayerDefinition(
@@ -79,7 +79,7 @@ export async function handleEOxHubEndpoint({
         selectedStac?.id ?? "",
         urls,
         //@ts-expect-error TODO
-        selectedStac?.["eodash:mapProjection"]?.["name"] ?? null,
+        selectedStac?.["eodash:mapProjection"]?.["name"] ?? undefined,
         processId,
       );
     } catch (error) {
