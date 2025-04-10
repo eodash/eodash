@@ -43,7 +43,13 @@ export async function handleVedaEndpoint({
             },
           },
         })
-        .then((resp) => resp.data)
+        .then((resp) => {
+          const dateRegex =
+            /(\d{4}([.\-/ ])\d{2}\2\d{2}|\d{2}([.\-/ ])\d{2}\3\d{4})/;
+          const fetchedSats = resp.data.properties.statistics;
+          fetchedSats.date = dataEndpoint.match(dateRegex)?.[0] ?? dataEndpoint;
+          return fetchedSats;
+        })
         .catch((resp) =>
           console.error(
             "[eodash] Error while fetching data from veda endpoint:",
@@ -55,7 +61,7 @@ export async function handleVedaEndpoint({
 }
 
 /**
- *
+ * Fetches the COGs endpoints from the STAC collections
  * @param {import("stac-ts").StacCollection} selectedStac
  */
 async function fetchVedaCOGs(selectedStac) {
