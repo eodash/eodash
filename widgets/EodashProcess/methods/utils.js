@@ -60,7 +60,7 @@ export function extractGeometries(jsonformValue, jsonformSchema) {
  * @param {*} processId
  * @returns
  */
-export async function createLayerDefinition(
+export async function createTiffLayerDefinition(
   link,
   layerId,
   urls,
@@ -136,3 +136,64 @@ export const download = (fileName, content) => {
   URL.revokeObjectURL(url);
   link.remove();
 };
+
+/**
+ * Generate time pairs from a temporal extent
+ * @param {import("stac-ts").TemporalExtents} temporalExtent - Array of temporal intervals [start, end]
+ */
+export function generateTimePairs(temporalExtent) {
+  const [startDate, endDate] = /** @type {[string, string]} */ (
+    temporalExtent?.[0] ?? ["", ""]
+  );
+  if (!startDate || !endDate) {
+    return [];
+  }
+  const times = [];
+  let current = new Date(endDate);
+  const start = new Date(startDate);
+
+  // Use fixed step of 1 day (in milliseconds)
+  const step = 24 * 60 * 60 * 1000;
+
+  // Add dates, limiting to 31 dates (30 pairs maximum)
+  while (current >= start && times.length < 31) {
+    times.push(new Date(current));
+    current.setTime(current.getTime() - step);
+  }
+
+  const timePairs = [];
+  for (let i = 0; i < times.length - 1; i++) {
+    timePairs.push([times[i].toISOString(), times[i + 1].toISOString()]);
+  }
+
+  return timePairs;
+}
+
+/**
+ * Filter links to separate those with and without endpoint property
+ * @param {import("stac-ts").StacLink[] | undefined} links
+ * @param {string} [relType] - Optional relationship type
+ * @param {string} [contentType] - Optional content type
+ * @returns {[import("stac-ts").StacLink[], import("stac-ts").StacLink[]]}
+ */
+export function separateEndpointLinks(links, relType, contentType) {
+  if (!links) return [[], []];
+  const standardLinks = [];
+  const endpointLinks = [];
+
+  for (const link of links) {
+    // Check if the link matches the specified relType and contentType (if provided)
+    const relTypeMatch = relType ? link.rel === relType : true;
+    const contentTypeMatch = contentType ? link.type === contentType : true;
+
+    if (relTypeMatch && contentTypeMatch) {
+      if (link.endpoint) {
+        endpointLinks.push(link);
+      } else {
+        standardLinks.push(link);
+      }
+    }
+  }
+
+  return [standardLinks, endpointLinks];
+}
