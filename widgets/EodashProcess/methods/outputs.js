@@ -205,7 +205,6 @@ export async function processGeoTiff({
       isPolling,
       jsonformSchema,
     }));
-  console.log("custom endpoint layers", layers);
   if (layers && layers.length) {
     return layers;
   }

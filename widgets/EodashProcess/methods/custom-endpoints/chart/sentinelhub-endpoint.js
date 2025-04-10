@@ -75,14 +75,15 @@ async function sentinelHubAuth(clientId, clientSecret) {
 
   // if the token is still valid, return it
   if (sessionToken && isValid) {
+    sessionStorage.setItem("sentinelhub_token_time", new Date().toISOString());
     return sessionToken;
   }
   const token = await retrieveSentinelHubToken(clientId, clientSecret);
   if (!token) {
     return;
   }
-  sessionStorage.setItem("sentinelhub_token", token);
   sessionStorage.setItem("sentinelhub_token_time", new Date().toISOString());
+  sessionStorage.setItem("sentinelhub_token", token);
   return token;
 }
 /**
@@ -195,7 +196,22 @@ async function fetchSentinelHubData({
     timeout,
   };
 
-  return await axios.post(url, body, config).then((resp) => resp.data.data);
+  return await axios
+    .post(url, body, config)
+    .then((resp) => {
+      const fetched = resp.data.data;
+      //@ts-expect-error TODO
+      fetched.forEach((dataItem) => {
+        dataItem.outputs.data.date = from;
+      });
+      return fetched;
+    })
+    .catch((err) => {
+      console.error(
+        "[eodash] Error (sentinelhub): error while fetching data from sentinel hub",
+        err.response?.data,
+      );
+    });
 }
 /**
  * @param {import("stac-ts").StacCollection} selectedStac
