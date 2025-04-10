@@ -44,10 +44,8 @@ export async function handleVedaEndpoint({
           },
         })
         .then((resp) => {
-          const dateRegex =
-            /(\d{4}([.\-/ ])\d{2}\2\d{2}|\d{2}([.\-/ ])\d{2}\3\d{4})/;
           const fetchedSats = resp.data.properties.statistics;
-          fetchedSats.date = dataEndpoint.match(dateRegex)?.[0] ?? dataEndpoint;
+          fetchedSats.date = extractDate(dataEndpoint);
           return fetchedSats;
         })
         .catch((resp) =>
@@ -99,4 +97,35 @@ async function fetchVedaCOGs(selectedStac) {
   }
   endpoints.sort((a, b) => b.localeCompare(a));
   return endpoints.length > 365 ? endpoints.slice(0, 365) : endpoints;
+}
+
+/**
+ * Extracts the date from a string
+ *
+ * @param {string} str
+ */
+function extractDate(str) {
+  const dateRegex = /(\d{4}([.\-/ ])\d{2}\2\d{2}|\d{2}([.\-/ ])\d{2}\3\d{4})/;// DD-MM-YYYY or YYYY-MM-DD
+  const monthYearRegex = /(\d{4}([.\-/ ])\d{2}|\d{2}([.\-/ ])\d{4})/; // YYYY-MM or MM-YYYY
+  const yearRegex = /(19[7-9][0-9]|20[0-9]{2})/; // YYYY
+
+  let date = str.match(dateRegex)?.[0] ?? "";
+  if (!date) {
+    date = str.match(monthYearRegex)?.[0] ?? "";
+  }
+  if (!date) {
+    date = str.match(yearRegex)?.[0] ?? "";
+  }
+  if (!date) {
+    console.error("[eodash] No date found in veda url:", str);
+    return undefined;
+  }
+
+  try {
+    date = new Date(date).toISOString().split("T")[0];
+    return date;
+  } catch (e) {
+    console.error("Error parsing date:", e);
+    return undefined;
+  }
 }
