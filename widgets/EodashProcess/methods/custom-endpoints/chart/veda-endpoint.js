@@ -22,6 +22,7 @@ export async function handleVedaEndpoint({
   const bboxProperty = getBboxProperty(jsonformSchema);
   const bbox = jsonformValue[bboxProperty];
   const endpoints = await fetchVedaCOGs(selectedStac);
+  // TODO: convert jsonform bbox type to geojson in the schema to avoid the conversion here
   return await Promise.all(
     endpoints.map((dataEndpoint) => {
       return axios
@@ -105,7 +106,7 @@ async function fetchVedaCOGs(selectedStac) {
  * @param {string} str
  */
 function extractDate(str) {
-  const dateRegex = /(\d{4}([.\-/ ])\d{2}\2\d{2}|\d{2}([.\-/ ])\d{2}\3\d{4})/;// DD-MM-YYYY or YYYY-MM-DD
+  const dateRegex = /(\d{4}([.\-/ ])\d{2}\2\d{2}|\d{2}([.\-/ ])\d{2}\3\d{4})/; // DD-MM-YYYY or YYYY-MM-DD
   const monthYearRegex = /(\d{4}([.\-/ ])\d{2}|\d{2}([.\-/ ])\d{4})/; // YYYY-MM or MM-YYYY
   const yearRegex = /(19[7-9][0-9]|20[0-9]{2})/; // YYYY
 

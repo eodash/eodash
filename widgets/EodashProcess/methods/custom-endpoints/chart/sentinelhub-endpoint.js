@@ -18,7 +18,14 @@ export async function handleSentinelHubProcess({
     (link) => link.rel === "service" && link.endpoint === "sentinelhub",
   );
   const evalScriptLink = await getEvalScriptLink(selectedStac);
-  if (!sentinelHubLink || !evalScriptLink) {
+  if (!evalScriptLink) {
+    console.error(
+      "[eodash] evalscript link for sentinel hub not found in indicator",
+      evalScriptLink,
+    );
+    return;
+  }
+  if (!sentinelHubLink) {
     return;
   }
   const endpoint = sentinelHubLink.href;
@@ -35,7 +42,6 @@ export async function handleSentinelHubProcess({
     );
     return;
   }
-
   // generate 30 dates from the start and end date of the selected stac
   // generate time pairs from the selected stac temporal extent
   const timePairs = generateTimePairs(selectedStac.extent.temporal.interval);
@@ -70,19 +76,18 @@ async function sentinelHubAuth(clientId, clientSecret) {
   const sessionTokenTime = /** @type {string} */ (
     sessionStorage.getItem("sentinelhub_token_time")
   );
-  const isValid =
-    new Date().getTime() - new Date(sessionTokenTime).getTime() < 3600 * 1000;
+  const isValid = Date.now() - Number(sessionTokenTime) < 3600 * 1000;
 
   // if the token is still valid, return it
   if (sessionToken && isValid) {
-    sessionStorage.setItem("sentinelhub_token_time", new Date().toISOString());
+    sessionStorage.setItem("sentinelhub_token_time", Date.now().toString());
     return sessionToken;
   }
   const token = await retrieveSentinelHubToken(clientId, clientSecret);
   if (!token) {
     return;
   }
-  sessionStorage.setItem("sentinelhub_token_time", new Date().toISOString());
+  sessionStorage.setItem("sentinelhub_token_time", Date.now().toString());
   sessionStorage.setItem("sentinelhub_token", token);
   return token;
 }
