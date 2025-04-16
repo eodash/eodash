@@ -17,6 +17,9 @@ export async function handleSentinelHubProcess({
   const sentinelHubLink = links.find(
     (link) => link.rel === "service" && link.endpoint === "sentinelhub",
   );
+  if (!sentinelHubLink) {
+    return;
+  }
   const evalScriptLink = await getEvalScriptLink(selectedStac);
   if (!evalScriptLink) {
     console.error(

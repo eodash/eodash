@@ -84,7 +84,7 @@ export async function processVector(links, jsonformValue, layerId) {
   }
   return layers;
 }
-
+////// --- CHARTS --- //////
 /**
  * @param {object} options
  * @param {import("stac-ts").StacLink[] | undefined} options.links
@@ -106,10 +106,19 @@ export async function getChartValues({
   isPolling,
 }) {
   if (!specUrl || !links) return [null, null];
-  /** @type {import("vega").Spec} */
+  /** @type {import("vega-lite").TopLevelSpec} **/
   const spec = await axios.get(specUrl).then((resp) => {
     return resp.data;
   });
+  if (!spec.data) {
+    console.error(
+      "[eodash] Make sure the Vega spec definition has a data property",
+    );
+    return [null, null];
+  }
+
+  /** @type {Record<string,any>} */
+  const dataValues = {};
 
   const [standardLinks, endpointLinks] = separateEndpointLinks(
     links,
@@ -131,41 +140,108 @@ export async function getChartValues({
   if (data && data.length) {
     //@ts-expect-error we assume data to exist in spec
     spec.data.values = data;
-    return [spec, data];
+    return [spec, dataValues];
   }
 
   const dataLinks = standardLinks.filter((link) => link.rel === "service");
-  /** @type {Record<string,any>} */
-  const dataValues = {};
-  for (const link of dataLinks ?? []) {
-    if (link.type && ["application/json", "text/csv"].includes(link.type)) {
-      const dataUrl = mustache.render(link.href, {
-        ...(jsonformValue ?? {}),
-        ...(link["eox:flatstyle"] ?? {}),
-      });
 
-      // Wait for data to be retrieved
-      const data = await axios.get(dataUrl).then((resp) => {
-        return resp.data;
-      });
-      // @ts-expect-error we assume data to exist in spec
-      spec.data.values = data;
-      continue;
+  checkForData: for (const link of dataLinks ?? []) {
+    switch (link.type) {
+      case undefined:
+        continue;
+      case "application/json":
+        await injectVegaInlineData(spec, {
+          url: link.href,
+          jsonformValue: jsonformValue,
+          flatstyleUrl: /** @type string */ (link["eox:flatstyle"]),
+        });
+        break checkForData;
+      case "text/csv":
+        await injectVegaUrlData(spec, {
+          url: link.href,
+          jsonformValue: jsonformValue,
+          flatstyleUrl: /** @type string */ (link["eox:flatstyle"]),
+        });
+        break checkForData;
+      default:
+        // this is not used anymore,
+        // but we should check it specific types may need this
+
+        // dataValues[/** @type {string} */ (link.id)] = await axios
+        // .get(
+        //   mustache.render(link.href, {
+        //     ...(jsonformValue ?? {}),
+        //     ...(link["eox:flatstyle"] ?? {}), // TODO
+        //   }),
+        // )
+        // .then((resp) => resp.data);
+        break;
     }
-    // not sure if this is used anymore, we need to revise our
-    // chart defs and which vega data type we are using
-    dataValues[/** @type {string} */ (link.id)] = await axios
-      .get(
-        mustache.render(link.href, {
-          ...(jsonformValue ?? {}),
-          ...(link["eox:flatstyle"] ?? {}),
-        }),
-      )
-      .then((resp) => resp.data);
   }
-
   return [spec, dataValues];
 }
+
+/**
+ *
+ * @param {import("vega-lite").TopLevelSpec} spec
+ * @param {object} injectables
+ * @param {string} injectables.url
+ * @param {Record<string,any>} [injectables.jsonformValue]
+ * @param {url} [injectables.flatstyleUrl]
+ */
+async function injectVegaInlineData(
+  spec,
+  { url, jsonformValue, flatstyleUrl },
+) {
+  if (!spec.data) {
+    return;
+  }
+  const dataUrl = await renderDataUrl(url, jsonformValue, flatstyleUrl);
+  /** @type {import("vega-lite/build/src/data").InlineData} */
+  (spec.data).values = await axios.get(dataUrl).then((resp) => {
+    return resp.data;
+  });
+  return spec;
+}
+
+/**
+ * @param {import("vega-lite").TopLevelSpec} spec
+ * @param {object} injectables
+ * @param {string} injectables.url
+ * @param {Record<string,any>} [injectables.jsonformValue]
+ * @param {url} [injectables.flatstyleUrl]
+ */
+async function injectVegaUrlData(spec, { url, jsonformValue, flatstyleUrl }) {
+  if (!spec.data) {
+    console.error(
+      "[eodash] Make sure the Vega spec definition has a data property",
+    );
+    return;
+  }
+  const dataUrl = await renderDataUrl(url, jsonformValue, flatstyleUrl);
+  /** @type {import("vega").UrlData} */
+  (spec.data).url = dataUrl;
+  return spec;
+}
+/**
+ *
+ * @param {string} url
+ * @param {Record<string,any>} [jsonformValue]
+ * @param {string} [flatstyleUrl]
+ */
+async function renderDataUrl(url, jsonformValue, flatstyleUrl) {
+  let flatStyles = {};
+  if (flatstyleUrl) {
+    flatStyles = await axios.get(flatstyleUrl).then((resp) => resp.data);
+  }
+
+  return mustache.render(url, {
+    ...(jsonformValue ?? {}),
+    ...flatStyles,
+  });
+}
+
+///////
 
 /**
  * @param {object} options

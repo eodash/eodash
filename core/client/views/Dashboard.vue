@@ -18,7 +18,7 @@ import { useEodashRuntime } from "@/composables/DefineEodash";
 import { useURLSearchParametersSync, useUpdateTheme } from "@/composables";
 import { useSTAcStore } from "@/store/stac";
 import { computed, defineAsyncComponent, onErrorCaptured, ref } from "vue";
-import { useDisplay } from "vuetify/lib/framework.mjs";
+import { useDisplay } from "vuetify/lib/framework";
 import { loadFont } from "@/utils";
 import Loading from "@/components/Loading.vue";
 import ErrorAlert from "@/components/ErrorAlert.vue";
