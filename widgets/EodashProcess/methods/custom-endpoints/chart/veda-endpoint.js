@@ -20,33 +20,24 @@ export async function handleVedaEndpoint({
   }
   const vedaEndpoint = vedaLink?.href;
   const bboxProperty = getBboxProperty(jsonformSchema);
-  const bbox = jsonformValue[bboxProperty];
-  const endpoints = await fetchVedaCOGs(selectedStac);
+  // this should be type geojson
+  const bboxGeoJSON = JSON.parse(jsonformValue[bboxProperty]);
+
+  const configs = await fetchVedaCOGsConfig(selectedStac);
   // TODO: convert jsonform bbox type to geojson in the schema to avoid the conversion here
   return await Promise.all(
-    endpoints.map((dataEndpoint) => {
+    configs.map(({ endpoint, datetime }) => {
       return axios
-        .post(vedaEndpoint + `?url=${dataEndpoint}`, {
+        .post(vedaEndpoint + `?url=${endpoint}`, {
           ...{
-            type: "Feature",
-            properties: {},
-            geometry: {
-              type: "Polygon",
-              coordinates: [
-                [
-                  [bbox[0], bbox[1]],
-                  [bbox[2], bbox[1]],
-                  [bbox[2], bbox[3]],
-                  [bbox[0], bbox[3]],
-                  [bbox[0], bbox[1]],
-                ],
-              ],
-            },
-          },
+            type:"Feature",
+            properties:{},
+            geometry: bboxGeoJSON,
+          }
         })
         .then((resp) => {
           const fetchedSats = resp.data.properties.statistics;
-          fetchedSats.date = extractDate(dataEndpoint);
+          fetchedSats.date = datetime;
           return fetchedSats;
         })
         .catch((resp) =>
@@ -63,7 +54,7 @@ export async function handleVedaEndpoint({
  * Fetches the COGs endpoints from the STAC collections
  * @param {import("stac-ts").StacCollection} selectedStac
  */
-async function fetchVedaCOGs(selectedStac) {
+async function fetchVedaCOGsConfig(selectedStac) {
   // retrieve the collections from the indicator
   const collectionLinks = selectedStac.links.filter(
     (link) => link.rel == "child",
@@ -83,50 +74,36 @@ async function fetchVedaCOGs(selectedStac) {
       )),
     );
   }
-  /** @type {string[]} */
-  const endpoints = [];
+  /** @type {{endpoint:string; datetime:string}[]} */
+  const configs = [];
   for (const collection of collections) {
     let itemLinks = collection.links.filter((link) => link.rel == "item");
-    endpoints.push(
-      ...itemLinks.map((link) =>
-        toAbsolute(
-          link.href.replace(/\/\d{4}\//g, "/").replace(".json", ".tif"),
-          "s3://veda-data-store/",
+    configs.push(
+      ...itemLinks.map((link) => ({
+        endpoint: /** @type {string} */ (link["cog_href"]),
+        datetime: /** @type string **/ (
+          link["datetime"] ?? link["start_datetime"]
         ),
-      ),
+      })),
     );
   }
-  endpoints.sort((a, b) => b.localeCompare(a));
-  return endpoints.length > 365 ? endpoints.slice(0, 365) : endpoints;
-}
 
-/**
- * Extracts the date from a string
- *
- * @param {string} str
- */
-function extractDate(str) {
-  const dateRegex = /(\d{4}([.\-/ ])\d{2}\2\d{2}|\d{2}([.\-/ ])\d{2}\3\d{4})/; // DD-MM-YYYY or YYYY-MM-DD
-  const monthYearRegex = /(\d{4}([.\-/ ])\d{2}|\d{2}([.\-/ ])\d{4})/; // YYYY-MM or MM-YYYY
-  const yearRegex = /(19[7-9][0-9]|20[0-9]{2})/; // YYYY
+  // Sort by date ascending
+  configs.sort(
+    (a, b) => new Date(a.datetime).getTime() - new Date(b.datetime).getTime(),
+  );
 
-  let date = str.match(dateRegex)?.[0] ?? "";
-  if (!date) {
-    date = str.match(monthYearRegex)?.[0] ?? "";
+  const maxConfigs = 50;
+  if (configs.length <= maxConfigs) {
+    return configs;
   }
-  if (!date) {
-    date = str.match(yearRegex)?.[0] ?? "";
-  }
-  if (!date) {
-    console.error("[eodash] No date found in veda url:", str);
-    return undefined;
-  }
-
-  try {
-    date = new Date(date).toISOString().split("T")[0];
-    return date;
-  } catch (e) {
-    console.error("Error parsing date:", e);
-    return undefined;
-  }
+  // we need to sample if the number of configs are more than 50
+    const totalSize = configs.length;
+    const sampledConfigs = [];
+    for (let i = 0; i < maxConfigs; i++) {
+      // Calculate the index to pick, ensuring distribution and inclusion of first/last
+      const index = Math.floor(i * (totalSize - 1) / (maxConfigs - 1));
+      sampledConfigs.push(configs[index]);
+    }
+    return sampledConfigs;
 }
