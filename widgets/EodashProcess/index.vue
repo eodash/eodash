@@ -182,5 +182,6 @@ eox-chart {
 }
 eox-jsonform {
   padding: 0.7em;
+  min-height: 0px;
 }
 </style>
