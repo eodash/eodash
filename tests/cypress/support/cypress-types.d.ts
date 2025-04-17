@@ -2,8 +2,8 @@
 import { vMountComponent as _vMount } from "./component";
 import { mount as _mount } from "cypress/vue";
 
-type VueMountOptions = Parameters<typeof _mount<object, object>>["1"] & {
-  vuetify?: import("vuetify/lib/framework.mjs").VuetifyOptions;
+type VueMountOptions = Parameters<typeof _mount<object, any>>["1"] & {
+  vuetify?: import("vuetify").VuetifyOptions;
   pinia?: import("@pinia/testing").TestingPinia | import("pinia").Pinia;
 };
 declare global {

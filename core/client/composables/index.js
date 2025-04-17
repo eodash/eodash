@@ -10,7 +10,7 @@ import {
   mapPosition,
 } from "@/store/states";
 import eodash from "@/eodash";
-import { useTheme } from "vuetify/lib/framework.mjs";
+import { useTheme } from "vuetify";
 import { inject, onMounted, onUnmounted, watch } from "vue";
 import { useSTAcStore } from "@/store/stac";
 import log from "loglevel";

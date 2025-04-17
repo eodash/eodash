@@ -15,13 +15,13 @@
 import { eodashKey } from "@/utils/keys";
 import { ref } from "vue";
 import { inject } from "vue";
-import { useDisplay } from "vuetify/lib/framework.mjs";
+import { useDisplay } from "vuetify";
 
 /**
  * Footer template ref
  *
  * @type {import("vue").Ref<
- *   import("vuetify/lib/components/index.mjs").VFooter | null
+ *   import("vuetify/lib/components/index").VFooter | null
  * >}
  */
 const footer = ref(null);

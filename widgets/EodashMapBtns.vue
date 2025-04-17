@@ -44,7 +44,7 @@ import ExportState from "^/ExportState.vue";
 import { computed, ref, triggerRef } from "vue";
 import PopUp from "./PopUp.vue";
 import EodashItemFilter from "./EodashItemFilter.vue";
-import { useDisplay } from "vuetify/lib/framework.mjs";
+import { useDisplay } from "vuetify";
 import { useSTAcStore } from "@/store/stac";
 import { storeToRefs } from "pinia";
 import { switchToCompare } from "@/utils/states";
