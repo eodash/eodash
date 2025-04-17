@@ -35,8 +35,8 @@ export async function handleSentinelHubProcess({
   const bboxProperty = getBboxProperty(jsonformSchema);
   const bbox = jsonformValue[bboxProperty];
 
-  const clientId = import.meta.env.VITE_SENTINELHUB_CLIENT_ID;
-  const clientSecret = import.meta.env.VITE_SENTINELHUB_CLIENT_SECRET;
+  const clientId = process.env.EODASH_SENTINELHUB_CLIENT_ID;
+  const clientSecret = process.env.EODASH_SENTINELHUB_CLIENT_SECRET;
 
   const bearer = await sentinelHubAuth(clientId, clientSecret);
   if (!bearer) {
@@ -74,11 +74,18 @@ export async function handleSentinelHubProcess({
 }
 
 /**
- * @param {string} clientId
- * @param {string} clientSecret
+ * @param {string} [clientId]
+ * @param {string} [clientSecret]
  * @returns {Promise<string | void>}
  */
 async function sentinelHubAuth(clientId, clientSecret) {
+  if (!clientId || !clientSecret) {
+    console.error(
+      "[eodash] Error (sentinelhub): client id or secret not found",
+    );
+    return;
+  }
+
   const sessionToken = sessionStorage.getItem("sentinelhub_token");
   const sessionTokenTime = /** @type {string} */ (
     sessionStorage.getItem("sentinelhub_token_time")
