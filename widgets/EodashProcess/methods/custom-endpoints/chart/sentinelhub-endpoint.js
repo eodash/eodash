@@ -47,7 +47,11 @@ export async function handleSentinelHubProcess({
   }
   // generate 30 dates from the start and end date of the selected stac
   // generate time pairs from the selected stac temporal extent
-  const timePairs = generateTimePairs(selectedStac.extent.temporal.interval);
+  const timePairs = generateTimePairs(
+    selectedStac.extent.temporal.interval[0],
+    [jsonformValue["start_date"], jsonformValue["end_date"]],
+    jsonformValue["distribution"],
+  );
 
   // fetch data from sentinel hub
   return await Promise.all(

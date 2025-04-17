@@ -139,26 +139,37 @@ export const download = (fileName, content) => {
 
 /**
  * Generate time pairs from a temporal extent
- * @param {import("stac-ts").TemporalExtents} temporalExtent - Array of temporal intervals [start, end]
+ * @param {import("stac-ts").TemporalExtent} stacExtent - [start, end]
+ * @param {import("stac-ts").TemporalExtent} [userExtent] -[start, end]
+ * @param {string} [distribution] - daily, weekly, monthly, or yearly
  */
-export function generateTimePairs(temporalExtent) {
+export function generateTimePairs(stacExtent, userExtent, distribution) {
   const [startDate, endDate] = /** @type {[string, string]} */ (
-    temporalExtent?.[0] ?? ["", ""]
+    userExtent ?? stacExtent ?? ["", ""]
   );
   if (!startDate || !endDate) {
     return [];
   }
   const times = [];
-  let current = new Date(endDate);
+  let latest = new Date(endDate);
   const start = new Date(startDate);
-
+  const oneDay = 24 * 60 * 60 * 1000;
   // Use fixed step of 1 day (in milliseconds)
-  const step = 24 * 60 * 60 * 1000;
+  const step =
+    distribution === "daily"
+      ? oneDay
+      : distribution === "weekly"
+        ? oneDay * 7
+        : distribution === "monthly"
+          ? oneDay * 30
+          : distribution === "yearly"
+            ? oneDay * 365
+            : oneDay;
 
   // Add dates, limiting to 31 dates (30 pairs maximum)
-  while (current >= start && times.length < 31) {
-    times.push(new Date(current));
-    current.setTime(current.getTime() - step);
+  while (latest >= start && times.length < 31) {
+    times.push(new Date(latest));
+    latest.setTime(latest.getTime() - step);
   }
 
   const timePairs = [];

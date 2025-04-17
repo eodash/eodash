@@ -30,10 +30,10 @@ export async function handleVedaEndpoint({
       return axios
         .post(vedaEndpoint + `?url=${endpoint}`, {
           ...{
-            type:"Feature",
-            properties:{},
+            type: "Feature",
+            properties: {},
             geometry: bboxGeoJSON,
-          }
+          },
         })
         .then((resp) => {
           const fetchedSats = resp.data.properties.statistics;
@@ -98,12 +98,12 @@ async function fetchVedaCOGsConfig(selectedStac) {
     return configs;
   }
   // we need to sample if the number of configs are more than 50
-    const totalSize = configs.length;
-    const sampledConfigs = [];
-    for (let i = 0; i < maxConfigs; i++) {
-      // Calculate the index to pick, ensuring distribution and inclusion of first/last
-      const index = Math.floor(i * (totalSize - 1) / (maxConfigs - 1));
-      sampledConfigs.push(configs[index]);
-    }
-    return sampledConfigs;
+  const totalSize = configs.length;
+  const sampledConfigs = [];
+  for (let i = 0; i < maxConfigs; i++) {
+    // Calculate the index to pick, ensuring distribution and inclusion of first/last
+    const index = Math.floor((i * (totalSize - 1)) / (maxConfigs - 1));
+    sampledConfigs.push(configs[index]);
+  }
+  return sampledConfigs;
 }
