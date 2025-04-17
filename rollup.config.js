@@ -50,5 +50,6 @@ export default defineConfig({
     "commander",
     "@vitejs/plugin-vue",
     "vite-plugin-vuetify",
+    "dotenv",
   ],
 });

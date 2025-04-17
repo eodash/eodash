@@ -17,7 +17,7 @@ import { useSTAcStore } from "@/store/stac";
 import "@eox/itemfilter";
 
 import { computed, ref } from "vue";
-import { useDisplay } from "vuetify/lib/framework.mjs";
+import { useDisplay } from "vuetify";
 
 const emit = defineEmits(["select"]);
 

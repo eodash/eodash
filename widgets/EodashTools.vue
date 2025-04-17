@@ -43,7 +43,7 @@ import EodashLayoutSwitcher from "^/EodashLayoutSwitcher.vue";
 import { mdiPlus, mdiViewDashboard } from "@mdi/js";
 import { computed, ref } from "vue";
 import { makePanelTransparent } from "@/composables";
-import { useDisplay } from "vuetify/lib/framework.mjs";
+import { useDisplay } from "vuetify";
 
 const dialog = ref(false);
 

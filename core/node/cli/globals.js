@@ -27,6 +27,7 @@ export const nodeModules = [
   "@vitejs/plugin-vue",
   "vite-plugin-vuetify",
   "axios",
+  "dotenv",
 ];
 export const clientModules = Object.keys(appPkgJSON?.dependencies).filter(
   (m) => !nodeModules.includes(m),
