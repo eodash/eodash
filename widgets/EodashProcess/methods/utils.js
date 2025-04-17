@@ -144,9 +144,65 @@ export const download = (fileName, content) => {
  * @param {string} [distribution] - daily, weekly, monthly, or yearly
  */
 export function generateTimePairs(stacExtent, userExtent, distribution) {
-  const [startDate, endDate] = /** @type {[string, string]} */ (
-    userExtent ?? stacExtent ?? ["", ""]
+  // check whether the userExtent is provided
+  // if it is check that it doesn't exceed the stacExtent
+  // and clamp it otherwise
+
+  /** @type {string|Date} */
+  let from = "";
+
+  /** @type {string|Date} */
+  let to = "";
+  [from, to] = /** @type {[string, string]} */ (userExtent ?? ["", ""]);
+
+  const [stacFrom, stacTo] = /** @type {[string, string]} */ (
+    stacExtent ?? ["", ""]
   );
+
+  try {
+    if (from && to) {
+      from = new Date(from);
+      to = new Date(to);
+    } else {
+      from = new Date(stacFrom);
+      to = new Date(stacTo);
+    }
+
+    if (from < new Date(stacFrom) || from > new Date(stacTo)) {
+      console.warn(
+        "[eodash] warn: start date is outside of the collection temporal extent and will be clamped",
+        `\nprovided start date:${from.toISOString()}`,
+        `\ncollection start date:${stacFrom}`,
+      );
+      from = new Date(stacFrom);
+    }
+
+    if (to > new Date(stacTo) || to < new Date(stacFrom)) {
+      console.warn(
+        "[eodash] warn: end date is outside of the collection temporal extent and will be clamped",
+        `\nprovided end date:${to.toISOString()}`,
+        `\ncollection end date:${stacTo}`,
+      );
+      to = new Date(stacTo);
+    }
+
+    if (from > to) {
+      console.error(
+        "[eodash] Error: start date is greater than end date",
+        from,
+        to,
+      );
+      return [];
+    }
+  } catch (e) {
+    //@ts-expect-error e should be an error
+    console.error("[eodash] Invalid date:", e.message);
+    return [];
+  }
+
+  const startDate = /** @type {Date} */ (from).toISOString();
+  const endDate = /** @type {Date} */ (to).toISOString();
+
   if (!startDate || !endDate) {
     return [];
   }
