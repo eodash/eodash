@@ -230,6 +230,7 @@ async function fetchSentinelHubData({
         "[eodash] Error (sentinelhub): error while fetching data from sentinel hub",
         err.response?.data,
       );
+      return [];
     });
 }
 /**
