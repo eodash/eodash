@@ -21,7 +21,7 @@ import { useDisplay } from "vuetify";
  * Footer template ref
  *
  * @type {import("vue").Ref<
- *   import("vuetify/lib/components/index").VFooter | null
+ *   import("vuetify/components").VFooter | null
  * >}
  */
 const footer = ref(null);
