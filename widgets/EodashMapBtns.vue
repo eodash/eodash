@@ -16,9 +16,9 @@
     />
     <v-btn
       class="map-btn"
-      :icon="[mdiCompare]"
+      :icon="[compareIcon]"
       v-if="compareIndicators"
-      @click="showCompareIndicators = !showCompareIndicators"
+      @click="onCompareClick"
     />
     <PopUp
       v-model="showCompareIndicators"
@@ -39,14 +39,17 @@
 import { makePanelTransparent } from "@/composables";
 import { changeMapProjection, setActiveTemplate } from "@/store/actions";
 import { availableMapProjection } from "@/store/states";
-import { mdiCompare, mdiEarthBox, mdiMapPlus } from "@mdi/js";
+import { mdiCompare, mdiCompareRemove, mdiEarthBox, mdiMapPlus } from "@mdi/js";
 import ExportState from "^/ExportState.vue";
-import { computed, ref } from "vue";
+import { computed, ref, triggerRef } from "vue";
 import PopUp from "./PopUp.vue";
 import EodashItemFilter from "./EodashItemFilter.vue";
 import { useDisplay } from "vuetify/lib/framework.mjs";
+import { useSTAcStore } from "@/store/stac";
+import { storeToRefs } from "pinia";
+import { switchToCompare } from "@/utils/states";
 
-defineProps({
+const { compareIndicators, changeProjection, exportMap } = defineProps({
   exportMap: {
     type: Boolean,
     default: true,
@@ -56,22 +59,45 @@ defineProps({
     default: true,
   },
   compareIndicators: {
-    type: Boolean,
+    /** @type {import("vue").PropType<boolean | {compareTemplate?:string;fallbackTemplate?:string}> }*/
+    type: [Boolean, Object],
     default: true,
   },
 });
+const { selectedStac, selectedCompareStac } = storeToRefs(useSTAcStore());
 const { smAndDown } = useDisplay();
 const popupWidth = computed(() => (smAndDown ? "70%" : "500px"));
 const popupHeight = computed(() => (smAndDown ? "90%" : "500px"));
 
 const showMapState = ref(false);
 const showCompareIndicators = ref(false);
+const compareIcon = computed(() =>
+  switchToCompare.value ? mdiCompare : mdiCompareRemove,
+);
+const onCompareClick = () => {
+  if (switchToCompare.value) {
+    showCompareIndicators.value = !showCompareIndicators.value;
+  } else {
+    switchToCompare.value = true;
+    const fallbackTemplate =
+      (typeof compareIndicators === "object" &&
+        compareIndicators.fallbackTemplate) ||
+      "expert";
+    selectedCompareStac.value = null;
+    setActiveTemplate(fallbackTemplate);
+    triggerRef(selectedStac);
+  }
+};
 
 /** @type {import("vue").Ref<HTMLDivElement|null>} */
 const rootRef = ref(null);
 
 const onSelectCompareIndicator = () => {
-  setActiveTemplate("compare");
+  const compareTemplate =
+    (typeof compareIndicators === "object" &&
+      compareIndicators.compareTemplate) ||
+    "compare";
+  setActiveTemplate(compareTemplate);
   showCompareIndicators.value = !showCompareIndicators.value;
 };
 

@@ -1,12 +1,12 @@
 # Eodash Store
 
-eodash fetches the SpatioTemporal Asset Catalog (STAC) endpoint [assigned in the client configuration](/api/client/types/type-aliases/Eodash.html#stacendpoint), navigate through its links, and assign values to its store. This store is then exposed to users, giving them the ability to read or modify the state of the dashboard.
+eodash fetches the SpatioTemporal Asset Catalog (STAC) endpoint [assigned in the client configuration](/api/types/core/client/types/type-aliases/Eodash.html#stacendpoint), navigate through its links, and assign values to its store. This store is then exposed to users, giving them the ability to read or modify the state of the dashboard.
 
 The store is divided into three main areas. The first area is the reactive `states`. These states are designed to respond to changes in the dashboard and update the interface accordingly, leveraging the [Vue reactivity system](https://vuejs.org/guide/essentials/reactivity-fundamentals).
 
 The second area consists of `actions`. These actions are functions that interact with the states, either by fetching new data or triggering changes in the existing states. They are responsible for updating the dashboard with new information or altering the display format of the current data.
 
-Finally, the third area is under the `stac` property. This is a [pinia store](https://pinia.vuejs.org/) that exposes the root STAC catalog links, the selected STAC object, a function to load the selected STAC object, and a function to load the links from the root catalog endpoint. Checkout the [API](/api/client/types/interfaces/EodashStore.html) to learn more
+Finally, the third area is under the `stac` property. This is a [pinia store](https://pinia.vuejs.org/) that exposes the root STAC catalog links, the selected STAC object, a function to load the selected STAC object, and a function to load the links from the root catalog endpoint. Checkout the [API](/api/types/core/client/types/interfaces/EodashStore.html) to learn more
 
 ## URL Query Parameters
 

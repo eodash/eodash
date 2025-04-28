@@ -1,3 +1,12 @@
+import {
+  mdiBarley,
+  mdiCurrencyEur,
+  mdiHospitalBoxOutline,
+  mdiImageFilterHdr,
+  mdiSetCenter,
+  mdiWater,
+  mdiWeatherWindy,
+} from "@mdi/js";
 import { reactive, ref, shallowReactive } from "vue";
 
 /**
@@ -26,6 +35,13 @@ export const posIsSetFromUrl = ref(false);
  * @type {import("vue").Ref<Record<string, any> | undefined>}
  */
 export const layerControlFormValue = ref({});
+
+/**
+ * Current value of the layer control JSON form for the latest layer the user interacted with.
+ * @type {import("vue").Ref<Record<string, any> | undefined>}
+ */
+export const layerControlFormValueCompare = ref({});
+
 /**
  * STAC indicators color palette, defaults to Bank-Wong palette
  *  @type {string[]} */
@@ -37,3 +53,39 @@ export const collectionsPalette = reactive([
   "#56B4E9",
   "#D55E00",
 ]);
+
+/**
+ * Object containing data themes and their associated brand properties (icon and color).
+ */
+export const dataThemesBrands = {
+  agriculture: {
+    icon: mdiBarley,
+    color: "#F2AF25",
+  },
+  water: {
+    icon: mdiWater,
+    color: "#73A6C7",
+  },
+  land: {
+    icon: mdiImageFilterHdr,
+    color: "#019E73",
+  },
+  health: {
+    icon: mdiHospitalBoxOutline,
+    color: "#497FA9",
+  },
+  combined: {
+    icon: mdiSetCenter,
+    color: "#56B4E9",
+  },
+  air: {
+    icon: mdiWeatherWindy,
+    color: "#475faf",
+  },
+  economy: {
+    icon: mdiCurrencyEur,
+    color: "#8E81AF",
+  },
+};
+/** used for switching in and out of compare mode @see {@link widgets/EodashMapBtns.vue} */
+export const switchToCompare = ref(true);

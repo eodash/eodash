@@ -4,7 +4,11 @@ import axios from "@/plugins/axios";
 import { useAbsoluteUrl, useCompareAbsoluteUrl } from "@/composables/index";
 import { eodashKey } from "@/utils/keys";
 import { indicator } from "@/store/states";
-import { eodashCollections, eodashCompareCollections } from "@/utils/states";
+import {
+  eodashCollections,
+  eodashCompareCollections,
+  switchToCompare,
+} from "@/utils/states";
 import log from "loglevel";
 import { updateEodashCollections } from "@/utils";
 
@@ -91,6 +95,7 @@ export const useSTAcStore = defineStore("stac", () => {
         );
         selectedStac.value = resp.data;
         indicator.value = selectedStac.value?.id ?? "";
+        switchToCompare.value = true;
       })
       .catch((err) => {
         throw new Error("error loading the selected STAC", err);
@@ -106,7 +111,6 @@ export const useSTAcStore = defineStore("stac", () => {
    */
   async function loadSelectedCompareSTAC(relativePath = "") {
     const absoluteUrl = useCompareAbsoluteUrl(relativePath);
-
     await axios
       .get(absoluteUrl.value)
       .then(async (resp) => {
@@ -116,6 +120,7 @@ export const useSTAcStore = defineStore("stac", () => {
           absoluteUrl.value,
         );
         selectedCompareStac.value = resp.data;
+        switchToCompare.value = false;
       })
       .catch((err) => {
         throw new Error("error loading the selected comparison STAC", err);

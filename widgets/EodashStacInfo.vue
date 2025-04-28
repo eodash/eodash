@@ -55,26 +55,32 @@ main {padding-bottom: 10px;}
 .footer-container small {font-size:10px;line-height:1;}`,
   },
   header: {
+    /** @type {import("vue").PropType<string[]>}  */
     type: Array,
     default: () => ["title"],
   },
   tags: {
+    /** @type {import("vue").PropType<string[]>}  */
     type: Array,
     default: () => ["themes"],
   },
   subheader: {
+    /** @type {import("vue").PropType<string[]>}  */
     type: Array,
     default: () => [],
   },
   body: {
+    /** @type {import("vue").PropType<string[]>}  */
     type: Array,
     default: () => ["satellite", "sensor", "agency", "extent"],
   },
   featured: {
+    /** @type {import("vue").PropType<string[]>}  */
     type: Array,
     default: () => ["description", "providers", "assets", "links"],
   },
   footer: {
+    /** @type {import("vue").PropType<string[]>}  */
     type: Array,
     default: () => ["sci:citation"],
   },

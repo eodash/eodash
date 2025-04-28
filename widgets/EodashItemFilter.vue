@@ -5,7 +5,7 @@
     ref="eoxItemFilter"
     style="overflow: auto; --background-color: none"
     @select="onSelect"
-    .items='store.stac?.filter((item) => item.rel === "child")'
+    .items="store.stac?.filter((item) => item.rel === 'child')"
   >
     <h4 slot="filterstitle" style="margin: 14px 8px">{{ filtersTitle }}</h4>
 

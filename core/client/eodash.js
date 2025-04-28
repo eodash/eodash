@@ -10,16 +10,26 @@ import { reactive } from "vue";
 export const eodash = reactive({
   id: "demo",
   stacEndpoint:
-    // "https://eurodatacube.github.io/eodash-catalog/RACE/catalog.json",
+    // "https://esa-eodash.github.io/RACE-catalog/RACE/catalog.json",
     // "https://gtif-cerulean.github.io/catalog/cerulean/catalog.json",
     // "https://eodashcatalog.eox.at/samplecatalog/samples/catalog.json",
     // "https://eodashcatalog.eox.at/test-style/trilateral/catalog.json",
-    // "https://gtif-cerulean.github.io/catalog/cerulean/catalog.json",
     // "https://gtif-cerulean.github.io/deside-catalog/deside/catalog.json",
     "https://gtif-cerulean.github.io/cerulean-catalog/cerulean/catalog.json",
+  // "https://gtif-austria.github.io/public-catalog/GTIF-Austria/catalog.json",
   brand: {
     noLayout: true,
     name: "Demo",
+    font: {
+      headers: {
+        family: "Open Sans",
+        link: "https://eox.at/fonts/opensans/opensans.css",
+      },
+      body: {
+        family: "Sintony",
+        link: "https://eox.at/fonts/sintony/sintony.css",
+      },
+    },
     theme: {
       colors: {
         primary: "#002742",
@@ -64,7 +74,7 @@ export const eodash = reactive({
         },
       },
       background: {
-        id: Symbol(),
+        id: "background-map",
         type: "internal",
         widget: {
           name: "EodashMap",
@@ -152,7 +162,7 @@ export const eodash = reactive({
           defineWidget: (selectedSTAC) => {
             return selectedSTAC
               ? {
-                  id: "Datepicker",
+                  id: "light-datepicker",
                   type: "internal",
                   layout: { x: 5, y: 8, w: 2, h: 4 },
                   title: "Date",
@@ -186,7 +196,7 @@ export const eodash = reactive({
         },
       },
       background: {
-        id: Symbol(),
+        id: "background-map",
         type: "internal",
         widget: {
           name: "EodashMap",
@@ -237,10 +247,6 @@ export const eodash = reactive({
                   type: "internal",
                   widget: {
                     name: "EodashStacInfo",
-                    properties: {
-                      showIndicatorsBtn: false,
-                      showLayoutSwitcher: false,
-                    },
                   },
                 }
               : null;
@@ -250,9 +256,9 @@ export const eodash = reactive({
           defineWidget: (selectedSTAC) => {
             return selectedSTAC
               ? {
-                  id: "Datepicker",
+                  id: "expert-datepicker",
                   type: "internal",
-                  layout: { x: 5, y: 8, w: 2, h: 4 },
+                  layout: { x: 5, y: 11, w: 2, h: 1 },
                   title: "Date",
                   widget: {
                     name: "EodashDatePicker",
@@ -288,7 +294,7 @@ export const eodash = reactive({
                   id: "Processes",
                   type: "internal",
                   title: "Processes",
-                  layout: { x: 9, y: 7, w: 3, h: 5 },
+                  layout: { x: 9, y: 6, w: 3, h: 5 },
                   widget: {
                     name: "EodashProcess",
                   },
@@ -315,7 +321,7 @@ export const eodash = reactive({
         },
       },
       background: {
-        id: Symbol(),
+        id: "background-map",
         type: "internal",
         widget: {
           name: "EodashMap",
@@ -333,8 +339,7 @@ export const eodash = reactive({
           widget: {
             name: "EodashTools",
             properties: {
-              layoutTarget: "expert",
-              layoutIcon: mdiViewDashboardVariant,
+              showLayoutSwitcher: false,
               itemFilterConfig: {
                 cssVars: {
                   "--form-flex-direction": "row",
@@ -412,7 +417,9 @@ export const eodash = reactive({
                   widget: {
                     name: "EodashMapBtns",
                     properties: {
-                      compareIndicators: false,
+                      compareIndicators: {
+                        fallbackTemplate: "expert",
+                      },
                     },
                   },
                 }
@@ -423,7 +430,7 @@ export const eodash = reactive({
           defineWidget: (selectedSTAC) => {
             return selectedSTAC
               ? {
-                  id: "Datepicker",
+                  id: "expert-Datepicker",
                   type: "internal",
                   layout: { x: 5, y: 8, w: 2, h: 4 },
                   title: "Date",
