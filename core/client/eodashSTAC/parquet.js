@@ -12,6 +12,8 @@ export const readParquetItems = async (url) => {
   await parquetRead({
     file: await asyncBufferFromUrl({ url }),
     rowFormat: "object",
+    // set utf8 to false to avoid parsing wkb to string
+    utf8: false,
     onComplete: (data) => {
       //@ts-expect-error onComplete param depends on the rowFormat
       items.push(...(adjustParquetItems(data) ?? []));
@@ -52,16 +54,12 @@ export const adjustParquetItems = (items) => {
   });
 };
 /**
- *  @param {string} wkb - Well Known Binary string
+ *  @param {Uint8Array} wkb - Well Known Binary
  */
 function wkbToGeometry(wkb) {
-  // Convert to Uint8Array
-  const uint8Array = new Uint8Array(
-    wkb.split("").map((char) => char.charCodeAt(0)),
-  );
   const geoJsonFormatter = new GeoJSON();
   const wkbReader = new WKB();
-  const olGeometry = wkbReader.readGeometry(uint8Array);
+  const olGeometry = wkbReader.readGeometry(wkb,{featureProjection: "EPSG:3857",dataProjection:"EPSG:4326"});
   return geoJsonFormatter.writeGeometryObject(olGeometry);
 }
 
