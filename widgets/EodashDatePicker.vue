@@ -226,8 +226,6 @@ watch(
 
       for (let idx = 0; idx < eodashCollections.length; idx++) {
         log.debug("Retrieving dates", eodashCollections[idx]);
-        await eodashCollections[idx].fetchCollection();
-
         const dates = [
           ...new Set(
             eodashCollections[idx].getItems()?.reduce((valid, it) => {
