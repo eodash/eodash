@@ -427,6 +427,8 @@ export async function mergeGeojsons(geojsonUrls) {
  * @param {import("stac-ts").StacItem[]} items
  */
 export function generateLinksFromItems(items) {
+  // this is still WIP, we need to add all the different properties
+  // that are used in all of our different cases.
   return items.map((item) => {
     return {
       item,
