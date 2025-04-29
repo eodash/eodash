@@ -59,7 +59,7 @@ export const adjustParquetItems = (items) => {
 function wkbToGeometry(wkb) {
   const geoJsonFormatter = new GeoJSON();
   const wkbReader = new WKB();
-  const olGeometry = wkbReader.readGeometry(wkb,{featureProjection: "EPSG:3857",dataProjection:"EPSG:4326"});
+  const olGeometry = wkbReader.readGeometry(wkb);
   return geoJsonFormatter.writeGeometryObject(olGeometry);
 }
 

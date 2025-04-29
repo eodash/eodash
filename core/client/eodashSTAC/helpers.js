@@ -429,18 +429,19 @@ export async function mergeGeojsons(geojsonUrls) {
 export function generateLinksFromItems(items) {
   return items.map((item) => {
     return {
+      item,
+      id: item.id,
       rel: "item",
       type: "application/geo+json",
       title: item.id,
-      href: "",
-      item,
+      href: "this.item",
       datetime:
         /** @type {*} */ (item.properties.datetime) instanceof Date
           ? item.properties.datetime.toISOString()
           : item.properties.datetime,
       ...(item.geometry?.type == "Point" &&
         item.geometry?.coordinates.length && {
-          latlng: item.geometry.coordinates.join(","),
+          latlng: item.geometry.coordinates.reverse().join(","),
         }),
     };
   });
