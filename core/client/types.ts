@@ -338,7 +338,7 @@ export type Eodash<T extends ExecutionTime = "compiletime"> = {
      * Dashboard theme as a custom [vuetifyJs
      * theme](https://vuetifyjs.com/en/features/theme/).
      */
-    theme?: import("vuetify/lib/index.mjs").ThemeDefinition & {
+    theme?: import("vuetify").ThemeDefinition & {
       collectionsPalette?: string[];
     };
     /** Text applied to the footer. */

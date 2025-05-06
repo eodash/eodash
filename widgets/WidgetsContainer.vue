@@ -17,7 +17,7 @@
 import { useDefineWidgets } from "@/composables/DefineWidgets";
 import { nextTick, onMounted } from "vue";
 import { ref } from "vue";
-import { useLayout } from "vuetify/lib/framework.mjs";
+import { useLayout } from "vuetify";
 import "animated-details";
 
 const props = defineProps({

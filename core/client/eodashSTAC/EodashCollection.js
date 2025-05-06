@@ -475,7 +475,7 @@ export class EodashCollection {
               "circle-radius": 10,
               "circle-fill-color": "#00417077",
               "circle-stroke-color": "#004170",
-              "fill-color": "#0417077",
+              "fill-color": "#00417077",
               "stroke-color": "#004170",
             },
           },
