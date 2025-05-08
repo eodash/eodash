@@ -54,6 +54,7 @@ export const clientModules = Object.keys(appPkgJSON?.dependencies).filter(
 cli.version(appPkgJSON.version, "-v, --version", "output the current version");
 
 cli
+  .allowExcessArguments()
   .option("--publicDir <path>", "path to statically served assets folder")
   .option("--no-publicDir", "stop serving static assets")
   .option("--outDir <path>", "minified output folder")
