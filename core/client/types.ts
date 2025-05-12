@@ -229,11 +229,9 @@ export interface FunctionalWidget<T extends ExecutionTime = "compiletime"> {
    */
   defineWidget: (
     selectedSTAC:
-      | import("stac-ts").StacCatalog
       | import("stac-ts").StacCollection
-      | import("stac-ts").StacItem
       | null,
-  ) => StaticWidget<T> | undefined | null;
+  ) => StaticWidget<T> | undefined | null | false;
 }
 /**
  * There are 3 types of Widgets:

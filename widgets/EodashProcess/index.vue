@@ -32,6 +32,11 @@
       >
         Download
       </v-btn>
+      <v-btn
+      v-if="opIndicator"
+      @click="loadOPsIndicator(opIndicator)">
+        back to points
+      </v-btn>
     </div>
   </div>
 </template>
@@ -43,11 +48,12 @@ import { useSTAcStore } from "@/store/stac";
 import { storeToRefs } from "pinia";
 import { computed, ref, toRaw, useTemplateRef } from "vue";
 import ProcessList from "./ProcessList.vue";
-import { handleProcesses, onChartClick } from "./methods/handling";
+import { loadOPsIndicator, handleProcesses, onChartClick } from "./methods/handling";
 import { useInitProcess, useAutoExec } from "./methods/composables";
 import { jobs, updateJobsStatus } from "./methods/async";
-import { indicator } from "@/store/states";
+import { indicator, opIndicator } from "@/store/states";
 import { download } from "./methods/utils";
+
 
 /** @type {import("vue").Ref<import("vega").Spec|null>} */
 const chartSpec = ref(null);
@@ -146,9 +152,7 @@ const startProcess = async () => {
     chartSpec,
     chartData,
     loading,
-    //@ts-expect-error TODO
     selectedStac,
-    isProcessed,
     isPolling,
     processResults,
   });
