@@ -226,10 +226,20 @@ async function fetchSentinelHubData({
       return fetched;
     })
     .catch((err) => {
+      if (err.response?.status === 401) {
+        console.error(
+          "[eodash] Error (sentinelhub): bearer token expired, please try again",
+        );
+        sessionStorage.removeItem("sentinelhub_token");
+        sessionStorage.removeItem("sentinelhub_token_time");
+        return;
+      }
+
       console.error(
         "[eodash] Error (sentinelhub): error while fetching data from sentinel hub",
         err.response?.data,
       );
+
       return [];
     });
 }
