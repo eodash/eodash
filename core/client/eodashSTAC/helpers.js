@@ -6,14 +6,15 @@ import { getStyleVariablesState } from "./triggers.js";
 /**
  *  @param {import("stac-ts").StacLink[]} [links]
  *  @param {Record<string,any>} [extraProperties]
+ * @param {string} [rel = "item"]
  **/
-export function generateFeatures(links, extraProperties = {}) {
+export function generateFeatures(links, extraProperties = {}, rel = "item") {
   /**
    * @type {import("geojson").Feature[]}
    */
   const features = [];
   links?.forEach((element) => {
-    if (element.rel === "item" && "latlng" in element) {
+    if (element.rel === rel && "latlng" in element) {
       const [lat, lon] = /** @type {string} */ (element.latlng)
         .split(",")
         .map((it) => Number(it));
