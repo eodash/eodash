@@ -1,5 +1,5 @@
 import mustache from "mustache";
-import { extractLayerConfig } from "@/eodashSTAC/helpers";
+import { addTooltipInteraction, extractLayerConfig } from "@/eodashSTAC/helpers";
 import axios from "@/plugins/axios";
 import { createTiffLayerDefinition, separateEndpointLinks } from "./utils";
 
@@ -61,12 +61,11 @@ export async function processVector(links, jsonformValue, layerId) {
     /** @type {Record<string,any>|undefined} */
     let style;
     if (flatStyleJSON) {
-      const extracted = extractLayerConfig(flatStyleJSON);
+      const extracted = extractLayerConfig(layerId ?? "", flatStyleJSON);
       layerConfig = extracted.layerConfig;
       style = extracted.style;
     }
-
-    layers.push({
+    const layer = {
       type: "Vector",
       source: {
         type: "Vector",
@@ -78,9 +77,13 @@ export async function processVector(links, jsonformValue, layerId) {
       properties: {
         id: layerId + "_vector_process",
         title: "Results " + layerId,
-        ...(layerConfig && { ...layerConfig, ...(style && { style: style }) }),
+        ...(layerConfig && { ...layerConfig }),
       },
-    });
+      ...(style && { style: style }),
+    }
+    // just adds the hover interaction, not the tooltip content itself - see https://github.com/eodash/eodash/issues/191
+    addTooltipInteraction(layer, style);
+    layers.push(layer);
   }
   return layers;
 }

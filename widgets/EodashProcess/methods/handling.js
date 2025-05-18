@@ -186,10 +186,19 @@ export async function handleProcesses({
         ...(imageLayers ?? []),
       ];
       let currentLayers = [...getLayers()];
+      // do cleanup of previous processing layers
       let analysisGroup = currentLayers.find((l) =>
         l.properties.id.includes("AnalysisGroup"),
       );
-      analysisGroup?.layers.push(...layers);
+      // remove layers with Results in title
+      for (let i = analysisGroup?.layers.length - 1; i >= 0; i--) {
+        const title = analysisGroup?.layers[i]?.properties['title'];
+        if (typeof title === 'string' && title.startsWith('Results ')) {
+          analysisGroup?.layers.splice(i, 1);
+        }
+      }
+      // unshift because we intend to place the processing layers on top
+      analysisGroup?.layers.unshift(...layers);
 
       if (mapEl.value) {
         mapEl.value.layers = [...currentLayers];
