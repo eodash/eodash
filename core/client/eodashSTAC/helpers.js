@@ -261,7 +261,6 @@ export const replaceLayer = (currentLayers, oldLayer, newLayers) => {
       newLayers.map((l) => l.properties.id),
     );
     currentLayers.splice(oldLayerIdx, 1, ...newLayers);
-    return currentLayers;
   }
 
   for (const l of currentLayers) {
@@ -269,12 +268,10 @@ export const replaceLayer = (currentLayers, oldLayer, newLayers) => {
       const updatedGroupLyrs = replaceLayer(l.layers, oldLayer, newLayers);
       if (updatedGroupLyrs?.length) {
         l.layers = updatedGroupLyrs;
-        return currentLayers;
       }
     }
   }
-  // we should have a fallback if layer to be replaced was not found
-  return [...newLayers, ...currentLayers];
+  return currentLayers;
 };
 
 /**
