@@ -32,7 +32,11 @@
       >
         Download
       </v-btn>
-      <v-btn v-if="opIndicator" color="primary" @click="loadOPsIndicator(opIndicator)">
+      <v-btn
+        v-if="opIndicator"
+        color="primary"
+        @click="loadOPsIndicator(opIndicator)"
+      >
         back to points
       </v-btn>
     </div>
