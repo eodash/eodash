@@ -197,6 +197,7 @@ export class EodashCollection {
         ...extraProperties,
         ...(this.color && { color: this.color }),
       };
+
       const links = await createLayersFromLinks(
         this.#collectionStac?.id ?? "",
         title,
@@ -204,6 +205,7 @@ export class EodashCollection {
         layerDatetime,
         extraProperties,
       );
+
       jsonArray.push(
         ...links,
         ...(await createLayersFromAssets(
@@ -354,12 +356,13 @@ export class EodashCollection {
     }
 
     /** @type {string | undefined} */
-    const oldLayerID = findLayer(currentLayers, layer)?.properties.id;
+    const oldLayerID = findLayer(currentLayers, layer)?.properties?.id;
 
     if (!oldLayerID) {
       return;
     }
 
+    //@ts-expect-error TODO
     const updatedLayers = replaceLayer(currentLayers, oldLayerID, newLayers);
 
     return updatedLayers;

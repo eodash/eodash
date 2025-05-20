@@ -28,10 +28,15 @@ export const registeredProjections = ["EPSG:4326", "EPSG:3857"];
 /** available projection to be rendered by `EodashMap` */
 export const availableMapProjection = ref("EPSG:3857");
 
-/** @type {import("vue").Ref<HTMLElement & Record<string,any> | null>} */
+/** @type {import("vue").Ref<import("@eox/map").EOxMap | null>} */
 export const mapEl = ref(null);
 
-/** @type {import("vue").Ref<HTMLElement & Record<string,any> | null>} */
+/** @type {import("vue").Ref<import("@eox/map").EOxMap | null>} */
 export const mapCompareEl = ref(null);
 
 export const activeTemplate = ref("");
+/**
+ * in case a stac process is loaded and the main indicator is changed,
+ * this will track the indicator that triggered the process
+ */
+export const opIndicator = ref("");

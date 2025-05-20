@@ -228,9 +228,7 @@ export interface FunctionalWidget<T extends ExecutionTime = "compiletime"> {
    * @param selectedSTAC - Currently selected STAC object
    */
   defineWidget: (
-    selectedSTAC:
-      | import("stac-ts").StacCollection
-      | null,
+    selectedSTAC: import("stac-ts").StacCollection | null,
   ) => StaticWidget<T> | undefined | null | false;
 }
 /**
