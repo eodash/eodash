@@ -14,6 +14,7 @@
 </template>
 <script setup>
 import { useSTAcStore } from "@/store/stac";
+import { opIndicator } from "@/store/states";
 import "@eox/itemfilter";
 
 import { computed, ref } from "vue";
@@ -87,6 +88,10 @@ const props = defineProps({
  * @param {import("stac-ts").StacLink} item
  */
 const selectIndicator = async (item) => {
+  if (opIndicator.value) {
+    opIndicator.value = "";
+  }
+
   if (item) {
     // Reset compare stac to empty
     store.resetSelectedCompareSTAC();

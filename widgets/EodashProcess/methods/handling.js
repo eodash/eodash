@@ -1,16 +1,19 @@
 import log from "loglevel";
 import { extractGeometries, getBboxProperty } from "./utils";
-import { datetime, mapEl } from "@/store/states";
+import { datetime, mapEl, opIndicator } from "@/store/states";
 import axios from "@/plugins/axios";
 import { getLayers } from "@/store/actions";
 import {
   getChartValues,
   processGeoTiff,
   processImage,
+  processSTAC,
   processVector,
 } from "./outputs";
 import { handleGeotiffCustomEndpoints } from "./custom-endpoints/geotiff";
 import { handleChartCustomEndpoints } from "./custom-endpoints/chart";
+import { useSTAcStore } from "@/store/stac";
+import { replaceLayer } from "@/eodashSTAC/helpers";
 /**
  * Fetch and set the jsonform schema to initialize the process
  *
@@ -95,12 +98,20 @@ export async function handleProcesses({
     const serviceLinks = selectedStac.value?.links?.filter(
       (l) => l.rel === "service",
     );
+
     const bboxProperty = getBboxProperty(jsonformSchema.value);
     const jsonformValue = /** @type {Record<string,any>} */ (
       jsonformEl.value?.value
     );
 
     extractGeometries(jsonformValue, jsonformSchema.value);
+
+    const isSTAC = serviceLinks.some((link) => link.endpoint === "STAC");
+
+    if (isSTAC) {
+      await processSTAC(serviceLinks, jsonformValue);
+      return;
+    }
 
     const origBbox = jsonformValue[bboxProperty];
 
@@ -180,17 +191,35 @@ export async function handleProcesses({
     );
 
     if (geotiffLayers?.length || vectorLayers?.length || imageLayers?.length) {
-      const layers = [
+      const layers = /** @type {import("@eox/map").EoxLayer[]} */ ([
         ...(geotiffLayers ?? []),
         ...(vectorLayers ?? []),
         ...(imageLayers ?? []),
-      ];
+      ]);
       let currentLayers = [...getLayers()];
-      let analysisGroup = currentLayers.find((l) =>
-        l.properties.id.includes("AnalysisGroup"),
-      );
-      analysisGroup?.layers.push(...layers);
 
+      let analysisGroup =
+        /*** @type {import("@eox/map/src/layers").EOxLayerTypeGroup | undefined} */ (
+          currentLayers.find((l) => l.properties?.id.includes("AnalysisGroup"))
+        );
+      if (!analysisGroup) {
+        return;
+      }
+
+      for (const layer of layers) {
+        const exists = analysisGroup.layers.find(
+          (l) => l.properties?.id === layer.properties?.id,
+        );
+        if (!exists) {
+          analysisGroup.layers.push(layer);
+        } else {
+          analysisGroup.layers = replaceLayer(
+            analysisGroup.layers,
+            layer.properties?.id ?? "",
+            [layer],
+          );
+        }
+      }
       if (mapEl.value) {
         mapEl.value.layers = [...currentLayers];
       }
@@ -264,4 +293,14 @@ export const onChartClick = (evt) => {
       error,
     );
   }
+};
+
+/**
+ * @param {string} id - The id of the collection holding the observation point
+ */
+export const loadOPsIndicator = (id) => {
+  const stacStore = useSTAcStore();
+  const link = stacStore.stac?.find((link) => link.id === id);
+  opIndicator.value = "";
+  stacStore.loadSelectedSTAC(link?.href);
 };

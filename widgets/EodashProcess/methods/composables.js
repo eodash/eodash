@@ -34,7 +34,7 @@ export const useInitProcess = ({
 
   onMounted(async () => {
     // wait for the layers to be rendered
-    if (mapEl.value?.layers.length > 1) {
+    if ((mapEl.value?.layers.length ?? 0) > 1) {
       await initProcess({
         selectedStac,
         jsonformEl,
