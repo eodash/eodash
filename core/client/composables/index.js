@@ -11,7 +11,7 @@ import {
 } from "@/store/states";
 import eodash from "@/eodash";
 import { useTheme } from "vuetify";
-import { inject, onMounted, onUnmounted, watch } from "vue";
+import { inject, nextTick, onMounted, onUnmounted, watch } from "vue";
 import { useSTAcStore } from "@/store/stac";
 import log from "loglevel";
 import { eodashKey, eoxLayersKey } from "@/utils/keys";
@@ -247,5 +247,42 @@ export const useOnLayersUpdate = (listener) => {
 
   onUnmounted(() => {
     unsubscribe();
+  });
+};
+/**
+ * @param {"layers:updated"|"time:updated"} event
+ * @param {import("@eox/map").EOxMap | null} mapEl
+ * @param {Record<string,any>[]} layers
+ */
+export const useEmitLayersUpdate = async (event, mapEl, layers) => {
+  if (!mapEl) {
+    return;
+  }
+
+  const layersEvents = useEventBus(eoxLayersKey);
+
+  const emit = async () =>
+    mapEl?.updateComplete.then(async () => {
+      await nextTick(() => {
+        layersEvents.emit(event, layers);
+      });
+    });
+
+  const dl = /** @type {import("ol/layer").Group} */ (
+    mapEl.getLayerById("AnalysisGroup")
+  );
+  await new Promise(async (res, _rej) => {
+    if (!dl) {
+      mapEl.map.getLayers().once("add", async () => {
+        await emit();
+        res(true);
+      });
+      return;
+    }
+
+    dl.getLayers().once("add", async () => {
+      await emit();
+      res(true);
+    });
   });
 };

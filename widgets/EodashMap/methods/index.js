@@ -7,7 +7,7 @@ import { storeToRefs } from "pinia";
 import { useEventBus } from "@vueuse/core";
 import { eoxLayersKey } from "@/utils/keys";
 import { posIsSetFromUrl } from "@/utils/states";
-import { useOnLayersUpdate } from "@/composables";
+import { useEmitLayersUpdate, useOnLayersUpdate } from "@/composables";
 /**
  * Holder for previous compare map view as it is overwritten by sync
  * @type { import("ol").View | null} mapElement
@@ -132,9 +132,12 @@ export const useInitMap = (
             JSON.parse(JSON.stringify(layersCollection)),
           );
           mapLayers.value = layersCollection;
-          await nextTick(() => {
-            layersEvent.emit("time:updated", mapLayers.value);
-          });
+
+          useEmitLayersUpdate(
+            "time:updated",
+            mapElement.value,
+            layersCollection,
+          );
           return;
         }
 
@@ -199,11 +202,11 @@ export const useInitMap = (
         );
         mapLayers.value = layersCollection;
         // Emit event to update layers
-        await nextTick(() => {
-          mapElement.value?.updateComplete.then(() => {
-            layersEvent.emit("layers:updated", mapLayers.value);
-          });
-        });
+        await useEmitLayersUpdate(
+          "layers:updated",
+          mapElement.value,
+          mapLayers.value,
+        );
       }
     },
     { immediate: true },
@@ -218,6 +221,7 @@ export const useInitMap = (
  * @param {import("@/eodashSTAC/EodashCollection").EodashCollection[]} eodashCols
  * @param {import("vue").Ref<Exclude<import("@/types").EodashStyleJson["tooltip"],undefined>>} tooltipProperties
  */
+
 export const useUpdateTooltipProperties = (eodashCols, tooltipProperties) => {
   useOnLayersUpdate(async () => {
     const tooltips = [];

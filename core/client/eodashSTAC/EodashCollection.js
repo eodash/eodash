@@ -70,8 +70,7 @@ export class EodashCollection {
     // Load collectionstac if not yet initialized
     stac = await this.fetchCollection();
 
-    const isObservationPoint =
-      stac?.endpointtype === "GeoDB" || /**@type {boolean} */ (stac?.locations);
+    const isObservationPoint = stac?.endpointtype === "GeoDB" //|| /**@type {boolean} */ (stac?.locations);
 
     if (linkOrDate instanceof Date) {
       // if collectionStac not yet initialized we do it here
