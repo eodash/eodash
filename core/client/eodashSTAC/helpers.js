@@ -246,7 +246,7 @@ export const findLayer = (layers, layer) => {
  * @param {Record<string,any>[]} currentLayers
  * @param {string} oldLayer - id of the layer to be replaced
  * @param {Record<string,any>[]} newLayers - array of layers to replace the old layer
- * @returns {Record<string,any>[] | undefined}
+ * @returns {Record<string,any>[]}
  */
 export const replaceLayer = (currentLayers, oldLayer, newLayers) => {
   const oldLayerIdx = currentLayers.findIndex(
@@ -273,6 +273,8 @@ export const replaceLayer = (currentLayers, oldLayer, newLayers) => {
       }
     }
   }
+  // we should have a fallback if layer to be replaced was not found
+  return [...newLayers, ...currentLayers];
 };
 
 /**

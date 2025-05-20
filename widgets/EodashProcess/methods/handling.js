@@ -11,6 +11,7 @@ import {
 } from "./outputs";
 import { handleGeotiffCustomEndpoints } from "./custom-endpoints/geotiff";
 import { handleChartCustomEndpoints } from "./custom-endpoints/chart";
+import { replaceLayer } from "@/eodashSTAC/helpers";
 /**
  * Fetch and set the jsonform schema to initialize the process
  *
@@ -107,6 +108,7 @@ export async function handleProcesses({
     const specUrl = /** @type {string} */ (
       selectedStac.value?.["eodash:vegadefinition"]
     );
+    const layerId = selectedStac.value?.id ?? "";
 
     [chartSpec.value, chartData.value] = await getChartValues({
       links: serviceLinks,
@@ -135,7 +137,7 @@ export async function handleProcesses({
     const geotiffLayers = await processGeoTiff({
       links: serviceLinks,
       jsonformValue,
-      layerId: selectedStac.value?.id ?? "",
+      layerId,
       isPolling,
       projection:
         //@ts-expect-error TODO
@@ -156,7 +158,7 @@ export async function handleProcesses({
     const vectorLayers = await processVector(
       serviceLinks,
       jsonformValue,
-      selectedStac.value?.id ?? "",
+      layerId,
     );
 
     if (vectorLayers?.length) {
@@ -180,28 +182,20 @@ export async function handleProcesses({
     );
 
     if (geotiffLayers?.length || vectorLayers?.length || imageLayers?.length) {
-      const layers = [
+      const newLayers = [
         ...(geotiffLayers ?? []),
         ...(vectorLayers ?? []),
         ...(imageLayers ?? []),
       ];
       let currentLayers = [...getLayers()];
-      // do cleanup of previous processing layers
-      let analysisGroup = currentLayers.find((l) =>
-        l.properties.id.includes("AnalysisGroup"),
-      );
-      // remove layers with Results in title
-      for (let i = analysisGroup?.layers.length - 1; i >= 0; i--) {
-        const title = analysisGroup?.layers[i]?.properties['title'];
-        if (typeof title === 'string' && title.startsWith('Results ')) {
-          analysisGroup?.layers.splice(i, 1);
-        }
+      // remove previous processing layer of the same id
+      for (let i = newLayers.length - 1; i >= 0; i--) {
+        //@ts-expect-error Why?
+        currentLayers = replaceLayer(currentLayers, newLayers[i].properties.id, [newLayers[i]]);
       }
-      // unshift because we intend to place the processing layers on top
-      analysisGroup?.layers.unshift(...layers);
 
       if (mapEl.value) {
-        mapEl.value.layers = [...currentLayers];
+        mapEl.value.layers = currentLayers;
       }
     }
     loading.value = false;
