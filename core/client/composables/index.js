@@ -271,7 +271,7 @@ export const useEmitLayersUpdate = async (event, mapEl, layers) => {
   const dl = /** @type {import("ol/layer").Group} */ (
     mapEl.getLayerById("AnalysisGroup")
   );
-  await new Promise(async (res, _rej) => {
+  await new Promise((res, _rej) => {
     if (!dl) {
       mapEl.map.getLayers().once("add", async () => {
         await emit();

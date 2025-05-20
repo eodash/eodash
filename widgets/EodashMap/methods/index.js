@@ -1,11 +1,9 @@
 import { createLayersConfig } from "./create-layers-config";
 import { setMapProjFromCol } from "@/eodashSTAC/triggers";
-import { nextTick, onMounted, onUnmounted, watch } from "vue";
+import { onMounted, onUnmounted, watch } from "vue";
 import log from "loglevel";
 import { useSTAcStore } from "@/store/stac";
 import { storeToRefs } from "pinia";
-import { useEventBus } from "@vueuse/core";
-import { eoxLayersKey } from "@/utils/keys";
 import { posIsSetFromUrl } from "@/utils/states";
 import { useEmitLayersUpdate, useOnLayersUpdate } from "@/composables";
 /**
@@ -79,7 +77,6 @@ export const useInitMap = (
     eodashCols.values,
     datetime.value,
   );
-  const layersEvent = useEventBus(eoxLayersKey);
 
   const stopIndicatorWatcher = watch(
     [selectedIndicator, datetime],
