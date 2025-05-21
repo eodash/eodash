@@ -14,6 +14,7 @@ import { handleGeotiffCustomEndpoints } from "./custom-endpoints/geotiff";
 import { handleChartCustomEndpoints } from "./custom-endpoints/chart";
 import { useSTAcStore } from "@/store/stac";
 import { replaceLayer } from "@/eodashSTAC/helpers";
+import { useEmitLayersUpdate } from "@/composables/index";
 /**
  * Fetch and set the jsonform schema to initialize the process
  *
@@ -211,7 +212,7 @@ export async function handleProcesses({
           (l) => l.properties?.id === layer.properties?.id,
         );
         if (!exists) {
-          analysisGroup.layers.push(layer);
+          analysisGroup.layers.unshift(layer);
         } else {
           analysisGroup.layers = replaceLayer(
             analysisGroup.layers,
@@ -221,6 +222,11 @@ export async function handleProcesses({
         }
       }
       if (mapEl.value) {
+        useEmitLayersUpdate(
+          "process:updated",
+          mapEl.value,
+          currentLayers,
+        );
         mapEl.value.layers = [...currentLayers];
       }
     }

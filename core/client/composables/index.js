@@ -236,7 +236,7 @@ export const useGetTemplates = () => {
  * Listens to the `layers:updated` and `time:updated` events and calls
  *
  * @param {import("@vueuse/core").EventBusListener<
- * "layers:updated"|"time:updated",
+ * "layers:updated"|"time:updated" | "process:updated",
  * {layers:Record<string,any>[]| undefined}
  * >} listener
  */
@@ -250,7 +250,7 @@ export const useOnLayersUpdate = (listener) => {
   });
 };
 /**
- * @param {"layers:updated"|"time:updated"} event
+ * @param {"layers:updated"|"time:updated"|"process:updated"} event
  * @param {import("@eox/map").EOxMap | null} mapEl
  * @param {Record<string,any>[]} layers
  */
@@ -262,10 +262,12 @@ export const useEmitLayersUpdate = async (event, mapEl, layers) => {
   const layersEvents = useEventBus(eoxLayersKey);
 
   const emit = async () =>
-    mapEl?.updateComplete.then(async () => {
+    // mapEl?.updateComplete.then(async () => {
       await nextTick(() => {
         layersEvents.emit(event, layers);
-      });
+        console.log("triggered layers update event:",event);
+
+      // });
     });
 
   const dl = /** @type {import("ol/layer").Group} */ (

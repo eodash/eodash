@@ -62,7 +62,9 @@ export const useInitProcess = ({
   });
 
   useOnLayersUpdate(async (evt, _payload) => {
-    if (evt === "layers:updated") {
+    if (evt !== "layers:updated") {
+      return;
+    }
       await initProcess({
         selectedStac,
         jsonformEl,
@@ -73,7 +75,6 @@ export const useInitProcess = ({
         loading,
         isPolling,
       });
-    }
   });
 };
 
