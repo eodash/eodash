@@ -262,12 +262,10 @@ export const useEmitLayersUpdate = async (event, mapEl, layers) => {
   const layersEvents = useEventBus(eoxLayersKey);
 
   const emit = async () =>
-    // mapEl?.updateComplete.then(async () => {
+    mapEl?.updateComplete.then(async () => {
       await nextTick(() => {
         layersEvents.emit(event, layers);
-        console.log("triggered layers update event:",event);
-
-      // });
+      });
     });
 
   const dl = /** @type {import("ol/layer").Group} */ (

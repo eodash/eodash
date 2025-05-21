@@ -222,12 +222,9 @@ export async function handleProcesses({
         }
       }
       if (mapEl.value) {
-        useEmitLayersUpdate(
-          "process:updated",
-          mapEl.value,
-          currentLayers,
-        );
-        mapEl.value.layers = [...currentLayers];
+        const layers = [...currentLayers];
+        useEmitLayersUpdate("process:updated", mapEl.value, layers);
+        mapEl.value.layers = layers;
       }
     }
     loading.value = false;

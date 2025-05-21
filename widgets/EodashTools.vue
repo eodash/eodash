@@ -7,7 +7,9 @@
       <v-btn
         v-if="props.showIndicatorsBtn"
         color="secondary"
+        :size="btnSize"
         class="text-none py-2 px-4"
+        :class="btnClasses"
         :append-icon="[mdiPlus]"
         :text="indicatorBtnText"
         @click="dialog = !dialog"
@@ -47,9 +49,11 @@ import { useDisplay } from "vuetify";
 
 const dialog = ref(false);
 
-const { smAndDown } = useDisplay();
+const { smAndDown, xxl } = useDisplay();
 const popupWidth = computed(() => (smAndDown.value ? "80%" : "70%"));
 const popupHeight = computed(() => (smAndDown.value ? "90%" : "70%"));
+const btnClasses = computed(() => ({ "text-body-2": !xxl.value }));
+const btnSize = computed(() => (xxl.value ? undefined : "v-small"));
 
 const props = defineProps({
   showIndicatorsBtn: {
@@ -82,6 +86,4 @@ const props = defineProps({
 const rootEl = ref(null);
 makePanelTransparent(rootEl);
 </script>
-<style lang="scss" scoped>
-
-</style>
+<style lang="scss" scoped></style>

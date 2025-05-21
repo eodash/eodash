@@ -65,16 +65,16 @@ export const useInitProcess = ({
     if (evt !== "layers:updated") {
       return;
     }
-      await initProcess({
-        selectedStac,
-        jsonformEl,
-        jsonformSchema,
-        chartSpec,
-        isProcessed,
-        processResults,
-        loading,
-        isPolling,
-      });
+    await initProcess({
+      selectedStac,
+      jsonformEl,
+      jsonformSchema,
+      chartSpec,
+      isProcessed,
+      processResults,
+      loading,
+      isPolling,
+    });
   });
 };
 
