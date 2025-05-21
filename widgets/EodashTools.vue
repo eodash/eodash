@@ -48,8 +48,8 @@ import { useDisplay } from "vuetify";
 const dialog = ref(false);
 
 const { smAndDown } = useDisplay();
-const popupWidth = computed(() => (smAndDown.value ? "80%" : "1500px"));
-const popupHeight = computed(() => (smAndDown.value ? "90%" : "800px"));
+const popupWidth = computed(() => (smAndDown.value ? "80%" : "70%"));
+const popupHeight = computed(() => (smAndDown.value ? "90%" : "70%"));
 
 const props = defineProps({
   showIndicatorsBtn: {
@@ -82,3 +82,6 @@ const props = defineProps({
 const rootEl = ref(null);
 makePanelTransparent(rootEl);
 </script>
+<style lang="scss" scoped>
+
+</style>
