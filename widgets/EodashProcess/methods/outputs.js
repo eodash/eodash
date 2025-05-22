@@ -1,5 +1,8 @@
 import mustache from "mustache";
-import { extractLayerConfig } from "@/eodashSTAC/helpers";
+import {
+  addTooltipInteraction,
+  extractLayerConfig,
+} from "@/eodashSTAC/helpers";
 import axios from "@/plugins/axios";
 import { createTiffLayerDefinition, separateEndpointLinks } from "./utils";
 
@@ -18,7 +21,7 @@ export function processImage(links, jsonformValue, origBbox) {
     layers.push({
       type: "Image",
       properties: {
-        id: link.id,
+        id: link.id + "_process",
         title: "Results " + link.id,
       },
       source: {
@@ -61,12 +64,11 @@ export async function processVector(links, jsonformValue, layerId) {
     /** @type {Record<string,any>|undefined} */
     let style;
     if (flatStyleJSON) {
-      const extracted = extractLayerConfig(flatStyleJSON);
+      const extracted = extractLayerConfig(layerId ?? "", flatStyleJSON);
       layerConfig = extracted.layerConfig;
       style = extracted.style;
     }
-
-    layers.push({
+    const layer = {
       type: "Vector",
       source: {
         type: "Vector",
@@ -76,11 +78,15 @@ export async function processVector(links, jsonformValue, layerId) {
         format: "GeoJSON",
       },
       properties: {
-        id: layerId + "_vector_process",
+        id: link.id + "_process",
         title: "Results " + layerId,
-        ...(layerConfig && { ...layerConfig, ...(style && { style: style }) }),
+        ...(layerConfig && { ...layerConfig }),
       },
-    });
+      ...(style && { style: style }),
+    };
+    // just adds the hover interaction, not the tooltip content itself - see https://github.com/eodash/eodash/issues/191
+    addTooltipInteraction(layer, style);
+    layers.push(layer);
   }
   return layers;
 }
@@ -293,13 +299,14 @@ export async function processGeoTiff({
   for (const link of geotiffLinks ?? []) {
     urls.push(mustache.render(link.href, { ...(jsonformValue ?? {}) }));
   }
-  return [
+  const definitions = geotiffLinks.map((geotiffLink) =>
     createTiffLayerDefinition(
-      geotiffLinks[0],
+      geotiffLink,
       layerId,
       urls,
       projection,
       processId,
     ),
-  ];
+  );
+  return definitions;
 }

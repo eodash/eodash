@@ -4,6 +4,7 @@
       v-if="exportMap"
       class="map-btn"
       :icon="[mdiMapPlus]"
+      v-tooltip:bottom="'Extract Storytelling configuration'"
       @click="showMapState = !showMapState"
     />
     <ExportState v-if="exportMap" v-model="showMapState" />
@@ -11,12 +12,14 @@
     <v-btn
       class="map-btn"
       :icon="[mdiEarthBox]"
+      v-tooltip:bottom="'Change map projection'"
       v-if="changeProjection && !!availableMapProjection"
       @click="changeMapProjection(availableMapProjection)"
     />
     <v-btn
       class="map-btn"
       :icon="[compareIcon]"
+      v-tooltip:bottom="'Compare mode'"
       v-if="compareIndicators"
       @click="onCompareClick"
     />
