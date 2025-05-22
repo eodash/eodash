@@ -2,6 +2,7 @@ import axios from "@/plugins/axios";
 import { getBboxProperty } from "../../utils";
 import { toAbsolute } from "stac-js/src/http.js";
 import { currentUrl } from "@/store/states";
+import { getDatetimeProperty } from "@/eodashSTAC/helpers";
 
 /**
  * @param {import("^/EodashProcess/types").CustomEnpointInput} inputs
@@ -77,13 +78,14 @@ async function fetchVedaCOGsConfig(selectedStac) {
   /** @type {{endpoint:string; datetime:string}[]} */
   const configs = [];
   for (const collection of collections) {
+    const datetimeProperty = /** @type string **/ (
+      getDatetimeProperty(collection.links)
+    );
     let itemLinks = collection.links.filter((link) => link.rel == "item");
     configs.push(
       ...itemLinks.map((link) => ({
         endpoint: /** @type {string} */ (link["cog_href"]),
-        datetime: /** @type string **/ (
-          link["datetime"] ?? link["start_datetime"]
-        ),
+        datetime: /** @type string **/ (link[datetimeProperty]),
       })),
     );
   }

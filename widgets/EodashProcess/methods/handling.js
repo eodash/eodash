@@ -15,6 +15,7 @@ import { handleChartCustomEndpoints } from "./custom-endpoints/chart";
 import { useSTAcStore } from "@/store/stac";
 import { replaceLayer } from "@/eodashSTAC/helpers";
 import { useEmitLayersUpdate } from "@/composables/index";
+
 /**
  * Fetch and set the jsonform schema to initialize the process
  *
@@ -119,6 +120,7 @@ export async function handleProcesses({
     const specUrl = /** @type {string} */ (
       selectedStac.value?.["eodash:vegadefinition"]
     );
+    const layerId = selectedStac.value?.id ?? "";
 
     [chartSpec.value, chartData.value] = await getChartValues({
       links: serviceLinks,
@@ -147,7 +149,7 @@ export async function handleProcesses({
     const geotiffLayers = await processGeoTiff({
       links: serviceLinks,
       jsonformValue,
-      layerId: selectedStac.value?.id ?? "",
+      layerId,
       isPolling,
       projection:
         //@ts-expect-error TODO
@@ -168,7 +170,7 @@ export async function handleProcesses({
     const vectorLayers = await processVector(
       serviceLinks,
       jsonformValue,
-      selectedStac.value?.id ?? "",
+      layerId,
     );
 
     if (vectorLayers?.length) {
@@ -192,7 +194,7 @@ export async function handleProcesses({
     );
 
     if (geotiffLayers?.length || vectorLayers?.length || imageLayers?.length) {
-      const layers = /** @type {import("@eox/map").EoxLayer[]} */ ([
+      const newLayers = /** @type {import("@eox/map").EoxLayer[]} */ ([
         ...(geotiffLayers ?? []),
         ...(vectorLayers ?? []),
         ...(imageLayers ?? []),
@@ -207,7 +209,7 @@ export async function handleProcesses({
         return;
       }
 
-      for (const layer of layers) {
+      for (const layer of newLayers) {
         const exists = analysisGroup.layers.find(
           (l) => l.properties?.id === layer.properties?.id,
         );

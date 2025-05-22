@@ -95,7 +95,7 @@ export async function createTiffLayerDefinition(
             sources: urls.map((url) => ({ url })),
           },
           properties: {
-            id: layerId + "_geotiff_process" + processId,
+            id: link.id + "_process" + processId,
             title: "Results " + layerId,
             ...(layerConfig && { layerConfig: layerConfig }),
             layerControlToolsExpand: true,
