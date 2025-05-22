@@ -1,14 +1,13 @@
 <template>
-  <div
-    ref="rootEl"
-    class="d-flex flex-column fill-height overflow-auto bg-primary"
-  >
-    <div class="d-flex flex-row justify-space-between pa-4 align-center">
+  <div ref="rootEl" class="d-flex flex-column fill-height bg-primary">
+    <div
+      class="d-flex flex-row align-center fill-height justify-space-between pa-2 align-center"
+    >
       <v-btn
         v-if="props.showIndicatorsBtn"
         color="secondary"
         :size="btnSize"
-        class="text-none py-2 px-4"
+        class="text-none"
         :class="btnClasses"
         :append-icon="[mdiPlus]"
         :text="indicatorBtnText"
@@ -49,11 +48,14 @@ import { useDisplay } from "vuetify";
 
 const dialog = ref(false);
 
-const { smAndDown, xxl } = useDisplay();
+const { smAndDown, xxl,lgAndUp } = useDisplay();
 const popupWidth = computed(() => (smAndDown.value ? "80%" : "70%"));
 const popupHeight = computed(() => (smAndDown.value ? "90%" : "70%"));
-const btnClasses = computed(() => ({ "text-body-2": !xxl.value }));
-const btnSize = computed(() => (xxl.value ? undefined : "v-small"));
+const btnClasses = computed(() => ({
+  "text-body-2": !xxl.value,
+  "py-2": lgAndUp.value,
+}));
+const btnSize = computed(() => (xxl.value ? undefined : "small"));
 
 const props = defineProps({
   showIndicatorsBtn: {

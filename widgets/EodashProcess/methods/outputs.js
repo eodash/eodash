@@ -1,8 +1,5 @@
 import mustache from "mustache";
-import {
-  addTooltipInteraction,
-  extractLayerConfig,
-} from "@/eodashSTAC/helpers";
+import { extractLayerConfig } from "@/eodashSTAC/helpers";
 import axios from "@/plugins/axios";
 import { createTiffLayerDefinition, separateEndpointLinks } from "./utils";
 import { useSTAcStore } from "@/store/stac";
@@ -87,8 +84,6 @@ export async function processVector(links, jsonformValue, layerId) {
       },
       ...(style && { style: style }),
     };
-    // just adds the hover interaction, not the tooltip content itself - see https://github.com/eodash/eodash/issues/191
-    addTooltipInteraction(layer, style);
     layers.push(layer);
   }
   return layers;

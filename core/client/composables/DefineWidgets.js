@@ -169,10 +169,10 @@ const getWidgetDefinition = (config) => {
   }
   importedWidget.title = config?.title ?? "";
   importedWidget.id =
-  // this is a workaround for forcing EodashProcess to update whenever an indicator is selected
-  // will be removed when we fix the interactions issue.
-  //@ts-expect-error TODO
-  config.widget?.name === "EodashProcess"
+    // this is a workaround for forcing EodashProcess to update whenever an indicator is selected
+    // will be removed when we fix the interactions issue.
+    //@ts-expect-error TODO
+    config.widget?.name === "EodashProcess"
       ? Symbol()
       : (config?.id ?? importedWidget.id);
 
