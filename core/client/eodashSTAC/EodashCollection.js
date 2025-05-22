@@ -7,6 +7,7 @@ import {
   fetchStyle,
   findLayer,
   generateFeatures,
+  getDatetimeProperty,
   replaceLayer,
 } from "./helpers";
 import {
@@ -158,7 +159,7 @@ export class EodashCollection {
 
     const layerDatetime = extractLayerDatetime(
       this.getItems(),
-      item.properties?.datetime ?? itemDatetime,
+      item.properties?.datetime ?? item.properties.start_datetime ?? itemDatetime,
     );
 
     const dataAssets = Object.keys(item?.assets ?? {}).reduce((data, ast) => {
@@ -248,13 +249,19 @@ export class EodashCollection {
   }
 
   getItems() {
+    const datetimeProperty = getDatetimeProperty(this.#collectionStac?.links)
+    const items = this.#collectionStac?.links.filter(
+      (i) => i.rel === "item"
+    )
+    if (!datetimeProperty) {
+      return items
+    }
     return (
-      this.#collectionStac?.links
-        .filter((i) => i.rel === "item")
+      items
         // sort by `datetime`, where oldest is first in array
-        .sort((a, b) =>
-          /** @type {number} */ (a.datetime) <
-          /** @type {number} */ (b.datetime)
+        ?.sort((a, b) =>
+          /** @type {number} */ (a[datetimeProperty]) <
+          /** @type {number} */ (b[datetimeProperty])
             ? -1
             : 1,
         )
@@ -323,12 +330,18 @@ export class EodashCollection {
    */
   async updateLayerJson(datetime, layer, map) {
     await this.fetchCollection();
-
+    const datetimeProperty = getDatetimeProperty(this.#collectionStac?.links);
+    if (!datetimeProperty) {
+      console.warn(
+        "[eodash] no datetime property found in collection",
+      );
+      return
+    }
     // get the link of the specified date
     const specifiedLink = this.getItems()?.find(
       (item) =>
-        typeof item.datetime === "string" &&
-        new Date(item.datetime).toISOString() === datetime,
+        typeof item[datetimeProperty] === "string" &&
+        new Date(item[datetimeProperty]).toISOString() === datetime,
     );
 
     if (!specifiedLink) {
