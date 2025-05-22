@@ -503,7 +503,13 @@ export class EodashCollection {
           },
         ];
       })(),
-      interactions: [],
+      interactions: (() => {
+        const oldLayer = findLayer([...getLayers()], "geodb-collection");
+        if (!oldLayer || !oldLayer.interactions?.length) {
+          return [];
+        }
+        return [...oldLayer.interactions];
+      })(),
     };
   }
 }
