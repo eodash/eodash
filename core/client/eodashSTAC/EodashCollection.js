@@ -159,7 +159,9 @@ export class EodashCollection {
 
     const layerDatetime = extractLayerDatetime(
       this.getItems(),
-      item.properties?.datetime ?? item.properties.start_datetime ?? itemDatetime,
+      item.properties?.datetime ??
+        item.properties.start_datetime ??
+        itemDatetime,
     );
 
     const dataAssets = Object.keys(item?.assets ?? {}).reduce((data, ast) => {
@@ -249,12 +251,10 @@ export class EodashCollection {
   }
 
   getItems() {
-    const datetimeProperty = getDatetimeProperty(this.#collectionStac?.links)
-    const items = this.#collectionStac?.links.filter(
-      (i) => i.rel === "item"
-    )
+    const datetimeProperty = getDatetimeProperty(this.#collectionStac?.links);
+    const items = this.#collectionStac?.links.filter((i) => i.rel === "item");
     if (!datetimeProperty) {
-      return items
+      return items;
     }
     return (
       items
@@ -269,12 +269,13 @@ export class EodashCollection {
   }
 
   getDates() {
-    const datetimeProperty = getDatetimeProperty(this.#collectionStac?.links)
+    const datetimeProperty = getDatetimeProperty(this.#collectionStac?.links);
     if (!datetimeProperty) {
       return [];
     }
-    return this.getItems()?.map((i) => new Date(/** @type {number} */ (i[datetimeProperty])));
-
+    return this.getItems()?.map(
+      (i) => new Date(/** @type {number} */ (i[datetimeProperty])),
+    );
   }
 
   async getExtent() {
@@ -288,10 +289,10 @@ export class EodashCollection {
    *  @param {Date} [date]
    **/
   getItem(date) {
-    const datetimeProperty = getDatetimeProperty(this.#collectionStac?.links)
+    const datetimeProperty = getDatetimeProperty(this.#collectionStac?.links);
     if (!datetimeProperty) {
       // in case no datetime property is found, return the first item
-      return this.getItems()?.[0]
+      return this.getItems()?.[0];
     }
     return date
       ? this.getItems()?.sort((a, b) => {
@@ -331,10 +332,8 @@ export class EodashCollection {
     await this.fetchCollection();
     const datetimeProperty = getDatetimeProperty(this.#collectionStac?.links);
     if (!datetimeProperty) {
-      console.warn(
-        "[eodash] no datetime property found in collection",
-      );
-      return
+      console.warn("[eodash] no datetime property found in collection");
+      return;
     }
     // get the link of the specified date
     const specifiedLink = this.getItems()?.find(

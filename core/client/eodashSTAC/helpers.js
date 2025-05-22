@@ -179,7 +179,7 @@ export const extractLayerDatetime = (links, currentStep) => {
   // check if links has a datetime value
   const dateProperty = getDatetimeProperty(links);
 
-if (!dateProperty) {
+  if (!dateProperty) {
     return undefined;
   }
 
@@ -450,7 +450,9 @@ export function getDatetimeProperty(links) {
   // TODO: consider other properties for datetime ranges
   const datetimeProperties = ["datetime", "start_datetime", "end_datetime"];
   for (const prop of datetimeProperties) {
-    const propExists = links.some((l) => l[prop] && typeof l[prop] === "string");
+    const propExists = links.some(
+      (l) => l[prop] && typeof l[prop] === "string",
+    );
     if (!propExists) {
       continue;
     }

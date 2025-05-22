@@ -193,13 +193,17 @@ export async function handleProcesses({
       );
       // remove previous processing layer of the same id
       for (let i = newLayers.length - 1; i >= 0; i--) {
-        //@ts-expect-error TODO
-        currentLayers = replaceLayer(currentLayers, newLayers[i].properties.id, [newLayers[i]]);
-        
-        if (!(analysisGroup?.layers?.find(
+        currentLayers = replaceLayer(
+          currentLayers,
+          //@ts-expect-error TODO
+          newLayers[i].properties.id,
+          [newLayers[i]],
+        );
+        const notExistingLayer = !analysisGroup?.layers?.find(
           //@ts-expect-error TODO
           (l) => l.properties.id === newLayers[i]?.properties?.id,
-        ))) {
+        );
+        if (notExistingLayer) {
           analysisGroup?.layers?.unshift(newLayers[i]);
         }
       }

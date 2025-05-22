@@ -78,14 +78,14 @@ async function fetchVedaCOGsConfig(selectedStac) {
   /** @type {{endpoint:string; datetime:string}[]} */
   const configs = [];
   for (const collection of collections) {
-    const datetimeProperty =/** @type string **/(getDatetimeProperty())
+    const datetimeProperty = /** @type string **/ (
+      getDatetimeProperty(collection.links)
+    );
     let itemLinks = collection.links.filter((link) => link.rel == "item");
     configs.push(
       ...itemLinks.map((link) => ({
         endpoint: /** @type {string} */ (link["cog_href"]),
-        datetime: /** @type string **/ (
-          link[datetimeProperty]
-        ),
+        datetime: /** @type string **/ (link[datetimeProperty]),
       })),
     );
   }
