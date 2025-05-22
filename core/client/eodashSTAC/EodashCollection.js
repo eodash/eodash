@@ -269,18 +269,12 @@ export class EodashCollection {
   }
 
   getDates() {
-    return (
-      this.#collectionStac?.links
-        .filter((i) => i.rel === "item")
-        // sort by `datetime`, where oldest is first in array
-        .sort((a, b) =>
-          /** @type {number} */ (a.datetime) <
-          /** @type {number} */ (b.datetime)
-            ? -1
-            : 1,
-        )
-        .map((i) => new Date(/** @type {number} */ (i.datetime)))
-    );
+    const datetimeProperty = getDatetimeProperty(this.#collectionStac?.links)
+    if (!datetimeProperty) {
+      return [];
+    }
+    return this.getItems()?.map((i) => new Date(/** @type {number} */ (i[datetimeProperty])));
+
   }
 
   async getExtent() {
@@ -294,14 +288,19 @@ export class EodashCollection {
    *  @param {Date} [date]
    **/
   getItem(date) {
+    const datetimeProperty = getDatetimeProperty(this.#collectionStac?.links)
+    if (!datetimeProperty) {
+      // in case no datetime property is found, return the first item
+      return this.getItems()?.[0]
+    }
     return date
       ? this.getItems()?.sort((a, b) => {
           const distanceA = Math.abs(
-            new Date(/** @type {number} */ (a.datetime)).getTime() -
+            new Date(/** @type {number} */ (a[datetimeProperty])).getTime() -
               date.getTime(),
           );
           const distanceB = Math.abs(
-            new Date(/** @type {number} */ (b.datetime)).getTime() -
+            new Date(/** @type {number} */ (b[datetimeProperty])).getTime() -
               date.getTime(),
           );
           return distanceA - distanceB;
