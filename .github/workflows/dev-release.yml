@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       comment:
-        description: "Optional comment"
+        description: "Optional comment (can not contain spaces)"
         required: false
         type: string
 

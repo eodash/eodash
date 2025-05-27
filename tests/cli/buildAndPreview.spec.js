@@ -48,7 +48,7 @@ describe("test build and preview commands", () => {
         "--lib",
       ]);
       expect(existsSync(".eodash/dist/eo-dash.js")).toBeTruthy();
-      expect(existsSync(".eodash/dist/style.css")).toBeTruthy();
+      expect(existsSync(".eodash/dist/eo-dash.css")).toBeTruthy();
     });
 
     it("test --base flag", async () => {

@@ -60,7 +60,7 @@ export function extractGeometries(jsonformValue, jsonformSchema) {
  * @param {*} processId
  * @returns
  */
-export async function createLayerDefinition(
+export async function createTiffLayerDefinition(
   link,
   layerId,
   urls,
@@ -95,7 +95,7 @@ export async function createLayerDefinition(
             sources: urls.map((url) => ({ url })),
           },
           properties: {
-            id: layerId + "_geotiff_process" + processId,
+            id: link.id + "_process" + processId,
             title: "Results " + layerId,
             ...(layerConfig && { layerConfig: layerConfig }),
             layerControlToolsExpand: true,
@@ -136,3 +136,131 @@ export const download = (fileName, content) => {
   URL.revokeObjectURL(url);
   link.remove();
 };
+
+/**
+ * Generate time pairs from a temporal extent
+ * @param {import("stac-ts").TemporalExtent} stacExtent - [start, end]
+ * @param {import("stac-ts").TemporalExtent} [userExtent] -[start, end]
+ * @param {string} [distribution] - daily, weekly, monthly, or yearly
+ */
+export function generateTimePairs(stacExtent, userExtent, distribution) {
+  // check whether the userExtent is provided
+  // if it is check that it doesn't exceed the stacExtent
+  // and clamp it otherwise
+
+  /** @type {string|Date} */
+  let from = "";
+
+  /** @type {string|Date} */
+  let to = "";
+  [from, to] = /** @type {[string, string]} */ (userExtent ?? ["", ""]);
+
+  const [stacFrom, stacTo] = /** @type {[string, string]} */ (
+    stacExtent ?? ["", ""]
+  );
+
+  try {
+    if (from && to) {
+      from = new Date(from);
+      to = new Date(to);
+    } else {
+      from = new Date(stacFrom);
+      to = new Date(stacTo);
+    }
+
+    if (from < new Date(stacFrom) || from > new Date(stacTo)) {
+      console.warn(
+        "[eodash] warn: start date is outside of the collection temporal extent and will be clamped",
+        `\nprovided start date:${from.toISOString()}`,
+        `\ncollection start date:${stacFrom}`,
+      );
+      from = new Date(stacFrom);
+    }
+
+    if (to > new Date(stacTo) || to < new Date(stacFrom)) {
+      console.warn(
+        "[eodash] warn: end date is outside of the collection temporal extent and will be clamped",
+        `\nprovided end date:${to.toISOString()}`,
+        `\ncollection end date:${stacTo}`,
+      );
+      to = new Date(stacTo);
+    }
+
+    if (from > to) {
+      console.error(
+        "[eodash] Error: start date is greater than end date",
+        from,
+        to,
+      );
+      return [];
+    }
+  } catch (e) {
+    //@ts-expect-error e should be an error
+    console.error("[eodash] Invalid date:", e.message);
+    return [];
+  }
+
+  const startDate = /** @type {Date} */ (from).toISOString();
+  const endDate = /** @type {Date} */ (to).toISOString();
+
+  if (!startDate || !endDate) {
+    return [];
+  }
+  const times = [];
+  let latest = new Date(endDate);
+  const start = new Date(startDate);
+  const oneDay = 24 * 60 * 60 * 1000;
+  // Use fixed step of 1 day (in milliseconds)
+  const step =
+    distribution === "daily"
+      ? oneDay
+      : distribution === "weekly"
+        ? oneDay * 7
+        : distribution === "monthly"
+          ? oneDay * 30
+          : distribution === "yearly"
+            ? oneDay * 365
+            : oneDay;
+
+  // Add dates, limiting to 31 dates (30 pairs maximum)
+  while (latest >= start && times.length < 31) {
+    times.push(new Date(latest));
+    latest.setTime(latest.getTime() - step);
+  }
+
+  const timePairs = [];
+  for (let i = 0; i < times.length - 1; i++) {
+    timePairs.push([times[i].toISOString(), times[i + 1].toISOString()]);
+  }
+
+  return timePairs;
+}
+
+/**
+ * Filter links to separate those with and without endpoint property
+ * @param {import("stac-ts").StacLink[] | undefined} links
+ * @param {string} [relType] - Optional relationship type
+ * @param {string} [contentType] - Optional content type
+ * @returns {[import("stac-ts").StacLink[], import("stac-ts").StacLink[]]}
+ */
+export function separateEndpointLinks(links, relType, contentType) {
+  if (!links) return [[], []];
+  const standardLinks = [];
+  const endpointLinks = [];
+
+  for (const link of links) {
+    // Check if the link matches the specified relType and contentType (if provided)
+    const relTypeMatch = relType ? link.rel === relType : true;
+    const contentTypeMatch = contentType ? link.type === contentType : true;
+
+    if (relTypeMatch && contentTypeMatch) {
+      if (link.endpoint) {
+        endpointLinks.push(link);
+      } else {
+        standardLinks.push(link);
+      }
+    }
+  }
+
+  return [standardLinks, endpointLinks];
+}

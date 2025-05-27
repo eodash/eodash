@@ -110,6 +110,7 @@ export const useSTAcStore = defineStore("stac", () => {
           eodashCollections.push(...collections);
 
           selectedStac.value = resp.data;
+
           indicator.value = selectedStac.value?.id ?? "";
           switchToCompare.value = true;
         });

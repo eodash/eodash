@@ -17,12 +17,14 @@ import {
   clientModules,
 } from "./globals.js";
 import { readFile } from "fs/promises";
+import { config } from "dotenv";
 import { defineConfig, mergeConfig, searchForWorkspaceRoot } from "vite";
 import { existsSync } from "fs";
 import path from "path";
 
 export const eodashViteConfig = /** @type {import("vite").UserConfigFn} */ (
   defineConfig(async ({ mode, command }) => {
+    const envPrefix = ["VITE_", "EODASH_"];
     return /** @type {import("vite").UserConfig} */ ({
       base: userConfig.base ?? "",
       cacheDir: cachePath,
@@ -46,7 +48,16 @@ export const eodashViteConfig = /** @type {import("vite").UserConfigFn} */ (
         },
       ],
       customLogger: logger,
-      define: { "process.env": {} },
+      define:
+        command === "build" && userConfig.lib
+          ? {
+              "process.env": "import.meta.env",
+            }
+          : {
+              "process.env": {},
+              ...defineEnvVariables(envPrefix),
+            },
+      envPrefix,
       resolve: {
         alias: {
           "@": path.join(appPath, "core/client"),
@@ -213,4 +224,17 @@ async function configureServer(server) {
       next();
     });
   };
+}
+/** @param {string[]} prefix */
+function defineEnvVariables(prefix) {
+  // Load environment variables from .env file
+  config();
+
+  const env = {};
+  for (const key in process.env) {
+    if (prefix.some((p) => key.startsWith(p))) {
+      env["process.env." + key] = `"${process.env[key]}"`;
+    }
+  }
+  return env;
 }

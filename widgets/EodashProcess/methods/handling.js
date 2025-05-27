@@ -9,7 +9,9 @@ import {
   processImage,
   processVector,
 } from "./outputs";
-
+import { handleGeotiffCustomEndpoints } from "./custom-endpoints/geotiff";
+import { handleChartCustomEndpoints } from "./custom-endpoints/chart";
+import { replaceLayer } from "@/eodashSTAC/helpers";
 /**
  * Fetch and set the jsonform schema to initialize the process
  *
@@ -87,6 +89,7 @@ export async function handleProcesses({
   if (!jsonformEl.value || !jsonformSchema.value || !selectedStac.value) {
     return;
   }
+
   log.debug("Processing...");
   loading.value = true;
   try {
@@ -105,12 +108,18 @@ export async function handleProcesses({
     const specUrl = /** @type {string} */ (
       selectedStac.value?.["eodash:vegadefinition"]
     );
+    const layerId = selectedStac.value?.id ?? "";
 
-    [chartSpec.value, chartData.value] = await getChartValues(
-      serviceLinks,
-      { ...(jsonformValue ?? {}) },
+    [chartSpec.value, chartData.value] = await getChartValues({
+      links: serviceLinks,
+      jsonformValue: { ...(jsonformValue ?? {}) },
+      jsonformSchema: jsonformSchema.value,
+      selectedStac: selectedStac.value,
       specUrl,
-    );
+      isPolling,
+      customEndpointsHandler: handleChartCustomEndpoints,
+    });
+
     if (Object.keys(chartData.value ?? {}).length) {
       processResults.value.push(chartData.value);
     }
@@ -125,25 +134,31 @@ export async function handleProcesses({
       chartSpec.value["background"] = "transparent";
     }
 
-    const geotiffLayer = await processGeoTiff(
-      serviceLinks,
+    const geotiffLayers = await processGeoTiff({
+      links: serviceLinks,
       jsonformValue,
-      selectedStac.value?.id ?? "",
+      layerId,
       isPolling,
-      //@ts-expect-error TODO
-      selectedStac.value?.["eodash:mapProjection"]?.["name"] ?? null,
-    );
+      projection:
+        //@ts-expect-error TODO
+        selectedStac.value?.["eodash:mapProjection"]?.["name"] ?? null,
+      jsonformSchema: jsonformSchema.value,
+      selectedStac: selectedStac.value,
+      customEndpointsHandler: handleGeotiffCustomEndpoints,
+    });
+    geotiffLayers?.forEach((geotiffLayer) => {
+      if (geotiffLayer && geotiffLayer.source?.sources.length) {
+        processResults.value.push(
+          //@ts-expect-error TODO
+          ...(geotiffLayer.source?.sources?.map((source) => source.url) ?? []),
+        );
+      }
+    });
 
-    if (geotiffLayer && geotiffLayer.source?.sources.length) {
-      processResults.value.push(
-        ...(geotiffLayer.source?.sources?.map((source) => source.url) ?? []),
-      );
-    }
-    // 3. vector geojson
     const vectorLayers = await processVector(
       serviceLinks,
       jsonformValue,
-      selectedStac.value?.id ?? "",
+      layerId,
     );
 
     if (vectorLayers?.length) {
@@ -161,14 +176,14 @@ export async function handleProcesses({
 
     log.debug(
       "rendered layers after processing:",
-      geotiffLayer,
+      geotiffLayers,
       vectorLayers,
       imageLayers,
     );
 
-    if (geotiffLayer || vectorLayers?.length || imageLayers?.length) {
-      const layers = [
-        ...(geotiffLayer ? [geotiffLayer] : []),
+    if (geotiffLayers?.length || vectorLayers?.length || imageLayers?.length) {
+      const newLayers = [
+        ...(geotiffLayers ?? []),
         ...(vectorLayers ?? []),
         ...(imageLayers ?? []),
       ];
@@ -176,10 +191,25 @@ export async function handleProcesses({
       let analysisGroup = currentLayers.find((l) =>
         l.properties.id.includes("AnalysisGroup"),
       );
-      analysisGroup?.layers.push(...layers);
+      // remove previous processing layer of the same id
+      for (let i = newLayers.length - 1; i >= 0; i--) {
+        currentLayers = replaceLayer(
+          currentLayers,
+          //@ts-expect-error TODO
+          newLayers[i].properties.id,
+          [newLayers[i]],
+        );
+        const notExistingLayer = !analysisGroup?.layers?.find(
+          //@ts-expect-error TODO
+          (l) => l.properties.id === newLayers[i]?.properties?.id,
+        );
+        if (notExistingLayer) {
+          analysisGroup?.layers?.unshift(newLayers[i]);
+        }
+      }
 
       if (mapEl.value) {
-        mapEl.value.layers = [...currentLayers];
+        mapEl.value.layers = currentLayers;
       }
     }
     loading.value = false;

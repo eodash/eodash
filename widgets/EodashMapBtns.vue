@@ -4,6 +4,7 @@
       v-if="exportMap"
       class="map-btn"
       :icon="[mdiMapPlus]"
+      v-tooltip:bottom="'Extract Storytelling configuration'"
       @click="showMapState = !showMapState"
     />
     <ExportState v-if="exportMap" v-model="showMapState" />
@@ -11,12 +12,14 @@
     <v-btn
       class="map-btn"
       :icon="[mdiEarthBox]"
+      v-tooltip:bottom="'Change map projection'"
       v-if="changeProjection && !!availableMapProjection"
       @click="changeMapProjection(availableMapProjection)"
     />
     <v-btn
       class="map-btn"
       :icon="[compareIcon]"
+      v-tooltip:bottom="'Compare mode'"
       v-if="compareIndicators"
       @click="onCompareClick"
     />
@@ -44,7 +47,7 @@ import ExportState from "^/ExportState.vue";
 import { computed, ref, triggerRef } from "vue";
 import PopUp from "./PopUp.vue";
 import EodashItemFilter from "./EodashItemFilter.vue";
-import { useDisplay } from "vuetify/lib/framework.mjs";
+import { useDisplay } from "vuetify";
 import { useSTAcStore } from "@/store/stac";
 import { storeToRefs } from "pinia";
 import { switchToCompare } from "@/utils/states";
