@@ -199,9 +199,11 @@ export async function loadPreviousProcess({ selectedStac, results, jobId }) {
   if (geotiffLayer) {
     const layers = [...(geotiffLayer ? [geotiffLayer] : [])];
     let currentLayers = [...getLayers()];
-    let analysisGroup = currentLayers.find((l) =>
-      l.properties.id.includes("AnalysisGroup"),
-    );
+    let analysisGroup =
+      /** @type {import("@eox/map/src/layers").EOxLayerTypeGroup} */ (
+        currentLayers.find((l) => l.properties?.id.includes("AnalysisGroup"))
+      );
+    //@ts-expect-error TODO
     analysisGroup?.layers.push(...layers);
 
     if (mapEl.value) {

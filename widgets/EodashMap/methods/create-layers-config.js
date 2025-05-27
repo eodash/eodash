@@ -53,9 +53,10 @@ export const createLayersConfig = async (
   const indicatorLayers =
     //@ts-expect-error indicator is collection
     await EodashCollection.getIndicatorLayers(selectedIndicator);
-  const geodbLayer = EodashCollection.getGeoDBLayer(eodashCols);
-  if (geodbLayer) {
-    dataLayers.layers.unshift(geodbLayer);
+  const observationPointsLayer =
+    EodashCollection.getObservationPointsLayer(eodashCols);
+  if (observationPointsLayer) {
+    dataLayers.layers.unshift(observationPointsLayer);
   }
   const baseLayers = {
     type: "Group",

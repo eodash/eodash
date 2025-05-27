@@ -1,17 +1,21 @@
 import log from "loglevel";
 import { extractGeometries, getBboxProperty } from "./utils";
-import { datetime, mapEl } from "@/store/states";
+import { datetime, mapEl, opIndicator } from "@/store/states";
 import axios from "@/plugins/axios";
 import { getLayers } from "@/store/actions";
 import {
   getChartValues,
   processGeoTiff,
   processImage,
+  processSTAC,
   processVector,
 } from "./outputs";
 import { handleGeotiffCustomEndpoints } from "./custom-endpoints/geotiff";
 import { handleChartCustomEndpoints } from "./custom-endpoints/chart";
+import { useSTAcStore } from "@/store/stac";
 import { replaceLayer } from "@/eodashSTAC/helpers";
+import { useEmitLayersUpdate } from "@/composables/index";
+
 /**
  * Fetch and set the jsonform schema to initialize the process
  *
@@ -96,12 +100,20 @@ export async function handleProcesses({
     const serviceLinks = selectedStac.value?.links?.filter(
       (l) => l.rel === "service",
     );
+
     const bboxProperty = getBboxProperty(jsonformSchema.value);
     const jsonformValue = /** @type {Record<string,any>} */ (
       jsonformEl.value?.value
     );
 
     extractGeometries(jsonformValue, jsonformSchema.value);
+
+    const isSTAC = serviceLinks.some((link) => link.endpoint === "STAC");
+
+    if (isSTAC) {
+      await processSTAC(serviceLinks, jsonformValue);
+      return;
+    }
 
     const origBbox = jsonformValue[bboxProperty];
 
@@ -182,34 +194,39 @@ export async function handleProcesses({
     );
 
     if (geotiffLayers?.length || vectorLayers?.length || imageLayers?.length) {
-      const newLayers = [
+      const newLayers = /** @type {import("@eox/map").EoxLayer[]} */ ([
         ...(geotiffLayers ?? []),
         ...(vectorLayers ?? []),
         ...(imageLayers ?? []),
-      ];
+      ]);
       let currentLayers = [...getLayers()];
-      let analysisGroup = currentLayers.find((l) =>
-        l.properties.id.includes("AnalysisGroup"),
-      );
-      // remove previous processing layer of the same id
-      for (let i = newLayers.length - 1; i >= 0; i--) {
-        currentLayers = replaceLayer(
-          currentLayers,
-          //@ts-expect-error TODO
-          newLayers[i].properties.id,
-          [newLayers[i]],
+
+      let analysisGroup =
+        /*** @type {import("@eox/map/src/layers").EOxLayerTypeGroup | undefined} */ (
+          currentLayers.find((l) => l.properties?.id.includes("AnalysisGroup"))
         );
-        const notExistingLayer = !analysisGroup?.layers?.find(
-          //@ts-expect-error TODO
-          (l) => l.properties.id === newLayers[i]?.properties?.id,
-        );
-        if (notExistingLayer) {
-          analysisGroup?.layers?.unshift(newLayers[i]);
-        }
+      if (!analysisGroup) {
+        return;
       }
 
+      for (const layer of newLayers) {
+        const exists = analysisGroup.layers.find(
+          (l) => l.properties?.id === layer.properties?.id,
+        );
+        if (!exists) {
+          analysisGroup.layers.unshift(layer);
+        } else {
+          analysisGroup.layers = replaceLayer(
+            analysisGroup.layers,
+            layer.properties?.id ?? "",
+            [layer],
+          );
+        }
+      }
       if (mapEl.value) {
-        mapEl.value.layers = currentLayers;
+        const layers = [...currentLayers];
+        useEmitLayersUpdate("process:updated", mapEl.value, layers);
+        mapEl.value.layers = layers;
       }
     }
     loading.value = false;
@@ -281,4 +298,14 @@ export const onChartClick = (evt) => {
       error,
     );
   }
+};
+
+/**
+ * @param {string} id - The id of the collection holding the observation point
+ */
+export const loadOPsIndicator = (id) => {
+  const stacStore = useSTAcStore();
+  const link = stacStore.stac?.find((link) => link.id === id);
+  opIndicator.value = "";
+  stacStore.loadSelectedSTAC(link?.href);
 };

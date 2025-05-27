@@ -142,7 +142,6 @@ onMounted(() => {
   if (props.enableCompare) {
     useInitMap(
       compareMap,
-      //@ts-expect-error todo selectedStac as collection
       selectedCompareStac,
       eodashCompareCollections,
       datetime,
@@ -156,7 +155,6 @@ onMounted(() => {
 
   useInitMap(
     eoxMap,
-    //@ts-expect-error todo selectedStac as collection
     selectedStac,
     eodashCollections,
     datetime,

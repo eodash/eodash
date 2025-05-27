@@ -1,10 +1,10 @@
 import mustache from "mustache";
-import {
-  addTooltipInteraction,
-  extractLayerConfig,
-} from "@/eodashSTAC/helpers";
+import { extractLayerConfig } from "@/eodashSTAC/helpers";
 import axios from "@/plugins/axios";
 import { createTiffLayerDefinition, separateEndpointLinks } from "./utils";
+import { useSTAcStore } from "@/store/stac";
+import { toAbsolute } from "stac-js/src/http.js";
+import { currentUrl, indicator, opIndicator } from "@/store/states";
 
 /**
  * @param {import("stac-ts").StacLink[] | undefined} links
@@ -84,8 +84,6 @@ export async function processVector(links, jsonformValue, layerId) {
       },
       ...(style && { style: style }),
     };
-    // just adds the hover interaction, not the tooltip content itself - see https://github.com/eodash/eodash/issues/191
-    addTooltipInteraction(layer, style);
     layers.push(layer);
   }
   return layers;
@@ -309,4 +307,29 @@ export async function processGeoTiff({
     ),
   );
   return definitions;
+}
+
+/**
+ *
+ * @param {import("stac-ts").StacLink[]} links
+ * @param {Record<string,any>} jsonformValue
+ */
+export async function processSTAC(links, jsonformValue) {
+  const stacLink = links.find(
+    (link) =>
+      link.rel === "service" &&
+      link.type == "application/json; profile=collection" &&
+      link.endpoint === "STAC",
+  );
+
+  if (!stacLink) return;
+  let stacUrl = mustache.render(stacLink.href, {
+    ...(jsonformValue ?? {}),
+  });
+  if (!stacUrl.startsWith("http://")) {
+    stacUrl = toAbsolute(stacUrl, currentUrl.value);
+  }
+
+  opIndicator.value = indicator.value;
+  await useSTAcStore().loadSelectedSTAC(stacUrl);
 }

@@ -1,12 +1,7 @@
 name: Create dev release
 
 on:
-  workflow_dispatch:
-    inputs:
-      comment:
-        description: "Optional comment (can not contain spaces)"
-        required: false
-        type: string
+  pull_request:
 
 permissions:
   contents: write
@@ -25,4 +20,4 @@ jobs:
         run: npm ci
       - name: Build and publish package 🚀
         run: |
-          npx pkg-pr-new publish --comment=${{ inputs.comment }}
+          npx pkg-pr-new publish --comment=update

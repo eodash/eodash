@@ -71,7 +71,7 @@ export class EodashCollection {
     // Load collectionstac if not yet initialized
     stac = await this.fetchCollection();
 
-    const isGeoDB = stac?.endpointtype === "GeoDB";
+    const isObservationPoint = stac?.endpointtype === "GeoDB"; //|| /**@type {boolean} */ (stac?.locations);
 
     if (linkOrDate instanceof Date) {
       // if collectionStac not yet initialized we do it here
@@ -106,7 +106,12 @@ export class EodashCollection {
       const title =
         this.#collectionStac?.title || this.#collectionStac?.id || "";
       layersJson.unshift(
-        ...(await this.buildJsonArray(item, stacItemUrl, title, isGeoDB)),
+        ...(await this.buildJsonArray(
+          item,
+          stacItemUrl,
+          title,
+          isObservationPoint,
+        )),
       );
       return layersJson;
     }
@@ -116,17 +121,17 @@ export class EodashCollection {
    * @param {import("stac-ts").StacItem} item
    * @param {string} itemUrl
    * @param {string} title
-   * @param {boolean} isGeoDB
+   * @param {boolean} isObservationPoint
    * @param {string} [itemDatetime]
    * @returns {Promise<Record<string,any>[]>} layers
    * */
-  async buildJsonArray(item, itemUrl, title, isGeoDB, itemDatetime) {
+  async buildJsonArray(item, itemUrl, title, isObservationPoint, itemDatetime) {
     log.debug(
       "Building JSON array",
       item,
       itemUrl,
       title,
-      isGeoDB,
+      isObservationPoint,
       itemDatetime,
     );
     await this.fetchCollection();
@@ -141,8 +146,8 @@ export class EodashCollection {
 
     const jsonArray = [];
 
-    if (isGeoDB) {
-      // handled by getGeoDBLayer
+    if (isObservationPoint) {
+      // handled by getObservationPointsLayer
       return [];
     }
 
@@ -194,6 +199,7 @@ export class EodashCollection {
         ...extraProperties,
         ...(this.color && { color: this.color }),
       };
+
       const links = await createLayersFromLinks(
         this.#collectionStac?.id ?? "",
         title,
@@ -201,6 +207,7 @@ export class EodashCollection {
         layerDatetime,
         extraProperties,
       );
+
       jsonArray.push(
         ...links,
         ...(await createLayersFromAssets(
@@ -359,12 +366,13 @@ export class EodashCollection {
     }
 
     /** @type {string | undefined} */
-    const oldLayerID = findLayer(currentLayers, layer)?.properties.id;
+    const oldLayerID = findLayer(currentLayers, layer)?.properties?.id;
 
     if (!oldLayerID) {
       return;
     }
 
+    //@ts-expect-error TODO
     const updatedLayers = replaceLayer(currentLayers, oldLayerID, newLayers);
 
     return updatedLayers;
@@ -406,16 +414,18 @@ export class EodashCollection {
   }
 
   /**
-   * Returns GeoDB layer from a list of EodashCollections
+   * Returns Observation points layer from a list of EodashCollections
    *
    * @param {EodashCollection[]} eodashCollections
    *
    **/
-  static getGeoDBLayer(eodashCollections) {
+  static getObservationPointsLayer(eodashCollections) {
     const allFeatures = [];
     for (const collection of eodashCollections) {
-      const isGeoDB = collection.#collectionStac?.endpointtype === "GeoDB";
-      if (!isGeoDB) {
+      const isObservationPoint =
+        collection.#collectionStac?.endpointtype === "GeoDB" ||
+        /**@type {boolean} */ (collection.#collectionStac?.locations);
+      if (!isObservationPoint) {
         continue;
       }
       const collectionFeatures = generateFeatures(
@@ -425,6 +435,7 @@ export class EodashCollection {
           geoDBID: collection.#collectionStac?.geoDBID,
           themes: collection.#collectionStac?.themes ?? [],
         },
+        collection.#collectionStac?.locations ? "child" : "item",
       ).features;
 
       if (collectionFeatures.length) {
@@ -492,7 +503,13 @@ export class EodashCollection {
           },
         ];
       })(),
-      interactions: [],
+      interactions: (() => {
+        const oldLayer = findLayer([...getLayers()], "geodb-collection");
+        if (!oldLayer || !oldLayer.interactions?.length) {
+          return [];
+        }
+        return [...oldLayer.interactions];
+      })(),
     };
   }
 }

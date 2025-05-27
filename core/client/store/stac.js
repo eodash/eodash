@@ -26,9 +26,7 @@ export const useSTAcStore = defineStore("stac", () => {
    * Selected STAC object.
    *
    * @type {import("vue").Ref<
-   *   | import("stac-ts").StacCatalog
    *   | import("stac-ts").StacCollection
-   *   | import("stac-ts").StacItem
    *   | null
    * >}
    */
@@ -38,9 +36,7 @@ export const useSTAcStore = defineStore("stac", () => {
    * Selected STAC object.
    *
    * @type {import("vue").Ref<
-   *   | import("stac-ts").StacCatalog
    *   | import("stac-ts").StacCollection
-   *   | import("stac-ts").StacItem
    *   | null
    * >}
    */

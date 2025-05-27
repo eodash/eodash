@@ -81,7 +81,7 @@ export const useDefineWidgets = (widgetConfigs) => {
             definedConfig = reactive(definedConfig);
           }
           definedWidget.value =
-            definedWidget.value.id === definedConfig?.id
+            definedConfig && definedWidget.value.id === definedConfig.id
               ? definedWidget.value
               : getWidgetDefinition(definedConfig);
         },
@@ -103,7 +103,9 @@ export const useDefineWidgets = (widgetConfigs) => {
  * @param {import("@/types").StaticWidget
  *   | Omit<import("@/types").StaticWidget, "layout">
  *   | undefined
- *   | null} [config]
+ *   | null
+ *   | false
+ * } [config]
  * @returns {DefinedWidget}
  */
 const getWidgetDefinition = (config) => {
@@ -115,7 +117,11 @@ const getWidgetDefinition = (config) => {
     id: Symbol(),
     layout: reactive({ x: 0, y: 0, h: 0, w: 0 }),
   };
-  switch (config?.type) {
+  if (!config) {
+    return importedWidget;
+  }
+
+  switch (config.type) {
     case "internal":
       importedWidget.component = defineAsyncComponent({
         loader: () => {
@@ -162,7 +168,13 @@ const getWidgetDefinition = (config) => {
       break;
   }
   importedWidget.title = config?.title ?? "";
-  importedWidget.id = config?.id ?? importedWidget.id;
+  importedWidget.id =
+    // this is a workaround for forcing EodashProcess to update whenever an indicator is selected
+    // will be removed when we fix the interactions issue.
+    //@ts-expect-error TODO
+    config.widget?.name === "EodashProcess"
+      ? Symbol()
+      : (config?.id ?? importedWidget.id);
 
   if ("layout" in config) {
     importedWidget.layout.x = config.layout.x;
