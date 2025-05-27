@@ -1,7 +1,12 @@
 name: Create dev release
 
 on:
-  pull_request:
+  workflow_dispatch:
+    inputs:
+      comment:
+        description: "Optional comment (can not contain spaces)"
+        required: false
+        type: string
 
 permissions:
   contents: write

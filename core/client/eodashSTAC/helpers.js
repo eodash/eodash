@@ -246,6 +246,7 @@ export const findLayer = (layers, layer) => {
  * @param {import("@eox/map").EoxLayer[]} currentLayers
  * @param {string} oldLayer - id of the layer to be replaced
  *  @param {import("@eox/map").EoxLayer[]} newLayers - array of layers to replace the old layer
+ * @returns {Record<string,any>[]}
  */
 export const replaceLayer = (currentLayers, oldLayer, newLayers) => {
   const oldLayerIdx = currentLayers.findIndex(
