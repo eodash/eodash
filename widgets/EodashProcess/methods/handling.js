@@ -200,25 +200,6 @@ export async function handleProcesses({
         ...(imageLayers ?? []),
       ]);
       let currentLayers = [...getLayers()];
-      let analysisGroup = currentLayers.find((l) =>
-        l.properties.id.includes("AnalysisGroup"),
-      );
-      // remove previous processing layer of the same id
-      for (let i = newLayers.length - 1; i >= 0; i--) {
-        currentLayers = replaceLayer(
-          currentLayers,
-          //@ts-expect-error TODO
-          newLayers[i].properties.id,
-          [newLayers[i]],
-        );
-        const notExistingLayer = !analysisGroup?.layers?.find(
-          //@ts-expect-error TODO
-          (l) => l.properties.id === newLayers[i]?.properties?.id,
-        );
-        if (notExistingLayer) {
-          analysisGroup?.layers?.unshift(newLayers[i]);
-        }
-      }
 
       let analysisGroup =
         /*** @type {import("@eox/map/src/layers").EOxLayerTypeGroup | undefined} */ (
