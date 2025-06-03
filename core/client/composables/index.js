@@ -137,7 +137,7 @@ export const useURLSearchParametersSync = () => {
             const { loadSelectedSTAC, stac } = useSTAcStore();
             let match = stac?.find((link) => link.id == value);
             const eodash = inject(eodashKey);
-            if ("useSubCode" in eodash && eodash.useSubCode) {
+            if ("useSubCode" in eodash.options && eodash.options.useSubCode) {
               match = stac?.find((link) => link.subcode == value);
             }
             if (match) {
