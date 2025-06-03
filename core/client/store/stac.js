@@ -105,7 +105,11 @@ export const useSTAcStore = defineStore("stac", () => {
           eodashCollections.push(...collections);
 
           selectedStac.value = resp.data;
-          if ("useSubCode" in eodash.options && eodash.options.useSubCode) {
+          if (
+            eodash.options &&
+            "useSubCode" in eodash.options &&
+            eodash.options.useSubCode
+          ) {
             indicator.value =
               typeof selectedStac.value?.subcode === "string"
                 ? selectedStac.value.subcode
