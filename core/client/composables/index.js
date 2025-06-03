@@ -135,7 +135,10 @@ export const useURLSearchParametersSync = () => {
           case "indicator": {
             log.debug("Found indicator key in url");
             const { loadSelectedSTAC, stac } = useSTAcStore();
-            const match = stac?.find((link) => link.id == value);
+            let match = stac?.find((link) => link.id == value);
+            if ("useSubCode" in eodash && eodash.useSubCode) {
+              match = stac?.find((link) => link.subcode == value);
+            }
             if (match) {
               log.debug("Found match, loading stac item", match);
               await loadSelectedSTAC(match.href);

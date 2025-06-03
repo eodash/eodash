@@ -82,7 +82,6 @@ export const useSTAcStore = defineStore("stac", () => {
    */
   async function loadSelectedSTAC(relativePath = "") {
     const absoluteUrl = useAbsoluteUrl(relativePath);
-
     await axios
       .get(absoluteUrl.value)
       .then(async (resp) => {
@@ -107,7 +106,13 @@ export const useSTAcStore = defineStore("stac", () => {
 
           selectedStac.value = resp.data;
 
-          indicator.value = selectedStac.value?.id ?? "";
+          if ("useSubCode" in eodash && eodash.useSubCode) {
+            indicator.value = typeof selectedStac.value?.subcode === "string"
+              ? selectedStac.value.subcode
+              : "";
+          } else {
+            indicator.value = selectedStac.value?.id ?? "";
+          }
           switchToCompare.value = true;
         });
       })
