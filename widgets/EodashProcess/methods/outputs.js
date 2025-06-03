@@ -4,7 +4,7 @@ import axios from "@/plugins/axios";
 import { createTiffLayerDefinition, separateEndpointLinks } from "./utils";
 import { useSTAcStore } from "@/store/stac";
 import { toAbsolute } from "stac-js/src/http.js";
-import { currentUrl, indicator, opIndicator } from "@/store/states";
+import { currentUrl } from "@/store/states";
 
 /**
  * @param {import("stac-ts").StacLink[] | undefined} links
@@ -329,7 +329,5 @@ export async function processSTAC(links, jsonformValue) {
   if (!stacUrl.startsWith("http://")) {
     stacUrl = toAbsolute(stacUrl, currentUrl.value);
   }
-
-  opIndicator.value = indicator.value;
-  await useSTAcStore().loadSelectedSTAC(stacUrl);
+  await useSTAcStore().loadSelectedSTAC(stacUrl,true);
 }

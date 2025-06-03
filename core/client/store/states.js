@@ -36,7 +36,6 @@ export const mapCompareEl = ref(null);
 
 export const activeTemplate = ref("");
 /**
- * in case a stac process is loaded and the main indicator is changed,
- * this will track the indicator that triggered the process
+ * Selected point of interest, used for location collections
  */
-export const opIndicator = ref("");
+export const poi = ref("");

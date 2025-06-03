@@ -33,9 +33,9 @@
         Download
       </v-btn>
       <v-btn
-        v-if="opIndicator"
+        v-if="poi"
         color="primary"
-        @click="loadOPsIndicator(opIndicator)"
+        @click="loadPOiIndicator()"
       >
         back to points
       </v-btn>
@@ -51,13 +51,13 @@ import { storeToRefs } from "pinia";
 import { computed, ref, toRaw, useTemplateRef } from "vue";
 import ProcessList from "./ProcessList.vue";
 import {
-  loadOPsIndicator,
   handleProcesses,
   onChartClick,
+  loadPOiIndicator,
 } from "./methods/handling";
 import { useInitProcess, useAutoExec } from "./methods/composables";
 import { jobs, updateJobsStatus } from "./methods/async";
-import { indicator, opIndicator } from "@/store/states";
+import { indicator, poi } from "@/store/states";
 import { download } from "./methods/utils";
 
 /** @type {import("vue").Ref<import("vega").Spec|null>} */
@@ -90,6 +90,7 @@ const isPolling = ref(false);
 const processResults = ref([]);
 
 const { selectedStac } = storeToRefs(useSTAcStore());
+
 
 useInitProcess({
   //@ts-expect-error TODO

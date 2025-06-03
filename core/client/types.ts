@@ -340,6 +340,10 @@ export type Eodash<T extends ExecutionTime = "compiletime"> = {
     /** Text applied to the footer. */
     footerText?: string;
   };
+  /** Dashboard global options  */
+  options:{
+    useSubCode: boolean;
+  }
 } & (
   | {
       /** Template configuration */

@@ -3,7 +3,7 @@ import { inject, ref } from "vue";
 import axios from "@/plugins/axios";
 import { useAbsoluteUrl, useCompareAbsoluteUrl } from "@/composables/index";
 import { eodashKey } from "@/utils/keys";
-import { indicator } from "@/store/states";
+import { indicator, poi } from "@/store/states";
 import { extractCollectionUrls } from "@/eodashSTAC/helpers";
 import {
   eodashCollections,
@@ -13,6 +13,7 @@ import {
 } from "@/utils/states";
 import { EodashCollection } from "@/eodashSTAC/EodashCollection";
 import log from "loglevel";
+import { c } from "vite/dist/node/moduleRunnerTransport.d-DJ_mE5sf";
 
 export const useSTAcStore = defineStore("stac", () => {
   /**
@@ -77,10 +78,11 @@ export const useSTAcStore = defineStore("stac", () => {
    * Fetches selected stac object and assign it to `selectedStac`
    *
    * @param {string} relativePath - Stac link href
+   * @param {boolean} [isPoi=false] - If true, the STAC is loaded for a point of interest
    * @returns {Promise<void>}
    * @see {@link selectedStac}
    */
-  async function loadSelectedSTAC(relativePath = "") {
+  async function loadSelectedSTAC(relativePath = "",isPoi=false) {
     const absoluteUrl = useAbsoluteUrl(relativePath);
     await axios
       .get(absoluteUrl.value)
@@ -105,14 +107,8 @@ export const useSTAcStore = defineStore("stac", () => {
           eodashCollections.push(...collections);
 
           selectedStac.value = resp.data;
-          if ("useSubCode" in eodash.options && eodash.options.useSubCode) {
-            indicator.value =
-              typeof selectedStac.value?.subcode === "string"
-                ? selectedStac.value.subcode
-                : "";
-          } else {
-            indicator.value = selectedStac.value?.id ?? "";
-          }
+          // set indicator and poi
+          [indicator.value,poi.value] = getIndicator(indicator.value,isPoi);
           switchToCompare.value = true;
         });
       })
@@ -167,6 +163,29 @@ export const useSTAcStore = defineStore("stac", () => {
   async function resetSelectedCompareSTAC() {
     selectedCompareStac.value = null;
   }
+
+  /**
+   *
+   * @param {string} currentIndicator
+   * @param {boolean} [isPoi=false] - If true, the indicator is for a point of interest
+   * @returns
+   */
+  function getIndicator(currentIndicator,isPoi=false){
+          let indicator = '';
+          let poi = '';
+          // use subcode as indicator identifier if configured
+          if ("useSubCode" in eodash.options && eodash.options.useSubCode) {
+             indicator = isPoi ? currentIndicator :
+              typeof selectedStac.value?.subcode === "string"
+                ? selectedStac.value.subcode
+                : "";
+                poi = isPoi ? /** @type {string} */ ((selectedStac.value?.subcode ?? "")) : "";
+          } else {
+            indicator = isPoi ? currentIndicator : selectedStac.value?.id ?? "";
+            poi = isPoi ? selectedStac.value?.id ?? "" : "";
+          }
+          return  [indicator,poi]
+}
 
   return {
     stac,

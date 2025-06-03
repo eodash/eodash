@@ -8,6 +8,7 @@ import {
   datetime,
   indicator,
   mapPosition,
+  // poi,
 } from "@/store/states";
 import eodash from "@/eodash";
 import { useTheme } from "vuetify";
@@ -18,6 +19,7 @@ import { eodashKey, eoxLayersKey } from "@/utils/keys";
 import { useEventBus } from "@vueuse/core";
 import { posIsSetFromUrl } from "@/utils/states";
 import { setCollectionsPalette } from "@/utils";
+// import { toAbsolute } from "stac-js/src/http.js";
 
 /**
  * Creates an absolute URL from a relative link and assignes it to `currentUrl`
@@ -119,6 +121,7 @@ export const useURLSearchParametersSync = () => {
     // Analyze currently set url params when first loaded and set them in the store
     if (window.location.search) {
       const searchParams = new URLSearchParams(window.location.search);
+      const { loadSelectedSTAC, stac } = useSTAcStore();
 
       /** @type {number | undefined} */
       let x,
@@ -134,10 +137,10 @@ export const useURLSearchParametersSync = () => {
           }
           case "indicator": {
             log.debug("Found indicator key in url");
-            const { loadSelectedSTAC, stac } = useSTAcStore();
+
             let match = stac?.find((link) => link.id == value);
             const eodash = inject(eodashKey);
-            if ("useSubCode" in eodash.options && eodash.options.useSubCode) {
+            if ("useSubCode" in (eodash?.options ?? {}) && eodash?.options.useSubCode) {
               match = stac?.find((link) => link.subcode == value);
             }
             if (match) {

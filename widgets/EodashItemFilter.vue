@@ -14,12 +14,11 @@
 </template>
 <script setup>
 import { useSTAcStore } from "@/store/stac";
-import { opIndicator } from "@/store/states";
 import "@eox/itemfilter";
-
 import { computed, ref } from "vue";
 import { useDisplay } from "vuetify";
 
+const store = useSTAcStore();
 const emit = defineEmits(["select"]);
 
 const props = defineProps({
@@ -88,10 +87,6 @@ const props = defineProps({
  * @param {import("stac-ts").StacLink} item
  */
 const selectIndicator = async (item) => {
-  if (opIndicator.value) {
-    opIndicator.value = "";
-  }
-
   if (item) {
     // Reset compare stac to empty
     store.resetSelectedCompareSTAC();
@@ -136,6 +131,4 @@ const config = computed(() => ({
 }));
 /** @type {import("vue").Ref<HTMLElement & Record<string,any> | null>} */
 const eoxItemFilter = ref(null);
-
-const store = useSTAcStore();
 </script>

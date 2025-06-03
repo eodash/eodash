@@ -1,6 +1,6 @@
 import log from "loglevel";
 import { extractGeometries, getBboxProperty } from "./utils";
-import { datetime, mapEl, opIndicator } from "@/store/states";
+import { datetime, indicator, mapEl } from "@/store/states";
 import axios from "@/plugins/axios";
 import { getLayers } from "@/store/actions";
 import {
@@ -15,6 +15,8 @@ import { handleChartCustomEndpoints } from "./custom-endpoints/chart";
 import { useSTAcStore } from "@/store/stac";
 import { replaceLayer } from "@/eodashSTAC/helpers";
 import { useEmitLayersUpdate } from "@/composables/index";
+import { inject } from "vue";
+import { eodashKey } from "@/utils/keys";
 
 /**
  * Fetch and set the jsonform schema to initialize the process
@@ -301,11 +303,12 @@ export const onChartClick = (evt) => {
 };
 
 /**
- * @param {string} id - The id of the collection holding the observation point
+ * Reloads the main indicator of a Point of Interest (POI)
  */
-export const loadOPsIndicator = (id) => {
+export const loadPOiIndicator = () => {
   const stacStore = useSTAcStore();
-  const link = stacStore.stac?.find((link) => link.id === id);
-  opIndicator.value = "";
+  const eodash = inject(eodashKey)
+  const prop = eodash?.options.useSubCode ? "subcode" : "id";
+  const link = stacStore.stac?.find((link) => link[prop] === indicator.value);
   stacStore.loadSelectedSTAC(link?.href);
 };
