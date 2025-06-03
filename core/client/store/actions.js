@@ -87,7 +87,6 @@ export const setActiveTemplate = (template) => {
  */
 export const includesProcess = (collection) => {
   return (
-    collection?.links?.some((link) => link.rel === "service") ||
-    !!poi.value
+    collection?.links?.some((link) => link.rel === "service") || !!poi.value
   );
 };

@@ -307,7 +307,7 @@ export const onChartClick = (evt) => {
  */
 export const loadPOiIndicator = () => {
   const stacStore = useSTAcStore();
-  const eodash = inject(eodashKey)
+  const eodash = inject(eodashKey);
   const prop = eodash?.options.useSubCode ? "subcode" : "id";
   const link = stacStore.stac?.find((link) => link[prop] === indicator.value);
   stacStore.loadSelectedSTAC(link?.href);

@@ -140,7 +140,10 @@ export const useURLSearchParametersSync = () => {
 
             let match = stac?.find((link) => link.id == value);
             const eodash = inject(eodashKey);
-            if ("useSubCode" in (eodash?.options ?? {}) && eodash?.options.useSubCode) {
+            if (
+              "useSubCode" in (eodash?.options ?? {}) &&
+              eodash?.options.useSubCode
+            ) {
               match = stac?.find((link) => link.subcode == value);
             }
             if (match) {

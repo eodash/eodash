@@ -32,11 +32,7 @@
       >
         Download
       </v-btn>
-      <v-btn
-        v-if="poi"
-        color="primary"
-        @click="loadPOiIndicator()"
-      >
+      <v-btn v-if="poi" color="primary" @click="loadPOiIndicator()">
         back to points
       </v-btn>
     </div>
@@ -90,7 +86,6 @@ const isPolling = ref(false);
 const processResults = ref([]);
 
 const { selectedStac } = storeToRefs(useSTAcStore());
-
 
 useInitProcess({
   //@ts-expect-error TODO

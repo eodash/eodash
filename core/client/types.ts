@@ -341,9 +341,9 @@ export type Eodash<T extends ExecutionTime = "compiletime"> = {
     footerText?: string;
   };
   /** Dashboard global options  */
-  options:{
+  options: {
     useSubCode: boolean;
-  }
+  };
 } & (
   | {
       /** Template configuration */

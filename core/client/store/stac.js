@@ -82,7 +82,7 @@ export const useSTAcStore = defineStore("stac", () => {
    * @returns {Promise<void>}
    * @see {@link selectedStac}
    */
-  async function loadSelectedSTAC(relativePath = "",isPoi=false) {
+  async function loadSelectedSTAC(relativePath = "", isPoi = false) {
     const absoluteUrl = useAbsoluteUrl(relativePath);
     await axios
       .get(absoluteUrl.value)
@@ -108,7 +108,7 @@ export const useSTAcStore = defineStore("stac", () => {
 
           selectedStac.value = resp.data;
           // set indicator and poi
-          [indicator.value,poi.value] = getIndicator(indicator.value,isPoi);
+          [indicator.value, poi.value] = getIndicator(indicator.value, isPoi);
           switchToCompare.value = true;
         });
       })
@@ -170,22 +170,25 @@ export const useSTAcStore = defineStore("stac", () => {
    * @param {boolean} [isPoi=false] - If true, the indicator is for a point of interest
    * @returns
    */
-  function getIndicator(currentIndicator,isPoi=false){
-          let indicator = '';
-          let poi = '';
-          // use subcode as indicator identifier if configured
-          if ("useSubCode" in eodash.options && eodash.options.useSubCode) {
-             indicator = isPoi ? currentIndicator :
-              typeof selectedStac.value?.subcode === "string"
-                ? selectedStac.value.subcode
-                : "";
-                poi = isPoi ? /** @type {string} */ ((selectedStac.value?.subcode ?? "")) : "";
-          } else {
-            indicator = isPoi ? currentIndicator : selectedStac.value?.id ?? "";
-            poi = isPoi ? selectedStac.value?.id ?? "" : "";
-          }
-          return  [indicator,poi]
-}
+  function getIndicator(currentIndicator, isPoi = false) {
+    let indicator = "";
+    let poi = "";
+    // use subcode as indicator identifier if configured
+    if ("useSubCode" in eodash.options && eodash.options.useSubCode) {
+      indicator = isPoi
+        ? currentIndicator
+        : typeof selectedStac.value?.subcode === "string"
+          ? selectedStac.value.subcode
+          : "";
+      poi = isPoi
+        ? /** @type {string} */ (selectedStac.value?.subcode ?? "")
+        : "";
+    } else {
+      indicator = isPoi ? currentIndicator : (selectedStac.value?.id ?? "");
+      poi = isPoi ? (selectedStac.value?.id ?? "") : "";
+    }
+    return [indicator, poi];
+  }
 
   return {
     stac,

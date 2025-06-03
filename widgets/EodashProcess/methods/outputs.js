@@ -329,5 +329,5 @@ export async function processSTAC(links, jsonformValue) {
   if (!stacUrl.startsWith("http://")) {
     stacUrl = toAbsolute(stacUrl, currentUrl.value);
   }
-  await useSTAcStore().loadSelectedSTAC(stacUrl,true);
+  await useSTAcStore().loadSelectedSTAC(stacUrl, true);
 }
