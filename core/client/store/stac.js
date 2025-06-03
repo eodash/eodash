@@ -107,9 +107,10 @@ export const useSTAcStore = defineStore("stac", () => {
           selectedStac.value = resp.data;
 
           if ("useSubCode" in eodash && eodash.useSubCode) {
-            indicator.value = typeof selectedStac.value?.subcode === "string"
-              ? selectedStac.value.subcode
-              : "";
+            indicator.value =
+              typeof selectedStac.value?.subcode === "string"
+                ? selectedStac.value.subcode
+                : "";
           } else {
             indicator.value = selectedStac.value?.id ?? "";
           }
