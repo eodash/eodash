@@ -136,6 +136,7 @@ export const useURLSearchParametersSync = () => {
             log.debug("Found indicator key in url");
             const { loadSelectedSTAC, stac } = useSTAcStore();
             let match = stac?.find((link) => link.id == value);
+            const eodash = inject(eodashKey);
             if ("useSubCode" in eodash && eodash.useSubCode) {
               match = stac?.find((link) => link.subcode == value);
             }
