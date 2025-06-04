@@ -7,6 +7,7 @@ import {
   currentUrl,
   datetime,
   indicator,
+  mapEl,
   mapPosition,
   poi,
 } from "@/store/states";
@@ -17,7 +18,7 @@ import { useSTAcStore } from "@/store/stac";
 import log from "loglevel";
 import { eodashKey, eoxLayersKey } from "@/utils/keys";
 import { useEventBus } from "@vueuse/core";
-import { posIsSetFromUrl } from "@/utils/states";
+import { isFirstLoad } from "@/utils/states";
 import { setCollectionsPalette } from "@/utils";
 import mustache from "mustache";
 import { toAbsolute } from "stac-js/src/http.js";
@@ -221,9 +222,14 @@ export const useURLSearchParametersSync = () => {
       if (x && y && z) {
         log.debug("Coordinates found, applying map poisition", x, y, z);
         mapPosition.value = [x, y, z];
-        if (!posIsSetFromUrl.value) {
-          posIsSetFromUrl.value = true;
+        if (mapEl.value) {
+          mapEl.value.center = [x, y];
+          mapEl.value.zoom = z;
         }
+      }
+
+      if (!isFirstLoad.value) {
+        isFirstLoad.value = true;
       }
     }
 
@@ -354,7 +360,7 @@ export const useGetSubCodeId = (collection) => {
     return "";
   }
   const eodash = inject(eodashKey);
-  if ("useSubCode" in (eodash?.options ?? {}) && eodash?.options.useSubCode) {
+  if ("useSubCode" in (eodash?.options ?? {}) && eodash?.options?.useSubCode) {
     return typeof collection.subcode === "string"
       ? collection.subcode
       : /** @type {string} */ (collection.id);

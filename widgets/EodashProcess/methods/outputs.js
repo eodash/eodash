@@ -3,6 +3,7 @@ import { extractLayerConfig } from "@/eodashSTAC/helpers";
 import axios from "@/plugins/axios";
 import { createTiffLayerDefinition, separateEndpointLinks } from "./utils";
 import { useSTAcStore } from "@/store/stac";
+import { isFirstLoad } from "@/utils/states";
 
 /**
  * @param {import("stac-ts").StacLink[] | undefined} links
@@ -326,6 +327,9 @@ export async function processSTAC(links, jsonformValue) {
   let poiUrl = mustache.render(stacLink.href, {
     ...(jsonformValue ?? {}),
   });
-
+  if (isFirstLoad.value) {
+    // prevent the map from jumping to the initial position
+    isFirstLoad.value = false;
+  }
   await useSTAcStore().loadSelectedSTAC(poiUrl, true);
 }

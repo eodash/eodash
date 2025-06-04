@@ -312,7 +312,9 @@ export type Eodash<T extends ExecutionTime = "compiletime"> = {
   /** Instance ID. */
   id?: string;
   /** Object containing potential special configuration options */
-  options?: object;
+  options?: {
+    useSubCode?: boolean;
+  };
   /** Root STAC catalog endpoint */
   stacEndpoint: StacEndpoint;
   /** Brand specifications. */
@@ -341,10 +343,6 @@ export type Eodash<T extends ExecutionTime = "compiletime"> = {
     };
     /** Text applied to the footer. */
     footerText?: string;
-  };
-  /** Dashboard global options  */
-  options: {
-    useSubCode: boolean;
   };
 } & (
   | {

@@ -30,8 +30,8 @@ export const eodashCollections = shallowReactive([]);
  */
 export const eodashCompareCollections = shallowReactive([]);
 
-/** whether the map postion was set in URL params on first load */
-export const posIsSetFromUrl = ref(false);
+/** whether it's the first load of the app, used to track if there are params in the url */
+export const isFirstLoad = ref(false);
 
 /**
  * Current value of the layer control JSON form for the latest layer the user interacted with.

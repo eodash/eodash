@@ -14,6 +14,7 @@
 </template>
 <script setup>
 import { useSTAcStore } from "@/store/stac";
+import { isFirstLoad } from "@/utils/states";
 import "@eox/itemfilter";
 import { computed, ref } from "vue";
 import { useDisplay } from "vuetify";
@@ -88,6 +89,10 @@ const props = defineProps({
  */
 const selectIndicator = async (item) => {
   if (item) {
+    if (isFirstLoad.value) {
+      // prevent the map from jumping to the initial position
+      isFirstLoad.value = false;
+    }
     // Reset compare stac to empty
     store.resetSelectedCompareSTAC();
     await store.loadSelectedSTAC(item.href);
