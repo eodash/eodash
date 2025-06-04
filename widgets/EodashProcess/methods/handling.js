@@ -14,9 +14,7 @@ import { handleGeotiffCustomEndpoints } from "./custom-endpoints/geotiff";
 import { handleChartCustomEndpoints } from "./custom-endpoints/chart";
 import { useSTAcStore } from "@/store/stac";
 import { replaceLayer } from "@/eodashSTAC/helpers";
-import { useEmitLayersUpdate } from "@/composables/index";
-import { inject } from "vue";
-import { eodashKey } from "@/utils/keys";
+import { useEmitLayersUpdate, useGetSubCodeId } from "@/composables/index";
 
 /**
  * Fetch and set the jsonform schema to initialize the process
@@ -303,12 +301,12 @@ export const onChartClick = (evt) => {
 };
 
 /**
- * Reloads the main indicator of a Point of Interest (POI)
+ * Loads the main indicator of a Point of Interest (POI)
  */
 export const loadPOiIndicator = () => {
   const stacStore = useSTAcStore();
-  const eodash = inject(eodashKey);
-  const prop = eodash?.options.useSubCode ? "subcode" : "id";
-  const link = stacStore.stac?.find((link) => link[prop] === indicator.value);
+  const link = stacStore.stac?.find(
+    (link) => useGetSubCodeId(link) === indicator.value,
+  );
   stacStore.loadSelectedSTAC(link?.href);
 };

@@ -3,8 +3,6 @@ import { extractLayerConfig } from "@/eodashSTAC/helpers";
 import axios from "@/plugins/axios";
 import { createTiffLayerDefinition, separateEndpointLinks } from "./utils";
 import { useSTAcStore } from "@/store/stac";
-import { toAbsolute } from "stac-js/src/http.js";
-import { currentUrl } from "@/store/states";
 
 /**
  * @param {import("stac-ts").StacLink[] | undefined} links
@@ -310,6 +308,8 @@ export async function processGeoTiff({
 }
 
 /**
+ * This function loads a STAC collection as a processing output.
+ * Currently, it only supports POI STAC collections
  *
  * @param {import("stac-ts").StacLink[]} links
  * @param {Record<string,any>} jsonformValue
@@ -323,11 +323,9 @@ export async function processSTAC(links, jsonformValue) {
   );
 
   if (!stacLink) return;
-  let stacUrl = mustache.render(stacLink.href, {
+  let poiUrl = mustache.render(stacLink.href, {
     ...(jsonformValue ?? {}),
   });
-  if (!stacUrl.startsWith("http://")) {
-    stacUrl = toAbsolute(stacUrl, currentUrl.value);
-  }
-  await useSTAcStore().loadSelectedSTAC(stacUrl, true);
+
+  await useSTAcStore().loadSelectedSTAC(poiUrl, true);
 }

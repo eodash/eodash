@@ -8,7 +8,7 @@ import {
   datetime,
   indicator,
   mapPosition,
-  // poi,
+  poi,
 } from "@/store/states";
 import eodash from "@/eodash";
 import { useTheme } from "vuetify";
@@ -19,7 +19,9 @@ import { eodashKey, eoxLayersKey } from "@/utils/keys";
 import { useEventBus } from "@vueuse/core";
 import { posIsSetFromUrl } from "@/utils/states";
 import { setCollectionsPalette } from "@/utils";
-// import { toAbsolute } from "stac-js/src/http.js";
+import mustache from "mustache";
+import { toAbsolute } from "stac-js/src/http.js";
+import axios from "@/plugins/axios";
 
 /**
  * Creates an absolute URL from a relative link and assignes it to `currentUrl`
@@ -121,7 +123,7 @@ export const useURLSearchParametersSync = () => {
     // Analyze currently set url params when first loaded and set them in the store
     if (window.location.search) {
       const searchParams = new URLSearchParams(window.location.search);
-      const { loadSelectedSTAC, stac } = useSTAcStore();
+      const store = useSTAcStore();
 
       /** @type {number | undefined} */
       let x,
@@ -137,18 +139,54 @@ export const useURLSearchParametersSync = () => {
           }
           case "indicator": {
             log.debug("Found indicator key in url");
-
-            let match = stac?.find((link) => link.id == value);
             const eodash = inject(eodashKey);
-            if (
-              "useSubCode" in (eodash?.options ?? {}) &&
-              eodash?.options.useSubCode
-            ) {
-              match = stac?.find((link) => link.subcode == value);
-            }
+            const match = store.stac?.find(
+              (link) => useGetSubCodeId(link) == value,
+            );
             if (match) {
               log.debug("Found match, loading stac item", match);
-              await loadSelectedSTAC(match.href);
+              if (searchParams.has("poi")) {
+                const indicatorUrl = toAbsolute(
+                  match.href,
+                  eodash?.stacEndpoint ?? "",
+                );
+                // fetch indicator stac collection without rendering it
+                /** @type {import("stac-ts").StacCollection} */
+                const indicatorStac = await axios
+                  .get(indicatorUrl)
+                  .then((resp) => resp.data);
+                poi.value = searchParams.get("poi") ?? "";
+                // find the process link
+                const poiMatch = indicatorStac?.links.find(
+                  (link) =>
+                    link.rel === "service" &&
+                    link.type === "application/json; profile=collection",
+                );
+                if (poiMatch) {
+                  log.debug("Found poi match, setting poi", poiMatch);
+                  // render poi value into the link href
+                  /** @type {any} */
+                  let viewForMustache = poi.value;
+                  const tokens = mustache.parse(poiMatch.href);
+                  const keyToken = tokens.find(
+                    (token) => token[0] === "name" && token[1] !== ".",
+                  );
+                  // Construct the view object
+                  if (keyToken) {
+                    const keyName = keyToken[1];
+                    viewForMustache = { [keyName]: poi.value };
+                  }
+                  /** @type {string} */
+                  const poiUrl = mustache.render(
+                    poiMatch.href,
+                    viewForMustache,
+                  );
+                  const poiAbsoluteUrl = toAbsolute(poiUrl, indicatorUrl);
+                  await store.loadSelectedSTAC(poiAbsoluteUrl, true);
+                }
+              } else {
+                await store.loadSelectedSTAC(match.href);
+              }
             }
             break;
           }
@@ -190,12 +228,13 @@ export const useURLSearchParametersSync = () => {
     }
 
     watch(
-      [indicator, mapPosition, datetime, activeTemplate],
+      [indicator, mapPosition, datetime, activeTemplate, poi],
       ([
         updatedIndicator,
         updatedMapPosition,
         updatedDatetime,
         updatedTemplate,
+        updatedPoi,
       ]) => {
         if ("URLSearchParams" in window) {
           const searchParams = new URLSearchParams(window.location.search);
@@ -215,6 +254,14 @@ export const useURLSearchParametersSync = () => {
           if (updatedTemplate) {
             searchParams.set("template", updatedTemplate);
           }
+          if (!updatedPoi) {
+            if (searchParams.has("poi")) {
+              searchParams.delete("poi");
+            }
+          } else {
+            searchParams.set("poi", updatedPoi);
+          }
+
           const newRelativePathQuery =
             window.location.pathname + "?" + searchParams.toString();
           history.pushState(null, "", newRelativePathQuery);
@@ -295,4 +342,22 @@ export const useEmitLayersUpdate = async (event, mapEl, layers) => {
       res(true);
     });
   });
+};
+
+/**
+ * @param {import("stac-ts").StacCollection | import("stac-ts").StacLink | import("stac-ts").StacItem | null} collection
+ * @returns {string} - Returns the collection id or subcode if `useSubCode`import { mustache } from 'mustache';
+ is enabled
+ */
+export const useGetSubCodeId = (collection) => {
+  if (!collection) {
+    return "";
+  }
+  const eodash = inject(eodashKey);
+  if ("useSubCode" in (eodash?.options ?? {}) && eodash?.options.useSubCode) {
+    return typeof collection.subcode === "string"
+      ? collection.subcode
+      : /** @type {string} */ (collection.id);
+  }
+  return /** @type {string} */ (collection.id);
 };

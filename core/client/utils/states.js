@@ -83,7 +83,7 @@ export const dataThemesBrands = {
   },
   "covid-19": {
     icon: mdiHospitalBoxOutline,
-    color: "#32322C"
+    color: "#32322C",
   },
   combined: {
     icon: mdiSetCenter,
@@ -107,12 +107,12 @@ export const dataThemesBrands = {
   },
   extremes: {
     icon: mdiLightningBolt,
-    color: "#a1280a"
+    color: "#a1280a",
   },
   cryosphere: {
     icon: mdiSnowflake,
-    color: "#42C7B8"
-  }
+    color: "#42C7B8",
+  },
 };
 /** used for switching in and out of compare mode @see {@link widgets/EodashMapBtns.vue} */
 export const switchToCompare = ref(true);
