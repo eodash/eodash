@@ -3,7 +3,10 @@ import {
   mdiCurrencyEur,
   mdiHospitalBoxOutline,
   mdiImageFilterHdr,
+  mdiLeaf,
+  mdiLightningBolt,
   mdiSetCenter,
+  mdiSnowflake,
   mdiWater,
   mdiWeatherWindy,
 } from "@mdi/js";
@@ -66,13 +69,21 @@ export const dataThemesBrands = {
     icon: mdiWater,
     color: "#73A6C7",
   },
+  oceans: {
+    icon: mdiWater,
+    color: "#6DA2C5",
+  },
   land: {
     icon: mdiImageFilterHdr,
     color: "#019E73",
   },
   health: {
     icon: mdiHospitalBoxOutline,
-    color: "#497FA9",
+    color: "#32322C",
+  },
+  "covid-19": {
+    icon: mdiHospitalBoxOutline,
+    color: "#32322C"
   },
   combined: {
     icon: mdiSetCenter,
@@ -82,10 +93,26 @@ export const dataThemesBrands = {
     icon: mdiWeatherWindy,
     color: "#475faf",
   },
+  atmosphere: {
+    icon: mdiWeatherWindy,
+    color: "#475faf",
+  },
   economy: {
     icon: mdiCurrencyEur,
     color: "#8E81AF",
   },
+  biomass: {
+    icon: mdiLeaf,
+    color: "#009E73",
+  },
+  extremes: {
+    icon: mdiLightningBolt,
+    color: "#a1280a"
+  },
+  cryosphere: {
+    icon: mdiSnowflake,
+    color: "#42C7B8"
+  }
 };
 /** used for switching in and out of compare mode @see {@link widgets/EodashMapBtns.vue} */
 export const switchToCompare = ref(true);
