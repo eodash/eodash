@@ -209,13 +209,22 @@ async function injectVegaInlineData(
       return resp.data;
     });
   } else if (link.method == "POST") {
-    // get body template to be used in POST request
+    // get body template to be used in POST request, check first if available
+    if (!link.body) {
+      console.error(
+        "[eodash] Inline data POST request requires a body template",
+      );
+      return spec;
+    }
+    // @ts-expect-error we assume link.body to be a string, not defined in stac-ts
     const bodyTemplate = await axios.get(link.body).then((resp) => {
       return resp.data;
     });
-    const body = JSON.parse(mustache.render(bodyTemplate, {
-      ...(jsonformValue ?? {}),
-    }));
+    const body = JSON.parse(
+      mustache.render(bodyTemplate, {
+        ...(jsonformValue ?? {}),
+      }),
+    );
     /** @type {import("vega-lite/build/src/data").InlineData} */
     (spec.data).values = await axios.post(url, body).then((resp) => {
       return resp.data;
