@@ -157,6 +157,7 @@ export async function getChartValues({
         await injectVegaInlineData(spec, {
           url: link.href,
           jsonformValue: jsonformValue,
+          link: link,
           flatstyleUrl: /** @type string */ (link["eox:flatstyle"]),
         });
         break checkForData;
@@ -191,20 +192,35 @@ export async function getChartValues({
  * @param {object} injectables
  * @param {string} injectables.url
  * @param {Record<string,any>} [injectables.jsonformValue]
+ * @param {import("stac-ts").StacLink} injectables.link
  * @param {url} [injectables.flatstyleUrl]
  */
 async function injectVegaInlineData(
   spec,
-  { url, jsonformValue, flatstyleUrl },
+  { url, jsonformValue, link, flatstyleUrl },
 ) {
   if (!spec.data) {
     return;
   }
-  const dataUrl = await renderDataUrl(url, jsonformValue, flatstyleUrl);
-  /** @type {import("vega-lite/build/src/data").InlineData} */
-  (spec.data).values = await axios.get(dataUrl).then((resp) => {
-    return resp.data;
-  });
+  if (link.method == "GET") {
+    const dataUrl = await renderDataUrl(url, jsonformValue, flatstyleUrl);
+    /** @type {import("vega-lite/build/src/data").InlineData} */
+    (spec.data).values = await axios.get(dataUrl).then((resp) => {
+      return resp.data;
+    });
+  } else if (link.method == "POST") {
+    // get body template to be used in POST request
+    const bodyTemplate = await axios.get(link.body).then((resp) => {
+      return resp.data;
+    });
+    const body = JSON.parse(mustache.render(bodyTemplate, {
+      ...(jsonformValue ?? {}),
+    }));
+    /** @type {import("vega-lite/build/src/data").InlineData} */
+    (spec.data).values = await axios.post(url, body).then((resp) => {
+      return resp.data;
+    });
+  }
   return spec;
 }
 
