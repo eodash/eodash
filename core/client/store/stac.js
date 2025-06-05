@@ -129,7 +129,7 @@ export const useSTAcStore = defineStore("stac", () => {
           indicator.value = isPoi
             ? indicator.value
             : useGetSubCodeId(selectedStac.value);
-          poi.value = isPoi ? useGetSubCodeId(selectedStac.value) : "";
+          poi.value = isPoi ? (selectedStac.value?.id ?? "") : "";
           switchToCompare.value = true;
         });
       })

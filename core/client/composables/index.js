@@ -359,7 +359,7 @@ export const useGetSubCodeId = (collection) => {
   if (!collection) {
     return "";
   }
-  const eodash = inject(eodashKey);
+
   if ("useSubCode" in (eodash?.options ?? {}) && eodash?.options?.useSubCode) {
     return typeof collection.subcode === "string"
       ? collection.subcode
