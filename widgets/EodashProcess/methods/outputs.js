@@ -216,10 +216,13 @@ async function injectVegaInlineData(
       );
       return spec;
     }
+    /** @type {string} */
+    const bodyTemplate = await axios
     // @ts-expect-error we assume link.body to be a string, not defined in stac-ts
-    const bodyTemplate = await axios.get(link.body).then((resp) => {
-      return resp.data;
-    });
+      .get(link.body, { responseType: "text" })
+      .then((resp) => {
+        return resp.data;
+      });
     const body = JSON.parse(
       mustache.render(bodyTemplate, {
         ...(jsonformValue ?? {}),
