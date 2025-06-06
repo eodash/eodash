@@ -48,7 +48,7 @@ import { useDisplay } from "vuetify";
 
 const dialog = ref(false);
 
-const { smAndDown, xxl,lgAndUp } = useDisplay();
+const { smAndDown, xxl, lgAndUp } = useDisplay();
 const popupWidth = computed(() => (smAndDown.value ? "80%" : "70%"));
 const popupHeight = computed(() => (smAndDown.value ? "90%" : "70%"));
 const btnClasses = computed(() => ({

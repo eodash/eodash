@@ -12,9 +12,9 @@ export const eodash = reactive({
   id: "demo",
   stacEndpoint:
     // "https://eodashcatalog.eox.at/statistical-veda-v5/trilateral/catalog.json",
-  // "https://esa-eodashboards.github.io/eodashboard-catalog/trilateral/catalog.json",
-  // "https://esa-eodashboards.github.io/RACE-catalog/RACE/catalog.json",
-  "https://GTIF-Austria.github.io/public-catalog/pr-preview/pr-16/GTIF-Austria/catalog.json",
+    // "https://esa-eodashboards.github.io/eodashboard-catalog/trilateral/catalog.json",
+    // "https://esa-eodashboards.github.io/RACE-catalog/RACE/catalog.json",
+    "https://GTIF-Austria.github.io/public-catalog/pr-preview/pr-16/GTIF-Austria/catalog.json",
   // "https://gtif-cerulean.github.io/catalog/cerulean/catalog.json",
   // "https://eodashcatalog.eox.at/samplecatalog/samples/catalog.json",
   // "https://eodashcatalog.eox.at/test-style/trilateral/catalog.json",
