@@ -62,6 +62,7 @@ const props = defineProps({
   enableHighlighting: { type: Boolean, default: true },
   expandMultipleFilters: { type: Boolean, default: true },
   expandMultipleResults: { type: Boolean, default: true },
+  styleOverride: { type: String, default: "" },
   filterProperties: {
     /** @type {import("vue").PropType<{
      * keys:string[];
@@ -133,6 +134,7 @@ const config = computed(() => ({
   aggregateResults: props.aggregateResults,
   style: props.cssVars,
   filterProperties: smAndDown.value ? "" : props.filterProperties,
+  styleOverride: props.styleOverride,
 }));
 /** @type {import("vue").Ref<HTMLElement & Record<string,any> | null>} */
 const eoxItemFilter = ref(null);
