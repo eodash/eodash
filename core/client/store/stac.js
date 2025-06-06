@@ -1,9 +1,13 @@
 import { defineStore } from "pinia";
 import { inject, ref } from "vue";
 import axios from "@/plugins/axios";
-import { useAbsoluteUrl, useCompareAbsoluteUrl } from "@/composables/index";
+import {
+  useAbsoluteUrl,
+  useCompareAbsoluteUrl,
+  useGetSubCodeId,
+} from "@/composables/index";
 import { eodashKey } from "@/utils/keys";
-import { indicator } from "@/store/states";
+import { indicator, poi } from "@/store/states";
 import { extractCollectionUrls } from "@/eodashSTAC/helpers";
 import {
   eodashCollections,
@@ -13,6 +17,7 @@ import {
 } from "@/utils/states";
 import { EodashCollection } from "@/eodashSTAC/EodashCollection";
 import log from "loglevel";
+import { toAbsolute } from "stac-js/src/http.js";
 
 export const useSTAcStore = defineStore("stac", () => {
   /**
@@ -77,12 +82,26 @@ export const useSTAcStore = defineStore("stac", () => {
    * Fetches selected stac object and assign it to `selectedStac`
    *
    * @param {string} relativePath - Stac link href
+   * @param {boolean} [isPoi=false] - If true, the STAC is loaded for a point of interest
    * @returns {Promise<void>}
    * @see {@link selectedStac}
    */
-  async function loadSelectedSTAC(relativePath = "") {
+  async function loadSelectedSTAC(relativePath = "", isPoi = false) {
     const absoluteUrl = useAbsoluteUrl(relativePath);
-
+    // construct absolute URL of a poi
+    if (isPoi) {
+      const indicatorUrl =
+        stac.value?.find((link) => useGetSubCodeId(link) === indicator.value)
+          ?.href ?? "";
+      const absoluteIndicatorUrl = toAbsolute(
+        indicatorUrl,
+        eodash.stacEndpoint,
+      );
+      absoluteUrl.value = useAbsoluteUrl(
+        relativePath,
+        absoluteIndicatorUrl,
+      ).value;
+    }
     await axios
       .get(absoluteUrl.value)
       .then(async (resp) => {
@@ -106,8 +125,11 @@ export const useSTAcStore = defineStore("stac", () => {
           eodashCollections.push(...collections);
 
           selectedStac.value = resp.data;
-
-          indicator.value = selectedStac.value?.id ?? "";
+          // set indicator and poi
+          indicator.value = isPoi
+            ? indicator.value
+            : useGetSubCodeId(selectedStac.value);
+          poi.value = isPoi ? (selectedStac.value?.id ?? "") : "";
           switchToCompare.value = true;
         });
       })

@@ -63,11 +63,11 @@ const props = defineProps({
   center: {
     //@ts-expect-error todo
     type: Array,
-    default: () => [15, 48],
+    default: () => [mapPosition.value?.[0] ?? 15, mapPosition.value?.[1] ?? 48],
   },
   zoom: {
     type: Number,
-    default: 4,
+    default: mapPosition.value?.[2] ?? 4,
   },
   zoomToExtent: {
     type: Boolean,
@@ -85,10 +85,7 @@ const controls = {
     collapsible: true,
   },
 };
-const initialCenter = toRaw([
-  mapPosition.value?.[0] ?? props.center?.[0],
-  mapPosition.value?.[1] ?? props.center?.[1],
-]);
+const initialCenter = toRaw(props.center);
 const initialZoom = toRaw(mapPosition.value?.[2] ?? props.zoom);
 /** @type {import("vue").Ref<Record<string,any>[]>} */
 const eoxMapLayers = ref([

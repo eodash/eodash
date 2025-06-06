@@ -32,11 +32,7 @@
       >
         Download
       </v-btn>
-      <v-btn
-        v-if="opIndicator"
-        color="primary"
-        @click="loadOPsIndicator(opIndicator)"
-      >
+      <v-btn v-if="poi" color="primary" @click="loadPOiIndicator()">
         back to points
       </v-btn>
     </div>
@@ -51,13 +47,13 @@ import { storeToRefs } from "pinia";
 import { computed, ref, toRaw, useTemplateRef } from "vue";
 import ProcessList from "./ProcessList.vue";
 import {
-  loadOPsIndicator,
   handleProcesses,
   onChartClick,
+  loadPOiIndicator,
 } from "./methods/handling";
 import { useInitProcess, useAutoExec } from "./methods/composables";
 import { jobs, updateJobsStatus } from "./methods/async";
-import { indicator, opIndicator } from "@/store/states";
+import { indicator, poi } from "@/store/states";
 import { download } from "./methods/utils";
 
 /** @type {import("vue").Ref<import("vega").Spec|null>} */

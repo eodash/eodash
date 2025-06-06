@@ -311,6 +311,10 @@ export interface EodashFont {
 export type Eodash<T extends ExecutionTime = "compiletime"> = {
   /** Instance ID. */
   id?: string;
+  /** Object containing potential special configuration options */
+  options?: {
+    useSubCode?: boolean;
+  };
   /** Root STAC catalog endpoint */
   stacEndpoint: StacEndpoint;
   /** Brand specifications. */
