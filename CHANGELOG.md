@@ -1,6 +1,15 @@
 # Changelog
 
 
+## [5.0.1-rc](https://github.com/eodash/eodash/compare/eodash-v5.0.0...eodash-v5.0.1-rc) (2025-06-06)
+
+
+### Features
+
+* Adding possibility to use POST for process requests ([#204](https://github.com/eodash/eodash/issues/204)) ([b7cad01](https://github.com/eodash/eodash/commit/b7cad0118bf987c82023bca56b9358a7457fe12b))
+* Integrate SentinelHub & Veda Processing Endpoints ([#182](https://github.com/eodash/eodash/issues/182)) ([05a2e54](https://github.com/eodash/eodash/commit/05a2e54913e3426724b0fdd7da2cf5c7ef101fd3))
+* support STAC as processing output ([#197](https://github.com/eodash/eodash/issues/197)) ([f63ad5e](https://github.com/eodash/eodash/commit/f63ad5ee0dc1e5e26fa609c4a61ae4ddb003c1e1))
+
 ## [5.0.0](https://github.com/eodash/eodash/compare/eodash-v5.0.0-rc.3...eodash-v5.0.0) (2025-03-26)
 
 
