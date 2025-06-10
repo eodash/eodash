@@ -6,6 +6,7 @@ import { useSTAcStore } from "@/store/stac";
 import { storeToRefs } from "pinia";
 import { isFirstLoad } from "@/utils/states";
 import { useEmitLayersUpdate, useOnLayersUpdate } from "@/composables";
+import { mapPosition } from "@/store/states";
 /**
  * Holder for previous compare map view as it is overwritten by sync
  * @type { import("ol").View | null} mapElement
@@ -167,7 +168,7 @@ export const useInitMap = (
           if (
             mapElement?.value?.id === "main" &&
             updatedStac.extent?.spatial.bbox &&
-            !isFirstLoad.value
+            !(isFirstLoad.value && mapPosition.value?.[0] && mapPosition.value?.[1])
           ) {
             // Sanitize extent,
             const b = updatedStac.extent?.spatial.bbox[0];
