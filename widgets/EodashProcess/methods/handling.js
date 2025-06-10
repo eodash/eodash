@@ -1,6 +1,6 @@
 import log from "loglevel";
 import { extractGeometries, getBboxProperty } from "./utils";
-import { datetime, indicator, mapEl } from "@/store/states";
+import { datetime, indicator, mapEl, poi } from "@/store/states";
 import axios from "@/plugins/axios";
 import { getLayers } from "@/store/actions";
 import {
@@ -41,7 +41,16 @@ export async function initProcess({
   loading,
   isPolling,
 }) {
-  if (!selectedStac.value) {
+  let updatedJsonform = null;
+  if (selectedStac.value["eodash:jsonform"]) {
+    updatedJsonform = await axios
+      //@ts-expect-error eodash extention
+      .get(selectedStac.value["eodash:jsonform"])
+      .then((resp) => resp.data);
+  }
+
+  if (!updatedJsonform && poi.value) {
+    jsonformSchema.value = null;
     return;
   }
   resetProcess({
@@ -52,19 +61,10 @@ export async function initProcess({
     isPolling,
     processResults,
   });
-  if (selectedStac.value["eodash:jsonform"]) {
-    jsonformEl.value?.editor.destroy();
-    // wait for the layers to be rendered
-    jsonformSchema.value = await axios
-      //@ts-expect-error eodash extention
-      .get(selectedStac.value["eodash:jsonform"])
-      .then((resp) => resp.data);
-    // remove borders from jsonform
-  } else {
-    if (!jsonformSchema.value) {
-      return;
-    }
-    jsonformSchema.value = null;
+
+  jsonformEl.value?.editor.destroy();
+  if (updatedJsonform) {
+    jsonformSchema.value = updatedJsonform;
   }
 }
 
@@ -108,13 +108,6 @@ export async function handleProcesses({
 
     extractGeometries(jsonformValue, jsonformSchema.value);
 
-    const isSTAC = serviceLinks.some((link) => link.endpoint === "STAC");
-
-    if (isSTAC) {
-      await processSTAC(serviceLinks, jsonformValue);
-      return;
-    }
-
     const origBbox = jsonformValue[bboxProperty];
 
     const specUrl = /** @type {string} */ (
@@ -145,6 +138,8 @@ export async function handleProcesses({
     if (chartSpec.value && !("background" in chartSpec.value)) {
       chartSpec.value["background"] = "transparent";
     }
+
+    await processSTAC(serviceLinks, jsonformValue);
 
     const geotiffLayers = await processGeoTiff({
       links: serviceLinks,

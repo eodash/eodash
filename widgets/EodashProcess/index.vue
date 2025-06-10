@@ -4,6 +4,7 @@
 
     <eox-jsonform
       v-if="jsonformSchema"
+      :key="selectedStac"
       ref="jsonformEl"
       .schema="jsonformSchema"
     ></eox-jsonform>

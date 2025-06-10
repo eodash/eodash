@@ -217,7 +217,7 @@ async function injectVegaInlineData(
     }
     /** @type {string} */
     const bodyTemplate = await axios
-    // @ts-expect-error we assume link.body to be a string, not defined in stac-ts
+      // @ts-expect-error we assume link.body to be a string, not defined in stac-ts
       .get(link.body, { responseType: "text" })
       .then((resp) => {
         return resp.data;
