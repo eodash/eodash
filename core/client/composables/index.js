@@ -343,7 +343,7 @@ export const useEmitLayersUpdate = async (event, mapEl, layers) => {
       return;
     }
 
-    dl.getLayers().once("add", async () => {
+    dl.getLayers().once("change", async () => {
       await emit();
       res(true);
     });
