@@ -17,7 +17,7 @@
     />
     <div style="text-align: right">
       <v-btn
-        v-if="!autoExec"
+        v-if="!autoExec && (jsonformSchema || chartSpec)"
         :loading="loading"
         style="margin-right: 20px"
         @click="startProcess"
