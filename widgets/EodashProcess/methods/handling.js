@@ -62,7 +62,7 @@ export async function initProcess({
     processResults,
   });
 
-  jsonformEl.value?.editor.destroy();
+  await jsonformEl.value?.editor.destroy();
   if (updatedJsonform) {
     jsonformSchema.value = updatedJsonform;
   }
@@ -299,6 +299,10 @@ export const onChartClick = (evt) => {
  * Loads the main indicator of a Point of Interest (POI)
  */
 export const loadPOiIndicator = () => {
+  if (!indicator.value) {
+    indicator.value =
+      new URLSearchParams(window.location.search).get("indicator") ?? "";
+  }
   const stacStore = useSTAcStore();
   const link = stacStore.stac?.find(
     (link) => useGetSubCodeId(link) === indicator.value,
