@@ -3,13 +3,7 @@ import { extractGeometries, getBboxProperty } from "./utils";
 import { datetime, mapEl, opIndicator } from "@/store/states";
 import axios from "@/plugins/axios";
 import { getLayers } from "@/store/actions";
-import {
-  getChartValues,
-  processGeoTiff,
-  processImage,
-  processSTAC,
-  processVector,
-} from "./outputs";
+import { getChartValues, processLayers, processSTAC } from "./outputs";
 import { handleGeotiffCustomEndpoints } from "./custom-endpoints/geotiff";
 import { handleChartCustomEndpoints } from "./custom-endpoints/chart";
 import { useSTAcStore } from "@/store/stac";
@@ -145,60 +139,33 @@ export async function handleProcesses({
     if (chartSpec.value && !("background" in chartSpec.value)) {
       chartSpec.value["background"] = "transparent";
     }
-
-    const geotiffLayers = await processGeoTiff({
-      links: serviceLinks,
-      jsonformValue,
-      layerId,
+    const newLayers = await processLayers({
       isPolling,
-      projection:
-        //@ts-expect-error TODO
-        selectedStac.value?.["eodash:mapProjection"]?.["name"] ?? null,
+      links: serviceLinks,
+      jsonformValue: { ...(jsonformValue ?? {}) },
       jsonformSchema: jsonformSchema.value,
       selectedStac: selectedStac.value,
-      customEndpointsHandler: handleGeotiffCustomEndpoints,
-    });
-    geotiffLayers?.forEach((geotiffLayer) => {
-      if (geotiffLayer && geotiffLayer.source?.sources.length) {
-        processResults.value.push(
-          //@ts-expect-error TODO
-          ...(geotiffLayer.source?.sources?.map((source) => source.url) ?? []),
-        );
-      }
-    });
-
-    const vectorLayers = await processVector(
-      serviceLinks,
-      jsonformValue,
       layerId,
-    );
+      origBbox,
+      //@ts-expect-error TODO
+      customLayersHandler: handleGeotiffCustomEndpoints,
+      projection: /** @type {{name?:string}} */ (
+        selectedStac.value?.["eodash:mapProjection"]
+      )?.["name"],
+    });
 
-    if (vectorLayers?.length) {
-      processResults.value.push(
-        ...vectorLayers.map((layer) => layer.source?.url),
-      );
+    // save layers results
+    if (newLayers.length) {
+      for (const layer of newLayers) {
+        if (layer.type === "WebGLTile" && layer.source?.type === "GeoTIFF") {
+          processResults.value.push(...(layer.source.sources ?? []));
+        } else if (layer.source && "url" in layer.source) {
+          processResults.value.push(layer.source.url);
+        }
+      }
     }
 
-    const imageLayers = processImage(serviceLinks, jsonformValue, origBbox);
-    if (imageLayers?.length) {
-      processResults.value.push(
-        ...imageLayers.map((layer) => layer.source?.url),
-      );
-    }
-
-    log.debug(
-      "rendered layers after processing:",
-      geotiffLayers,
-      vectorLayers,
-      imageLayers,
-    );
-
-    if (geotiffLayers?.length || vectorLayers?.length || imageLayers?.length) {
-      const newLayers = /** @type {import("@eox/map").EoxLayer[]} */ ([
-        ...(geotiffLayers ?? []),
-        ...(vectorLayers ?? []),
-        ...(imageLayers ?? []),
-      ]);
+    if (newLayers.length) {
       let currentLayers = [...getLayers()];
 
       let analysisGroup =

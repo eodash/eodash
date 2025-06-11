@@ -6,88 +6,6 @@ import { useSTAcStore } from "@/store/stac";
 import { toAbsolute } from "stac-js/src/http.js";
 import { currentUrl, indicator, opIndicator } from "@/store/states";
 
-/**
- * @param {import("stac-ts").StacLink[] | undefined} links
- * @param {Record<string,any>|undefined} jsonformValue
- * @param {number[]} origBbox
- */
-export function processImage(links, jsonformValue, origBbox) {
-  if (!links) return;
-  const imageLinks = links.filter(
-    (link) => link.rel === "service" && link.type === "image/png",
-  );
-  const layers = [];
-  for (const link of imageLinks) {
-    layers.push({
-      type: "Image",
-      properties: {
-        id: link.id + "_process",
-        title: "Results " + link.id,
-      },
-      source: {
-        type: "ImageStatic",
-        imageExtent: origBbox,
-        url: mustache.render(link.href, {
-          ...(jsonformValue ?? {}),
-        }),
-      },
-    });
-  }
-  return layers;
-}
-
-/**
- * @param {import("stac-ts").StacLink[] | undefined} links
- * @param {Record<string,any> | undefined} jsonformValue
- * @param {string} layerId
- */
-export async function processVector(links, jsonformValue, layerId) {
-  if (!links) return;
-  /** @type {Record<string,any>[]} */
-  const layers = [];
-  const vectorLinks = links.filter(
-    (link) => link.rel === "service" && link.type === "application/geo+json",
-  );
-  if (vectorLinks.length === 0) return layers;
-
-  let flatStyleJSON = null;
-
-  for (const link of vectorLinks) {
-    if ("eox:flatstyle" in (link ?? {})) {
-      flatStyleJSON = await axios
-        .get(/** @type {string} */ (link["eox:flatstyle"]))
-        .then((resp) => resp.data);
-    }
-
-    /** @type {Record<string,any>|undefined} */
-    let layerConfig;
-    /** @type {Record<string,any>|undefined} */
-    let style;
-    if (flatStyleJSON) {
-      const extracted = extractLayerConfig(layerId ?? "", flatStyleJSON);
-      layerConfig = extracted.layerConfig;
-      style = extracted.style;
-    }
-    const layer = {
-      type: "Vector",
-      source: {
-        type: "Vector",
-        url: mustache.render(link.href, {
-          ...(jsonformValue ?? {}),
-        }),
-        format: "GeoJSON",
-      },
-      properties: {
-        id: link.id + "_process",
-        title: "Results " + layerId,
-        ...(layerConfig && { ...layerConfig }),
-      },
-      ...(style && { style: style }),
-    };
-    layers.push(layer);
-  }
-  return layers;
-}
 ////// --- CHARTS --- //////
 /**
  * @param {object} options
@@ -218,7 +136,7 @@ async function injectVegaInlineData(
     }
     /** @type {string} */
     const bodyTemplate = await axios
-    // @ts-expect-error we assume link.body to be a string, not defined in stac-ts
+      // @ts-expect-error we assume link.body to be a string, not defined in stac-ts
       .get(link.body, { responseType: "text" })
       .then((resp) => {
         return resp.data;
@@ -273,49 +191,28 @@ async function renderDataUrl(url, jsonformValue, flatstyleUrl) {
   });
 }
 
-///////
+/////// MAP LAYERS ///////
 
 /**
  * @param {object} options
  * @param {import("stac-ts").StacLink[] | undefined} options.links
  * @param {Record<string,any> | undefined} options.jsonformValue
  * @param {string} options.layerId
- * @param {import("vue").Ref<boolean>} options.isPolling
- * @param {string} options.projection
- * @param {import("stac-ts").StacCollection} options.selectedStac
- * @param {import("json-schema").JSONSchema7} options.jsonformSchema
- * @param {(input:import("^/EodashProcess/types").CustomEnpointInput)=>Promise<Record<string,any>[] | undefined | null>} [options.customEndpointsHandler]
+ * @param {string} [options.projection]
  */
 export async function processGeoTiff({
   links,
   jsonformValue,
   layerId,
-  isPolling,
   projection,
-  selectedStac,
-  jsonformSchema,
-  customEndpointsHandler,
 }) {
   if (!links) return;
 
-  const [geotiffLinks, endpointLinks] = separateEndpointLinks(
+  const [geotiffLinks, _] = separateEndpointLinks(
     links,
     "service",
     "image/tiff",
   );
-  const layers =
-    customEndpointsHandler &&
-    jsonformValue &&
-    (await customEndpointsHandler({
-      jsonformValue,
-      links: endpointLinks,
-      selectedStac,
-      isPolling,
-      jsonformSchema,
-    }));
-  if (layers && layers.length) {
-    return layers;
-  }
 
   if (!geotiffLinks.length) {
     return;
@@ -325,18 +222,182 @@ export async function processGeoTiff({
   for (const link of geotiffLinks ?? []) {
     urls.push(mustache.render(link.href, { ...(jsonformValue ?? {}) }));
   }
-  const definitions = geotiffLinks.map((geotiffLink) =>
-    createTiffLayerDefinition(
-      geotiffLink,
-      layerId,
-      urls,
-      projection,
-      processId,
+  const definitions = await Promise.all(
+    geotiffLinks.map((geotiffLink) =>
+      createTiffLayerDefinition(
+        geotiffLink,
+        layerId,
+        urls,
+        projection,
+        processId,
+      ),
     ),
-  );
+  ).then((defs) => defs.filter((defs) => !!defs));
   return definitions;
 }
 
+/**
+ * @param {import("stac-ts").StacLink[] | undefined} links
+ * @param {Record<string,any>|undefined} jsonformValue
+ * @param {number[]} origBbox
+ */
+export function processImage(links, jsonformValue, origBbox) {
+  if (!links) return;
+  const imageLinks = links.filter(
+    (link) => link.rel === "service" && link.type === "image/png",
+  );
+  /** @type {import("@eox/map/src/layers").EOxLayerType<"Image","ImageStatic">[]} */
+  const layers = [];
+  for (const link of imageLinks) {
+    layers.push({
+      type: "Image",
+      properties: {
+        id: link.id + "_process",
+        title: "Results " + link.id,
+      },
+      source: {
+        type: "ImageStatic",
+        imageExtent: origBbox,
+        url: mustache.render(link.href, {
+          ...(jsonformValue ?? {}),
+        }),
+      },
+    });
+  }
+  return layers;
+}
+
+/**
+ * @param {import("stac-ts").StacLink[] | undefined} links
+ * @param {Record<string,any> | undefined} jsonformValue
+ * @param {string} layerId
+ */
+export async function processVector(links, jsonformValue, layerId) {
+  if (!links) return;
+  /** @type {import("@eox/map/src/layers").EOxLayerType<"Vector",any>[]} */
+  const layers = [];
+  const vectorLinks = links.filter(
+    (link) => link.rel === "service" && link.type === "application/geo+json",
+  );
+  if (!vectorLinks.length) return layers;
+
+  let flatStyleJSON = null;
+
+  for (const link of vectorLinks) {
+    if ("eox:flatstyle" in (link ?? {})) {
+      flatStyleJSON = await axios
+        .get(/** @type {string} */ (link["eox:flatstyle"]))
+        .then((resp) => resp.data);
+    }
+
+    /** @type {Record<string,any>|undefined} */
+    let layerConfig;
+    /** @type {Record<string,any>|undefined} */
+    let style;
+    if (flatStyleJSON) {
+      const extracted = extractLayerConfig(layerId ?? "", flatStyleJSON);
+      layerConfig = extracted.layerConfig;
+      style = extracted.style;
+    }
+    /** @type {import("@eox/map/src/layers").EOxLayerType<"Vector","Vector"|"FlatGeoBuf">} */
+    const layer = {
+      type: "Vector",
+      source: {
+        type: "Vector",
+        url: mustache.render(link.href, {
+          ...(jsonformValue ?? {}),
+        }),
+        format: "GeoJSON",
+      },
+      properties: {
+        id: link.id + "_process",
+        title: "Results " + layerId,
+        ...(layerConfig && { ...layerConfig }),
+      },
+      ...(style && { style: style }),
+    };
+    layers.push(layer);
+  }
+  return layers;
+}
+
+/**
+ * Unified wrapper for processing map layer types (Vector, Image, GeoTiff)
+ * @param {object} options
+ * @param {import("stac-ts").StacLink[] | undefined} options.links
+ * @param {Record<string,any> | undefined} options.jsonformValue
+ * @param {string} options.layerId
+ * @param {string} [options.projection] - Required for GeoTiff layers
+ * @param {number[]} options.origBbox - Required for Image layers
+ * @param {import("vue").Ref<boolean>} options.isPolling
+ * @param {import("stac-ts").StacCollection} options.selectedStac
+ * @param {import("json-schema").JSONSchema7} options.jsonformSchema
+ * @param {(input:import("../types").CustomEnpointInput)=>Promise<import("@eox/map").EoxLayer[]>} options.customLayersHandler
+ */
+export async function processLayers({
+  links,
+  jsonformValue,
+  layerId,
+  projection,
+  origBbox,
+  isPolling,
+  selectedStac,
+  jsonformSchema,
+  customLayersHandler,
+}) {
+  if (!links) return [];
+  /** @type {import("@eox/map").EoxLayer[]} */
+  const layers = [];
+
+  const [standardLinks, endpointLinks] = separateEndpointLinks(
+    links,
+    "service",
+    undefined,
+  );
+  // Handle custom endpoints first if handler is provided
+  if (customLayersHandler && jsonformValue && selectedStac && jsonformSchema) {
+    if (endpointLinks.length > 0) {
+      const customLayers = await customLayersHandler({
+        jsonformValue,
+        links: endpointLinks,
+        selectedStac,
+        isPolling,
+        jsonformSchema,
+      });
+
+      if (customLayers && customLayers.length) {
+        layers.push(...customLayers);
+      }
+    }
+  }
+
+  const vectorlayers = await processVector(
+    standardLinks,
+    jsonformValue,
+    layerId,
+  );
+
+  const imagelayers = processImage(standardLinks, jsonformValue, origBbox);
+
+  const geotiffLayers = await processGeoTiff({
+    links: standardLinks,
+    jsonformValue,
+    layerId,
+    projection,
+  });
+
+  layers.push(
+    ...[
+      ...(vectorlayers ?? []),
+      ...(imagelayers ?? []),
+      ...(geotiffLayers ?? []),
+    ],
+  );
+
+  return layers;
+}
+
+////// STAC PROCESSING /////
 /**
  *
  * @param {import("stac-ts").StacLink[]} links

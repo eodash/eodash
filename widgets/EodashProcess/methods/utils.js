@@ -53,12 +53,11 @@ export function extractGeometries(jsonformValue, jsonformSchema) {
 
 /**
  *
- * @param {*} link
- * @param {*} layerId
+ * @param {import("stac-ts").StacLink} link
+ * @param {string} layerId
  * @param {string[]} urls
- * @param {*} projection
- * @param {*} processId
- * @returns
+ * @param {import("openlayers").ProjectionLike} projection
+ * @param {string} processId
  */
 export async function createTiffLayerDefinition(
   link,
@@ -74,9 +73,7 @@ export async function createTiffLayerDefinition(
       .then((resp) => resp.data);
   }
 
-  /** @type {Record<string,any>|undefined} */
   let layerConfig;
-  /** @type {Record<string,any>|undefined} */
   let style;
   if (flatStyleJSON) {
     const extracted = extractLayerConfig(layerId ?? "", flatStyleJSON);
@@ -85,6 +82,7 @@ export async function createTiffLayerDefinition(
   }
   // We want to make sure the urls are alphabetically sorted
   urls = urls.sort();
+  /** @type {import("@eox/map/src/layers").EOxLayerType<"WebGLTile","GeoTIFF"> | undefined} */
   const layerdef =
     urls.length > 0
       ? {
