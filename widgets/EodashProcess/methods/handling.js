@@ -4,7 +4,7 @@ import { datetime, mapEl, opIndicator } from "@/store/states";
 import axios from "@/plugins/axios";
 import { getLayers } from "@/store/actions";
 import { getChartValues, processLayers, processSTAC } from "./outputs";
-import { handleGeotiffCustomEndpoints } from "./custom-endpoints/geotiff";
+import { handleLayersCustomEndpoints } from "./custom-endpoints/layers";
 import { handleChartCustomEndpoints } from "./custom-endpoints/chart";
 import { useSTAcStore } from "@/store/stac";
 import { replaceLayer } from "@/eodashSTAC/helpers";
@@ -147,8 +147,7 @@ export async function handleProcesses({
       selectedStac: selectedStac.value,
       layerId,
       origBbox,
-      //@ts-expect-error TODO
-      customLayersHandler: handleGeotiffCustomEndpoints,
+      customLayersHandler: handleLayersCustomEndpoints,
       projection: /** @type {{name?:string}} */ (
         selectedStac.value?.["eodash:mapProjection"]
       )?.["name"],
