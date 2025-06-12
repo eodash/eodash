@@ -19,7 +19,6 @@ function createCustomLayersEndpointsHandler(callbacks) {
 }
 
 /**
- *
  * @param {any} layer
  * @returns {layer is import("@eox/map/.").EoxLayer}
  */

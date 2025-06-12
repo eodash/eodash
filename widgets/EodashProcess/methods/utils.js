@@ -1,5 +1,12 @@
-import { extractLayerConfig } from "@/eodashSTAC/helpers";
+import { useEmitLayersUpdate } from "@/composables";
+import {
+  extractLayerConfig,
+  mergeGeojsons,
+  replaceLayer,
+} from "@/eodashSTAC/helpers";
 import axios from "@/plugins/axios";
+import { getLayers } from "@/store/actions";
+import { mapEl } from "@/store/states";
 import { isMulti } from "@eox/jsonform/src/custom-inputs/spatial/utils";
 
 /**
@@ -262,3 +269,208 @@ export function separateEndpointLinks(links, relType, contentType) {
 
   return [standardLinks, endpointLinks];
 }
+
+/**
+ * Generates layer definitions for asynchronous process results.
+ * using AsyncProcessResults data structure.
+ * @param {import("^/EodashProcess/types").AsyncProcessResults} processResults
+ * @param {import("stac-ts").StacLink} endpointLink
+ * @param {import("stac-ts").StacCollection|null} selectedStac
+ * @param {string} [postfixId=""] - Optional layers id postfix
+ * @returns
+ */
+export async function creatAsyncProcessLayerDefinitions(
+  processResults,
+  endpointLink,
+  selectedStac,
+  postfixId = "",
+) {
+  /** @type {import("@eox/map").EoxLayer[]} */
+  const layers = [];
+  /** @type {import("@/types").EodashStyleJson | (Record<string,import("@/types").EodashStyleJson> & {multipleStyles:true}) | null} */
+  let flatStyles = null;
+  if (endpointLink["eox:flatstyle"]) {
+    if (typeof endpointLink["eox:flatstyle"] === "string") {
+      flatStyles = await axios
+        .get(/** @type {string} */ (endpointLink["eox:flatstyle"]))
+        .then((resp) => /** @type {} */ resp.data);
+    } else {
+      // multipleStyles as a flag to indicate it
+      flatStyles = { multipleStyles: true };
+      await Promise.all(
+        Object.keys(endpointLink["eox:flatstyle"] ?? {}).map((key) => {
+          //@ts-expect-error TODO
+          flatStyles[key] = axios
+            //@ts-expect-error TODO
+            .get(endpointLink["eox:flatstyle"][key])
+            .then((resp) => resp.data);
+        }),
+      );
+    }
+  }
+
+  for (const resultItem of processResults) {
+    const flatStyleJSON = extractStyle(resultItem, flatStyles);
+    let style, layerConfig;
+    if (flatStyleJSON) {
+      const extracted = extractLayerConfig(
+        selectedStac?.id ?? "",
+        flatStyleJSON,
+      );
+      layerConfig = extracted.layerConfig;
+      style = extracted.style;
+    }
+
+    switch (resultItem.type) {
+      case "image/tiff": {
+        layers.push({
+          type: "WebGLTile",
+          properties: {
+            id: endpointLink.id + "_process" + resultItem.id + postfixId,
+            title:
+              "Results " +
+              (selectedStac?.id ?? "") +
+              " " +
+              (resultItem.id ?? ""),
+            layerControlToolsExpand: true,
+            ...(layerConfig && { layerConfig }),
+          },
+          source: {
+            type: "GeoTIFF",
+            normalize: !style,
+            sources: resultItem.urls.map((url) => ({ url })),
+            //@ts-expect-error TODO
+            ...(selectedStac["eodash:mapProjection"]?.["name"] && {
+              //@ts-expect-error TODO
+              projection: selectedStac["eodash:mapProjection"]["name"],
+            }),
+          },
+          ...(style && { style }),
+        });
+        break;
+      }
+      case "application/geo+json": {
+        const mergedUrl = await mergeGeojsons(resultItem.urls);
+        layers.push({
+          type: "Vector",
+          source: {
+            type: "Vector",
+            format: "GeoJSON",
+            ...(mergedUrl && { url: mergedUrl }),
+          },
+          properties: {
+            id: endpointLink.id + "_process_" + resultItem.id + postfixId,
+            title:
+              "Results " +
+              (selectedStac?.id ?? "") +
+              " " +
+              (resultItem.id ?? ""),
+            ...(layerConfig && {
+              layerConfig: {
+                ...layerConfig,
+                style,
+              },
+            }),
+          },
+          ...(!style?.variables && { style }),
+          interactions: [],
+        });
+        break;
+      }
+      default:
+        console.warn(
+          `[eodash] Unsupported result type "${resultItem.type}" for ${resultItem.id} layer creation.`,
+        );
+        break;
+    }
+  }
+  return layers;
+}
+/**
+ *
+ * @param {import("^/EodashProcess/types").AsyncProcessResults[number]} processResult
+ * @param {null| import("@/types").EodashStyleJson | (Record<string,import("@/types").EodashStyleJson> & {multipleStyles:true})} flatStyles
+ */
+function extractStyle(processResult, flatStyles) {
+  if (!flatStyles) {
+    return undefined;
+  }
+  if (!("multipleStyles" in flatStyles)) {
+    return flatStyles;
+  }
+
+  const outputKey = processResult.id;
+  if (!outputKey || !(outputKey in flatStyles)) {
+    return undefined;
+  }
+  return flatStyles[outputKey];
+}
+
+/**
+ *
+ * @param {import("^/EodashProcess/types").EOxHubProcessResults} resultItem
+ * @returns {import("^/EodashProcess/types").AsyncProcessResults}
+ */
+export function extractAsyncResults(resultItem) {
+  if (!resultItem) {
+    return [];
+  }
+  // if no type specified we assume the results are geotiff sources
+  if ("urls" in resultItem && Array.isArray(resultItem.urls)) {
+    return [{ id: "", urls: resultItem.urls, type: "image/tiff" }];
+  }
+
+  const extracted = [];
+  for (const key in resultItem) {
+    if (key === "id") {
+      continue;
+    }
+    extracted.push({
+      // used as a key to identify the corresponding style
+      id: key,
+      //@ts-expect-error TODO
+      urls: /** @type {string[]} */ (resultItem[key].urls),
+      //@ts-expect-error TODO
+      type: /** @type {string} */ (resultItem[key].mimetype),
+    });
+  }
+  return extracted;
+}
+/**
+ *
+ * @param {import("@eox/map").EoxLayer[]} processLayers
+ * @returns
+ */
+export const applyProcessLayersToMap = (processLayers) => {
+  if (processLayers.length) {
+    const currentLayers = [...getLayers()];
+
+    let analysisGroup =
+      /*** @type {import("@eox/map/src/layers").EOxLayerTypeGroup | undefined} */ (
+        currentLayers.find((l) => l.properties?.id.includes("AnalysisGroup"))
+      );
+    if (!analysisGroup) {
+      return;
+    }
+
+    for (const layer of processLayers) {
+      const exists = analysisGroup.layers.find(
+        (l) => l.properties?.id === layer.properties?.id,
+      );
+      if (!exists) {
+        analysisGroup.layers.unshift(layer);
+      } else {
+        analysisGroup.layers = replaceLayer(
+          analysisGroup.layers,
+          layer.properties?.id ?? "",
+          [layer],
+        );
+      }
+    }
+    if (mapEl.value) {
+      const layers = [...currentLayers];
+      useEmitLayersUpdate("process:updated", mapEl.value, layers);
+      mapEl.value.layers = layers;
+    }
+  }
+};

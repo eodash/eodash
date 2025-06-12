@@ -15,7 +15,7 @@
         </tr>
       </thead>
       <tbody>
-        <tr v-for="item in jobs" :key="item.date">
+        <tr v-for="item in jobs" :key="item.jobID">
           <td>
             {{ new Date(item.job_start_datetime).toISOString().slice(0, 16) }}
           </td>
@@ -73,7 +73,7 @@ import { useOnLayersUpdate } from "@/composables";
 
 const { selectedStac } = toRefs(useSTAcStore());
 
-useOnLayersUpdate(() => updateJobsStatus(jobs, indicator));
+useOnLayersUpdate(() => updateJobsStatus(jobs, indicator.value));
 </script>
 <style lang="scss">
 div.v-table__wrapper {

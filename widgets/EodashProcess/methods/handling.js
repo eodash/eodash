@@ -1,14 +1,15 @@
 import log from "loglevel";
-import { extractGeometries, getBboxProperty } from "./utils";
-import { datetime, mapEl, opIndicator } from "@/store/states";
+import {
+  applyProcessLayersToMap,
+  extractGeometries,
+  getBboxProperty,
+} from "./utils";
+import { datetime, opIndicator } from "@/store/states";
 import axios from "@/plugins/axios";
-import { getLayers } from "@/store/actions";
 import { getChartValues, processLayers, processSTAC } from "./outputs";
 import { handleLayersCustomEndpoints } from "./custom-endpoints/layers";
 import { handleChartCustomEndpoints } from "./custom-endpoints/chart";
 import { useSTAcStore } from "@/store/stac";
-import { replaceLayer } from "@/eodashSTAC/helpers";
-import { useEmitLayersUpdate } from "@/composables/index";
 
 /**
  * Fetch and set the jsonform schema to initialize the process
@@ -163,38 +164,7 @@ export async function handleProcesses({
         }
       }
     }
-
-    if (newLayers.length) {
-      let currentLayers = [...getLayers()];
-
-      let analysisGroup =
-        /*** @type {import("@eox/map/src/layers").EOxLayerTypeGroup | undefined} */ (
-          currentLayers.find((l) => l.properties?.id.includes("AnalysisGroup"))
-        );
-      if (!analysisGroup) {
-        return;
-      }
-
-      for (const layer of newLayers) {
-        const exists = analysisGroup.layers.find(
-          (l) => l.properties?.id === layer.properties?.id,
-        );
-        if (!exists) {
-          analysisGroup.layers.unshift(layer);
-        } else {
-          analysisGroup.layers = replaceLayer(
-            analysisGroup.layers,
-            layer.properties?.id ?? "",
-            [layer],
-          );
-        }
-      }
-      if (mapEl.value) {
-        const layers = [...currentLayers];
-        useEmitLayersUpdate("process:updated", mapEl.value, layers);
-        mapEl.value.layers = layers;
-      }
-    }
+    applyProcessLayersToMap(newLayers);
     loading.value = false;
   } catch (error) {
     console.error("[eodash] Error while running process:", error);
