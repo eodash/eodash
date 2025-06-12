@@ -10,14 +10,15 @@ import { includesProcess } from "./store/actions";
  */
 export const eodash = reactive({
   id: "demo",
+  options: {
+    // useSubCode: true,
+  },
   stacEndpoint:
-    // "https://eodashcatalog.eox.at/statistical-veda-v5/trilateral/catalog.json",
-    // "https://esa-eodashboards.github.io/eodashboard-catalog/trilateral/catalog.json",
-    // "https://esa-eodashboards.github.io/RACE-catalog/RACE/catalog.json",
-    "https://GTIF-Austria.github.io/public-catalog/pr-preview/pr-16/GTIF-Austria/catalog.json",
+    "https://esa-eodashboards.github.io/eodashboard-catalog/trilateral/catalog.json",
+  // "https://esa-eodashboards.github.io/RACE-catalog/RACE/catalog.json",
+  // "https://GTIF-Austria.github.io/public-catalog/pr-preview/pr-16/GTIF-Austria/catalog.json",
   // "https://gtif-cerulean.github.io/catalog/cerulean/catalog.json",
   // "https://eodashcatalog.eox.at/samplecatalog/samples/catalog.json",
-  // "https://eodashcatalog.eox.at/test-style/trilateral/catalog.json",
   // "https://gtif-cerulean.github.io/deside-catalog/deside/catalog.json",
   // "https://gtif-cerulean.github.io/cerulean-catalog/cerulean/catalog.json",
   // "https://gtif-austria.github.io/public-catalog/GTIF-Austria/catalog.json",

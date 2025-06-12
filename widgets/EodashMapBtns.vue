@@ -23,6 +23,13 @@
       v-if="compareIndicators"
       @click="onCompareClick"
     />
+    <v-btn
+      class="map-btn"
+      :icon="[mdiStarFourPointsCircleOutline]"
+      v-tooltip:bottom="'back to POIs'"
+      v-if="backToPOIs && poi"
+      @click="loadPOiIndicator()"
+    />
     <PopUp
       v-model="showCompareIndicators"
       :maxWidth="popupWidth"
@@ -41,8 +48,14 @@
 <script setup>
 import { makePanelTransparent } from "@/composables";
 import { changeMapProjection, setActiveTemplate } from "@/store/actions";
-import { availableMapProjection } from "@/store/states";
-import { mdiCompare, mdiCompareRemove, mdiEarthBox, mdiMapPlus } from "@mdi/js";
+import { availableMapProjection, poi } from "@/store/states";
+import {
+  mdiCompare,
+  mdiCompareRemove,
+  mdiEarthBox,
+  mdiMapPlus,
+  mdiStarFourPointsCircleOutline,
+} from "@mdi/js";
 import ExportState from "^/ExportState.vue";
 import { computed, ref, triggerRef } from "vue";
 import PopUp from "./PopUp.vue";
@@ -51,22 +64,28 @@ import { useDisplay } from "vuetify";
 import { useSTAcStore } from "@/store/stac";
 import { storeToRefs } from "pinia";
 import { switchToCompare } from "@/utils/states";
+import { loadPOiIndicator } from "./EodashProcess/methods/handling";
 
-const { compareIndicators, changeProjection, exportMap } = defineProps({
-  exportMap: {
-    type: Boolean,
-    default: true,
-  },
-  changeProjection: {
-    type: Boolean,
-    default: true,
-  },
-  compareIndicators: {
-    /** @type {import("vue").PropType<boolean | {compareTemplate?:string;fallbackTemplate?:string}> }*/
-    type: [Boolean, Object],
-    default: true,
-  },
-});
+const { compareIndicators, changeProjection, exportMap, backToPOIs } =
+  defineProps({
+    exportMap: {
+      type: Boolean,
+      default: true,
+    },
+    changeProjection: {
+      type: Boolean,
+      default: true,
+    },
+    compareIndicators: {
+      /** @type {import("vue").PropType<boolean | {compareTemplate?:string;fallbackTemplate?:string}> }*/
+      type: [Boolean, Object],
+      default: true,
+    },
+    backToPOIs: {
+      type: Boolean,
+      default: true,
+    },
+  });
 const { selectedStac, selectedCompareStac } = storeToRefs(useSTAcStore());
 const { smAndDown } = useDisplay();
 const popupWidth = computed(() => (smAndDown ? "70%" : "500px"));

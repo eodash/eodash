@@ -3,8 +3,7 @@ import { extractLayerConfig } from "@/eodashSTAC/helpers";
 import axios from "@/plugins/axios";
 import { createTiffLayerDefinition, separateEndpointLinks } from "./utils";
 import { useSTAcStore } from "@/store/stac";
-import { toAbsolute } from "stac-js/src/http.js";
-import { currentUrl, indicator, opIndicator } from "@/store/states";
+import { isFirstLoad } from "@/utils/states";
 
 /**
  * @param {import("stac-ts").StacLink[] | undefined} links
@@ -218,7 +217,7 @@ async function injectVegaInlineData(
     }
     /** @type {string} */
     const bodyTemplate = await axios
-    // @ts-expect-error we assume link.body to be a string, not defined in stac-ts
+      // @ts-expect-error we assume link.body to be a string, not defined in stac-ts
       .get(link.body, { responseType: "text" })
       .then((resp) => {
         return resp.data;
@@ -338,6 +337,8 @@ export async function processGeoTiff({
 }
 
 /**
+ * This function loads a STAC collection as a processing output.
+ * Currently, it only supports POI STAC collections
  *
  * @param {import("stac-ts").StacLink[]} links
  * @param {Record<string,any>} jsonformValue
@@ -351,13 +352,12 @@ export async function processSTAC(links, jsonformValue) {
   );
 
   if (!stacLink) return;
-  let stacUrl = mustache.render(stacLink.href, {
+  let poiUrl = mustache.render(stacLink.href, {
     ...(jsonformValue ?? {}),
   });
-  if (!stacUrl.startsWith("http://")) {
-    stacUrl = toAbsolute(stacUrl, currentUrl.value);
+  if (isFirstLoad.value) {
+    // prevent the map from jumping to the initial position
+    isFirstLoad.value = false;
   }
-
-  opIndicator.value = indicator.value;
-  await useSTAcStore().loadSelectedSTAC(stacUrl);
+  await useSTAcStore().loadSelectedSTAC(poiUrl, true);
 }

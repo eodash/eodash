@@ -4,8 +4,9 @@ import { onMounted, onUnmounted, watch } from "vue";
 import log from "loglevel";
 import { useSTAcStore } from "@/store/stac";
 import { storeToRefs } from "pinia";
-import { posIsSetFromUrl } from "@/utils/states";
+import { isFirstLoad } from "@/utils/states";
 import { useEmitLayersUpdate, useOnLayersUpdate } from "@/composables";
+import { mapPosition } from "@/store/states";
 /**
  * Holder for previous compare map view as it is overwritten by sync
  * @type { import("ol").View | null} mapElement
@@ -33,9 +34,6 @@ export const useHandleMapMoveEnd = (mapElement, mapPosition) => {
       !Number.isNaN(z)
     ) {
       mapPosition.value = [lonlat[0], lonlat[1], z];
-      if (posIsSetFromUrl.value) {
-        posIsSetFromUrl.value = false;
-      }
     }
   };
 
@@ -158,7 +156,8 @@ export const useInitMap = (
         }
         if (
           endInterval !== null &&
-          endInterval.toISOString() !== datetime.value
+          endInterval.toISOString() !== datetime.value &&
+          !isFirstLoad.value
         ) {
           datetime.value = endInterval.toISOString();
         }
@@ -169,7 +168,7 @@ export const useInitMap = (
           if (
             mapElement?.value?.id === "main" &&
             updatedStac.extent?.spatial.bbox &&
-            !posIsSetFromUrl.value
+            !(isFirstLoad.value && mapPosition.value?.[0] && mapPosition.value?.[1])
           ) {
             // Sanitize extent,
             const b = updatedStac.extent?.spatial.bbox[0];
@@ -188,9 +187,6 @@ export const useInitMap = (
             /** @type {import("@eox/map").EOxMap} */
             (mapElement.value).zoomExtent = reprojExtent;
           }
-        }
-        if (posIsSetFromUrl.value) {
-          posIsSetFromUrl.value = false;
         }
 
         log.debug(
