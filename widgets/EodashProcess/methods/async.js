@@ -20,7 +20,7 @@ export const jobs = ref([]);
  * @param {import("vue").Ref<boolean>} params.isPolling - checks wether the polling should continue
  * @param {number} [params.pollInterval=5000] - The interval (in milliseconds) between polling attempts.
  * @param {number} [params.maxRetries=60] - The maximum number of polling attempts.
- * @returns {Promise<Record<string,any>>} The fetched results JSON.
+ * @returns {Promise<import("../types").EOxHubProcessResponse>} The fetched results JSON.
  * @throws {Error} If the process does not complete successfully within the maximum retries.
  */
 export async function pollProcessStatus({
@@ -180,13 +180,16 @@ export const loadProcess = async (jobObject, selectedStac) => {
  * @param {string} params.jobId
  */
 export async function loadPreviousProcess({ selectedStac, results, jobId }) {
-  const geotiffLinks = selectedStac?.links.filter(
+  const geotiffLink = selectedStac?.links.find(
     (link) => link.rel === "service" && link.type === "image/tiff",
   );
+  if (!geotiffLink) {
+    return;
+  }
   // TODO: support multiple geotiff layers from one process
   // const stacProjection = selectedStac
   const geotiffLayer = await createTiffLayerDefinition(
-    geotiffLinks?.[0],
+    geotiffLink,
     selectedStac?.id ?? "",
     results?.[0].urls,
     //@ts-expect-error TODO
@@ -203,7 +206,6 @@ export async function loadPreviousProcess({ selectedStac, results, jobId }) {
       /** @type {import("@eox/map/src/layers").EOxLayerTypeGroup} */ (
         currentLayers.find((l) => l.properties?.id.includes("AnalysisGroup"))
       );
-    //@ts-expect-error TODO
     analysisGroup?.layers.push(...layers);
 
     if (mapEl.value) {

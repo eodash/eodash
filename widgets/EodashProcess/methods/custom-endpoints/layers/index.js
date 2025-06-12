@@ -1,8 +1,8 @@
 import { handleEOxHubEndpoint } from "./eoxhub-workspaces-endpoint";
 
-export const handleLayersCustomEndpoints = createCustomLayersEndpointsHandler(
-  [handleEOxHubEndpoint],
-);
+export const handleLayersCustomEndpoints = createCustomLayersEndpointsHandler([
+  handleEOxHubEndpoint,
+]);
 
 /**
  * @param {((input:import("^/EodashProcess/types").CustomEnpointInput)=> Promise<Record<string,any> | undefined | null>)[]} callbacks
@@ -14,9 +14,7 @@ function createCustomLayersEndpointsHandler(callbacks) {
     // and return multiple layers
     return await Promise.all(
       callbacks.map((callback) => callback(inputs)),
-    ).then(
-      (layers) => layers.filter(isValidEoxLayer),
-    );
+    ).then((layers) => layers.filter(isValidEoxLayer));
   };
 }
 
@@ -26,9 +24,5 @@ function createCustomLayersEndpointsHandler(callbacks) {
  * @returns {layer is import("@eox/map/.").EoxLayer}
  */
 function isValidEoxLayer(layer) {
-  return (
-    layer &&
-    layer.type &&
-    (layer.source || layer.layers)
-  );
+  return layer && layer.type && (layer.source || layer.layers);
 }

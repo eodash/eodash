@@ -8,3 +8,16 @@ export interface CustomEnpointInput {
   selectedStac: StacCollection;
   isPolling?: Ref<boolean>;
 }
+
+export type EOxHubProcessResponse = { id: string } & (
+  | {
+      urls: string[];
+    }
+  | Record<string, { urls: string[]; mimetype: string }>
+);
+
+export type AsyncProcessResponse = {
+  type: string;
+  urls: string[];
+  id: string;
+}[];
