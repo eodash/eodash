@@ -4,6 +4,7 @@
 
     <eox-jsonform
       v-if="jsonformSchema"
+      :key="selectedStac"
       ref="jsonformEl"
       .schema="jsonformSchema"
     ></eox-jsonform>
@@ -17,7 +18,7 @@
     />
     <div style="text-align: right">
       <v-btn
-        v-if="!autoExec"
+        v-if="!autoExec && (jsonformSchema || chartSpec)"
         :loading="loading"
         style="margin-right: 20px"
         @click="startProcess"
@@ -32,13 +33,6 @@
       >
         Download
       </v-btn>
-      <v-btn
-        v-if="opIndicator"
-        color="primary"
-        @click="loadOPsIndicator(opIndicator)"
-      >
-        back to points
-      </v-btn>
     </div>
   </div>
 </template>
@@ -50,14 +44,10 @@ import { useSTAcStore } from "@/store/stac";
 import { storeToRefs } from "pinia";
 import { computed, ref, toRaw, useTemplateRef } from "vue";
 import ProcessList from "./ProcessList.vue";
-import {
-  loadOPsIndicator,
-  handleProcesses,
-  onChartClick,
-} from "./methods/handling";
+import { handleProcesses, onChartClick } from "./methods/handling";
 import { useInitProcess, useAutoExec } from "./methods/composables";
 import { jobs, updateJobsStatus } from "./methods/async";
-import { indicator, opIndicator } from "@/store/states";
+import { indicator } from "@/store/states";
 import { download } from "./methods/utils";
 
 /** @type {import("vue").Ref<import("vega").Spec|null>} */

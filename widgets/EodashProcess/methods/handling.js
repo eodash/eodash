@@ -4,12 +4,13 @@ import {
   extractGeometries,
   getBboxProperty,
 } from "./utils";
-import { datetime, opIndicator } from "@/store/states";
+import { datetime, indicator, poi } from "@/store/states";
 import axios from "@/plugins/axios";
 import { getChartValues, processLayers, processSTAC } from "./outputs";
 import { handleLayersCustomEndpoints } from "./custom-endpoints/layers";
 import { handleChartCustomEndpoints } from "./custom-endpoints/chart";
 import { useSTAcStore } from "@/store/stac";
+import { useGetSubCodeId } from "@/composables";
 
 /**
  * Fetch and set the jsonform schema to initialize the process
@@ -36,7 +37,16 @@ export async function initProcess({
   loading,
   isPolling,
 }) {
-  if (!selectedStac.value) {
+  let updatedJsonform = null;
+  if (selectedStac.value["eodash:jsonform"]) {
+    updatedJsonform = await axios
+      //@ts-expect-error eodash extention
+      .get(selectedStac.value["eodash:jsonform"])
+      .then((resp) => resp.data);
+  }
+
+  if (!updatedJsonform && poi.value) {
+    jsonformSchema.value = null;
     return;
   }
   resetProcess({
@@ -47,19 +57,10 @@ export async function initProcess({
     isPolling,
     processResults,
   });
-  if (selectedStac.value["eodash:jsonform"]) {
-    jsonformEl.value?.editor.destroy();
-    // wait for the layers to be rendered
-    jsonformSchema.value = await axios
-      //@ts-expect-error eodash extention
-      .get(selectedStac.value["eodash:jsonform"])
-      .then((resp) => resp.data);
-    // remove borders from jsonform
-  } else {
-    if (!jsonformSchema.value) {
-      return;
-    }
-    jsonformSchema.value = null;
+
+  await jsonformEl.value?.editor.destroy();
+  if (updatedJsonform) {
+    jsonformSchema.value = updatedJsonform;
   }
 }
 
@@ -103,13 +104,6 @@ export async function handleProcesses({
 
     extractGeometries(jsonformValue, jsonformSchema.value);
 
-    const isSTAC = serviceLinks.some((link) => link.endpoint === "STAC");
-
-    if (isSTAC) {
-      await processSTAC(serviceLinks, jsonformValue);
-      return;
-    }
-
     const origBbox = jsonformValue[bboxProperty];
 
     const specUrl = /** @type {string} */ (
@@ -140,6 +134,9 @@ export async function handleProcesses({
     if (chartSpec.value && !("background" in chartSpec.value)) {
       chartSpec.value["background"] = "transparent";
     }
+
+    await processSTAC(serviceLinks, jsonformValue);
+
     const newLayers = await processLayers({
       isPolling,
       links: serviceLinks,
@@ -237,11 +234,16 @@ export const onChartClick = (evt) => {
 };
 
 /**
- * @param {string} id - The id of the collection holding the observation point
+ * Loads the main indicator of a Point of Interest (POI)
  */
-export const loadOPsIndicator = (id) => {
+export const loadPOiIndicator = () => {
+  if (!indicator.value) {
+    indicator.value =
+      new URLSearchParams(window.location.search).get("indicator") ?? "";
+  }
   const stacStore = useSTAcStore();
-  const link = stacStore.stac?.find((link) => link.id === id);
-  opIndicator.value = "";
+  const link = stacStore.stac?.find(
+    (link) => useGetSubCodeId(link) === indicator.value,
+  );
   stacStore.loadSelectedSTAC(link?.href);
 };

@@ -3,7 +3,7 @@ import {
   mapCompareEl,
   registeredProjections,
   activeTemplate,
-  opIndicator,
+  poi,
 } from "@/store/states";
 import { getProjectionCode } from "@/eodashSTAC/helpers";
 import log from "loglevel";
@@ -87,7 +87,6 @@ export const setActiveTemplate = (template) => {
  */
 export const includesProcess = (collection) => {
   return (
-    collection?.links?.some((link) => link.rel === "service") ||
-    !!opIndicator.value
+    collection?.links?.some((link) => link.rel === "service") || !!poi.value
   );
 };
