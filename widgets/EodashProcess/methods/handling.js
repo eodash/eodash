@@ -208,7 +208,7 @@ export function resetProcess({
  */
 export const onChartClick = (evt) => {
   const chartSpec = evt.target?.spec;
-  if (!chartSpec) {
+  if (!chartSpec || !evt.detail?.item?.datum?.datum) {
     return;
   }
   const encodingKey = Object.keys(chartSpec.encoding ?? {}).find(
@@ -221,6 +221,7 @@ export const onChartClick = (evt) => {
   if (!temporalKey) {
     return;
   }
+
   try {
     const vegaItem = evt.detail.item;
     const temporalValue = new Date(vegaItem.datum.datum[temporalKey]);
