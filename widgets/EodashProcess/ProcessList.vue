@@ -59,7 +59,7 @@
 </template>
 <script setup>
 import { mdiUploadBox, mdiDownloadBox, mdiTrashCanOutline } from "@mdi/js";
-import { toRefs } from "vue";
+import { onMounted, toRefs } from "vue";
 import { useSTAcStore } from "@/store/stac";
 import { indicator } from "@/store/states";
 import {
@@ -72,6 +72,9 @@ import {
 import { useOnLayersUpdate } from "@/composables";
 
 const { selectedStac } = toRefs(useSTAcStore());
+onMounted(() => {
+  updateJobsStatus(jobs, indicator.value);
+});
 
 useOnLayersUpdate(() => updateJobsStatus(jobs, indicator.value));
 </script>

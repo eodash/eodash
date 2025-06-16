@@ -364,7 +364,7 @@ export async function processLayers({
         jsonformSchema,
       });
 
-      if (customLayers && customLayers.length) {
+      if (customLayers.length) {
         layers.push(...customLayers);
       }
     }

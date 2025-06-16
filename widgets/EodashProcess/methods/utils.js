@@ -310,7 +310,7 @@ export async function creatAsyncProcessLayerDefinitions(
   }
 
   for (const resultItem of processResults) {
-    const flatStyleJSON = extractStyle(resultItem, flatStyles);
+    const flatStyleJSON = extractStyleFromResult(resultItem, flatStyles);
     let style, layerConfig;
     if (flatStyleJSON) {
       const extracted = extractLayerConfig(
@@ -391,7 +391,7 @@ export async function creatAsyncProcessLayerDefinitions(
  * @param {import("^/EodashProcess/types").AsyncProcessResults[number]} processResult
  * @param {null| import("@/types").EodashStyleJson | (Record<string,import("@/types").EodashStyleJson> & {multipleStyles:true})} flatStyles
  */
-function extractStyle(processResult, flatStyles) {
+function extractStyleFromResult(processResult, flatStyles) {
   if (!flatStyles) {
     return undefined;
   }

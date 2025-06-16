@@ -1,5 +1,6 @@
 import { indicator } from "@/store/states";
-import axios from "@/plugins/axios";
+// we don't want to use the caching axios instance here
+import axios from "axios";
 import { ref } from "vue";
 import {
   applyProcessLayersToMap,
@@ -35,6 +36,7 @@ export async function pollProcessStatus({
 }) {
   let retries = 0;
   isPolling.value = true;
+  // Ensure the jobs status is updated after the job has started and before polling
   setTimeout(() => {
     updateJobsStatus(jobs, indicator.value);
   }, 500);
@@ -102,7 +104,11 @@ export async function updateJobsStatus(jobs, indicator) {
   const jobsUrls = JSON.parse(localStorage.getItem(indicator) || "[]");
   /** @type {import("../types").AsyncJob[]} */
   const jobResults = await Promise.all(
-    jobsUrls.map((url) => axios.get(url).then((response) => response.data)),
+    jobsUrls.map((url) =>
+      axios
+        .get(url, { params: { t: Date.now() } })
+        .then((response) => response.data),
+    ),
   );
   jobResults.sort((a, b) => {
     return (
