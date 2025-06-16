@@ -202,6 +202,33 @@ async function injectVegaInlineData(
     return;
   }
   if (link.method == "GET") {
+    // we see if any of the template variables match an array in the jsonformValue 
+    // and if so, we can do multiple requests and merge all data together.
+    const matches = mustache.parse(url)
+      .filter(function(v) { return v[0] === 'name' })
+      .map(function(v) { return v[1]; });
+    if (matches.length > 0 && jsonformValue) {
+      const dataValues = [];
+      for (const match of matches) {
+        if (Array.isArray(jsonformValue[match])) {
+          for (const value of jsonformValue[match]) {
+            const dataUrl = await renderDataUrl(url, { ...jsonformValue, [match]: value }, flatstyleUrl);
+            dataValues.push(
+              await axios.get(dataUrl).then((resp) => resp.data),
+            );
+          }
+        } else {
+          const dataUrl = await renderDataUrl(url, jsonformValue, flatstyleUrl);
+          dataValues.push(
+            await axios.get(dataUrl).then((resp) => resp.data),
+          );
+        }
+      }
+      /** @type {import("vega-lite/build/src/data").InlineData} */
+      (spec.data).values = dataValues.flat();
+      return spec;
+    }
+    // if no array matches, we can just do a single request
     const dataUrl = await renderDataUrl(url, jsonformValue, flatstyleUrl);
     /** @type {import("vega-lite/build/src/data").InlineData} */
     (spec.data).values = await axios.get(dataUrl).then((resp) => {
