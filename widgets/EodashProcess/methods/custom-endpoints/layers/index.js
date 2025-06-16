@@ -5,7 +5,7 @@ export const handleLayersCustomEndpoints = createCustomLayersEndpointsHandler([
 ]);
 
 /**
- * @param {((input:import("^/EodashProcess/types").CustomEnpointInput)=> Promise<Record<string,any> | undefined | null>)[]} callbacks
+ * @param {((input:import("^/EodashProcess/types").CustomEnpointInput)=> Promise<Record<string,any>[] | undefined | null>)[]} callbacks
  * @returns {(input: import("^/EodashProcess/types").CustomEnpointInput) => Promise<import("@eox/map/.").EoxLayer[]>}
  */
 function createCustomLayersEndpointsHandler(callbacks) {
@@ -14,7 +14,13 @@ function createCustomLayersEndpointsHandler(callbacks) {
     // and return multiple layers
     return await Promise.all(
       callbacks.map((callback) => callback(inputs)),
-    ).then((layers) => layers.filter(isValidEoxLayer));
+    ).then((asyncProcessesLayers) => {
+      const layers = [];
+      for (const processLayers of asyncProcessesLayers) {
+        layers.push(...(processLayers?.filter(isValidEoxLayer) ?? []));
+      }
+      return layers;
+    });
   };
 }
 
@@ -23,5 +29,5 @@ function createCustomLayersEndpointsHandler(callbacks) {
  * @returns {layer is import("@eox/map/.").EoxLayer}
  */
 function isValidEoxLayer(layer) {
-  return layer && layer.type && (layer.source || layer.layers);
+  return !!layer && !!layer.type && (!!layer.source || !!layer.layers);
 }

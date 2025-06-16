@@ -1,7 +1,11 @@
 import axios from "@/plugins/axios";
 import { indicator } from "@/store/states";
 import mustache from "mustache";
-import { pollProcessStatus } from "^/EodashProcess/methods/async";
+import {
+  jobs,
+  pollProcessStatus,
+  updateJobsStatus,
+} from "^/EodashProcess/methods/async";
 import {
   creatAsyncProcessLayerDefinitions,
   extractAsyncResults,
@@ -24,6 +28,7 @@ export async function handleEOxHubEndpoint({
   const eoxhubLinks = links.filter(
     (link) => link.rel === "service" && link.endpoint === "eoxhub_workspaces",
   );
+  const layers = [];
   for (const link of eoxhubLinks) {
     // TODO: prove of concept, needs to be reworked for sure
     // Special handling for eoxhub workspace process endpoints
@@ -61,13 +66,17 @@ export async function handleEOxHubEndpoint({
           }
           return [];
         });
+      await updateJobsStatus(jobs, indicator.value);
 
-      return await creatAsyncProcessLayerDefinitions(
-        processResults,
-        link,
-        selectedStac,
+      layers.push(
+        ...(await creatAsyncProcessLayerDefinitions(
+          processResults,
+          link,
+          selectedStac,
+        )),
       );
     } catch (error) {
+      await updateJobsStatus(jobs, indicator.value);
       if (error instanceof Error) {
         console.error("Error sending POST request:", error.message);
       } else {
@@ -75,4 +84,6 @@ export async function handleEOxHubEndpoint({
       }
     }
   }
+
+  return layers;
 }
