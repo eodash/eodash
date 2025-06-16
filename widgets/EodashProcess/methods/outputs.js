@@ -31,12 +31,6 @@ export async function getChartValues({
   const spec = await axios.get(specUrl).then((resp) => {
     return resp.data;
   });
-  if (!spec.data) {
-    console.error(
-      "[eodash] Make sure the Vega spec definition has a data property",
-    );
-    return [null, null];
-  }
 
   /** @type {Record<string,any>} */
   const dataValues = {};
@@ -65,40 +59,43 @@ export async function getChartValues({
   }
 
   const dataLinks = standardLinks.filter((link) => link.rel === "service");
+  try {
+    checkForData: for (const link of dataLinks ?? []) {
+      switch (link.type) {
+        case undefined:
+          continue;
+        case "application/json":
+          await injectVegaInlineData(spec, {
+            url: link.href,
+            jsonformValue: jsonformValue,
+            link: link,
+            flatstyleUrl: /** @type string */ (link["eox:flatstyle"]),
+          });
+          break checkForData;
+        case "text/csv":
+          await injectVegaUrlData(spec, {
+            url: link.href,
+            jsonformValue: jsonformValue,
+            flatstyleUrl: /** @type string */ (link["eox:flatstyle"]),
+          });
+          break checkForData;
+        default:
+          // this is not used anymore,
+          // but we should check it specific types may need this
 
-  checkForData: for (const link of dataLinks ?? []) {
-    switch (link.type) {
-      case undefined:
-        continue;
-      case "application/json":
-        await injectVegaInlineData(spec, {
-          url: link.href,
-          jsonformValue: jsonformValue,
-          link: link,
-          flatstyleUrl: /** @type string */ (link["eox:flatstyle"]),
-        });
-        break checkForData;
-      case "text/csv":
-        await injectVegaUrlData(spec, {
-          url: link.href,
-          jsonformValue: jsonformValue,
-          flatstyleUrl: /** @type string */ (link["eox:flatstyle"]),
-        });
-        break checkForData;
-      default:
-        // this is not used anymore,
-        // but we should check it specific types may need this
-
-        // dataValues[/** @type {string} */ (link.id)] = await axios
-        // .get(
-        //   mustache.render(link.href, {
-        //     ...(jsonformValue ?? {}),
-        //     ...(link["eox:flatstyle"] ?? {}), // TODO
-        //   }),
-        // )
-        // .then((resp) => resp.data);
-        break;
+          // dataValues[/** @type {string} */ (link.id)] = await axios
+          // .get(
+          //   mustache.render(link.href, {
+          //     ...(jsonformValue ?? {}),
+          //     ...(link["eox:flatstyle"] ?? {}), // TODO
+          //   }),
+          // )
+          // .then((resp) => resp.data);
+          break;
+      }
     }
+  } catch (e) {
+    console.error("[eodash] Error while injecting Vega data", e);
   }
   return [spec, dataValues];
 }
@@ -162,9 +159,6 @@ async function injectVegaInlineData(
  */
 async function injectVegaUrlData(spec, { url, jsonformValue, flatstyleUrl }) {
   if (!spec.data) {
-    console.error(
-      "[eodash] Make sure the Vega spec definition has a data property",
-    );
     return;
   }
   const dataUrl = await renderDataUrl(url, jsonformValue, flatstyleUrl);
