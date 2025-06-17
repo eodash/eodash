@@ -33,13 +33,18 @@
     <PopUp
       v-model="showCompareIndicators"
       :maxWidth="popupWidth"
-      :maxHeight="popupHeight"
+      :width="popupWidth"
+      :max-height="popupHeight"
+      :height="popupHeight"
     >
       <EodashItemFilter
         :enableCompare="true"
-        filters-title=""
-        results-title="Select an indicator to compare"
-        :filter-properties="[]"
+        resultType="cards"
+        style="--padding: 72px; --form-flex-direction: row"
+        filters-title="Select an indicator to compare"
+        subTitleProperty="subtitle"
+        imagProperty="thumbnail"
+        results-title=""
         @select="onSelectCompareIndicator"
       />
     </PopUp>
@@ -88,8 +93,8 @@ const { compareIndicators, changeProjection, exportMap, backToPOIs } =
   });
 const { selectedStac, selectedCompareStac } = storeToRefs(useSTAcStore());
 const { smAndDown } = useDisplay();
-const popupWidth = computed(() => (smAndDown ? "70%" : "500px"));
-const popupHeight = computed(() => (smAndDown ? "90%" : "500px"));
+const popupWidth = computed(() => (smAndDown.value ? "80%" : "70%"));
+const popupHeight = computed(() => (smAndDown.value ? "90%" : "70%"));
 
 const showMapState = ref(false);
 const showCompareIndicators = ref(false);

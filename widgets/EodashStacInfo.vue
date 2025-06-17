@@ -37,7 +37,7 @@ const {
 
   styleOverride: {
     type: String,
-    default:  "",
+    default: "",
   },
   header: {
     /** @type {import("vue").PropType<string[]>}  */

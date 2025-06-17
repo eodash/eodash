@@ -14,13 +14,13 @@ export const eodash = reactive({
     // useSubCode: true,
   },
   stacEndpoint:
-    "https://esa-eodashboards.github.io/eodashboard-catalog/trilateral/catalog.json",
-  // "https://esa-eodashboards.github.io/RACE-catalog/RACE/catalog.json",
-  // "https://GTIF-Austria.github.io/public-catalog/pr-preview/pr-16/GTIF-Austria/catalog.json",
-  // "https://gtif-cerulean.github.io/catalog/cerulean/catalog.json",
-  // "https://eodashcatalog.eox.at/samplecatalog/samples/catalog.json",
-  // "https://gtif-cerulean.github.io/deside-catalog/deside/catalog.json",
-  // "https://gtif-cerulean.github.io/cerulean-catalog/cerulean/catalog.json",
+    // "https://esa-eodashboards.github.io/eodashboard-catalog/trilateral/catalog.json",
+    // "https://esa-eodashboards.github.io/RACE-catalog/RACE/catalog.json",
+    // "https://GTIF-Austria.github.io/public-catalog/pr-preview/pr-16/GTIF-Austria/catalog.json",
+    // "https://gtif-cerulean.github.io/catalog/cerulean/catalog.json",
+    // "https://eodashcatalog.eox.at/samplecatalog/samples/catalog.json",
+    // "https://gtif-cerulean.github.io/deside-catalog/deside/catalog.json",
+    "https://gtif-cerulean.github.io/cerulean-catalog/cerulean/catalog.json",
   // "https://gtif-austria.github.io/public-catalog/GTIF-Austria/catalog.json",
   brand: {
     noLayout: true,
@@ -344,6 +344,12 @@ export const eodash = reactive({
             properties: {
               showLayoutSwitcher: false,
               itemFilterConfig: {
+                resultType: "cards",
+                style: "--padding: 72px",
+                filtersTitle: "Select an indicator",
+                resultsTitle: "",
+                subTitleProperty: "subtitle",
+                imageProperty: "thumbnail",
                 cssVars: {
                   "--form-flex-direction": "row",
                 },
@@ -364,9 +370,12 @@ export const eodash = reactive({
               indicatorBtnText: "Select an indicator to compare",
               itemFilterConfig: {
                 enableCompare: true,
-                // resultsTitle:"Select an indicator to compare",
+                resultType: "cards",
+                style: "--padding: 72px",
                 filtersTitle: "Select an indicator to compare",
-                // filterProperties: [],
+                resultsTitle: "",
+                subTitleProperty: "subtitle",
+                imageProperty: "thumbnail",
                 cssVars: {
                   "--form-flex-direction": "row",
                 },
