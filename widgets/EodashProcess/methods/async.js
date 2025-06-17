@@ -1,14 +1,19 @@
-import { indicator, mapEl } from "@/store/states";
+import { indicator } from "@/store/states";
+// we don't want to use the caching axios instance here
 import axios from "axios";
 import { ref } from "vue";
-import { createTiffLayerDefinition, download } from "./utils";
+import {
+  applyProcessLayersToMap,
+  creatAsyncProcessLayerDefinitions,
+  download,
+  extractAsyncResults,
+} from "./utils";
 import log from "loglevel";
-import { getLayers } from "@/store/actions";
 
 /**
  * The list of job result from the server
  * {job_start_datetime: string, job_end_datetime: string,status: string}
- *  @type {import("vue").Ref<any[]>}
+ *  @type {import("vue").Ref<import("../types").AsyncJob[]>}
  **/
 export const jobs = ref([]);
 
@@ -20,7 +25,7 @@ export const jobs = ref([]);
  * @param {import("vue").Ref<boolean>} params.isPolling - checks wether the polling should continue
  * @param {number} [params.pollInterval=5000] - The interval (in milliseconds) between polling attempts.
  * @param {number} [params.maxRetries=60] - The maximum number of polling attempts.
- * @returns {Promise<Record<string,any>>} The fetched results JSON.
+ * @returns {Promise<import("../types").EOxHubProcessResults>} The fetched results JSON.
  * @throws {Error} If the process does not complete successfully within the maximum retries.
  */
 export async function pollProcessStatus({
@@ -31,8 +36,9 @@ export async function pollProcessStatus({
 }) {
   let retries = 0;
   isPolling.value = true;
+  // Ensure the jobs status is updated after the job has started and before polling
   setTimeout(() => {
-    updateJobsStatus(jobs, indicator);
+    updateJobsStatus(jobs, indicator.value);
   }, 500);
 
   while (retries < maxRetries && isPolling.value) {
@@ -90,14 +96,19 @@ export async function pollProcessStatus({
 
 /**
  *
- * @param {*} jobs
- * @param {*} indicator
+ * @param {import("vue").Ref<import("../types").AsyncJob[]>} jobs
+ * @param {string} indicator
  */
 export async function updateJobsStatus(jobs, indicator) {
   /** @type {string[]} */
-  const jobsUrls = JSON.parse(localStorage.getItem(indicator.value) || "[]");
+  const jobsUrls = JSON.parse(localStorage.getItem(indicator) || "[]");
+  /** @type {import("../types").AsyncJob[]} */
   const jobResults = await Promise.all(
-    jobsUrls.map((url) => fetch(url).then((response) => response.json())),
+    jobsUrls.map((url) =>
+      axios
+        .get(url, { params: { t: Date.now() } })
+        .then((response) => response.data),
+    ),
   );
   jobResults.sort((a, b) => {
     return (
@@ -110,26 +121,33 @@ export async function updateJobsStatus(jobs, indicator) {
 
 /**
  * Removes a job from the local storage and updates the job status
- * @param {*} jobObject
+ * @param {import("../types").AsyncJob} jobObject
  */
 export const deleteJob = async (jobObject) => {
   /** @type {string[]} */
   const jobsUrls = JSON.parse(localStorage.getItem(indicator.value) || "[]");
   const newJobs = jobsUrls.filter((url) => !url.includes(jobObject.jobID));
   localStorage.setItem(indicator.value, JSON.stringify(newJobs));
-  updateJobsStatus(jobs, indicator);
+  await updateJobsStatus(jobs, indicator.value);
 };
 
 /**
  * Downloads an existing process results
- *  @param {*} jobObject
- * @param {*} selectedStac
+ * @param {import("../types").AsyncJob} jobObject
+ * @param {import("stac-ts").StacCollection | null} selectedStac
  */
 export const downloadPreviousResults = async (jobObject, selectedStac) => {
-  /** @type {any[]} */
+  /** @type {string[]} */
   const results = [];
-  await fetch(jobObject.links[1].href)
-    .then((response) => response.json())
+  const link = jobObject.links.find(
+    (link) => link.rel.includes("results") && link.type == "application/json",
+  );
+  if (!link) {
+    return;
+  }
+  await axios
+    .get(link.href)
+    .then((response) => response.data)
     .then((data) => {
       results.push(...data.urls);
     });
@@ -154,15 +172,14 @@ export const downloadPreviousResults = async (jobObject, selectedStac) => {
  * Load the process results and update the map layers.
  *
  * @async
- * @param {*} jobObject
- * @param {*} selectedStac
+ * @param {import("../types").AsyncJob} jobObject
+ * @param {import("stac-ts").StacCollection | null} selectedStac
  */
 export const loadProcess = async (jobObject, selectedStac) => {
-  /** @type {any[]} */
-  const results = [];
-  await axios
+  /** @type {import("../types").EOxHubProcessResults} */
+  const results = await axios
     .get(jobObject.links[1].href)
-    .then((response) => results.push(response.data));
+    .then((response) => response.data);
 
   await loadPreviousProcess({
     selectedStac,
@@ -176,38 +193,26 @@ export const loadProcess = async (jobObject, selectedStac) => {
  *
  * @param {Object} params
  * @param {import("stac-ts").StacCollection | null} params.selectedStac
- * @param {any[]} params.results
  * @param {string} params.jobId
+ * @param {import("../types").EOxHubProcessResults} params.results
  */
 export async function loadPreviousProcess({ selectedStac, results, jobId }) {
-  const geotiffLinks = selectedStac?.links.filter(
-    (link) => link.rel === "service" && link.type === "image/tiff",
+  const asyncLink = selectedStac?.links.find(
+    (link) => link.rel === "service" && link.endpoint == "eoxhub_workspaces",
   );
-  // TODO: support multiple geotiff layers from one process
-  // const stacProjection = selectedStac
-  const geotiffLayer = await createTiffLayerDefinition(
-    geotiffLinks?.[0],
-    selectedStac?.id ?? "",
-    results?.[0].urls,
-    //@ts-expect-error TODO
-    selectedStac?.["eodash:mapProjection"]?.["name"] ?? null,
+  if (!asyncLink) {
+    return;
+  }
+
+  const unifiedResult = extractAsyncResults(results);
+
+  const layers = await creatAsyncProcessLayerDefinitions(
+    unifiedResult,
+    asyncLink,
+    selectedStac,
     jobId,
   );
 
-  log.debug("rendered layers after loading previous process:", geotiffLayer);
-
-  if (geotiffLayer) {
-    const layers = [...(geotiffLayer ? [geotiffLayer] : [])];
-    let currentLayers = [...getLayers()];
-    let analysisGroup =
-      /** @type {import("@eox/map/src/layers").EOxLayerTypeGroup} */ (
-        currentLayers.find((l) => l.properties?.id.includes("AnalysisGroup"))
-      );
-    //@ts-expect-error TODO
-    analysisGroup?.layers.push(...layers);
-
-    if (mapEl.value) {
-      mapEl.value.layers = [...currentLayers];
-    }
-  }
+  log.debug("rendered layers after loading previous process:", layers);
+  applyProcessLayersToMap(layers);
 }
