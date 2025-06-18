@@ -42,7 +42,7 @@ export const eodash = reactive({
         surface: "#ffff",
       },
       variables: {
-        "surface-opacity": 0.6,
+        "surface-opacity": 0.8,
         "primary-opacity": 0.8,
       },
       // Bank-Wong palette
@@ -125,11 +125,11 @@ export const eodash = reactive({
                       slider: false,
                       tools: ["datetime", "info", "legend"],
                       cssVars: {
-                        "--list-padding": "0",
+                        "--list-padding": "-8px",
                         "--tools-button-visibility": "none",
                         "--layer-input-visibility": "none",
                         "--layer-type-visibility": "none",
-                        "--padding": "16px",
+                        "--padding": "8px",
                         "--padding-vertical": "16px",
                         "--layer-tools-button-visibility": "none",
                         "--layer-summary-visibility": "none",

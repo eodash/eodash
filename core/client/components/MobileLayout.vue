@@ -103,7 +103,7 @@ onMounted(() => {
   z-index: 10;
 }
 :deep(.bg-surface) {
-  backdrop-filter: blur(9.5px) !important;
+  backdrop-filter: blur(10px) !important;
   background-color: rgba(
     var(--v-theme-surface),
     var(--v-surface-opacity, 0.8)

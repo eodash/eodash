@@ -77,15 +77,14 @@ const layoutStyle = {
   opacity: 0;
 }
 :deep(.bg-surface) {
-  backdrop-filter: blur(9.5px) !important;
+  backdrop-filter: blur(10px) !important;
   background-color: rgba(
     var(--v-theme-surface),
     var(--v-surface-opacity, 0.8)
   ) !important;
-  border-radius: 4px;
-  border-style: solid;
-  border-width: 1px;
-  border-color: rgb(var(--v-theme-surface));
+  border-radius: 8px;
+  border: none;
+  box-shadow: 0px 0px 1px rgba(24, 39, 75, 0.22), 0px 6px 12px -6px rgba(24, 39, 75, 0.12), 0px 8px 24px -4px rgba(24, 39, 75, 0.08);
   scrollbar-color: rgba(var(--v-theme-on-surface), 0.2) transparent;
   scrollbar-width: thin;
 }
@@ -95,10 +94,8 @@ const layoutStyle = {
     var(--v-theme-primary),
     var(--v-primary-opacity, 0.8)
   ) !important;
-  border-radius: 4px;
-  border-style: solid;
-  border-width: 1px;
-  border-color: rgb(var(--v-theme-primary));
+  border-radius: 8px;
+  border: none;
   scrollbar-color: rgba(var(--v-theme-on-primary), 0.2) transparent;
   scrollbar-width: thin;
 }
