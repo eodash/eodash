@@ -70,7 +70,7 @@ onMounted(() => {
   mainRectTopPx.value = mainRect.value.top + "px";
   mainRectBtmPx.value = (mainRect.value.bottom || 48) + "px";
   tabsHeightFromBtm.value =
-    mainRect.value.bottom + (tabs.value?.$el?.clientHeight ?? 0) + "px";
+    mainRect.value.bottom + (tabs.value?.$el?.clientHeight ?? 48) + "px";
 });
 </script>
 <style scoped>
@@ -79,7 +79,6 @@ onMounted(() => {
 }
 
 .panel {
-  top: v-bind("mainRectTopPx");
   bottom: v-bind("tabsHeightFromBtm");
   position: absolute;
   overflow: hidden;
