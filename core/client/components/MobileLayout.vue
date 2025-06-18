@@ -74,10 +74,6 @@ onMounted(() => {
 });
 </script>
 <style scoped>
-.main {
-  height: 91dvh;
-}
-
 .panel {
   bottom: v-bind("tabsHeightFromBtm");
   position: absolute;

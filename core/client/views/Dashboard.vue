@@ -62,7 +62,7 @@ const FooterComponent = defineAsyncComponent(
   () => import(`@/components/Footer.vue`),
 );
 
-const templateHeight = props.isWebComponent ? "100%" : "100dvh";
+const templateHeight = "100%";
 
 const error = ref("");
 onErrorCaptured((e, comp, info) => {
@@ -75,17 +75,19 @@ onErrorCaptured((e, comp, info) => {
 </script>
 <style>
 .loading-container {
-  height: 100dvh;
+  height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 div.v-application__wrap {
-  min-height: fit-content;
+  height: 100%;
+  min-height: 100%;
 }
 eo-dash {
   overflow: hidden;
+  display: block;
 }
 /* set eox-elements colors css vars to match the theme */
 :root {
