@@ -1,6 +1,6 @@
 <template>
   <v-main>
-    <eox-layout :gap="gap" class="layout-container" :style="layoutStyle">
+    <eox-layout :mediaBreakpoints="[0, 960, 1920]" :gap="gap" class="layout-container" :style="layoutStyle">
       <eox-layout-item
         v-if="bgWidget?.component"
         :key="bgWidget.id"

@@ -93,7 +93,7 @@ export const eodash = reactive({
           id: Symbol(),
           type: "internal",
           title: "Tools",
-          layout: { x: 0, y: 0, w: 3, h: 1 },
+          layout: { x: 0, y: 0, w: "3/3/2", h: 1 },
           widget: {
             name: "EodashTools",
             properties: {
@@ -118,7 +118,7 @@ export const eodash = reactive({
                   id: "layercontrol-light",
                   type: "internal",
                   title: "Layers",
-                  layout: { x: 0, y: 1, w: 3, h: 3 },
+                  layout: { x: 0, y: 1, w: "3/3/2", h: 3 },
                   widget: {
                     name: "EodashLayerControl",
                     properties: {
@@ -147,7 +147,7 @@ export const eodash = reactive({
                   id: "stacinfo-light",
                   type: "internal",
                   title: "Information",
-                  layout: { x: 9, y: 0, w: 3, h: 6 },
+                  layout: { x: "9/9/10", y: 0, w: "3/3/2", h: 6 },
                   widget: {
                     name: "EodashStacInfo",
                     properties: {
@@ -215,7 +215,7 @@ export const eodash = reactive({
           id: Symbol(),
           type: "internal",
           title: "Tools",
-          layout: { x: 0, y: 0, w: 3, h: 1 },
+          layout: { x: 0, y: 0, w: "3/3/2", h: 1 },
           widget: {
             name: "EodashTools",
             properties: {
@@ -237,7 +237,7 @@ export const eodash = reactive({
           id: Symbol(),
           type: "internal",
           title: "Layers",
-          layout: { x: 0, y: 1, w: 3, h: 6 },
+          layout: { x: 0, y: 1, w: "3/3/2", h: 6 },
           widget: {
             name: "EodashLayerControl",
           },
@@ -248,7 +248,7 @@ export const eodash = reactive({
               ? {
                   id: "Information",
                   title: "Information",
-                  layout: { x: 9, y: 0, w: 3, h: 6 },
+                  layout: { x: "9/9/10", y: 0, w: "3/3/2", h: 6 },
                   type: "internal",
                   widget: {
                     name: "EodashStacInfo",
@@ -282,7 +282,7 @@ export const eodash = reactive({
             return selected
               ? {
                   id: "Buttons",
-                  layout: { x: 8, y: 0, w: 1, h: 2 },
+                  layout: { x: "8/8/9", y: 0, w: 1, h: 2 },
                   title: "Buttons",
                   type: "internal",
                   widget: {
@@ -298,7 +298,7 @@ export const eodash = reactive({
               id: "Processes",
               type: "internal",
               title: "Processes",
-              layout: { x: 9, y: 6, w: 3, h: 5 },
+              layout: { x: "9/9/10", y: 6, w: "3/3/2", h: 5 },
               widget: {
                 name: "EodashProcess",
               },
@@ -338,7 +338,7 @@ export const eodash = reactive({
           id: Symbol(),
           type: "internal",
           title: "Tools",
-          layout: { x: 0, y: 0, w: 3, h: 1 },
+          layout: { x: 0, y: 0, w: "3/3/2", h: 1 },
           widget: {
             name: "EodashTools",
             properties: {
@@ -362,7 +362,7 @@ export const eodash = reactive({
           id: Symbol(),
           type: "internal",
           title: "Tools",
-          layout: { x: 9, y: 0, w: 3, h: 1 },
+          layout: { x: "9/9/10", y: 0, w: "3/3/2", h: 1 },
           widget: {
             name: "EodashTools",
             properties: {
@@ -387,7 +387,7 @@ export const eodash = reactive({
           id: Symbol(),
           type: "internal",
           title: "Layers",
-          layout: { x: 0, y: 1, w: 3, h: 6 },
+          layout: { x: 0, y: 1, w: "3/3/2", h: 6 },
           widget: {
             name: "EodashLayerControl",
           },
@@ -395,7 +395,7 @@ export const eodash = reactive({
         {
           id: Symbol(),
           title: "Comparison Layers",
-          layout: { x: 9, y: 1, w: 3, h: 6 },
+          layout: { x: "9/9/10", y: 1, w: "3/3/2", h: 6 },
           type: "internal",
           widget: {
             name: "EodashLayerControl",
@@ -410,7 +410,7 @@ export const eodash = reactive({
               id: "Processes",
               type: "internal",
               title: "Processes",
-              layout: { x: 9, y: 6, w: 3, h: 5 },
+              layout: { x: 9, y: 6, w: "3/3/2", h: 5 },
               widget: {
                 name: "EodashProcess",
               },
@@ -421,7 +421,7 @@ export const eodash = reactive({
             return selected
               ? {
                   id: "Buttons",
-                  layout: { x: 8, y: 0, w: 1, h: 2 },
+                  layout: { x: "8/8/9", y: 0, w: 1, h: 2 },
                   title: "Buttons",
                   type: "internal",
                   widget: {
