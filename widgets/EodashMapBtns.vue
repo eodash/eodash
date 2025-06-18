@@ -1,9 +1,10 @@
 <template>
-  <div ref="rootRef" class="d-flex flex-column align-end justify-end my-3 pa-2">
+  <div ref="rootRef" class="d-flex flex-column align-end">
     <v-btn
       v-if="exportMap"
       class="map-btn"
       :icon="[mdiMapPlus]"
+      size="small"
       v-tooltip:bottom="'Extract Storytelling configuration'"
       @click="showMapState = !showMapState"
     />
@@ -12,6 +13,7 @@
     <v-btn
       class="map-btn"
       :icon="[mdiEarthBox]"
+      size="small"
       v-tooltip:bottom="'Change map projection'"
       v-if="changeProjection && !!availableMapProjection"
       @click="changeMapProjection(availableMapProjection)"
@@ -19,6 +21,7 @@
     <v-btn
       class="map-btn"
       :icon="[compareIcon]"
+      size="small"
       v-tooltip:bottom="'Compare mode'"
       v-if="compareIndicators"
       @click="onCompareClick"
@@ -26,6 +29,7 @@
     <v-btn
       class="map-btn"
       :icon="[mdiStarFourPointsCircleOutline]"
+      size="small"
       v-tooltip:bottom="'back to POIs'"
       v-if="backToPOIs && poi"
       @click="loadPOiIndicator()"
