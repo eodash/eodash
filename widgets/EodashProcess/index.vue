@@ -174,7 +174,6 @@ const chartStyles = computed(() => {
 <style>
 .process-container {
   height: 100%;
-  overflow-y: auto;
 }
 eox-chart {
   --background-color: transparent;

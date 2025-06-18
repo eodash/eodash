@@ -1,5 +1,5 @@
 <template>
-  <div class="flex-grow-1 fill-height overflow-auto">
+  <div class="flex-grow-1">
     <eox-stacinfo
       .for="currentUrl"
       .allowHtml="allowHtml"

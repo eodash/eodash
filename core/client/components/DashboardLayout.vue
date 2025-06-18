@@ -58,7 +58,7 @@ const layoutStyle = {
 <style scoped>
 .panel {
   position: relative;
-  overflow: visible;
+  overflow: auto;
   z-index: 1;
 }
 
@@ -76,27 +76,25 @@ const layoutStyle = {
 .fade-leave-to {
   opacity: 0;
 }
-:deep(.bg-surface) {
+:deep(.bg-surface),
+:deep(.bg-primary) {
   backdrop-filter: blur(10px) !important;
-  background-color: rgba(
-    var(--v-theme-surface),
-    var(--v-surface-opacity, 0.8)
-  ) !important;
   border-radius: 8px;
   border: none;
   box-shadow: 0px 0px 1px rgba(24, 39, 75, 0.22), 0px 6px 12px -6px rgba(24, 39, 75, 0.12), 0px 8px 24px -4px rgba(24, 39, 75, 0.08);
   scrollbar-color: rgba(var(--v-theme-on-surface), 0.2) transparent;
   scrollbar-width: thin;
 }
+:deep(.bg-surface) {
+  background-color: rgba(
+    var(--v-theme-surface),
+    var(--v-surface-opacity, 0.8)
+  ) !important;
+}
 :deep(.bg-primary) {
-  backdrop-filter: blur(9.5px) !important;
   background-color: rgba(
     var(--v-theme-primary),
     var(--v-primary-opacity, 0.8)
   ) !important;
-  border-radius: 8px;
-  border: none;
-  scrollbar-color: rgba(var(--v-theme-on-primary), 0.2) transparent;
-  scrollbar-width: thin;
 }
 </style>

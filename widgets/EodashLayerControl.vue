@@ -1,11 +1,10 @@
 <template>
-  <span class="d-flex flex-column fill-height overflow-auto">
+  <span class="d-flex flex-column">
     <eox-layercontrol
       v-if="showControls"
       v-bind="config"
       :for="mapElement"
       @datetime:updated="debouncedHandleDateTime"
-      class="fill-height"
       toolsAsList="true"
       style="--eox-background-color: transparent"
       ref="eoxLayercontrol"
