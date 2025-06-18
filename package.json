@@ -37,7 +37,7 @@
   "scripts": {
     "start": "npx eodash dev --entryPoint core/client/eodash.js",
     "prepare": "rollup -c",
-    "prepack": "npm run build:lib && npm run build:types",
+    "prepack": "npm run build:lib",
     "dev": "npx eodash dev --entryPoint core/client/eodash.js",
     "dev:lib": "npx eodash dev --entryPoint core/client/eodash.js --lib",
     "build": "npx eodash build --entryPoint core/client/eodash.js",
