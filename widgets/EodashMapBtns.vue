@@ -43,11 +43,13 @@
     >
       <EodashItemFilter
         :enableCompare="true"
+        :enableHighlighting="false"
         resultType="cards"
-        style="--padding: 72px; --form-flex-direction: row"
+        style="--select-filter-max-items: 8; --form-flex-direction: row"
         filters-title="Select an indicator to compare"
         subTitleProperty="subtitle"
-        imagProperty="thumbnail"
+        imageProperty="thumbnail"
+        aggregateResults="collection_group"
         results-title=""
         @select="onSelectCompareIndicator"
       />
