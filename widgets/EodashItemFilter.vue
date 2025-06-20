@@ -74,13 +74,15 @@ const props = defineProps({
     default: () => [
       {
         keys: ["title", "themes", "description"],
-        title: "Search",
+        title: "Search by name or description",
         type: "text",
+        expanded: true
       },
       {
         key: "themes",
-        title: "Theme Filter",
+        title: "Filter by theme",
         type: "multiselect",
+        expanded : true
       },
     ],
   },

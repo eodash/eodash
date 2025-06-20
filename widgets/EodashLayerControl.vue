@@ -1,16 +1,14 @@
 <template>
-  <span class="d-flex flex-column fill-height overflow-auto">
+  <span class="d-flex flex-column">
     <eox-layercontrol
       v-if="showControls"
       v-bind="config"
       :for="mapElement"
       @datetime:updated="debouncedHandleDateTime"
-      class="fill-height"
       toolsAsList="true"
       style="--eox-background-color: transparent"
       ref="eoxLayercontrol"
       @layerConfig:change="onLayerConfigChange"
-      .styleOverride="styleOverride"
     />
   </span>
 </template>
@@ -128,10 +126,9 @@ const onLayerConfigChange = (evt) => {
     layerControlFormValue.value = evt.detail.jsonformValue;
   }
 };
-
-const styleOverride = `
-input[type="range"] {
-  background:transparent !important;
-}
-`;
 </script>
+<style scoped>
+eox-layercontrol {
+  overflow: auto;
+}
+</style>
