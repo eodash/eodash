@@ -102,11 +102,13 @@ export const eodash = reactive({
               itemFilterConfig: {
                 resultType: "cards",
                 filtersTitle: "",
-                style: "--padding: 72px",
                 filterProperties: [],
                 resultsTitle: "Explore more indicators",
                 subTitleProperty: "subtitle",
                 imageProperty: "thumbnail",
+                cssVars: {
+                  "--filter-display": "none",
+                },
               },
             },
           },
@@ -226,9 +228,6 @@ export const eodash = reactive({
                 subTitleProperty: "subtitle",
                 imageProperty: "thumbnail",
                 aggregateResults: "collection_group",
-                style: {
-                  "--form-flex-direction": "row",
-                },
               },
             },
           },
@@ -345,14 +344,10 @@ export const eodash = reactive({
               showLayoutSwitcher: false,
               itemFilterConfig: {
                 resultType: "cards",
-                style: "--padding: 72px",
                 filtersTitle: "Select an indicator",
                 resultsTitle: "",
                 subTitleProperty: "subtitle",
                 imageProperty: "thumbnail",
-                cssVars: {
-                  "--form-flex-direction": "row",
-                },
               },
             },
           },
@@ -371,14 +366,10 @@ export const eodash = reactive({
               itemFilterConfig: {
                 enableCompare: true,
                 resultType: "cards",
-                style: "--padding: 72px",
                 filtersTitle: "Select an indicator to compare",
                 resultsTitle: "",
                 subTitleProperty: "subtitle",
                 imageProperty: "thumbnail",
-                cssVars: {
-                  "--form-flex-direction": "row",
-                },
               },
             },
           },

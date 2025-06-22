@@ -45,7 +45,7 @@
         :enableCompare="true"
         :enableHighlighting="false"
         resultType="cards"
-        style="--select-filter-max-items: 8; --form-flex-direction: row"
+        style="--select-filter-max-items: 8"
         filters-title="Select an indicator to compare"
         subTitleProperty="subtitle"
         imageProperty="thumbnail"
