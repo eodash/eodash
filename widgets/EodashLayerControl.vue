@@ -9,7 +9,9 @@
       style="--eox-background-color: transparent"
       ref="eoxLayercontrol"
       @layerConfig:change="onLayerConfigChange"
-    />
+    >
+      <div slot="layerstitle"><p v-if="title" class="mt-2 mb-2"><strong>{{ title }}</strong></p></div>
+    </eox-layercontrol>
   </span>
 </template>
 <script setup>
@@ -41,6 +43,10 @@ const props = defineProps({
   tools: {
     type: Array,
     default: () => ["datetime", "info", "config", "legend", "opacity"],
+  },
+  title: {
+    type: String || Boolean,
+    default: "Layers",
   },
   cssVars: {
     type: Object,
