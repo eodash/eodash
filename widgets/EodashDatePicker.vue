@@ -362,4 +362,8 @@ makePanelTransparent(rootEl);
 .vc-popover-caret.direction-top.align-left {
   clip-path: polygon(0% 0%, 100% 0%, 0% 100%, 0% 100%);
 }
+
+.vc-bordered {
+  border: none;
+}
 </style>
