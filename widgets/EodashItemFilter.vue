@@ -75,13 +75,13 @@ const props = defineProps({
         keys: ["title", "themes", "description"],
         title: "Search by name or description",
         type: "text",
-        expanded: true
+        expanded: true,
       },
       {
         key: "themes",
         title: "Filter by theme",
         type: "multiselect",
-        expanded : true
+        expanded: true,
       },
     ],
   },
@@ -142,12 +142,12 @@ const eoxItemFilter = ref(null);
 </script>
 
 <style scoped>
+eox-itemfilter {
+  --form-flex-direction: row;
+}
+@media (max-width: 768px) {
   eox-itemfilter {
-    --form-flex-direction: row;
+    --form-flex-direction: column;
   }
-  @media (max-width: 768px) {
-    eox-itemfilter {
-      --form-flex-direction: column;
-    }
-  }
+}
 </style>

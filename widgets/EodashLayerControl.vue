@@ -10,7 +10,13 @@
       ref="eoxLayercontrol"
       @layerConfig:change="onLayerConfigChange"
     >
-      <div slot="layerstitle"><p v-if="title" class="mt-2 mb-2"><strong>{{ title }}</strong></p></div>
+      <slot name="layerstitle">
+        <div>
+          <p v-if="title" class="mt-2 mb-2">
+            <strong>{{ title }}</strong>
+          </p>
+        </div>
+      </slot>
     </eox-layercontrol>
   </span>
 </template>

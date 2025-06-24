@@ -328,9 +328,9 @@ makePanelTransparent(rootEl);
   .datePicker {
     position: absolute;
     bottom: 0;
-    left: 0; 
-    right: 0; 
-    margin-inline: auto; 
+    left: 0;
+    right: 0;
+    margin-inline: auto;
     width: fit-content;
   }
 }
@@ -352,7 +352,10 @@ makePanelTransparent(rootEl);
   backdrop-filter: blur(10px) !important;
   border-radius: 8px;
   border: none;
-  box-shadow: 0px 0px 1px rgba(24, 39, 75, 0.22), 0px 6px 12px -6px rgba(24, 39, 75, 0.12), 0px 8px 24px -4px rgba(24, 39, 75, 0.08);
+  box-shadow:
+    0px 0px 1px rgba(24, 39, 75, 0.22),
+    0px 6px 12px -6px rgba(24, 39, 75, 0.12),
+    0px 8px 24px -4px rgba(24, 39, 75, 0.08);
   background-color: rgba(
     var(--v-theme-surface),
     var(--v-surface-opacity, 0.8)

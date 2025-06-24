@@ -1,6 +1,11 @@
 <template>
   <v-main>
-    <eox-layout :mediaBreakpoints="[0, 960, 1920]" :gap="gap" class="layout-container" :style="layoutStyle">
+    <eox-layout
+      :mediaBreakpoints="[0, 960, 1920]"
+      :gap="gap"
+      class="layout-container"
+      :style="layoutStyle"
+    >
       <eox-layout-item
         v-if="bgWidget?.component"
         :key="bgWidget.id"
@@ -88,7 +93,10 @@ const layoutStyle = {
   backdrop-filter: blur(10px) !important;
   border-radius: 8px;
   border: none;
-  box-shadow: 0px 0px 1px rgba(24, 39, 75, 0.22), 0px 6px 12px -6px rgba(24, 39, 75, 0.12), 0px 8px 24px -4px rgba(24, 39, 75, 0.08);
+  box-shadow:
+    0px 0px 1px rgba(24, 39, 75, 0.22),
+    0px 6px 12px -6px rgba(24, 39, 75, 0.12),
+    0px 8px 24px -4px rgba(24, 39, 75, 0.08);
   max-height: 100%;
   overflow: auto;
   scrollbar-color: rgba(var(--v-theme-on-surface), 0.2) transparent;
