@@ -398,12 +398,27 @@ export const eodash = reactive({
         {
           defineWidget: (selectedSTAC) =>
             includesProcess(selectedSTAC) && {
-              id: "Processes",
+              id: "Process",
               type: "internal",
               title: "Processes",
-              layout: { x: 9, y: 6, w: 3, h: 5 },
+              layout: { x: 0, y: 7, w: 3, h: 5 },
               widget: {
                 name: "EodashProcess",
+              },
+            },
+        },
+        {
+          defineWidget: (selectedSTAC) =>
+            includesProcess(selectedSTAC) && {
+              id: "CompareMapProcess",
+              type: "internal",
+              title: "Processes",
+              layout: { x: 9, y: 7, w: 3, h: 5 },
+              widget: {
+                name: "EodashProcess",
+                properties: {
+                  enableCompare: true,
+                },
               },
             },
         },
