@@ -280,18 +280,21 @@ export const replaceLayer = (currentLayers, oldLayer, newLayers) => {
  * @param {import('../eodashSTAC/EodashCollection.js').EodashCollection[]} indicators
  * @param {import('ol/layer').Layer} layer
  */
-export const getColFromLayer = async (indicators, layer) => {
+export const getColFromLayer = (indicators, layer) => {
   // init cols
-  const collections = await Promise.all(
-    indicators.map((ind) => ind.fetchCollection()),
-  );
+  const collections = indicators.map((ind) => ind.collectionStac);
   const [collectionId, itemId, ..._other] = layer.get("id").split(";:;");
 
   const chosen = collections.find((col) => {
     const isInd =
-      col.id === collectionId &&
-      col.links?.some(
-        (link) => link.rel === "item" && link.href.includes(itemId),
+      col?.id === collectionId &&
+      col?.links?.some(
+        (link) =>
+          link.rel === "item" &&
+          (link.href.includes(itemId) ||
+            link.id === itemId ||
+            //@ts-expect-error attaching the item in link when parsing .parquet items, see @/eodashSTAC/parquet.js
+            (link["item"] && link["item"].id === itemId)),
       );
     return isInd;
   });
@@ -416,6 +419,33 @@ export async function mergeGeojsons(geojsonUrls) {
   return encodeURI(
     "data:application/json;charset=utf-8," + JSON.stringify(merged),
   );
+}
+
+/**
+ *
+ * @param {import("stac-ts").StacItem[]} items
+ */
+export function generateLinksFromItems(items) {
+  // this is still WIP, we need to add all the different properties
+  // that are used in all of our different cases.
+  return items.map((item) => {
+    return {
+      item,
+      id: item.id,
+      rel: "item",
+      type: "application/geo+json",
+      title: item.id,
+      href: "this.item",
+      datetime:
+        /** @type {*} */ (item.properties.datetime) instanceof Date
+          ? item.properties.datetime.toISOString()
+          : item.properties.datetime,
+      ...(item.geometry?.type == "Point" &&
+        item.geometry?.coordinates.length && {
+          latlng: item.geometry.coordinates.reverse().join(","),
+        }),
+    };
+  });
 }
 
 /**
