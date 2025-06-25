@@ -4,6 +4,7 @@
 
     <eox-jsonform
       v-if="jsonformSchema"
+      :key="selectedStac"
       ref="jsonformEl"
       .schema="jsonformSchema"
     ></eox-jsonform>
@@ -17,7 +18,7 @@
     />
     <div style="text-align: right">
       <v-btn
-        v-if="!autoExec"
+        v-if="!autoExec && (jsonformSchema || chartSpec)"
         :loading="loading"
         style="margin-right: 20px"
         @click="startProcess"
@@ -146,9 +147,7 @@ const startProcess = async () => {
     chartSpec,
     chartData,
     loading,
-    //@ts-expect-error TODO
     selectedStac,
-    isProcessed,
     isPolling,
     processResults,
   });
@@ -182,5 +181,6 @@ eox-chart {
 }
 eox-jsonform {
   padding: 0.7em;
+  min-height: 0px;
 }
 </style>

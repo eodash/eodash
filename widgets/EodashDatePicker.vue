@@ -22,7 +22,7 @@
             variant="text"
             @click="jumpDate(true)"
             class="py-2"
-            style="flex-shrink: 1"
+            style="flex-shrink: 1; padding: 0;"
           >
             <v-icon :icon="[mdiRayEndArrow]" />
           </v-btn>
@@ -52,7 +52,7 @@
             v-tooltip:bottom="'Set date to latest available dataset'"
             @click="jumpDate(false)"
             class="py-2"
-            style="flex-shrink: 1"
+            style="flex-shrink: 1; padding: 0;"
           >
             <v-icon :icon="[mdiRayStartArrow]" />
           </v-btn>
@@ -130,6 +130,7 @@ import { mdiRayStartArrow, mdiRayEndArrow } from "@mdi/js";
 import { eodashCollections, collectionsPalette } from "@/utils/states";
 import log from "loglevel";
 import { makePanelTransparent } from "@/composables";
+import { getDatetimeProperty } from "@/eodashSTAC/helpers";
 
 const { lgAndDown } = useDisplay();
 
@@ -226,10 +227,19 @@ watch(
 
       for (let idx = 0; idx < eodashCollections.length; idx++) {
         log.debug("Retrieving dates", eodashCollections[idx]);
+        await eodashCollections[idx].fetchCollection();
+        const dateProperty = getDatetimeProperty(
+          eodashCollections[idx].getItems(),
+        );
+        if (!dateProperty) {
+          continue;
+        }
         const dates = [
           ...new Set(
             eodashCollections[idx].getItems()?.reduce((valid, it) => {
-              const parsed = Date.parse(/** @type {string} */ (it.datetime));
+              const parsed = Date.parse(
+                /** @type {string} */ (it[dateProperty]),
+              );
               if (parsed) {
                 valid.push(new Date(parsed));
               }

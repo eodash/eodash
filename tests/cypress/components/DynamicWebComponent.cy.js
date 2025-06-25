@@ -25,7 +25,7 @@ describe("<DynamicWebComponent />", () => {
         link: async () => await import("@eox/stacinfo"),
         tagName: "eox-stacinfo",
         properties: {
-          for: "https://esa-eodash.github.io/RACE-catalog/RACE/cruises_impact/collection.json",
+          for: "https://esa-eodashboards.github.io/RACE-catalog/RACE/catalog.json",
           allowHtml: "true",
         },
       },

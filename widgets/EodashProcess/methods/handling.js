@@ -1,14 +1,20 @@
 import log from "loglevel";
 import { extractGeometries, getBboxProperty } from "./utils";
-import { datetime, mapEl } from "@/store/states";
+import { datetime, indicator, mapEl, poi } from "@/store/states";
 import axios from "@/plugins/axios";
 import { getLayers } from "@/store/actions";
 import {
   getChartValues,
   processGeoTiff,
   processImage,
+  processSTAC,
   processVector,
 } from "./outputs";
+import { handleGeotiffCustomEndpoints } from "./custom-endpoints/geotiff";
+import { handleChartCustomEndpoints } from "./custom-endpoints/chart";
+import { useSTAcStore } from "@/store/stac";
+import { replaceLayer } from "@/eodashSTAC/helpers";
+import { useEmitLayersUpdate, useGetSubCodeId } from "@/composables/index";
 
 /**
  * Fetch and set the jsonform schema to initialize the process
@@ -35,7 +41,16 @@ export async function initProcess({
   loading,
   isPolling,
 }) {
-  if (!selectedStac.value) {
+  let updatedJsonform = null;
+  if (selectedStac.value["eodash:jsonform"]) {
+    updatedJsonform = await axios
+      //@ts-expect-error eodash extention
+      .get(selectedStac.value["eodash:jsonform"])
+      .then((resp) => resp.data);
+  }
+
+  if (!updatedJsonform && poi.value) {
+    jsonformSchema.value = null;
     return;
   }
   resetProcess({
@@ -46,19 +61,10 @@ export async function initProcess({
     isPolling,
     processResults,
   });
-  if (selectedStac.value["eodash:jsonform"]) {
-    jsonformEl.value?.editor.destroy();
-    // wait for the layers to be rendered
-    jsonformSchema.value = await axios
-      //@ts-expect-error eodash extention
-      .get(selectedStac.value["eodash:jsonform"])
-      .then((resp) => resp.data);
-    // remove borders from jsonform
-  } else {
-    if (!jsonformSchema.value) {
-      return;
-    }
-    jsonformSchema.value = null;
+
+  await jsonformEl.value?.editor.destroy();
+  if (updatedJsonform) {
+    jsonformSchema.value = updatedJsonform;
   }
 }
 
@@ -87,12 +93,14 @@ export async function handleProcesses({
   if (!jsonformEl.value || !jsonformSchema.value || !selectedStac.value) {
     return;
   }
+
   log.debug("Processing...");
   loading.value = true;
   try {
     const serviceLinks = selectedStac.value?.links?.filter(
       (l) => l.rel === "service",
     );
+
     const bboxProperty = getBboxProperty(jsonformSchema.value);
     const jsonformValue = /** @type {Record<string,any>} */ (
       jsonformEl.value?.value
@@ -105,12 +113,18 @@ export async function handleProcesses({
     const specUrl = /** @type {string} */ (
       selectedStac.value?.["eodash:vegadefinition"]
     );
+    const layerId = selectedStac.value?.id ?? "";
 
-    [chartSpec.value, chartData.value] = await getChartValues(
-      serviceLinks,
-      { ...(jsonformValue ?? {}) },
+    [chartSpec.value, chartData.value] = await getChartValues({
+      links: serviceLinks,
+      jsonformValue: { ...(jsonformValue ?? {}) },
+      jsonformSchema: jsonformSchema.value,
+      selectedStac: selectedStac.value,
       specUrl,
-    );
+      isPolling,
+      customEndpointsHandler: handleChartCustomEndpoints,
+    });
+
     if (Object.keys(chartData.value ?? {}).length) {
       processResults.value.push(chartData.value);
     }
@@ -125,25 +139,33 @@ export async function handleProcesses({
       chartSpec.value["background"] = "transparent";
     }
 
-    const geotiffLayer = await processGeoTiff(
-      serviceLinks,
-      jsonformValue,
-      selectedStac.value?.id ?? "",
-      isPolling,
-      //@ts-expect-error TODO
-      selectedStac.value?.["eodash:mapProjection"]?.["name"] ?? null,
-    );
+    await processSTAC(serviceLinks, jsonformValue);
 
-    if (geotiffLayer && geotiffLayer.source?.sources.length) {
-      processResults.value.push(
-        ...(geotiffLayer.source?.sources?.map((source) => source.url) ?? []),
-      );
-    }
-    // 3. vector geojson
+    const geotiffLayers = await processGeoTiff({
+      links: serviceLinks,
+      jsonformValue,
+      layerId,
+      isPolling,
+      projection:
+        //@ts-expect-error TODO
+        selectedStac.value?.["eodash:mapProjection"]?.["name"] ?? null,
+      jsonformSchema: jsonformSchema.value,
+      selectedStac: selectedStac.value,
+      customEndpointsHandler: handleGeotiffCustomEndpoints,
+    });
+    geotiffLayers?.forEach((geotiffLayer) => {
+      if (geotiffLayer && geotiffLayer.source?.sources.length) {
+        processResults.value.push(
+          //@ts-expect-error TODO
+          ...(geotiffLayer.source?.sources?.map((source) => source.url) ?? []),
+        );
+      }
+    });
+
     const vectorLayers = await processVector(
       serviceLinks,
       jsonformValue,
-      selectedStac.value?.id ?? "",
+      layerId,
     );
 
     if (vectorLayers?.length) {
@@ -161,25 +183,45 @@ export async function handleProcesses({
 
     log.debug(
       "rendered layers after processing:",
-      geotiffLayer,
+      geotiffLayers,
       vectorLayers,
       imageLayers,
     );
 
-    if (geotiffLayer || vectorLayers?.length || imageLayers?.length) {
-      const layers = [
-        ...(geotiffLayer ? [geotiffLayer] : []),
+    if (geotiffLayers?.length || vectorLayers?.length || imageLayers?.length) {
+      const newLayers = /** @type {import("@eox/map").EoxLayer[]} */ ([
+        ...(geotiffLayers ?? []),
         ...(vectorLayers ?? []),
         ...(imageLayers ?? []),
-      ];
+      ]);
       let currentLayers = [...getLayers()];
-      let analysisGroup = currentLayers.find((l) =>
-        l.properties.id.includes("AnalysisGroup"),
-      );
-      analysisGroup?.layers.push(...layers);
 
+      let analysisGroup =
+        /*** @type {import("@eox/map/src/layers").EOxLayerTypeGroup | undefined} */ (
+          currentLayers.find((l) => l.properties?.id.includes("AnalysisGroup"))
+        );
+      if (!analysisGroup) {
+        return;
+      }
+
+      for (const layer of newLayers) {
+        const exists = analysisGroup.layers.find(
+          (l) => l.properties?.id === layer.properties?.id,
+        );
+        if (!exists) {
+          analysisGroup.layers.unshift(layer);
+        } else {
+          analysisGroup.layers = replaceLayer(
+            analysisGroup.layers,
+            layer.properties?.id ?? "",
+            [layer],
+          );
+        }
+      }
       if (mapEl.value) {
-        mapEl.value.layers = [...currentLayers];
+        const layers = [...currentLayers];
+        useEmitLayersUpdate("process:updated", mapEl.value, layers);
+        mapEl.value.layers = layers;
       }
     }
     loading.value = false;
@@ -243,7 +285,16 @@ export const onChartClick = (evt) => {
   }
   try {
     const vegaItem = evt.detail.item;
-    const temporalValue = new Date(vegaItem.datum.datum[temporalKey]);
+    let datestring = "";
+    // It seems sometimes we have datum inside datum and sometimes not    
+    if (vegaItem.datum && vegaItem.datum.datum) {
+      // If datum is nested, we use the nested datum
+      datestring = vegaItem.datum.datum[temporalKey];
+    } else {
+      // Otherwise, we use the top-level datum
+      datestring = vegaItem.datum[temporalKey];
+    }
+    const temporalValue = new Date(datestring);
     datetime.value = temporalValue.toISOString();
   } catch (error) {
     console.warn(
@@ -251,4 +302,19 @@ export const onChartClick = (evt) => {
       error,
     );
   }
+};
+
+/**
+ * Loads the main indicator of a Point of Interest (POI)
+ */
+export const loadPOiIndicator = () => {
+  if (!indicator.value) {
+    indicator.value =
+      new URLSearchParams(window.location.search).get("indicator") ?? "";
+  }
+  const stacStore = useSTAcStore();
+  const link = stacStore.stac?.find(
+    (link) => useGetSubCodeId(link) === indicator.value,
+  );
+  stacStore.loadSelectedSTAC(link?.href);
 };

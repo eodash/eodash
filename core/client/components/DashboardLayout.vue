@@ -1,6 +1,6 @@
 <template>
   <v-main>
-    <eox-layout :gap="gap" :style="`padding: ${gap}px`">
+    <eox-layout :gap="gap" class="layout-container" :style="layoutStyle">
       <eox-layout-item
         v-if="bgWidget?.component"
         :key="bgWidget.id"
@@ -49,6 +49,11 @@ import "@eox/layout";
 import { useDefineTemplate } from "@/composables/DefineTemplate";
 
 const { bgWidget, importedWidgets, gap } = useDefineTemplate();
+
+const layoutStyle = {
+  padding: gap.value + "px",
+  overflow: "hidden !important",
+};
 </script>
 <style scoped>
 .panel {

@@ -6,14 +6,15 @@ import { getStyleVariablesState } from "./triggers.js";
 /**
  *  @param {import("stac-ts").StacLink[]} [links]
  *  @param {Record<string,any>} [extraProperties]
+ * @param {string} [rel = "item"]
  **/
-export function generateFeatures(links, extraProperties = {}) {
+export function generateFeatures(links, extraProperties = {}, rel = "item") {
   /**
    * @type {import("geojson").Feature[]}
    */
   const features = [];
   links?.forEach((element) => {
-    if (element.rel === "item" && "latlng" in element) {
+    if (element.rel === rel && "latlng" in element) {
       const [lat, lon] = /** @type {string} */ (element.latlng)
         .split(",")
         .map((it) => Number(it));
@@ -177,9 +178,9 @@ export const extractLayerDatetime = (links, currentStep) => {
   }
 
   // check if links has a datetime value
-  // TODO: consider datetime ranges
-  const hasDatetime = links.some((l) => typeof l.datetime === "string");
-  if (!hasDatetime) {
+  const dateProperty = getDatetimeProperty(links);
+
+  if (!dateProperty) {
     return undefined;
   }
 
@@ -187,11 +188,10 @@ export const extractLayerDatetime = (links, currentStep) => {
   const controlValues = [];
   try {
     currentStep = new Date(currentStep).toISOString();
-
     links.reduce((vals, link) => {
-      if (link.datetime && link.rel === "item") {
+      if (link[dateProperty] && link.rel === "item") {
         vals.push(
-          new Date(/** @type {string} */ (link.datetime)).toISOString(),
+          new Date(/** @type {string} */ (link[dateProperty])).toISOString(),
         );
       }
       return vals;
@@ -223,8 +223,8 @@ export const extractLayerDatetime = (links, currentStep) => {
 /**
  * Find JSON layer by ID
  *  @param {string} layer
- *  @param {Record<string, any>[]} layers
- *  @returns {Record<string,any> | undefined}
+ *  @param {import("@eox/map").EoxLayer[]} layers
+ *  @returns {import("@eox/map").EoxLayer | undefined}
  **/
 export const findLayer = (layers, layer) => {
   for (const lyr of layers) {
@@ -235,7 +235,7 @@ export const findLayer = (layers, layer) => {
       }
       return found;
     }
-    if (lyr.properties.id === layer) {
+    if (lyr.properties?.id === layer) {
       return lyr;
     }
   }
@@ -243,14 +243,14 @@ export const findLayer = (layers, layer) => {
 
 /**
  * Removes the layer with the id provided and injects an array of layers in its position
- * @param {Record<string,any>[]} currentLayers
+ * @param {import("@eox/map").EoxLayer[]} currentLayers
  * @param {string} oldLayer - id of the layer to be replaced
- * @param {Record<string,any>[]} newLayers - array of layers to replace the old layer
- * @returns {Record<string,any>[] | undefined}
+ *  @param {import("@eox/map").EoxLayer[]} newLayers - array of layers to replace the old layer
+ * @returns {import("@eox/map").EoxLayer[]}
  */
 export const replaceLayer = (currentLayers, oldLayer, newLayers) => {
   const oldLayerIdx = currentLayers.findIndex(
-    (l) => l.properties.id === oldLayer,
+    (l) => l.properties?.id === oldLayer,
   );
 
   if (oldLayerIdx !== -1) {
@@ -258,10 +258,9 @@ export const replaceLayer = (currentLayers, oldLayer, newLayers) => {
       "Replacing layer",
       oldLayer,
       "with",
-      newLayers.map((l) => l.properties.id),
+      newLayers.map((l) => l.properties?.id),
     );
     currentLayers.splice(oldLayerIdx, 1, ...newLayers);
-    return currentLayers;
   }
 
   for (const l of currentLayers) {
@@ -269,10 +268,10 @@ export const replaceLayer = (currentLayers, oldLayer, newLayers) => {
       const updatedGroupLyrs = replaceLayer(l.layers, oldLayer, newLayers);
       if (updatedGroupLyrs?.length) {
         l.layers = updatedGroupLyrs;
-        return currentLayers;
       }
     }
   }
+  return currentLayers;
 };
 
 /**
@@ -309,7 +308,7 @@ export const getColFromLayer = (indicators, layer) => {
  * @param {string} collectionId
  * @param {string} itemId
  * @param {import('stac-ts').StacLink} link
- * @param {string} projectionCode
+ * @param {string | import("ol/proj").ProjectionLike} projectionCode
  *
  */
 export const createLayerID = (collectionId, itemId, link, projectionCode) => {
@@ -471,3 +470,23 @@ export const addTooltipInteraction = (layer, style) => {
     ];
   }
 };
+/**
+ *
+ * @param {import("stac-ts").StacLink[]} [links]
+ */
+export function getDatetimeProperty(links) {
+  if (!links?.length) {
+    return undefined;
+  }
+  // TODO: consider other properties for datetime ranges
+  const datetimeProperties = ["datetime", "start_datetime", "end_datetime"];
+  for (const prop of datetimeProperties) {
+    const propExists = links.some(
+      (l) => l[prop] && typeof l[prop] === "string",
+    );
+    if (!propExists) {
+      continue;
+    }
+    return prop;
+  }
+}

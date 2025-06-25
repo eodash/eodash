@@ -14,11 +14,12 @@
 </template>
 <script setup>
 import { useSTAcStore } from "@/store/stac";
+import { isFirstLoad } from "@/utils/states";
 import "@eox/itemfilter";
-
 import { computed, ref } from "vue";
-import { useDisplay } from "vuetify/lib/framework.mjs";
+import { useDisplay } from "vuetify";
 
+const store = useSTAcStore();
 const emit = defineEmits(["select"]);
 
 const props = defineProps({
@@ -61,6 +62,7 @@ const props = defineProps({
   enableHighlighting: { type: Boolean, default: true },
   expandMultipleFilters: { type: Boolean, default: true },
   expandMultipleResults: { type: Boolean, default: true },
+  styleOverride: { type: String, default: "" },
   filterProperties: {
     /** @type {import("vue").PropType<{
      * keys:string[];
@@ -88,6 +90,10 @@ const props = defineProps({
  */
 const selectIndicator = async (item) => {
   if (item) {
+    if (isFirstLoad.value) {
+      // prevent the map from jumping to the initial position
+      isFirstLoad.value = false;
+    }
     // Reset compare stac to empty
     store.resetSelectedCompareSTAC();
     await store.loadSelectedSTAC(item.href);
@@ -128,9 +134,8 @@ const config = computed(() => ({
   aggregateResults: props.aggregateResults,
   style: props.cssVars,
   filterProperties: smAndDown.value ? "" : props.filterProperties,
+  styleOverride: props.styleOverride,
 }));
 /** @type {import("vue").Ref<HTMLElement & Record<string,any> | null>} */
 const eoxItemFilter = ref(null);
-
-const store = useSTAcStore();
 </script>

@@ -1,5 +1,6 @@
 import { mdiViewDashboard, mdiViewDashboardVariant } from "@mdi/js";
 import { reactive } from "vue";
+import { includesProcess } from "./store/actions";
 
 /**
  * Reactive Edoash Instance Object. provided globally in the app, and used as an
@@ -9,13 +10,17 @@ import { reactive } from "vue";
  */
 export const eodash = reactive({
   id: "demo",
+  options: {
+    // useSubCode: true,
+  },
   stacEndpoint:
-    // "https://esa-eodash.github.io/RACE-catalog/RACE/catalog.json",
-    // "https://gtif-cerulean.github.io/catalog/cerulean/catalog.json",
-    // "https://eodashcatalog.eox.at/samplecatalog/samples/catalog.json",
-    // "https://eodashcatalog.eox.at/test-style/trilateral/catalog.json",
-    // "https://gtif-cerulean.github.io/deside-catalog/deside/catalog.json",
-    "https://gtif-cerulean.github.io/cerulean-catalog/cerulean/catalog.json",
+    "https://esa-eodashboards.github.io/eodashboard-catalog/trilateral/catalog.json",
+  // "https://esa-eodashboards.github.io/RACE-catalog/RACE/catalog.json",
+  // "https://GTIF-Austria.github.io/public-catalog/pr-preview/pr-16/GTIF-Austria/catalog.json",
+  // "https://gtif-cerulean.github.io/catalog/cerulean/catalog.json",
+  // "https://eodashcatalog.eox.at/samplecatalog/samples/catalog.json",
+  // "https://gtif-cerulean.github.io/deside-catalog/deside/catalog.json",
+  // "https://gtif-cerulean.github.io/cerulean-catalog/cerulean/catalog.json",
   // "https://gtif-austria.github.io/public-catalog/GTIF-Austria/catalog.json",
   brand: {
     noLayout: true,
@@ -289,17 +294,15 @@ export const eodash = reactive({
         },
         {
           defineWidget: (selectedSTAC) =>
-            selectedSTAC?.links.some((l) => l.rel === "service")
-              ? {
-                  id: "Processes",
-                  type: "internal",
-                  title: "Processes",
-                  layout: { x: 9, y: 6, w: 3, h: 5 },
-                  widget: {
-                    name: "EodashProcess",
-                  },
-                }
-              : null,
+            includesProcess(selectedSTAC) && {
+              id: "Processes",
+              type: "internal",
+              title: "Processes",
+              layout: { x: 9, y: 6, w: 3, h: 5 },
+              widget: {
+                name: "EodashProcess",
+              },
+            },
         },
       ],
     },
@@ -394,17 +397,15 @@ export const eodash = reactive({
         },
         {
           defineWidget: (selectedSTAC) =>
-            selectedSTAC?.links.some((l) => l.rel === "service")
-              ? {
-                  id: Symbol(),
-                  type: "internal",
-                  title: "Processes",
-                  layout: { x: 0, y: 7, w: 3, h: 5 },
-                  widget: {
-                    name: "EodashProcess",
-                  },
-                }
-              : null,
+            includesProcess(selectedSTAC) && {
+              id: "Processes",
+              type: "internal",
+              title: "Processes",
+              layout: { x: 9, y: 6, w: 3, h: 5 },
+              widget: {
+                name: "EodashProcess",
+              },
+            },
         },
         {
           defineWidget: (selected) => {

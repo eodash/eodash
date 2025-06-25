@@ -1,13 +1,14 @@
 <template>
-  <div
-    ref="rootEl"
-    class="d-flex flex-column fill-height overflow-auto bg-primary"
-  >
-    <div class="d-flex flex-row justify-space-between pa-4 align-center">
+  <div ref="rootEl" class="d-flex flex-column fill-height bg-primary">
+    <div
+      class="d-flex flex-row align-center fill-height justify-space-between pa-2 align-center"
+    >
       <v-btn
         v-if="props.showIndicatorsBtn"
         color="secondary"
-        class="text-none py-2 px-4"
+        :size="btnSize"
+        class="text-none"
+        :class="btnClasses"
         :append-icon="[mdiPlus]"
         :text="indicatorBtnText"
         @click="dialog = !dialog"
@@ -43,13 +44,18 @@ import EodashLayoutSwitcher from "^/EodashLayoutSwitcher.vue";
 import { mdiPlus, mdiViewDashboard } from "@mdi/js";
 import { computed, ref } from "vue";
 import { makePanelTransparent } from "@/composables";
-import { useDisplay } from "vuetify/lib/framework.mjs";
+import { useDisplay } from "vuetify";
 
 const dialog = ref(false);
 
-const { smAndDown } = useDisplay();
-const popupWidth = computed(() => (smAndDown.value ? "80%" : "1500px"));
-const popupHeight = computed(() => (smAndDown.value ? "90%" : "800px"));
+const { smAndDown, xxl, lgAndUp } = useDisplay();
+const popupWidth = computed(() => (smAndDown.value ? "80%" : "70%"));
+const popupHeight = computed(() => (smAndDown.value ? "90%" : "70%"));
+const btnClasses = computed(() => ({
+  "text-body-2": !xxl.value,
+  "py-2": lgAndUp.value,
+}));
+const btnSize = computed(() => (xxl.value ? undefined : "small"));
 
 const props = defineProps({
   showIndicatorsBtn: {
@@ -82,3 +88,4 @@ const props = defineProps({
 const rootEl = ref(null);
 makePanelTransparent(rootEl);
 </script>
+<style lang="scss" scoped></style>

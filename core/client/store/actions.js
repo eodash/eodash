@@ -3,21 +3,23 @@ import {
   mapCompareEl,
   registeredProjections,
   activeTemplate,
+  poi,
 } from "@/store/states";
 import { getProjectionCode } from "@/eodashSTAC/helpers";
 import log from "loglevel";
 
 /**
  * Returns the current layers of {@link mapEl}
- * @returns {Record<string,any>[]}
+ * @returns {import("@eox/map").EoxLayer[]}
  */
-export const getLayers = () => mapEl.value?.layers.toReversed();
+export const getLayers = () => mapEl.value?.layers.toReversed() ?? [];
 
 /**
  * Returns the current layers of {@link mapCompareEl}
- * @returns {Record<string,any>[]}
+ * * @returns {import("@eox/map").EoxLayer[]}
  */
-export const getCompareLayers = () => mapCompareEl.value?.layers.toReversed();
+export const getCompareLayers = () =>
+  mapCompareEl.value?.layers.toReversed() ?? [];
 
 /**
  * Register EPSG projection in `eox-map`
@@ -76,4 +78,15 @@ export const changeMapProjection = async (projection) => {
 export const setActiveTemplate = (template) => {
   activeTemplate.value = template;
   log.debug("Setting active template to", template);
+};
+
+/**
+ * Check whether the collection needs an EodashProcess Widget
+ * @param {import("stac-ts").StacCollection | null} collection
+ * @returns
+ */
+export const includesProcess = (collection) => {
+  return (
+    collection?.links?.some((link) => link.rel === "service") || !!poi.value
+  );
 };

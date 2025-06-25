@@ -7,6 +7,7 @@ import {
   fetchStyle,
   findLayer,
   generateFeatures,
+  getDatetimeProperty,
   replaceLayer,
 } from "./helpers";
 import {
@@ -67,7 +68,10 @@ export class EodashCollection {
     /** @type {Record<string,any>[]} */
     let layersJson = [];
 
-    const isGeoDB = stac?.endpointtype === "GeoDB";
+    // Load collectionstac if not yet initialized
+    stac = await this.fetchCollection();
+
+    const isObservationPoint = stac?.endpointtype === "GeoDB";
 
     if (linkOrDate instanceof Date) {
       // if collectionStac not yet initialized we do it here
@@ -107,7 +111,12 @@ export class EodashCollection {
       const title =
         this.#collectionStac?.title || this.#collectionStac?.id || "";
       layersJson.unshift(
-        ...(await this.buildJsonArray(item, stacItemUrl, title, isGeoDB)),
+        ...(await this.buildJsonArray(
+          item,
+          stacItemUrl,
+          title,
+          isObservationPoint,
+        )),
       );
       return layersJson;
     }
@@ -117,17 +126,17 @@ export class EodashCollection {
    * @param {import("stac-ts").StacItem} item
    * @param {string} itemUrl
    * @param {string} title
-   * @param {boolean} isGeoDB
+   * @param {boolean} isObservationPoint
    * @param {string} [itemDatetime]
    * @returns {Promise<Record<string,any>[]>} layers
    * */
-  async buildJsonArray(item, itemUrl, title, isGeoDB, itemDatetime) {
+  async buildJsonArray(item, itemUrl, title, isObservationPoint, itemDatetime) {
     log.debug(
       "Building JSON array",
       item,
       itemUrl,
       title,
-      isGeoDB,
+      isObservationPoint,
       itemDatetime,
     );
     // registering top level indicator projection
@@ -141,8 +150,8 @@ export class EodashCollection {
 
     const jsonArray = [];
 
-    if (isGeoDB) {
-      // handled by getGeoDBLayer
+    if (isObservationPoint) {
+      // handled by getObservationPointsLayer
       return [];
     }
 
@@ -159,7 +168,9 @@ export class EodashCollection {
 
     const layerDatetime = extractLayerDatetime(
       this.getItems(),
-      item.properties?.datetime ?? itemDatetime,
+      item.properties?.datetime ??
+        item.properties.start_datetime ??
+        itemDatetime,
     );
 
     const dataAssets = Object.keys(item?.assets ?? {}).reduce((data, ast) => {
@@ -192,6 +203,7 @@ export class EodashCollection {
         ...extraProperties,
         ...(this.color && { color: this.color }),
       };
+
       const links = await createLayersFromLinks(
         this.#collectionStac?.id ?? "",
         title,
@@ -199,6 +211,7 @@ export class EodashCollection {
         layerDatetime,
         extraProperties,
       );
+
       jsonArray.push(
         ...links,
         ...(await createLayersFromAssets(
@@ -252,13 +265,17 @@ export class EodashCollection {
    * Returns all item links sorted by datetime ascendingly
    */
   getItems() {
+    const datetimeProperty = getDatetimeProperty(this.#collectionStac?.links);
+    const items = this.#collectionStac?.links.filter((i) => i.rel === "item");
+    if (!datetimeProperty) {
+      return items;
+    }
     return (
-      this.#collectionStac?.links
-        .filter((i) => i.rel === "item")
+      items
         // sort by `datetime`, where oldest is first in array
-        .sort((a, b) =>
-          /** @type {number} */ (a.datetime) <
-          /** @type {number} */ (b.datetime)
+        ?.sort((a, b) =>
+          /** @type {number} */ (a[datetimeProperty]) <
+          /** @type {number} */ (b[datetimeProperty])
             ? -1
             : 1,
         )
@@ -266,8 +283,12 @@ export class EodashCollection {
   }
 
   getDates() {
+    const datetimeProperty = getDatetimeProperty(this.#collectionStac?.links);
+    if (!datetimeProperty) {
+      return [];
+    }
     return this.getItems()?.map(
-      (i) => new Date(/** @type {number} */ (i.datetime)),
+      (i) => new Date(/** @type {number} */ (i[datetimeProperty])),
     );
   }
 
@@ -281,14 +302,19 @@ export class EodashCollection {
    *  @param {Date} [date]
    **/
   getItem(date) {
+    const datetimeProperty = getDatetimeProperty(this.#collectionStac?.links);
+    if (!datetimeProperty) {
+      // in case no datetime property is found, return the first item
+      return this.getItems()?.[0];
+    }
     return date
       ? this.getItems()?.sort((a, b) => {
           const distanceA = Math.abs(
-            new Date(/** @type {number} */ (a.datetime)).getTime() -
+            new Date(/** @type {number} */ (a[datetimeProperty])).getTime() -
               date.getTime(),
           );
           const distanceB = Math.abs(
-            new Date(/** @type {number} */ (b.datetime)).getTime() -
+            new Date(/** @type {number} */ (b[datetimeProperty])).getTime() -
               date.getTime(),
           );
           return distanceA - distanceB;
@@ -316,11 +342,17 @@ export class EodashCollection {
    * @param {string} map
    */
   async updateLayerJson(datetime, layer, map) {
+    await this.fetchCollection();
+    const datetimeProperty = getDatetimeProperty(this.#collectionStac?.links);
+    if (!datetimeProperty) {
+      console.warn("[eodash] no datetime property found in collection");
+      return;
+    }
     // get the link of the specified date
     const specifiedLink = this.getItems()?.find(
       (item) =>
-        typeof item.datetime === "string" &&
-        new Date(item.datetime).toISOString() === datetime,
+        typeof item[datetimeProperty] === "string" &&
+        new Date(item[datetimeProperty]).toISOString() === datetime,
     );
 
     if (!specifiedLink) {
@@ -340,12 +372,13 @@ export class EodashCollection {
     }
 
     /** @type {string | undefined} */
-    const oldLayerID = findLayer(currentLayers, layer)?.properties.id;
+    const oldLayerID = findLayer(currentLayers, layer)?.properties?.id;
 
     if (!oldLayerID) {
       return;
     }
 
+    //@ts-expect-error TODO
     const updatedLayers = replaceLayer(currentLayers, oldLayerID, newLayers);
 
     return updatedLayers;
@@ -387,16 +420,18 @@ export class EodashCollection {
   }
 
   /**
-   * Returns GeoDB layer from a list of EodashCollections
+   * Returns Observation points layer from a list of EodashCollections
    *
    * @param {EodashCollection[]} eodashCollections
    *
    **/
-  static getGeoDBLayer(eodashCollections) {
+  static getObservationPointsLayer(eodashCollections) {
     const allFeatures = [];
     for (const collection of eodashCollections) {
-      const isGeoDB = collection.#collectionStac?.endpointtype === "GeoDB";
-      if (!isGeoDB) {
+      const isObservationPoint =
+        collection.#collectionStac?.endpointtype === "GeoDB" ||
+        /**@type {boolean} */ (collection.#collectionStac?.locations);
+      if (!isObservationPoint) {
         continue;
       }
       const collectionFeatures = generateFeatures(
@@ -406,6 +441,7 @@ export class EodashCollection {
           geoDBID: collection.#collectionStac?.geoDBID,
           themes: collection.#collectionStac?.themes ?? [],
         },
+        collection.#collectionStac?.locations ? "child" : "item",
       ).features;
 
       if (collectionFeatures.length) {
@@ -467,13 +503,19 @@ export class EodashCollection {
               "circle-radius": 10,
               "circle-fill-color": "#00417077",
               "circle-stroke-color": "#004170",
-              "fill-color": "#0417077",
+              "fill-color": "#00417077",
               "stroke-color": "#004170",
             },
           },
         ];
       })(),
-      interactions: [],
+      interactions: (() => {
+        const oldLayer = findLayer([...getLayers()], "geodb-collection");
+        if (!oldLayer || !oldLayer.interactions?.length) {
+          return [];
+        }
+        return [...oldLayer.interactions];
+      })(),
     };
   }
 }

@@ -1,7 +1,7 @@
 import { indicator, mapEl } from "@/store/states";
 import axios from "axios";
 import { ref } from "vue";
-import { createLayerDefinition, download } from "./utils";
+import { createTiffLayerDefinition, download } from "./utils";
 import log from "loglevel";
 import { getLayers } from "@/store/actions";
 
@@ -20,7 +20,7 @@ export const jobs = ref([]);
  * @param {import("vue").Ref<boolean>} params.isPolling - checks wether the polling should continue
  * @param {number} [params.pollInterval=5000] - The interval (in milliseconds) between polling attempts.
  * @param {number} [params.maxRetries=60] - The maximum number of polling attempts.
- * @returns {Promise<JSON>} The fetched results JSON.
+ * @returns {Promise<Record<string,any>>} The fetched results JSON.
  * @throws {Error} If the process does not complete successfully within the maximum retries.
  */
 export async function pollProcessStatus({
@@ -34,6 +34,7 @@ export async function pollProcessStatus({
   setTimeout(() => {
     updateJobsStatus(jobs, indicator);
   }, 500);
+
   while (retries < maxRetries && isPolling.value) {
     try {
       // Fetch the process JSON report
@@ -182,8 +183,9 @@ export async function loadPreviousProcess({ selectedStac, results, jobId }) {
   const geotiffLinks = selectedStac?.links.filter(
     (link) => link.rel === "service" && link.type === "image/tiff",
   );
+  // TODO: support multiple geotiff layers from one process
   // const stacProjection = selectedStac
-  const geotiffLayer = await createLayerDefinition(
+  const geotiffLayer = await createTiffLayerDefinition(
     geotiffLinks?.[0],
     selectedStac?.id ?? "",
     results?.[0].urls,
@@ -197,9 +199,11 @@ export async function loadPreviousProcess({ selectedStac, results, jobId }) {
   if (geotiffLayer) {
     const layers = [...(geotiffLayer ? [geotiffLayer] : [])];
     let currentLayers = [...getLayers()];
-    let analysisGroup = currentLayers.find((l) =>
-      l.properties.id.includes("AnalysisGroup"),
-    );
+    let analysisGroup =
+      /** @type {import("@eox/map/src/layers").EOxLayerTypeGroup} */ (
+        currentLayers.find((l) => l.properties?.id.includes("AnalysisGroup"))
+      );
+    //@ts-expect-error TODO
     analysisGroup?.layers.push(...layers);
 
     if (mapEl.value) {

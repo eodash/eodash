@@ -12,7 +12,7 @@
   </div>
 </template>
 <script setup>
-import { useTheme } from "vuetify/lib/framework.mjs";
+import { useTheme } from "vuetify";
 import pkgJson from "../../../package.json";
 const { computedThemes } = useTheme();
 

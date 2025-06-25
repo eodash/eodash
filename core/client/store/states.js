@@ -28,10 +28,14 @@ export const registeredProjections = ["EPSG:4326", "EPSG:3857"];
 /** available projection to be rendered by `EodashMap` */
 export const availableMapProjection = ref("EPSG:3857");
 
-/** @type {import("vue").Ref<HTMLElement & Record<string,any> | null>} */
+/** @type {import("vue").Ref<import("@eox/map").EOxMap | null>} */
 export const mapEl = ref(null);
 
-/** @type {import("vue").Ref<HTMLElement & Record<string,any> | null>} */
+/** @type {import("vue").Ref<import("@eox/map").EOxMap | null>} */
 export const mapCompareEl = ref(null);
 
 export const activeTemplate = ref("");
+/**
+ * Selected point of interest, used for location collections
+ */
+export const poi = ref("");

@@ -34,7 +34,7 @@ export const useInitProcess = ({
 
   onMounted(async () => {
     // wait for the layers to be rendered
-    if (mapEl.value?.layers.length > 1) {
+    if ((mapEl.value?.layers.length ?? 0) > 1) {
       await initProcess({
         selectedStac,
         jsonformEl,
@@ -62,18 +62,19 @@ export const useInitProcess = ({
   });
 
   useOnLayersUpdate(async (evt, _payload) => {
-    if (evt === "layers:updated") {
-      await initProcess({
-        selectedStac,
-        jsonformEl,
-        jsonformSchema,
-        chartSpec,
-        isProcessed,
-        processResults,
-        loading,
-        isPolling,
-      });
+    if (evt !== "layers:updated") {
+      return;
     }
+    await initProcess({
+      selectedStac,
+      jsonformEl,
+      jsonformSchema,
+      chartSpec,
+      isProcessed,
+      processResults,
+      loading,
+      isPolling,
+    });
   });
 };
 

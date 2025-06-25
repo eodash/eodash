@@ -1,15 +1,20 @@
 import { defineStore } from "pinia";
 import { inject, ref } from "vue";
 import axios from "@/plugins/axios";
-import { useAbsoluteUrl, useCompareAbsoluteUrl } from "@/composables/index";
+import {
+  useAbsoluteUrl,
+  useCompareAbsoluteUrl,
+  useGetSubCodeId,
+} from "@/composables/index";
 import { eodashKey } from "@/utils/keys";
-import { indicator } from "@/store/states";
+import { indicator, poi } from "@/store/states";
 import {
   eodashCollections,
   eodashCompareCollections,
   switchToCompare,
 } from "@/utils/states";
 import log from "loglevel";
+import { toAbsolute } from "stac-js/src/http.js";
 import { updateEodashCollections } from "@/utils";
 
 export const useSTAcStore = defineStore("stac", () => {
@@ -24,9 +29,7 @@ export const useSTAcStore = defineStore("stac", () => {
    * Selected STAC object.
    *
    * @type {import("vue").Ref<
-   *   | import("stac-ts").StacCatalog
    *   | import("stac-ts").StacCollection
-   *   | import("stac-ts").StacItem
    *   | null
    * >}
    */
@@ -36,9 +39,7 @@ export const useSTAcStore = defineStore("stac", () => {
    * Selected STAC object.
    *
    * @type {import("vue").Ref<
-   *   | import("stac-ts").StacCatalog
    *   | import("stac-ts").StacCollection
-   *   | import("stac-ts").StacItem
    *   | null
    * >}
    */
@@ -79,12 +80,26 @@ export const useSTAcStore = defineStore("stac", () => {
    * Fetches selected stac object and assign it to `selectedStac`
    *
    * @param {string} relativePath - Stac link href
+   * @param {boolean} [isPoi=false] - If true, the STAC is loaded for a point of interest
    * @returns {Promise<void>}
    * @see {@link selectedStac}
    */
-  async function loadSelectedSTAC(relativePath = "") {
+  async function loadSelectedSTAC(relativePath = "", isPoi = false) {
     const absoluteUrl = useAbsoluteUrl(relativePath);
-
+    // construct absolute URL of a poi
+    if (isPoi) {
+      const indicatorUrl =
+        stac.value?.find((link) => useGetSubCodeId(link) === indicator.value)
+          ?.href ?? "";
+      const absoluteIndicatorUrl = toAbsolute(
+        indicatorUrl,
+        eodash.stacEndpoint,
+      );
+      absoluteUrl.value = useAbsoluteUrl(
+        relativePath,
+        absoluteIndicatorUrl,
+      ).value;
+    }
     await axios
       .get(absoluteUrl.value)
       .then(async (resp) => {
@@ -93,9 +108,13 @@ export const useSTAcStore = defineStore("stac", () => {
           resp.data,
           absoluteUrl.value,
         );
-        selectedStac.value = resp.data;
-        indicator.value = selectedStac.value?.id ?? "";
-        switchToCompare.value = true;
+          selectedStac.value = resp.data;
+          // set indicator and poi
+          indicator.value = isPoi
+            ? indicator.value
+            : useGetSubCodeId(selectedStac.value);
+          poi.value = isPoi ? (selectedStac.value?.id ?? "") : "";
+          switchToCompare.value = true;
       })
       .catch((err) => {
         throw new Error("error loading the selected STAC", err);

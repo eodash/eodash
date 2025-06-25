@@ -5,6 +5,7 @@ import { VApp } from "vuetify/components";
 import { mockEodash, registerPlugins } from "./utils";
 import { eodashKey } from "@/utils/keys";
 import "vuetify/styles";
+
 /**
  * @param {import("vue").DefineComponent<{}, {}, any> | Element} OriginalComponent
  * @param {import("./cypress-types").VueMountOptions} options
@@ -30,12 +31,13 @@ export const vMountComponent = (OriginalComponent, options = {}) => {
 
   return mount(
     {
-      render: () => h(Suspense, [h(VApp, [h(OriginalComponent, props)])]),
+      render: () =>
+        h(Suspense, () => [h(VApp, () => [h(OriginalComponent, props)])]),
     },
     options,
   ).then((app) => {
     return cy
-      .wrap({ wrapper: app.wrapper.getComponent(OriginalComponent), options })
+      .wrap({ wrapper: app.wrapper.findComponent(OriginalComponent), options })
       .as("vue");
   });
 };

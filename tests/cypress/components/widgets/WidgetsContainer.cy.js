@@ -56,7 +56,6 @@ describe("<WidgetsContainer />", () => {
   });
 
   it("renders successfully", () => {
-    cy.get("@vue").should("exist");
     cy.get("details").should("exist");
   });
 

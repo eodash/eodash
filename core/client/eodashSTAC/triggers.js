@@ -52,9 +52,12 @@ export function getStyleVariablesState(collectionId, variables) {
     return variables;
   }
 
-  const analysisGroup = mapElement.layers.find(
-    (layer) => layer.properties?.id === "AnalysisGroup",
-  );
+  const analysisGroup =
+    /** @type {import("@eox/map/src/layers").EOxLayerTypeGroup | undefined} */ (
+      mapElement.layers.find(
+        (layer) => layer.properties?.id === "AnalysisGroup",
+      )
+    );
   if (!analysisGroup) {
     return variables;
   }

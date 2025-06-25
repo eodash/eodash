@@ -1,13 +1,12 @@
 import { createLayersConfig } from "./create-layers-config";
 import { setMapProjFromCol } from "@/eodashSTAC/triggers";
-import { nextTick, onMounted, onUnmounted, watch } from "vue";
+import { onMounted, onUnmounted, watch } from "vue";
 import log from "loglevel";
 import { useSTAcStore } from "@/store/stac";
 import { storeToRefs } from "pinia";
-import { useEventBus } from "@vueuse/core";
-import { eoxLayersKey } from "@/utils/keys";
-import { posIsSetFromUrl } from "@/utils/states";
-import { useOnLayersUpdate } from "@/composables";
+import { isFirstLoad } from "@/utils/states";
+import { useEmitLayersUpdate, useOnLayersUpdate } from "@/composables";
+import { mapPosition } from "@/store/states";
 /**
  * Holder for previous compare map view as it is overwritten by sync
  * @type { import("ol").View | null} mapElement
@@ -35,9 +34,6 @@ export const useHandleMapMoveEnd = (mapElement, mapPosition) => {
       !Number.isNaN(z)
     ) {
       mapPosition.value = [lonlat[0], lonlat[1], z];
-      if (posIsSetFromUrl.value) {
-        posIsSetFromUrl.value = false;
-      }
     }
   };
 
@@ -79,7 +75,6 @@ export const useInitMap = (
     eodashCols.values,
     datetime.value,
   );
-  const layersEvent = useEventBus(eoxLayersKey);
 
   const stopIndicatorWatcher = watch(
     [selectedIndicator, datetime],
@@ -132,9 +127,12 @@ export const useInitMap = (
             JSON.parse(JSON.stringify(layersCollection)),
           );
           mapLayers.value = layersCollection;
-          await nextTick(() => {
-            layersEvent.emit("time:updated", mapLayers.value);
-          });
+
+          useEmitLayersUpdate(
+            "time:updated",
+            mapElement.value,
+            layersCollection,
+          );
           return;
         }
 
@@ -158,7 +156,8 @@ export const useInitMap = (
         }
         if (
           endInterval !== null &&
-          endInterval.toISOString() !== datetime.value
+          endInterval.toISOString() !== datetime.value &&
+          !isFirstLoad.value
         ) {
           datetime.value = endInterval.toISOString();
         }
@@ -169,7 +168,7 @@ export const useInitMap = (
           if (
             mapElement?.value?.id === "main" &&
             updatedStac.extent?.spatial.bbox &&
-            !posIsSetFromUrl.value
+            !(isFirstLoad.value && mapPosition.value?.[0] && mapPosition.value?.[1])
           ) {
             // Sanitize extent,
             const b = updatedStac.extent?.spatial.bbox[0];
@@ -189,9 +188,6 @@ export const useInitMap = (
             (mapElement.value).zoomExtent = reprojExtent;
           }
         }
-        if (posIsSetFromUrl.value) {
-          posIsSetFromUrl.value = false;
-        }
 
         log.debug(
           "Assigned layers",
@@ -199,11 +195,11 @@ export const useInitMap = (
         );
         mapLayers.value = layersCollection;
         // Emit event to update layers
-        await nextTick(() => {
-          mapElement.value?.updateComplete.then(() => {
-            layersEvent.emit("layers:updated", mapLayers.value);
-          });
-        });
+        await useEmitLayersUpdate(
+          "layers:updated",
+          mapElement.value,
+          mapLayers.value,
+        );
       }
     },
     { immediate: true },
@@ -218,6 +214,7 @@ export const useInitMap = (
  * @param {import("@/eodashSTAC/EodashCollection").EodashCollection[]} eodashCols
  * @param {import("vue").Ref<Exclude<import("@/types").EodashStyleJson["tooltip"],undefined>>} tooltipProperties
  */
+
 export const useUpdateTooltipProperties = (eodashCols, tooltipProperties) => {
   useOnLayersUpdate(async () => {
     const tooltips = [];

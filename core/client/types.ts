@@ -228,12 +228,8 @@ export interface FunctionalWidget<T extends ExecutionTime = "compiletime"> {
    * @param selectedSTAC - Currently selected STAC object
    */
   defineWidget: (
-    selectedSTAC:
-      | import("stac-ts").StacCatalog
-      | import("stac-ts").StacCollection
-      | import("stac-ts").StacItem
-      | null,
-  ) => StaticWidget<T> | undefined | null;
+    selectedSTAC: import("stac-ts").StacCollection | null,
+  ) => StaticWidget<T> | undefined | null | false;
 }
 /**
  * There are 3 types of Widgets:
@@ -315,6 +311,10 @@ export interface EodashFont {
 export type Eodash<T extends ExecutionTime = "compiletime"> = {
   /** Instance ID. */
   id?: string;
+  /** Object containing potential special configuration options */
+  options?: {
+    useSubCode?: boolean;
+  };
   /** Root STAC catalog endpoint */
   stacEndpoint: StacEndpoint;
   /** Brand specifications. */
@@ -338,7 +338,7 @@ export type Eodash<T extends ExecutionTime = "compiletime"> = {
      * Dashboard theme as a custom [vuetifyJs
      * theme](https://vuetifyjs.com/en/features/theme/).
      */
-    theme?: import("vuetify/lib/index.mjs").ThemeDefinition & {
+    theme?: import("vuetify").ThemeDefinition & {
       collectionsPalette?: string[];
     };
     /** Text applied to the footer. */
