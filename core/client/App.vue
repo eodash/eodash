@@ -23,7 +23,7 @@ defineProps({
   },
 });
 
-// window.setEodashLoglevel("DEBUG")
+window.setEodashLoglevel("DEBUG")
 
 const error = ref("");
 const isWebComponent = !!document.querySelector("eo-dash");
