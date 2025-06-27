@@ -23,3 +23,9 @@ declare module "stac-js/src/http.js" {
   const toAbsolute: (...args: string[]) => string;
   export { toAbsolute };
 }
+
+declare module "@eox/ui/vuetify/blueprint.js" {
+  import type { Blueprint } from "vuetify";
+  const eox: Blueprint;
+  export { eox };
+}

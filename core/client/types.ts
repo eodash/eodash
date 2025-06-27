@@ -58,14 +58,26 @@ export interface WidgetsContainerProps {
  * @group Eodash
  * */
 export interface Layout {
-  /** Horizontal start position. Integer between 1 and 12 */
-  x: number;
-  /** Vertical start position. Integer between 1 and 12 */
-  y: number;
-  /** Width. Integer between 1 and 12 */
-  w: number;
-  /** Height. Integer between 1 and 12 */
-  h: number;
+  /**
+   * Horizontal start position. Integer between 1 and 12 or numbers seperated by "/" for different breakpoints
+   * @example "3/2/1"
+   */
+  x: number | string;
+  /**
+   *  Vertical start position. Integer between 1 and 12 or numbers seperated by "/" for different breakpoints
+   * @example "3/2/1"
+   */
+  y: number | string;
+  /**
+   *  Width. Integer between 1 and 12 or numbers seperated by "/" for different breakpoints
+   * @example "3/2/1"
+   */
+  w: number | string;
+  /**
+   * Height. Integer between 1 and 12 or numbers seperated by "/" for different breakpoints
+   * @example "3/2/1"
+   */
+  h: number | string;
 }
 /**
  * Widget type: `web-component` API
