@@ -3,6 +3,7 @@ import { collectionsPalette } from "./states";
 import {
   extractCollectionUrls,
   generateLinksFromItems,
+  revokeCollectionBlobUrls,
 } from "@/eodashSTAC/helpers";
 import { EodashCollection } from "@/eodashSTAC/EodashCollection";
 import { toAbsolute } from "stac-js/src/http.js";
@@ -193,6 +194,10 @@ export const updateEodashCollections = async (
       });
     }),
   ).then(async (collections) => {
+    // revoke old blob urls in the previous collections. see generateLinksFromItems in "../eodashSTAC/helpers.js"
+    eodashCollections.forEach((ec) => {
+      revokeCollectionBlobUrls(ec);
+    });
     // empty array from old collections
     eodashCollections.splice(0, eodashCollections.length);
     // update eodashCollections

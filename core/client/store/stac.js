@@ -108,13 +108,13 @@ export const useSTAcStore = defineStore("stac", () => {
           resp.data,
           absoluteUrl.value,
         );
-          selectedStac.value = resp.data;
-          // set indicator and poi
-          indicator.value = isPoi
-            ? indicator.value
-            : useGetSubCodeId(selectedStac.value);
-          poi.value = isPoi ? (selectedStac.value?.id ?? "") : "";
-          switchToCompare.value = true;
+        selectedStac.value = resp.data;
+        // set indicator and poi
+        indicator.value = isPoi
+          ? indicator.value
+          : useGetSubCodeId(selectedStac.value);
+        poi.value = isPoi ? (selectedStac.value?.id ?? "") : "";
+        switchToCompare.value = true;
       })
       .catch((err) => {
         throw new Error("error loading the selected STAC", err);

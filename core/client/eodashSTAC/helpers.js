@@ -429,13 +429,17 @@ export function generateLinksFromItems(items) {
   // this is still WIP, we need to add all the different properties
   // that are used in all of our different cases.
   return items.map((item) => {
+    const itemBlob = new Blob([JSON.stringify(item)], {
+      type: "application/geo+json",
+    });
+    // urls are revoked when updating the collection. see updateEodashCollections in "../utils/index.js"
+    const itemUrl = URL.createObjectURL(itemBlob);
     return {
-      item,
       id: item.id,
       rel: "item",
       type: "application/geo+json",
       title: item.id,
-      href: "this.item",
+      href: itemUrl,
       datetime:
         /** @type {*} */ (item.properties.datetime) instanceof Date
           ? item.properties.datetime.toISOString()
@@ -445,6 +449,20 @@ export function generateLinksFromItems(items) {
           latlng: item.geometry.coordinates.reverse().join(","),
         }),
     };
+  });
+}
+
+/**
+ * @param {import("../eodashSTAC/EodashCollection.js").EodashCollection} collection
+ */
+export function revokeCollectionBlobUrls(collection) {
+  collection.collectionStac?.links.forEach((link) => {
+    if (!(link.rel === "item" && link.type === "application/geo+json")) {
+      return;
+    }
+    if (link.href.startsWith("blob:")) {
+      URL.revokeObjectURL(link.href);
+    }
   });
 }
 
@@ -470,6 +488,7 @@ export const addTooltipInteraction = (layer, style) => {
     ];
   }
 };
+
 /**
  *
  * @param {import("stac-ts").StacLink[]} [links]

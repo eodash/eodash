@@ -14,8 +14,9 @@ export const readParquetItems = async (url) => {
     rowFormat: "object",
     // set utf8 to false to avoid parsing wkb to string
     utf8: false,
+    /*** @param {import("stac-ts").StacItem[]} data */
+    //@ts-expect-error rows are expected be array of arrays in hyparquet
     onComplete: (data) => {
-      //@ts-expect-error onComplete param depends on the rowFormat
       items.push(...(adjustParquetItems(data) ?? []));
     },
   });
@@ -31,7 +32,8 @@ export const adjustParquetItems = (items) => {
   return items.map((item) => {
     item = moveItemProperties(item);
     item = adjustItemsBigInts(item);
-    return {
+
+    return /** @type {import("stac-ts").StacItem} */ ({
       ...item,
       //@ts-expect-error geometry wkb conversion by stac-geoparquet
       geometry: wkbToGeometry(item.geometry),
@@ -50,7 +52,7 @@ export const adjustParquetItems = (items) => {
         const { xmax, xmin, ymax, ymin } = bbox;
         return [xmin, ymin, xmax, ymax].map((v) => parseFloat(v));
       })(item.bbox),
-    };
+    });
   });
 };
 /**

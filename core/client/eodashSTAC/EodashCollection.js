@@ -81,15 +81,11 @@ export class EodashCollection {
     }
     let stacItemUrl = "";
 
-    if (itemLink?.["item"]) {
-      stac = /** @type {import("stac-ts").StacItem} */ (itemLink["item"]);
-    } else {
-      stacItemUrl = itemLink
-        ? toAbsolute(itemLink.href, this.#collectionUrl)
-        : this.#collectionUrl;
+    stacItemUrl = itemLink
+      ? toAbsolute(itemLink.href, this.#collectionUrl)
+      : this.#collectionUrl;
 
-      stac = await axios.get(stacItemUrl).then((resp) => resp.data);
-    }
+    stac = await axios.get(stacItemUrl).then((resp) => resp.data);
 
     if (!itemLink) {
       // no specific item was requested; render last item
