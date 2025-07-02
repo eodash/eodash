@@ -46,6 +46,7 @@ export async function initProcess({
   isPolling,
   enableCompare,
 }) {
+  const isPoiAlive = enableCompare ? !!comparePoi.value : !!poi.value;
   let updatedJsonform = null;
   if (selectedStac.value?.["eodash:jsonform"]) {
     updatedJsonform = await axios
@@ -54,7 +55,7 @@ export async function initProcess({
       .then((resp) => resp.data);
   }
 
-  if (!updatedJsonform && poi.value) {
+  if (!updatedJsonform && isPoiAlive) {
     jsonformSchema.value = null;
     return;
   }
