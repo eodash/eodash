@@ -89,7 +89,6 @@ export const setActiveTemplate = (template) => {
  */
 export const includesProcess = (collection, compare = false) => {
   const isPoiAlive = compare ? !!comparePoi.value : !!poi.value;
-  console.log(compare, collection);
 
   return (
     collection?.links?.some((link) => link.rel === "service") || isPoiAlive

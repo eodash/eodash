@@ -520,7 +520,6 @@ export function updateJsonformSchemaTarget(jsonformSchema) {
     "eox-map#main",
     "eox-map#compare",
   );
-  console.log("updatedJsonformSchemaTarget", JSON.parse(stringified));
 
   return /** @type {import("json-schema").JSONSchema7} */ (
     JSON.parse(stringified)
