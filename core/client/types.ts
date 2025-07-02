@@ -84,7 +84,9 @@ export interface WebComponentWidget<T extends ExecutionTime = "compiletime"> {
 /** @group Widgets */
 export interface TEodashMap {
   name: "EodashMap";
-  properties?: InstanceType<typeof import("^/EodashMap.vue").default>["$props"];
+  properties?: InstanceType<
+    typeof import("^/EodashMap/index.vue").default
+  >["$props"];
 }
 
 /** @group Widgets */
@@ -123,7 +125,7 @@ export interface TEodashStacInfo {
 export interface TEodashProcess {
   name: "EodashProcess";
   properties?: InstanceType<
-    typeof import("^/EodashProcess.vue").default
+    typeof import("^/EodashProcess/index.vue").default
   >["$props"];
 }
 
@@ -229,6 +231,7 @@ export interface FunctionalWidget<T extends ExecutionTime = "compiletime"> {
    */
   defineWidget: (
     selectedSTAC: import("stac-ts").StacCollection | null,
+    selectedCompareSTAC?: import("stac-ts").StacCollection | null,
   ) => StaticWidget<T> | undefined | null | false;
 }
 /**
@@ -436,3 +439,11 @@ export type EodashStyleJson = import("ol/style/flat").FlatStyleLike & {
   jsonform?: import("json-schema").JSONSchema7;
   tooltip?: { id: string; title?: string; appendix?: string }[];
 };
+
+export type LayersEventBusKeys =
+  | "layers:updated"
+  | "time:updated"
+  | "process:updated"
+  | "compareLayers:updated"
+  | "compareTime:updated"
+  | "compareProcess:updated";

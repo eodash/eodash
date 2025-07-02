@@ -408,8 +408,8 @@ export const eodash = reactive({
             },
         },
         {
-          defineWidget: (selectedSTAC) =>
-            includesProcess(selectedSTAC) && {
+          defineWidget: (_, updatedCompareStac) =>
+            includesProcess(updatedCompareStac, true) && {
               id: "CompareMapProcess",
               type: "internal",
               title: "Processes",
