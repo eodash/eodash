@@ -22,7 +22,7 @@
             variant="text"
             @click="jumpDate(true)"
             class="py-2"
-            style="flex-shrink: 1; padding: 0;"
+            style="flex-shrink: 1; padding: 0"
           >
             <v-icon :icon="[mdiRayEndArrow]" />
           </v-btn>
@@ -52,7 +52,7 @@
             v-tooltip:bottom="'Set date to latest available dataset'"
             @click="jumpDate(false)"
             class="py-2"
-            style="flex-shrink: 1; padding: 0;"
+            style="flex-shrink: 1; padding: 0"
           >
             <v-icon :icon="[mdiRayStartArrow]" />
           </v-btn>

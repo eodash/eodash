@@ -33,13 +33,14 @@
     "core/client/**/*.js",
     "core/client/**/*.umd.cjs",
     "core/client/**/*.d.ts",
-    "core/client/**/*.tsx",
     "core/client/**/*.vue",
     "widgets/**/*.vue",
     "widgets/**/*.ts",
     "widgets/**/*.js",
     "widgets/**/*.d.ts",
-    "widgets/**/*.tsx",
+    "dashboards/**/*.js",
+    "dashboards/**/*.ts",
+    "dashboards/**/*.d.ts",
     "core/node/**/*.d.ts"
   ]
 }

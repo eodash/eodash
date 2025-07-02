@@ -1,5 +1,5 @@
 <template>
-  <HeaderComponent v-if="!eodash.brand.noLayout" />
+  <HeaderComponent v-if="!eodash?.brand.noLayout" />
   <ErrorAlert v-model="error" />
   <EodashOverlay />
   <Suspense>
@@ -10,19 +10,26 @@
       </div>
     </template>
   </Suspense>
-  <FooterComponent v-if="!eodash.brand.noLayout" />
+  <FooterComponent v-if="!eodash?.brand.noLayout" />
 </template>
 
 <script setup>
 import { useEodashRuntime } from "@/composables/DefineEodash";
 import { useURLSearchParametersSync, useUpdateTheme } from "@/composables";
 import { useSTAcStore } from "@/store/stac";
-import { computed, defineAsyncComponent, onErrorCaptured, ref } from "vue";
+import {
+  computed,
+  defineAsyncComponent,
+  onErrorCaptured,
+  provide,
+  ref,
+} from "vue";
 import { useDisplay } from "vuetify";
 import { loadFont } from "@/utils";
 import Loading from "@/components/Loading.vue";
 import ErrorAlert from "@/components/ErrorAlert.vue";
 import EodashOverlay from "@/components/EodashOverlay.vue";
+import { eodashKey } from "@/utils/keys";
 
 const props = defineProps({
   config: {
@@ -37,18 +44,26 @@ const props = defineProps({
 useURLSearchParametersSync();
 
 const eodash = await useEodashRuntime(props.config);
+if (!eodash) {
+  throw new Error(
+    "Eodash configuration is not defined. Please provide a valid configuration file or object.",
+  );
+}
+provide(eodashKey, eodash);
 
 const theme = useUpdateTheme("dashboardTheme", {
-  ...(eodash.brand?.theme ?? {}),
+  ...(eodash?.brand?.theme ?? {}),
 });
 theme.global.name.value = "dashboardTheme";
 
-await loadFont(eodash.brand?.font, props.isWebComponent);
+await loadFont(eodash?.brand?.font, props.isWebComponent);
 
-const { loadSTAC } = useSTAcStore();
-await loadSTAC();
+const { loadSTAC, init } = useSTAcStore();
+init(eodash.stacEndpoint);
+await loadSTAC(eodash.stacEndpoint);
 
 const { smAndDown } = useDisplay();
+
 const TemplateComponent = computed(() =>
   smAndDown.value
     ? defineAsyncComponent(() => import(`@/components/MobileLayout.vue`))

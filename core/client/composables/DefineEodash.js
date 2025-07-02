@@ -1,65 +1,52 @@
 import store from "@/store";
-import { eodashKey } from "@/utils/keys";
-import { inject } from "vue";
+import { reactive } from "vue";
 
 /**
  * Handles importing user defined instance of Eodash
  *
  * @async
  * @param {string | undefined} runtimeConfig
- * @returns {Promise<import("@/types").Eodash>}
+ * @returns {Promise<import("@/types").Eodash | null | undefined>}
  * @see {@linkplain '@/eodash.js'}
  */
 export const useEodashRuntime = async (runtimeConfig) => {
-  const eodash = /** @type {import("@/types").Eodash} */ (inject(eodashKey));
-  /** @param {import("@/types").Eodash} config */
-  const assignInstance = (config) => {
-    if ("template" in config) {
-      //@ts-expect-error to do
-      delete eodash.templates;
-      //@ts-expect-error to do
-      eodash.template = config.template;
-    } else if ("templates" in config) {
-      //@ts-expect-error to do
-      delete eodash.template;
-      //@ts-expect-error to do
-      eodash.templates = config.templates;
-    }
-    /** @type {(keyof import("@/types").Eodash)[]} */ (
-      Object.keys(eodash)
-    ).forEach((key) => {
-      //@ts-expect-error to do
-      eodash[key] = config[key];
-    });
-  };
+  let eodashConfig;
 
   if (runtimeConfig) {
-    assignInstance(
-      (
-        await import(
-          /* @vite-ignore */ new URL(runtimeConfig, import.meta.url).href
-        )
-      ).default,
-    );
-    return eodash;
+    try {
+      eodashConfig = await import(
+        /* @vite-ignore */ new URL(runtimeConfig, import.meta.url).href
+      ).then(async (m) => await m["default"]);
+    } catch (e) {
+      console.error("Error importing runtime config:", e);
+      eodashConfig = null;
+    }
+
+    return reactive(eodashConfig);
   }
 
   try {
     const configJs = "/config.js";
-    assignInstance(
-      (await import(/* @vite-ignore */ new URL(configJs, import.meta.url).href))
-        .default,
-    );
+    eodashConfig = await import(
+      /* @vite-ignore */ new URL(configJs, import.meta.url).href
+    ).then(async (m) => await m["default"]);
+    if (!eodashConfig) {
+      eodashConfig = await import("user:config").then(
+        async (m) => await m["default"],
+      );
+      console.log("using user:config", eodashConfig);
+    }
   } catch {
     try {
-      assignInstance(
-        await import("user:config").then(async (m) => await m["default"]),
+      eodashConfig = await import("user:config").then(
+        async (m) => await m["default"],
       );
     } catch {
       console.error("no dashboard configuration defined");
+      eodashConfig = null;
     }
   }
-  return eodash;
+  return eodashConfig;
 };
 
 /**

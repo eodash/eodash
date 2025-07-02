@@ -286,7 +286,7 @@ export const onChartClick = (evt) => {
   try {
     const vegaItem = evt.detail.item;
     let datestring = "";
-    // It seems sometimes we have datum inside datum and sometimes not    
+    // It seems sometimes we have datum inside datum and sometimes not
     if (vegaItem.datum && vegaItem.datum.datum) {
       // If datum is nested, we use the nested datum
       datestring = vegaItem.datum.datum[temporalKey];

@@ -11,7 +11,6 @@ import {
   mapPosition,
   poi,
 } from "@/store/states";
-import eodash from "@/eodash";
 import { useTheme } from "vuetify";
 import { inject, nextTick, onMounted, onUnmounted, watch } from "vue";
 import { useSTAcStore } from "@/store/stac";
@@ -33,8 +32,11 @@ import axios from "@/plugins/axios";
  * @returns {import("vue").Ref<string>} - Returns `currentUrl`
  * @see {@link '@/store/states.js'}
  */
-export const useAbsoluteUrl = (rel = "", base = eodash.stacEndpoint) => {
-  if (!rel || rel.includes("http")) {
+export const useAbsoluteUrl = (
+  rel = "",
+  base = inject(eodashKey)?.stacEndpoint,
+) => {
+  if (!rel || rel.includes("http") || !base) {
     currentUrl.value = rel;
     return currentUrl;
   }
@@ -62,9 +64,12 @@ export const useAbsoluteUrl = (rel = "", base = eodash.stacEndpoint) => {
  * @returns {import("vue").Ref<string>} - Returns `currentUrl`
  * @see {@link '@/store/states.js'}
  */
-export const useCompareAbsoluteUrl = (rel = "", base = eodash.stacEndpoint) => {
-  if (!rel || rel.includes("http")) {
-    currentCompareUrl.value = base;
+export const useCompareAbsoluteUrl = (
+  rel = "",
+  base = inject(eodashKey)?.stacEndpoint,
+) => {
+  if (!rel || rel.includes("http") || !base) {
+    currentCompareUrl.value = rel;
     return currentCompareUrl;
   }
 
@@ -291,8 +296,11 @@ export const makePanelTransparent = (root) => {
 };
 
 export const useGetTemplates = () => {
-  const eodash = /** @type {import("@/types").Eodash} */ (inject(eodashKey));
-  return "template" in eodash ? [] : Object.keys(eodash.templates);
+  const eodash = inject(eodashKey);
+  if (!eodash) {
+    return [];
+  }
+  return "template" in eodash ? [] : Object.keys(eodash?.templates ?? {});
 };
 
 /**
@@ -352,10 +360,11 @@ export const useEmitLayersUpdate = async (event, mapEl, layers) => {
 
 /**
  * @param {import("stac-ts").StacCollection | import("stac-ts").StacLink | import("stac-ts").StacItem | null} collection
- * @returns {string} - Returns the collection id or subcode if `useSubCode`import { mustache } from 'mustache';
- is enabled
+ * @returns {string} - Returns the collection id or subcode if `useSubCode` is enabled
  */
 export const useGetSubCodeId = (collection) => {
+  const eodash = inject(eodashKey);
+
   if (!collection) {
     return "";
   }

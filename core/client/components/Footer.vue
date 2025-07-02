@@ -7,7 +7,7 @@
     class="d-flex justify-end"
   >
     <p class="pt-0 footer-text">
-      {{ eodash.brand.footerText ?? "" }}
+      {{ eodash?.brand.footerText ?? "" }}
     </p>
   </v-footer>
 </template>
@@ -25,7 +25,7 @@ import { useDisplay } from "vuetify";
  * >}
  */
 const footer = ref(null);
-const eodash = /** @type {import("@/types").Eodash} */ (inject(eodashKey));
+const eodash = inject(eodashKey);
 
 const { mdAndDown } = useDisplay();
 </script>

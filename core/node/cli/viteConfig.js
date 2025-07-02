@@ -62,8 +62,10 @@ export const eodashViteConfig = /** @type {import("vite").UserConfigFn} */ (
         alias: {
           "@": path.join(appPath, "core/client"),
           "^": path.join(appPath, "widgets"),
-          "user:config": entryPath,
           "user:widgets": internalWidgetsPath,
+          ...(entryPath && {
+            "user:config": entryPath,
+          }),
         },
         extensions: [".js", ".json", ".jsx", ".mjs", ".ts", ".tsx", ".vue"],
       },
@@ -144,7 +146,8 @@ export const eodashViteConfig = /** @type {import("vite").UserConfigFn} */ (
                 const isClientDep = clientModules.some((m) =>
                   source.startsWith(m),
                 );
-                return !isCssOrVuetify && isClientDep;
+                const isUserConfig = source === "user:config";
+                return (!isCssOrVuetify && isClientDep) || isUserConfig;
               },
             },
           }),
@@ -163,11 +166,14 @@ export const viteConfig = /** @type {import("vite").UserConfigFn} */ (
 
 /** @type {import("vite").ServerHook} */
 async function configureServer(server) {
-  server.watcher.add([
-    entryPath,
+  const watchedFiles = [
     runtimeConfigPath,
     path.join(internalWidgetsPath, "**/*.vue"),
-  ]);
+  ];
+  if (entryPath) {
+    watchedFiles.push(entryPath);
+  }
+  server.watcher.add(watchedFiles);
 
   let updatedPath = "";
   const loggerInfo = logger.info;

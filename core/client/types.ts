@@ -84,7 +84,9 @@ export interface WebComponentWidget<T extends ExecutionTime = "compiletime"> {
 /** @group Widgets */
 export interface TEodashMap {
   name: "EodashMap";
-  properties?: InstanceType<typeof import("^/EodashMap.vue").default>["$props"];
+  properties?: InstanceType<
+    typeof import("^/EodashMap/index.vue").default
+  >["$props"];
 }
 
 /** @group Widgets */
@@ -123,7 +125,7 @@ export interface TEodashStacInfo {
 export interface TEodashProcess {
   name: "EodashProcess";
   properties?: InstanceType<
-    typeof import("^/EodashProcess.vue").default
+    typeof import("^/EodashProcess/index.vue").default
   >["$props"];
 }
 
