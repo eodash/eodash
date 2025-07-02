@@ -4,5 +4,5 @@
  * @see {@link "@/plugins/index.js"}
  */
 export const eodashKey = Symbol("eodash");
-/** @type {import("@vueuse/core").EventBusKey<"layers:updated"|"time:updated"|"process:updated">} */
+/** @type {import("@vueuse/core").EventBusKey<import("@/types").LayersEventBusKeys>} */
 export const eoxLayersKey = Symbol("eoxMapLayers");

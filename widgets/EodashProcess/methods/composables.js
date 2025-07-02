@@ -1,4 +1,3 @@
-import { mapEl } from "@/store/states";
 import { initProcess } from "./handling";
 import { useEventBus } from "@vueuse/core";
 import { nextTick, onMounted, watch } from "vue";
@@ -19,6 +18,7 @@ import { useOnLayersUpdate } from "@/composables";
  * @param {import("vue").Ref<boolean>} params.isProcessed
  * @param {import("vue").Ref<boolean>} params.loading
  * @param {import("vue").Ref<boolean>} params.isPolling
+ * @param {import("@eox/map").EOxMap | null} params.mapElement
  */
 export const useInitProcess = ({
   selectedStac,
@@ -29,13 +29,15 @@ export const useInitProcess = ({
   processResults,
   loading,
   isPolling,
+  mapElement,
 }) => {
   const layersEvents = useEventBus(eoxLayersKey);
 
   onMounted(async () => {
     // wait for the layers to be rendered
-    if ((mapEl.value?.layers.length ?? 0) > 1) {
+    if ((mapElement?.layers.length ?? 0) > 1) {
       await initProcess({
+        enableCompare: mapElement?.id === "compare",
         selectedStac,
         jsonformEl,
         jsonformSchema,
@@ -48,6 +50,7 @@ export const useInitProcess = ({
     } else {
       layersEvents.once(async () => {
         await initProcess({
+          enableCompare: mapElement?.id === "compare",
           selectedStac,
           jsonformEl,
           jsonformSchema,
@@ -61,11 +64,14 @@ export const useInitProcess = ({
     }
   });
 
+  const evtKey =
+    mapElement?.id === "compare" ? "compareLayers:updated" : "layers:updated";
   useOnLayersUpdate(async (evt, _payload) => {
-    if (evt !== "layers:updated") {
+    if (evt !== evtKey) {
       return;
     }
     await initProcess({
+      enableCompare: mapElement?.id === "compare",
       selectedStac,
       jsonformEl,
       jsonformSchema,
