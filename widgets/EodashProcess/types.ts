@@ -7,6 +7,8 @@ export interface CustomEnpointInput {
   jsonformValue: Record<string, any>;
   selectedStac: StacCollection;
   isPolling?: Ref<boolean>;
+  enableCompare?: boolean;
+  jobs: Ref<AsyncJob[]>;
 }
 export interface AsyncJob {
   type: string;

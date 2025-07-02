@@ -27,7 +27,7 @@
       class="map-btn"
       :icon="[mdiStarFourPointsCircleOutline]"
       v-tooltip:bottom="'back to POIs'"
-      v-if="backToPOIs && poi"
+      v-if="backToPOIs && (poi || comparePoi)"
       @click="loadPOiIndicator()"
     />
     <PopUp
@@ -48,7 +48,12 @@
 <script setup>
 import { makePanelTransparent } from "@/composables";
 import { changeMapProjection, setActiveTemplate } from "@/store/actions";
-import { availableMapProjection, poi } from "@/store/states";
+import {
+  activeTemplate,
+  availableMapProjection,
+  comparePoi,
+  poi,
+} from "@/store/states";
 import {
   mdiCompare,
   mdiCompareRemove,
@@ -63,7 +68,6 @@ import EodashItemFilter from "./EodashItemFilter.vue";
 import { useDisplay } from "vuetify";
 import { useSTAcStore } from "@/store/stac";
 import { storeToRefs } from "pinia";
-import { switchToCompare } from "@/utils/states";
 import { loadPOiIndicator } from "./EodashProcess/methods/handling";
 
 const { compareIndicators, changeProjection, exportMap, backToPOIs } =
@@ -94,21 +98,24 @@ const popupHeight = computed(() => (smAndDown ? "90%" : "500px"));
 const showMapState = ref(false);
 const showCompareIndicators = ref(false);
 const compareIcon = computed(() =>
-  switchToCompare.value ? mdiCompare : mdiCompareRemove,
+  activeTemplate.value ===
+  ((typeof compareIndicators === "object" &&
+    compareIndicators?.compareTemplate) ||
+    "compare")
+    ? mdiCompareRemove
+    : mdiCompare,
 );
+
 const onCompareClick = () => {
-  if (switchToCompare.value) {
-    showCompareIndicators.value = !showCompareIndicators.value;
-  } else {
-    switchToCompare.value = true;
-    const fallbackTemplate =
-      (typeof compareIndicators === "object" &&
-        compareIndicators.fallbackTemplate) ||
-      "expert";
-    selectedCompareStac.value = null;
-    setActiveTemplate(fallbackTemplate);
-    triggerRef(selectedStac);
-  }
+  showCompareIndicators.value = !showCompareIndicators.value;
+
+  const fallbackTemplate =
+    (typeof compareIndicators === "object" &&
+      compareIndicators.fallbackTemplate) ||
+    "expert";
+  selectedCompareStac.value = null;
+  setActiveTemplate(fallbackTemplate);
+  triggerRef(selectedStac);
 };
 
 /** @type {import("vue").Ref<HTMLDivElement|null>} */

@@ -3,8 +3,15 @@ import {
   applyProcessLayersToMap,
   extractGeometries,
   getBboxProperty,
+  updateJsonformSchemaTarget,
 } from "./utils";
-import { datetime, indicator, poi } from "@/store/states";
+import {
+  compareIndicator,
+  comparePoi,
+  datetime,
+  indicator,
+  poi,
+} from "@/store/states";
 import axios from "@/plugins/axios";
 import { getChartValues, processLayers, processSTAC } from "./outputs";
 import { handleLayersCustomEndpoints } from "./custom-endpoints/layers";
@@ -18,7 +25,7 @@ import { useGetSubCodeId } from "@/composables";
  * @export
  * @async
  * @param {Object} params
- * @param {import("vue").Ref<import("stac-ts").StacCollection>} params.selectedStac
+ * @param {import("vue").Ref<import("stac-ts").StacCollection | null>} params.selectedStac
  * @param {import("vue").Ref<import("@eox/jsonform").EOxJSONForm | null>} params.jsonformEl
  * @param {import("vue").Ref<Record<string,any> | null>} params.jsonformSchema
  * @param {import("vue").Ref<import("@eox/chart").EOxChart["spec"] | null>} params.chartSpec
@@ -26,6 +33,7 @@ import { useGetSubCodeId } from "@/composables";
  * @param {import("vue").Ref<boolean>} params.isProcessed
  * @param {import("vue").Ref<boolean>} params.loading
  * @param {import("vue").Ref<boolean>} params.isPolling
+ * @param {boolean} params.enableCompare
  */
 export async function initProcess({
   selectedStac,
@@ -36,9 +44,10 @@ export async function initProcess({
   processResults,
   loading,
   isPolling,
+  enableCompare,
 }) {
   let updatedJsonform = null;
-  if (selectedStac.value["eodash:jsonform"]) {
+  if (selectedStac.value?.["eodash:jsonform"]) {
     updatedJsonform = await axios
       //@ts-expect-error eodash extention
       .get(selectedStac.value["eodash:jsonform"])
@@ -60,6 +69,9 @@ export async function initProcess({
 
   await jsonformEl.value?.editor.destroy();
   if (updatedJsonform) {
+    if (enableCompare) {
+      updatedJsonform = updateJsonformSchemaTarget(updatedJsonform);
+    }
     jsonformSchema.value = updatedJsonform;
   }
 }
@@ -75,6 +87,8 @@ export async function initProcess({
  * @param {import("vue").Ref<Record<string, any> | null>} params.chartData
  * @param {import("vue").Ref<boolean>} params.isPolling
  * @param {import("vue").Ref<any[]>} params.processResults
+ * @param {import("@eox/map").EOxMap | null} params.mapElement
+ * @param {import("vue").Ref<import("../types").AsyncJob[]>} params.jobs
  */
 export async function handleProcesses({
   loading,
@@ -85,6 +99,8 @@ export async function handleProcesses({
   chartData,
   isPolling,
   processResults,
+  mapElement,
+  jobs,
 }) {
   if (!jsonformEl.value || !jsonformSchema.value || !selectedStac.value) {
     return;
@@ -118,6 +134,7 @@ export async function handleProcesses({
       selectedStac: selectedStac.value,
       specUrl,
       isPolling,
+      jobs,
       customEndpointsHandler: handleChartCustomEndpoints,
     });
 
@@ -135,7 +152,11 @@ export async function handleProcesses({
       chartSpec.value["background"] = "transparent";
     }
 
-    await processSTAC(serviceLinks, jsonformValue);
+    await processSTAC(
+      serviceLinks,
+      jsonformValue,
+      mapElement?.id === "compare",
+    );
 
     const newLayers = await processLayers({
       isPolling,
@@ -145,6 +166,7 @@ export async function handleProcesses({
       selectedStac: selectedStac.value,
       layerId,
       origBbox,
+      jobs,
       customLayersHandler: handleLayersCustomEndpoints,
       projection: /** @type {{name?:string}} */ (
         selectedStac.value?.["eodash:mapProjection"]
@@ -161,7 +183,8 @@ export async function handleProcesses({
         }
       }
     }
-    applyProcessLayersToMap(newLayers);
+
+    applyProcessLayersToMap(mapElement, newLayers);
     loading.value = false;
   } catch (error) {
     console.error("[eodash] Error while running process:", error);
@@ -247,4 +270,16 @@ export const loadPOiIndicator = () => {
     (link) => useGetSubCodeId(link) === indicator.value,
   );
   stacStore.loadSelectedSTAC(link?.href);
+  if (comparePoi.value) {
+    if (compareIndicator.value) {
+      const comparelink = stacStore.stac?.find(
+        (link) => useGetSubCodeId(link) === compareIndicator.value,
+      );
+      stacStore.loadSelectedCompareSTAC(comparelink?.href).catch((err) => {
+        console.error("[eodash] Error loading compare STAC:", err);
+      });
+    } else {
+      stacStore.resetSelectedCompareSTAC();
+    }
+  }
 };

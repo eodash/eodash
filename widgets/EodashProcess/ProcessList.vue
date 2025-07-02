@@ -24,7 +24,7 @@
             <v-btn
               :disabled="item.status !== 'successful'"
               color="primary"
-              @click="loadProcess(item, selectedStac)"
+              @click="loadProcess(item, selectedStac, mapElement)"
               :icon="[mdiUploadBox]"
               variant="text"
               v-tooltip="'Load results to map'"
@@ -45,7 +45,12 @@
           <td style="padding: 0px">
             <v-btn
               color="#ff5252"
-              @click="deleteJob(item)"
+              @click="
+                deleteJob(
+                  toRef(() => currentJobs),
+                  item,
+                )
+              "
               :icon="[mdiTrashCanOutline]"
               variant="text"
               v-tooltip="'Remove job'"
@@ -59,24 +64,35 @@
 </template>
 <script setup>
 import { mdiUploadBox, mdiDownloadBox, mdiTrashCanOutline } from "@mdi/js";
-import { onMounted, toRefs } from "vue";
+import { onMounted, toRef, toRefs } from "vue";
 import { useSTAcStore } from "@/store/stac";
 import { indicator } from "@/store/states";
 import {
   deleteJob,
   downloadPreviousResults,
-  jobs,
   loadProcess,
   updateJobsStatus,
 } from "./methods/async";
 import { useOnLayersUpdate } from "@/composables";
-
+import { compareJobs, jobs } from "./states";
+const { enableCompare, mapElement } = defineProps({
+  enableCompare: {
+    type: Boolean,
+    default: false,
+  },
+  mapElement: {
+    /** @type {import("vue").PropType<import("@eox/map").EOxMap | null>} */
+    type: Object,
+    default: () => null,
+  },
+});
 const { selectedStac } = toRefs(useSTAcStore());
+const currentJobs = enableCompare ? compareJobs : jobs;
 onMounted(() => {
-  updateJobsStatus(jobs, indicator.value);
+  updateJobsStatus(currentJobs, indicator.value);
 });
 
-useOnLayersUpdate(() => updateJobsStatus(jobs, indicator.value));
+useOnLayersUpdate(() => updateJobsStatus(currentJobs, indicator.value));
 </script>
 <style lang="scss">
 div.v-table__wrapper {
