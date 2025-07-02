@@ -299,7 +299,7 @@ export const useGetTemplates = () => {
  * Listens to the `layers:updated` and `time:updated` events and calls
  *
  * @param {import("@vueuse/core").EventBusListener<
- * "layers:updated"|"time:updated" | "process:updated",
+ * import("@/types").LayersEventBusKeys,
  * {layers:Record<string,any>[]| undefined}
  * >} listener
  */
@@ -313,7 +313,7 @@ export const useOnLayersUpdate = (listener) => {
   });
 };
 /**
- * @param {"layers:updated"|"time:updated"|"process:updated"} event
+ * @param {import("@/types").LayersEventBusKeys} event
  * @param {import("@eox/map").EOxMap | null} mapEl
  * @param {Record<string,any>[]} layers
  */

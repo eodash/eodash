@@ -7,13 +7,12 @@ import {
   useGetSubCodeId,
 } from "@/composables/index";
 import { eodashKey } from "@/utils/keys";
-import { indicator, poi } from "@/store/states";
+import { compareIndicator, comparePoi, indicator, poi } from "@/store/states";
 import { extractCollectionUrls } from "@/eodashSTAC/helpers";
 import {
   eodashCollections,
   eodashCompareCollections,
   collectionsPalette,
-  switchToCompare,
 } from "@/utils/states";
 import { EodashCollection } from "@/eodashSTAC/EodashCollection";
 import log from "loglevel";
@@ -88,19 +87,9 @@ export const useSTAcStore = defineStore("stac", () => {
    */
   async function loadSelectedSTAC(relativePath = "", isPoi = false) {
     const absoluteUrl = useAbsoluteUrl(relativePath);
-    // construct absolute URL of a poi
     if (isPoi) {
-      const indicatorUrl =
-        stac.value?.find((link) => useGetSubCodeId(link) === indicator.value)
-          ?.href ?? "";
-      const absoluteIndicatorUrl = toAbsolute(
-        indicatorUrl,
-        eodash.stacEndpoint,
-      );
-      absoluteUrl.value = useAbsoluteUrl(
-        relativePath,
-        absoluteIndicatorUrl,
-      ).value;
+      // construct absolute URL of a poi
+      absoluteUrl.value = constructPoiUrl(relativePath, indicator.value);
     }
     await axios
       .get(absoluteUrl.value)
@@ -130,14 +119,12 @@ export const useSTAcStore = defineStore("stac", () => {
             ? indicator.value
             : useGetSubCodeId(selectedStac.value);
           poi.value = isPoi ? (selectedStac.value?.id ?? "") : "";
-          switchToCompare.value = true;
         });
       })
       .catch((err) => {
         throw new Error("error loading the selected STAC", err);
       });
   }
-
   /**
    * Fetches selected stac object and assign it to `selectedCompareStac`
    *
@@ -145,8 +132,12 @@ export const useSTAcStore = defineStore("stac", () => {
    * @returns {Promise<void>}
    * @see {@link selectedCompareStac}
    */
-  async function loadSelectedCompareSTAC(relativePath = "") {
+  async function loadSelectedCompareSTAC(relativePath = "", isPOI = false) {
     const absoluteUrl = useCompareAbsoluteUrl(relativePath);
+    if (isPOI) {
+      // construct absolute URL of a poi
+      absoluteUrl.value = constructPoiUrl(relativePath, compareIndicator.value);
+    }
     await axios
       .get(absoluteUrl.value)
       .then(async (resp) => {
@@ -169,7 +160,10 @@ export const useSTAcStore = defineStore("stac", () => {
           eodashCompareCollections.push(...collections);
 
           selectedCompareStac.value = resp.data;
-          switchToCompare.value = false;
+          compareIndicator.value = isPOI
+            ? compareIndicator.value
+            : useGetSubCodeId(selectedCompareStac.value);
+          comparePoi.value = isPOI ? (selectedCompareStac.value?.id ?? "") : "";
         });
       })
       .catch((err) => {
@@ -183,6 +177,21 @@ export const useSTAcStore = defineStore("stac", () => {
    */
   async function resetSelectedCompareSTAC() {
     selectedCompareStac.value = null;
+  }
+
+  /**
+   * Construct absolute URL of a point of interest (POI)
+   *
+   * @param {string} relativePath - The relative path to the POI
+   * @param {string} indicatorStr - selected indicator id or subcode
+   */
+  function constructPoiUrl(relativePath, indicatorStr) {
+    // construct absolute URL of a poi
+    const indicatorUrl =
+      stac.value?.find((link) => useGetSubCodeId(link) === indicatorStr)
+        ?.href ?? "";
+    const absoluteIndicatorUrl = toAbsolute(indicatorUrl, eodash.stacEndpoint);
+    return toAbsolute(relativePath, absoluteIndicatorUrl);
   }
 
   return {

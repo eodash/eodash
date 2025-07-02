@@ -4,6 +4,7 @@ import {
   registeredProjections,
   activeTemplate,
   poi,
+  comparePoi,
 } from "@/store/states";
 import { getProjectionCode } from "@/eodashSTAC/helpers";
 import log from "loglevel";
@@ -82,11 +83,15 @@ export const setActiveTemplate = (template) => {
 
 /**
  * Check whether the collection needs an EodashProcess Widget
- * @param {import("stac-ts").StacCollection | null} collection
+ * @param {import("stac-ts").StacCollection | null | undefined} collection
+ * @param {boolean} [compare=false] - Whether to check for compare collection
  * @returns
  */
-export const includesProcess = (collection) => {
+export const includesProcess = (collection, compare = false) => {
+  const isPoiAlive = compare ? !!comparePoi.value : !!poi.value;
+  console.log(compare, collection);
+
   return (
-    collection?.links?.some((link) => link.rel === "service") || !!poi.value
+    collection?.links?.some((link) => link.rel === "service") || isPoiAlive
   );
 };
