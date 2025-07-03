@@ -80,10 +80,13 @@ export class EodashCollection {
       itemLink = linkOrDate;
     }
     let stacItemUrl = "";
-
-    stacItemUrl = itemLink
-      ? toAbsolute(itemLink.href, this.#collectionUrl)
-      : this.#collectionUrl;
+    if (itemLink?.href.startsWith("blob:")) {
+      stacItemUrl = itemLink.href;
+    } else {
+      stacItemUrl = itemLink
+        ? toAbsolute(itemLink.href, this.#collectionUrl)
+        : this.#collectionUrl;
+    }
 
     stac = await axios.get(stacItemUrl).then((resp) => resp.data);
 
