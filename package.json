@@ -5,6 +5,7 @@
   "types": "./dist/types/core/client/types.d.ts",
   "files": [
     "core/client",
+    "dashboards",
     "widgets",
     "dist"
   ],
@@ -29,6 +30,9 @@
       "default": "./dist/client/eo-dash.js"
     },
     "./webcomponent.css": "./dist/client/eo-dash.css",
+    "./dashboards": {
+      "default":"./dashboards/index.js"
+    },
     "./config": {
       "default": "./dist/node/main.js"
     }

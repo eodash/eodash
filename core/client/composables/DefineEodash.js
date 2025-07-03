@@ -34,7 +34,6 @@ export const useEodashRuntime = async (runtimeConfig) => {
       eodashConfig = await import("user:config").then(
         async (m) => await m["default"],
       );
-      console.log("using user:config", eodashConfig);
     }
   } catch {
     try {
@@ -46,7 +45,7 @@ export const useEodashRuntime = async (runtimeConfig) => {
       eodashConfig = null;
     }
   }
-  return eodashConfig;
+  return reactive(eodashConfig);
 };
 
 /**

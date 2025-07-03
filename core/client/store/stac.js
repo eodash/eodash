@@ -20,10 +20,11 @@ import { toAbsolute } from "stac-js/src/http.js";
 
 export const useSTAcStore = defineStore("stac", () => {
   /**
-   * STAC endpoint URL
+   * STAC catalog endpoint URL
    * @type {import("vue").Ref<import("@/types").StacEndpoint | null>}
    */
   const stacEndpoint = ref(null);
+
   /**
    * Links of the root STAC catalog
    *
@@ -52,7 +53,7 @@ export const useSTAcStore = defineStore("stac", () => {
   const selectedCompareStac = ref(null);
 
   /**
-   * Initializes the STAC endpoint.
+   * Initializes the store by assigning the STAC endpoint.
    * @param {import("@/types").StacEndpoint} endpoint
    */
   function init(endpoint) {
@@ -126,7 +127,6 @@ export const useSTAcStore = defineStore("stac", () => {
         absoluteIndicatorUrl,
       ).value;
     }
-    console.log("Loading STAC from", stac.value, absoluteUrl.value);
 
     await axios
       .get(absoluteUrl.value)
