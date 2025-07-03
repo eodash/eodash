@@ -15,7 +15,7 @@ import log from "loglevel";
  **/
 
 const useTemplate = () => {
-  const eodash = /** @type {import("@/types").Eodash} */ (inject(eodashKey));
+  const eodash = inject(eodashKey);
 
   /** @type {DefinedTemplate} */
   const definedTemplate = shallowReactive({
@@ -24,7 +24,9 @@ const useTemplate = () => {
     loading: shallowRef(null),
     gap: ref(16),
   });
-
+  if (!eodash) {
+    return definedTemplate;
+  }
   if ("template" in eodash) {
     [definedTemplate.bgWidget] = useDefineWidgets([eodash.template.background]);
     [definedTemplate.loading] = useDefineWidgets([eodash.template.loading]);

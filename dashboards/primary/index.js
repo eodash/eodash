@@ -1,14 +1,8 @@
+import { createEodash } from "@/composables/DefineEodash";
 import { mdiViewDashboard, mdiViewDashboardVariant } from "@mdi/js";
-import { reactive } from "vue";
-import { includesProcess } from "./store/actions";
+import { includesProcess } from "@/store/actions";
 
-/**
- * Reactive Edoash Instance Object. provided globally in the app, and used as an
- * intermediate object to make user defined instances config reactive.
- *
- * @type {import("./types").Eodash}
- */
-export const eodash = reactive({
+export const eodash = createEodash({
   id: "demo",
   options: {
     // useSubCode: true,
