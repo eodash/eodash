@@ -1,5 +1,13 @@
 import log from "loglevel";
 import { collectionsPalette } from "./states";
+import {
+  extractCollectionUrls,
+  generateLinksFromItems,
+  revokeCollectionBlobUrls,
+} from "@/eodashSTAC/helpers";
+import { EodashCollection } from "@/eodashSTAC/EodashCollection";
+import { toAbsolute } from "stac-js/src/http.js";
+import { readParquetItems } from "@/eodashSTAC/parquet";
 import WebFontLoader from "webfontloader";
 
 /**
@@ -140,4 +148,59 @@ export const setCollectionsPalette = (colors) => {
   log.debug("Setting collections color palette", colors);
   collectionsPalette.splice(0, collectionsPalette.length);
   collectionsPalette.push(...colors);
+};
+
+/**
+ * Updates the eodash collections by fetching and processing collection data from specified URLs
+ * @param {import("stac-ts").StacCollection} indicator - The indicator object
+ * @param {string} indicatorUrl - The absolute indicator URL
+ * @param {import('@/eodashSTAC/EodashCollection').EodashCollection[]} eodashCollections  - The array of existing eodash collections to be updated
+ * @async
+ * @description This function extracts collection URLs from the indicator, fetches collection data,
+ * processes parquet items if available, and updates the eodashCollections array with new collection data.
+ * Each collection is assigned a color from a predefined palette.
+ */
+export const updateEodashCollections = async (
+  eodashCollections,
+  indicator,
+  indicatorUrl,
+) => {
+  // init eodash collections
+  const collectionUrls = extractCollectionUrls(indicator, indicatorUrl);
+
+  await Promise.all(
+    collectionUrls.map((cu, idx) => {
+      return new Promise((resolve, _reject) => {
+        const ec = new EodashCollection(cu);
+        ec.fetchCollection().then((col) => {
+          const parquetAsset = Object.values(col.assets ?? {}).find(
+            (asset) =>
+              asset.type === "application/vnd.apache.parquet" &&
+              asset.roles?.includes("collection-mirror"),
+          );
+
+          ec.color = collectionsPalette[idx % collectionsPalette.length];
+
+          if (!parquetAsset) {
+            resolve(ec);
+            return;
+          }
+
+          readParquetItems(toAbsolute(parquetAsset.href, cu)).then((items) => {
+            col.links.push(...generateLinksFromItems(items));
+            resolve(ec);
+          });
+        });
+      });
+    }),
+  ).then(async (collections) => {
+    // revoke old blob urls in the previous collections. see generateLinksFromItems in "../eodashSTAC/helpers.js"
+    eodashCollections.forEach((ec) => {
+      revokeCollectionBlobUrls(ec);
+    });
+    // empty array from old collections
+    eodashCollections.splice(0, eodashCollections.length);
+    // update eodashCollections
+    eodashCollections.push(...collections);
+  });
 };
