@@ -12,7 +12,7 @@ export const readParquetItems = async (url) => {
   const response = await fetch(url, {
     method: "GET",
     headers: {
-      "Accept": "application/octet-stream"
+      Accept: "application/octet-stream",
     },
   });
 
@@ -20,12 +20,21 @@ export const readParquetItems = async (url) => {
     throw new Error(`Fetch failed: ${response.status} ${response.statusText}`);
   }
   const contentType = response.headers.get("Content-Type") || "";
-  if (!contentType.includes("application") && !contentType.includes("octet-stream") && !url.endsWith(".parquet")) {
-    console.warn("Response may not be a Parquet file. Content-Type:", contentType);
+  if (
+    !contentType.includes("application") &&
+    !contentType.includes("octet-stream") &&
+    !url.endsWith(".parquet")
+  ) {
+    console.warn(
+      "Response may not be a Parquet file. Content-Type:",
+      contentType,
+    );
   }
   const arrayBuffer = await response.arrayBuffer();
   if (arrayBuffer.byteLength < 8) {
-    throw new Error("Downloaded buffer is too small to be a valid Parquet file.");
+    throw new Error(
+      "Downloaded buffer is too small to be a valid Parquet file.",
+    );
   }
   await parquetRead({
     file: arrayBuffer,

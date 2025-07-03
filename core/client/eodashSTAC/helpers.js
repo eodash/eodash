@@ -426,8 +426,21 @@ export async function mergeGeojsons(geojsonUrls) {
  * @param {import("stac-ts").StacItem[]} items
  */
 export function generateLinksFromItems(items) {
-  // this is still WIP, we need to add all the different properties
-  // that are used in all of our different cases.
+  /**
+   * @param {string|Date} datetime
+   * @returns
+   */
+  function formateDatetime(datetime) {
+    if (datetime instanceof Date) {
+      return datetime.toISOString();
+    }
+    if (typeof datetime === "string") {
+      const date = new Date(datetime);
+      return date.toISOString();
+    }
+    return datetime;
+  }
+
   return items.map((item) => {
     const itemBlob = new Blob([JSON.stringify(item)], {
       type: "application/geo+json",
@@ -440,14 +453,37 @@ export function generateLinksFromItems(items) {
       type: "application/geo+json",
       title: item.id,
       href: itemUrl,
-      datetime:
-        /** @type {*} */ (item.properties.datetime) instanceof Date
-          ? item.properties.datetime.toISOString()
-          : item.properties.datetime,
+      ...(item.properties.datetime && {
+        datetime: formateDatetime(item.properties.datetime),
+      }),
+      ...(item.properties.start_datetime && {
+        start_datetime: formateDatetime(item.properties.start_datetime),
+      }),
+      ...(item.properties.end_datetime && {
+        end_datetime: formateDatetime(item.properties.end_datetime),
+      }),
+      //@ts-expect-error projection extension
+      ...(item.properties?.["proj:epsg"] && {
+        "proj:epsg": /** @type {number} **/ (item.properties["proj:epsg"]),
+      }),
+      //@ts-expect-error eodash projection
+      ...(item.properties?.["eodash:proj4_def"] && {
+        "eodash:proj4_def": item.properties["eodash:proj4_def"],
+      }),
+
       ...(item.geometry?.type == "Point" &&
         item.geometry?.coordinates.length && {
           latlng: item.geometry.coordinates.reverse().join(","),
         }),
+      ...(Object.values(item.assets ?? {}).some(
+        (asset) =>
+          asset.href.startsWith("s3://veda-data-store") &&
+          asset.type === "image/tiff; application=geotiff",
+      ) && {
+        cog_href: Object.values(item.assets ?? {}).find((asset) =>
+          asset.href.startsWith("s3://veda-data-store"),
+        )?.href,
+      }),
     };
   });
 }
