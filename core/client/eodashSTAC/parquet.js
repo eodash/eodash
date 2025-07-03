@@ -1,4 +1,4 @@
-import { asyncBufferFromUrl, parquetRead } from "hyparquet";
+import { parquetRead } from "hyparquet";
 import WKB from "ol/format/WKB.js";
 import GeoJSON from "ol/format/GeoJSON";
 import log from "loglevel";
@@ -9,8 +9,26 @@ import log from "loglevel";
 export const readParquetItems = async (url) => {
   /** @type {import("stac-ts").StacItem[]} */
   let items = [];
+  const response = await fetch(url, {
+    method: "GET",
+    headers: {
+      "Accept": "application/octet-stream"
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Fetch failed: ${response.status} ${response.statusText}`);
+  }
+  const contentType = response.headers.get("Content-Type") || "";
+  if (!contentType.includes("application") && !contentType.includes("octet-stream") && !url.endsWith(".parquet")) {
+    console.warn("Response may not be a Parquet file. Content-Type:", contentType);
+  }
+  const arrayBuffer = await response.arrayBuffer();
+  if (arrayBuffer.byteLength < 8) {
+    throw new Error("Downloaded buffer is too small to be a valid Parquet file.");
+  }
   await parquetRead({
-    file: await asyncBufferFromUrl({ url }),
+    file: arrayBuffer,
     rowFormat: "object",
     // set utf8 to false to avoid parsing wkb to string
     utf8: false,
