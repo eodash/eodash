@@ -173,20 +173,20 @@ export const updateEodashCollections = async (
       return new Promise((resolve, _reject) => {
         const ec = new EodashCollection(cu);
         ec.fetchCollection().then((col) => {
-          const parquetLink = col.links.find(
-            (link) =>
-              link.rel === "items" &&
-              link.type === "application/vnd.apache.parquet",
+          const parquetAsset = Object.values(col.assets ?? {}).find(
+            (asset) =>
+              asset.type === "application/vnd.apache.parquet" &&
+              asset.roles?.includes("collection-mirror"),
           );
 
           ec.color = collectionsPalette[idx % collectionsPalette.length];
 
-          if (!parquetLink) {
+          if (!parquetAsset) {
             resolve(ec);
             return;
           }
 
-          readParquetItems(toAbsolute(parquetLink.href, cu)).then((items) => {
+          readParquetItems(toAbsolute(parquetAsset.href, cu)).then((items) => {
             col.links.push(...generateLinksFromItems(items));
             resolve(ec);
           });
