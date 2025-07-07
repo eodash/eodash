@@ -177,6 +177,7 @@ const chartStyles = computed(() => {
 <style>
 eox-chart {
   --background-color: transparent;
+  padding-top: 1em;
 }
 eox-jsonform {
   padding: 0.7em;
