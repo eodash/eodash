@@ -1,5 +1,5 @@
 <template>
-  <v-main class="overflow-hidden main">
+  <v-main class="overflow-hidden">
     <Suspense suspensible>
       <component
         id="bg-widget"
@@ -23,7 +23,10 @@
           >
         </div>
         <Suspense suspensible>
-          <div class="component-container" v-show="activeIdx === idx">
+          <div
+            class="d-flex flex-column justify-center component-container"
+            v-show="activeIdx === idx"
+          >
             <component
               :key="importedWidget.value.id"
               :is="importedWidget.value.component"
@@ -76,6 +79,7 @@ onMounted(() => {
 <style scoped>
 .panel {
   bottom: v-bind("tabsHeightFromBtm");
+  top: v-bind("mainRectTopPx");
   position: absolute;
   overflow: hidden;
   width: 100%;
