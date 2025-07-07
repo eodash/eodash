@@ -4,6 +4,7 @@ import VCalendar from "v-calendar";
 import store from "../store";
 import log from "loglevel";
 import { eodashKey } from "@/utils/keys";
+import { reactive } from "vue";
 
 export const pinia = createPinia();
 
@@ -16,6 +17,6 @@ export function registerPlugins(app) {
     .use(pinia)
     // Use plugin with optional defaults
     .use(VCalendar, {})
-    //@ts-expect-error null
-    .provide(eodashKey, null);
+    //@ts-expect-error reactive placeholder for eodash
+    .provide(eodashKey, reactive({}));
 }

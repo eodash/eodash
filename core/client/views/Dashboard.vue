@@ -17,19 +17,12 @@
 import { useEodashRuntime } from "@/composables/DefineEodash";
 import { useURLSearchParametersSync, useUpdateTheme } from "@/composables";
 import { useSTAcStore } from "@/store/stac";
-import {
-  computed,
-  defineAsyncComponent,
-  onErrorCaptured,
-  provide,
-  ref,
-} from "vue";
+import { computed, defineAsyncComponent, onErrorCaptured, ref } from "vue";
 import { useDisplay } from "vuetify";
 import { loadFont } from "@/utils";
 import Loading from "@/components/Loading.vue";
 import ErrorAlert from "@/components/ErrorAlert.vue";
 import EodashOverlay from "@/components/EodashOverlay.vue";
-import { eodashKey } from "@/utils/keys";
 
 const props = defineProps({
   config: {
@@ -49,7 +42,6 @@ if (!eodash) {
     "Eodash configuration is not defined. Please provide a valid configuration file or object.",
   );
 }
-provide(eodashKey, eodash);
 
 const theme = useUpdateTheme("dashboardTheme", {
   ...(eodash?.brand?.theme ?? {}),
