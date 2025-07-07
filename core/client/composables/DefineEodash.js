@@ -1,5 +1,6 @@
 import store from "@/store";
-import { reactive } from "vue";
+import { eodashKey } from "@/utils/keys";
+import { inject, reactive } from "vue";
 
 /**
  * Handles importing user defined instance of Eodash
@@ -11,41 +12,45 @@ import { reactive } from "vue";
  */
 export const useEodashRuntime = async (runtimeConfig) => {
   let eodashConfig;
+  const eodash = /** @type {import("@/types").Eodash} */ (inject(eodashKey));
 
   if (runtimeConfig) {
-    try {
-      eodashConfig = await import(
-        /* @vite-ignore */ new URL(runtimeConfig, import.meta.url).href
-      ).then(async (m) => await m["default"]);
-    } catch (e) {
-      console.error("Error importing runtime config:", e);
-      eodashConfig = null;
+    eodashConfig = await import(
+      /* @vite-ignore */ new URL(runtimeConfig, import.meta.url).href
+    ).then(async (m) => await m["default"]);
+    if (!eodashConfig) {
+      throw new Error(
+        "No dashboard configuration defined in the runtime config:" +
+          runtimeConfig,
+      );
     }
-
+    Object.assign(eodash, eodashConfig);
     return reactive(eodashConfig);
   }
 
+  async function importUserConfig() {
+    if (__userConfigExist__) {
+      return import("user:config").then(async (m) => await m["default"]);
+    }
+  }
   try {
     const configJs = "/config.js";
     eodashConfig = await import(
       /* @vite-ignore */ new URL(configJs, import.meta.url).href
     ).then(async (m) => await m["default"]);
     if (!eodashConfig) {
-      eodashConfig = await import("user:config").then(
-        async (m) => await m["default"],
-      );
+      eodashConfig = await importUserConfig();
     }
   } catch {
     try {
-      eodashConfig = await import("user:config").then(
-        async (m) => await m["default"],
-      );
+      eodashConfig = await importUserConfig();
     } catch {
       console.error("no dashboard configuration defined");
       eodashConfig = null;
     }
   }
-  return reactive(eodashConfig);
+  Object.assign(eodash, eodashConfig);
+  return reactive(eodash);
 };
 
 /**

@@ -6,6 +6,9 @@ export default [
   ...pluginVue.configs["flat/essential"],
   {
     ignores: ["public/", "dist/", ".eodash/", "docs/"],
+    global: {
+      __userConfigExist__: "readonly",
+    },
   },
   {
     files: ["core/client/**/*.vue", "widgets/**/*.vue"],

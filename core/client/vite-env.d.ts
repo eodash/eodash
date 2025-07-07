@@ -23,3 +23,5 @@ declare module "stac-js/src/http.js" {
   const toAbsolute: (...args: string[]) => string;
   export { toAbsolute };
 }
+
+declare const __userConfigExist__: boolean;

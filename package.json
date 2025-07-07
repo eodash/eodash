@@ -31,7 +31,7 @@
     },
     "./webcomponent.css": "./dist/client/eo-dash.css",
     "./dashboards": {
-      "default":"./dashboards/index.js"
+      "default": "./dashboards/index.js"
     },
     "./config": {
       "default": "./dist/node/main.js"

@@ -48,15 +48,17 @@ export const eodashViteConfig = /** @type {import("vite").UserConfigFn} */ (
         },
       ],
       customLogger: logger,
-      define:
-        command === "build" && userConfig.lib
+      define: {
+        __userConfigExist__: !!entryPath,
+        ...(command === "build" && userConfig.lib
           ? {
               "process.env": "import.meta.env",
             }
           : {
               "process.env": {},
               ...defineEnvVariables(envPrefix),
-            },
+            }),
+      },
       envPrefix,
       resolve: {
         alias: {
@@ -146,9 +148,10 @@ export const eodashViteConfig = /** @type {import("vite").UserConfigFn} */ (
                 const isClientDep = clientModules.some((m) =>
                   source.startsWith(m),
                 );
-                const isUserConfig = source === "user:config";
+                const isUserConfig = source === "user:config" && !entryPath;
                 return (!isCssOrVuetify && isClientDep) || isUserConfig;
               },
+              treeshake: "smallest",
             },
           }),
       },
