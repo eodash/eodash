@@ -54,10 +54,9 @@ export const useEodashRuntime = async (runtimeConfig) => {
 };
 
 /**
- * @param {((
- *       store: typeof import("@/store").default,
- *     ) => (Promise<import("@/types").Eodash> | import("@/types").Eodash))
- *   | import("@/types").Eodash} config
+ * @template {import("@/types").Eodash} T
+ * @param {T | ((store: typeof import("@/store").default) => Promise<T>)} config
+ * @returns {Promise<T>}
  */
 export const createEodash = async (config) => {
   if (config instanceof Function) {

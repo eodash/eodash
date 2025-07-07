@@ -2,7 +2,7 @@ import { createEodash } from "@/composables/DefineEodash";
 import { mdiViewDashboard, mdiViewDashboardVariant } from "@mdi/js";
 import { includesProcess } from "@/store/actions";
 
-export const eodash = createEodash({
+export const eodash = await createEodash({
   id: "demo",
   options: {
     // useSubCode: true,
