@@ -1,7 +1,7 @@
 <template>
   <div>
     <v-table
-      v-if="jobs.length"
+      v-if="currentJobs.length"
       density="compact"
       style="background-color: transparent"
     >
@@ -15,7 +15,7 @@
         </tr>
       </thead>
       <tbody>
-        <tr v-for="item in jobs" :key="item.jobID">
+        <tr v-for="item in currentJobs" :key="item.jobID">
           <td>
             {{ new Date(item.job_start_datetime).toISOString().slice(0, 16) }}
           </td>
@@ -49,6 +49,7 @@
                 deleteJob(
                   toRef(() => currentJobs),
                   item,
+                  currentIndicator,
                 )
               "
               :icon="[mdiTrashCanOutline]"
@@ -66,7 +67,7 @@
 import { mdiUploadBox, mdiDownloadBox, mdiTrashCanOutline } from "@mdi/js";
 import { onMounted, toRef, toRefs } from "vue";
 import { useSTAcStore } from "@/store/stac";
-import { indicator } from "@/store/states";
+import { compareIndicator, indicator } from "@/store/states";
 import {
   deleteJob,
   downloadPreviousResults,
@@ -88,11 +89,13 @@ const { enableCompare, mapElement } = defineProps({
 });
 const { selectedStac } = toRefs(useSTAcStore());
 const currentJobs = enableCompare ? compareJobs : jobs;
+const currentIndicator = enableCompare ? compareIndicator : indicator;
+
 onMounted(() => {
-  updateJobsStatus(currentJobs, indicator.value);
+  updateJobsStatus(currentJobs, currentIndicator.value);
 });
 
-useOnLayersUpdate(() => updateJobsStatus(currentJobs, indicator.value));
+useOnLayersUpdate(() => updateJobsStatus(currentJobs, currentIndicator.value));
 </script>
 <style lang="scss">
 div.v-table__wrapper {

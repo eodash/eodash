@@ -1,6 +1,6 @@
 <template>
   <div ref="container" class="pb-4">
-    <ProcessList />
+    <ProcessList :map-element="mapElement" :enable-compare="enableCompare" />
 
     <eox-jsonform
       v-if="jsonformSchema"

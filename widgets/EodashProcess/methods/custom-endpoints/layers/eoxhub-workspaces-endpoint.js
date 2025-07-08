@@ -58,6 +58,7 @@ export async function handleEOxHubEndpoint({
         jobs,
         processUrl: responseProcess.headers.location,
         isPolling,
+        enableCompare,
       })
         .then((resultItem) => {
           return extractAsyncResults(resultItem);

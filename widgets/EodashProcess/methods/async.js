@@ -1,4 +1,4 @@
-import { indicator } from "@/store/states";
+import { compareIndicator, indicator } from "@/store/states";
 // we don't want to use the caching axios instance here
 import axios from "axios";
 import {
@@ -18,6 +18,7 @@ import log from "loglevel";
  * @param {import("vue").Ref<boolean>} params.isPolling - checks wether the polling should continue
  * @param {number} [params.pollInterval=5000] - The interval (in milliseconds) between polling attempts.
  * @param {number} [params.maxRetries=60] - The maximum number of polling attempts.
+ * @param {boolean} [params.enableCompare=false] - Whether to enable comparison mode, affecting the indicator used.
  * @returns {Promise<import("../types").EOxHubProcessResults>} The fetched results JSON.
  * @throws {Error} If the process does not complete successfully within the maximum retries.
  */
@@ -27,12 +28,16 @@ export async function pollProcessStatus({
   isPolling,
   pollInterval = 10000,
   maxRetries = 560,
+  enableCompare = false,
 }) {
   let retries = 0;
   isPolling.value = true;
   // Ensure the jobs status is updated after the job has started and before polling
   setTimeout(() => {
-    updateJobsStatus(jobs, indicator.value);
+    updateJobsStatus(
+      jobs,
+      enableCompare ? compareIndicator.value : indicator.value,
+    );
   }, 500);
 
   while (retries < maxRetries && isPolling.value) {
@@ -117,13 +122,14 @@ export async function updateJobsStatus(jobs, indicator) {
  * Removes a job from the local storage and updates the job status
  * @param {import("vue").Ref<import("../types").AsyncJob[]>} jobs
  * @param {import("../types").AsyncJob} jobObject
+ * @param {string} indicator
  */
-export const deleteJob = async (jobs, jobObject) => {
+export const deleteJob = async (jobs, jobObject, indicator) => {
   /** @type {string[]} */
-  const jobsUrls = JSON.parse(localStorage.getItem(indicator.value) || "[]");
+  const jobsUrls = JSON.parse(localStorage.getItem(indicator) || "[]");
   const newJobs = jobsUrls.filter((url) => !url.includes(jobObject.jobID));
-  localStorage.setItem(indicator.value, JSON.stringify(newJobs));
-  await updateJobsStatus(jobs, indicator.value);
+  localStorage.setItem(indicator, JSON.stringify(newJobs));
+  await updateJobsStatus(jobs, indicator);
 };
 
 /**

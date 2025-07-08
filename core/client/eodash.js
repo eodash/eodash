@@ -380,7 +380,7 @@ export const eodash = reactive({
           id: Symbol(),
           type: "internal",
           title: "Layers",
-          layout: { x: 0, y: 1, w: "3/3/2", h: 11 },
+          layout: { x: 0, y: 1, w: "3/3/2", h: 5 },
           widget: {
             name: "EodashLayerControl",
           },
@@ -388,7 +388,7 @@ export const eodash = reactive({
         {
           id: Symbol(),
           title: "Comparison Layers",
-          layout: { x: "9/9/10", y: 1, w: "3/3/2", h: 4 },
+          layout: { x: "9/9/10", y: 1, w: "3/3/2", h: 5 },
           type: "internal",
           widget: {
             name: "EodashLayerControl",
