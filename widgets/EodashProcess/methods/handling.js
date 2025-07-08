@@ -234,7 +234,11 @@ export function resetProcess({
  */
 export const onChartClick = (evt) => {
   const chartSpec = evt.target?.spec;
-  if (!chartSpec || !evt.detail?.item?.datum || !evt.detail?.item?.datum.datum) {
+  if (
+    !chartSpec ||
+    !evt.detail?.item?.datum ||
+    !evt.detail?.item?.datum.datum
+  ) {
     return;
   }
   const encodingKey = Object.keys(chartSpec.encoding ?? {}).find(
