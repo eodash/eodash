@@ -119,7 +119,6 @@ import {
   reactive,
   ref,
   customRef,
-  toRef,
   onMounted,
   computed,
   useTemplateRef,
@@ -127,10 +126,11 @@ import {
 import { useSTAcStore } from "@/store/stac";
 import { datetime } from "@/store/states";
 import { mdiRayStartArrow, mdiRayEndArrow } from "@mdi/js";
-import { eodashCollections, collectionsPalette } from "@/utils/states";
+import { eodashCollections, eodashCompareCollections } from "@/utils/states";
 import log from "loglevel";
 import { useTransparentPanel } from "@/composables";
 import { getDatetimeProperty } from "@/eodashSTAC/helpers";
+import { storeToRefs } from "pinia";
 
 const { lgAndDown } = useDisplay();
 
@@ -215,30 +215,47 @@ defineProps({
  */
 const attributes = reactive([]);
 
-const selectedStac = toRef(useSTAcStore(), "selectedStac");
+const { selectedCompareStac, selectedStac } = storeToRefs(useSTAcStore());
 
 watch(
-  selectedStac,
-  async (updatedStac, previousStac) => {
-    if (updatedStac && previousStac?.id !== updatedStac.id) {
-      log.debug("Datepicker selected STAC change triggered");
-      // remove old values
-      attributes.splice(0, attributes.length);
+  [selectedStac, selectedCompareStac],
+  async ([updatedStac, updatedCompareStac]) => {
+    attributes.splice(0, attributes.length);
+    if (!updatedStac && !updatedCompareStac) {
+      log.debug("No STAC selected, clearing datepicker attributes");
+      return;
+    }
 
-      for (let idx = 0; idx < eodashCollections.length; idx++) {
-        log.debug("Retrieving dates", eodashCollections[idx]);
-        await eodashCollections[idx].fetchCollection();
-        const dateProperty = getDatetimeProperty(
-          eodashCollections[idx].getItems(),
-        );
+    const attrs = [
+      ...(await fetchCollectionsAttributes(eodashCollections)),
+      ...(await fetchCollectionsAttributes(eodashCompareCollections)),
+    ];
+    attributes.push(...attrs);
+  },
+  { immediate: true },
+);
+
+/**
+ *
+ * @param {import("@/eodashSTAC/EodashCollection").EodashCollection[]} eodashCollections
+ */
+async function fetchCollectionsAttributes(eodashCollections) {
+  if (!eodashCollections || !eodashCollections.length) {
+    return [];
+  }
+
+  return await Promise.all(
+    eodashCollections.map((ec, idx) => {
+      return ec.fetchCollection().then(() => {
+        const dateProperty = getDatetimeProperty(ec.getItems());
         if (!dateProperty) {
-          continue;
+          return;
         }
         const dates = [
           ...new Set(
-            eodashCollections[idx].getItems()?.reduce((valid, it) => {
+            ec.getItems()?.reduce((valid, item) => {
               const parsed = Date.parse(
-                /** @type {string} */ (it[dateProperty]),
+                /** @type {string} */ (item[dateProperty]),
               );
               if (parsed) {
                 valid.push(new Date(parsed));
@@ -247,12 +264,11 @@ watch(
             }, /** @type {Date[]} */ ([])),
           ),
         ];
-        attributes.push({
+        return {
           key: "id-" + idx.toString() + Math.random().toString(16).slice(2),
           dot: {
             style: {
-              backgroundColor:
-                collectionsPalette[idx % collectionsPalette.length],
+              backgroundColor: ec.color,
             },
           },
           dates,
@@ -262,13 +278,11 @@ watch(
               "font-weight": "bold",
             },
           },
-        });
-      }
-    }
-  },
-  { immediate: true },
-);
-
+        };
+      });
+    }),
+  );
+}
 /**
  * @param {boolean} reverse
  */

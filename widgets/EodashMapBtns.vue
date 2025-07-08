@@ -102,6 +102,7 @@ const { compareIndicators, changeProjection, exportMap, backToPOIs } =
     },
   });
 const { selectedStac, selectedCompareStac } = storeToRefs(useSTAcStore());
+const { resetSelectedCompareSTAC } = useSTAcStore();
 const { smAndDown } = useDisplay();
 const popupWidth = computed(() => (smAndDown.value ? "80%" : "70%"));
 const popupHeight = computed(() => (smAndDown.value ? "90%" : "70%"));
@@ -125,6 +126,7 @@ const onCompareClick = () => {
       compareIndicators.fallbackTemplate) ||
     "expert";
   selectedCompareStac.value = null;
+  resetSelectedCompareSTAC()
   setActiveTemplate(fallbackTemplate);
   triggerRef(selectedStac);
 };

@@ -146,11 +146,12 @@ export const useSTAcStore = defineStore("stac", () => {
           resp.data,
           absoluteUrl.value,
         );
-
+        const reversedPalette = [...collectionsPalette].reverse();
         await Promise.all(
-          collectionUrls.map((cu) => {
+          collectionUrls.map((cu, idx) => {
             const ec = new EodashCollection(cu);
             ec.fetchCollection();
+            ec.color = reversedPalette[idx % collectionsPalette.length];
             return ec;
           }),
         ).then((collections) => {
@@ -176,6 +177,7 @@ export const useSTAcStore = defineStore("stac", () => {
    *
    */
   async function resetSelectedCompareSTAC() {
+    eodashCompareCollections.splice(0, eodashCompareCollections.length);
     selectedCompareStac.value = null;
   }
 
