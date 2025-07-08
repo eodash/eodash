@@ -95,8 +95,6 @@ const selectIndicator = async (item) => {
       // prevent the map from jumping to the initial position
       isFirstLoad.value = false;
     }
-    // Reset compare stac to empty
-    store.resetSelectedCompareSTAC();
     await store.loadSelectedSTAC(item.href);
     emit("select", item);
   } else {
@@ -111,7 +109,7 @@ const selectCompareIndicator = (item) => {
     store.loadSelectedCompareSTAC(item.href);
     emit("select", item);
   } else {
-    // TODO
+    store.resetSelectedCompareSTAC();
   }
 };
 /** @param {any} evt*/

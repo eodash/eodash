@@ -5,8 +5,7 @@ import {
   replaceLayer,
 } from "@/eodashSTAC/helpers";
 import axios from "@/plugins/axios";
-import { getLayers } from "@/store/actions";
-import { mapEl } from "@/store/states";
+import { getCompareLayers, getLayers } from "@/store/actions";
 import { isMulti } from "@eox/jsonform/src/custom-inputs/spatial/utils";
 
 /**
@@ -466,40 +465,63 @@ export function extractAsyncResults(resultItem) {
   return extracted;
 }
 /**
- *
+ * @param {import("@eox/map").EOxMap | null} mapElement
  * @param {import("@eox/map").EoxLayer[]} processLayers
- * @returns
  */
-export const applyProcessLayersToMap = (processLayers) => {
-  if (processLayers.length) {
-    const currentLayers = [...getLayers()];
+export const applyProcessLayersToMap = (mapElement, processLayers) => {
+  if (!processLayers.length || !mapElement) {
+    return;
+  }
+  const getMapLayers =
+    mapElement.id === "compare" ? getCompareLayers : getLayers;
+  const currentLayers = [...getMapLayers()];
 
-    let analysisGroup =
-      /*** @type {import("@eox/map/src/layers").EOxLayerTypeGroup | undefined} */ (
-        currentLayers.find((l) => l.properties?.id.includes("AnalysisGroup"))
-      );
-    if (!analysisGroup) {
-      return;
-    }
+  let analysisGroup =
+    /*** @type {import("@eox/map/src/layers").EOxLayerTypeGroup | undefined} */ (
+      currentLayers.find((l) => l.properties?.id.includes("AnalysisGroup"))
+    );
+  if (!analysisGroup) {
+    return;
+  }
 
-    for (const layer of processLayers) {
-      const exists = analysisGroup.layers.find(
-        (l) => l.properties?.id === layer.properties?.id,
+  for (const layer of processLayers) {
+    const exists = analysisGroup.layers.find(
+      (l) => l.properties?.id === layer.properties?.id,
+    );
+    if (!exists) {
+      analysisGroup.layers.unshift(layer);
+    } else {
+      analysisGroup.layers = replaceLayer(
+        analysisGroup.layers,
+        layer.properties?.id ?? "",
+        [layer],
       );
-      if (!exists) {
-        analysisGroup.layers.unshift(layer);
-      } else {
-        analysisGroup.layers = replaceLayer(
-          analysisGroup.layers,
-          layer.properties?.id ?? "",
-          [layer],
-        );
-      }
-    }
-    if (mapEl.value) {
-      const layers = [...currentLayers];
-      useEmitLayersUpdate("process:updated", mapEl.value, layers);
-      mapEl.value.layers = layers;
     }
   }
+  if (mapElement) {
+    const layers = [...currentLayers];
+    const evtKey =
+      mapElement.id === "compare"
+        ? "compareProcess:updated"
+        : "process:updated";
+    useEmitLayersUpdate(evtKey, mapElement, layers);
+    mapElement.layers = layers;
+  }
 };
+/**
+ * Updates the jsonform schema to target the compare map
+ * @param {import("json-schema").JSONSchema7 | null | undefined} jsonformSchema
+ */
+export function updateJsonformSchemaTarget(jsonformSchema) {
+  if (!jsonformSchema) {
+    return jsonformSchema;
+  }
+  const stringified = JSON.stringify(jsonformSchema).replaceAll(
+    "eox-map#main",
+    "eox-map#compare",
+  );
+
+  return /** @type {import("json-schema").JSONSchema7} */ (
+    JSON.parse(stringified)
+  );
+}

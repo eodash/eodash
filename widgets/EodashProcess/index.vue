@@ -1,10 +1,10 @@
 <template>
   <div ref="container" class="pb-4">
-    <ProcessList />
+    <ProcessList :map-element="mapElement" :enable-compare="enableCompare" />
 
     <eox-jsonform
       v-if="jsonformSchema"
-      :key="selectedStac"
+      :key="jsonformKey"
       ref="jsonformEl"
       .schema="jsonformSchema"
     ></eox-jsonform>
@@ -18,7 +18,7 @@
     />
     <div class="mt-4 text-right">
       <v-btn
-        v-if="!autoExec && (jsonformSchema || chartSpec)"
+        v-if="showExecBtn"
         :loading="loading"
         style="margin-right: 20px"
         :append-icon="[mdiCogPlayOutline]"
@@ -48,11 +48,23 @@ import { computed, ref, toRaw, useTemplateRef } from "vue";
 import ProcessList from "./ProcessList.vue";
 import { handleProcesses, onChartClick } from "./methods/handling";
 import { useInitProcess, useAutoExec } from "./methods/composables";
-import { jobs, updateJobsStatus } from "./methods/async";
-import { indicator } from "@/store/states";
+import { updateJobsStatus } from "./methods/async";
+import {
+  compareIndicator,
+  indicator,
+  mapCompareEl,
+  mapEl,
+} from "@/store/states";
 import { download } from "./methods/utils";
+import { compareJobs, jobs } from "./states";
 import { mdiCogPlayOutline, mdiDownloadCircleOutline } from "@mdi/js";
 
+const { enableCompare } = defineProps({
+  enableCompare: {
+    type: Boolean,
+    default: false,
+  },
+});
 /** @type {import("vue").Ref<import("vega").Spec|null>} */
 const chartSpec = ref(null);
 
@@ -82,11 +94,25 @@ const isPolling = ref(false);
 /** @type {import("vue").Ref<any[]>} */
 const processResults = ref([]);
 
-const { selectedStac } = storeToRefs(useSTAcStore());
+const showExecBtn = computed(
+  () =>
+    !autoExec.value &&
+    (!!jsonformSchema.value || !!chartSpec.value) &&
+    !!jsonformEl.value,
+);
+const { selectedStac, selectedCompareStac } = storeToRefs(useSTAcStore());
+const currentSelectedStac = enableCompare ? selectedCompareStac : selectedStac;
+const mapElement = enableCompare ? mapCompareEl : mapEl;
+const currentIndicator = enableCompare ? compareIndicator : indicator;
+const currentJobs = enableCompare ? compareJobs : jobs;
+
+const jsonformKey = computed(
+  () => currentIndicator.value + mapElement.value?.id,
+);
 
 useInitProcess({
-  //@ts-expect-error TODO
-  selectedStac,
+  selectedStac: currentSelectedStac,
+  mapElement: mapElement.value,
   jsonformEl,
   jsonformSchema,
   chartSpec,
@@ -108,7 +134,7 @@ const downloadResults = () => {
         : result;
       fileName = fileName.includes("?") ? fileName.split("?")[0] : fileName;
     } else {
-      fileName = selectedStac.value?.id + "_process_results.json";
+      fileName = currentSelectedStac.value?.id + "_process_results.json";
     }
     download(fileName, result);
   });
@@ -145,23 +171,25 @@ const startProcess = async () => {
   processResults.value = [];
 
   await handleProcesses({
+    jobs: currentJobs,
+    selectedStac: currentSelectedStac,
     jsonformEl,
     jsonformSchema,
     chartSpec,
     chartData,
     loading,
-    selectedStac,
     isPolling,
     processResults,
+    mapElement: mapElement.value,
   });
 
   isProcessed.value = true;
-  if (isAsync.value) updateJobsStatus(jobs, indicator.value);
+  if (isAsync.value) updateJobsStatus(currentJobs, currentIndicator.value);
 };
 useAutoExec(autoExec, jsonformEl, jsonformSchema, startProcess);
 
 const chartStyles = computed(() => {
-  /** @type {Record<string,string> }*/
+  /** @type {Record<string,string>} */
   const styles = {};
   if (!chartSpec.value?.["height"]) {
     styles["height"] =

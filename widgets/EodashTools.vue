@@ -41,7 +41,7 @@ import EodashItemFilter from "^/EodashItemFilter.vue";
 import EodashLayoutSwitcher from "^/EodashLayoutSwitcher.vue";
 import { mdiPlusCircleOutline, mdiViewDashboard } from "@mdi/js";
 import { computed, ref } from "vue";
-import { makePanelTransparent } from "@/composables";
+import { useTransparentPanel } from "@/composables";
 import { useDisplay } from "vuetify";
 
 const dialog = ref(false);
@@ -79,6 +79,6 @@ const props = defineProps({
   },
 });
 const rootEl = ref(null);
-makePanelTransparent(rootEl);
+useTransparentPanel(rootEl);
 </script>
 <style lang="scss" scoped></style>

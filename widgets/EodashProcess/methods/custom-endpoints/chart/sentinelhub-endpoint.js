@@ -1,5 +1,5 @@
 import axios from "@/plugins/axios";
-import { currentUrl } from "@/store/states";
+import { currentUrl, currentCompareUrl } from "@/store/states";
 import { generateTimePairs, getBboxProperty } from "../../utils";
 import { extractCollectionUrls } from "@/eodashSTAC/helpers";
 
@@ -13,6 +13,7 @@ export async function handleSentinelHubProcess({
   jsonformValue,
   jsonformSchema,
   selectedStac,
+  enableCompare = false,
 }) {
   const sentinelHubLink = links.find(
     (link) => link.rel === "service" && link.endpoint === "sentinelhub",
@@ -20,7 +21,10 @@ export async function handleSentinelHubProcess({
   if (!sentinelHubLink) {
     return;
   }
-  const evalScriptLink = await getEvalScriptLink(selectedStac);
+  const evalScriptLink = await getEvalScriptLink(
+    selectedStac,
+    enableCompare ? currentCompareUrl.value : currentUrl.value,
+  );
   if (!evalScriptLink) {
     console.error(
       "[eodash] evalscript link for sentinel hub not found in indicator",
@@ -245,8 +249,9 @@ async function fetchSentinelHubData({
 }
 /**
  * @param {import("stac-ts").StacCollection} selectedStac
+ * @param {string} absoluteUrl
  */
-async function getEvalScriptLink(selectedStac) {
+async function getEvalScriptLink(selectedStac, absoluteUrl) {
   const evalScriptLink = selectedStac.links.find(
     (link) => link.rel === "example" && link.title === "evalscript",
   );
@@ -254,7 +259,7 @@ async function getEvalScriptLink(selectedStac) {
     return evalScriptLink;
   }
   // retrieve the first example link from the indicator children
-  for (const link of extractCollectionUrls(selectedStac, currentUrl.value)) {
+  for (const link of extractCollectionUrls(selectedStac, absoluteUrl)) {
     const scriptLink = axios
       .get(link)
       .then((resp) =>

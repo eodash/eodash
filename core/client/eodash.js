@@ -15,12 +15,12 @@ export const eodash = reactive({
   },
   stacEndpoint:
     "https://esa-eodashboards.github.io/eodashboard-catalog/trilateral/catalog.json",
-    // "https://esa-eodashboards.github.io/RACE-catalog/RACE/catalog.json",
-    // "https://GTIF-Austria.github.io/public-catalog/pr-preview/pr-16/GTIF-Austria/catalog.json",
-    // "https://gtif-cerulean.github.io/catalog/cerulean/catalog.json",
-    // "https://eodashcatalog.eox.at/samplecatalog/samples/catalog.json",
-    // "https://gtif-cerulean.github.io/deside-catalog/deside/catalog.json",
-    // "https://gtif-cerulean.github.io/cerulean-catalog/cerulean/catalog.json",
+  // "https://esa-eodashboards.github.io/RACE-catalog/RACE/catalog.json",
+  // "https://GTIF-Austria.github.io/public-catalog/pr-preview/pr-16/GTIF-Austria/catalog.json",
+  // "https://gtif-cerulean.github.io/catalog/cerulean/catalog.json",
+  // "https://eodashcatalog.eox.at/samplecatalog/samples/catalog.json",
+  // "https://gtif-cerulean.github.io/deside-catalog/deside/catalog.json",
+  // "https://gtif-cerulean.github.io/cerulean-catalog/cerulean/catalog.json",
   // "https://gtif-austria.github.io/public-catalog/GTIF-Austria/catalog.json",
   brand: {
     noLayout: true,
@@ -380,7 +380,7 @@ export const eodash = reactive({
           id: Symbol(),
           type: "internal",
           title: "Layers",
-          layout: { x: 0, y: 1, w: "3/3/2", h: 11 },
+          layout: { x: 0, y: 1, w: "3/3/2", h: 5 },
           widget: {
             name: "EodashLayerControl",
           },
@@ -388,7 +388,7 @@ export const eodash = reactive({
         {
           id: Symbol(),
           title: "Comparison Layers",
-          layout: { x: "9/9/10", y: 1, w: "3/3/2", h: 4 },
+          layout: { x: "9/9/10", y: 1, w: "3/3/2", h: 5 },
           type: "internal",
           widget: {
             name: "EodashLayerControl",
@@ -400,12 +400,27 @@ export const eodash = reactive({
         {
           defineWidget: (selectedSTAC) =>
             includesProcess(selectedSTAC) && {
-              id: "Processes",
+              id: "Process",
+              type: "internal",
+              title: "Processes",
+              layout: { x: 0, y: 6, w: "3/3/2", h: 5 },
+              widget: {
+                name: "EodashProcess",
+              },
+            },
+        },
+        {
+          defineWidget: (_, updatedCompareStac) =>
+            includesProcess(updatedCompareStac, true) && {
+              id: "CompareMapProcess",
               type: "internal",
               title: "Processes",
               layout: { x: 9, y: 6, w: "3/3/2", h: 5 },
               widget: {
                 name: "EodashProcess",
+                properties: {
+                  enableCompare: true,
+                },
               },
             },
         },

@@ -15,9 +15,11 @@ import { isFirstLoad } from "@/utils/states";
  * @param {import("vue").Ref<boolean>} options.isPolling
  * @param {import("stac-ts").StacCollection} options.selectedStac
  * @param {Record<string,any>} options.jsonformSchema
+ * @param {import("vue").Ref<import("../types").AsyncJob[]>} options.jobs
+ * @param {boolean} [options.enableCompare=false] - Whether to enable compare mode
  * @returns {Promise<[import("@eox/chart").EOxChart["spec"] | null,Record<string,any>|null]>}
  **/
-export async function getChartValues({
+export async function processCharts({
   links,
   jsonformValue,
   specUrl,
@@ -25,6 +27,8 @@ export async function getChartValues({
   jsonformSchema,
   selectedStac,
   isPolling,
+  jobs,
+  enableCompare = false,
 }) {
   if (!specUrl || !links) return [null, null];
   /** @type {import("vega-lite").TopLevelSpec} **/
@@ -50,6 +54,8 @@ export async function getChartValues({
       links: endpointLinks,
       selectedStac,
       isPolling,
+      jobs,
+      enableCompare,
     }));
 
   if (data && data.length) {
@@ -307,7 +313,7 @@ export async function processVector(links, jsonformValue, layerId) {
         title: "Results " + layerId,
         ...(layerConfig && { ...layerConfig }),
       },
-      ...(style && { style: style }),
+      ...(style && { style }),
     };
     layers.push(layer);
   }
@@ -325,7 +331,9 @@ export async function processVector(links, jsonformValue, layerId) {
  * @param {import("vue").Ref<boolean>} options.isPolling
  * @param {import("stac-ts").StacCollection} options.selectedStac
  * @param {import("json-schema").JSONSchema7} options.jsonformSchema
+ * @param {import("vue").Ref<import("../types").AsyncJob[]>} options.jobs
  * @param {(input:import("../types").CustomEnpointInput)=>Promise<import("@eox/map").EoxLayer[]>} options.customLayersHandler
+ * @param {boolean} [options.enableCompare=false] - Whether to enable compare mode
  */
 export async function processLayers({
   links,
@@ -336,7 +344,9 @@ export async function processLayers({
   isPolling,
   selectedStac,
   jsonformSchema,
+  jobs,
   customLayersHandler,
+  enableCompare = false,
 }) {
   if (!links) return [];
   /** @type {import("@eox/map").EoxLayer[]} */
@@ -356,6 +366,8 @@ export async function processLayers({
         selectedStac,
         isPolling,
         jsonformSchema,
+        jobs,
+        enableCompare,
       });
 
       if (customLayers.length) {
@@ -398,7 +410,7 @@ export async function processLayers({
  * @param {import("stac-ts").StacLink[]} links
  * @param {Record<string,any>} jsonformValue
  */
-export async function processSTAC(links, jsonformValue) {
+export async function processSTAC(links, jsonformValue, enableCompare = false) {
   const stacLink = links.find(
     (link) =>
       link.rel === "service" &&
@@ -414,5 +426,9 @@ export async function processSTAC(links, jsonformValue) {
     // prevent the map from jumping to the initial position
     isFirstLoad.value = false;
   }
-  await useSTAcStore().loadSelectedSTAC(poiUrl, true);
+  const store = useSTAcStore();
+  const loadPOI = enableCompare
+    ? store.loadSelectedCompareSTAC
+    : store.loadSelectedSTAC;
+  await loadPOI(poiUrl, true);
 }

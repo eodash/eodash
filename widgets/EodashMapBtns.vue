@@ -31,7 +31,7 @@
       :icon="[mdiStarFourPointsCircleOutline]"
       size="small"
       v-tooltip:bottom="'back to POIs'"
-      v-if="backToPOIs && poi"
+      v-if="backToPOIs && (poi || comparePoi)"
       @click="loadPOiIndicator()"
     />
     <PopUp
@@ -57,9 +57,14 @@
   </div>
 </template>
 <script setup>
-import { makePanelTransparent } from "@/composables";
+import { useTransparentPanel } from "@/composables";
 import { changeMapProjection, setActiveTemplate } from "@/store/actions";
-import { availableMapProjection, poi } from "@/store/states";
+import {
+  activeTemplate,
+  availableMapProjection,
+  comparePoi,
+  poi,
+} from "@/store/states";
 import {
   mdiCompare,
   mdiCompareRemove,
@@ -74,7 +79,6 @@ import EodashItemFilter from "./EodashItemFilter.vue";
 import { useDisplay } from "vuetify";
 import { useSTAcStore } from "@/store/stac";
 import { storeToRefs } from "pinia";
-import { switchToCompare } from "@/utils/states";
 import { loadPOiIndicator } from "./EodashProcess/methods/handling";
 
 const { compareIndicators, changeProjection, exportMap, backToPOIs } =
@@ -98,6 +102,7 @@ const { compareIndicators, changeProjection, exportMap, backToPOIs } =
     },
   });
 const { selectedStac, selectedCompareStac } = storeToRefs(useSTAcStore());
+const { resetSelectedCompareSTAC } = useSTAcStore();
 const { smAndDown } = useDisplay();
 const popupWidth = computed(() => (smAndDown.value ? "80%" : "70%"));
 const popupHeight = computed(() => (smAndDown.value ? "90%" : "70%"));
@@ -105,21 +110,25 @@ const popupHeight = computed(() => (smAndDown.value ? "90%" : "70%"));
 const showMapState = ref(false);
 const showCompareIndicators = ref(false);
 const compareIcon = computed(() =>
-  switchToCompare.value ? mdiCompare : mdiCompareRemove,
+  activeTemplate.value ===
+  ((typeof compareIndicators === "object" &&
+    compareIndicators?.compareTemplate) ||
+    "compare")
+    ? mdiCompareRemove
+    : mdiCompare,
 );
+
 const onCompareClick = () => {
-  if (switchToCompare.value) {
-    showCompareIndicators.value = !showCompareIndicators.value;
-  } else {
-    switchToCompare.value = true;
-    const fallbackTemplate =
-      (typeof compareIndicators === "object" &&
-        compareIndicators.fallbackTemplate) ||
-      "expert";
-    selectedCompareStac.value = null;
-    setActiveTemplate(fallbackTemplate);
-    triggerRef(selectedStac);
-  }
+  showCompareIndicators.value = !showCompareIndicators.value;
+
+  const fallbackTemplate =
+    (typeof compareIndicators === "object" &&
+      compareIndicators.fallbackTemplate) ||
+    "expert";
+  selectedCompareStac.value = null;
+  resetSelectedCompareSTAC();
+  setActiveTemplate(fallbackTemplate);
+  triggerRef(selectedStac);
 };
 
 /** @type {import("vue").Ref<HTMLDivElement|null>} */
@@ -134,7 +143,7 @@ const onSelectCompareIndicator = () => {
   showCompareIndicators.value = !showCompareIndicators.value;
 };
 
-makePanelTransparent(rootRef);
+useTransparentPanel(rootRef);
 </script>
 <style scoped>
 .map-btn {

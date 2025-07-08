@@ -1,8 +1,7 @@
 import axios from "@/plugins/axios";
-import { indicator } from "@/store/states";
+import { compareIndicator, indicator } from "@/store/states";
 import mustache from "mustache";
 import {
-  jobs,
   pollProcessStatus,
   updateJobsStatus,
 } from "^/EodashProcess/methods/async";
@@ -21,6 +20,8 @@ export async function handleEOxHubEndpoint({
   jsonformValue,
   isPolling,
   selectedStac,
+  jobs,
+  enableCompare = false,
 }) {
   if (!isPolling) {
     return;
@@ -38,22 +39,26 @@ export async function handleEOxHubEndpoint({
     const jsonData = JSON.parse(
       mustache.render(postBody, { ...(jsonformValue ?? {}) }),
     );
+    const currentIndicator = enableCompare ? compareIndicator : indicator;
     try {
       const responseProcess = await axios.post(link.href, jsonData, {
         headers: {
           "Content-Type": "application/json",
         },
       });
+
       // We save the process status url into localstorage assigning it to the indicator id
       const currentJobs = JSON.parse(
-        localStorage.getItem(indicator.value) || "[]",
+        localStorage.getItem(currentIndicator.value) || "[]",
       );
       currentJobs.push(responseProcess.headers.location);
-      localStorage.setItem(indicator.value, JSON.stringify(currentJobs));
+      localStorage.setItem(currentIndicator.value, JSON.stringify(currentJobs));
 
       const processResults = await pollProcessStatus({
+        jobs,
         processUrl: responseProcess.headers.location,
         isPolling,
+        enableCompare,
       })
         .then((resultItem) => {
           return extractAsyncResults(resultItem);
@@ -66,7 +71,7 @@ export async function handleEOxHubEndpoint({
           }
           return [];
         });
-      await updateJobsStatus(jobs, indicator.value);
+      await updateJobsStatus(jobs, currentIndicator.value);
 
       layers.push(
         ...(await creatAsyncProcessLayerDefinitions(
@@ -76,7 +81,7 @@ export async function handleEOxHubEndpoint({
         )),
       );
     } catch (error) {
-      await updateJobsStatus(jobs, indicator.value);
+      await updateJobsStatus(jobs, currentIndicator.value);
       if (error instanceof Error) {
         console.error("Error sending POST request:", error.message);
       } else {

@@ -16,7 +16,7 @@
 <script setup>
 import { activeTemplate } from "@/store/states";
 import { mdiViewDashboard } from "@mdi/js";
-import { makePanelTransparent } from "@/composables";
+import { useTransparentPanel } from "@/composables";
 import { ref } from "vue";
 import { useDisplay } from "vuetify/lib/composables/display";
 
@@ -35,5 +35,5 @@ defineProps({
 
 /** @type {import("vue").Ref<HTMLDivElement|null>} */
 const rootRef = ref(null);
-makePanelTransparent(rootRef);
+useTransparentPanel(rootRef);
 </script>

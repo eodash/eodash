@@ -1,7 +1,6 @@
-import { indicator } from "@/store/states";
+import { compareIndicator, indicator } from "@/store/states";
 // we don't want to use the caching axios instance here
 import axios from "axios";
-import { ref } from "vue";
 import {
   applyProcessLayersToMap,
   creatAsyncProcessLayerDefinitions,
@@ -11,34 +10,34 @@ import {
 import log from "loglevel";
 
 /**
- * The list of job result from the server
- * {job_start_datetime: string, job_end_datetime: string,status: string}
- *  @type {import("vue").Ref<import("../types").AsyncJob[]>}
- **/
-export const jobs = ref([]);
-
-/**
  * Polls the process status and fetches a result item when the process is successful.
  *
  * @param {Object} params - Parameters for polling the process status.
+ * @param {import("vue").Ref<import("../types").AsyncJob[]>} params.jobs - The list of jobs to update.
  * @param {string} params.processUrl - The URL of the process JSON report.
  * @param {import("vue").Ref<boolean>} params.isPolling - checks wether the polling should continue
  * @param {number} [params.pollInterval=5000] - The interval (in milliseconds) between polling attempts.
  * @param {number} [params.maxRetries=60] - The maximum number of polling attempts.
+ * @param {boolean} [params.enableCompare=false] - Whether to enable comparison mode, affecting the indicator used.
  * @returns {Promise<import("../types").EOxHubProcessResults>} The fetched results JSON.
  * @throws {Error} If the process does not complete successfully within the maximum retries.
  */
 export async function pollProcessStatus({
+  jobs,
   processUrl,
   isPolling,
   pollInterval = 10000,
   maxRetries = 560,
+  enableCompare = false,
 }) {
   let retries = 0;
   isPolling.value = true;
   // Ensure the jobs status is updated after the job has started and before polling
   setTimeout(() => {
-    updateJobsStatus(jobs, indicator.value);
+    updateJobsStatus(
+      jobs,
+      enableCompare ? compareIndicator.value : indicator.value,
+    );
   }, 500);
 
   while (retries < maxRetries && isPolling.value) {
@@ -121,14 +120,16 @@ export async function updateJobsStatus(jobs, indicator) {
 
 /**
  * Removes a job from the local storage and updates the job status
+ * @param {import("vue").Ref<import("../types").AsyncJob[]>} jobs
  * @param {import("../types").AsyncJob} jobObject
+ * @param {string} indicator
  */
-export const deleteJob = async (jobObject) => {
+export const deleteJob = async (jobs, jobObject, indicator) => {
   /** @type {string[]} */
-  const jobsUrls = JSON.parse(localStorage.getItem(indicator.value) || "[]");
+  const jobsUrls = JSON.parse(localStorage.getItem(indicator) || "[]");
   const newJobs = jobsUrls.filter((url) => !url.includes(jobObject.jobID));
-  localStorage.setItem(indicator.value, JSON.stringify(newJobs));
-  await updateJobsStatus(jobs, indicator.value);
+  localStorage.setItem(indicator, JSON.stringify(newJobs));
+  await updateJobsStatus(jobs, indicator);
 };
 
 /**
@@ -174,8 +175,9 @@ export const downloadPreviousResults = async (jobObject, selectedStac) => {
  * @async
  * @param {import("../types").AsyncJob} jobObject
  * @param {import("stac-ts").StacCollection | null} selectedStac
+ * @param {import("@eox/map").EOxMap | null} mapElement
  */
-export const loadProcess = async (jobObject, selectedStac) => {
+export const loadProcess = async (jobObject, selectedStac, mapElement) => {
   /** @type {import("../types").EOxHubProcessResults} */
   const results = await axios
     .get(jobObject.links[1].href)
@@ -185,6 +187,7 @@ export const loadProcess = async (jobObject, selectedStac) => {
     selectedStac,
     results,
     jobId: jobObject.jobID,
+    mapElement,
   });
 };
 
@@ -195,8 +198,14 @@ export const loadProcess = async (jobObject, selectedStac) => {
  * @param {import("stac-ts").StacCollection | null} params.selectedStac
  * @param {string} params.jobId
  * @param {import("../types").EOxHubProcessResults} params.results
+ * @param {import("@eox/map").EOxMap | null} params.mapElement
  */
-export async function loadPreviousProcess({ selectedStac, results, jobId }) {
+export async function loadPreviousProcess({
+  selectedStac,
+  results,
+  jobId,
+  mapElement,
+}) {
   const asyncLink = selectedStac?.links.find(
     (link) => link.rel === "service" && link.endpoint == "eoxhub_workspaces",
   );
@@ -214,5 +223,5 @@ export async function loadPreviousProcess({ selectedStac, results, jobId }) {
   );
 
   log.debug("rendered layers after loading previous process:", layers);
-  applyProcessLayersToMap(layers);
+  applyProcessLayersToMap(mapElement, layers);
 }
