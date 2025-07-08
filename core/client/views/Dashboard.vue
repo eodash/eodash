@@ -62,7 +62,7 @@ const FooterComponent = defineAsyncComponent(
   () => import(`@/components/Footer.vue`),
 );
 
-const templateHeight = props.isWebComponent ? "100%" : "100dvh";
+const templateHeight = "100%";
 
 const error = ref("");
 onErrorCaptured((e, comp, info) => {
@@ -75,37 +75,34 @@ onErrorCaptured((e, comp, info) => {
 </script>
 <style>
 .loading-container {
-  height: 100dvh;
+  height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 div.v-application__wrap {
-  min-height: fit-content;
+  height: 100%;
+  min-height: 100%;
 }
 eo-dash {
   overflow: hidden;
+  display: block;
 }
 /* set eox-elements colors css vars to match the theme */
-/*
-eox-layercontrol,
-eox-map,
-eox-drawtools,
-eox-timecontrol,
-eox-jsonform,
-eox-chart,
-eox-stacinfo,
-eox-itemfilter {
-  --primary-color: rgb(var(--v-theme-primary));
-  --eox-primary-color: rgb(var(--v-theme-primary));
-  --eox-secondary-color: rgb(var(--v-theme-secondary));
-  --eox-accent-color: rgb(var(--v-theme-accent));
-  --eox-error-color: rgb(var(--v-theme-error));
-  --eox-info-color: rgb(var(--v-theme-info));
-  --eox-success-color: rgb(var(--v-theme-success));
-  --eox-warning-color: rgb(var(--v-theme-warning));
-  --range-slider-color: rgb(var(--v-theme-primary));
-  --range-slider-track-color: rgb(var(--v-theme-on-primary));
-} */
+:root {
+  --eox-theme-light-primary: var(--v-theme-primary) !important;
+  --eox-theme-light-on-primary: var(--v-theme-on-primary) !important;
+  --eox-theme-light-secondary: var(--v-theme-secondary) !important;
+  --eox-theme-light-on-secondary: var(--v-theme-on-secondary) !important;
+  --eox-theme-light-surface: var(--v-theme-surface) !important;
+  --eox-theme-light-on-surface: var(--v-theme-on-surface) !important;
+  --eox-theme-light-background: var(--v-theme-background) !important;
+  --eox-theme-light-on-background: var(--v-theme-on-background) !important;
+  --eox-theme-light-accent: var(--v-theme-accent) !important;
+  --eox-theme-light-error: var(--v-theme-error) !important;
+  --eox-theme-light-info: var(--v-theme-info) !important;
+  --eox-theme-light-success: var(--v-theme-success) !important;
+  --eox-theme-light-warning: var(--v-theme-warning) !important;
+}
 </style>

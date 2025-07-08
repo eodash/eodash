@@ -168,7 +168,11 @@ export const useInitMap = (
           if (
             mapElement?.value?.id === "main" &&
             updatedStac.extent?.spatial.bbox &&
-            !(isFirstLoad.value && mapPosition.value?.[0] && mapPosition.value?.[1])
+            !(
+              isFirstLoad.value &&
+              mapPosition.value?.[0] &&
+              mapPosition.value?.[1]
+            )
           ) {
             // Sanitize extent,
             const b = updatedStac.extent?.spatial.bbox[0];

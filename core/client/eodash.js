@@ -15,12 +15,12 @@ export const eodash = reactive({
   },
   stacEndpoint:
     "https://esa-eodashboards.github.io/eodashboard-catalog/trilateral/catalog.json",
-  // "https://esa-eodashboards.github.io/RACE-catalog/RACE/catalog.json",
-  // "https://GTIF-Austria.github.io/public-catalog/pr-preview/pr-16/GTIF-Austria/catalog.json",
-  // "https://gtif-cerulean.github.io/catalog/cerulean/catalog.json",
-  // "https://eodashcatalog.eox.at/samplecatalog/samples/catalog.json",
-  // "https://gtif-cerulean.github.io/deside-catalog/deside/catalog.json",
-  // "https://gtif-cerulean.github.io/cerulean-catalog/cerulean/catalog.json",
+    // "https://esa-eodashboards.github.io/RACE-catalog/RACE/catalog.json",
+    // "https://GTIF-Austria.github.io/public-catalog/pr-preview/pr-16/GTIF-Austria/catalog.json",
+    // "https://gtif-cerulean.github.io/catalog/cerulean/catalog.json",
+    // "https://eodashcatalog.eox.at/samplecatalog/samples/catalog.json",
+    // "https://gtif-cerulean.github.io/deside-catalog/deside/catalog.json",
+    // "https://gtif-cerulean.github.io/cerulean-catalog/cerulean/catalog.json",
   // "https://gtif-austria.github.io/public-catalog/GTIF-Austria/catalog.json",
   brand: {
     noLayout: true,
@@ -42,7 +42,7 @@ export const eodash = reactive({
         surface: "#ffff",
       },
       variables: {
-        "surface-opacity": 0.6,
+        "surface-opacity": 0.8,
         "primary-opacity": 0.8,
       },
       // Bank-Wong palette
@@ -93,7 +93,7 @@ export const eodash = reactive({
           id: Symbol(),
           type: "internal",
           title: "Tools",
-          layout: { x: 0, y: 0, w: 3, h: 1 },
+          layout: { x: 0, y: 0, w: "3/3/2", h: 1 },
           widget: {
             name: "EodashTools",
             properties: {
@@ -102,11 +102,13 @@ export const eodash = reactive({
               itemFilterConfig: {
                 resultType: "cards",
                 filtersTitle: "",
-                style: "--padding: 72px",
                 filterProperties: [],
                 resultsTitle: "Explore more indicators",
                 subTitleProperty: "subtitle",
                 imageProperty: "thumbnail",
+                cssVars: {
+                  "--filter-display": "none",
+                },
               },
             },
           },
@@ -118,21 +120,23 @@ export const eodash = reactive({
                   id: "layercontrol-light",
                   type: "internal",
                   title: "Layers",
-                  layout: { x: 0, y: 1, w: 3, h: 3 },
+                  layout: { x: 0, y: 1, w: "3/3/2", h: 10 },
                   widget: {
                     name: "EodashLayerControl",
                     properties: {
                       slider: false,
                       tools: ["datetime", "info", "legend"],
                       cssVars: {
-                        "--list-padding": "0",
+                        "--list-padding": "-8px",
                         "--tools-button-visibility": "none",
                         "--layer-input-visibility": "none",
                         "--layer-type-visibility": "none",
-                        "--padding": "16px",
+                        "--padding": "8px",
                         "--padding-vertical": "16px",
                         "--layer-tools-button-visibility": "none",
+                        "--layer-toggle-button-visibility": "flex",
                         "--layer-summary-visibility": "none",
+                        "--layer-visibility": "none",
                       },
                     },
                   },
@@ -147,7 +151,7 @@ export const eodash = reactive({
                   id: "stacinfo-light",
                   type: "internal",
                   title: "Information",
-                  layout: { x: 9, y: 0, w: 3, h: 6 },
+                  layout: { x: "9/9/10", y: 0, w: "3/3/2", h: 12 },
                   widget: {
                     name: "EodashStacInfo",
                     properties: {
@@ -169,7 +173,7 @@ export const eodash = reactive({
               ? {
                   id: "light-datepicker",
                   type: "internal",
-                  layout: { x: 5, y: 8, w: 2, h: 4 },
+                  layout: { x: 4, y: 7, w: 4, h: 5 },
                   title: "Date",
                   widget: {
                     name: "EodashDatePicker",
@@ -215,7 +219,7 @@ export const eodash = reactive({
           id: Symbol(),
           type: "internal",
           title: "Tools",
-          layout: { x: 0, y: 0, w: 3, h: 1 },
+          layout: { x: 0, y: 0, w: "3/3/2", h: 1 },
           widget: {
             name: "EodashTools",
             properties: {
@@ -226,9 +230,6 @@ export const eodash = reactive({
                 subTitleProperty: "subtitle",
                 imageProperty: "thumbnail",
                 aggregateResults: "collection_group",
-                style: {
-                  "--form-flex-direction": "row",
-                },
               },
             },
           },
@@ -237,7 +238,7 @@ export const eodash = reactive({
           id: Symbol(),
           type: "internal",
           title: "Layers",
-          layout: { x: 0, y: 1, w: 3, h: 6 },
+          layout: { x: 0, y: 1, w: "3/3/2", h: 11 },
           widget: {
             name: "EodashLayerControl",
           },
@@ -248,7 +249,7 @@ export const eodash = reactive({
               ? {
                   id: "Information",
                   title: "Information",
-                  layout: { x: 9, y: 0, w: 3, h: 6 },
+                  layout: { x: "9/9/10", y: 0, w: "3/3/2", h: 6 },
                   type: "internal",
                   widget: {
                     name: "EodashStacInfo",
@@ -263,7 +264,7 @@ export const eodash = reactive({
               ? {
                   id: "expert-datepicker",
                   type: "internal",
-                  layout: { x: 5, y: 11, w: 2, h: 1 },
+                  layout: { x: 4, y: 7, w: 4, h: 5 },
                   title: "Date",
                   widget: {
                     name: "EodashDatePicker",
@@ -282,7 +283,7 @@ export const eodash = reactive({
             return selected
               ? {
                   id: "Buttons",
-                  layout: { x: 8, y: 0, w: 1, h: 2 },
+                  layout: { x: "8/8/9", y: 0, w: 1, h: 2 },
                   title: "Buttons",
                   type: "internal",
                   widget: {
@@ -298,7 +299,7 @@ export const eodash = reactive({
               id: "Processes",
               type: "internal",
               title: "Processes",
-              layout: { x: 9, y: 6, w: 3, h: 5 },
+              layout: { x: "9/9/10", y: 6, w: "3/3/2", h: 5 },
               widget: {
                 name: "EodashProcess",
               },
@@ -338,15 +339,17 @@ export const eodash = reactive({
           id: Symbol(),
           type: "internal",
           title: "Tools",
-          layout: { x: 0, y: 0, w: 3, h: 1 },
+          layout: { x: 0, y: 0, w: "3/3/2", h: 1 },
           widget: {
             name: "EodashTools",
             properties: {
               showLayoutSwitcher: false,
               itemFilterConfig: {
-                cssVars: {
-                  "--form-flex-direction": "row",
-                },
+                resultType: "cards",
+                filtersTitle: "Select an indicator",
+                resultsTitle: "",
+                subTitleProperty: "subtitle",
+                imageProperty: "thumbnail",
               },
             },
           },
@@ -356,20 +359,19 @@ export const eodash = reactive({
           id: Symbol(),
           type: "internal",
           title: "Tools",
-          layout: { x: 9, y: 0, w: 3, h: 1 },
+          layout: { x: "9/9/10", y: 0, w: "3/3/2", h: 1 },
           widget: {
             name: "EodashTools",
             properties: {
               showLayoutSwitcher: false,
-              indicatorBtnText: "Select an indicator to compare",
+              indicatorBtnText: "Select second indicator",
               itemFilterConfig: {
                 enableCompare: true,
-                // resultsTitle:"Select an indicator to compare",
+                resultType: "cards",
                 filtersTitle: "Select an indicator to compare",
-                // filterProperties: [],
-                cssVars: {
-                  "--form-flex-direction": "row",
-                },
+                resultsTitle: "",
+                subTitleProperty: "subtitle",
+                imageProperty: "thumbnail",
               },
             },
           },
@@ -378,7 +380,7 @@ export const eodash = reactive({
           id: Symbol(),
           type: "internal",
           title: "Layers",
-          layout: { x: 0, y: 1, w: 3, h: 6 },
+          layout: { x: 0, y: 1, w: "3/3/2", h: 11 },
           widget: {
             name: "EodashLayerControl",
           },
@@ -386,7 +388,7 @@ export const eodash = reactive({
         {
           id: Symbol(),
           title: "Comparison Layers",
-          layout: { x: 9, y: 1, w: 3, h: 6 },
+          layout: { x: "9/9/10", y: 1, w: "3/3/2", h: 4 },
           type: "internal",
           widget: {
             name: "EodashLayerControl",
@@ -401,7 +403,7 @@ export const eodash = reactive({
               id: "Processes",
               type: "internal",
               title: "Processes",
-              layout: { x: 9, y: 6, w: 3, h: 5 },
+              layout: { x: 9, y: 6, w: "3/3/2", h: 5 },
               widget: {
                 name: "EodashProcess",
               },
@@ -412,7 +414,7 @@ export const eodash = reactive({
             return selected
               ? {
                   id: "Buttons",
-                  layout: { x: 8, y: 0, w: 1, h: 2 },
+                  layout: { x: "8/8/9", y: 0, w: 1, h: 2 },
                   title: "Buttons",
                   type: "internal",
                   widget: {
@@ -433,7 +435,7 @@ export const eodash = reactive({
               ? {
                   id: "expert-Datepicker",
                   type: "internal",
-                  layout: { x: 5, y: 8, w: 2, h: 4 },
+                  layout: { x: 4, y: 7, w: 4, h: 5 },
                   title: "Date",
                   widget: {
                     name: "EodashDatePicker",
