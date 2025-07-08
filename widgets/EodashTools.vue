@@ -6,10 +6,8 @@
       <v-btn
         v-if="props.showIndicatorsBtn"
         color="secondary"
-        :size="btnSize"
         class="text-none"
-        :class="btnClasses"
-        :append-icon="[mdiPlus]"
+        :append-icon="[mdiPlusCircleOutline]"
         :text="indicatorBtnText"
         @click="dialog = !dialog"
       >
@@ -41,21 +39,16 @@
 import PopUp from "^/PopUp.vue";
 import EodashItemFilter from "^/EodashItemFilter.vue";
 import EodashLayoutSwitcher from "^/EodashLayoutSwitcher.vue";
-import { mdiPlus, mdiViewDashboard } from "@mdi/js";
+import { mdiPlusCircleOutline, mdiViewDashboard } from "@mdi/js";
 import { computed, ref } from "vue";
 import { makePanelTransparent } from "@/composables";
 import { useDisplay } from "vuetify";
 
 const dialog = ref(false);
 
-const { smAndDown, xxl, lgAndUp } = useDisplay();
-const popupWidth = computed(() => (smAndDown.value ? "80%" : "70%"));
+const { smAndDown } = useDisplay();
+const popupWidth = computed(() => (smAndDown.value ? "90%" : "70%"));
 const popupHeight = computed(() => (smAndDown.value ? "90%" : "70%"));
-const btnClasses = computed(() => ({
-  "text-body-2": !xxl.value,
-  "py-2": lgAndUp.value,
-}));
-const btnSize = computed(() => (xxl.value ? undefined : "small"));
 
 const props = defineProps({
   showIndicatorsBtn: {

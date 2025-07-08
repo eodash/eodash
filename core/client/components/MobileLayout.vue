@@ -1,5 +1,5 @@
 <template>
-  <v-main class="overflow-hidden main">
+  <v-main class="overflow-hidden">
     <Suspense suspensible>
       <component
         id="bg-widget"
@@ -23,7 +23,10 @@
           >
         </div>
         <Suspense suspensible>
-          <div class="component-container" v-show="activeIdx === idx">
+          <div
+            class="d-flex flex-column justify-center component-container"
+            v-show="activeIdx === idx"
+          >
             <component
               :key="importedWidget.value.id"
               :is="importedWidget.value.component"
@@ -70,22 +73,18 @@ onMounted(() => {
   mainRectTopPx.value = mainRect.value.top + "px";
   mainRectBtmPx.value = (mainRect.value.bottom || 48) + "px";
   tabsHeightFromBtm.value =
-    mainRect.value.bottom + (tabs.value?.$el?.clientHeight ?? 0) + "px";
+    mainRect.value.bottom + (tabs.value?.$el?.clientHeight ?? 48) + "px";
 });
 </script>
 <style scoped>
-.main {
-  height: 91dvh;
-}
-
 .panel {
-  top: v-bind("mainRectTopPx");
   bottom: v-bind("tabsHeightFromBtm");
+  top: v-bind("mainRectTopPx");
   position: absolute;
   overflow: hidden;
   width: 100%;
   left: 0;
-  z-index: 1;
+  z-index: 3;
 }
 
 .component-container {
@@ -103,7 +102,7 @@ onMounted(() => {
   z-index: 10;
 }
 :deep(.bg-surface) {
-  backdrop-filter: blur(9.5px) !important;
+  backdrop-filter: blur(10px) !important;
   background-color: rgba(
     var(--v-theme-surface),
     var(--v-surface-opacity, 0.8)

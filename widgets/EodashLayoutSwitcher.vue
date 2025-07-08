@@ -1,6 +1,6 @@
 <template>
   <div ref="rootRef">
-    <v-tooltip :text="`Switch to ${target} mode`">
+    <v-tooltip v-if="!mobile" :text="`Switch to ${target} mode`">
       <template v-slot:activator="{ props }">
         <v-icon
           v-bind="props"
@@ -9,6 +9,7 @@
         ></v-icon>
       </template>
     </v-tooltip>
+    <v-icon v-else @click="activeTemplate = target" :icon="[icon]"></v-icon>
   </div>
 </template>
 
@@ -17,7 +18,9 @@ import { activeTemplate } from "@/store/states";
 import { mdiViewDashboard } from "@mdi/js";
 import { makePanelTransparent } from "@/composables";
 import { ref } from "vue";
+import { useDisplay } from "vuetify/lib/composables/display";
 
+const { mobile } = useDisplay();
 defineProps({
   target: {
     type: String,

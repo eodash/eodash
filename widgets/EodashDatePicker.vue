@@ -6,12 +6,12 @@
       :attributes="attributes"
       :masks="masks"
       expanded
-      class="bg-surface overflow-auto"
+      class="overflow-auto"
       style="background-color: transparent; max-width: 100%"
     >
       <template v-if="toggleCalendar" #default="{ inputValue, inputEvents }">
         <div
-          class="bg-surface d-flex flex-row align-center justify-center pb-1"
+          class="d-flex flex-row align-center justify-center pb-1"
           style="overflow: hidden; width: 100%"
         >
           <v-btn
@@ -22,7 +22,7 @@
             variant="text"
             @click="jumpDate(true)"
             class="py-2"
-            style="flex-shrink: 1"
+            style="flex-shrink: 1; padding: 0"
           >
             <v-icon :icon="[mdiRayEndArrow]" />
           </v-btn>
@@ -52,7 +52,7 @@
             v-tooltip:bottom="'Set date to latest available dataset'"
             @click="jumpDate(false)"
             class="py-2"
-            style="flex-shrink: 1"
+            style="flex-shrink: 1; padding: 0"
           >
             <v-icon :icon="[mdiRayStartArrow]" />
           </v-btn>
@@ -328,7 +328,10 @@ makePanelTransparent(rootEl);
   .datePicker {
     position: absolute;
     bottom: 0;
-    width: 100%;
+    left: 0;
+    right: 0;
+    margin-inline: auto;
+    width: fit-content;
   }
 }
 .vc-day-content {
@@ -342,5 +345,28 @@ makePanelTransparent(rootEl);
 
 .vc-popover-content-wrapper {
   transform: v-bind("transform") !important;
+}
+
+.vc-date-picker-content,
+.datePicker {
+  backdrop-filter: blur(10px) !important;
+  border-radius: 8px;
+  border: none;
+  box-shadow:
+    0px 0px 1px rgba(24, 39, 75, 0.22),
+    0px 6px 12px -6px rgba(24, 39, 75, 0.12),
+    0px 8px 24px -4px rgba(24, 39, 75, 0.08);
+  background-color: rgba(
+    var(--v-theme-surface),
+    var(--v-surface-opacity, 0.8)
+  ) !important;
+}
+
+.vc-popover-caret.direction-top.align-left {
+  clip-path: polygon(0% 0%, 100% 0%, 0% 100%, 0% 100%);
+}
+
+.vc-bordered {
+  border: none;
 }
 </style>
