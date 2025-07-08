@@ -156,7 +156,7 @@ const startProcess = async () => {
   });
 
   isProcessed.value = true;
-  if (isAsync.value) updateJobsStatus(jobs, indicator);
+  if (isAsync.value) updateJobsStatus(jobs, indicator.value);
 };
 useAutoExec(autoExec, jsonformEl, jsonformSchema, startProcess);
 

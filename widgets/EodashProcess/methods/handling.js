@@ -1,20 +1,16 @@
 import log from "loglevel";
-import { extractGeometries, getBboxProperty } from "./utils";
-import { datetime, indicator, mapEl, poi } from "@/store/states";
-import axios from "@/plugins/axios";
-import { getLayers } from "@/store/actions";
 import {
-  getChartValues,
-  processGeoTiff,
-  processImage,
-  processSTAC,
-  processVector,
-} from "./outputs";
-import { handleGeotiffCustomEndpoints } from "./custom-endpoints/geotiff";
+  applyProcessLayersToMap,
+  extractGeometries,
+  getBboxProperty,
+} from "./utils";
+import { datetime, indicator, poi } from "@/store/states";
+import axios from "@/plugins/axios";
+import { getChartValues, processLayers, processSTAC } from "./outputs";
+import { handleLayersCustomEndpoints } from "./custom-endpoints/layers";
 import { handleChartCustomEndpoints } from "./custom-endpoints/chart";
 import { useSTAcStore } from "@/store/stac";
-import { replaceLayer } from "@/eodashSTAC/helpers";
-import { useEmitLayersUpdate, useGetSubCodeId } from "@/composables/index";
+import { useGetSubCodeId } from "@/composables";
 
 /**
  * Fetch and set the jsonform schema to initialize the process
@@ -141,89 +137,31 @@ export async function handleProcesses({
 
     await processSTAC(serviceLinks, jsonformValue);
 
-    const geotiffLayers = await processGeoTiff({
-      links: serviceLinks,
-      jsonformValue,
-      layerId,
+    const newLayers = await processLayers({
       isPolling,
-      projection:
-        //@ts-expect-error TODO
-        selectedStac.value?.["eodash:mapProjection"]?.["name"] ?? null,
+      links: serviceLinks,
+      jsonformValue: { ...(jsonformValue ?? {}) },
       jsonformSchema: jsonformSchema.value,
       selectedStac: selectedStac.value,
-      customEndpointsHandler: handleGeotiffCustomEndpoints,
-    });
-    geotiffLayers?.forEach((geotiffLayer) => {
-      if (geotiffLayer && geotiffLayer.source?.sources.length) {
-        processResults.value.push(
-          //@ts-expect-error TODO
-          ...(geotiffLayer.source?.sources?.map((source) => source.url) ?? []),
-        );
-      }
-    });
-
-    const vectorLayers = await processVector(
-      serviceLinks,
-      jsonformValue,
       layerId,
-    );
+      origBbox,
+      customLayersHandler: handleLayersCustomEndpoints,
+      projection: /** @type {{name?:string}} */ (
+        selectedStac.value?.["eodash:mapProjection"]
+      )?.["name"],
+    });
 
-    if (vectorLayers?.length) {
-      processResults.value.push(
-        ...vectorLayers.map((layer) => layer.source?.url),
-      );
-    }
-
-    const imageLayers = processImage(serviceLinks, jsonformValue, origBbox);
-    if (imageLayers?.length) {
-      processResults.value.push(
-        ...imageLayers.map((layer) => layer.source?.url),
-      );
-    }
-
-    log.debug(
-      "rendered layers after processing:",
-      geotiffLayers,
-      vectorLayers,
-      imageLayers,
-    );
-
-    if (geotiffLayers?.length || vectorLayers?.length || imageLayers?.length) {
-      const newLayers = /** @type {import("@eox/map").EoxLayer[]} */ ([
-        ...(geotiffLayers ?? []),
-        ...(vectorLayers ?? []),
-        ...(imageLayers ?? []),
-      ]);
-      let currentLayers = [...getLayers()];
-
-      let analysisGroup =
-        /*** @type {import("@eox/map/src/layers").EOxLayerTypeGroup | undefined} */ (
-          currentLayers.find((l) => l.properties?.id.includes("AnalysisGroup"))
-        );
-      if (!analysisGroup) {
-        return;
-      }
-
+    // save layers results
+    if (newLayers.length) {
       for (const layer of newLayers) {
-        const exists = analysisGroup.layers.find(
-          (l) => l.properties?.id === layer.properties?.id,
-        );
-        if (!exists) {
-          analysisGroup.layers.unshift(layer);
-        } else {
-          analysisGroup.layers = replaceLayer(
-            analysisGroup.layers,
-            layer.properties?.id ?? "",
-            [layer],
-          );
+        if (layer.type === "WebGLTile" && layer.source?.type === "GeoTIFF") {
+          processResults.value.push(...(layer.source.sources ?? []));
+        } else if (layer.source && "url" in layer.source) {
+          processResults.value.push(layer.source.url);
         }
       }
-      if (mapEl.value) {
-        const layers = [...currentLayers];
-        useEmitLayersUpdate("process:updated", mapEl.value, layers);
-        mapEl.value.layers = layers;
-      }
     }
+    applyProcessLayersToMap(newLayers);
     loading.value = false;
   } catch (error) {
     console.error("[eodash] Error while running process:", error);
@@ -270,7 +208,7 @@ export function resetProcess({
  */
 export const onChartClick = (evt) => {
   const chartSpec = evt.target?.spec;
-  if (!chartSpec) {
+  if (!chartSpec || !evt.detail?.item?.datum || !evt.detail?.item?.datum.datum) {
     return;
   }
   const encodingKey = Object.keys(chartSpec.encoding ?? {}).find(
@@ -283,6 +221,7 @@ export const onChartClick = (evt) => {
   if (!temporalKey) {
     return;
   }
+
   try {
     const vegaItem = evt.detail.item;
     let datestring = "";

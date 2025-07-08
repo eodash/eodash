@@ -207,7 +207,12 @@ export const extractLayerDatetime = (links, currentStep) => {
 
   // item datetime is not included in the item links datetime
   if (!controlValues.includes(currentStep)) {
-    return undefined;
+    const currentStepTime = new Date(currentStep).getTime();
+    currentStep = controlValues.reduce((a, b) => {
+      const aDiff = Math.abs(new Date(a).getTime() - currentStepTime);
+      const bDiff = Math.abs(new Date(b).getTime() - currentStepTime);
+      return bDiff < aDiff ? b : a;
+    });
   }
 
   return {

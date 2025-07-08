@@ -3,8 +3,5 @@
   "packages": {
     ".": {}
   },
-  "prerelease": true,
-  "prerelease-type": "rc",
-  "versioning": "prerelease",
   "release-type": "node"
 }
