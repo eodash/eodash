@@ -10,7 +10,7 @@ import { useOnLayersUpdate } from "@/composables";
  * @export
  * @async
  * @param {Object} params
- * @param {import("vue").Ref<import("stac-ts").StacCollection>} params.selectedStac
+ * @param {import("vue").Ref<import("stac-ts").StacCollection | null>} params.selectedStac
  * @param {import("vue").Ref<import("@eox/jsonform").EOxJSONForm | null>} params.jsonformEl
  * @param {import("vue").Ref<Record<string,any> | null>} params.jsonformSchema
  * @param {import("vue").Ref<import("@eox/chart").EOxChart["spec"] | null>} params.chartSpec

@@ -126,7 +126,7 @@ const onCompareClick = () => {
       compareIndicators.fallbackTemplate) ||
     "expert";
   selectedCompareStac.value = null;
-  resetSelectedCompareSTAC()
+  resetSelectedCompareSTAC();
   setActiveTemplate(fallbackTemplate);
   triggerRef(selectedStac);
 };

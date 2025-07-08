@@ -13,7 +13,7 @@ import {
   poi,
 } from "@/store/states";
 import axios from "@/plugins/axios";
-import { getChartValues, processLayers, processSTAC } from "./outputs";
+import { processCharts, processLayers, processSTAC } from "./outputs";
 import { handleLayersCustomEndpoints } from "./custom-endpoints/layers";
 import { handleChartCustomEndpoints } from "./custom-endpoints/chart";
 import { useSTAcStore } from "@/store/stac";
@@ -79,7 +79,7 @@ export async function initProcess({
 
 /**
  *
- * @param {Object} params
+ * @param {object} params
  * @param {import("vue").Ref<boolean>} params.loading
  * @param {import("vue").Ref<import("stac-ts").StacCollection | null>} params.selectedStac
  * @param {import("vue").Ref<import("@eox/jsonform").EOxJSONForm | null>} params.jsonformEl
@@ -128,10 +128,11 @@ export async function handleProcesses({
     );
     const layerId = selectedStac.value?.id ?? "";
 
-    [chartSpec.value, chartData.value] = await getChartValues({
+    [chartSpec.value, chartData.value] = await processCharts({
       links: serviceLinks,
       jsonformValue: { ...(jsonformValue ?? {}) },
       jsonformSchema: jsonformSchema.value,
+      enableCompare: mapElement?.id === "compare",
       selectedStac: selectedStac.value,
       specUrl,
       isPolling,
@@ -165,12 +166,13 @@ export async function handleProcesses({
       jsonformValue: { ...(jsonformValue ?? {}) },
       jsonformSchema: jsonformSchema.value,
       selectedStac: selectedStac.value,
+      enableCompare: mapElement?.id === "compare",
       layerId,
       origBbox,
       jobs,
       customLayersHandler: handleLayersCustomEndpoints,
       projection: /** @type {{name?:string}} */ (
-        selectedStac.value?.["eodash:mapProjection"]
+        selectedStac.value["eodash:mapProjection"]
       )?.["name"],
     });
 

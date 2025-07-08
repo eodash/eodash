@@ -4,7 +4,7 @@
 
     <eox-jsonform
       v-if="jsonformSchema"
-      :key="selectedStac"
+      :key="jsonformKey"
       ref="jsonformEl"
       .schema="jsonformSchema"
     ></eox-jsonform>
@@ -18,7 +18,7 @@
     />
     <div class="mt-4 text-right">
       <v-btn
-        v-if="!autoExec && (jsonformSchema || chartSpec)"
+        v-if="showExecBtn"
         :loading="loading"
         style="margin-right: 20px"
         :append-icon="[mdiCogPlayOutline]"
@@ -94,17 +94,25 @@ const isPolling = ref(false);
 /** @type {import("vue").Ref<any[]>} */
 const processResults = ref([]);
 
+const showExecBtn = computed(
+  () =>
+    !autoExec.value &&
+    (!!jsonformSchema.value || !!chartSpec.value) &&
+    !!jsonformEl.value,
+);
 const { selectedStac, selectedCompareStac } = storeToRefs(useSTAcStore());
 const currentSelectedStac = enableCompare ? selectedCompareStac : selectedStac;
 const mapElement = enableCompare ? mapCompareEl : mapEl;
 const currentIndicator = enableCompare ? compareIndicator : indicator;
 const currentJobs = enableCompare ? compareJobs : jobs;
 
+const jsonformKey = computed(
+  () => currentIndicator.value + mapElement.value?.id,
+);
+
 useInitProcess({
-  //@ts-expect-error TODO
   selectedStac: currentSelectedStac,
   mapElement: mapElement.value,
-  jobs: currentJobs,
   jsonformEl,
   jsonformSchema,
   chartSpec,

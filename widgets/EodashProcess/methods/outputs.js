@@ -16,9 +16,10 @@ import { isFirstLoad } from "@/utils/states";
  * @param {import("stac-ts").StacCollection} options.selectedStac
  * @param {Record<string,any>} options.jsonformSchema
  * @param {import("vue").Ref<import("../types").AsyncJob[]>} options.jobs
+ * @param {boolean} [options.enableCompare=false] - Whether to enable compare mode
  * @returns {Promise<[import("@eox/chart").EOxChart["spec"] | null,Record<string,any>|null]>}
  **/
-export async function getChartValues({
+export async function processCharts({
   links,
   jsonformValue,
   specUrl,
@@ -27,6 +28,7 @@ export async function getChartValues({
   selectedStac,
   isPolling,
   jobs,
+  enableCompare = false,
 }) {
   if (!specUrl || !links) return [null, null];
   /** @type {import("vega-lite").TopLevelSpec} **/
@@ -53,6 +55,7 @@ export async function getChartValues({
       selectedStac,
       isPolling,
       jobs,
+      enableCompare,
     }));
 
   if (data && data.length) {

@@ -2,6 +2,7 @@
   <span class="d-flex flex-column">
     <eox-layercontrol
       v-if="showControls"
+      :key="mapElement"
       v-bind="config"
       :for="mapElement"
       @datetime:updated="debouncedHandleDateTime"
