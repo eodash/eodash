@@ -1,5 +1,5 @@
 <template>
-  <div ref="container" class="process-container">
+  <div ref="container" class="pb-4">
     <ProcessList />
 
     <eox-jsonform
@@ -16,11 +16,12 @@
       @click:item="onChartClick"
       :style="chartStyles"
     />
-    <div style="text-align: right">
+    <div class="mt-4 text-right">
       <v-btn
         v-if="!autoExec && (jsonformSchema || chartSpec)"
         :loading="loading"
         style="margin-right: 20px"
+        :append-icon="[mdiCogPlayOutline]"
         @click="startProcess"
         color="primary"
       >
@@ -29,6 +30,7 @@
       <v-btn
         v-if="processResults.length && isProcessed && !isAsync"
         color="primary"
+        :append-icon="[mdiDownloadCircleOutline]"
         @click="downloadResults"
       >
         Download
@@ -55,6 +57,7 @@ import {
 } from "@/store/states";
 import { download } from "./methods/utils";
 import { compareJobs, jobs } from "./states";
+import { mdiCogPlayOutline, mdiDownloadCircleOutline } from "@mdi/js";
 
 const { enableCompare } = defineProps({
   enableCompare: {
@@ -192,12 +195,9 @@ const chartStyles = computed(() => {
 });
 </script>
 <style>
-.process-container {
-  height: 100%;
-  overflow-y: auto;
-}
 eox-chart {
   --background-color: transparent;
+  padding-top: 1em;
 }
 eox-jsonform {
   padding: 0.7em;

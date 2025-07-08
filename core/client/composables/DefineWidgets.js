@@ -8,7 +8,7 @@ import { storeToRefs } from "pinia";
  *   props: Record<string, unknown>;
  *   title: string;
  *   id: string | number | symbol;
- *   layout: { x: number; y: number; h: number; w: number };
+ *   layout: { x: number | string; y: number | string; h: number | string; w: number | string };
  * }} DefinedWidget
  */
 

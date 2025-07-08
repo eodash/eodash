@@ -6,11 +6,14 @@
 
 // Styles
 import "vuetify/styles";
+import "@eox/ui/vuetify/style.css";
+import { eox } from "@eox/ui/vuetify/blueprint.js";
 
 import { createVuetify } from "vuetify";
 import { mdiChevronLeft, mdiChevronRight, mdiMenuDown, mdiPlus } from "@mdi/js";
 
 const vuetify = createVuetify({
+  blueprint: eox,
   icons: {
     aliases: {
       // mapping v-date-picker and v-tabs default icons to `@mdi/js`

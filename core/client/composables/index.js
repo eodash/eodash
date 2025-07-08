@@ -281,11 +281,11 @@ export const useURLSearchParametersSync = () => {
  * Converts eox-layout-item to transparent
  *
  *  @param {import("vue").Ref<HTMLElement|null>} root - components root element ref*/
-export const makePanelTransparent = (root) => {
+export const useTransparentPanel = (root) => {
   onMounted(() => {
-    const eoxItem = root.value?.parentElement;
-    if (eoxItem?.tagName === "EOX-LAYOUT-ITEM") {
-      eoxItem.classList.remove("bg-surface");
+    const backgroundItem = root.value?.parentElement;
+    if (backgroundItem?.classList.contains("bg-surface")) {
+      backgroundItem.classList.remove("bg-surface");
     }
   });
 };
