@@ -226,10 +226,11 @@ watch(
       return;
     }
 
-    const attrs = [
-      ...(await fetchCollectionsAttributes(eodashCollections)),
-      ...(await fetchCollectionsAttributes(eodashCompareCollections)),
-    ];
+    const attrs =
+      /** @type {Partial<import("v-calendar/dist/types/src/utils/attribute").AttributeConfig>[]} */ ([
+        ...(await fetchCollectionsAttributes(eodashCollections)),
+        ...(await fetchCollectionsAttributes(eodashCompareCollections)),
+      ]);
     attributes.push(...attrs);
   },
   { immediate: true },
@@ -249,7 +250,7 @@ async function fetchCollectionsAttributes(eodashCollections) {
       return ec.fetchCollection().then(() => {
         const dateProperty = getDatetimeProperty(ec.getItems());
         if (!dateProperty) {
-          return;
+          return [];
         }
         const dates = [
           ...new Set(
