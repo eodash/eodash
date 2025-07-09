@@ -24,7 +24,7 @@
             <v-btn
               :disabled="item.status !== 'successful'"
               color="primary"
-              @click="loadProcess(item, selectedStac, mapElement)"
+              @click="loadProcess(item, currentStac, mapElement)"
               :icon="[mdiUploadBox]"
               variant="text"
               v-tooltip="'Load results to map'"
@@ -35,7 +35,7 @@
             <v-btn
               :disabled="item.status !== 'successful'"
               color="primary"
-              @click="downloadPreviousResults(item, selectedStac)"
+              @click="downloadPreviousResults(item, currentStac)"
               :icon="[mdiDownloadBox]"
               variant="text"
               v-tooltip="'Download results'"
@@ -87,9 +87,10 @@ const { enableCompare, mapElement } = defineProps({
     default: () => null,
   },
 });
-const { selectedStac } = toRefs(useSTAcStore());
+const { selectedStac, selectedCompareStac } = toRefs(useSTAcStore());
 const currentJobs = enableCompare ? compareJobs : jobs;
 const currentIndicator = enableCompare ? compareIndicator : indicator;
+const currentStac = enableCompare ? selectedCompareStac : selectedStac;
 
 onMounted(() => {
   updateJobsStatus(currentJobs, currentIndicator.value);

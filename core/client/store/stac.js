@@ -8,15 +8,14 @@ import {
 } from "@/composables/index";
 import { eodashKey } from "@/utils/keys";
 import { compareIndicator, comparePoi, indicator, poi } from "@/store/states";
-import { extractCollectionUrls } from "@/eodashSTAC/helpers";
 import {
   eodashCollections,
   eodashCompareCollections,
   collectionsPalette,
 } from "@/utils/states";
-import { EodashCollection } from "@/eodashSTAC/EodashCollection";
 import log from "loglevel";
 import { toAbsolute } from "stac-js/src/http.js";
+import { updateEodashCollections } from "@/utils";
 
 export const useSTAcStore = defineStore("stac", () => {
   /**
@@ -94,32 +93,18 @@ export const useSTAcStore = defineStore("stac", () => {
     await axios
       .get(absoluteUrl.value)
       .then(async (resp) => {
-        // init eodash collections
-        const collectionUrls = extractCollectionUrls(
+        await updateEodashCollections(
+          eodashCollections,
           resp.data,
           absoluteUrl.value,
+          collectionsPalette,
         );
-
-        await Promise.all(
-          collectionUrls.map((cu, idx) => {
-            const ec = new EodashCollection(cu);
-            ec.fetchCollection();
-            ec.color = collectionsPalette[idx % collectionsPalette.length];
-            return ec;
-          }),
-        ).then((collections) => {
-          // empty array from old collections
-          eodashCollections.splice(0, eodashCollections.length);
-          // update eodashCollections
-          eodashCollections.push(...collections);
-
-          selectedStac.value = resp.data;
-          // set indicator and poi
-          indicator.value = isPoi
-            ? indicator.value
-            : useGetSubCodeId(selectedStac.value);
-          poi.value = isPoi ? (selectedStac.value?.id ?? "") : "";
-        });
+        selectedStac.value = resp.data;
+        // set indicator and poi
+        indicator.value = isPoi
+          ? indicator.value
+          : useGetSubCodeId(selectedStac.value);
+        poi.value = isPoi ? (selectedStac.value?.id ?? "") : "";
       })
       .catch((err) => {
         throw new Error("error loading the selected STAC", err);
@@ -141,31 +126,17 @@ export const useSTAcStore = defineStore("stac", () => {
     await axios
       .get(absoluteUrl.value)
       .then(async (resp) => {
-        // init eodash collections
-        const collectionUrls = await extractCollectionUrls(
+        await updateEodashCollections(
+          eodashCompareCollections,
           resp.data,
           absoluteUrl.value,
+          [...collectionsPalette].reverse(),
         );
-        const reversedPalette = [...collectionsPalette].reverse();
-        await Promise.all(
-          collectionUrls.map((cu, idx) => {
-            const ec = new EodashCollection(cu);
-            ec.fetchCollection();
-            ec.color = reversedPalette[idx % collectionsPalette.length];
-            return ec;
-          }),
-        ).then((collections) => {
-          // empty array from old collections
-          eodashCompareCollections.splice(0, eodashCompareCollections.length);
-          // update eodashCompareCollections
-          eodashCompareCollections.push(...collections);
-
-          selectedCompareStac.value = resp.data;
-          compareIndicator.value = isPOI
-            ? compareIndicator.value
-            : useGetSubCodeId(selectedCompareStac.value);
-          comparePoi.value = isPOI ? (selectedCompareStac.value?.id ?? "") : "";
-        });
+        selectedCompareStac.value = resp.data;
+        compareIndicator.value = isPOI
+          ? compareIndicator.value
+          : useGetSubCodeId(selectedCompareStac.value);
+        comparePoi.value = isPOI ? (selectedCompareStac.value?.id ?? "") : "";
       })
       .catch((err) => {
         throw new Error("error loading the selected comparison STAC", err);
