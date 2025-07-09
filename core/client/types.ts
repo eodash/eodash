@@ -58,14 +58,26 @@ export interface WidgetsContainerProps {
  * @group Eodash
  * */
 export interface Layout {
-  /** Horizontal start position. Integer between 1 and 12 */
-  x: number;
-  /** Vertical start position. Integer between 1 and 12 */
-  y: number;
-  /** Width. Integer between 1 and 12 */
-  w: number;
-  /** Height. Integer between 1 and 12 */
-  h: number;
+  /**
+   * Horizontal start position. Integer between 1 and 12 or numbers seperated by "/" for different breakpoints
+   * @example "3/2/1"
+   */
+  x: number | string;
+  /**
+   *  Vertical start position. Integer between 1 and 12 or numbers seperated by "/" for different breakpoints
+   * @example "3/2/1"
+   */
+  y: number | string;
+  /**
+   *  Width. Integer between 1 and 12 or numbers seperated by "/" for different breakpoints
+   * @example "3/2/1"
+   */
+  w: number | string;
+  /**
+   * Height. Integer between 1 and 12 or numbers seperated by "/" for different breakpoints
+   * @example "3/2/1"
+   */
+  h: number | string;
 }
 /**
  * Widget type: `web-component` API
@@ -84,7 +96,9 @@ export interface WebComponentWidget<T extends ExecutionTime = "compiletime"> {
 /** @group Widgets */
 export interface TEodashMap {
   name: "EodashMap";
-  properties?: InstanceType<typeof import("^/EodashMap.vue").default>["$props"];
+  properties?: InstanceType<
+    typeof import("^/EodashMap/index.vue").default
+  >["$props"];
 }
 
 /** @group Widgets */
@@ -123,7 +137,7 @@ export interface TEodashStacInfo {
 export interface TEodashProcess {
   name: "EodashProcess";
   properties?: InstanceType<
-    typeof import("^/EodashProcess.vue").default
+    typeof import("^/EodashProcess/index.vue").default
   >["$props"];
 }
 
@@ -229,6 +243,7 @@ export interface FunctionalWidget<T extends ExecutionTime = "compiletime"> {
    */
   defineWidget: (
     selectedSTAC: import("stac-ts").StacCollection | null,
+    selectedCompareSTAC?: import("stac-ts").StacCollection | null,
   ) => StaticWidget<T> | undefined | null | false;
 }
 /**
@@ -436,3 +451,11 @@ export type EodashStyleJson = import("ol/style/flat").FlatStyleLike & {
   jsonform?: import("json-schema").JSONSchema7;
   tooltip?: { id: string; title?: string; appendix?: string }[];
 };
+
+export type LayersEventBusKeys =
+  | "layers:updated"
+  | "time:updated"
+  | "process:updated"
+  | "compareLayers:updated"
+  | "compareTime:updated"
+  | "compareProcess:updated";

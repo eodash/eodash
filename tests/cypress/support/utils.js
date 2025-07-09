@@ -9,7 +9,15 @@ export const registerPlugins = async (app, options) => {
   const vuetify = createVuetify(options.vuetify);
   app.use(vuetify);
 
-  options.pinia = options.pinia ?? createTestingPinia({ createSpy: cy.stub() });
+  options.pinia =
+    options.pinia ??
+    createTestingPinia({
+      createSpy: cy.stub().returns({
+        selectedStac: { value: null },
+        selectedCompareStac: { value: null },
+        stac: { value: null },
+      }),
+    });
   app.use(options.pinia);
 };
 

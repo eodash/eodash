@@ -152,9 +152,10 @@ export const setCollectionsPalette = (colors) => {
 
 /**
  * Updates the eodash collections by fetching and processing collection data from specified URLs
- * @param {import("stac-ts").StacCollection} indicator - The indicator object
- * @param {string} indicatorUrl - The absolute indicator URL
+ * @param {import("stac-ts").StacCollection} selectedStac - The indicator object
+ * @param {string} absoluteUrl - The absolute indicator URL
  * @param {import('@/eodashSTAC/EodashCollection').EodashCollection[]} eodashCollections  - The array of existing eodash collections to be updated
+ * @param {string[]} colorPalette - The color palette to assign to each collection
  * @async
  * @description This function extracts collection URLs from the indicator, fetches collection data,
  * processes parquet items if available, and updates the eodashCollections array with new collection data.
@@ -162,24 +163,26 @@ export const setCollectionsPalette = (colors) => {
  */
 export const updateEodashCollections = async (
   eodashCollections,
-  indicator,
-  indicatorUrl,
+  selectedStac,
+  absoluteUrl,
+  colorPalette,
 ) => {
   // init eodash collections
-  const collectionUrls = extractCollectionUrls(indicator, indicatorUrl);
+  const collectionUrls = extractCollectionUrls(selectedStac, absoluteUrl);
 
   await Promise.all(
     collectionUrls.map((cu, idx) => {
       return new Promise((resolve, _reject) => {
         const ec = new EodashCollection(cu);
         ec.fetchCollection().then((col) => {
+          // assign color from the palette
+          ec.color = colorPalette[idx % colorPalette.length];
+
           const parquetAsset = Object.values(col.assets ?? {}).find(
             (asset) =>
               asset.type === "application/vnd.apache.parquet" &&
               asset.roles?.includes("collection-mirror"),
           );
-
-          ec.color = collectionsPalette[idx % collectionsPalette.length];
 
           if (!parquetAsset) {
             resolve(ec);

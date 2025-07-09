@@ -1,7 +1,7 @@
 <template>
   <div>
     <v-table
-      v-if="jobs.length"
+      v-if="currentJobs.length"
       density="compact"
       style="background-color: transparent"
     >
@@ -15,7 +15,7 @@
         </tr>
       </thead>
       <tbody>
-        <tr v-for="item in jobs" :key="item.date">
+        <tr v-for="item in currentJobs" :key="item.jobID">
           <td>
             {{ new Date(item.job_start_datetime).toISOString().slice(0, 16) }}
           </td>
@@ -24,7 +24,7 @@
             <v-btn
               :disabled="item.status !== 'successful'"
               color="primary"
-              @click="loadProcess(item, selectedStac)"
+              @click="loadProcess(item, selectedStac, mapElement)"
               :icon="[mdiUploadBox]"
               variant="text"
               v-tooltip="'Load results to map'"
@@ -45,7 +45,13 @@
           <td style="padding: 0px">
             <v-btn
               color="#ff5252"
-              @click="deleteJob(item)"
+              @click="
+                deleteJob(
+                  toRef(() => currentJobs),
+                  item,
+                  currentIndicator,
+                )
+              "
               :icon="[mdiTrashCanOutline]"
               variant="text"
               v-tooltip="'Remove job'"
@@ -59,21 +65,37 @@
 </template>
 <script setup>
 import { mdiUploadBox, mdiDownloadBox, mdiTrashCanOutline } from "@mdi/js";
-import { toRefs } from "vue";
+import { onMounted, toRef, toRefs } from "vue";
 import { useSTAcStore } from "@/store/stac";
-import { indicator } from "@/store/states";
+import { compareIndicator, indicator } from "@/store/states";
 import {
   deleteJob,
   downloadPreviousResults,
-  jobs,
   loadProcess,
   updateJobsStatus,
 } from "./methods/async";
 import { useOnLayersUpdate } from "@/composables";
-
+import { compareJobs, jobs } from "./states";
+const { enableCompare, mapElement } = defineProps({
+  enableCompare: {
+    type: Boolean,
+    default: false,
+  },
+  mapElement: {
+    /** @type {import("vue").PropType<import("@eox/map").EOxMap | null>} */
+    type: Object,
+    default: () => null,
+  },
+});
 const { selectedStac } = toRefs(useSTAcStore());
+const currentJobs = enableCompare ? compareJobs : jobs;
+const currentIndicator = enableCompare ? compareIndicator : indicator;
 
-useOnLayersUpdate(() => updateJobsStatus(jobs, indicator));
+onMounted(() => {
+  updateJobsStatus(currentJobs, currentIndicator.value);
+});
+
+useOnLayersUpdate(() => updateJobsStatus(currentJobs, currentIndicator.value));
 </script>
 <style lang="scss">
 div.v-table__wrapper {
