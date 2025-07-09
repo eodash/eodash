@@ -8,7 +8,6 @@ import {
 } from "@/composables/index";
 import { eodashKey } from "@/utils/keys";
 import { compareIndicator, comparePoi, indicator, poi } from "@/store/states";
-import { extractCollectionUrls } from "@/eodashSTAC/helpers";
 import {
   eodashCollections,
   eodashCompareCollections,
