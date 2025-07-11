@@ -15,6 +15,8 @@ export const datetime = ref(new Date().toISOString());
 
 /** Currently selected indicator */
 export const indicator = ref("");
+/** Currently selected compare indicator */
+export const compareIndicator = ref("");
 
 /**
  * Current map position
@@ -39,3 +41,7 @@ export const activeTemplate = ref("");
  * Selected point of interest, used for location collections
  */
 export const poi = ref("");
+/**
+ * Selected point of interest for comparison, used for location collections
+ */
+export const comparePoi = ref("");

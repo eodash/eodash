@@ -116,6 +116,7 @@ export const eodashViteConfig = /** @type {import("vite").UserConfigFn} */ (
             "@eox/layout",
             "@eox/itemfilter",
             "@eox/stacinfo",
+            "@eox/elements-utils",
           ],
           noDiscovery: true,
         },

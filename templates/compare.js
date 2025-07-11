@@ -30,41 +30,42 @@ export default {
   },
   widgets: [
     {
-      id: "tools",
+      id: "Tools",
       type: "internal",
       title: "Tools",
-      layout: { x: 0, y: 0, w: 3, h: 1 },
+      layout: { x: 0, y: 0, w: "3/3/2", h: 1 },
       widget: {
         name: "EodashTools",
         properties: {
           showLayoutSwitcher: false,
           itemFilterConfig: {
-            cssVars: {
-              "--form-flex-direction": "row",
-            },
+            resultType: "cards",
+            filtersTitle: "Select an indicator",
+            resultsTitle: "",
+            subTitleProperty: "subtitle",
+            imageProperty: "thumbnail",
           },
         },
       },
     },
     // compare indicators
     {
-      id: "compare-tools",
+      id: "CompareTools",
       type: "internal",
       title: "Tools",
-      layout: { x: 9, y: 0, w: 3, h: 1 },
+      layout: { x: "9/9/10", y: 0, w: "3/3/2", h: 1 },
       widget: {
         name: "EodashTools",
         properties: {
           showLayoutSwitcher: false,
-          indicatorBtnText: "Select an indicator to compare",
+          indicatorBtnText: "Select second indicator",
           itemFilterConfig: {
             enableCompare: true,
-            // resultsTitle:"Select an indicator to compare",
+            resultType: "cards",
             filtersTitle: "Select an indicator to compare",
-            // filterProperties: [],
-            cssVars: {
-              "--form-flex-direction": "row",
-            },
+            resultsTitle: "",
+            subTitleProperty: "subtitle",
+            imageProperty: "thumbnail",
           },
         },
       },
@@ -73,15 +74,15 @@ export default {
       id: "layercontrol",
       type: "internal",
       title: "Layers",
-      layout: { x: 0, y: 1, w: 3, h: 6 },
+      layout: { x: 0, y: 1, w: "3/3/2", h: 5 },
       widget: {
         name: "EodashLayerControl",
       },
     },
     {
-      id: "compare-layercontrol",
+      id: "CompareLayerControl",
       title: "Comparison Layers",
-      layout: { x: 9, y: 1, w: 3, h: 6 },
+      layout: { x: "9/9/10", y: 1, w: "3/3/2", h: 5 },
       type: "internal",
       widget: {
         name: "EodashLayerControl",
@@ -93,12 +94,27 @@ export default {
     {
       defineWidget: (selectedSTAC) =>
         includesProcess(selectedSTAC) && {
-          id: "Processes",
+          id: "Process",
           type: "internal",
           title: "Processes",
-          layout: { x: 9, y: 6, w: 3, h: 5 },
+          layout: { x: 0, y: 6, w: "3/3/2", h: 5 },
           widget: {
             name: "EodashProcess",
+          },
+        },
+    },
+    {
+      defineWidget: (_, updatedCompareStac) =>
+        includesProcess(updatedCompareStac, true) && {
+          id: "CompareMapProcess",
+          type: "internal",
+          title: "Processes",
+          layout: { x: 9, y: 6, w: "3/3/2", h: 5 },
+          widget: {
+            name: "EodashProcess",
+            properties: {
+              enableCompare: true,
+            },
           },
         },
     },
@@ -107,7 +123,7 @@ export default {
         return selected
           ? {
               id: "Buttons",
-              layout: { x: 8, y: 0, w: 1, h: 2 },
+              layout: { x: "8/8/9", y: 0, w: 1, h: 2 },
               title: "Buttons",
               type: "internal",
               widget: {
@@ -128,7 +144,7 @@ export default {
           ? {
               id: "expert-Datepicker",
               type: "internal",
-              layout: { x: 5, y: 8, w: 2, h: 4 },
+              layout: { x: 4, y: 7, w: 4, h: 5 },
               title: "Date",
               widget: {
                 name: "EodashDatePicker",

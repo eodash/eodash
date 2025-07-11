@@ -178,15 +178,24 @@ export const indexHtml = `
   <link rel="icon" href="/favicon.ico" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Welcome to Eodash v5</title>
+  <style>
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      padding: 0;
+      margin: 0;
+    }
+  </style>
 </head>
 
 <body>
 ${
   userConfig.lib
-    ? `<eo-dash style="height:100dvh;"/>
+    ? `<eo-dash style="height:100%;"/>
 <script type="module" src="${path.resolve(`/@fs/${appPath}`, `core/client/asWebComponent.js`)}"></script>
 `
-    : ` <div id="app" />
+    : ` <div id="app" style="height:100%;" />
 <script type="module" src="${path.resolve(`/@fs/${appPath}`, `core/client/render.js`)}"></script>
 `
 }

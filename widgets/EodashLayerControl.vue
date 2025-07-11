@@ -1,17 +1,24 @@
 <template>
-  <span class="d-flex flex-column fill-height overflow-auto">
+  <span class="d-flex flex-column">
     <eox-layercontrol
       v-if="showControls"
+      :key="mapElement"
       v-bind="config"
       :for="mapElement"
       @datetime:updated="debouncedHandleDateTime"
-      class="fill-height"
       toolsAsList="true"
       style="--eox-background-color: transparent"
       ref="eoxLayercontrol"
       @layerConfig:change="onLayerConfigChange"
-      .styleOverride="styleOverride"
-    />
+    >
+      <slot name="layerstitle">
+        <div>
+          <p v-if="title" class="mt-2 mb-2">
+            <strong>{{ title }}</strong>
+          </p>
+        </div>
+      </slot>
+    </eox-layercontrol>
   </span>
 </template>
 <script setup>
@@ -43,6 +50,10 @@ const props = defineProps({
   tools: {
     type: Array,
     default: () => ["datetime", "info", "config", "legend", "opacity"],
+  },
+  title: {
+    type: String || Boolean,
+    default: "Layers",
   },
   cssVars: {
     type: Object,
@@ -79,7 +90,6 @@ const handleDatetimeUpdate = async (evt) => {
   let updatedLayers = [];
 
   if (ec) {
-    await ec.fetchCollection();
     updatedLayers = await ec.updateLayerJson(
       datetime,
       layer.get("id"),
@@ -128,10 +138,9 @@ const onLayerConfigChange = (evt) => {
     layerControlFormValue.value = evt.detail.jsonformValue;
   }
 };
-
-const styleOverride = `
-input[type="range"] {
-  background:transparent !important;
-}
-`;
 </script>
+<style scoped>
+eox-layercontrol {
+  overflow: auto;
+}
+</style>

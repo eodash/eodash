@@ -6,12 +6,12 @@
       :attributes="attributes"
       :masks="masks"
       expanded
-      class="bg-surface overflow-auto"
+      class="overflow-auto"
       style="background-color: transparent; max-width: 100%"
     >
       <template v-if="toggleCalendar" #default="{ inputValue, inputEvents }">
         <div
-          class="bg-surface d-flex flex-row align-center justify-center pb-1"
+          class="d-flex flex-row align-center justify-center pb-1"
           style="overflow: hidden; width: 100%"
         >
           <v-btn
@@ -119,7 +119,6 @@ import {
   reactive,
   ref,
   customRef,
-  toRef,
   onMounted,
   computed,
   useTemplateRef,
@@ -127,10 +126,11 @@ import {
 import { useSTAcStore } from "@/store/stac";
 import { datetime } from "@/store/states";
 import { mdiRayStartArrow, mdiRayEndArrow } from "@mdi/js";
-import { eodashCollections, collectionsPalette } from "@/utils/states";
+import { eodashCollections, eodashCompareCollections } from "@/utils/states";
 import log from "loglevel";
-import { makePanelTransparent } from "@/composables";
+import { useTransparentPanel } from "@/composables";
 import { getDatetimeProperty } from "@/eodashSTAC/helpers";
+import { storeToRefs } from "pinia";
 
 const { lgAndDown } = useDisplay();
 
@@ -215,30 +215,48 @@ defineProps({
  */
 const attributes = reactive([]);
 
-const selectedStac = toRef(useSTAcStore(), "selectedStac");
+const { selectedCompareStac, selectedStac } = storeToRefs(useSTAcStore());
 
 watch(
-  selectedStac,
-  async (updatedStac, previousStac) => {
-    if (updatedStac && previousStac?.id !== updatedStac.id) {
-      log.debug("Datepicker selected STAC change triggered");
-      // remove old values
-      attributes.splice(0, attributes.length);
+  [selectedStac, selectedCompareStac],
+  async ([updatedStac, updatedCompareStac]) => {
+    attributes.splice(0, attributes.length);
+    if (!updatedStac && !updatedCompareStac) {
+      log.debug("No STAC selected, clearing datepicker attributes");
+      return;
+    }
 
-      for (let idx = 0; idx < eodashCollections.length; idx++) {
-        log.debug("Retrieving dates", eodashCollections[idx]);
-        await eodashCollections[idx].fetchCollection();
-        const dateProperty = getDatetimeProperty(
-          eodashCollections[idx].getItems(),
-        );
+    const attrs =
+      /** @type {Partial<import("v-calendar/dist/types/src/utils/attribute").AttributeConfig>[]} */ ([
+        ...(await fetchCollectionsAttributes(eodashCollections)),
+        ...(await fetchCollectionsAttributes(eodashCompareCollections)),
+      ]);
+    attributes.push(...attrs);
+  },
+  { immediate: true },
+);
+
+/**
+ *
+ * @param {import("@/eodashSTAC/EodashCollection").EodashCollection[]} eodashCollections
+ */
+async function fetchCollectionsAttributes(eodashCollections) {
+  if (!eodashCollections || !eodashCollections.length) {
+    return [];
+  }
+
+  return await Promise.all(
+    eodashCollections.map((ec, idx) => {
+      return ec.fetchCollection().then(() => {
+        const dateProperty = getDatetimeProperty(ec.getItems());
         if (!dateProperty) {
-          continue;
+          return [];
         }
         const dates = [
           ...new Set(
-            eodashCollections[idx].getItems()?.reduce((valid, it) => {
+            ec.getItems()?.reduce((valid, item) => {
               const parsed = Date.parse(
-                /** @type {string} */ (it[dateProperty]),
+                /** @type {string} */ (item[dateProperty]),
               );
               if (parsed) {
                 valid.push(new Date(parsed));
@@ -247,12 +265,11 @@ watch(
             }, /** @type {Date[]} */ ([])),
           ),
         ];
-        attributes.push({
+        return {
           key: "id-" + idx.toString() + Math.random().toString(16).slice(2),
           dot: {
             style: {
-              backgroundColor:
-                collectionsPalette[idx % collectionsPalette.length],
+              backgroundColor: ec.color,
             },
           },
           dates,
@@ -262,13 +279,11 @@ watch(
               "font-weight": "bold",
             },
           },
-        });
-      }
-    }
-  },
-  { immediate: true },
-);
-
+        };
+      });
+    }),
+  );
+}
 /**
  * @param {boolean} reverse
  */
@@ -303,7 +318,7 @@ onMounted(() => {
     : "translate3d(0px,-80px,0)";
 });
 
-makePanelTransparent(rootEl);
+useTransparentPanel(rootEl);
 </script>
 <style>
 .vc-popover-content {
@@ -328,7 +343,10 @@ makePanelTransparent(rootEl);
   .datePicker {
     position: absolute;
     bottom: 0;
-    width: 100%;
+    left: 0;
+    right: 0;
+    margin-inline: auto;
+    width: fit-content;
   }
 }
 .vc-day-content {
@@ -342,5 +360,28 @@ makePanelTransparent(rootEl);
 
 .vc-popover-content-wrapper {
   transform: v-bind("transform") !important;
+}
+
+.vc-date-picker-content,
+.datePicker {
+  backdrop-filter: blur(10px) !important;
+  border-radius: 8px;
+  border: none;
+  box-shadow:
+    0px 0px 1px rgba(24, 39, 75, 0.22),
+    0px 6px 12px -6px rgba(24, 39, 75, 0.12),
+    0px 8px 24px -4px rgba(24, 39, 75, 0.08);
+  background-color: rgba(
+    var(--v-theme-surface),
+    var(--v-surface-opacity, 0.8)
+  ) !important;
+}
+
+.vc-popover-caret.direction-top.align-left {
+  clip-path: polygon(0% 0%, 100% 0%, 0% 100%, 0% 100%);
+}
+
+.vc-bordered {
+  border: none;
 }
 </style>

@@ -31,7 +31,7 @@ const baseConfig = {
         surface: "#ffff",
       },
       variables: {
-        "surface-opacity": 0.6,
+        "surface-opacity": 0.8,
         "primary-opacity": 0.8,
       },
       // Bank-Wong palette
@@ -58,8 +58,8 @@ const baseConfig = {
 
 /** @param {import("@/types").Eodash} config */
 export const getBaseConfig = (config) => {
-  const merged = {}
-  deepmergeInto(merged,baseConfig, config || {});
+  const merged = {};
+  deepmergeInto(merged, baseConfig, config || {});
   return merged;
 };
 

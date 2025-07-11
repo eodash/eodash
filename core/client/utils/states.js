@@ -114,5 +114,3 @@ export const dataThemesBrands = {
     color: "#42C7B8",
   },
 };
-/** used for switching in and out of compare mode @see {@link widgets/EodashMapBtns.vue} */
-export const switchToCompare = ref(true);

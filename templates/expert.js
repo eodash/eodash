@@ -30,10 +30,10 @@ export default {
   },
   widgets: [
     {
-      id: Symbol(),
+      id: "Tools",
       type: "internal",
       title: "Tools",
-      layout: { x: 0, y: 0, w: 3, h: 1 },
+      layout: { x: 0, y: 0, w: "3/3/2", h: 1 },
       widget: {
         name: "EodashTools",
         properties: {
@@ -44,18 +44,15 @@ export default {
             subTitleProperty: "subtitle",
             imageProperty: "thumbnail",
             aggregateResults: "collection_group",
-            style: {
-              "--form-flex-direction": "row",
-            },
           },
         },
       },
     },
     {
-      id: Symbol(),
+      id: "Layercontrol",
       type: "internal",
       title: "Layers",
-      layout: { x: 0, y: 1, w: 3, h: 6 },
+      layout: { x: 0, y: 1, w: "3/3/2", h: 11 },
       widget: {
         name: "EodashLayerControl",
       },
@@ -66,7 +63,7 @@ export default {
           ? {
               id: "Information",
               title: "Information",
-              layout: { x: 9, y: 0, w: 3, h: 6 },
+              layout: { x: "9/9/10", y: 0, w: "3/3/2", h: 6 },
               type: "internal",
               widget: {
                 name: "EodashStacInfo",
@@ -81,7 +78,7 @@ export default {
           ? {
               id: "expert-datepicker",
               type: "internal",
-              layout: { x: 5, y: 11, w: 2, h: 1 },
+              layout: { x: 4, y: 7, w: 4, h: 5 },
               title: "Date",
               widget: {
                 name: "EodashDatePicker",
@@ -100,7 +97,7 @@ export default {
         return selected
           ? {
               id: "Buttons",
-              layout: { x: 8, y: 0, w: 1, h: 2 },
+              layout: { x: "8/8/9", y: 0, w: 1, h: 2 },
               title: "Buttons",
               type: "internal",
               widget: {
@@ -116,7 +113,7 @@ export default {
           id: "Processes",
           type: "internal",
           title: "Processes",
-          layout: { x: 9, y: 6, w: 3, h: 5 },
+          layout: { x: "9/9/10", y: 6, w: "3/3/2", h: 5 },
           widget: {
             name: "EodashProcess",
           },

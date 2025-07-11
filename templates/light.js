@@ -30,10 +30,10 @@ export default {
   },
   widgets: [
     {
-      id: Symbol(),
+      id: "tools-light",
       type: "internal",
       title: "Tools",
-      layout: { x: 0, y: 0, w: 3, h: 1 },
+      layout: { x: 0, y: 0, w: "3/3/2", h: 1 },
       widget: {
         name: "EodashTools",
         properties: {
@@ -42,11 +42,13 @@ export default {
           itemFilterConfig: {
             resultType: "cards",
             filtersTitle: "",
-            style: "--padding: 72px",
             filterProperties: [],
             resultsTitle: "Explore more indicators",
             subTitleProperty: "subtitle",
             imageProperty: "thumbnail",
+            cssVars: {
+              "--filter-display": "none",
+            },
           },
         },
       },
@@ -58,21 +60,23 @@ export default {
               id: "layercontrol-light",
               type: "internal",
               title: "Layers",
-              layout: { x: 0, y: 1, w: 3, h: 3 },
+              layout: { x: 0, y: 1, w: "3/3/2", h: 10 },
               widget: {
                 name: "EodashLayerControl",
                 properties: {
                   slider: false,
                   tools: ["datetime", "info", "legend"],
                   cssVars: {
-                    "--list-padding": "0",
+                    "--list-padding": "-8px",
                     "--tools-button-visibility": "none",
                     "--layer-input-visibility": "none",
                     "--layer-type-visibility": "none",
-                    "--padding": "16px",
+                    "--padding": "8px",
                     "--padding-vertical": "16px",
                     "--layer-tools-button-visibility": "none",
+                    "--layer-toggle-button-visibility": "flex",
                     "--layer-summary-visibility": "none",
+                    "--layer-visibility": "none",
                   },
                 },
               },
@@ -87,7 +91,7 @@ export default {
               id: "stacinfo-light",
               type: "internal",
               title: "Information",
-              layout: { x: 9, y: 0, w: 3, h: 6 },
+              layout: { x: "9/9/10", y: 0, w: "3/3/2", h: 12 },
               widget: {
                 name: "EodashStacInfo",
                 properties: {
@@ -109,7 +113,7 @@ export default {
           ? {
               id: "light-datepicker",
               type: "internal",
-              layout: { x: 5, y: 8, w: 2, h: 4 },
+              layout: { x: 4, y: 7, w: 4, h: 5 },
               title: "Date",
               widget: {
                 name: "EodashDatePicker",
