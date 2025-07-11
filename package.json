@@ -5,7 +5,7 @@
   "types": "./dist/types/core/client/types.d.ts",
   "files": [
     "core/client",
-    "dashboards",
+    "templates",
     "widgets",
     "dist"
   ],
@@ -19,6 +19,9 @@
       ],
       "config": [
         "./dist/node/types.d.ts"
+      ],
+      "templates": [
+        "./dist/types/templates/index.d.ts"
       ]
     }
   },
@@ -30,8 +33,8 @@
       "default": "./dist/client/eo-dash.js"
     },
     "./webcomponent.css": "./dist/client/eo-dash.css",
-    "./dashboards": {
-      "default": "./dashboards/index.js"
+    "./templates": {
+      "default": "./dist/client/templates.js"
     },
     "./config": {
       "default": "./dist/node/main.js"
@@ -39,12 +42,12 @@
   },
   "browser": "./core/client/main.js",
   "scripts": {
-    "start": "npx eodash dev --entryPoint dashboards/primary/index.js",
+    "start": "npx eodash dev --entryPoint templates/baseConfig/index.js",
     "prepare": "rollup -c",
     "prepack": "npm run build:lib && npm run build:types",
-    "dev": "npx eodash dev --entryPoint dashboards/primary/index.js",
-    "dev:lib": "npx eodash dev --entryPoint dashboards/primary/index.js --lib",
-    "build": "npx eodash build --entryPoint dashboards/primary/index.js",
+    "dev": "npx eodash dev --entryPoint templates/baseConfig/index.js",
+    "dev:lib": "npx eodash dev --entryPoint templates/baseConfig/index.js --lib",
+    "build": "npx eodash build --entryPoint templates/baseConfig/index.js",
     "build:lib": "npx eodash build --entryPoint false --lib --outDir dist/client",
     "build:cli": "rollup -c",
     "build:types": "vue-tsc --declaration  --emitDeclarationOnly && tsc-alias",

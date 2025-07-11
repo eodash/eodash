@@ -133,12 +133,24 @@ export const eodashViteConfig = /** @type {import("vite").UserConfigFn} */ (
             minify: false,
             lib: {
               entry: path.join(appPath, "core/client/asWebComponent.js"),
-              fileName: "eo-dash",
+              fileName: (_, entryFileName) => {
+                console.log(`Building ${entryFileName}...`);
+                return entryFileName === "asWebComponent"
+                  ? "eo-dash.js"
+                  : "templates.js";
+              },
+              cssFileName: "eo-dash",
               formats: ["es"],
               name: "@eodash/eodash",
             },
             rollupOptions: {
-              input: path.join(appPath, "core/client/asWebComponent.js"),
+              input: {
+                asWebComponent: path.join(
+                  appPath,
+                  "core/client/asWebComponent.js",
+                ),
+                templates: path.join(appPath, "templates/index.js"),
+              },
               // vuetify is compiled by "vite-plugin-vuetify"
               external: (source) => {
                 const isCssOrVuetify =
@@ -148,6 +160,8 @@ export const eodashViteConfig = /** @type {import("vite").UserConfigFn} */ (
                 const isClientDep = clientModules.some((m) =>
                   source.startsWith(m),
                 );
+                // "user:config" will be removed by rollup treeshaking in this case, but it checks whether it's
+                // a valid import prior to that
                 const isUserConfig = source === "user:config" && !entryPath;
                 return (!isCssOrVuetify && isClientDep) || isUserConfig;
               },

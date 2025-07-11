@@ -38,9 +38,9 @@
     "widgets/**/*.ts",
     "widgets/**/*.js",
     "widgets/**/*.d.ts",
-    "dashboards/**/*.js",
-    "dashboards/**/*.ts",
-    "dashboards/**/*.d.ts",
+    "templates/**/*.js",
+    "templates/**/*.ts",
+    "templates/**/*.d.ts",
     "core/node/**/*.d.ts"
   ]
 }
