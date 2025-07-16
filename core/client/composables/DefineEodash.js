@@ -29,6 +29,8 @@ export const useEodashRuntime = async (runtimeConfig) => {
   }
 
   async function importUserConfig() {
+    /* global __userConfigExist__:readonly */
+    // injected by vite
     if (__userConfigExist__) {
       return import("user:config").then(async (m) => await m["default"]);
     }

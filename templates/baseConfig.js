@@ -56,9 +56,11 @@ const baseConfig = {
   },
 };
 
-/** @param {import("@/types").Eodash} config */
+/**
+ * @param {Partial<import("@/types").Eodash>} config
+ */
 export const getBaseConfig = (config) => {
-  const merged = {};
+  const merged = /** @type {import("@/types").Eodash} */ ({});
   deepmergeInto(merged, baseConfig, config || {});
   return merged;
 };
