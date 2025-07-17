@@ -8,7 +8,7 @@ Checkout the [documentation](https://eodash.github.io/eodash/) for a detailed gu
 
 ## Get Started
 
-Install all the required dependecies after cloning or downloading the repository using Node v22.12.0 or higher:
+Install all the required dependecies after cloning or downloading the repository using Node v18 or higher:
 
 ```bash
 npm run install
@@ -43,6 +43,7 @@ npm run build -- --lib
     .
     ├── core               # CLI & Client source code
     ├── docs               # Documentation files
+    ├── templates          # Base configurations and eodash templates
     ├── tests              # CLI & Client component tests folder
     ├── widgets            # Vue components as internal widgets.
     ├── public             # Statically served directory
