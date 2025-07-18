@@ -135,7 +135,6 @@ export const eodashViteConfig = /** @type {import("vite").UserConfigFn} */ (
             lib: {
               entry: path.join(appPath, "core/client/asWebComponent.js"),
               fileName: (_, entryFileName) => {
-                console.log(`Building ${entryFileName}...`);
                 return entryFileName === "asWebComponent"
                   ? "eo-dash.js"
                   : "templates.js";

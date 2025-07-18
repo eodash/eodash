@@ -46,7 +46,7 @@ if (!eodash) {
 const theme = useUpdateTheme("dashboardTheme", {
   ...(eodash?.brand?.theme ?? {}),
 });
-theme.global.name.value = "dashboardTheme";
+theme.change("dashboardTheme");
 
 await loadFont(eodash?.brand?.font, props.isWebComponent);
 
