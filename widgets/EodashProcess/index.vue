@@ -15,6 +15,7 @@
       .dataValues="toRaw(chartData)"
       @click:item="onChartClick"
       :style="chartStyles"
+      .opt="vegaEmbedOptions"
     />
     <div class="mt-4 text-right">
       <v-btn
@@ -59,11 +60,17 @@ import { download } from "./methods/utils";
 import { compareJobs, jobs } from "./states";
 import { mdiCogPlayOutline, mdiDownloadCircleOutline } from "@mdi/js";
 
-const { enableCompare } = defineProps({
+const { enableCompare, vegaEmbedOptions } = defineProps({
   enableCompare: {
     type: Boolean,
     default: false,
   },
+  vegaEmbedOptions: {
+    type: Object,
+    default: {
+      actions: true,
+    }
+  }
 });
 /** @type {import("vue").Ref<import("vega").Spec|null>} */
 const chartSpec = ref(null);
