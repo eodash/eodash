@@ -369,7 +369,7 @@ export const useGetSubCodeId = (collection) => {
     return "";
   }
 
-  if ("useSubCode" in (eodash?.options ?? {}) && eodash?.options?.useSubCode) {
+  if (eodash?.options?.useSubCode) {
     return typeof collection.subcode === "string"
       ? collection.subcode
       : /** @type {string} */ (collection.id);

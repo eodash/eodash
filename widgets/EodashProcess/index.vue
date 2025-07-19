@@ -67,8 +67,8 @@ const { enableCompare, vegaEmbedOptions } = defineProps({
   },
   vegaEmbedOptions: {
     type: Object,
-    default: {
-      actions: true,
+    default() {
+      return {actions: true, }
     }
   }
 });
