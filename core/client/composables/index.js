@@ -16,6 +16,7 @@ import { inject, nextTick, onMounted, onUnmounted, watch } from "vue";
 import { useSTAcStore } from "@/store/stac";
 import log from "loglevel";
 import { eodashKey, eoxLayersKey } from "@/utils/keys";
+import { useEodash } from "@/utils/useEodash";
 import { useEventBus } from "@vueuse/core";
 import { isFirstLoad } from "@/utils/states";
 import { setCollectionsPalette } from "@/utils";
@@ -363,7 +364,7 @@ export const useEmitLayersUpdate = async (event, mapEl, layers) => {
  * @returns {string} - Returns the collection id or subcode if `useSubCode` is enabled
  */
 export const useGetSubCodeId = (collection) => {
-  const eodash = inject(eodashKey);
+  const eodash = useEodash();
 
   if (!collection) {
     return "";
