@@ -30,7 +30,7 @@ export interface EodashConfig {
   /** Cache folder */
   cacheDir?: string;
   /** Specifies main entry file, exporting `createEodash` */
-  entryPoint?: string;
+  entryPoint?: string | false;
   /** File exporting eodash client runtime config */
   runtime?: string;
   /** Set a custom path for importing user defined internal widgets */

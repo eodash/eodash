@@ -1,72 +1,64 @@
 import store from "@/store";
 import { eodashKey } from "@/utils/keys";
-import { inject } from "vue";
+import { inject, reactive } from "vue";
 
 /**
  * Handles importing user defined instance of Eodash
  *
  * @async
  * @param {string | undefined} runtimeConfig
- * @returns {Promise<import("@/types").Eodash>}
+ * @returns {Promise<import("@/types").Eodash | null | undefined>}
  * @see {@linkplain '@/eodash.js'}
  */
 export const useEodashRuntime = async (runtimeConfig) => {
+  let eodashConfig;
   const eodash = /** @type {import("@/types").Eodash} */ (inject(eodashKey));
-  /** @param {import("@/types").Eodash} config */
-  const assignInstance = (config) => {
-    if ("template" in config) {
-      //@ts-expect-error to do
-      delete eodash.templates;
-      //@ts-expect-error to do
-      eodash.template = config.template;
-    } else if ("templates" in config) {
-      //@ts-expect-error to do
-      delete eodash.template;
-      //@ts-expect-error to do
-      eodash.templates = config.templates;
-    }
-    /** @type {(keyof import("@/types").Eodash)[]} */ (
-      Object.keys(eodash)
-    ).forEach((key) => {
-      //@ts-expect-error to do
-      eodash[key] = config[key];
-    });
-  };
 
   if (runtimeConfig) {
-    assignInstance(
-      (
-        await import(
-          /* @vite-ignore */ new URL(runtimeConfig, import.meta.url).href
-        )
-      ).default,
-    );
-    return eodash;
+    eodashConfig = await import(
+      /* @vite-ignore */ new URL(runtimeConfig, import.meta.url).href
+    ).then(async (m) => await m["default"]);
+    if (!eodashConfig) {
+      throw new Error(
+        "No dashboard configuration defined in the runtime config:" +
+          runtimeConfig,
+      );
+    }
+    Object.assign(eodash, eodashConfig);
+    return reactive(eodashConfig);
   }
 
-  try {
-    const configJs = "/config.js";
-    assignInstance(
-      (await import(/* @vite-ignore */ new URL(configJs, import.meta.url).href))
-        .default,
-    );
-  } catch {
-    try {
-      assignInstance(
-        await import("user:config").then(async (m) => await m["default"]),
-      );
-    } catch {
-      console.error("no dashboard configuration defined");
+  async function importUserConfig() {
+    /* global __userConfigExist__:readonly */
+    // injected by vite
+    if (__userConfigExist__) {
+      return import("user:config").then(async (m) => await m["default"]);
     }
   }
-  return eodash;
+  try {
+    const configJs = "/config.js";
+    eodashConfig = await import(
+      /* @vite-ignore */ new URL(configJs, import.meta.url).href
+    ).then(async (m) => await m["default"]);
+    if (!eodashConfig) {
+      eodashConfig = await importUserConfig();
+    }
+  } catch {
+    try {
+      eodashConfig = await importUserConfig();
+    } catch {
+      console.error("no dashboard configuration defined");
+      eodashConfig = null;
+    }
+  }
+  Object.assign(eodash, eodashConfig);
+  return reactive(eodash);
 };
 
 /**
- * @param {((
- *       store: typeof import("@/store").default,
- *     ) => (Promise<import("@/types").Eodash> | import("@/types").Eodash))
- *   | import("@/types").Eodash} config
+ * @template {import("@/types").Eodash} T
+ * @param {T | ((store: typeof import("@/store").default) => Promise<T>)} config
+ * @returns {Promise<T>}
  */
 export const createEodash = async (config) => {
   if (config instanceof Function) {

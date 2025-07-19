@@ -1,10 +1,10 @@
 import vuetify from "./vuetify";
 import { createPinia } from "pinia";
-import eodash from "@/eodash";
 import VCalendar from "v-calendar";
-import { eodashKey } from "@/utils/keys";
 import store from "../store";
 import log from "loglevel";
+import { eodashKey } from "@/utils/keys";
+import { reactive } from "vue";
 
 export const pinia = createPinia();
 
@@ -17,5 +17,6 @@ export function registerPlugins(app) {
     .use(pinia)
     // Use plugin with optional defaults
     .use(VCalendar, {})
-    .provide(eodashKey, eodash);
+    //@ts-expect-error reactive placeholder for eodash
+    .provide(eodashKey, reactive({}));
 }
