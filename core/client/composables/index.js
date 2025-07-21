@@ -16,13 +16,43 @@ import { inject, nextTick, onMounted, onUnmounted, watch } from "vue";
 import { useSTAcStore } from "@/store/stac";
 import log from "loglevel";
 import { eodashKey, eoxLayersKey } from "@/utils/keys";
-import { useEodash } from "@/utils/useEodash";
 import { useEventBus } from "@vueuse/core";
 import { isFirstLoad } from "@/utils/states";
 import { setCollectionsPalette } from "@/utils";
 import mustache from "mustache";
 import { toAbsolute } from "stac-js/src/http.js";
 import axios from "@/plugins/axios";
+
+
+/**
+/** @type {import('@/types').Eodash | null}*/
+
+let _eodash = null;
+
+/**
+ * Call this once in a top-level component to inject and store the reactive eodash object.
+ * @throws {Error} If eodash is not found in the inject context
+ */
+export function provideEodashInstance() {
+  const injected = inject(eodashKey);
+  if (!injected) {
+    throw new Error('Missing injected eodash – did you forget to call provideEodashInstance in a component?');
+  }
+  _eodash = injected;
+}
+
+/**
+ * Access the reactive eodash configuration anywhere after it has been provided.
+ * @returns {import('@/types').Eodash | null}
+ * @throws {Error} If eodash was not yet provided
+ */
+export function useEodash() {
+  if (!_eodash) {
+    throw new Error('Eodash not yet available – call provideEodashInstance() first.');
+  }
+  return _eodash;
+}
+
 
 /**
  * Creates an absolute URL from a relative link and assignes it to `currentUrl`
