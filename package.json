@@ -28,7 +28,6 @@
     "./webcomponent": {
       "default": "./dist/client/eo-dash.js"
     },
-    "./webcomponent.css": "./dist/client/eo-dash.css",
     "./config": {
       "default": "./dist/node/main.js"
     }
