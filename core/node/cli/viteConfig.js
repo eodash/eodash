@@ -32,7 +32,7 @@ export const eodashViteConfig = /** @type {import("vite").UserConfigFn} */ (
       plugins: [
         vue({
           features: {
-            customElement: command === "build" && userConfig.lib, // if not building in lib mode, do not use custom elements imports
+            customElement: command === "build" && userConfig.lib,
           },
           template: {
             transformAssetUrls,
