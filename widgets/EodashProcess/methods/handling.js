@@ -70,9 +70,11 @@ export async function initProcess({
 
   await jsonformEl.value?.editor.destroy();
   if (updatedJsonform) {
-    if (enableCompare) {
-      updatedJsonform = updateJsonformSchemaTarget(updatedJsonform);
-    }
+    updatedJsonform = updateJsonformSchemaTarget(
+      updatedJsonform,
+      enableCompare,
+    );
+
     jsonformSchema.value = updatedJsonform;
   }
 }
