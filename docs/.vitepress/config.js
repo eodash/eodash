@@ -34,6 +34,7 @@ export default defineConfig({
         items: [
           { text: "Get Started", link: "/" },
           { text: "Instantiating Eodash", link: "/instantiation" },
+          { text: "STAC", link: "/STAC" },
           {
             text: "Widgets",
             link: "/widgets/",
