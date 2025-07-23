@@ -1,7 +1,7 @@
 import axios from "@/plugins/axios";
 import { getBboxProperty } from "../../utils";
 import { toAbsolute } from "stac-js/src/http.js";
-import { currentUrl } from "@/store/states";
+import { currentCompareUrl, currentUrl } from "@/store/states";
 import { getDatetimeProperty } from "@/eodashSTAC/helpers";
 
 /**
@@ -12,6 +12,7 @@ export async function handleVedaEndpoint({
   jsonformSchema,
   jsonformValue,
   selectedStac,
+  enableCompare = false,
 }) {
   const vedaLink = links.find(
     (link) => link.rel === "service" && link.endpoint === "veda",
@@ -24,7 +25,10 @@ export async function handleVedaEndpoint({
   // this should be type geojson
   const bboxGeoJSON = JSON.parse(jsonformValue[bboxProperty]);
 
-  const configs = await fetchVedaCOGsConfig(selectedStac);
+  const configs = await fetchVedaCOGsConfig(
+    selectedStac,
+    enableCompare ? currentCompareUrl.value : currentUrl.value,
+  );
   // TODO: convert jsonform bbox type to geojson in the schema to avoid the conversion here
   return await Promise.all(
     configs.map(({ endpoint, datetime }) => {
@@ -54,8 +58,9 @@ export async function handleVedaEndpoint({
 /**
  * Fetches the COGs endpoints from the STAC collections
  * @param {import("stac-ts").StacCollection} selectedStac
+ * @param {string} absoluteUrl
  */
-async function fetchVedaCOGsConfig(selectedStac) {
+async function fetchVedaCOGsConfig(selectedStac, absoluteUrl) {
   // retrieve the collections from the indicator
   const collectionLinks = selectedStac.links.filter(
     (link) => link.rel == "child",
@@ -69,7 +74,7 @@ async function fetchVedaCOGsConfig(selectedStac) {
       ...(await Promise.all(
         collectionLinks.map((link) =>
           axios
-            .get(toAbsolute(link.href, currentUrl.value))
+            .get(toAbsolute(link.href, absoluteUrl))
             .then((resp) => resp.data),
         ),
       )),

@@ -1,8 +1,14 @@
 import axios from "@/plugins/axios";
-import { indicator } from "@/store/states";
+import { compareIndicator, indicator } from "@/store/states";
 import mustache from "mustache";
-import { pollProcessStatus } from "^/EodashProcess/methods/async";
-import { createTiffLayerDefinition } from "^/EodashProcess/methods/utils";
+import {
+  pollProcessStatus,
+  updateJobsStatus,
+} from "^/EodashProcess/methods/async";
+import {
+  creatAsyncProcessLayerDefinitions,
+  extractAsyncResults,
+} from "../../utils";
 
 /**
  *
@@ -14,6 +20,8 @@ export async function handleEOxHubEndpoint({
   jsonformValue,
   isPolling,
   selectedStac,
+  jobs,
+  enableCompare = false,
 }) {
   if (!isPolling) {
     return;
@@ -21,6 +29,7 @@ export async function handleEOxHubEndpoint({
   const eoxhubLinks = links.filter(
     (link) => link.rel === "service" && link.endpoint === "eoxhub_workspaces",
   );
+  const layers = [];
   for (const link of eoxhubLinks) {
     // TODO: prove of concept, needs to be reworked for sure
     // Special handling for eoxhub workspace process endpoints
@@ -30,38 +39,29 @@ export async function handleEOxHubEndpoint({
     const jsonData = JSON.parse(
       mustache.render(postBody, { ...(jsonformValue ?? {}) }),
     );
+    const currentIndicator = enableCompare ? compareIndicator : indicator;
     try {
       const responseProcess = await axios.post(link.href, jsonData, {
         headers: {
           "Content-Type": "application/json",
         },
       });
+
       // We save the process status url into localstorage assigning it to the indicator id
       const currentJobs = JSON.parse(
-        localStorage.getItem(indicator.value) || "[]",
+        localStorage.getItem(currentIndicator.value) || "[]",
       );
       currentJobs.push(responseProcess.headers.location);
-      localStorage.setItem(indicator.value, JSON.stringify(currentJobs));
-      /**
-       *  @type {{
-       * processId: string;
-       * urls: string[];
-       * }}
-       * */
-      const { processId, urls } = await pollProcessStatus({
+      localStorage.setItem(currentIndicator.value, JSON.stringify(currentJobs));
+
+      const processResults = await pollProcessStatus({
+        jobs,
         processUrl: responseProcess.headers.location,
         isPolling,
+        enableCompare,
       })
         .then((resultItem) => {
-          const resultUrls = resultItem?.urls;
-          if (!resultUrls?.length) {
-            return { processId: "", urls: /** @type {string[]} */ ([]) };
-          }
-          /** @type {string} */
-          const processId = resultItem?.id;
-          /** @type {string[]} */
-          const urls = resultUrls;
-          return { processId, urls };
+          return extractAsyncResults(resultItem);
         })
         .catch((error) => {
           if (error instanceof Error) {
@@ -69,20 +69,19 @@ export async function handleEOxHubEndpoint({
           } else {
             console.error("Unknown error occurred during polling:", error);
           }
-          return { processId: "", urls: /** @type {string[]} */ ([]) };
+          return [];
         });
-      if (!urls.length) {
-        return;
-      }
-      return await createTiffLayerDefinition(
-        link,
-        selectedStac?.id ?? "",
-        urls,
-        //@ts-expect-error TODO
-        selectedStac?.["eodash:mapProjection"]?.["name"] ?? undefined,
-        processId,
+      await updateJobsStatus(jobs, currentIndicator.value);
+
+      layers.push(
+        ...(await creatAsyncProcessLayerDefinitions(
+          processResults,
+          link,
+          selectedStac,
+        )),
       );
     } catch (error) {
+      await updateJobsStatus(jobs, currentIndicator.value);
       if (error instanceof Error) {
         console.error("Error sending POST request:", error.message);
       } else {
@@ -90,4 +89,6 @@ export async function handleEOxHubEndpoint({
       }
     }
   }
+
+  return layers;
 }

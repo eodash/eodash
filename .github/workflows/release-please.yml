@@ -15,7 +15,6 @@ jobs:
         id: release
       - name: Checkout 🛎
         uses: actions/checkout@v4
-        if: ${{ steps.release.outputs.release_created }}
       - name: Setup node env 🏗
         uses: actions/setup-node@v4
         with:
@@ -23,12 +22,14 @@ jobs:
           check-latest: true
           registry-url: "https://registry.npmjs.org"
           cache: "npm"
-        if: ${{ steps.release.outputs.release_created }}
       - name: Install dependencies 👨🏻‍💻
         run: npm ci --prefer-offline --no-audit
-        if: ${{ steps.release.outputs.release_created }}
       - name: Publish package on NPM 📦
         run: npm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
         if: ${{ steps.release.outputs.release_created }}
+      - name: Build and publish package 🚀
+        run: |
+          npx pkg-pr-new publish --comment=update
+        if: ${{ !steps.release.outputs.release_created }}

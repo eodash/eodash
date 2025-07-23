@@ -8,7 +8,7 @@ import { storeToRefs } from "pinia";
  *   props: Record<string, unknown>;
  *   title: string;
  *   id: string | number | symbol;
- *   layout: { x: number; y: number; h: number; w: number };
+ *   layout: { x: number | string; y: number | string; h: number | string; w: number | string };
  * }} DefinedWidget
  */
 
@@ -69,14 +69,14 @@ export const useDefineWidgets = (widgetConfigs) => {
     });
 
     if ("defineWidget" in (config ?? {})) {
-      const { selectedStac } = storeToRefs(useSTAcStore());
+      const { selectedStac, selectedCompareStac } = storeToRefs(useSTAcStore());
       watch(
-        selectedStac,
-        (updatedStac) => {
+        [selectedStac, selectedCompareStac],
+        ([updatedStac, updatedCompareStac]) => {
           let definedConfig =
             /** @type {import("@/types").FunctionalWidget} */ (
               config
-            )?.defineWidget(updatedStac);
+            )?.defineWidget(updatedStac, updatedCompareStac);
           if (definedConfig) {
             definedConfig = reactive(definedConfig);
           }

@@ -129,7 +129,9 @@ export const useInitMap = (
           mapLayers.value = layersCollection;
 
           useEmitLayersUpdate(
-            "time:updated",
+            mapElement.value?.id === "compare"
+              ? "compareTime:updated"
+              : "time:updated",
             mapElement.value,
             layersCollection,
           );
@@ -168,7 +170,11 @@ export const useInitMap = (
           if (
             mapElement?.value?.id === "main" &&
             updatedStac.extent?.spatial.bbox &&
-            !(isFirstLoad.value && mapPosition.value?.[0] && mapPosition.value?.[1])
+            !(
+              isFirstLoad.value &&
+              mapPosition.value?.[0] &&
+              mapPosition.value?.[1]
+            )
           ) {
             // Sanitize extent,
             const b = updatedStac.extent?.spatial.bbox[0];
@@ -196,7 +202,9 @@ export const useInitMap = (
         mapLayers.value = layersCollection;
         // Emit event to update layers
         await useEmitLayersUpdate(
-          "layers:updated",
+          mapElement.value?.id === "compare"
+            ? "compareLayers:updated"
+            : "layers:updated",
           mapElement.value,
           mapLayers.value,
         );
@@ -216,7 +224,12 @@ export const useInitMap = (
  */
 
 export const useUpdateTooltipProperties = (eodashCols, tooltipProperties) => {
-  useOnLayersUpdate(async () => {
+  useOnLayersUpdate(async (evt, _payload) => {
+    if (evt.includes("compare")) {
+      // TODO: support compare map tooltips
+      // Do not update tooltip properties on compare map
+      return;
+    }
     const tooltips = [];
     for (const ec of eodashCols) {
       tooltips.push(...(await ec.getToolTipProperties()));

@@ -17,7 +17,6 @@ import { useSTAcStore } from "@/store/stac";
 import { isFirstLoad } from "@/utils/states";
 import "@eox/itemfilter";
 import { computed, ref } from "vue";
-import { useDisplay } from "vuetify";
 
 const store = useSTAcStore();
 const emit = defineEmits(["select"]);
@@ -74,13 +73,15 @@ const props = defineProps({
     default: () => [
       {
         keys: ["title", "themes", "description"],
-        title: "Search",
+        title: "Search by name or description",
         type: "text",
+        expanded: true,
       },
       {
         key: "themes",
-        title: "Theme Filter",
+        title: "Filter by theme",
         type: "multiselect",
+        expanded: true,
       },
     ],
   },
@@ -94,8 +95,6 @@ const selectIndicator = async (item) => {
       // prevent the map from jumping to the initial position
       isFirstLoad.value = false;
     }
-    // Reset compare stac to empty
-    store.resetSelectedCompareSTAC();
     await store.loadSelectedSTAC(item.href);
     emit("select", item);
   } else {
@@ -110,7 +109,7 @@ const selectCompareIndicator = (item) => {
     store.loadSelectedCompareSTAC(item.href);
     emit("select", item);
   } else {
-    // TODO
+    store.resetSelectedCompareSTAC();
   }
 };
 /** @param {any} evt*/
@@ -122,7 +121,7 @@ const onSelect = async (evt) => {
     selectIndicator(item);
   }
 };
-const { smAndDown } = useDisplay();
+
 const config = computed(() => ({
   titleProperty: props.titleProperty,
   enableHighlighting: props.enableHighlighting,
@@ -133,9 +132,20 @@ const config = computed(() => ({
   imageProperty: props.imageProperty,
   aggregateResults: props.aggregateResults,
   style: props.cssVars,
-  filterProperties: smAndDown.value ? "" : props.filterProperties,
+  filterProperties: props.filterProperties,
   styleOverride: props.styleOverride,
 }));
 /** @type {import("vue").Ref<HTMLElement & Record<string,any> | null>} */
 const eoxItemFilter = ref(null);
 </script>
+
+<style scoped>
+eox-itemfilter {
+  --form-flex-direction: row;
+}
+@media (max-width: 768px) {
+  eox-itemfilter {
+    --form-flex-direction: column;
+  }
+}
+</style>

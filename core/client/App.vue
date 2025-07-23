@@ -1,5 +1,5 @@
 <template>
-  <v-app>
+  <v-app class="fill-height">
     <Suspense>
       <Dashboard :is-web-component="isWebComponent" :config="config" />
 

@@ -207,7 +207,12 @@ export const extractLayerDatetime = (links, currentStep) => {
 
   // item datetime is not included in the item links datetime
   if (!controlValues.includes(currentStep)) {
-    return undefined;
+    const currentStepTime = new Date(currentStep).getTime();
+    currentStep = controlValues.reduce((a, b) => {
+      const aDiff = Math.abs(new Date(a).getTime() - currentStepTime);
+      const bDiff = Math.abs(new Date(b).getTime() - currentStepTime);
+      return bDiff < aDiff ? b : a;
+    });
   }
 
   return {
@@ -280,18 +285,21 @@ export const replaceLayer = (currentLayers, oldLayer, newLayers) => {
  * @param {import('../eodashSTAC/EodashCollection.js').EodashCollection[]} indicators
  * @param {import('ol/layer').Layer} layer
  */
-export const getColFromLayer = async (indicators, layer) => {
+export const getColFromLayer = (indicators, layer) => {
   // init cols
-  const collections = await Promise.all(
-    indicators.map((ind) => ind.fetchCollection()),
-  );
+  const collections = indicators.map((ind) => ind.collectionStac);
   const [collectionId, itemId, ..._other] = layer.get("id").split(";:;");
 
   const chosen = collections.find((col) => {
     const isInd =
-      col.id === collectionId &&
-      col.links?.some(
-        (link) => link.rel === "item" && link.href.includes(itemId),
+      col?.id === collectionId &&
+      col?.links?.some(
+        (link) =>
+          link.rel === "item" &&
+          (link.href.includes(itemId) ||
+            link.id === itemId ||
+            //@ts-expect-error attaching the item in link when parsing .parquet items, see @/eodashSTAC/parquet.js
+            (link["item"] && link["item"].id === itemId)),
       );
     return isInd;
   });
@@ -419,6 +427,87 @@ export async function mergeGeojsons(geojsonUrls) {
 }
 
 /**
+ *
+ * @param {import("stac-ts").StacItem[]} items
+ */
+export function generateLinksFromItems(items) {
+  /**
+   * @param {string|Date} datetime
+   * @returns
+   */
+  function formateDatetime(datetime) {
+    if (datetime instanceof Date) {
+      return datetime.toISOString();
+    }
+    if (typeof datetime === "string") {
+      const date = new Date(datetime);
+      return date.toISOString();
+    }
+    return datetime;
+  }
+
+  return items.map((item) => {
+    const itemBlob = new Blob([JSON.stringify(item)], {
+      type: "application/geo+json",
+    });
+    // urls are revoked when updating the collection. see updateEodashCollections in "../utils/index.js"
+    const itemUrl = URL.createObjectURL(itemBlob);
+    return {
+      id: item.id,
+      rel: "item",
+      type: "application/geo+json",
+      title: item.id,
+      href: itemUrl,
+      ...(item.properties.datetime && {
+        datetime: formateDatetime(item.properties.datetime),
+      }),
+      ...(item.properties.start_datetime && {
+        start_datetime: formateDatetime(item.properties.start_datetime),
+      }),
+      ...(item.properties.end_datetime && {
+        end_datetime: formateDatetime(item.properties.end_datetime),
+      }),
+      //@ts-expect-error projection extension
+      ...(item.properties?.["proj:epsg"] && {
+        "proj:epsg": /** @type {number} **/ (item.properties["proj:epsg"]),
+      }),
+      //@ts-expect-error eodash projection
+      ...(item.properties?.["eodash:proj4_def"] && {
+        "eodash:proj4_def": item.properties["eodash:proj4_def"],
+      }),
+
+      ...(item.geometry?.type == "Point" &&
+        item.geometry?.coordinates.length && {
+          latlng: item.geometry.coordinates.reverse().join(","),
+        }),
+      ...(Object.values(item.assets ?? {}).some(
+        (asset) =>
+          asset.href.startsWith("s3://veda-data-store") &&
+          asset.type === "image/tiff; application=geotiff",
+      ) && {
+        cog_href: Object.values(item.assets ?? {}).find((asset) =>
+          asset.href.startsWith("s3://veda-data-store"),
+        )?.href,
+      }),
+    };
+  });
+}
+
+/**
+ * @param {import("../eodashSTAC/EodashCollection.js").EodashCollection} collection
+ */
+export function revokeCollectionBlobUrls(collection) {
+  collection.collectionStac?.links.forEach((link) => {
+    if (!(link.rel === "item" && link.type === "application/geo+json")) {
+      return;
+    }
+    if (link.href.startsWith("blob:")) {
+      URL.revokeObjectURL(link.href);
+    }
+  });
+}
+
+/**
  * adds tooltip to the layer if the style has tooltip property
  * @param {Record<string,any>} layer
  * @param {import("@/types").EodashStyleJson} [style]
@@ -440,6 +529,7 @@ export const addTooltipInteraction = (layer, style) => {
     ];
   }
 };
+
 /**
  *
  * @param {import("stac-ts").StacLink[]} [links]
