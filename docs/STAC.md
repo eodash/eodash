@@ -226,6 +226,5 @@ Attribution text to be displayed on the map can be set using the `attribution` p
 
 eodash utilizes the following STAC extensions to enhance its capabilities:
 
-- **[Projection Extension](https://github.com/stac-extensions/projection)**: Used to specify coordinate reference systems for layers via the `proj:epsg` property.
-- **[Web Map Links Extension](https://github.com/stac-extensions/web-map-links)**: While not a formal extension, eodash follows the convention of using `wms:*` properties to configure WMS layers.
-- **EOX Custom Extensions**: eodash employs custom properties with the `eox:` and `eodash:` prefixes for functionalities not covered by standard extensions, such as `eox:colorlegend`, `eox:flatstyle`, and `eodash:proj4_def`.
+- **Projection Extension**: https://github.com/stac-extensions/projection
+- **Web Map Links Extension**: https://github.com/stac-extensions/web-map-links
