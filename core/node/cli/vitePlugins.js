@@ -1,7 +1,4 @@
 import path from "path";
-/**
- * @returns {import("vite").Plugin}
- */
 
 /**
  * @param {Object} [options]
