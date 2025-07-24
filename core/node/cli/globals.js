@@ -39,7 +39,7 @@ export const clientModules = Object.keys(appPkgJSON?.dependencies).filter(
  * @typedef {Object} Options
  * @property {string | false} publicDir
  * @property {string} outDir
- * @property {string} entryPoint
+ * @property {string | false} entryPoint
  * @property {string} widgets
  * @property {string} cacheDir
  * @property {string} runtime
@@ -90,9 +90,12 @@ export const publicPath = userConfig.publicDir
   runtimeConfigPath = userConfig.runtime
     ? path.resolve(rootPath, userConfig.runtime)
     : path.join(srcPath, "./runtime.js"),
-  entryPath = userConfig.entryPoint
-    ? path.resolve(rootPath, userConfig.entryPoint)
-    : path.join(srcPath, "/main.js"),
+  entryPath =
+    userConfig.entryPoint === "false"
+      ? false
+      : userConfig.entryPoint
+        ? path.resolve(rootPath, userConfig.entryPoint)
+        : path.join(srcPath, "/main.js"),
   internalWidgetsPath = userConfig.widgets
     ? path.resolve(rootPath, userConfig.widgets)
     : path.join(srcPath, "widgets"),

@@ -11,7 +11,6 @@ import {
   mapPosition,
   poi,
 } from "@/store/states";
-import eodash from "@/eodash";
 import { useTheme } from "vuetify";
 import { inject, nextTick, onMounted, onUnmounted, watch } from "vue";
 import { useSTAcStore } from "@/store/stac";
@@ -24,6 +23,37 @@ import mustache from "mustache";
 import { toAbsolute } from "stac-js/src/http.js";
 import axios from "@/plugins/axios";
 
+
+/**
+/** @type {import('@/types').Eodash | null}*/
+
+let _eodash = null;
+
+/**
+ * Call this once in a top-level component to inject and store the reactive eodash object.
+ * @throws {Error} If eodash is not found in the inject context
+ */
+export function provideEodashInstance() {
+  const injected = inject(eodashKey);
+  if (!injected) {
+    throw new Error('Missing injected eodash – did you forget to call provideEodashInstance in a component?');
+  }
+  _eodash = injected;
+}
+
+/**
+ * Access the reactive eodash configuration anywhere after it has been provided.
+ * @returns {import('@/types').Eodash | null}
+ * @throws {Error} If eodash was not yet provided
+ */
+export function useEodash() {
+  if (!_eodash) {
+    throw new Error('Eodash not yet available – call provideEodashInstance() first.');
+  }
+  return _eodash;
+}
+
+
 /**
  * Creates an absolute URL from a relative link and assignes it to `currentUrl`
  *
@@ -33,8 +63,11 @@ import axios from "@/plugins/axios";
  * @returns {import("vue").Ref<string>} - Returns `currentUrl`
  * @see {@link '@/store/states.js'}
  */
-export const useAbsoluteUrl = (rel = "", base = eodash.stacEndpoint) => {
-  if (!rel || rel.includes("http")) {
+export const useAbsoluteUrl = (
+  rel = "",
+  base = inject(eodashKey)?.stacEndpoint,
+) => {
+  if (!rel || rel.includes("http") || !base) {
     currentUrl.value = rel;
     return currentUrl;
   }
@@ -62,9 +95,12 @@ export const useAbsoluteUrl = (rel = "", base = eodash.stacEndpoint) => {
  * @returns {import("vue").Ref<string>} - Returns `currentUrl`
  * @see {@link '@/store/states.js'}
  */
-export const useCompareAbsoluteUrl = (rel = "", base = eodash.stacEndpoint) => {
-  if (!rel || rel.includes("http")) {
-    currentCompareUrl.value = base;
+export const useCompareAbsoluteUrl = (
+  rel = "",
+  base = inject(eodashKey)?.stacEndpoint,
+) => {
+  if (!rel || rel.includes("http") || !base) {
+    currentCompareUrl.value = rel;
     return currentCompareUrl;
   }
 
@@ -291,8 +327,11 @@ export const useTransparentPanel = (root) => {
 };
 
 export const useGetTemplates = () => {
-  const eodash = /** @type {import("@/types").Eodash} */ (inject(eodashKey));
-  return "template" in eodash ? [] : Object.keys(eodash.templates);
+  const eodash = inject(eodashKey);
+  if (!eodash) {
+    return [];
+  }
+  return "template" in eodash ? [] : Object.keys(eodash?.templates ?? {});
 };
 
 /**
@@ -352,15 +391,16 @@ export const useEmitLayersUpdate = async (event, mapEl, layers) => {
 
 /**
  * @param {import("stac-ts").StacCollection | import("stac-ts").StacLink | import("stac-ts").StacItem | null} collection
- * @returns {string} - Returns the collection id or subcode if `useSubCode`import { mustache } from 'mustache';
- is enabled
+ * @returns {string} - Returns the collection id or subcode if `useSubCode` is enabled
  */
 export const useGetSubCodeId = (collection) => {
+  const eodash = useEodash();
+
   if (!collection) {
     return "";
   }
 
-  if ("useSubCode" in (eodash?.options ?? {}) && eodash?.options?.useSubCode) {
+  if (eodash?.options?.useSubCode) {
     return typeof collection.subcode === "string"
       ? collection.subcode
       : /** @type {string} */ (collection.id);

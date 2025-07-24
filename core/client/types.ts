@@ -1,5 +1,5 @@
 /** @group Eodash */
-export interface WebComponentProps<T extends ExecutionTime = "compiletime"> {
+export interface WebComponentProps {
   /**
    * Imports web component file, either using a URL or an import function.
    *
@@ -14,7 +14,7 @@ export interface WebComponentProps<T extends ExecutionTime = "compiletime"> {
    *   import maps are not available in runtime config
    *   :::
    */
-  link?: T extends "runtime" ? string : string | (() => Promise<unknown>);
+  link?: string | (() => Promise<unknown>);
   /**
    * Exported Constructor, needs to be provided if the web component is not
    * registered in by the [link](#link) provided
@@ -84,12 +84,12 @@ export interface Layout {
  *
  * @group Eodash
  */
-export interface WebComponentWidget<T extends ExecutionTime = "compiletime"> {
+export interface WebComponentWidget {
   id: number | string | symbol;
   title: string;
   /** Widget position and size. */
   layout: Layout;
-  widget: WebComponentProps<T>;
+  widget: WebComponentProps;
   type: "web-component";
 }
 // Internal Widget Interfaces
@@ -233,7 +233,7 @@ export interface IFrameWidget {
   type: "iframe";
 }
 /** @group Eodash */
-export interface FunctionalWidget<T extends ExecutionTime = "compiletime"> {
+export interface FunctionalWidget {
   /**
    * Provides a functional definition of widgets, gets triggered whenever a STAC
    * object is selected, and only renders the returned configuration if the `id`
@@ -244,15 +244,15 @@ export interface FunctionalWidget<T extends ExecutionTime = "compiletime"> {
   defineWidget: (
     selectedSTAC: import("stac-ts").StacCollection | null,
     selectedCompareSTAC?: import("stac-ts").StacCollection | null,
-  ) => StaticWidget<T> | undefined | null | false;
+  ) => StaticWidget | undefined | null | false;
 }
 /**
  * There are 3 types of Widgets:
  *
  * @group Eodash
  */
-export type StaticWidget<T extends ExecutionTime = "compiletime"> =
-  | WebComponentWidget<T>
+export type StaticWidget =
+  | WebComponentWidget
   | InternalComponentWidget
   | IFrameWidget;
 /**
@@ -267,16 +267,14 @@ export type StaticWidget<T extends ExecutionTime = "compiletime"> =
  *
  * @group Eodash
  */
-export type Widget<T extends ExecutionTime = "compiletime"> =
-  | StaticWidget<T>
-  | FunctionalWidget<T>;
+export type Widget = StaticWidget | FunctionalWidget;
 
 /** @group Eodash */
-export type BackgroundWidget<T extends ExecutionTime = "compiletime"> =
-  | Omit<WebComponentWidget<T>, "layout" | "title" | "slidable">
+export type BackgroundWidget =
+  | Omit<WebComponentWidget, "layout" | "title" | "slidable">
   | Omit<InternalComponentWidget, "layout" | "title" | "slidable">
   | Omit<IFrameWidget, "layout" | "title" | "slidable">
-  | Omit<FunctionalWidget<T>, "layout" | "slidable">;
+  | Omit<FunctionalWidget, "layout" | "slidable">;
 /**
  * Dashboard rendered widgets specification. 3 types of widgets are supported:
  * `"iframe"`, `"internal"`, and `"web-component"`. A specific object should be
@@ -284,30 +282,25 @@ export type BackgroundWidget<T extends ExecutionTime = "compiletime"> =
  *
  * @group Eodash
  */
-export interface Template<T extends ExecutionTime = "compiletime"> {
+export interface Template {
   /** Gap between widgets */
   gap?: number;
   /** Loading widget */
-  loading?: BackgroundWidget<T>;
+  loading?: BackgroundWidget;
   /**
    * Widget rendered as the dashboard background. Has the same specifications of
    * {@link Widget} without the `title` and `layout` properties
    */
-  background?: BackgroundWidget<T>;
+  background?: BackgroundWidget;
   /** Array of widgets that will be rendered as dashboard panels. */
-  widgets: Widget<T>[];
+  widgets: Widget[];
 }
 /** @group Eodash */
-export type MultiTemplates<T extends ExecutionTime = "compiletime"> = Record<
-  string,
-  Template<T>
->;
+export type MultiTemplates = Record<string, Template>;
 
 /** @ignore */
 export type StacEndpoint = `${string}/catalog.json`;
 
-/** @group Eodash */
-type ExecutionTime = "runtime" | "compiletime";
 /** @group Eodash */
 export interface EodashFont {
   /**
@@ -323,7 +316,7 @@ export interface EodashFont {
  *
  * @group Eodash
  */
-export type Eodash<T extends ExecutionTime = "compiletime"> = {
+export type Eodash = {
   /** Instance ID. */
   id?: string;
   /** Object containing potential special configuration options */
@@ -362,11 +355,11 @@ export type Eodash<T extends ExecutionTime = "compiletime"> = {
 } & (
   | {
       /** Template configuration */
-      template: Template<T>;
+      template: Template;
     }
   | {
       /** Multiple templates configuration */
-      templates: MultiTemplates<T>;
+      templates: MultiTemplates;
     }
 );
 /////////
