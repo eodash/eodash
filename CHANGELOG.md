@@ -1,6 +1,28 @@
 # Changelog
 
 
+## [5.1.0](https://github.com/eodash/eodash/compare/eodash-v5.0.0...eodash-v5.1.0) (2025-07-24)
+
+
+### Features
+
+* Adding possibility to use POST for process requests ([#204](https://github.com/eodash/eodash/issues/204)) ([b7cad01](https://github.com/eodash/eodash/commit/b7cad0118bf987c82023bca56b9358a7457fe12b))
+* Export dashboard templates ([#213](https://github.com/eodash/eodash/issues/213)) ([7045b6b](https://github.com/eodash/eodash/commit/7045b6ba59a5f64c53e0a0a591ee2841dc1a75aa))
+* implementation of multi data requests for multi feature selection ([#208](https://github.com/eodash/eodash/issues/208)) ([29b3262](https://github.com/eodash/eodash/commit/29b3262a2de6719bdd64e982c70b6c70483857fb))
+* Integrate SentinelHub & Veda Processing Endpoints ([#182](https://github.com/eodash/eodash/issues/182)) ([05a2e54](https://github.com/eodash/eodash/commit/05a2e54913e3426724b0fdd7da2cf5c7ef101fd3))
+* Support multiple output results with different layer types from custom endpoints ([#209](https://github.com/eodash/eodash/issues/209)) ([a4020f6](https://github.com/eodash/eodash/commit/a4020f610d7979b5af56c07793e4f058f2b8bd59))
+* support STAC as processing output ([#197](https://github.com/eodash/eodash/issues/197)) ([f63ad5e](https://github.com/eodash/eodash/commit/f63ad5ee0dc1e5e26fa609c4a61ae4ddb003c1e1))
+* Support STAC Items in parquet format ([#169](https://github.com/eodash/eodash/issues/169)) ([ff0457e](https://github.com/eodash/eodash/commit/ff0457e362939f1189e2cbed3b586d0ac0a91495))
+* Support subcode as indicator value & poi as url search parameter ([#202](https://github.com/eodash/eodash/issues/202)) ([6a11cd6](https://github.com/eodash/eodash/commit/6a11cd66aa3d1239ba27ab0e9eece276ba3f10c1))
+* UI updates ([#211](https://github.com/eodash/eodash/issues/211)) ([6cc4330](https://github.com/eodash/eodash/commit/6cc43305bc150100585299f564145d87077e92f7))
+
+
+### Bug Fixes
+
+* dev release on release please workflow ([#214](https://github.com/eodash/eodash/issues/214)) ([79881d0](https://github.com/eodash/eodash/commit/79881d0c19e97ef1b6c198492117e50d9c467d26))
+* Enable EodashProcess Widget for the compare map ([#212](https://github.com/eodash/eodash/issues/212)) ([fe3d32e](https://github.com/eodash/eodash/commit/fe3d32ed4db198d7a18c1b4f3e50c3a6353416d4))
+* spacing in datepicker and date selection from chart ([#210](https://github.com/eodash/eodash/issues/210)) ([e51890c](https://github.com/eodash/eodash/commit/e51890c9e2bb881b4754b0a2cd6dbe007f078afd))
+
 ## [5.0.0](https://github.com/eodash/eodash/compare/eodash-v5.0.0-rc.3...eodash-v5.0.0) (2025-03-26)
 
 
