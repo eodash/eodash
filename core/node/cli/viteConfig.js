@@ -256,7 +256,7 @@ async function configureServer(server) {
 /** @param {string[]} prefix */
 function defineEnvVariables(prefix) {
   // Load environment variables from .env file
-  config();
+  config({ quiet: true });
 
   const env = {};
   for (const key in process.env) {
