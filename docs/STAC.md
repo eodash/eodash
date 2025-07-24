@@ -161,16 +161,11 @@ eodash supports multiple approaches for defining coordinate reference systems (C
 #### Standard EPSG Codes
 For standard coordinate reference systems, eodash uses the `proj:epsg` property from the [Projection Extension](https://github.com/stac-extensions/projection) to define EPSG codes:
 
-```json
-{
-  "proj:epsg": 4326
-}
-```
-
 #### Custom Projections
 For custom or specialized projections not covered by standard EPSG codes, eodash provides two custom properties:
 
-**`eodash:mapProjection`** - Used for map-specific projections with predefined extents:
+**`eodash:mapProjection`** - Used for map-specific projections with predefined extents, can exist in the top level of Items or Collections:
+
 ```json
 {
   "eodash:mapProjection": {
@@ -181,7 +176,7 @@ For custom or specialized projections not covered by standard EPSG codes, eodash
 }
 ```
 
-**`eodash:proj4_def`** - Used for custom Proj4 projection definitions:
+**`eodash:proj4_def`** - Used for custom Proj4 projection definitions, can exist in Link, Asset, or inside Item `properties`:
 ```json
 {
   "eodash:proj4_def": {
