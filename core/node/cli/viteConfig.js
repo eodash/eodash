@@ -53,22 +53,26 @@ export const eodashViteConfig = /** @type {import("vite").UserConfigFn} */ (
         userConfig.lib && vueCustomElementStyleInjector(),
       ],
       customLogger: logger,
-      define:
-        command === "build" && userConfig.lib
+      define: {
+        __userConfigExist__: !!entryPath,
+        ...(command === "build" && userConfig.lib
           ? {
               "process.env": "import.meta.env",
             }
           : {
               "process.env": {},
               ...defineEnvVariables(envPrefix),
-            },
+            }),
+      },
       envPrefix,
       resolve: {
         alias: {
           "@": path.join(appPath, "core/client"),
           "^": path.join(appPath, "widgets"),
-          "user:config": entryPath,
           "user:widgets": internalWidgetsPath,
+          ...(entryPath && {
+            "user:config": entryPath,
+          }),
         },
         extensions: [".js", ".json", ".jsx", ".mjs", ".ts", ".tsx", ".vue"],
       },
@@ -135,12 +139,23 @@ export const eodashViteConfig = /** @type {import("vite").UserConfigFn} */ (
             minify: false,
             lib: {
               entry: path.join(appPath, "core/client/asWebComponent.js"),
-              fileName: "eo-dash",
+              fileName: (_, entryFileName) => {
+                return entryFileName === "asWebComponent"
+                  ? "eo-dash.js"
+                  : "templates.js";
+              },
+              cssFileName: "eo-dash",
               formats: ["es"],
               name: "@eodash/eodash",
             },
             rollupOptions: {
-              input: path.join(appPath, "core/client/asWebComponent.js"),
+              input: {
+                asWebComponent: path.join(
+                  appPath,
+                  "core/client/asWebComponent.js",
+                ),
+                templates: path.join(appPath, "templates/index.js"),
+              },
               // vuetify is compiled by "vite-plugin-vuetify"
               external: (source) => {
                 const isCssOrVuetify =
@@ -150,8 +165,12 @@ export const eodashViteConfig = /** @type {import("vite").UserConfigFn} */ (
                 const isClientDep = clientModules.some((m) =>
                   source.startsWith(m),
                 );
-                return !isCssOrVuetify && isClientDep;
+                // "user:config" will be removed by rollup treeshaking in this case, but it checks whether it's
+                // a valid import prior to that
+                const isUserConfig = source === "user:config" && !entryPath;
+                return (!isCssOrVuetify && isClientDep) || isUserConfig;
               },
+              treeshake: "smallest",
             },
           }),
       },
@@ -169,11 +188,14 @@ export const viteConfig = /** @type {import("vite").UserConfigFn} */ (
 
 /** @type {import("vite").ServerHook} */
 async function configureServer(server) {
-  server.watcher.add([
-    entryPath,
+  const watchedFiles = [
     runtimeConfigPath,
     path.join(internalWidgetsPath, "**/*.vue"),
-  ]);
+  ];
+  if (entryPath) {
+    watchedFiles.push(entryPath);
+  }
+  server.watcher.add(watchedFiles);
 
   let updatedPath = "";
   const loggerInfo = logger.info;

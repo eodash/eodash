@@ -18,7 +18,7 @@ describe("<EodashDatePicker/>", () => {
     });
 
     it("click date", () => {
-      cy.get(".vc-day-content").eq(20).click();
+      cy.get(".vc-day-content").eq(2).click();
     });
   });
 });
