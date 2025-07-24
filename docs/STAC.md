@@ -12,7 +12,7 @@ The top level consists of "Indicators," which are STAC Collections that group to
 
 #### Indicator Link Properties
 
-The links from an indicator collection to a data collection can contain several metadata properties that describe it's visual products. [EodashItemFilter] uses the properties to create filters and display overviews of the products.
+The links in a Catalog pointing to indicator collections can contain several metadata properties that describe it's visual products. [EodashItemFilter]() uses the properties to create filters and display overviews of these products.
 
 | Property | Description |
 |---|---|
