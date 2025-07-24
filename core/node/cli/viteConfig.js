@@ -21,6 +21,7 @@ import { config } from "dotenv";
 import { defineConfig, mergeConfig, searchForWorkspaceRoot } from "vite";
 import { existsSync } from "fs";
 import path from "path";
+import { vueCustomElementStyleInjector } from "./vitePlugins.js";
 
 export const eodashViteConfig = /** @type {import("vite").UserConfigFn} */ (
   defineConfig(async ({ mode, command }) => {
@@ -30,6 +31,9 @@ export const eodashViteConfig = /** @type {import("vite").UserConfigFn} */ (
       cacheDir: cachePath,
       plugins: [
         vue({
+          features: {
+            customElement: command === "build" && userConfig.lib,
+          },
           template: {
             transformAssetUrls,
             compilerOptions: {
@@ -46,6 +50,7 @@ export const eodashViteConfig = /** @type {import("vite").UserConfigFn} */ (
           name: "inject-html",
           configureServer,
         },
+        userConfig.lib && vueCustomElementStyleInjector(),
       ],
       customLogger: logger,
       define: {
@@ -251,7 +256,7 @@ async function configureServer(server) {
 /** @param {string[]} prefix */
 function defineEnvVariables(prefix) {
   // Load environment variables from .env file
-  config();
+  config({ quiet: true });
 
   const env = {};
   for (const key in process.env) {

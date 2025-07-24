@@ -2,7 +2,7 @@
 import log from "loglevel";
 log.setLevel(log.levels.WARN, true);
 
-import { ref } from "vue";
+import { ref, shallowRef } from "vue";
 
 /** Currently selected STAC endpoint */
 export const currentUrl = ref("");
@@ -31,10 +31,10 @@ export const registeredProjections = ["EPSG:4326", "EPSG:3857"];
 export const availableMapProjection = ref("EPSG:3857");
 
 /** @type {import("vue").Ref<import("@eox/map").EOxMap | null>} */
-export const mapEl = ref(null);
+export const mapEl = shallowRef(null);
 
 /** @type {import("vue").Ref<import("@eox/map").EOxMap | null>} */
-export const mapCompareEl = ref(null);
+export const mapCompareEl = shallowRef(null);
 
 export const activeTemplate = ref("");
 /**

@@ -6,6 +6,7 @@ import {
 } from "@/eodashSTAC/helpers";
 import axios from "@/plugins/axios";
 import { getCompareLayers, getLayers } from "@/store/actions";
+import { mapCompareEl, mapEl } from "@/store/states";
 import { isMulti } from "@eox/jsonform/src/custom-inputs/spatial/utils";
 
 /**
@@ -511,17 +512,21 @@ export const applyProcessLayersToMap = (mapElement, processLayers) => {
 /**
  * Updates the jsonform schema to target the compare map
  * @param {import("json-schema").JSONSchema7 | null | undefined} jsonformSchema
+ * @param {boolean} enableCompare
  */
-export function updateJsonformSchemaTarget(jsonformSchema) {
+export function updateJsonformSchemaTarget(jsonformSchema, enableCompare) {
   if (!jsonformSchema) {
-    return jsonformSchema;
+    return null;
   }
-  const stringified = JSON.stringify(jsonformSchema).replaceAll(
-    "eox-map#main",
-    "eox-map#compare",
-  );
+  for (const key in jsonformSchema.properties) {
+    //@ts-expect-error jsonform schema
+    if (jsonformSchema.properties[key]?.options?.drawtools) {
+      //@ts-expect-error jsonform schema
+      jsonformSchema.properties[key].options.drawtools.for = enableCompare
+        ? mapEl.value
+        : mapCompareEl.value;
+    }
+  }
 
-  return /** @type {import("json-schema").JSONSchema7} */ (
-    JSON.parse(stringified)
-  );
+  return jsonformSchema;
 }

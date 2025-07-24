@@ -207,3 +207,16 @@ export const updateEodashCollections = async (
     eodashCollections.push(...collections);
   });
 };
+/**
+ *
+ * @param {Element | string} selector
+ */
+export const getElement = (selector) => {
+  const eoDash = document.querySelector("eo-dash");
+  if (!eoDash) {
+    //@ts-expect-error selectior can be a string or an Element
+    return document.querySelector(selector);
+  }
+  //@ts-expect-error selectior can be a string or an Element
+  return eoDash.shadowRoot?.querySelector(selector);
+};
