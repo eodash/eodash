@@ -1,5 +1,5 @@
 <template>
-  <HeaderComponent v-if="!eodash.brand.noLayout" />
+  <HeaderComponent v-if="!eodash?.brand.noLayout" />
   <ErrorAlert v-model="error" />
   <EodashOverlay />
   <Suspense>
@@ -10,7 +10,7 @@
       </div>
     </template>
   </Suspense>
-  <FooterComponent v-if="!eodash.brand.noLayout" />
+  <FooterComponent v-if="!eodash?.brand.noLayout" />
 </template>
 
 <script setup>
@@ -37,18 +37,25 @@ const props = defineProps({
 useURLSearchParametersSync();
 
 const eodash = await useEodashRuntime(props.config);
+if (!eodash) {
+  throw new Error(
+    "Eodash configuration is not defined. Please provide a valid configuration file or object.",
+  );
+}
 
 const theme = useUpdateTheme("dashboardTheme", {
-  ...(eodash.brand?.theme ?? {}),
+  ...(eodash?.brand?.theme ?? {}),
 });
-theme.global.name.value = "dashboardTheme";
+theme.change("dashboardTheme");
 
-await loadFont(eodash.brand?.font, props.isWebComponent);
+await loadFont(eodash?.brand?.font, props.isWebComponent);
 
-const { loadSTAC } = useSTAcStore();
-await loadSTAC();
+const { loadSTAC, init } = useSTAcStore();
+init(eodash.stacEndpoint);
+await loadSTAC(eodash.stacEndpoint);
 
 const { smAndDown } = useDisplay();
+
 const TemplateComponent = computed(() =>
   smAndDown.value
     ? defineAsyncComponent(() => import(`@/components/MobileLayout.vue`))

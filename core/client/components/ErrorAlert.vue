@@ -25,9 +25,9 @@ import { mdiClose, mdiAlertCircle } from "@mdi/js";
 import { inject } from "vue";
 
 const error = defineModel({ type: String, required: true });
-const eodash = /** @type {import("@/types").Eodash} */ (inject(eodashKey));
+const eodash = inject(eodashKey);
 const errorMessage =
-  eodash.brand.errorMessage ?? "something went wrong, please try again later";
+  eodash?.brand?.errorMessage ?? "something went wrong, please try again later";
 </script>
 <style scoped>
 .alert {

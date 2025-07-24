@@ -43,6 +43,7 @@ npm run build -- --lib
     .
     ├── core               # CLI & Client source code
     ├── docs               # Documentation files
+    ├── templates          # Base configurations and eodash templates
     ├── tests              # CLI & Client component tests folder
     ├── widgets            # Vue components as internal widgets.
     ├── public             # Statically served directory

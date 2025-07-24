@@ -24,6 +24,7 @@ declare module "stac-js/src/http.js" {
   export { toAbsolute };
 }
 
+declare const __userConfigExist__: boolean;
 declare module "@eox/ui/vuetify/blueprint.js" {
   import type { Blueprint } from "vuetify";
   const eox: Blueprint;
