@@ -76,6 +76,7 @@ export async function processCharts({
             jsonformValue: jsonformValue,
             link: link,
             flatstyleUrl: /** @type string */ (link["eox:flatstyle"]),
+            jsonformSchema,
           });
           break checkForData;
         case "text/csv":
@@ -114,35 +115,40 @@ export async function processCharts({
  * @param {Record<string,any>} [injectables.jsonformValue]
  * @param {import("stac-ts").StacLink} injectables.link
  * @param {url} [injectables.flatstyleUrl]
+ * @param {import("json-schema").JSONSchema7} [injectables.jsonformSchema]
  */
 async function injectVegaInlineData(
   spec,
-  { url, jsonformValue, link, flatstyleUrl },
+  { url, jsonformValue, link, flatstyleUrl, jsonformSchema },
 ) {
   if (!spec.data) {
     return;
   }
   if (link.method == "GET") {
-    // we see if any of the template variables match an array in the jsonformValue 
+    // we see if any of the multiQuery values match an array in the jsonformValue
     // and if so, we can do multiple requests and merge all data together.
-    const matches = mustache.parse(url)
-      .filter(function(v) { return v[0] === 'name' })
-      .map(function(v) { return v[1]; });
+    //@ts-expect-error type jsonform Schema
+    const multiQuery = jsonformSchema?.options?.multiQuery;
+    const matches = Object.keys(jsonformValue ?? {}).filter((key) => {
+      return Array.isArray(multiQuery)
+        ? multiQuery.includes(key)
+        : multiQuery === key;
+    });
     if (matches.length > 0 && jsonformValue) {
       const dataValues = [];
       for (const match of matches) {
         if (Array.isArray(jsonformValue[match])) {
           for (const value of jsonformValue[match]) {
-            const dataUrl = await renderDataUrl(url, { ...jsonformValue, [match]: value }, flatstyleUrl);
-            dataValues.push(
-              await axios.get(dataUrl).then((resp) => resp.data),
+            const dataUrl = await renderDataUrl(
+              url,
+              { ...jsonformValue, [match]: value },
+              flatstyleUrl,
             );
+            dataValues.push(await axios.get(dataUrl).then((resp) => resp.data));
           }
         } else {
           const dataUrl = await renderDataUrl(url, jsonformValue, flatstyleUrl);
-          dataValues.push(
-            await axios.get(dataUrl).then((resp) => resp.data),
-          );
+          dataValues.push(await axios.get(dataUrl).then((resp) => resp.data));
         }
       }
       /** @type {import("vega-lite/build/src/data").InlineData} */
