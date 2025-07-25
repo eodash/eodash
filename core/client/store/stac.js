@@ -19,9 +19,10 @@ import { updateEodashCollections } from "@/utils";
 export const useSTAcStore = defineStore("stac", () => {
   /**
    * STAC catalog endpoint URL
-   * @type {import("vue").Ref<import("@/types").StacEndpoint | null>}
+   * @type {import("vue").Ref<string| null>}
    */
   const stacEndpoint = ref(null);
+  const isApi = ref(false);
 
   /**
    * Links of the root STAC catalog
@@ -55,14 +56,19 @@ export const useSTAcStore = defineStore("stac", () => {
    * @param {import("@/types").StacEndpoint} endpoint
    */
   function init(endpoint) {
-    stacEndpoint.value = endpoint;
+    if (typeof endpoint === "string") {
+      stacEndpoint.value = endpoint;
+      return;
+    }
+    stacEndpoint.value = endpoint.endpoint;
+    isApi.value = endpoint.api ?? false;
   }
 
   /**
    * Fetches root stac catalog and assign it to `stac`
    *
-   * @param {import("@/types").StacEndpoint} [url=eodash.stacEndpoint] Default
-   *   is `eodash.stacEndpoint`
+   * @param {string} [url=stacEndpoint] Default
+   *   is  the configured `stacEndpoint` url
    * @returns {Promise<void>}
    * @see {@link stac}
    */
@@ -78,14 +84,19 @@ export const useSTAcStore = defineStore("stac", () => {
       stac.value = null;
       return;
     }
+    if (isApi.value) {
+      url = url + "/collections";
+    }
+    const property = isApi.value ? "collections" : "links";
 
     log.debug("Loading STAC endpoint", url);
     await axios
       .get(url)
       .then((resp) => {
-        const links = /** @type {import("stac-ts").StacCatalog} */ (
-          resp.data
-        ).links.map((link) => {
+        console.log("STAC response", url, resp.data);
+
+        //@ts-expect-error TODO
+        const links = resp.data[property].map((link) => {
           if (!link.title) {
             link.title = `${link.rel} ${link.href}`;
           }
@@ -116,6 +127,7 @@ export const useSTAcStore = defineStore("stac", () => {
       // construct absolute URL of a poi
       absoluteUrl.value = constructPoiUrl(relativePath, indicator.value);
     }
+    console.log("Loading selected STAC", absoluteUrl.value, isPoi);
 
     await axios
       .get(absoluteUrl.value)
@@ -203,6 +215,8 @@ export const useSTAcStore = defineStore("stac", () => {
   }
 
   return {
+    stacEndpoint,
+    isApi,
     stac,
     init,
     loadSTAC,

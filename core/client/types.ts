@@ -299,7 +299,12 @@ export interface Template {
 export type MultiTemplates = Record<string, Template>;
 
 /** @ignore */
-export type StacEndpoint = `${string}/catalog.json`;
+export type StacEndpoint =
+  | string
+  | {
+      endpoint: string;
+      api?: boolean;
+    };
 
 /** @group Eodash */
 export interface EodashFont {

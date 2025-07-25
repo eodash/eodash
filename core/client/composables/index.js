@@ -22,7 +22,7 @@ import { setCollectionsPalette } from "@/utils";
 import mustache from "mustache";
 import { toAbsolute } from "stac-js/src/http.js";
 import axios from "@/plugins/axios";
-
+import { storeToRefs } from "pinia";
 
 /**
 /** @type {import('@/types').Eodash | null}*/
@@ -36,7 +36,9 @@ let _eodash = null;
 export function provideEodashInstance() {
   const injected = inject(eodashKey);
   if (!injected) {
-    throw new Error('Missing injected eodash – did you forget to call provideEodashInstance in a component?');
+    throw new Error(
+      "Missing injected eodash – did you forget to call provideEodashInstance in a component?",
+    );
   }
   _eodash = injected;
 }
@@ -48,75 +50,68 @@ export function provideEodashInstance() {
  */
 export function useEodash() {
   if (!_eodash) {
-    throw new Error('Eodash not yet available – call provideEodashInstance() first.');
+    throw new Error(
+      "Eodash not yet available – call provideEodashInstance() first.",
+    );
   }
   return _eodash;
 }
-
-
 /**
- * Creates an absolute URL from a relative link and assignes it to `currentUrl`
- *
- * @param {string} [rel=''] Default is `''`
- * @param {string} [base=eodash.stacEndpoint] - Base URL, default value is the
- *   root stac catalog. Default is `eodash.stacEndpoint`
- * @returns {import("vue").Ref<string>} - Returns `currentUrl`
- * @see {@link '@/store/states.js'}
+ * @param {import("vue").Ref<string>} absoluteUrl
+ * @returns
  */
-export const useAbsoluteUrl = (
-  rel = "",
-  base = inject(eodashKey)?.stacEndpoint,
-) => {
-  if (!rel || rel.includes("http") || !base) {
-    currentUrl.value = rel;
-    return currentUrl;
-  }
+const createUseAbsoluteUrl = (absoluteUrl) => {
+  /**
+   * Creates an absolute URL from a relative link and assignes it to `currentUrl`
+   *
+   * @param {string} [rel=''] Default is `''`
+   * @param {string} [base=eodash.stacEndpoint] - Base URL, default value is the
+   *   root stac catalog. Default is `eodash.stacEndpoint`
+   * @returns {import("vue").Ref<string>} - Returns `currentUrl`
+   * @see {@link '@/store/states.js'}
+   */
+  return (rel = "", base) => {
+    const { stacEndpoint, isApi } = storeToRefs(useSTAcStore());
+    if (!base) {
+      base = stacEndpoint.value ?? undefined;
+      if (!base) {
+        console.warn(
+          "[eodash] No base URL provided for absolute URL construction.",
+        );
+        return absoluteUrl;
+      }
+    }
 
-  const st = base.split("/");
-  const arr = rel.split("/");
-  st.pop();
+    if (rel.includes("http")) {
+      absoluteUrl.value = rel;
+      return absoluteUrl;
+    }
+    if (!rel) {
+      absoluteUrl.value = base;
+      return absoluteUrl;
+    }
 
-  for (let i = 0; i < arr.length; i++) {
-    if (arr[i] == ".") continue;
-    if (arr[i] == "..") st.pop();
-    else st.push(arr[i]);
-  }
+    if (isApi.value) {
+      absoluteUrl.value = base + `/collections/${rel}`;
+      return absoluteUrl;
+    }
 
-  currentUrl.value = st.join("/");
-  return currentUrl;
+    const st = base.split("/");
+    const arr = rel.split("/");
+    st.pop();
+
+    for (let i = 0; i < arr.length; i++) {
+      if (arr[i] == ".") continue;
+      if (arr[i] == "..") st.pop();
+      else st.push(arr[i]);
+    }
+
+    absoluteUrl.value = st.join("/");
+    return absoluteUrl;
+  };
 };
-
-/**
- * Use the absolute compare URL from a relative link
- *
- * @param {string} [rel=''] Default is `''`
- * @param {string} [base=eodash.stacEndpoint] - Base URL, default value is the
- *   root stac catalog. Default is `eodash.stacEndpoint`
- * @returns {import("vue").Ref<string>} - Returns `currentUrl`
- * @see {@link '@/store/states.js'}
- */
-export const useCompareAbsoluteUrl = (
-  rel = "",
-  base = inject(eodashKey)?.stacEndpoint,
-) => {
-  if (!rel || rel.includes("http") || !base) {
-    currentCompareUrl.value = rel;
-    return currentCompareUrl;
-  }
-
-  const st = base.split("/");
-  const arr = rel.split("/");
-  st.pop();
-
-  for (let i = 0; i < arr.length; i++) {
-    if (arr[i] == ".") continue;
-    if (arr[i] == "..") st.pop();
-    else st.push(arr[i]);
-  }
-
-  currentCompareUrl.value = st.join("/");
-  return currentCompareUrl;
-};
+export const useAbsoluteUrl = createUseAbsoluteUrl(currentUrl);
+export const useCompareAbsoluteUrl = createUseAbsoluteUrl(currentCompareUrl);
 
 /**
  * Updates an existing Vuetify theme. updates only the values provided in the
@@ -176,7 +171,6 @@ export const useURLSearchParametersSync = () => {
           }
           case "indicator": {
             log.debug("Found indicator key in url");
-            const eodash = inject(eodashKey);
             const match = store.stac?.find(
               (link) => useGetSubCodeId(link) == value,
             );
@@ -185,7 +179,7 @@ export const useURLSearchParametersSync = () => {
               if (searchParams.has("poi")) {
                 const indicatorUrl = toAbsolute(
                   match.href,
-                  eodash?.stacEndpoint ?? "",
+                  store.stacEndpoint ?? "",
                 );
                 // fetch indicator stac collection without rendering it
                 /** @type {import("stac-ts").StacCollection} */
