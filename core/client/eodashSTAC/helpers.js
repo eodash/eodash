@@ -100,6 +100,10 @@ export function extractCollectionUrls(stacObject, basepath) {
     return collectionUrls;
   }
   children.forEach((link) => {
+    if (link.href.startsWith("http")) {
+      collectionUrls.push(link.href);
+      return;
+    }
     collectionUrls.push(toAbsolute(link.href, basepath));
   });
   return collectionUrls;
@@ -169,18 +173,11 @@ export const getProjectionCode = (projection) => {
 
 /**
  * Extracts layercontrol LayerDatetime property from STAC Links
- * @param {import("stac-ts").StacLink[]} [links]
+ * @param {Date[]} [dates]
  * @param {string|null} [currentStep]
  **/
-export const extractLayerDatetime = (links, currentStep) => {
-  if (!currentStep || !links?.length) {
-    return undefined;
-  }
-
-  // check if links has a datetime value
-  const dateProperty = getDatetimeProperty(links);
-
-  if (!dateProperty) {
+export const extractLayerDatetime = (dates, currentStep) => {
+  if (!currentStep || !dates?.length) {
     return undefined;
   }
 
@@ -188,12 +185,8 @@ export const extractLayerDatetime = (links, currentStep) => {
   const controlValues = [];
   try {
     currentStep = new Date(currentStep).toISOString();
-    links.reduce((vals, link) => {
-      if (link[dateProperty] && link.rel === "item") {
-        vals.push(
-          new Date(/** @type {string} */ (link[dateProperty])).toISOString(),
-        );
-      }
+    dates.reduce((vals, date) => {
+      vals.push(date.toISOString());
       return vals;
     }, controlValues);
   } catch (e) {
@@ -549,4 +542,48 @@ export function getDatetimeProperty(links) {
     }
     return prop;
   }
+}
+/**
+ *
+ * @param {*} stacObject
+ * @returns {stacObject is import("stac-ts").StacItem}
+ */
+export function isSTACItem(stacObject) {
+  return (
+    stacObject &&
+    typeof stacObject === "object" &&
+    "type" in stacObject &&
+    stacObject.type === "Feature" &&
+    "properties" in stacObject &&
+    "geometry" in stacObject
+  );
+}
+/**
+ *
+ * @param {[string|null,string|null]} param0
+ * @param {string} density
+ */
+export function createDatesFromRange([startDate, endDate], density) {
+  if (!startDate || !endDate) {
+    return [];
+  }
+  if (!density) {
+    return [startDate, endDate];
+  }
+
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  const dates = [];
+  let current = start;
+  while (current <= end) {
+    dates.push(current.toISOString());
+    if (["daily", "day"].includes(density)) {
+      current.setDate(current.getDate() + 1);
+    } else if (["monthly", "month"].includes(density)) {
+      current.setMonth(current.getMonth() + 1);
+    } else if (["yearly", "year", "annual"].includes(density)) {
+      current.setFullYear(current.getFullYear() + 1);
+    }
+  }
+  return dates;
 }

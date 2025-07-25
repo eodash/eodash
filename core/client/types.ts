@@ -457,3 +457,23 @@ export type LayersEventBusKeys =
   | "compareLayers:updated"
   | "compareTime:updated"
   | "compareProcess:updated";
+
+//// STAC API types
+export interface SearchParams {
+  /** Collection IDs to search within */
+  collections: string[];
+  /** Query parameters */
+  query: {
+    datetime?: {
+      eq?: string;
+      in?: string[];
+    };
+    geometry?: Record<string, any>;
+  };
+  /** Maximum number of results to return */
+  limit?: number;
+}
+export interface StacItemsAPIResponse {
+  type: "FeatureCollection";
+  features: import("stac-ts").StacItem[];
+}

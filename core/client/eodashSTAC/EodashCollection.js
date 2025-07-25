@@ -1,6 +1,7 @@
 import { Collection, Item } from "stac-js";
 import { toAbsolute } from "stac-js/src/http.js";
 import {
+  createDatesFromRange,
   extractLayerConfig,
   extractLayerDatetime,
   extractRoles,
@@ -8,6 +9,7 @@ import {
   findLayer,
   generateFeatures,
   getDatetimeProperty,
+  isSTACItem,
   replaceLayer,
 } from "./helpers";
 import {
@@ -22,6 +24,8 @@ import { dataThemesBrands } from "@/utils/states";
 
 export class EodashCollection {
   #collectionUrl = "";
+
+  isAPI = true;
 
   /** @type {import("stac-ts").StacCollection | undefined} */
   #collectionStac;
@@ -45,20 +49,21 @@ export class EodashCollection {
   }
 
   /** @param {string} collectionUrl */
-  constructor(collectionUrl) {
+  constructor(collectionUrl, isAPI = true) {
     this.#collectionUrl = collectionUrl;
+    this.isAPI = isAPI;
   }
 
   /**
    * @async
-   * @param {import('stac-ts').StacLink | Date} [linkOrDate]
+   * @param {import('stac-ts').StacLink | Date } [linkOrDate]
    * @returns
    */
   createLayersJson = async (linkOrDate) => {
     /**
-     * @type {import("stac-ts").StacLink | undefined}
+     * @type {import("stac-ts").StacLink | import("stac-ts").StacItem | undefined}
      **/
-    let itemLink;
+    let itemOrItemLink;
 
     /**
      * @type {import("stac-ts").StacCollection | import("stac-ts").StacItem | undefined}
@@ -68,57 +73,61 @@ export class EodashCollection {
     /** @type {Record<string,any>[]} */
     let layersJson = [];
 
-    // Load collectionstac if not yet initialized
+    // Load collectionstac if not yet initialized // TODO
     stac = await this.fetchCollection();
 
     const isObservationPoint = stac?.endpointtype === "GeoDB";
 
     if (linkOrDate instanceof Date) {
       // if collectionStac not yet initialized we do it here
-      itemLink = this.getItem(linkOrDate);
+      itemOrItemLink = await this.getItem(linkOrDate);
     } else {
-      itemLink = linkOrDate;
+      itemOrItemLink = linkOrDate;
     }
+
     let stacItemUrl = "";
-    if (itemLink?.href.startsWith("blob:")) {
-      stacItemUrl = itemLink.href;
-    } else {
-      stacItemUrl = itemLink
-        ? toAbsolute(itemLink.href, this.#collectionUrl)
-        : this.#collectionUrl;
-    }
-
-    stac = await axios.get(stacItemUrl).then((resp) => resp.data);
-
-    if (!itemLink) {
-      // no specific item was requested; render last item
-      this.#collectionStac = new Collection(stac);
-      this.selectedItem = this.getItem();
-
-      if (this.selectedItem) {
-        layersJson = await this.createLayersJson(this.selectedItem);
+    if (isSTACItem(itemOrItemLink)) {
+      this.selectedItem = itemOrItemLink;
+      stac = this.selectedItem;
+      stacItemUrl = this.#collectionUrl + `/items/${this.selectedItem.id}`;
+    } else if (itemOrItemLink) {
+      if (itemOrItemLink?.href?.startsWith("blob:")) {
+        stacItemUrl = itemOrItemLink.href;
       } else {
+        stacItemUrl = toAbsolute(itemOrItemLink.href, this.#collectionUrl);
+        this.selectedItem = await axios
+          .get(stacItemUrl)
+          .then((resp) => resp.data);
+      }
+    } else {
+      this.selectedItem = await this.getItem();
+      if (!this.selectedItem) {
         console.warn(
           "[eodash] the selected collection does not include any items",
         );
+        return [];
+      } else if (this.selectedItem.href) {
+        //@ts-expect-error if selected item is a link, we fetch the item
+        stacItemUrl = toAbsolute(this.selectedItem.href, this.#collectionUrl);
+        this.selectedItem = await axios
+          .get(stacItemUrl)
+          .then((resp) => resp.data);
       }
-      return [];
-    } else {
-      // specific item was requested
-      const item = new Item(stac);
-      this.selectedItem = item;
-      const title =
-        this.#collectionStac?.title || this.#collectionStac?.id || "";
-      layersJson.unshift(
-        ...(await this.buildJsonArray(
-          item,
-          stacItemUrl,
-          title,
-          isObservationPoint,
-        )),
-      );
-      return layersJson;
     }
+
+    // specific item was requested
+    const item = new Item(stac);
+    this.selectedItem = item;
+    const title = this.#collectionStac?.title || this.#collectionStac?.id || "";
+    layersJson.unshift(
+      ...(await this.buildJsonArray(
+        item,
+        stacItemUrl,
+        title,
+        isObservationPoint,
+      )),
+    );
+    return layersJson;
   };
 
   /**
@@ -166,7 +175,7 @@ export class EodashCollection {
     );
 
     const layerDatetime = extractLayerDatetime(
-      this.getItems(),
+      await this.getDates(),
       item.properties?.datetime ??
         item.properties.start_datetime ??
         itemDatetime,
@@ -251,21 +260,28 @@ export class EodashCollection {
 
   async fetchCollection() {
     if (!this.#collectionStac) {
-      log.debug("Fetching collection file", this.#collectionUrl);
       const col = await axios
         .get(this.#collectionUrl)
         .then((resp) => resp.data);
       this.#collectionStac = new Collection(col);
+      log.debug("Fetching collection file", this.#collectionUrl);
     }
     return this.#collectionStac;
   }
 
   /**
    * Returns all item links sorted by datetime ascendingly
+   * @returns {Promise<import("stac-ts").StacLink[] | import("stac-ts").StacItem[] | undefined>}
    */
-  getItems() {
-    const datetimeProperty = getDatetimeProperty(this.#collectionStac?.links);
+  async getItems() {
     const items = this.#collectionStac?.links.filter((i) => i.rel === "item");
+    if (this.isAPI && !items?.length) {
+      const itemUrl = this.#collectionUrl + "/items";
+      return await axios.get(itemUrl).then((resp) => {
+        return resp.data;
+      });
+    }
+    const datetimeProperty = getDatetimeProperty(this.#collectionStac?.links);
     if (!datetimeProperty) {
       return items;
     }
@@ -281,12 +297,24 @@ export class EodashCollection {
     );
   }
 
-  getDates() {
+  async getDates() {
+    if (this.isAPI) {
+      this.#collectionStac = await this.fetchCollection();
+      const temporalExtent =
+        this.#collectionStac?.extent?.temporal?.interval?.[0] ?? [];
+      const timeDensity = /** @type {string} */ (
+        this.#collectionStac?.["dashboard:time_density"]
+      );
+
+      return createDatesFromRange(temporalExtent, timeDensity).map(
+        (date) => new Date(date),
+      );
+    }
     const datetimeProperty = getDatetimeProperty(this.#collectionStac?.links);
     if (!datetimeProperty) {
       return [];
     }
-    return this.getItems()?.map(
+    return (await this.getItems())?.map(
       (i) => new Date(/** @type {number} */ (i[datetimeProperty])),
     );
   }
@@ -294,20 +322,50 @@ export class EodashCollection {
   async getExtent() {
     return this.#collectionStac?.extent;
   }
+  apiSearchUrl = "";
+  /**
+   * @param {import("@/types").SearchParams} params
+   * @returns {Promise<import("stac-ts").StacItem[]>}
+   * */
+  async queryAPI(params) {
+    if (!this.apiSearchUrl) {
+      const urlArr = this.#collectionUrl.split("/");
+      const removeIdx = urlArr.indexOf("collections");
+      this.apiSearchUrl = urlArr.slice(0, removeIdx + 1).join("/") + "/search";
+    }
+    return await axios
+      .get(this.apiSearchUrl, { params })
+      .then((resp) => resp.data?.features);
+  }
 
   /**
    * Get closest Item Link from a certain date,
    * get the latest if no date provided
    *  @param {Date} [date]
+   *  @return {Promise<import("stac-ts").StacItem | import("stac-ts").StacLink | undefined>} item
    **/
-  getItem(date) {
+  async getItem(date) {
+    if (!date) {
+      return (await this.getItems())?.[0];
+    }
+    if (this.isAPI) {
+      const urlArr = this.#collectionUrl.split("/");
+      const removeIdx = urlArr.indexOf("collections");
+      const collectionId = urlArr[removeIdx + 1];
+      return await this.queryAPI({
+        collections: [collectionId],
+        query: { datetime: { eq: date.toISOString() } },
+      }).then((items) => {
+        return items?.[0];
+      });
+    }
     const datetimeProperty = getDatetimeProperty(this.#collectionStac?.links);
     if (!datetimeProperty) {
       // in case no datetime property is found, return the first item
-      return this.getItems()?.[0];
+      return (await this.getItems())?.[0];
     }
     return date
-      ? this.getItems()?.sort((a, b) => {
+      ? (await this.getItems())?.sort((a, b) => {
           const distanceA = Math.abs(
             new Date(/** @type {number} */ (a[datetimeProperty])).getTime() -
               date.getTime(),
@@ -318,7 +376,7 @@ export class EodashCollection {
           );
           return distanceA - distanceB;
         })[0]
-      : this.getItems()?.at(-1);
+      : (await this.getItems())?.at(-1);
   }
 
   async getToolTipProperties() {
@@ -348,11 +406,7 @@ export class EodashCollection {
       return;
     }
     // get the link of the specified date
-    const specifiedLink = this.getItems()?.find(
-      (item) =>
-        typeof item[datetimeProperty] === "string" &&
-        new Date(item[datetimeProperty]).toISOString() === datetime,
-    );
+    const specifiedLink = await this.getItem(new Date(datetime));
 
     if (!specifiedLink) {
       console.warn(
@@ -361,9 +415,23 @@ export class EodashCollection {
       );
       return;
     }
-
-    // create json layers from the item
-    const newLayers = await this.createLayersJson(specifiedLink);
+    /** @type {Record<string, any>[]} */
+    let newLayers = [];
+    if (isSTACItem(specifiedLink)) {
+      // wip
+      // if specifiedLink is an item, we create layers from it
+      newLayers = await this.buildJsonArray(
+        specifiedLink,
+        this.#collectionUrl + `/items/${specifiedLink.id}`,
+        this.#collectionStac?.title || this.#collectionStac?.id || "",
+        this.#collectionStac?.endpointtype === "GeoDB" ||
+          !!this.#collectionStac?.locations,
+        datetime,
+      );
+    } else {
+      // create json layers from the item
+      newLayers = await this.createLayersJson(specifiedLink);
+    }
 
     let currentLayers = getLayers();
     if (map === "second") {
