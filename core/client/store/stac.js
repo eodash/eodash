@@ -137,7 +137,7 @@ export const useSTAcStore = defineStore("stac", () => {
           resp.data,
           absoluteUrl.value,
           collectionsPalette,
-          isApi.value
+          isApi.value,
         );
         selectedStac.value = resp.data;
         // set indicator and poi

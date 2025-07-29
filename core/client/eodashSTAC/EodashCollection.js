@@ -331,10 +331,10 @@ export class EodashCollection {
     if (!this.apiSearchUrl) {
       const urlArr = this.#collectionUrl.split("/");
       const removeIdx = urlArr.indexOf("collections");
-      this.apiSearchUrl = urlArr.slice(0, removeIdx + 1).join("/") + "/search";
+      this.apiSearchUrl = urlArr.slice(0, removeIdx).join("/") + "/search";
     }
     return await axios
-      .get(this.apiSearchUrl, { params })
+      .post(this.apiSearchUrl, { ...params })
       .then((resp) => resp.data?.features);
   }
 

@@ -129,7 +129,6 @@ import { mdiRayStartArrow, mdiRayEndArrow } from "@mdi/js";
 import { eodashCollections, eodashCompareCollections } from "@/utils/states";
 import log from "loglevel";
 import { useTransparentPanel } from "@/composables";
-import { getDatetimeProperty } from "@/eodashSTAC/helpers";
 import { storeToRefs } from "pinia";
 
 const { lgAndDown } = useDisplay();
