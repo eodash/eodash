@@ -170,7 +170,10 @@ export const eodashViteConfig = /** @type {import("vite").UserConfigFn} */ (
                 const isUserConfig = source === "user:config" && !entryPath;
                 return (!isCssOrVuetify && isClientDep) || isUserConfig;
               },
-              treeshake: "smallest",
+              treeshake: {
+                moduleSideEffects: true,
+                preset: "smallest",
+              },
             },
           }),
       },
