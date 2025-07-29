@@ -512,21 +512,16 @@ export const applyProcessLayersToMap = (mapElement, processLayers) => {
 /**
  * Updates the jsonform schema to target the compare map
  * @param {import("json-schema").JSONSchema7 | null | undefined} jsonformSchema
- * @param {boolean} enableCompare
  */
-export function updateJsonformSchemaTarget(jsonformSchema, enableCompare) {
+export function updateJsonformSchemaTarget(jsonformSchema) {
   if (!jsonformSchema) {
-    return null;
+    return jsonformSchema;
   }
-  for (const key in jsonformSchema.properties) {
-    //@ts-expect-error jsonform schema
-    if (jsonformSchema.properties[key]?.options?.drawtools) {
-      //@ts-expect-error jsonform schema
-      jsonformSchema.properties[key].options.drawtools.for = enableCompare
-        ? mapEl.value
-        : mapCompareEl.value;
-    }
-  }
-
-  return jsonformSchema;
+  const stringified = JSON.stringify(jsonformSchema).replaceAll(
+    "eox-map#main",
+    "eox-map#compare",
+  );
+  return /** @type {import("json-schema").JSONSchema7} */ (
+    JSON.parse(stringified)
+  );
 }
