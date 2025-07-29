@@ -6,7 +6,6 @@ import {
 } from "@/eodashSTAC/helpers";
 import axios from "@/plugins/axios";
 import { getCompareLayers, getLayers } from "@/store/actions";
-import { mapCompareEl, mapEl } from "@/store/states";
 import { isMulti } from "@eox/jsonform/src/custom-inputs/spatial/utils";
 
 /**
