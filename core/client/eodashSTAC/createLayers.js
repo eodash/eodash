@@ -370,3 +370,94 @@ export const createLayersFromLinks = async (
   }
   return jsonArray;
 };
+/**
+ * Implementation of a function that creates a layer from the render extention
+ * @param {import("stac-ts").StacCollection | undefined | null} collection
+ * @param {import("stac-ts").StacItem | undefined | null} item
+ * @param {string} rasterURL
+ * @returns {import("@eox/map/src/layers").EOxLayerType<"Tile","XYZ">[]}
+ */
+export function createLayerFromRender(collection, item, rasterURL) {
+  if (!collection || !collection.render || !item?.render) {
+    return [];
+  }
+
+  const render = /** @type {Record<string,import("@/types").Render>} */ (
+    collection.render ?? item?.render
+  );
+  const layers = [];
+  // special case for rescale
+  for (const key in render) {
+    const title = render[key].title;
+    const rescale =
+      render[key].rescale ??
+      collection.assets?.[render[key].assets[0]]?.rescale ??
+      [];
+
+    const paramsObject = {
+      assets: render[key].assets,
+      expression:
+        render[key].expression ??
+        collection.assets?.[render[key].assets[0]]?.expression,
+      nodata:
+        render[key].nodata ??
+        collection.assets?.[render[key].assets[0]]?.nodata,
+      resampling:
+        render[key].resampling ??
+        collection.assets?.[render[key].assets[0]]?.resampling,
+      color_formula:
+        render[key].color_formula ??
+        collection.assets?.[render[key].assets[0]]?.color_formula,
+      colormap:
+        render[key].colormap ??
+        collection.assets?.[render[key].assets[0]]?.colormap,
+      colormap_name:
+        render[key].colormap_name ??
+        collection.assets?.[render[key].assets[0]]?.colormap_name,
+    };
+    let paramsStr = Object.entries(paramsObject).reduce((acc, [key, value]) => {
+      if (value) {
+        acc += `${key}=${value}&`;
+      }
+      return acc;
+    }, "");
+    paramsStr +=
+      //@ts-expect-error TODO
+      typeof rescale?.[0] === "undefined"
+        ? ""
+        : // @ts-expect-error TODO
+          typeof rescale?.[0] === "string"
+          ? //@ts-expect-error TODO
+            rescale.join(",")
+          : //@ts-expect-error TODO
+            rescale.reduce((acc, val) => {
+              acc += `rescale=${val.join(",")}&`;
+              return acc;
+            }, "");
+
+    const url = `${rasterURL}/collections/${collection.id}/items/${item.id}/tiles/WebMercatorQuad/{{z}}/{{x}}/{{y}}?${paramsStr}`;
+    layers.push({
+      /** @type {"Tile"} */
+      type: "Tile",
+      properties: {
+        id: createLayerID(
+          collection.id,
+          item.id,
+          { id: item.id, href: "", title, rel: "" },
+          "EPSG:3857",
+        ),
+        title,
+        layerDatetime: item.datetime,
+        roles: item.roles,
+      },
+      source: {
+        /** @type {"XYZ"} */
+        type: "XYZ",
+        url,
+        projection: "EPSG:3857",
+      },
+    });
+  }
+
+  return layers;
+}

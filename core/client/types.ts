@@ -477,3 +477,65 @@ export interface StacItemsAPIResponse {
   type: "FeatureCollection";
   features: import("stac-ts").StacItem[];
 }
+
+export interface Render {
+  /** REQUIRED. Array of asset keys referencing the assets that are used to make the rendering */
+  assets: string[];
+  /** Optional title of the rendering */
+  title?: string;
+  /** 2 dimensions array of delimited Min,Max range per band. If not provided, the data will not be rescaled. */
+  rescale?: number[][];
+  /** Nodata value to use for the referenced assets. */
+  nodata?: number | string;
+  /** Color map identifier that must be applied for a raster band */
+  colormap_name?: string;
+  /** Color map JSON definition that must be applied for a raster band */
+  colormap?: Record<string, unknown>;
+  /** Color formula that must be applied for a raster band */
+  color_formula?: string;
+  /** Resampling algorithm to apply to the referenced assets. See GDAL resampling algorithm for some examples. */
+  resampling?: string;
+  /** Band arithmetic formula to apply to the referenced assets. */
+  expression?: string;
+  /** Zoom levels range applicable for the visualization */
+  minmax_zoom?: number[];
+}
+
+export interface TitilerSTACParameters {
+  /** STAC Item URL. Required */
+  url: string;
+  /** asset names. */
+  assets?: string[];
+  /** rio-tiler's math expression with asset names (e.g Asset1_b1/Asset2_b1). */
+  expression?: string;
+  /** tell rio-tiler that each asset is a 1 band dataset, so expression Asset1/Asset2 can be passed. */
+  asset_as_band?: boolean;
+  /** Per asset band math expression (e.g Asset1|1,2,3). */
+  asset_bidx?: string[];
+  /** Overwrite internal Nodata value. */
+  nodata?: string | number;
+  /** Apply dataset internal Scale/Offset. */
+  unscale?: boolean;
+  /** RasterIO resampling algorithm. Defaults to nearest. */
+  resampling?: string;
+  /** WarpKernel resampling algorithm (only used when doing re-projection). Defaults to nearest. */
+  reproject?: string;
+  /** Comma (',') delimited Min,Max range (e.g rescale=0,1000, rescale=0,1000&rescale=0,3000&rescale=0,2000). */
+  rescale?: string[];
+  /** rio-color formula. */
+  color_formula?: string;
+  /** JSON encoded custom Colormap. */
+  colormap?: string;
+  /** rio-tiler color map name. */
+  colormap_name?: string;
+  /** Add mask to the output data. Default is True. */
+  return_mask?: boolean;
+  /** Buffer on each side of the given tile. It must be a multiple of 0.5. Output tilesize will be expanded to tilesize + 2 * buffer (e.g 0.5 = 257x257, 1.0 = 258x258). */
+  buffer?: number;
+  /** Padding to apply to each tile edge. Helps reduce resampling artefacts along edges. Defaults to 0. */
+  padding?: number;
+  /** Custom algorithm name (e.g hillshade). */
+  algorithm?: string;
+  /** JSON encoded algorithm parameters. */
+  algorithm_params?: string;
+}

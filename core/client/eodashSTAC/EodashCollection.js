@@ -17,7 +17,11 @@ import {
   getCompareLayers,
   registerProjection,
 } from "@/store/actions";
-import { createLayersFromAssets, createLayersFromLinks } from "./createLayers";
+import {
+  createLayerFromRender,
+  createLayersFromAssets,
+  createLayersFromLinks,
+} from "./createLayers";
 import axios from "@/plugins/axios";
 import log from "loglevel";
 import { dataThemesBrands } from "@/utils/states";
@@ -222,6 +226,11 @@ export class EodashCollection {
 
       jsonArray.push(
         ...links,
+        ...createLayerFromRender(
+          this.#collectionStac,
+          item,
+          "https://openveda.cloud/api/raster",
+        ),
         ...(await createLayersFromAssets(
           this.#collectionStac?.id ?? "",
           title || this.#collectionStac?.title || item.id,
