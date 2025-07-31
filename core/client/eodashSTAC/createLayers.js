@@ -378,64 +378,54 @@ export const createLayersFromLinks = async (
  * @returns {import("@eox/map/src/layers").EOxLayerType<"Tile","XYZ">[]}
  */
 export function createLayerFromRender(collection, item, rasterURL) {
-  if (!collection || !collection.render || !item?.render) {
+  if (!collection || !collection.renders || !item) {
+    console.log("No renders extension found in collection", collection, item);
+
     return [];
   }
+  // TODO: reconsider taking the asset value from item instead of collection
 
-  const render = /** @type {Record<string,import("@/types").Render>} */ (
-    collection.render ?? item?.render
+  // this implementation is based on openveda api which relies on the collection for rendersing
+  // eodash generally takes the item to be the rendersing source
+  // this should be evaluated and check which would be a better practice to support
+  // general STAC API implementations
+
+  const renders = /** @type {Record<string,import("@/types").Render>} */ (
+    collection.renders ?? item?.renders
   );
   const layers = [];
   // special case for rescale
-  for (const key in render) {
-    const title = render[key].title;
-    const rescale =
-      render[key].rescale ??
-      collection.assets?.[render[key].assets[0]]?.rescale ??
-      [];
+  for (const key in renders) {
+    const title = renders[key].title;
 
     const paramsObject = {
-      assets: render[key].assets,
+      assets: renders[key].assets,
       expression:
-        render[key].expression ??
-        collection.assets?.[render[key].assets[0]]?.expression,
+        renders[key].expression ??
+        collection.assets?.[renders[key].assets[0]]?.expression,
       nodata:
-        render[key].nodata ??
-        collection.assets?.[render[key].assets[0]]?.nodata,
+        renders[key].nodata ??
+        collection.assets?.[renders[key].assets[0]]?.nodata,
       resampling:
-        render[key].resampling ??
-        collection.assets?.[render[key].assets[0]]?.resampling,
+        renders[key].resampling ??
+        collection.assets?.[renders[key].assets[0]]?.resampling,
       color_formula:
-        render[key].color_formula ??
-        collection.assets?.[render[key].assets[0]]?.color_formula,
+        renders[key].color_formula ??
+        collection.assets?.[renders[key].assets[0]]?.color_formula,
       colormap:
-        render[key].colormap ??
-        collection.assets?.[render[key].assets[0]]?.colormap,
+        renders[key].colormap ??
+        collection.assets?.[renders[key].assets[0]]?.colormap,
       colormap_name:
-        render[key].colormap_name ??
-        collection.assets?.[render[key].assets[0]]?.colormap_name,
+        renders[key].colormap_name ??
+        collection.assets?.[renders[key].assets[0]]?.colormap_name,
+      rescale:
+        renders[key].rescale ??
+        collection.assets?.[renders[key].assets[0]]?.rescale,
     };
-    let paramsStr = Object.entries(paramsObject).reduce((acc, [key, value]) => {
-      if (value) {
-        acc += `${key}=${value}&`;
-      }
-      return acc;
-    }, "");
-    paramsStr +=
-      //@ts-expect-error TODO
-      typeof rescale?.[0] === "undefined"
-        ? ""
-        : // @ts-expect-error TODO
-          typeof rescale?.[0] === "string"
-          ? //@ts-expect-error TODO
-            rescale.join(",")
-          : //@ts-expect-error TODO
-            rescale.reduce((acc, val) => {
-              acc += `rescale=${val.join(",")}&`;
-              return acc;
-            }, "");
+    const paramsStr = encodeURLObject(paramsObject);
+    console.log("Creating layer from render", paramsStr);
 
-    const url = `${rasterURL}/collections/${collection.id}/items/${item.id}/tiles/WebMercatorQuad/{{z}}/{{x}}/{{y}}?${paramsStr}`;
+    const url = `${rasterURL}/collections/${collection.id}/items/${item.id}/tiles/WebMercatorQuad/{z}/{x}/{y}?${paramsStr}`;
     layers.push({
       /** @type {"Tile"} */
       type: "Tile",
@@ -460,4 +450,56 @@ export function createLayerFromRender(collection, item, rasterURL) {
   }
 
   return layers;
+}
+/**
+ *
+ * @param {Record<string,any>} obj
+ * @param {string} [prefix]
+ * @returns {string}
+ */
+function encodeURLObject(obj, prefix = "") {
+  let str = "";
+  for (const key in obj) {
+    const value = obj[key];
+    if (value === null || value === undefined || value === "") {
+      continue;
+    }
+
+    const fullKey = prefix ? `${prefix}.${key}` : key;
+    const valueType = Array.isArray(value) ? "array" : typeof value;
+
+    switch (valueType) {
+      case "array": {
+        // Check if any element in the array is itself an array (multi-dimensional)
+        const hasNestedArrays = value.some((/** @type {any} */ item) =>
+          Array.isArray(item),
+        );
+
+        if (hasNestedArrays) {
+          // For multi-dimensional arrays, repeat the key with different values
+          for (const val of value) {
+            if (Array.isArray(val)) {
+              str += `${fullKey}=${val.join(",")}&`;
+            } else {
+              str += `${fullKey}=${val}&`;
+            }
+          }
+        } else {
+          // For simple arrays, join with commas
+          str += `${fullKey}=${value.join(",")}&`;
+        }
+        break;
+      }
+      case "object": {
+        // For nested objects, pass the current key as prefix
+        str += encodeURLObject(value, fullKey);
+        break;
+      }
+      default: {
+        str += `${fullKey}=${encodeURIComponent(value)}&`;
+        break;
+      }
+    }
+  }
+  return str;
 }

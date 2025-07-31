@@ -69,18 +69,14 @@ export class EodashCollection {
      **/
     let itemOrItemLink;
 
-    /**
-     * @type {import("stac-ts").StacCollection | import("stac-ts").StacItem | undefined}
-     **/
-    let stac;
     // TODO get auxiliary layers from collection
     /** @type {Record<string,any>[]} */
     let layersJson = [];
 
     // Load collectionstac if not yet initialized // TODO
-    stac = await this.fetchCollection();
+    await this.fetchCollection();
 
-    const isObservationPoint = stac?.endpointtype === "GeoDB";
+    const isObservationPoint = this.#collectionStac?.endpointtype === "GeoDB";
 
     if (linkOrDate instanceof Date) {
       // if collectionStac not yet initialized we do it here
@@ -92,7 +88,6 @@ export class EodashCollection {
     let stacItemUrl = "";
     if (isSTACItem(itemOrItemLink)) {
       this.selectedItem = itemOrItemLink;
-      stac = this.selectedItem;
       stacItemUrl = this.#collectionUrl + `/items/${this.selectedItem.id}`;
     } else if (itemOrItemLink) {
       if (itemOrItemLink?.href?.startsWith("blob:")) {
@@ -103,7 +98,8 @@ export class EodashCollection {
           .get(stacItemUrl)
           .then((resp) => resp.data);
       }
-    } else {
+    }
+    if (!this.selectedItem) {
       this.selectedItem = await this.getItem();
       if (!this.selectedItem) {
         console.warn(
@@ -120,7 +116,7 @@ export class EodashCollection {
     }
 
     // specific item was requested
-    const item = new Item(stac);
+    const item = new Item(this.selectedItem);
     this.selectedItem = item;
     const title = this.#collectionStac?.title || this.#collectionStac?.id || "";
     layersJson.unshift(
@@ -143,6 +139,10 @@ export class EodashCollection {
    * @returns {Promise<Record<string,any>[]>} layers
    * */
   async buildJsonArray(item, itemUrl, title, isObservationPoint, itemDatetime) {
+    if (!item) {
+      console.warn("[eodash] no item provided to buildJsonArray");
+      return [];
+    }
     log.debug(
       "Building JSON array",
       item,
@@ -287,7 +287,7 @@ export class EodashCollection {
     if (this.isAPI && !items?.length) {
       const itemUrl = this.#collectionUrl + "/items";
       return await axios.get(itemUrl).then((resp) => {
-        return resp.data;
+        return resp.data.features;
       });
     }
     const datetimeProperty = getDatetimeProperty(this.#collectionStac?.links);
