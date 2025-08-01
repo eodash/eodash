@@ -22,6 +22,11 @@ export const useSTAcStore = defineStore("stac", () => {
    * @type {import("vue").Ref<string| null>}
    */
   const stacEndpoint = ref(null);
+  /**
+   * Raster endpoint URL
+   * @type {import("vue").Ref<string | null>}
+   */
+  const rasterEndpoint = ref(null);
   const isApi = ref(false);
 
   /**
@@ -62,6 +67,7 @@ export const useSTAcStore = defineStore("stac", () => {
     }
     stacEndpoint.value = endpoint.endpoint;
     isApi.value = endpoint.api ?? false;
+    rasterEndpoint.value = endpoint.rasterEndpoint ?? null;
   }
 
   /**
@@ -138,6 +144,7 @@ export const useSTAcStore = defineStore("stac", () => {
           absoluteUrl.value,
           collectionsPalette,
           isApi.value,
+          rasterEndpoint.value,
         );
         selectedStac.value = resp.data;
         // set indicator and poi
@@ -177,6 +184,7 @@ export const useSTAcStore = defineStore("stac", () => {
           absoluteUrl.value,
           [...collectionsPalette].reverse(),
           isApi.value,
+          rasterEndpoint.value,
         );
         selectedCompareStac.value = resp.data;
         compareIndicator.value = isPOI

@@ -30,6 +30,8 @@ export class EodashCollection {
   #collectionUrl = "";
 
   isAPI = true;
+  /** @type {string | null} */
+  rasterEndpoint = null;
 
   /** @type {import("stac-ts").StacCollection | undefined} */
   #collectionStac;
@@ -52,10 +54,15 @@ export class EodashCollection {
     return this.#collectionStac;
   }
 
-  /** @param {string} collectionUrl */
-  constructor(collectionUrl, isAPI = true) {
+  /**
+   * @param {string} collectionUrl
+   * @param {boolean} isAPI
+   * @param {string | null} rasterEndpoint
+   */
+  constructor(collectionUrl, isAPI = true, rasterEndpoint = null) {
     this.#collectionUrl = collectionUrl;
     this.isAPI = isAPI;
+    this.rasterEndpoint = rasterEndpoint;
   }
 
   /**
@@ -226,16 +233,18 @@ export class EodashCollection {
 
       jsonArray.push(
         ...links,
-        ...createLayerFromRender(
-          "https://openveda.cloud/api/raster",
-          this.#collectionStac,
-          item,
-          {
-            ...extraProperties,
-            ...layerConfig && { layerConfig },
-            ...layerDatetime && { layerDatetime },
-          }
-        ),
+        ...((this.rasterEndpoint &&
+          createLayerFromRender(
+            this.rasterEndpoint,
+            this.#collectionStac,
+            item,
+            {
+              ...extraProperties,
+              ...(layerConfig && { layerConfig }),
+              ...(layerDatetime && { layerDatetime }),
+            },
+          )) ||
+          []),
         ...(await createLayersFromAssets(
           this.#collectionStac?.id ?? "",
           title || this.#collectionStac?.title || item.id,

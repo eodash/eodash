@@ -12,6 +12,7 @@ const baseConfig = {
   stacEndpoint: {
     endpoint: "https://openveda.cloud/api/stac/",
     api: true,
+    rasterEndpoint: "https://openveda.cloud/api/raster/",
   },
   brand: {
     noLayout: true,

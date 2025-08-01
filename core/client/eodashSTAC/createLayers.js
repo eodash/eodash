@@ -378,7 +378,12 @@ export const createLayersFromLinks = async (
  * @param {Record<string, any>} [extraProperties]
  * @returns {import("@eox/map/src/layers").EOxLayerType<"Tile","XYZ">[]}
  */
-export function createLayerFromRender(rasterURL,collection, item,extraProperties) {
+export function createLayerFromRender(
+  rasterURL,
+  collection,
+  item,
+  extraProperties,
+) {
   if (!collection || !collection.renders || !item) {
     console.log("No renders extension found in collection", collection, item);
 
@@ -439,7 +444,7 @@ export function createLayerFromRender(rasterURL,collection, item,extraProperties
         ),
         title,
         roles: item.roles,
-        ...extraProperties
+        ...extraProperties,
       },
       source: {
         /** @type {"XYZ"} */
