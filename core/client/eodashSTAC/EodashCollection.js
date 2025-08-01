@@ -227,9 +227,14 @@ export class EodashCollection {
       jsonArray.push(
         ...links,
         ...createLayerFromRender(
+          "https://openveda.cloud/api/raster",
           this.#collectionStac,
           item,
-          "https://openveda.cloud/api/raster",
+          {
+            ...extraProperties,
+            ...layerConfig && { layerConfig },
+            ...layerDatetime && { layerDatetime },
+          }
         ),
         ...(await createLayersFromAssets(
           this.#collectionStac?.id ?? "",

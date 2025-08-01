@@ -375,9 +375,10 @@ export const createLayersFromLinks = async (
  * @param {import("stac-ts").StacCollection | undefined | null} collection
  * @param {import("stac-ts").StacItem | undefined | null} item
  * @param {string} rasterURL
+ * @param {Record<string, any>} [extraProperties]
  * @returns {import("@eox/map/src/layers").EOxLayerType<"Tile","XYZ">[]}
  */
-export function createLayerFromRender(collection, item, rasterURL) {
+export function createLayerFromRender(rasterURL,collection, item,extraProperties) {
   if (!collection || !collection.renders || !item) {
     console.log("No renders extension found in collection", collection, item);
 
@@ -437,8 +438,8 @@ export function createLayerFromRender(collection, item, rasterURL) {
           "EPSG:3857",
         ),
         title,
-        layerDatetime: item.datetime,
         roles: item.roles,
+        ...extraProperties
       },
       source: {
         /** @type {"XYZ"} */
