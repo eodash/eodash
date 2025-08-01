@@ -525,16 +525,37 @@ export const addTooltipInteraction = (layer, style) => {
 
 /**
  *
- * @param {import("stac-ts").StacLink[]} [links]
+ * @param {import("stac-ts").StacLink[] | import("stac-ts").StacItem[] |undefined |null} [linksOrItems]
  */
-export function getDatetimeProperty(links) {
-  if (!links?.length) {
+export function getDatetimeProperty(linksOrItems) {
+  if (!linksOrItems?.length) {
     return undefined;
   }
+  const first = linksOrItems[0];
+  let checkProperties = false;
+  if (isSTACItem(first)) {
+    checkProperties = true;
+  }
+
   // TODO: consider other properties for datetime ranges
   const datetimeProperties = ["datetime", "start_datetime", "end_datetime"];
+  if (checkProperties) {
+    for (const prop of datetimeProperties) {
+      const propExists = linksOrItems.some(
+        (l) =>
+          //@ts-expect-error TODO
+          l["properties"]?.[prop] &&
+          //@ts-expect-error TODO
+          typeof l["properties"]?.[prop] === "string",
+      );
+      if (!propExists) {
+        continue;
+      }
+      return prop;
+    }
+  }
   for (const prop of datetimeProperties) {
-    const propExists = links.some(
+    const propExists = linksOrItems.some(
       (l) => l[prop] && typeof l[prop] === "string",
     );
     if (!propExists) {
@@ -586,4 +607,35 @@ export function createDatesFromRange([startDate, endDate], density) {
     }
   }
   return dates;
+}
+/**
+ * Fetch all STAC items from a STAC API endpoint.
+ * @param {string} itemUrl
+ * @param {number} [limit=100] - The maximum number of items to fetch per request.
+ */
+export async function fetchApiItems(itemUrl, limit = 100) {
+  if (itemUrl.includes("limit=")) {
+    itemUrl = itemUrl.replace(/limit=\d+/, `limit=${limit}`);
+  } else {
+    if (itemUrl.includes("?")) {
+      itemUrl += `&limit=${limit}`;
+    } else {
+      itemUrl += `?limit=${limit}`;
+    }
+  }
+
+  const itemsFeatureCollection = await axios
+    .get(itemUrl)
+    .then((resp) => resp.data);
+  /** @type {import("stac-ts").StacItem[]} */
+  const items = itemsFeatureCollection.features;
+  const nextLink = itemsFeatureCollection.links.find(
+    //@ts-expect-error TODO: itemsFeatureCollection is not typed
+    (link) => link.rel === "next",
+  );
+  if (nextLink) {
+    const nextPage = await fetchApiItems(nextLink.href);
+    items.push(...nextPage);
+  }
+  return items;
 }

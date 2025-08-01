@@ -1,10 +1,10 @@
 import { Collection, Item } from "stac-js";
 import { toAbsolute } from "stac-js/src/http.js";
 import {
-  createDatesFromRange,
   extractLayerConfig,
   extractLayerDatetime,
   extractRoles,
+  fetchApiItems,
   fetchStyle,
   findLayer,
   generateFeatures,
@@ -284,12 +284,12 @@ export class EodashCollection {
    */
   async getItems() {
     const items = this.#collectionStac?.links.filter((i) => i.rel === "item");
+
     if (this.isAPI && !items?.length) {
       const itemUrl = this.#collectionUrl + "/items";
-      return await axios.get(itemUrl).then((resp) => {
-        return resp.data.features;
-      });
+      return await fetchApiItems(itemUrl);
     }
+
     const datetimeProperty = getDatetimeProperty(this.#collectionStac?.links);
     if (!datetimeProperty) {
       return items;
@@ -307,25 +307,22 @@ export class EodashCollection {
   }
 
   async getDates() {
-    if (this.isAPI) {
-      this.#collectionStac = await this.fetchCollection();
-      const temporalExtent =
-        this.#collectionStac?.extent?.temporal?.interval?.[0] ?? [];
-      const timeDensity = /** @type {string} */ (
-        this.#collectionStac?.["dashboard:time_density"]
-      );
+    const items = await this.getItems();
 
-      return createDatesFromRange(temporalExtent, timeDensity).map(
-        (date) => new Date(date),
-      );
-    }
-    const datetimeProperty = getDatetimeProperty(this.#collectionStac?.links);
-    if (!datetimeProperty) {
+    const datetimeProperty = getDatetimeProperty(
+      this.isAPI ? items : this.#collectionStac?.links,
+    );
+    if (!datetimeProperty || !items?.length) {
       return [];
     }
-    return (await this.getItems())?.map(
-      (i) => new Date(/** @type {number} */ (i[datetimeProperty])),
-    );
+
+    const mapToDates = this.isAPI
+      ? //@ts-expect-error todo
+        (i) =>
+          new Date(/** @type {string} */ (i.properties?.[datetimeProperty]))
+      : //@ts-expect-error todo
+        (i) => new Date(/** @type {string} */ (i[datetimeProperty]));
+    return items?.map(mapToDates) || [];
   }
 
   async getExtent() {
@@ -342,8 +339,19 @@ export class EodashCollection {
       const removeIdx = urlArr.indexOf("collections");
       this.apiSearchUrl = urlArr.slice(0, removeIdx).join("/") + "/search";
     }
+    const [collection] = params.collections || [];
+    const datetime = params.query?.datetime?.eq;
+    const limit = params.limit;
+    // this needs to be refactored, I am not sure how the search should work,
+    // seems in this instance get works better than post
     return await axios
-      .post(this.apiSearchUrl, { ...params })
+      .get(this.apiSearchUrl, {
+        params: {
+          collections: collection,
+          datetime,
+          limit,
+        },
+      })
       .then((resp) => resp.data?.features);
   }
 
