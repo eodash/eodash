@@ -8,7 +8,7 @@ eodash expects STAC collections in two levels to provide a user-friendly experie
 
 ### 1. Indicators (Collection of Collections)
 
-The top level consists of "Indicators," which are STAC Collections that group together other STAC Collections. Users primarily interact with these Indicators. When a user selects an Indicator and a specific datetime, the client renders the most relevant STAC Item from each of the nested collections, creating a unified view of different datasets for that point in time.
+The top level consists of "Indicators", which are STAC Collections that group together other STAC Collections. Users primarily interact with these Indicators. When a user selects an Indicator and a specific datetime, the client renders the most relevant STAC Item from each of the nested collections, creating a unified view of different datasets for that point in time.
 
 #### Indicator Link Properties
 
@@ -25,7 +25,7 @@ The links in a Catalog pointing to indicator collections can contain several met
 | `sensor` | An array of sensors used for data acquisition. |
 | `cities` | An array of relevant cities. |
 | `countries` | An array of relevant countries. |
-| `thumbnail` | An array of URLs to a thumbnail image for the collection. |
+| `thumbnail` | A URL to a thumbnail image for the collection. |
 | `tags` | An array of keywords or tags. |
 | `agency` | An array of contributing agencies. |
 
@@ -87,7 +87,22 @@ eodash supports various properties in [web map links](https://github.com/stac-ex
   "proj:epsg": 4326
 }
 ```
-
+### Data Assets
+eodash renders Item assets with the role `data` assigned, for example:
+```json
+{
+  ...
+ "assets": {
+   "example_data":{
+    "href":	"https://example.com/geotiff.tiff",
+    "type":	"image/tiff",
+    "title": "Example GeoTiFF Asset",
+    "roles":["data"]
+   }
+  ...	
+  }	
+}
+```
 ### Observation Points
 
 eodash can render Items as observation points on the map when specific conditions are met. This visualization mode is particularly useful for displaying point-based location data.
@@ -95,7 +110,7 @@ eodash can render Items as observation points on the map when specific condition
 #### Configuration
 
 A Collection is rendered as observation points when either:
-- `endpointtype` is set to `"geodb"`
+- `endpointtype` is set to `"GeoDB"`
 - `locations` is set to `true`
 
 #### Point Generation
@@ -210,7 +225,23 @@ Attribution text to be displayed on the map can be set using the `attribution` p
 
 
 ### eodash Flat Styles 
-...
+eodash Flat Styles extend the standard [OpenLayers Flat Styles](https://openlayers.org/en/latest/apidoc/module-ol_style_flat.html) to support dynamic, user-configurable styling. This extension introduces additional properties to the style object to enable interactive visualizations, legends, and tooltips.
+
+The core of this extension is the ability to define style `variables` that can be dynamically updated by the user through a `jsonform`. This allows users to adjust visualization parameters like colors or filter values as well as `tooltip` properties directly from the user interface and update the legend scale.
+
+- **`variables`**: A key-value map where style properties can be defined as variables.
+- **`jsonform`**: A [EOxJSONForm]() JSON Schema that defines a form. This form is rendered in the UI, allowing users to modify the `variables` at runtime.
+- **`legend`**: Configuration for displaying a layer's legend.
+- **`tooltip`**: Configuration for defining interactive tooltips that appear on feature hover or click.
+
+```ts
+type EodashStyleJson = import("ol/style/flat").FlatStyleLike & {
+  variables?: Record<string, string | number | boolean | null | undefined>;
+  legend?: import("@eox/layercontrol/src/components/layer-config.js").EOxLayerControlLayerConfig["layerConfig"]["legend"];
+  jsonform?: import("json-schema").JSONSchema7;
+  tooltip?: { id: string; title?: string; appendix?: string }[];
+};
+```
 
 
 ## Processing
