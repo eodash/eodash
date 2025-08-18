@@ -61,6 +61,10 @@ export const useSTAcStore = defineStore("stac", () => {
    * @param {import("@/types").StacEndpoint} endpoint
    */
   function init(endpoint) {
+    if (!endpoint) {
+      throw new Error("STAC endpoint is not defined");
+    }
+
     if (typeof endpoint === "string") {
       stacEndpoint.value = endpoint;
       return;

@@ -101,10 +101,10 @@ export class EodashCollection {
         stacItemUrl = itemOrItemLink.href;
       } else {
         stacItemUrl = toAbsolute(itemOrItemLink.href, this.#collectionUrl);
-        this.selectedItem = await axios
-          .get(stacItemUrl)
-          .then((resp) => resp.data);
       }
+      this.selectedItem = await axios
+        .get(stacItemUrl)
+        .then((resp) => resp.data);
     }
     if (!this.selectedItem) {
       this.selectedItem = await this.getItem();
