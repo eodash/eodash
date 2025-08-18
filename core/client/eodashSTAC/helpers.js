@@ -280,23 +280,23 @@ export const replaceLayer = (currentLayers, oldLayer, newLayers) => {
  */
 export const getColFromLayer = (indicators, layer) => {
   // init cols
-  const collections = indicators.map((ind) => ind.collectionStac);
+  // const collections = indicators.map((ind) => ind.collectionStac);
   const [collectionId, itemId, ..._other] = layer.get("id").split(";:;");
 
-  const chosen = collections.find((col) => {
-    const isInd =
-      col?.id === collectionId &&
-      col?.links?.some(
-        (link) =>
-          link.rel === "item" &&
-          (link.href.includes(itemId) ||
-            link.id === itemId ||
-            //@ts-expect-error attaching the item in link when parsing .parquet items, see @/eodashSTAC/parquet.js
-            (link["item"] && link["item"].id === itemId)),
+  return indicators.find(async (ind) => {
+    const isCollection = ind.collectionStac?.id === collectionId;
+    if (!isCollection) {
+      return false;
+    }
+    /** @type {string[]} */
+    const itemIds = [];
+    await ind.getItems().then((items) => {
+      itemIds.push(
+        ...(items?.map((item) => /** @type {string} */ (item.id)) ?? []),
       );
-    return isInd;
+    });
+    return itemIds.includes(itemId);
   });
-  return indicators.find((ind) => ind.collectionStac?.id === chosen?.id);
 };
 
 /**

@@ -431,7 +431,7 @@ export class EodashCollection {
    */
   async updateLayerJson(datetime, layer, map) {
     await this.fetchCollection();
-    const datetimeProperty = getDatetimeProperty(this.#collectionStac?.links);
+    const datetimeProperty = getDatetimeProperty(await this.getItems());
     if (!datetimeProperty) {
       console.warn("[eodash] no datetime property found in collection");
       return;
@@ -449,7 +449,6 @@ export class EodashCollection {
     /** @type {Record<string, any>[]} */
     let newLayers = [];
     if (isSTACItem(specifiedLink)) {
-      // wip
       // if specifiedLink is an item, we create layers from it
       newLayers = await this.buildJsonArray(
         specifiedLink,

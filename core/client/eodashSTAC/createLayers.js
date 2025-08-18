@@ -385,16 +385,8 @@ export function createLayerFromRender(
   extraProperties,
 ) {
   if (!collection || !collection.renders || !item) {
-    console.log("No renders extension found in collection", collection, item);
-
     return [];
   }
-  // TODO: reconsider taking the asset value from item instead of collection
-
-  // this implementation is based on openveda api which relies on the collection for rendersing
-  // eodash generally takes the item to be the rendersing source
-  // this should be evaluated and check which would be a better practice to support
-  // general STAC API implementations
 
   const renders = /** @type {Record<string,import("@/types").Render>} */ (
     collection.renders ?? item?.renders
@@ -404,29 +396,32 @@ export function createLayerFromRender(
   for (const key in renders) {
     const title = renders[key].title;
 
+    const assetsCollection =
+      renders[key].assets[0] in item["assets"] ? item : collection;
+
     const paramsObject = {
       assets: renders[key].assets,
       expression:
         renders[key].expression ??
-        collection.assets?.[renders[key].assets[0]]?.expression,
+        assetsCollection["assets"]?.[renders[key].assets[0]]?.expression,
       nodata:
         renders[key].nodata ??
-        collection.assets?.[renders[key].assets[0]]?.nodata,
+        assetsCollection["assets"]?.[renders[key].assets[0]]?.nodata,
       resampling:
         renders[key].resampling ??
-        collection.assets?.[renders[key].assets[0]]?.resampling,
+        assetsCollection["assets"]?.[renders[key].assets[0]]?.resampling,
       color_formula:
         renders[key].color_formula ??
-        collection.assets?.[renders[key].assets[0]]?.color_formula,
+        assetsCollection["assets"]?.[renders[key].assets[0]]?.color_formula,
       colormap:
         renders[key].colormap ??
-        collection.assets?.[renders[key].assets[0]]?.colormap,
+        assetsCollection["assets"]?.[renders[key].assets[0]]?.colormap,
       colormap_name:
         renders[key].colormap_name ??
-        collection.assets?.[renders[key].assets[0]]?.colormap_name,
+        assetsCollection["assets"]?.[renders[key].assets[0]]?.colormap_name,
       rescale:
         renders[key].rescale ??
-        collection.assets?.[renders[key].assets[0]]?.rescale,
+        assetsCollection["assets"]?.[renders[key].assets[0]]?.rescale,
     };
     const paramsStr = encodeURLObject(paramsObject);
     console.log("Creating layer from render", paramsStr);
