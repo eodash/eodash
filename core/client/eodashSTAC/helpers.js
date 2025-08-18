@@ -610,26 +610,26 @@ export function createDatesFromRange([startDate, endDate], density) {
 }
 /**
  * Fetch all STAC items from a STAC API endpoint.
- * @param {string} itemUrl
+ * @param {string} itemsUrl
  * @param {number} [limit=100] - The maximum number of items to fetch per request.
  */
-export async function fetchApiItems(itemUrl, limit = 100) {
-  if (itemUrl.includes("limit=")) {
-    itemUrl = itemUrl.replace(/limit=\d+/, `limit=${limit}`);
+export async function fetchApiItems(itemsUrl, limit = 100) {
+  if (itemsUrl.includes("limit=")) {
+    itemsUrl = itemsUrl.replace(/limit=\d+/, `limit=${limit}`);
   } else {
-    if (itemUrl.includes("?")) {
-      itemUrl += `&limit=${limit}`;
+    if (itemsUrl.includes("?")) {
+      itemsUrl += `&limit=${limit}`;
     } else {
-      itemUrl += `?limit=${limit}`;
+      itemsUrl += `?limit=${limit}`;
     }
   }
 
   const itemsFeatureCollection = await axios
-    .get(itemUrl)
+    .get(itemsUrl)
     .then((resp) => resp.data);
   /** @type {import("stac-ts").StacItem[]} */
   const items = itemsFeatureCollection.features;
-  const nextLink = itemsFeatureCollection.links.find(
+  const nextLink = itemsFeatureCollection.links?.find(
     //@ts-expect-error TODO: itemsFeatureCollection is not typed
     (link) => link.rel === "next",
   );
