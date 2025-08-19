@@ -82,6 +82,10 @@ const createUseAbsoluteUrl = (absoluteUrl) => {
         return absoluteUrl;
       }
     }
+    if (isApi.value) {
+      absoluteUrl.value = base + `/collections/${rel}`;
+      return absoluteUrl;
+    }
 
     if (rel.includes("http")) {
       absoluteUrl.value = rel;
@@ -89,11 +93,6 @@ const createUseAbsoluteUrl = (absoluteUrl) => {
     }
     if (!rel) {
       absoluteUrl.value = base;
-      return absoluteUrl;
-    }
-
-    if (isApi.value) {
-      absoluteUrl.value = base + `/collections/${rel}`;
       return absoluteUrl;
     }
 
@@ -217,7 +216,9 @@ export const useURLSearchParametersSync = () => {
                   await store.loadSelectedSTAC(poiAbsoluteUrl, true);
                 }
               } else {
-                await store.loadSelectedSTAC(match.href);
+                await store.loadSelectedSTAC(
+                  /** @type {string} */ (store.isApi ? match.id : match.href),
+                );
               }
             }
             break;

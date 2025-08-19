@@ -348,6 +348,7 @@ export class EodashCollection {
    * @returns {Promise<import("stac-ts").StacItem[]>}
    * */
   async queryAPI(params) {
+    // wip
     if (!this.apiSearchUrl) {
       const urlArr = this.#collectionUrl.split("/");
       const removeIdx = urlArr.indexOf("collections");
@@ -380,9 +381,7 @@ export class EodashCollection {
       return (await this.getItems())?.[0];
     }
     if (this.isAPI) {
-      const urlArr = this.#collectionUrl.split("/");
-      const removeIdx = urlArr.indexOf("collections");
-      const collectionId = urlArr[removeIdx + 1];
+      const collectionId = /** @type {string} */ (this.collectionStac?.id);
       return await this.queryAPI({
         collections: [collectionId],
         query: { datetime: { eq: date.toISOString() } },
