@@ -455,10 +455,9 @@ export function createLayerFromRender(
 /**
  *
  * @param {Record<string,any>} obj
- * @param {string} [prefix]
  * @returns {string}
  */
-function encodeURLObject(obj, prefix = "") {
+function encodeURLObject(obj) {
   let str = "";
   for (const key in obj) {
     const value = obj[key];
@@ -466,7 +465,6 @@ function encodeURLObject(obj, prefix = "") {
       continue;
     }
 
-    const fullKey = prefix ? `${prefix}.${key}` : key;
     const valueType = Array.isArray(value) ? "array" : typeof value;
 
     switch (valueType) {
@@ -480,24 +478,23 @@ function encodeURLObject(obj, prefix = "") {
           // For multi-dimensional arrays, repeat the key with different values
           for (const val of value) {
             if (Array.isArray(val)) {
-              str += `${fullKey}=${val.join(",")}&`;
+              str += `${key}=${val.join(",")}&`;
             } else {
-              str += `${fullKey}=${val}&`;
+              str += `${key}=${val}&`;
             }
           }
         } else {
           // For simple arrays, join with commas
-          str += `${fullKey}=${value.join(",")}&`;
+          str += `${key}=${value.join(",")}&`;
         }
         break;
       }
       case "object": {
-        // For nested objects, pass the current key as prefix
-        str += encodeURLObject(value, fullKey);
+        str += `${key}=${encodeURI(JSON.stringify(value))}&`;
         break;
       }
       default: {
-        str += `${fullKey}=${encodeURIComponent(value)}&`;
+        str += `${key}=${encodeURIComponent(value)}&`;
         break;
       }
     }
