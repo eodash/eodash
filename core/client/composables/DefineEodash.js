@@ -6,7 +6,7 @@ import { inject, reactive } from "vue";
  * Handles importing user defined instance of Eodash
  *
  * @async
- * @param {string | undefined} runtimeConfig
+ * @param {string | undefined| (()=> Promise<import("@/types").Eodash>) | Function} runtimeConfig
  * @returns {Promise<import("@/types").Eodash | null | undefined>}
  * @see {@linkplain '@/eodash.js'}
  */
@@ -15,9 +15,12 @@ export const useEodashRuntime = async (runtimeConfig) => {
   const eodash = /** @type {import("@/types").Eodash} */ (inject(eodashKey));
 
   if (runtimeConfig) {
-    eodashConfig = await import(
-      /* @vite-ignore */ new URL(runtimeConfig, import.meta.url).href
-    ).then(async (m) => await m["default"]);
+    eodashConfig =
+      typeof runtimeConfig === "function"
+        ? await runtimeConfig()
+        : await import(
+            /* @vite-ignore */ new URL(runtimeConfig, import.meta.url).href
+          ).then(async (m) => await m["default"]);
     if (!eodashConfig) {
       throw new Error(
         "No dashboard configuration defined in the runtime config:" +
