@@ -13,7 +13,7 @@
 <script setup>
 import Dashboard from "@/views/Dashboard.vue";
 import ErrorAlert from "./components/ErrorAlert.vue";
-import { provideEodashInstance } from "@/composables";
+import { provideEodashInstance, useAdoptStyles } from "@/composables";
 import { onErrorCaptured, ref } from "vue";
 
 defineProps({
@@ -37,4 +37,8 @@ onErrorCaptured((e, inst, info) => {
   `;
 });
 provideEodashInstance();
+if (isWebComponent) {
+  // Adopt styles into the shadowRoot when running as web component
+  useAdoptStyles();
+}
 </script>
