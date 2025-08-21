@@ -18,7 +18,7 @@ import { onErrorCaptured, ref } from "vue";
 
 defineProps({
   config: {
-    type: String,
+    type: [String, Function],
     required: false,
     default: undefined,
   },
