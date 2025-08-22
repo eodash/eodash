@@ -1,5 +1,25 @@
 <template>
   <div ref="rootRef" class="d-flex flex-column align-end">
+    <!-- Zoom Out Button -->
+    <v-btn
+      v-if="showZoomControls"
+      class="map-btn"
+      :icon="[mdiMinus]"
+      size="small"
+      v-tooltip:bottom="'Zoom out'"
+      @click="() => console.log('zoomout')"
+    />
+
+    <!-- Zoom In Button -->
+    <v-btn
+      v-if="showZoomControls"
+      class="map-btn"
+      :icon="[mdiPlus]"
+      size="small"
+      v-tooltip:bottom="'Zoom in'"
+      @click="() => console.log('zoomin')"
+    />
+
     <v-btn
       v-if="exportMap"
       class="map-btn"
@@ -63,6 +83,8 @@ import {
   activeTemplate,
   availableMapProjection,
   comparePoi,
+  mapEl,
+  mapCompareEl,
   poi,
 } from "@/store/states";
 import {
@@ -70,6 +92,8 @@ import {
   mdiCompareRemove,
   mdiEarthBox,
   mdiMapPlus,
+  mdiMinus,
+  mdiPlus,
   mdiStarFourPointsCircleOutline,
 } from "@mdi/js";
 import ExportState from "^/ExportState.vue";
@@ -81,26 +105,35 @@ import { useSTAcStore } from "@/store/stac";
 import { storeToRefs } from "pinia";
 import { loadPOiIndicator } from "./EodashProcess/methods/handling";
 
-const { compareIndicators, changeProjection, exportMap, backToPOIs } =
-  defineProps({
-    exportMap: {
-      type: Boolean,
-      default: true,
-    },
-    changeProjection: {
-      type: Boolean,
-      default: true,
-    },
-    compareIndicators: {
-      /** @type {import("vue").PropType<boolean | {compareTemplate?:string;fallbackTemplate?:string}> }*/
-      type: [Boolean, Object],
-      default: true,
-    },
-    backToPOIs: {
-      type: Boolean,
-      default: true,
-    },
-  });
+const {
+  compareIndicators,
+  changeProjection,
+  exportMap,
+  backToPOIs,
+  showZoomControls,
+} = defineProps({
+  exportMap: {
+    type: Boolean,
+    default: true,
+  },
+  changeProjection: {
+    type: Boolean,
+    default: true,
+  },
+  compareIndicators: {
+    /** @type {import("vue").PropType<boolean | {compareTemplate?:string;fallbackTemplate?:string}> }*/
+    type: [Boolean, Object],
+    default: true,
+  },
+  backToPOIs: {
+    type: Boolean,
+    default: true,
+  },
+  showZoomControls: {
+    type: Boolean,
+    default: true, // Always show zoom controls by default
+  },
+});
 const { selectedStac, selectedCompareStac } = storeToRefs(useSTAcStore());
 const { resetSelectedCompareSTAC } = useSTAcStore();
 const { smAndDown } = useDisplay();
