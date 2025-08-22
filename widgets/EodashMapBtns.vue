@@ -1,5 +1,6 @@
 <template>
   <div ref="rootRef" class="d-flex flex-column align-end">
+    <b>TEST TEST TEST</b>
     <!-- Zoom Out Button -->
     <v-btn
       v-if="showZoomControls"
@@ -131,7 +132,7 @@ const {
   },
   showZoomControls: {
     type: Boolean,
-    default: true, // Always show zoom controls by default
+    default: true,
   },
 });
 const { selectedStac, selectedCompareStac } = storeToRefs(useSTAcStore());
