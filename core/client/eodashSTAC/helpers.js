@@ -611,18 +611,12 @@ export function createDatesFromRange([startDate, endDate], density) {
 /**
  * Fetch all STAC items from a STAC API endpoint.
  * @param {string} itemsUrl
+ * @param {string} [query]
  * @param {number} [limit=100] - The maximum number of items to fetch per request.
  */
-export async function fetchApiItems(itemsUrl, limit = 100) {
-  if (itemsUrl.includes("limit=")) {
-    itemsUrl = itemsUrl.replace(/limit=\d+/, `limit=${limit}`);
-  } else {
-    if (itemsUrl.includes("?")) {
-      itemsUrl += `&limit=${limit}`;
-    } else {
-      itemsUrl += `?limit=${limit}`;
-    }
-  }
+export async function fetchApiItems(itemsUrl, query, limit = 100) {
+  itemsUrl = itemsUrl.includes("?") ? itemsUrl.split("?")[0] : itemsUrl;
+  itemsUrl += query ? `?limit=${limit}&${query}` : `?limit=${limit}`;
 
   const itemsFeatureCollection = await axios
     .get(itemsUrl)
@@ -633,8 +627,24 @@ export async function fetchApiItems(itemsUrl, limit = 100) {
     //@ts-expect-error TODO: itemsFeatureCollection is not typed
     (link) => link.rel === "next",
   );
+
   if (nextLink) {
-    const nextPage = await fetchApiItems(nextLink.href);
+    let [nextLinkURL, nextLinkQuery] = nextLink.href.split("?");
+    nextLinkQuery = nextLinkQuery.replace(/limit=\d+/, "");
+    if (query) {
+      const queryParams = new URLSearchParams(query);
+      const nextLinkParams = new URLSearchParams(nextLinkQuery);
+
+      for (const key of nextLinkParams.keys()) {
+        queryParams.delete(key);
+      }
+      const remainingQuery = queryParams.toString();
+      if (remainingQuery) {
+        nextLinkQuery += `&${remainingQuery}`;
+      }
+    }
+
+    const nextPage = await fetchApiItems(nextLinkURL, nextLinkQuery);
     items.push(...nextPage);
   }
   return items;

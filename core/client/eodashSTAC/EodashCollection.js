@@ -301,7 +301,7 @@ export class EodashCollection {
 
     if (this.isAPI && !items?.length) {
       const itemUrl = this.#collectionUrl + "/items";
-      return await fetchApiItems(itemUrl);
+      return await fetchApiItems(itemUrl, `fields=properties`);
     }
 
     const datetimeProperty = getDatetimeProperty(this.#collectionStac?.links);
