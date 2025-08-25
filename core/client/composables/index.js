@@ -16,13 +16,12 @@ import { inject, nextTick, onMounted, onUnmounted, watch } from "vue";
 import { useSTAcStore } from "@/store/stac";
 import log from "loglevel";
 import { eodashKey, eoxLayersKey } from "@/utils/keys";
-import { useEventBus } from "@vueuse/core";
+import { useEventBus, useMutationObserver } from "@vueuse/core";
 import { isFirstLoad } from "@/utils/states";
 import { setCollectionsPalette } from "@/utils";
 import mustache from "mustache";
 import { toAbsolute } from "stac-js/src/http.js";
 import axios from "@/plugins/axios";
-
 
 /**
 /** @type {import('@/types').Eodash | null}*/
@@ -36,7 +35,9 @@ let _eodash = null;
 export function provideEodashInstance() {
   const injected = inject(eodashKey);
   if (!injected) {
-    throw new Error('Missing injected eodash – did you forget to call provideEodashInstance in a component?');
+    throw new Error(
+      "Missing injected eodash – did you forget to call provideEodashInstance in a component?",
+    );
   }
   _eodash = injected;
 }
@@ -48,11 +49,12 @@ export function provideEodashInstance() {
  */
 export function useEodash() {
   if (!_eodash) {
-    throw new Error('Eodash not yet available – call provideEodashInstance() first.');
+    throw new Error(
+      "Eodash not yet available – call provideEodashInstance() first.",
+    );
   }
   return _eodash;
 }
-
 
 /**
  * Creates an absolute URL from a relative link and assignes it to `currentUrl`
@@ -407,3 +409,93 @@ export const useGetSubCodeId = (collection) => {
   }
   return /** @type {string} */ (collection.id);
 };
+
+/**
+ * Composable: Adopt Vuetify styles into eo-dash shadow root
+ * - Safe no-op outside Web Component context
+ * - Cleans up observers on unmount
+ */
+/**
+ * @param {string[]} [keyWords=["vuetify"]] - list of case-insensitive substrings to match against <style> element IDs
+ */
+export function useAdoptStyles(keyWords = ["vuetify"]) {
+  /** @type {Array<() => void>} */
+  let stops = [];
+
+  const eoDash =
+    /** @type {HTMLElement & { shadowRoot: ShadowRoot | null }} */ (
+      document.querySelector("eo-dash")
+    );
+  if (!eoDash || !eoDash.shadowRoot) return;
+  // Require Constructable Stylesheets support
+  if (typeof CSSStyleSheet === "undefined") return;
+
+  const head = document.head;
+  const shadow = eoDash.shadowRoot;
+  /** @type {Map<string, CSSStyleSheet>} */
+  const sheetsById = new Map();
+
+  /**
+   * @param {string} id
+   * @param {string} cssText
+   */
+  const updateSheet = (id, cssText) => {
+    let sheet = sheetsById.get(id);
+    if (!sheet) {
+      sheet = new CSSStyleSheet();
+      sheet.replaceSync(cssText);
+      sheetsById.set(id, sheet);
+      shadow.adoptedStyleSheets = [...shadow.adoptedStyleSheets, sheet];
+    } else {
+      sheet.replaceSync(cssText);
+    }
+  };
+
+  /**
+   * @param {HTMLStyleElement} el
+   */
+  const handleStyleEl = (el) => {
+    const id = el.id || "";
+    const idLc = id.toLowerCase();
+    if (!keyWords.some((s) => idLc.includes(String(s).toLowerCase()))) return;
+    const cssText = (el.textContent || "").replaceAll(":root", ":host");
+    if (!cssText) return;
+
+    updateSheet(id, cssText);
+
+    const observer = useMutationObserver(
+      el,
+      () => {
+        const nextCss = (el.textContent || "").replaceAll(":root", ":host");
+        if (nextCss) updateSheet(id, nextCss);
+      },
+      { childList: true, characterData: true, subtree: true },
+    );
+    if (observer?.stop) stops.push(() => observer.stop());
+  };
+
+  /**
+   * @param {Node} node
+   */
+  const handleNode = (node) => {
+    if (node instanceof HTMLStyleElement) handleStyleEl(node);
+  };
+
+  head.childNodes.forEach(handleNode);
+
+  const headObserver = useMutationObserver(
+    head,
+    (mutations) => {
+      mutations?.forEach((m) => {
+        m.addedNodes?.forEach(handleNode);
+      });
+    },
+    { childList: true },
+  );
+  if (headObserver?.stop) stops.push(() => headObserver.stop());
+
+  onUnmounted(() => {
+    stops.forEach((stop) => stop());
+    stops = [];
+  });
+}

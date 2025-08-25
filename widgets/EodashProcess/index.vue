@@ -68,9 +68,9 @@ const { enableCompare, vegaEmbedOptions } = defineProps({
   vegaEmbedOptions: {
     type: Object,
     default() {
-      return {actions: true, }
-    }
-  }
+      return { actions: true };
+    },
+  },
 });
 /** @type {import("vue").Ref<import("vega").Spec|null>} */
 const chartSpec = ref(null);
