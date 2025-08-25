@@ -1,10 +1,10 @@
 # STAC
 
-eodash leverages the SpatioTemporal Asset Catalog (STAC) specification to discover and display geospatial data. The implementation uses a two-tiered structure of collections and a set of STAC extensions to handle various data types and services.
+eodash leverages the SpatioTemporal Asset Catalog (STAC) specification to discover and display geospatial data. The implementation uses a two-tiered collection structure and a set of STAC extensions to handle various data types and services.
 
-## Two-level Collections
+## Two-Level Collections
 
-eodash expects STAC collections in two levels to provide a user-friendly experience for data exploration.
+eodash uses a two-level STAC collection hierarchy to provide a user-friendly experience for data exploration.
 
 ### 1. Indicators (Collection of Collections)
 
@@ -12,7 +12,7 @@ The top level consists of "Indicators", which are STAC Collections that group to
 
 #### Indicator Link Properties
 
-The links in a Catalog pointing to indicator collections can contain several metadata properties that describe it's visual products. [EodashItemFilter]() uses the properties to create filters and display overviews of these products.
+The links in a catalog pointing to indicator collections can contain several metadata properties that describe their visual products. The [EOxItemfilter](https://eox-a.github.io/EOxElements/?path=/docs/elements-eox-itemfilter--docs) component uses these properties to create filters and display overviews of these products.
 
 | Property | Description |
 |---|---|
@@ -32,29 +32,30 @@ The links in a Catalog pointing to indicator collections can contain several met
 
 ### 2. Data Collections
 
-The second level consists of standard STAC Collections that contain STAC Items. These items hold the actual visualization data, such as map service links or direct data assets. The items typically cover the same geographical location across different datetimes.
+The second level consists of standard STAC Collections that contain STAC Items. These items hold the actual visualization data, such as map service links or direct data assets. Items typically cover the same geographical location across different time periods.
 
-To support various data sources and visualization needs, eodash uses several custom and standard properties within STAC Items, Assets, and Links and expects specific properties from an Item to be bubbled up to its link.
+To support various data sources and visualization needs, eodash uses several custom and standard properties within STAC Items, Assets, and Links. The system expects specific properties from an Item to be bubbled up to its link.
 
-## Map Layers Visualization
-eodash creates map layers by processing STAC Items from these collections. It uses information from [web map links](https://github.com/stac-extensions/web-map-links) (like WMS, WMTS), and direct data assets like Cloud-Optimized GeoTIFFs (COGs) and vector data (GeoJSON, FlatGeobuf).
+## Map Layer Visualization
 
-To choose the correct Item to visualize, eodash expects the Item's `datetime` or `start_datetime` and `end_datetime` properties to be present on the link pointing to it in the Collection.
+eodash creates map layers by processing STAC Items from these collections. It uses information from [web map links](https://github.com/stac-extensions/web-map-links) (such as WMS, WMTS, or XYZ sources) and direct data assets like Cloud-Optimized GeoTIFFs (COGs) and vector data (GeoJSON, FlatGeobuf).
+
+To select the correct Item for visualization, eodash requires the Item's `datetime` or `start_datetime` and `end_datetime` properties to be present on the link pointing to it in the Collection.
 
 ### Layer Organization
 
 eodash organizes map layers into three distinct groups based on the web map link or asset `roles` property:
 
-1. **Data Layers**: Contain the main visualized products and datasets. Default assignment when neither overlay nor baselayer roles are present, you can use `"data"` to explicitly marks a layer as containing primary data
+1. **Data Layers**: Contain the main visualized products and datasets. This is the default assignment when neither overlay nor baselayer roles are present. You can use `"data"` to explicitly mark a layer as containing primary data.
 
 2. **Overlays**: Displayed on top of data layers to add contextual metadata such as administrative boundaries or reference grids. Roles containing `"overlay"` will be classified as overlays.
 
-3. **Base Layers**: Provide background context (satellite imagery, terrain, etc.). Roles containing `"baselayer"` will be classified as overlays
+3. **Base Layers**: Provide background context (satellite imagery, terrain, etc.). Roles containing `"baselayer"` will be classified as base layers.
 
 
-Additionally, the initial visibility of a layer is controlled by the `"visible"` and `"invisible"` roles. If the `roles` array includes `"visible"`, the layer will be shown on the map by default. Otherwise, it will be hidden initially but can be enabled by the user. This is particularly useful for managing multiple baselayers or overlays, allowing users to toggle them on or off.
+Additionally, the initial visibility of a layer is controlled by the `"visible"` and `"invisible"` roles. If the `roles` array includes `"visible"`, the layer will be shown on the map by default. Otherwise, it will be hidden initially but can be enabled by the user. This is particularly useful for managing multiple base layers or overlays, allowing users to toggle them on or off.
 
-for example:
+For example:
 ```json
 {
  "id": "OSM",
@@ -64,7 +65,7 @@ for example:
  "title": "OSM Background",
  "roles": [
    "baselayer",
-   "invisible"
+   "visible"
  ]
 },
 ```
@@ -88,19 +89,18 @@ eodash supports various properties in [web map links](https://github.com/stac-ex
 }
 ```
 ### Data Assets
-eodash renders Item assets with the role `data` assigned, for example:
+
+eodash renders Item assets with the `data` role assigned. For example:
 ```json
 {
-  ...
- "assets": {
-   "example_data":{
-    "href":	"https://example.com/geotiff.tiff",
-    "type":	"image/tiff",
-    "title": "Example GeoTiFF Asset",
-    "roles":["data"]
-   }
-  ...	
-  }	
+  "assets": {
+    "example_data": {
+      "href": "https://example.com/geotiff.tiff",
+      "type": "image/tiff",
+      "title": "Example GeoTIFF Asset",
+      "roles": ["data"]
+    }
+  }
 }
 ```
 ### Observation Points
@@ -114,8 +114,9 @@ A Collection is rendered as observation points when either:
 - `locations` is set to `true`
 
 #### Point Generation
+
 When configured for observation points, eodash:
-1. Searches for `latlng` properties in the Collection's Items links
+1. Searches for `latlng` properties in the Collection's child or Item links
 2. Creates a GeoJSON FeatureCollection from these coordinates
 3. Styles the points based on the Collection's `themes` property
 
@@ -171,15 +172,17 @@ The `latlng` property should contain coordinates in the format `"latitude,longit
 
 ### Projection Configuration
 
-eodash supports multiple approaches for defining coordinate reference systems (CRS) and map projections to accommodate different data sources and visualization requirements. The projection configuration can live on the Collection, Item, Link or Asset levels.
+eodash supports multiple approaches for defining coordinate reference systems (CRS) and map projections to accommodate different data sources and visualization requirements. The projection configuration can be defined at the Collection, Item, Link, or Asset levels.
 
 #### Standard EPSG Codes
-For standard coordinate reference systems, eodash uses the `proj:epsg` property from the [Projection Extension](https://github.com/stac-extensions/projection) to define EPSG codes:
+
+For standard coordinate reference systems, eodash uses the `proj:epsg` property from the [Projection Extension](https://github.com/stac-extensions/projection) to define EPSG codes.
 
 #### Custom Projections
+
 For custom or specialized projections not covered by standard EPSG codes, eodash provides two custom properties:
 
-**`eodash:mapProjection`** - Used for map-specific projections with predefined extents, can exist in the top level of Items or Collections:
+**`eodash:mapProjection`** - Used for map-specific projections with predefined extents. Can exist at the top level of Items or Collections:
 
 ```json
 {
@@ -191,7 +194,7 @@ For custom or specialized projections not covered by standard EPSG codes, eodash
 }
 ```
 
-**`eodash:proj4_def`** - Used for custom Proj4 projection definitions, can exist in Link, Asset, or inside Item `properties`:
+**`eodash:proj4_def`** - Used for custom Proj4 projection definitions. Can exist in Link, Asset, or inside Item `properties`:
 ```json
 {
   "eodash:proj4_def": {
@@ -224,13 +227,14 @@ Attribution text to be displayed on the map can be set using the `attribution` p
 ```
 
 
-### eodash Flat Styles 
+### eodash Flat Styles
+
 eodash Flat Styles extend the standard [OpenLayers Flat Styles](https://openlayers.org/en/latest/apidoc/module-ol_style_flat.html) to support dynamic, user-configurable styling. This extension introduces additional properties to the style object to enable interactive visualizations, legends, and tooltips.
 
-The core of this extension is the ability to define style `variables` that can be dynamically updated by the user through a `jsonform`. This allows users to adjust visualization parameters like colors or filter values as well as `tooltip` properties directly from the user interface and update the legend scale.
+The core of this extension is the ability to define style `variables` that can be dynamically updated by the user through a `jsonform`. This allows users to adjust visualization parameters like colors or filter values, as well as `tooltip` properties, directly in [EOxLayerControl](https://eox-a.github.io/EOxElements/?path=/story/elements-eox-layercontrol--layer-styles-config) and update the legend scale.
 
 - **`variables`**: A key-value map where style properties can be defined as variables.
-- **`jsonform`**: A [EOxJSONForm]() JSON Schema that defines a form. This form is rendered in the UI, allowing users to modify the `variables` at runtime.
+- **`jsonform`**: A [EOxJSONForm](https://eox-a.github.io/EOxElements/?path=/docs/elements-eox-jsonform--docs) JSON Schema that defines a form. This form is rendered in the UI, allowing users to modify the `variables` at runtime.
 - **`legend`**: Configuration for displaying a layer's legend.
 - **`tooltip`**: Configuration for defining interactive tooltips that appear on feature hover or click.
 
@@ -246,47 +250,52 @@ type EodashStyleJson = import("ol/style/flat").FlatStyleLike & {
 
 ## Processing
 
-Processing in eodash takes different types of inputs in the shape of URLs and user‑defined forms and produces two kinds of outputs:
-- Charts (Vega/Vega-Lite)
-- Visualized map layers (vector or raster)
+eodash processing transforms user inputs into dynamic visualizations through STAC service links. Users fill forms that are injected into service URLs using Mustache templating (e.g., <code v-pre>{{bbox}}</code>, <code v-pre>{{metric}}</code>), generating real-time charts and map layers.
 
-Form values are injected into service link URLs and POST bodies using Mustache templating (e.g., {{bbox}}, {{metric}}). For POST bodies, the referenced template is fetched as plain text and rendered before submission.
+### Outputs
 
-### Collection-level properties
-
-Provide these non-standard properties on a processing-enabled Collection:
-
-- `eodash:jsonform` (string, URL): [EOxJSONForm]() JSON Schema describing input parameters. The schema can include:
-  - top-level `options.execute` (boolean): if true, automatically executes processing when form values change.
-  - top-level `options.multiQuery` (string or string[]): one or more property names that contain array values; this triggers multiple requests whose results are merged and injected into the Vega definition.
-- `eodash:vegadefinition` (string, URL): A Vega/Vega-Lite spec. Data will be injected into this spec from the service links described below.
+- **Charts**: Vega/Vega-Lite visualizations from data APIs
+- **Map Layers**: Vector or raster layers from geospatial services
+- **STAC Collections**: metadata, map services, and further processing.
 
 
-Notes about form value handling:
-- GeoJSON inputs are converted to stringified geometry objects before templating. For multi-geometry fields the value becomes an array of geometry strings.
-- Bounding boxes use the exact key whose schema has `format: "bounding-box"`.
+### Required Collection Properties
 
-### Service links for processing
+| Property | Type | Description |
+|----------|------|-------------|
+| `eodash:jsonform` | URL | JSON Schema defining user input form |
+| `eodash:vegadefinition` | URL | Vega/Vega-Lite specification for chart output |
 
-Processing relies on `links` with `rel: "service"` on the Collection. eodash separates links into two groups:
-- Standard links (no `endpoint` property): handled synchronously, directly fetch data/assets
-- Custom endpoint links (have `endpoint`): handled by dedicated adapters (async jobs, external APIs)
-  
+#### Form Configuration Options
 
-#### Synchronous links
+- `options.execute` (boolean): Auto-execute when form values change
+- `options.multiQuery` (string[]): Properties triggering multiple parallel requests
 
-Charts data sources:
-- `type: "application/json"`: fetched and injected into the Vega spec. Supports `method: "GET" | "POST"`.
-  - For `POST`, provide `body` pointing to a request-body template that is rendered with form values.
-- `type: "text/csv"`: the form is rendered into the URL and injected into the Vega spec as `data.url`.
-- Optional `eox:flatstyle` on the link can point to a style JSON whose variables are also available for mustache templating (e.g., thresholds, palette names).
 
-Map layers outputs:
+### Service Links
+
+Processing uses Collection `links` with `rel: "service"`. Choose the appropriate type:
+
+- **Synchronous**: Direct API calls for immediate results (charts/simple layers)
+- **Custom Endpoints**: Specialized integrations for complex workflows (SentinelHub, VEDA, EOxHub)
+
+#### 1. Synchronous Links (Direct Processing)
+Standard links without an `endpoint` property are processed immediately.
+
+**Chart Data Sources:**
+
+- `type: "application/json"` - JSON data injected into Vega spec
+  - Supports `method: "GET"` or `"POST"`
+  - For POST: use `body` property pointing to a JSON file, can be a Mustache template
+- `type: "text/csv"` - CSV data loaded as `data.url` in Vega spec
+- Optional `eox:flatstyle` on the link can point to a style JSON whose variables are also available for Mustache templating (e.g., thresholds, palette names)
+
+**Map Layer Outputs:**
 - Vector: `type: "application/geo+json"` → creates a Vector layer. Supports `eox:flatstyle` to provide style. The form is rendered into the link `href`.
 - Static image: `type: "image/png"` → creates a static raster layer using the form’s bounding box as extent; the form is rendered into the link `href`.
-- GeoTIFF/COG: `type: "image/tiff"` → creates a WebGLTile GeoTIFF layer. Multiple links may be combined; `eox:flatstyle` can style/normalize; projection may be applied from `eodash:mapProjection.name`.
+- GeoTIFF/COG: `type: "image/tiff"` → creates a WebGLTile GeoTIFF layer. Multiple links may be combined; `eox:flatstyle` can style/normalize; projection may be applied from `eodash:mapProjection`.
 
-Example synchronous links:
+**Example:**
 
 ```json
 {
@@ -297,7 +306,7 @@ Example synchronous links:
       "type": "application/json",
       "href": "https://api.example.com/series?bbox={{bbox}}&metric={{metric}}",
       "method": "GET",
-      "eox:flatstyle": "https://styles.example.com/ts-style.json"
+      "eox:flatstyle": "https://example.com/style.json"
     },
     {
       "rel": "service",
@@ -329,10 +338,10 @@ Link POST body template example:
 }
 ```
 
-Where the referenced template is a plain text Mustache JSON, e.g.:
+Where the referenced template is a plain text Mustache JSON template, for example:
 
 ```json
-{"metric": "{{metric}}", "bbox": {{bbox}}, "geom": {{aoi}}}
+{"metric": "{{metric}}", "bbox": "{{bbox}}", "geom": "{{aoi}}"}
 ```
 CSV example:
 
@@ -345,31 +354,41 @@ CSV example:
 }
 ```
 
-#### Custom endpoints
+#### 2. Custom Endpoints (Specialized Processing)
 
-Custom endpoints allow deeper integrations. eodash currently supports:
+Links with an `endpoint` property are handled by dedicated adapters for external services.
 
-1) Sentinel Hub time‑series for charts
-- Link: `rel: "service"`, `endpoint: "sentinelhub"`, `href`: Sentinel Hub Aggregation API endpoint
-- Collection or child Collections/Items must provide an `example` link with `title: "evalscript"` whose `href` contains the evalscript text; the link must also carry a `dataId` indicating the dataset type used by SH.
-- The JSON form must include a bbox field (format `bounding-box`). Optional `start_date`, `end_date`, `distribution` (daily|weekly|monthly|yearly) constrain sampling.
-- Environment: client app must be configured with `EODASH_SENTINELHUB_CLIENT_ID` and `EODASH_SENTINELHUB_CLIENT_SECRET` for OAuth2.
+**Available Endpoints:**
 
-Example:
+##### Sentinel Hub (`endpoint: "sentinelhub"`)
+For time-series chart generation using Sentinel Hub Aggregation API.
+
+**Requirements:**
+- Link: `rel: "service"`, `endpoint: "sentinelhub"`, `href: [SH API endpoint]`
+- Evalscript: `rel: "example"`, `title: "evalscript"`, `href: [evalscript URL]`, `dataId: [dataset]`
+- Environment: Set `EODASH_SENTINELHUB_CLIENT_ID` and `EODASH_SENTINELHUB_CLIENT_SECRET`
 
 ```json
 {
   "links": [
-    { "rel": "example", "title": "evalscript", "href": "https://example.com/evalscripts/ndvi.js", "dataId": "S2L2A" },
-    { "rel": "service", "endpoint": "sentinelhub", "href": "https://services.sentinel-hub.com/api/v1/statistics" }
+    { 
+      "rel": "example", 
+      "title": "evalscript", 
+      "href": "https://example.com/evalscripts/ndvi.js", 
+      "dataId": "S2L2A" 
+    },
+    { 
+      "rel": "service", 
+      "endpoint": "sentinelhub", 
+      "href": "https://services.sentinel-hub.com/api/v1/statistics" 
+    }
   ]
 }
 ```
 
 2) NASA VEDA statistics for charts
 - Link: `rel: "service"`, `endpoint: "veda"`, `href`: VEDA statistics endpoint
-- eodash gathers COG endpoints and dates from the Indicator’s Collection or its children by reading `links` with `rel: "item"` where each link has `cog_href` and a bubbled datetime property on the link (see “Bubbling datetime to links”).
-- The form must include an AOI geometry. Prefer a `geojson`-typed field; if a `bounding-box` is used, provide the value as a GeoJSON geometry string (temporary limitation).
+- eodash gathers COG endpoints and dates from the Indicator’s Collection or its children by reading `links` with `rel: "item"` where each link has `cog_href` and a bubbled `datetime` property on the link.
 
 Example child/Item links used to discover inputs:
 
@@ -382,59 +401,48 @@ Example child/Item links used to discover inputs:
 }
 ```
 
-3) EOxHub Workspaces asynchronous processing for map layers
-- Link: `rel: "service"`, `endpoint: "eoxhub_workspaces"`, `href`: job submission URL
-- Provide `body` pointing to a JSON template used as POST body; rendered with form values.
-- Optional `eox:flatstyle` for styling returned outputs. It can be:
-  - string URL to a single style JSON, or
-  - array of `{ id, url }` where `id` matches a result key, or
-  - object mapping result keys to style URLs
+##### EOxHub Workspaces (`endpoint: "eoxhub_workspaces"`)
+For asynchronous processing workflows that generate map layers.
 
-Expected server responses:
-- POST returns a `Location` header pointing to a job status JSON.
-- Polling the job status JSON must eventually return `{ status: "successful" | "running" | "failed", links: [...] }`. eodash follows a link to fetch the results JSON. Include a results link with `rel` containing `results` and `type: "application/json"`.
-- Results JSON (any of):
-  - `{ "urls": ["https://.../a.tif", "https://.../b.tif"] }` → treated as GeoTIFF outputs
-  - `{ "vector": { "urls": ["https://.../out.geojson"], "mimetype": "application/geo+json" }, "raster": { "urls": ["https://.../a.tif"], "mimetype": "image/tiff" } }`
+**Requirements:**
+- Link: `rel: "service"`, `endpoint: "eoxhub_workspaces"`, `href: [job URL]`
+- Template: `body` property pointing to POST request template
+- Styling: Optional `eox:flatstyle` (URL, array of `{id, url}`, or object)
 
-eodash converts the results into layers and adds them under the Analysis group. Styles are matched by result keys.
+**Workflow:**
 
-Example EOxHub link:
+1. POST request creates job → returns `Location` header
+2. Poll job status → `{status: "successful|running|failed", links: [...]}`
+3. Fetch results → `{urls: [...]}` or `{vector: {...}, raster: {...}}`
 
 ```json
 {
   "rel": "service",
-  "id": "my-analysis",
   "endpoint": "eoxhub_workspaces",
   "href": "https://api.example.com/process",
-  "body": "https://api.example.com/templates/my-analysis.mustache",
-  "eox:flatstyle": [ { "id": "vector", "url": "https://styles.example.com/vector-style.json" } ]
+  "body": "https://api.example.com/templates/analysis.json",
+  "eox:flatstyle": [{"id": "vector", "url": "https://styles.example.com/vector.json"}]
 }
 ```
 
-### Loading a POI STAC as a processing output
+### STAC Collection Output
 
-To open another STAC Collection as a processing result, provide a service link with:
-
-- `rel: "service"`
-- `type: "application/json; profile=collection"`
-- `endpoint: "STAC"`
-
-The `href` is rendered with the form values. eodash loads the returned Collection into the UI.
-Example:
+To load another STAC Collection as a processing result:
 
 ```json
 {
   "rel": "service",
-  "endpoint": "STAC",
+  "endpoint": "STAC", 
   "type": "application/json; profile=collection",
-  "href": "https://stac.example.com/poi/{{collection}}.json"
+  "href": "https://stac.example.com/{{collection}}.json"
 }
 ```
+
+The `href` uses form values via Mustache templating. eodash loads the returned Collection into the UI.
 
 ## STAC Extensions
 
-eodash utilizes the following STAC extensions to enhance its capabilities:
+eodash utilizes the following STAC community extensions to enhance its capabilities:
 
 - **Projection Extension**: https://github.com/stac-extensions/projection
 - **Web Map Links Extension**: https://github.com/stac-extensions/web-map-links
