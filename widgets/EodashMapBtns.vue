@@ -1,24 +1,21 @@
 <template>
   <div ref="rootRef" class="d-flex flex-column align-end">
-    <b>TEST TEST TEST</b>
-    <!-- Zoom Out Button -->
-    <v-btn
-      v-if="showZoomControls"
-      class="map-btn"
-      :icon="[mdiMinus]"
-      size="small"
-      v-tooltip:bottom="'Zoom out'"
-      @click="() => console.log('zoomout')"
-    />
-
-    <!-- Zoom In Button -->
     <v-btn
       v-if="showZoomControls"
       class="map-btn"
       :icon="[mdiPlus]"
       size="small"
       v-tooltip:bottom="'Zoom in'"
-      @click="() => console.log('zoomin')"
+      @click="() => onMapZoomIn"
+    />
+
+    <v-btn
+      v-if="showZoomControls"
+      class="map-btn"
+      :icon="[mdiMinus]"
+      size="small"
+      v-tooltip:bottom="'Zoom out'"
+      @click="onMapZoomOut"
     />
 
     <v-btn
@@ -178,6 +175,22 @@ const onSelectCompareIndicator = () => {
 };
 
 useTransparentPanel(rootRef);
+
+const onMapZoomOut = () => {
+  const map = mapEl.value?.map;
+  const currentZoom = map?.getView().getZoom();
+  if (currentZoom !== undefined && currentZoom !== null) {
+    map?.getView().setZoom(currentZoom - 1);
+  }
+};
+
+const onMapZoomIn = () => {
+  const map = mapEl.value?.map;
+  const currentZoom = map?.getView().getZoom();
+  if (currentZoom !== undefined && currentZoom !== null) {
+    map?.getView().setZoom(currentZoom + 1);
+  }
+};
 </script>
 <style scoped>
 .map-btn {
