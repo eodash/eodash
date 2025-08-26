@@ -6,7 +6,7 @@
       :icon="[mdiPlus]"
       size="small"
       v-tooltip:bottom="'Zoom in'"
-      @click="() => onMapZoomIn"
+      @click="onMapZoomIn"
     />
 
     <v-btn
