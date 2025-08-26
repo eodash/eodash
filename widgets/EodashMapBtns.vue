@@ -102,6 +102,7 @@ import { useDisplay } from "vuetify";
 import { useSTAcStore } from "@/store/stac";
 import { storeToRefs } from "pinia";
 import { loadPOiIndicator } from "./EodashProcess/methods/handling";
+import { easeOut } from "ol/easing.js";
 
 const {
   compareIndicators,
@@ -180,7 +181,15 @@ const onMapZoomOut = () => {
   const map = mapEl.value?.map;
   const currentZoom = map?.getView().getZoom();
   if (currentZoom !== undefined && currentZoom !== null) {
-    map?.getView().setZoom(currentZoom - 1);
+    const view = map?.getView();
+
+    if (view !== undefined && view.getZoom()) {
+      view.animate({
+        zoom: currentZoom - 1,
+        duration: 250,
+        easing: easeOut,
+      });
+    }
   }
 };
 
@@ -188,7 +197,15 @@ const onMapZoomIn = () => {
   const map = mapEl.value?.map;
   const currentZoom = map?.getView().getZoom();
   if (currentZoom !== undefined && currentZoom !== null) {
-    map?.getView().setZoom(currentZoom + 1);
+    const view = map?.getView();
+
+    if (view !== undefined && view.getZoom()) {
+      view.animate({
+        zoom: currentZoom + 1,
+        duration: 250,
+        easing: easeOut,
+      });
+    }
   }
 };
 </script>
