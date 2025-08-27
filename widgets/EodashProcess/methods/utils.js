@@ -3,6 +3,7 @@ import {
   extractLayerConfig,
   mergeGeojsons,
   replaceLayer,
+  getLegendInfoFromStac,
 } from "@/eodashSTAC/helpers";
 import axios from "@/plugins/axios";
 import { getCompareLayers, getLayers } from "@/store/actions";
@@ -294,7 +295,6 @@ export async function creatAsyncProcessLayerDefinitions(
     let style;
     /** @type {Record<string, unknown> | undefined}  */
     let layerConfig;
-    let extraProperties = {};
     if (flatStyleJSON) {
       const extracted = extractLayerConfig(
         selectedStac?.id ?? "",
@@ -305,11 +305,7 @@ export async function creatAsyncProcessLayerDefinitions(
     }
 
     // Check if collection has eox:colorlegend definition, if yes overwrite legend description
-    if (selectedStac && selectedStac["eox:colorlegend"]) {
-      extraProperties = {
-        layerLegend: selectedStac["eox:colorlegend"],
-      };
-    }
+    let extraProperties = getLegendInfoFromStac(selectedStac);
 
     switch (resultItem.type) {
       case "image/tiff": {

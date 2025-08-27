@@ -550,3 +550,25 @@ export function getDatetimeProperty(links) {
     return prop;
   }
 }
+
+/**
+ * @param {import ("stac-ts").StacCollection | undefined | null} collection
+ * @returns {object}
+ */
+export function getLegendInfoFromStac(collection) {
+  let extraProperties = {};
+  if (collection?.assets?.legend?.href) {
+    extraProperties = {
+      description: `<div style="width: 100%">
+          <img src="${collection.assets.legend.href}" style="max-height:70px; margin-top:-15px; margin-bottom:-20px;" />
+        </div>`,
+    };
+  }
+  // Check if collection has eox:colorlegend definition, if yes overwrite legend description
+  if (collection && collection["eox:colorlegend"]) {
+    extraProperties = {
+      layerLegend: collection["eox:colorlegend"],
+    };
+  }
+  return extraProperties;
+}
