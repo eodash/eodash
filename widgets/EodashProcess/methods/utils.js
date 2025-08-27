@@ -291,6 +291,7 @@ export async function creatAsyncProcessLayerDefinitions(
   for (const resultItem of processResults) {
     const flatStyleJSON = extractStyleFromResult(resultItem, flatStyles);
     let style, layerConfig;
+    let extraProperties = {};
     if (flatStyleJSON) {
       const extracted = extractLayerConfig(
         selectedStac?.id ?? "",
@@ -298,6 +299,13 @@ export async function creatAsyncProcessLayerDefinitions(
       );
       layerConfig = extracted.layerConfig;
       style = extracted.style;
+    }
+
+    // Check if collection has eox:colorlegend definition, if yes overwrite legend description
+    if (selectedStac && selectedStac["eox:colorlegend"]) {
+      extraProperties = {
+        layerLegend: selectedStac["eox:colorlegend"],
+      };
     }
 
     switch (resultItem.type) {
@@ -313,6 +321,7 @@ export async function creatAsyncProcessLayerDefinitions(
               (resultItem.id ?? ""),
             layerControlToolsExpand: true,
             ...(layerConfig && { layerConfig }),
+            ...extraProperties,
           },
           source: {
             type: "GeoTIFF",
@@ -350,6 +359,7 @@ export async function creatAsyncProcessLayerDefinitions(
                 style,
               },
             }),
+            ...extraProperties,
           },
           ...(!style?.variables && { style }),
           interactions: [],
