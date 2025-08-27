@@ -123,7 +123,7 @@ export default {
         return selected
           ? {
               id: "Buttons",
-              layout: { x: "8/8/9", y: 0, w: 1, h: 2 },
+              layout: { x: "8/8/9", y: 0, w: 1, h: 4 },
               title: "Buttons",
               type: "internal",
               widget: {
