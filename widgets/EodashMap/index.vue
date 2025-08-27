@@ -84,6 +84,8 @@ const controls = {
   Attribution: {
     collapsible: true,
   },
+  ScaleLine: {},
+  MousePosition: {},
 };
 const initialCenter = toRaw(props.center);
 const initialZoom = toRaw(mapPosition.value?.[2] ?? props.zoom);
