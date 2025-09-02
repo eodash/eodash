@@ -9,7 +9,7 @@ import {
   generateFeatures,
   getDatetimeProperty,
   replaceLayer,
-  getLegendInfoFromStac,
+  extractLayerLegend,
 } from "./helpers";
 import {
   getLayers,
@@ -185,7 +185,7 @@ export class EodashCollection {
 
     if (isSupported) {
       // Checking for potential legend asset
-      let extraProperties = getLegendInfoFromStac(this.#collectionStac);
+      let extraProperties = extractLayerLegend(this.#collectionStac);
       extraProperties = {
         ...extraProperties,
         ...(this.color && { color: this.color }),
