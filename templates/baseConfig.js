@@ -10,7 +10,8 @@ const baseConfig = {
     // useSubCode: true,
   },
   stacEndpoint:
-    "https://esa-eodashboards.github.io/eodashboard-catalog/trilateral/catalog.json",
+    // "https://esa-eodashboards.github.io/eodashboard-catalog/trilateral/catalog.json",
+    "http://0.0.0.0:8000/cerulean/catalog.json",
   brand: {
     noLayout: true,
     name: "Demo",
