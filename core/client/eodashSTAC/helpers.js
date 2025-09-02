@@ -555,7 +555,7 @@ export function getDatetimeProperty(links) {
  * @param {import ("stac-ts").StacCollection | undefined | null} collection
  * @returns {object}
  */
-export function getLegendInfoFromStac(collection) {
+export function extractLayerLegend(collection) {
   let extraProperties = {};
   if (collection?.assets?.legend?.href) {
     extraProperties = {
