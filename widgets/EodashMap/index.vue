@@ -100,7 +100,7 @@ console.log(`enable scale line? ${props.enableScaleLine}`);
 const tooltipProperties = ref([]);
 /** @type {import("vue").Ref<Exclude<import("@/types").EodashStyleJson["tooltip"], undefined>>} */
 const compareTooltipProperties = ref([]);
-/** @type {import("vue").ComputedRef<import("@eox/map").EOxMap["controls"]>} */
+/** @type {import("vue").ComputedRef<Record<string, any>>} */
 const controls = computed(() => ({
   Attribution: {
     collapsible: true,
