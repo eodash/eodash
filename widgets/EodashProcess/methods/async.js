@@ -150,7 +150,16 @@ export const downloadPreviousResults = async (jobObject, selectedStac) => {
     .get(link.href)
     .then((response) => response.data)
     .then((data) => {
-      results.push(...data.urls);
+      // either urls is an Array
+      if (data.urls) {
+        results.push(...data.urls);
+      }
+      else {
+        // or urls need to be aggregated from mapping objects
+        for (const outputMappingObject of Object.values(data)) {
+          results.push(...outputMappingObject.urls);
+        }
+      }
     });
   results.forEach((result) => {
     if (!result) {
