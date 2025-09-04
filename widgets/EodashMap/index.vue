@@ -32,11 +32,13 @@
       />
     </eox-map>
   </eox-map-compare>
+  <div id="cursor-coordinates">{{ cursorLongitude }}, {{ cursorLatitude }}</div>
+  <span ref="scale-line"></span>
 </template>
 <script setup>
 import "@eox/map";
 import "@eox/map/src/plugins/advancedLayersAndSources";
-import { computed, onMounted, ref, toRaw } from "vue";
+import { computed, onMounted, ref, toRaw, useTemplateRef } from "vue";
 import { datetime, mapEl, mapPosition, mapCompareEl } from "@/store/states";
 import { storeToRefs } from "pinia";
 import { useSTAcStore } from "@/store/stac";
@@ -52,6 +54,7 @@ import {
   useUpdateTooltipProperties,
 } from "^/EodashMap/methods";
 import { inAndOut } from "ol/easing.js";
+import { toStringXY } from "ol/coordinate.js";
 import mustache from "mustache";
 
 const props = defineProps({
@@ -85,7 +88,17 @@ const controls = {
     collapsible: true,
   },
   ScaleLine: {},
-  MousePosition: {},
+  MousePosition: {
+    projection: "EPSG:4326",
+    coordinateFormat: (c) => {
+      //console.log(toStringXY(c || [0.0, 0.0], 3));
+      const coords = c || [0.0, 0.0];
+      cursorLongitude.value = coords[0];
+      cursorLatitude.value = coords[1];
+      return "";
+    },
+    //target: "#cursor-coordinates",
+  },
 };
 const initialCenter = toRaw(props.center);
 const initialZoom = toRaw(mapPosition.value?.[2] ?? props.zoom);
@@ -127,6 +140,8 @@ const showCompare = computed(() =>
   props.enableCompare && !!selectedCompareStac.value ? "" : "first",
 );
 
+const scaleLineRef = useTemplateRef("scale-line");
+
 useHandleMapMoveEnd(eoxMap, mapPosition);
 
 onMounted(() => {
@@ -161,6 +176,10 @@ onMounted(() => {
     compareMap,
     props.zoomToExtent,
   );
+
+  if (scaleLineRef.value && controls.ScaleLine) {
+    controls.ScaleLine.target = scaleLineRef.value;
+  }
 });
 
 useUpdateTooltipProperties(eodashCollections, tooltipProperties);
@@ -211,4 +230,15 @@ const tooltipPropertyTransform = (map) => {
     };
   };
 };
+
+const cursorLatitude = ref(0.0);
+const cursorLongitude = ref(0.0);
 </script>
+
+<style scoped>
+#cursor-coordinates {
+  position: fixed;
+  right: 10px;
+  bottom: 10px;
+}
+</style>
