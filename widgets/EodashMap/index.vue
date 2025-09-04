@@ -81,7 +81,7 @@ const props = defineProps({
   },
   enableCursorCoordinates: {
     type: Boolean,
-    default: false,
+    default: true,
   },
   enableScaleLine: {
     type: Boolean,
@@ -100,7 +100,7 @@ console.log(`enable scale line? ${props.enableScaleLine}`);
 const tooltipProperties = ref([]);
 /** @type {import("vue").Ref<Exclude<import("@/types").EodashStyleJson["tooltip"], undefined>>} */
 const compareTooltipProperties = ref([]);
-/** @type {import("@eox/map").EOxMap["controls"]} */
+/** @type {import("vue").ComputedRef<import("@eox/map").EOxMap["controls"]>} */
 const controls = computed(() => ({
   Attribution: {
     collapsible: true,
@@ -113,7 +113,7 @@ const controls = computed(() => ({
   MousePosition: props.enableCursorCoordinates
     ? {
         projection: "EPSG:4326",
-        coordinateFormat: (c) => {
+        coordinateFormat: (/** @type {[number, number]} */ c) => {
           return `${c[1].toFixed(3)} °N, ${c[0].toFixed(3)} °E`;
         },
         target: cursorCoordsRef.value || undefined,
