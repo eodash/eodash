@@ -309,7 +309,7 @@ export async function processVector(links, jsonformValue, layerId) {
   /** @type {import("@eox/map/src/layers").EOxLayerType<"Vector",any>[]} */
   const layers = [];
   const vectorLinks = links.filter(
-    (link) => link.rel === "service" && (link.type === "application/geo+json" || link.type === "application/geodb"),
+    (link) => link.rel === "service" && link.type === "application/geo+json",
   );
   if (!vectorLinks.length) return layers;
 
@@ -330,58 +330,6 @@ export async function processVector(links, jsonformValue, layerId) {
       const extracted = extractLayerConfig(layerId ?? "", flatStyleJSON);
       layerConfig = extracted.layerConfig;
       style = extracted.style;
-    }
-    // if the link is of type geodb, we need to fetch the actual GeoJSON URL first
-    if (link.type === "application/geodb" && link.method === "POST") {
-      if (!link.body) {
-        console.error(
-          "[eodash] GeoDB link requires a body template for POST request",
-        );
-        continue;
-      }
-      /** @type {string} */
-      const bodyTemplate = await axios
-      // @ts-expect-error we assume link.body to be a string, not defined in stac-ts
-      .get(link.body, { responseType: "text" })
-      .then((resp) => {
-        return resp.data;
-      });
-      const body = JSON.parse(
-        mustache.render(bodyTemplate, {
-          ...(jsonformValue ?? {}),
-        }),
-      );
-      const responseData = await axios.post(link.href, body).then((resp) => resp.data);
-      debugger;
-      // we convert response data to base64 url to be used in the layer source
-      // the response is a json with property src which contains an array of objects in which 
-      // that have a st_asgeojson property in following format:
-      // "{\"type\":\"Point\",\"coordinates\":[-3.7674,51.5675]}"
-      if (!responseData || !Array.isArray(responseData) || responseData.length === 0 || !responseData[0].src) {
-        console.error("[eodash] GeoDB response data is not in expected format", responseData);
-        continue;
-      }
-      const features = responseData[0].src.map(item => {
-        return {
-          type: "Feature",
-          geometry: item.geometry,
-          properties: item,
-        };
-      });
-      const geojson = {
-        type: "FeatureCollection",
-        features: features,
-      };
-      const geojsonStr = JSON.stringify(geojson);
-      const geojsonB64 = btoa(unescape(encodeURIComponent(geojsonStr)));
-      link.href = `data:application/geo+json;base64,${geojsonB64}`;
-
-      // Create a blob URL
-      // const blob = new Blob([JSON.stringify(geojson)], {
-      //   type: "application/geo+json"
-      // });
-      // const url = URL.createObjectURL(blob);
-      // link.href = url;
     }
     /** @type {import("@eox/map/src/layers").EOxLayerType<"Vector","Vector"|"FlatGeoBuf">} */
     const layer = {
@@ -466,7 +414,6 @@ export async function processLayers({
     jsonformValue,
     layerId,
   );
-  
 
   const imagelayers = processImage(standardLinks, jsonformValue, origBbox);
 

@@ -95,6 +95,26 @@ export async function createLayersFromAssets(
         url: assets[ast].href,
         attributions: assets[ast].attribution,
       });
+    } else if (assets[ast]?.type === "application/geodb+json") {
+      const responseData = await (await fetch(assets[ast].href)).json();
+      if (!responseData || !Array.isArray(responseData) || responseData.length === 0) {
+        console.error("[eodash] GeoDB response data is not in expected format", responseData);
+        continue;
+      }
+      const features = responseData.map(item => {
+        return {
+          type: "Feature",
+          geometry: item.geometry,
+          properties: {}//item,
+        };
+      });
+      const geojson = {
+        type: "FeatureCollection",
+        features: features,
+      };
+      geoJsonSources.push(encodeURI(
+        "data:application/json;charset=utf-8," + JSON.stringify(geojson),
+      ));
     }
   }
 
