@@ -32,8 +32,8 @@
       />
     </eox-map>
   </eox-map-compare>
-  <div id="cursor-coordinates">{{ cursorLongitude }}, {{ cursorLatitude }}</div>
-  <span ref="scale-line"></span>
+  <div id="cursor-coordinates" ref="cursor-coords"></div>
+  <span id="scale-line" ref="scale-line"></span>
 </template>
 <script setup>
 import "@eox/map";
@@ -78,28 +78,30 @@ const props = defineProps({
   },
 });
 
+// Prepare containers for scale line and cursor coordinates
+const scaleLineRef = useTemplateRef("scale-line");
+const cursorCoordsRef = useTemplateRef("cursor-coords");
+
 /** @type {import("vue").Ref<Exclude<import("@/types").EodashStyleJson["tooltip"], undefined>>} */
 const tooltipProperties = ref([]);
 /** @type {import("vue").Ref<Exclude<import("@/types").EodashStyleJson["tooltip"], undefined>>} */
 const compareTooltipProperties = ref([]);
 /** @type {import("@eox/map").EOxMap["controls"]} */
-const controls = {
+const controls = computed(() => ({
   Attribution: {
     collapsible: true,
   },
-  ScaleLine: {},
+  ScaleLine: {
+    target: scaleLineRef.value || undefined,
+  },
   MousePosition: {
     projection: "EPSG:4326",
     coordinateFormat: (c) => {
-      //console.log(toStringXY(c || [0.0, 0.0], 3));
-      const coords = c || [0.0, 0.0];
-      cursorLongitude.value = coords[0];
-      cursorLatitude.value = coords[1];
-      return "";
+      return `${c[1].toFixed(3)} °N, ${c[0].toFixed(3)} °E`;
     },
-    //target: "#cursor-coordinates",
+    target: cursorCoordsRef.value || undefined,
   },
-};
+}));
 const initialCenter = toRaw(props.center);
 const initialZoom = toRaw(mapPosition.value?.[2] ?? props.zoom);
 /** @type {import("vue").Ref<Record<string,any>[]>} */
@@ -140,8 +142,6 @@ const showCompare = computed(() =>
   props.enableCompare && !!selectedCompareStac.value ? "" : "first",
 );
 
-const scaleLineRef = useTemplateRef("scale-line");
-
 useHandleMapMoveEnd(eoxMap, mapPosition);
 
 onMounted(() => {
@@ -176,10 +176,6 @@ onMounted(() => {
     compareMap,
     props.zoomToExtent,
   );
-
-  if (scaleLineRef.value && controls.ScaleLine) {
-    controls.ScaleLine.target = scaleLineRef.value;
-  }
 });
 
 useUpdateTooltipProperties(eodashCollections, tooltipProperties);
@@ -238,7 +234,39 @@ const cursorLongitude = ref(0.0);
 <style scoped>
 #cursor-coordinates {
   position: fixed;
-  right: 10px;
-  bottom: 10px;
+  left: 24px;
+  bottom: 56px;
+  padding: 0 2px;
+  color: rgba(0, 0, 0, 0.9);
+  font-size: 13px;
+  background: #fffe;
+  border-radius: 4px;
+  border: none;
+  padding: 4px 8px;
+}
+
+#scale-line {
+  position: fixed;
+  left: 24px;
+  bottom: 24px;
+  color: #fff;
+}
+
+:deep(.ol-scale-line) {
+  background: #fffe !important;
+  border-radius: 4px !important;
+  border: none !important;
+  padding: 4px 8px !important;
+  font-size: 12px !important;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+}
+:deep(.ol-scale-line-inner) {
+  display: flex;
+  justify-content: center;
+  border: 1px solid rgba(0, 0, 0, 0.5) !important;
+  border-top: none !important;
+  color: #333 !important;
+  font-weight: 500 !important;
 }
 </style>
