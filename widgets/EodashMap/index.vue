@@ -32,8 +32,12 @@
       />
     </eox-map>
   </eox-map-compare>
-  <div id="cursor-coordinates" ref="cursor-coords"></div>
-  <span id="scale-line" ref="scale-line"></span>
+  <div
+    v-if="props.enableCursorCoordinates"
+    id="cursor-coordinates"
+    ref="cursor-coords"
+  />
+  <span v-if="props.enableScaleLine" id="scale-line" ref="scale-line" />
 </template>
 <script setup>
 import "@eox/map";
@@ -54,7 +58,6 @@ import {
   useUpdateTooltipProperties,
 } from "^/EodashMap/methods";
 import { inAndOut } from "ol/easing.js";
-import { toStringXY } from "ol/coordinate.js";
 import mustache from "mustache";
 
 const props = defineProps({
@@ -76,11 +79,22 @@ const props = defineProps({
     type: Boolean,
     default: true,
   },
+  enableCursorCoordinates: {
+    type: Boolean,
+    default: false,
+  },
+  enableScaleLine: {
+    type: Boolean,
+    default: true,
+  },
 });
 
 // Prepare containers for scale line and cursor coordinates
 const scaleLineRef = useTemplateRef("scale-line");
 const cursorCoordsRef = useTemplateRef("cursor-coords");
+
+console.log(`enable cursor coords? ${props.enableCursorCoordinates}`);
+console.log(`enable scale line? ${props.enableScaleLine}`);
 
 /** @type {import("vue").Ref<Exclude<import("@/types").EodashStyleJson["tooltip"], undefined>>} */
 const tooltipProperties = ref([]);
@@ -91,17 +105,23 @@ const controls = computed(() => ({
   Attribution: {
     collapsible: true,
   },
-  ScaleLine: {
-    target: scaleLineRef.value || undefined,
-  },
-  MousePosition: {
+  ScaleLine: props.enableScaleLine
+    ? {
+        target: scaleLineRef.value || undefined,
+      }
+    : undefined,
+}));
+
+if (props.enableCursorCoordinates) {
+  controls.value.MousePosition = {
     projection: "EPSG:4326",
     coordinateFormat: (c) => {
       return `${c[1].toFixed(3)} °N, ${c[0].toFixed(3)} °E`;
     },
     target: cursorCoordsRef.value || undefined,
-  },
-}));
+  };
+}
+
 const initialCenter = toRaw(props.center);
 const initialZoom = toRaw(mapPosition.value?.[2] ?? props.zoom);
 /** @type {import("vue").Ref<Record<string,any>[]>} */
@@ -226,9 +246,6 @@ const tooltipPropertyTransform = (map) => {
     };
   };
 };
-
-const cursorLatitude = ref(0.0);
-const cursorLongitude = ref(0.0);
 </script>
 
 <style scoped>

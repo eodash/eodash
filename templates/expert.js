@@ -25,6 +25,8 @@ export default {
       name: "EodashMap",
       properties: {
         enableCompare: true,
+        enableScaleLine: true,
+        enableCursorCoordinates: true,
       },
     },
   },
