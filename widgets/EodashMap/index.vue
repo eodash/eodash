@@ -110,17 +110,16 @@ const controls = computed(() => ({
         target: scaleLineRef.value || undefined,
       }
     : undefined,
+  MousePosition: props.enableCursorCoordinates
+    ? {
+        projection: "EPSG:4326",
+        coordinateFormat: (c) => {
+          return `${c[1].toFixed(3)} °N, ${c[0].toFixed(3)} °E`;
+        },
+        target: cursorCoordsRef.value || undefined,
+      }
+    : undefined,
 }));
-
-if (props.enableCursorCoordinates) {
-  controls.value.MousePosition = {
-    projection: "EPSG:4326",
-    coordinateFormat: (c) => {
-      return `${c[1].toFixed(3)} °N, ${c[0].toFixed(3)} °E`;
-    },
-    target: cursorCoordsRef.value || undefined,
-  };
-}
 
 const initialCenter = toRaw(props.center);
 const initialZoom = toRaw(mapPosition.value?.[2] ?? props.zoom);
