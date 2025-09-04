@@ -82,7 +82,6 @@ import {
   availableMapProjection,
   comparePoi,
   mapEl,
-  mapCompareEl,
   poi,
 } from "@/store/states";
 import {
