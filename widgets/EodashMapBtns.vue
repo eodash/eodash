@@ -1,7 +1,6 @@
 <template>
   <div ref="rootRef" class="d-flex flex-column align-end">
     <v-btn
-      v-if="showZoomControls"
       class="map-btn"
       :icon="[mdiPlus]"
       size="small"
@@ -10,7 +9,6 @@
     />
 
     <v-btn
-      v-if="showZoomControls"
       class="map-btn"
       :icon="[mdiMinus]"
       size="small"
@@ -29,27 +27,27 @@
     <ExportState v-if="exportMap" v-model="showMapState" />
 
     <v-btn
+      v-if="changeProjection && !!availableMapProjection"
       class="map-btn"
       :icon="[mdiEarthBox]"
       size="small"
       v-tooltip:bottom="'Change map projection'"
-      v-if="changeProjection && !!availableMapProjection"
       @click="changeMapProjection(availableMapProjection)"
     />
     <v-btn
+      v-if="compareIndicators"
       class="map-btn"
       :icon="[compareIcon]"
       size="small"
       v-tooltip:bottom="'Compare mode'"
-      v-if="compareIndicators"
       @click="onCompareClick"
     />
     <v-btn
+      v-if="backToPOIs && (poi || comparePoi)"
       class="map-btn"
       :icon="[mdiStarFourPointsCircleOutline]"
       size="small"
       v-tooltip:bottom="'back to POIs'"
-      v-if="backToPOIs && (poi || comparePoi)"
       @click="loadPOiIndicator()"
     />
     <PopUp
@@ -103,35 +101,26 @@ import { storeToRefs } from "pinia";
 import { loadPOiIndicator } from "./EodashProcess/methods/handling";
 import { easeOut } from "ol/easing.js";
 
-const {
-  compareIndicators,
-  changeProjection,
-  exportMap,
-  backToPOIs,
-  showZoomControls,
-} = defineProps({
-  exportMap: {
-    type: Boolean,
-    default: true,
-  },
-  changeProjection: {
-    type: Boolean,
-    default: true,
-  },
-  compareIndicators: {
-    /** @type {import("vue").PropType<boolean | {compareTemplate?:string;fallbackTemplate?:string}> }*/
-    type: [Boolean, Object],
-    default: true,
-  },
-  backToPOIs: {
-    type: Boolean,
-    default: true,
-  },
-  showZoomControls: {
-    type: Boolean,
-    default: true,
-  },
-});
+const { compareIndicators, changeProjection, exportMap, backToPOIs } =
+  defineProps({
+    exportMap: {
+      type: Boolean,
+      default: true,
+    },
+    changeProjection: {
+      type: Boolean,
+      default: true,
+    },
+    compareIndicators: {
+      /** @type {import("vue").PropType<boolean | {compareTemplate?:string;fallbackTemplate?:string}> }*/
+      type: [Boolean, Object],
+      default: true,
+    },
+    backToPOIs: {
+      type: Boolean,
+      default: true,
+    },
+  });
 const { selectedStac, selectedCompareStac } = storeToRefs(useSTAcStore());
 const { resetSelectedCompareSTAC } = useSTAcStore();
 const { smAndDown } = useDisplay();

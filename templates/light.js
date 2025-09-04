@@ -63,6 +63,11 @@ export default {
               type: "internal",
               widget: {
                 name: "EodashMapBtns",
+                properties: {
+                  exportMap: false,
+                  changeProjection: false,
+                  compareIndicators: false,
+                },
               },
             }
           : null;
