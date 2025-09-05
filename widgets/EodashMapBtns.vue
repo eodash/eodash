@@ -16,6 +16,17 @@
       @click="onMapZoomOut"
     />
 
+    <eox-geosearch
+      :for="mapEl"
+      :endpoint="opencageUrl"
+      class="geosearch-detached"
+      label="Search"
+      small
+      button
+      list-direction="left"
+      results-direction="down"
+    ></eox-geosearch>
+
     <v-btn
       v-if="exportMap"
       class="map-btn"
@@ -86,6 +97,7 @@ import {
   mdiCompare,
   mdiCompareRemove,
   mdiEarthBox,
+  mdiMagnify,
   mdiMapPlus,
   mdiMinus,
   mdiPlus,
@@ -101,26 +113,37 @@ import { storeToRefs } from "pinia";
 import { loadPOiIndicator } from "./EodashProcess/methods/handling";
 import { easeOut } from "ol/easing.js";
 
-const { compareIndicators, changeProjection, exportMap, backToPOIs } =
-  defineProps({
-    exportMap: {
-      type: Boolean,
-      default: true,
-    },
-    changeProjection: {
-      type: Boolean,
-      default: true,
-    },
-    compareIndicators: {
-      /** @type {import("vue").PropType<boolean | {compareTemplate?:string;fallbackTemplate?:string}> }*/
-      type: [Boolean, Object],
-      default: true,
-    },
-    backToPOIs: {
-      type: Boolean,
-      default: true,
-    },
-  });
+import "@eox/geosearch";
+
+const {
+  compareIndicators,
+  changeProjection,
+  exportMap,
+  backToPOIs,
+  enableSearch,
+} = defineProps({
+  exportMap: {
+    type: Boolean,
+    default: true,
+  },
+  changeProjection: {
+    type: Boolean,
+    default: true,
+  },
+  compareIndicators: {
+    /** @type {import("vue").PropType<boolean | {compareTemplate?:string;fallbackTemplate?:string}> }*/
+    type: [Boolean, Object],
+    default: true,
+  },
+  backToPOIs: {
+    type: Boolean,
+    default: true,
+  },
+  enableSearch: {
+    type: Boolean,
+    default: true,
+  },
+});
 const { selectedStac, selectedCompareStac } = storeToRefs(useSTAcStore());
 const { resetSelectedCompareSTAC } = useSTAcStore();
 const { smAndDown } = useDisplay();
@@ -196,12 +219,52 @@ const onMapZoomIn = () => {
     }
   }
 };
+const opencageApiKey = import.meta.env.EODASH_OPENCAGE || "NO_KEY_FOUND";
+const opencageUrl = `https://api.opencagedata.com/geocode/v1/json?key=${opencageApiKey}`;
+
+/*const menu = document
+  .querySelector("eox-geosearch")
+  .renderRoot.querySelector("menu");*/
 </script>
-<style scoped>
+
+<style>
 .map-btn {
   width: 36px;
   height: 36px;
   border-radius: 25%;
   margin: 4px;
+}
+
+/* Container constraints removal */
+eox-geosearch {
+  position: relative !important;
+  overflow: visible !important;
+  z-index: 10;
+}
+
+/* Deep selector to target internal menu elements */
+eox-geosearch :deep(#search),
+eox-geosearch :deep([role="menu"]),
+eox-geosearch :deep(menu),
+eox-geosearch :deep(.dropdown),
+eox-geosearch :deep(.results-container) {
+  position: fixed !important;
+  min-width: 280px !important;
+  max-width: 350px !important;
+  max-height: 60vh !important;
+  overflow-y: auto !important;
+  z-index: 9999 !important;
+  transform: none !important;
+  top: auto !important;
+  right: auto !important;
+}
+
+/* Position the fixed menu relative to the button */
+eox-geosearch[open] :deep(#search),
+eox-geosearch:has([open]) :deep([role="menu"]),
+eox-geosearch:has([aria-expanded="true"]) :deep(menu) {
+  /* Calculate position based on button location */
+  right: 32px !important;
+  top: 80px !important;
 }
 </style>

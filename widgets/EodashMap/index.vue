@@ -93,9 +93,6 @@ const props = defineProps({
 const scaleLineRef = useTemplateRef("scale-line");
 const cursorCoordsRef = useTemplateRef("cursor-coords");
 
-console.log(`enable cursor coords? ${props.enableCursorCoordinates}`);
-console.log(`enable scale line? ${props.enableScaleLine}`);
-
 /** @type {import("vue").Ref<Exclude<import("@/types").EodashStyleJson["tooltip"], undefined>>} */
 const tooltipProperties = ref([]);
 /** @type {import("vue").Ref<Exclude<import("@/types").EodashStyleJson["tooltip"], undefined>>} */
