@@ -105,7 +105,8 @@ export async function createLayersFromAssets(
         return {
           type: "Feature",
           geometry: item.geometry,
-          properties: {}//item,
+          // we pass the item making sure to remove geometry to avoid duplication
+          properties: { ...item, geometry: undefined },
         };
       });
       const geojson = {
