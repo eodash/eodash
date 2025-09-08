@@ -25,6 +25,13 @@ export default {
       name: "EodashMap",
       properties: {
         enableCompare: true,
+        btns: {
+          enableExportMap: false,
+          enableChangeProjection: false,
+          enableCompareIndicators: false,
+          enableBackToPOIs: false,
+          enableSearch: true,
+        },
       },
     },
   },
@@ -53,7 +60,7 @@ export default {
         },
       },
     },
-    {
+    /*{
       defineWidget: (selected) => {
         return selected
           ? {
@@ -72,7 +79,7 @@ export default {
             }
           : null;
       },
-    },
+    },*/
     {
       defineWidget: (selectedSTAC) => {
         return selectedSTAC

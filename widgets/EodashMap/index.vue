@@ -38,6 +38,15 @@
     ref="cursor-coords"
   />
   <span v-if="props.enableScaleLine" id="scale-line" ref="scale-line" />
+  <div class="map-buttons-container">
+    <EodashMapBtns
+      :exportMap="props.btns.enableExportMap"
+      :changeProjection="props.btns.enableChangeProjection"
+      :compareIndicators="props.btns.enableCompareIndicators"
+      :backToPOIs="props.btns.enableBackToPOIs"
+      :enableSearch="props.btns.enableSearch"
+    />
+  </div>
 </template>
 <script setup>
 import "@eox/map";
@@ -59,6 +68,7 @@ import {
 } from "^/EodashMap/methods";
 import { inAndOut } from "ol/easing.js";
 import mustache from "mustache";
+import EodashMapBtns from "../EodashMapBtns.vue";
 
 const props = defineProps({
   enableCompare: {
@@ -86,6 +96,9 @@ const props = defineProps({
   enableScaleLine: {
     type: Boolean,
     default: true,
+  },
+  btns: {
+    type: Object,
   },
 });
 
@@ -281,5 +294,11 @@ const tooltipPropertyTransform = (map) => {
   border-top: none !important;
   color: #333 !important;
   font-weight: 500 !important;
+}
+
+.map-buttons-container {
+  position: fixed;
+  right: 380px;
+  top: 40px;
 }
 </style>
