@@ -53,6 +53,7 @@
       :compareIndicators="btnsProps.compareIndicators"
       :backToPOIs="btnsProps.backToPOIs"
       :enableSearch="btnsProps.enableSearch"
+      :enableZoom="btnsProps.enableZoom"
     />
   </div>
 </template>
@@ -129,6 +130,7 @@ const props = defineProps({
       enableCompareIndicators: true,
       enableBackToPOIs: true,
       enableSearch: true,
+      enableZoom: true,
     }),
   },
 });
@@ -169,6 +171,7 @@ const btnsProps = computed(() => ({
   compareIndicators: props.btns.enableCompareIndicators ?? true,
   backToPOIs: props.btns.enableBackToPOIs ?? true,
   enableSearch: props.btns.enableSearch ?? true,
+  enableZoom: props.btns.enableZoom ?? true,
 }));
 
 // Prepare containers for scale line and cursor coordinates

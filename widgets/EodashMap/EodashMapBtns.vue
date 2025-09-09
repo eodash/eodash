@@ -1,6 +1,7 @@
 <template>
   <div ref="rootRef" class="d-flex flex-column align-end">
     <v-btn
+      v-if="enableZoom"
       class="map-btn"
       :icon="[mdiPlus]"
       size="small"
@@ -9,24 +10,13 @@
     />
 
     <v-btn
+      v-if="enableZoom"
       class="map-btn"
       :icon="[mdiMinus]"
       size="small"
       v-tooltip:bottom="'Zoom out'"
       @click="onMapZoomOut"
     />
-
-    <eox-geosearch
-      v-if="enableSearch"
-      :for="mapEl"
-      :endpoint="opencageUrl"
-      class="geosearch-detached"
-      label="Search"
-      small
-      button
-      list-direction="left"
-      results-direction="down"
-    ></eox-geosearch>
 
     <v-btn
       v-if="exportMap"
@@ -62,6 +52,17 @@
       v-tooltip:bottom="'back to POIs'"
       @click="loadPOiIndicator()"
     />
+    <eox-geosearch
+      v-if="enableSearch"
+      :for="mapEl"
+      :endpoint="opencageUrl"
+      class="geosearch-detached"
+      label="Search"
+      small
+      button
+      list-direction="left"
+      results-direction="down"
+    ></eox-geosearch>
     <PopUp
       v-model="showCompareIndicators"
       :maxWidth="popupWidth"
@@ -121,6 +122,7 @@ const {
   exportMap,
   backToPOIs,
   enableSearch,
+  enableZoom,
 } = defineProps({
   exportMap: {
     type: Boolean,
@@ -140,6 +142,10 @@ const {
     default: true,
   },
   enableSearch: {
+    type: Boolean,
+    default: true,
+  },
+  enableZoom: {
     type: Boolean,
     default: true,
   },
