@@ -164,11 +164,11 @@ const parseResponsiveValue = (value) => {
 const responsiveX = computed(() => parseResponsiveValue(props.btnsPosition.x));
 const responsiveY = computed(() => parseResponsiveValue(props.btnsPosition.y));
 const btnsProps = computed(() => ({
-  exportMap: props.btns.enableExportMap || true,
-  changeProjection: props.btns.enableChangeProjection || true,
-  compareIndicators: props.btns.enableCompareIndicators || true,
-  backToPOIs: props.btns.enableBackToPOIs || true,
-  enableSearch: props.btns.enableSearch || true,
+  exportMap: props.btns.enableExportMap ?? true,
+  changeProjection: props.btns.enableChangeProjection ?? true,
+  compareIndicators: props.btns.enableCompareIndicators ?? true,
+  backToPOIs: props.btns.enableBackToPOIs ?? true,
+  enableSearch: props.btns.enableSearch ?? true,
 }));
 
 // Prepare containers for scale line and cursor coordinates
