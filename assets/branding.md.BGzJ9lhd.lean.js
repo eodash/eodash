@@ -1,0 +1,1 @@
+import{_ as a,c as i,o as n,ag as t}from"./chunks/framework.r-SdhhLy.js";const E=JSON.parse('{"title":"Branding","description":"","frontmatter":{},"headers":[],"relativePath":"branding.md","filePath":"branding.md"}'),e={name:"branding.md"};function h(l,s,p,k,r,d){return n(),i("div",null,s[0]||(s[0]=[t("",21)]))}const g=a(e,[["render",h]]);export{E as __pageData,g as default};
