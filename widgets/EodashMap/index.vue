@@ -33,18 +33,26 @@
     </eox-map>
   </eox-map-compare>
   <div
-    v-if="props.enableCursorCoordinates"
+    v-if="enableCursorCoordinates"
     id="cursor-coordinates"
     ref="cursor-coords"
   />
-  <span v-if="props.enableScaleLine" id="scale-line" ref="scale-line" />
-  <div class="map-buttons-container">
+  <span v-if="enableScaleLine" id="scale-line" ref="scale-line" />
+  <div
+    class="map-buttons-container"
+    :style="`margin: ${btnsPosition.gap}px 0 ${btnsPosition.gap}px 0`"
+  >
     <EodashMapBtns
-      :exportMap="props.btns.enableExportMap"
-      :changeProjection="props.btns.enableChangeProjection"
-      :compareIndicators="props.btns.enableCompareIndicators"
-      :backToPOIs="props.btns.enableBackToPOIs"
-      :enableSearch="props.btns.enableSearch"
+      v-if="indicator || compareIndicator"
+      :style="{
+        gridColumn: responsiveX,
+        gridRow: responsiveY,
+      }"
+      :exportMap="btnsProps.exportMap"
+      :changeProjection="btnsProps.changeProjection"
+      :compareIndicators="btnsProps.compareIndicators"
+      :backToPOIs="btnsProps.backToPOIs"
+      :enableSearch="btnsProps.enableSearch"
     />
   </div>
 </template>
@@ -52,9 +60,17 @@
 import "@eox/map";
 import "@eox/map/src/plugins/advancedLayersAndSources";
 import { computed, onMounted, ref, toRaw, useTemplateRef } from "vue";
-import { datetime, mapEl, mapPosition, mapCompareEl } from "@/store/states";
+import {
+  datetime,
+  mapEl,
+  mapPosition,
+  mapCompareEl,
+  indicator,
+  compareIndicator,
+} from "@/store/states";
 import { storeToRefs } from "pinia";
 import { useSTAcStore } from "@/store/stac";
+import { useDisplay } from "vuetify";
 import {
   eodashCollections,
   eodashCompareCollections,
@@ -68,7 +84,7 @@ import {
 } from "^/EodashMap/methods";
 import { inAndOut } from "ol/easing.js";
 import mustache from "mustache";
-import EodashMapBtns from "../EodashMapBtns.vue";
+import EodashMapBtns from "^/EodashMap/EodashMapBtns.vue";
 
 const props = defineProps({
   enableCompare: {
@@ -97,10 +113,63 @@ const props = defineProps({
     type: Boolean,
     default: true,
   },
+  btnsPosition: {
+    type: Object,
+    default: () => ({
+      x: "12/9/8",
+      y: 1,
+      gap: 16,
+    }),
+  },
   btns: {
     type: Object,
+    default: () => ({
+      enableExportMap: true,
+      enableChangeProjection: true,
+      enableCompareIndicators: true,
+      enableBackToPOIs: true,
+      enableSearch: true,
+    }),
   },
 });
+
+// Responsive positioning logic
+const { width } = useDisplay();
+
+/**
+ * Parse responsive string values (e.g., "1/5/10") into values for different screen sizes
+ * Breakpoints: [0, 960, 1920] based on properties passed to eox-layout in DashboardLayout.vue
+ * @param {string | number} value
+ * @returns {number}
+ */
+const parseResponsiveValue = (value) => {
+  if (typeof value === "number") {
+    return value;
+  }
+  if (typeof value === "string") {
+    const parts = value.split("/");
+    const currentWidth = width.value;
+
+    if (currentWidth < 960) {
+      return parseInt(parts[0]) || 1;
+    } else if (currentWidth < 1920) {
+      return parseInt(parts[1] || parts[0]) || 1;
+    } else {
+      return parseInt(parts[2] || parts[1] || parts[0]) || 1;
+    }
+  }
+  return 1;
+};
+
+const responsiveX = computed(() => parseResponsiveValue(props.btnsPosition.x));
+const responsiveY = computed(() => parseResponsiveValue(props.btnsPosition.y));
+const btnsProps = computed(() => ({
+  exportMap: props.btns.enableExportMap || true,
+  changeProjection: props.btns.enableChangeProjection || true,
+  compareIndicators: props.btns.enableCompareIndicators || true,
+  backToPOIs: props.btns.enableBackToPOIs || true,
+  enableSearch: props.btns.enableSearch || true,
+}));
 
 // Prepare containers for scale line and cursor coordinates
 const scaleLineRef = useTemplateRef("scale-line");
@@ -298,7 +367,18 @@ const tooltipPropertyTransform = (map) => {
 
 .map-buttons-container {
   position: fixed;
-  right: 380px;
-  top: 40px;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  grid-template-rows: repeat(12, 1fr);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.map-buttons-container > * {
+  pointer-events: auto;
 }
 </style>

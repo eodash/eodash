@@ -25,13 +25,6 @@ export default {
       name: "EodashMap",
       properties: {
         enableCompare: true,
-        btns: {
-          enableExportMap: true,
-          enableChangeProjection: true,
-          enableCompareIndicators: true,
-          enableBackToPOIs: false,
-          enableSearch: false,
-        },
       },
     },
   },
@@ -99,21 +92,6 @@ export default {
           : null;
       },
     },
-    /*{
-      defineWidget: (selected) => {
-        return selected
-          ? {
-              id: "Buttons",
-              layout: { x: "8/8/9", y: 0, w: 1, h: 4 },
-              title: "Buttons",
-              type: "internal",
-              widget: {
-                name: "EodashMapBtns",
-              },
-            }
-          : null;
-      },
-    },*/
     {
       defineWidget: (selectedSTAC) =>
         includesProcess(selectedSTAC) && {

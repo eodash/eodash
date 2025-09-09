@@ -17,6 +17,7 @@
     />
 
     <eox-geosearch
+      v-if="enableSearch"
       :for="mapEl"
       :endpoint="opencageUrl"
       class="geosearch-detached"
@@ -97,7 +98,6 @@ import {
   mdiCompare,
   mdiCompareRemove,
   mdiEarthBox,
-  mdiMagnify,
   mdiMapPlus,
   mdiMinus,
   mdiPlus,
@@ -105,12 +105,12 @@ import {
 } from "@mdi/js";
 import ExportState from "^/ExportState.vue";
 import { computed, ref, triggerRef } from "vue";
-import PopUp from "./PopUp.vue";
-import EodashItemFilter from "./EodashItemFilter.vue";
+import PopUp from "^/PopUp.vue";
+import EodashItemFilter from "^/EodashItemFilter.vue";
 import { useDisplay } from "vuetify";
 import { useSTAcStore } from "@/store/stac";
 import { storeToRefs } from "pinia";
-import { loadPOiIndicator } from "./EodashProcess/methods/handling";
+import { loadPOiIndicator } from "^/EodashProcess/methods/handling";
 import { easeOut } from "ol/easing.js";
 
 import "@eox/geosearch";
@@ -162,7 +162,11 @@ const compareIcon = computed(() =>
 );
 
 const onCompareClick = () => {
-  showCompareIndicators.value = !showCompareIndicators.value;
+  showCompareIndicators.value =
+    activeTemplate.value !==
+    ((typeof compareIndicators === "object" &&
+      compareIndicators.compareTemplate) ||
+      "compare");
 
   const fallbackTemplate =
     (typeof compareIndicators === "object" &&
@@ -219,7 +223,7 @@ const onMapZoomIn = () => {
     }
   }
 };
-const opencageApiKey = import.meta.env.EODASH_OPENCAGE || "NO_KEY_FOUND";
+const opencageApiKey = process.env.EODASH_OPENCAGE || "NO_KEY_FOUND";
 const opencageUrl = `https://api.opencagedata.com/geocode/v1/json?key=${opencageApiKey}`;
 
 /*const menu = document
@@ -240,31 +244,5 @@ eox-geosearch {
   position: relative !important;
   overflow: visible !important;
   z-index: 10;
-}
-
-/* Deep selector to target internal menu elements */
-eox-geosearch :deep(#search),
-eox-geosearch :deep([role="menu"]),
-eox-geosearch :deep(menu),
-eox-geosearch :deep(.dropdown),
-eox-geosearch :deep(.results-container) {
-  position: fixed !important;
-  min-width: 280px !important;
-  max-width: 350px !important;
-  max-height: 60vh !important;
-  overflow-y: auto !important;
-  z-index: 9999 !important;
-  transform: none !important;
-  top: auto !important;
-  right: auto !important;
-}
-
-/* Position the fixed menu relative to the button */
-eox-geosearch[open] :deep(#search),
-eox-geosearch:has([open]) :deep([role="menu"]),
-eox-geosearch:has([aria-expanded="true"]) :deep(menu) {
-  /* Calculate position based on button location */
-  right: 32px !important;
-  top: 80px !important;
 }
 </style>

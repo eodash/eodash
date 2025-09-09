@@ -19,14 +19,14 @@ export default {
     },
   },
   background: {
-    id: "background-map",
+    id: "lite-map",
     type: "internal",
     widget: {
       name: "EodashMap",
       properties: {
         enableCompare: true,
         btns: {
-          enableExportMap: false,
+          enableExportMap: true,
           enableChangeProjection: false,
           enableCompareIndicators: false,
           enableBackToPOIs: false,
@@ -60,26 +60,6 @@ export default {
         },
       },
     },
-    /*{
-      defineWidget: (selected) => {
-        return selected
-          ? {
-              id: "Buttons",
-              layout: { x: "8/8/9", y: 0, w: 1, h: 4 },
-              title: "Buttons",
-              type: "internal",
-              widget: {
-                name: "EodashMapBtns",
-                properties: {
-                  exportMap: false,
-                  changeProjection: false,
-                  compareIndicators: false,
-                },
-              },
-            }
-          : null;
-      },
-    },*/
     {
       defineWidget: (selectedSTAC) => {
         return selectedSTAC

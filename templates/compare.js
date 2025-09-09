@@ -119,26 +119,6 @@ export default {
         },
     },
     {
-      defineWidget: (selected) => {
-        return selected
-          ? {
-              id: "Buttons",
-              layout: { x: "8/8/9", y: 0, w: 1, h: 4 },
-              title: "Buttons",
-              type: "internal",
-              widget: {
-                name: "EodashMapBtns",
-                properties: {
-                  compareIndicators: {
-                    fallbackTemplate: "expert",
-                  },
-                },
-              },
-            }
-          : null;
-      },
-    },
-    {
       defineWidget: (selectedSTAC) => {
         return selectedSTAC
           ? {
