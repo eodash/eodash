@@ -110,6 +110,15 @@ export interface TEodashDatePicker {
 }
 
 /** @group Widgets */
+export interface TEodashTimeSlider {
+  name: "EodashTimeSlider";
+  properties?: InstanceType<
+    typeof import("^/EodashTimeSlider.vue").default
+  >["$props"];
+}
+
+
+/** @group Widgets */
 export interface TEodashItemFilter {
   name: "EodashItemFilter";
   properties?: InstanceType<
@@ -203,7 +212,8 @@ export type ComponentWidget =
   | TEodashLayoutSwitcher
   | TExportState
   | TPopUp
-  | TWidgetsContainer;
+  | TWidgetsContainer
+  | TEodashTimeSlider;
 /**
  * Widget type: `internal` API. Internal widgets are Vue components provided by
  * eodash.

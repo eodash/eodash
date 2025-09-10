@@ -10,6 +10,7 @@ import {
   getDatetimeProperty,
   replaceLayer,
   extractLayerLegend,
+  extractTimeControlValues,
 } from "./helpers";
 import {
   getLayers,
@@ -172,6 +173,7 @@ export class EodashCollection {
         item.properties.start_datetime ??
         itemDatetime,
     );
+    const timeControlValues = extractTimeControlValues(layerDatetime)
 
     const dataAssets = Object.keys(item?.assets ?? {}).reduce((data, ast) => {
       if (item.assets[ast].roles?.includes("data")) {
@@ -189,6 +191,7 @@ export class EodashCollection {
       extraProperties = {
         ...extraProperties,
         ...(this.color && { color: this.color }),
+        ...(timeControlValues && {  timeControlValues }),
       };
 
       const links = await createLayersFromLinks(

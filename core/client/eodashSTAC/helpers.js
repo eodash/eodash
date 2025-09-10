@@ -224,6 +224,17 @@ export const extractLayerDatetime = (links, currentStep) => {
     displayFormat: "DD.MM.YYYY HH:MM",
   };
 };
+/**
+ * Extracts time control values from layer datetime
+ * @param {ReturnType<typeof extractLayerDatetime>} layerDatetime
+ */
+export function extractTimeControlValues(layerDatetime) {
+  if (!layerDatetime?.controlValues.length) {
+    return undefined;
+  }
+
+  return layerDatetime.controlValues.map((dt) => ({ date: dt }));
+}
 
 /**
  * Find JSON layer by ID
