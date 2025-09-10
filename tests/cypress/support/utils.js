@@ -103,16 +103,7 @@ export const mockEodash = {
         widget: {
           name: "EodashDatePicker",
         },
-      },
-      {
-        id: "Buttons",
-        layout: { x: 8, y: 0, w: 1, h: 1 },
-        title: "Buttons",
-        type: "internal",
-        widget: {
-          name: "EodashMapBtns",
-        },
-      },
+      }
     ],
   },
 };

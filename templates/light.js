@@ -19,12 +19,19 @@ export default {
     },
   },
   background: {
-    id: "background-map",
+    id: "lite-map",
     type: "internal",
     widget: {
       name: "EodashMap",
       properties: {
         enableCompare: true,
+        btns: {
+          enableExportMap: true,
+          enableChangeProjection: false,
+          enableCompareIndicators: false,
+          enableBackToPOIs: false,
+          enableSearch: true,
+        },
       },
     },
   },

@@ -11,6 +11,7 @@ import {
   getDatetimeProperty,
   isSTACItem,
   replaceLayer,
+  extractLayerLegend,
 } from "./helpers";
 import {
   getLayers,
@@ -204,20 +205,7 @@ export class EodashCollection {
 
     if (isSupported) {
       // Checking for potential legend asset
-      let extraProperties = null;
-      if (this.#collectionStac?.assets?.legend?.href) {
-        extraProperties = {
-          description: `<div style="width: 100%">
-            <img src="${this.#collectionStac.assets.legend.href}" style="max-height:70px; margin-top:-15px; margin-bottom:-20px;" />
-          </div>`,
-        };
-      }
-      // Check if collection has eox:colorlegend definition, if yes overwrite legend description
-      if (this.#collectionStac && this.#collectionStac["eox:colorlegend"]) {
-        extraProperties = {
-          layerLegend: this.#collectionStac["eox:colorlegend"],
-        };
-      }
+      let extraProperties = extractLayerLegend(this.#collectionStac);
       extraProperties = {
         ...extraProperties,
         ...(this.color && { color: this.color }),

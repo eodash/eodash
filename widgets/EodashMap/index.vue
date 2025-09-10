@@ -32,14 +32,46 @@
       />
     </eox-map>
   </eox-map-compare>
+  <div
+    v-if="enableCursorCoordinates"
+    id="cursor-coordinates"
+    ref="cursor-coords"
+  />
+  <span v-if="enableScaleLine" id="scale-line" ref="scale-line" />
+  <div
+    class="map-buttons-container"
+    :style="`margin: ${btnsPosition.gap}px 0 ${btnsPosition.gap}px 0`"
+  >
+    <EodashMapBtns
+      v-if="indicator || compareIndicator"
+      :style="{
+        gridColumn: responsiveX,
+        gridRow: responsiveY,
+      }"
+      :exportMap="btnsProps.exportMap"
+      :changeProjection="btnsProps.changeProjection"
+      :compareIndicators="btnsProps.compareIndicators"
+      :backToPOIs="btnsProps.backToPOIs"
+      :enableSearch="btnsProps.enableSearch"
+      :enableZoom="btnsProps.enableZoom"
+    />
+  </div>
 </template>
 <script setup>
 import "@eox/map";
 import "@eox/map/src/plugins/advancedLayersAndSources";
-import { computed, onMounted, ref, toRaw } from "vue";
-import { datetime, mapEl, mapPosition, mapCompareEl } from "@/store/states";
+import { computed, onMounted, ref, toRaw, useTemplateRef } from "vue";
+import {
+  datetime,
+  mapEl,
+  mapPosition,
+  mapCompareEl,
+  indicator,
+  compareIndicator,
+} from "@/store/states";
 import { storeToRefs } from "pinia";
 import { useSTAcStore } from "@/store/stac";
+import { useDisplay } from "vuetify";
 import {
   eodashCollections,
   eodashCompareCollections,
@@ -53,6 +85,7 @@ import {
 } from "^/EodashMap/methods";
 import { inAndOut } from "ol/easing.js";
 import mustache from "mustache";
+import EodashMapBtns from "^/EodashMap/EodashMapBtns.vue";
 
 const props = defineProps({
   enableCompare: {
@@ -73,18 +106,103 @@ const props = defineProps({
     type: Boolean,
     default: true,
   },
+  enableCursorCoordinates: {
+    type: Boolean,
+    default: true,
+  },
+  enableScaleLine: {
+    type: Boolean,
+    default: true,
+  },
+  btnsPosition: {
+    type: Object,
+    default: () => ({
+      x: "12/9/8",
+      y: 1,
+      gap: 16,
+    }),
+  },
+  btns: {
+    type: Object,
+    default: () => ({
+      enableExportMap: true,
+      enableChangeProjection: true,
+      enableCompareIndicators: true,
+      enableBackToPOIs: true,
+      enableSearch: true,
+      enableZoom: true,
+    }),
+  },
 });
+
+// Responsive positioning logic
+const { width } = useDisplay();
+
+/**
+ * Parse responsive string values (e.g., "1/5/10") into values for different screen sizes
+ * Breakpoints: [0, 960, 1920] based on properties passed to eox-layout in DashboardLayout.vue
+ * @param {string | number} value
+ * @returns {number}
+ */
+const parseResponsiveValue = (value) => {
+  if (typeof value === "number") {
+    return value;
+  }
+  if (typeof value === "string") {
+    const parts = value.split("/");
+    const currentWidth = width.value;
+
+    if (currentWidth < 960) {
+      return parseInt(parts[0]) || 1;
+    } else if (currentWidth < 1920) {
+      return parseInt(parts[1] || parts[0]) || 1;
+    } else {
+      return parseInt(parts[2] || parts[1] || parts[0]) || 1;
+    }
+  }
+  return 1;
+};
+
+const responsiveX = computed(() => parseResponsiveValue(props.btnsPosition.x));
+const responsiveY = computed(() => parseResponsiveValue(props.btnsPosition.y));
+const btnsProps = computed(() => ({
+  exportMap: props.btns.enableExportMap ?? true,
+  changeProjection: props.btns.enableChangeProjection ?? true,
+  compareIndicators: props.btns.enableCompareIndicators ?? true,
+  backToPOIs: props.btns.enableBackToPOIs ?? true,
+  enableSearch: props.btns.enableSearch ?? true,
+  enableZoom: props.btns.enableZoom ?? true,
+}));
+
+// Prepare containers for scale line and cursor coordinates
+const scaleLineRef = useTemplateRef("scale-line");
+const cursorCoordsRef = useTemplateRef("cursor-coords");
 
 /** @type {import("vue").Ref<Exclude<import("@/types").EodashStyleJson["tooltip"], undefined>>} */
 const tooltipProperties = ref([]);
 /** @type {import("vue").Ref<Exclude<import("@/types").EodashStyleJson["tooltip"], undefined>>} */
 const compareTooltipProperties = ref([]);
-/** @type {import("@eox/map").EOxMap["controls"]} */
-const controls = {
+/** @type {import("vue").ComputedRef<Record<string, any>>} */
+const controls = computed(() => ({
   Attribution: {
     collapsible: true,
   },
-};
+  ScaleLine: props.enableScaleLine
+    ? {
+        target: scaleLineRef.value || undefined,
+      }
+    : undefined,
+  MousePosition: props.enableCursorCoordinates
+    ? {
+        projection: "EPSG:4326",
+        coordinateFormat: (/** @type {[number, number]} */ c) => {
+          return `${c[1].toFixed(3)} °N, ${c[0].toFixed(3)} °E`;
+        },
+        target: cursorCoordsRef.value || undefined,
+      }
+    : undefined,
+}));
+
 const initialCenter = toRaw(props.center);
 const initialZoom = toRaw(mapPosition.value?.[2] ?? props.zoom);
 /** @type {import("vue").Ref<Record<string,any>[]>} */
@@ -210,3 +328,60 @@ const tooltipPropertyTransform = (map) => {
   };
 };
 </script>
+
+<style scoped>
+#cursor-coordinates {
+  position: fixed;
+  left: 24px;
+  bottom: 56px;
+  padding: 0 2px;
+  color: rgba(0, 0, 0, 0.9);
+  font-size: 13px;
+  background: #fffe;
+  border-radius: 4px;
+  border: none;
+  padding: 4px 8px;
+}
+
+#scale-line {
+  position: fixed;
+  left: 24px;
+  bottom: 24px;
+  color: #fff;
+}
+
+:deep(.ol-scale-line) {
+  background: #fffe !important;
+  border-radius: 4px !important;
+  border: none !important;
+  padding: 4px 8px !important;
+  font-size: 12px !important;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+}
+:deep(.ol-scale-line-inner) {
+  display: flex;
+  justify-content: center;
+  border: 1px solid rgba(0, 0, 0, 0.5) !important;
+  border-top: none !important;
+  color: #333 !important;
+  font-weight: 500 !important;
+}
+
+.map-buttons-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  grid-template-rows: repeat(12, 1fr);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.map-buttons-container > * {
+  pointer-events: auto;
+}
+</style>

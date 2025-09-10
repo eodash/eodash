@@ -26,7 +26,7 @@ import EodashOverlay from "@/components/EodashOverlay.vue";
 
 const props = defineProps({
   config: {
-    type: String,
+    type: [String, Function],
   },
   isWebComponent: {
     type: Boolean,

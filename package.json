@@ -1,6 +1,6 @@
 {
   "name": "@eodash/eodash",
-  "version": "5.0.0",
+  "version": "5.1.0",
   "type": "module",
   "types": "./dist/types/core/client/types.d.ts",
   "files": [
@@ -67,6 +67,7 @@
   "dependencies": {
     "@eox/chart": "^1.0.1",
     "@eox/drawtools": "^1.1.3",
+    "@eox/geosearch": "^1.0.1",
     "@eox/itemfilter": "^1.10.4",
     "@eox/jsonform": "^1.4.1",
     "@eox/layercontrol": "^1.1.2",
@@ -89,6 +90,7 @@
     "loglevel": "^1.9.2",
     "mustache": "^4.2.0",
     "pinia": "^3.0.3",
+    "proj4": "^2.19.10",
     "sass": "^1.89.2",
     "stac-js": "^0.1.6",
     "stac-ts": "^1.0.4",
