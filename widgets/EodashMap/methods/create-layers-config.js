@@ -1,4 +1,5 @@
 import { EodashCollection } from "@/eodashSTAC/EodashCollection";
+import { useSTAcStore } from "@/store/stac";
 import log from "loglevel";
 
 /**
@@ -34,12 +35,15 @@ export const createLayersConfig = async (
     layers: /** @type {Record<string,any>[]}*/ ([]),
   };
 
+  const store = useSTAcStore();
   for (const ec of eodashCols) {
     let layers;
     if (updatedTime) {
-      layers = await ec.createLayersJson(new Date(updatedTime));
+      layers = await ec.createLayersJson(
+        store.selectedItem ?? new Date(updatedTime),
+      );
     } else {
-      layers = await ec.createLayersJson();
+      layers = await ec.createLayersJson(store.selectedItem ?? undefined);
     }
     // Add expand to all analysis layers
     layers.forEach((dl) => {

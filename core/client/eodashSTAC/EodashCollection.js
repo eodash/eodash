@@ -68,7 +68,7 @@ export class EodashCollection {
 
   /**
    * @async
-   * @param {import('stac-ts').StacLink | Date } [linkOrDate]
+   * @param { import("stac-ts").StacItem | import('stac-ts').StacLink | Date } [linkOrDate]
    * @returns
    */
   createLayersJson = async (linkOrDate) => {

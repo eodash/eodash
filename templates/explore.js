@@ -1,8 +1,8 @@
-import { mdiViewDashboard } from "@mdi/js";
 import { includesProcess } from "@/store/actions";
-
 /** @type {import("@/types").Template} */
+//@ts-expect-error todo
 export default {
+  gap: 16,
   loading: {
     id: "loading",
     type: "web-component",
@@ -37,9 +37,8 @@ export default {
       widget: {
         name: "EodashTools",
         properties: {
-          layoutTarget: "lite",
-          layoutIcon: mdiViewDashboard,
           itemFilterConfig: {
+            explore: true,
             resultType: "cards",
             subTitleProperty: "subtitle",
             imageProperty: "thumbnail",
@@ -48,15 +47,15 @@ export default {
         },
       },
     },
-    {
-      id: "Layercontrol",
-      type: "internal",
-      title: "Layers",
-      layout: { x: 0, y: 1, w: "3/3/2", h: 11 },
-      widget: {
-        name: "EodashLayerControl",
-      },
-    },
+    // {
+    //   id: "Layercontrol",
+    //   type: "internal",
+    //   title: "Layers",
+    //   layout: { x: 0, y: 6, w: "3/3/2", h: 5 },
+    //   widget: {
+    //     name: "EodashLayerControl",
+    //   },
+    // },
     {
       defineWidget: (selectedSTAC) => {
         return selectedSTAC
@@ -73,23 +72,12 @@ export default {
       },
     },
     {
-      defineWidget: (selectedSTAC) => {
-        return selectedSTAC
-          ? {
-              id: "expert-datepicker",
-              type: "internal",
-              layout: { x: 4, y: 7, w: 4, h: 5 },
-              title: "Date",
-              widget: {
-                name: "EodashDatePicker",
-                properties: {
-                  hintText: `<b>Hint:</b> closest available date is displayed <br />
-                            on map (see Analysis Layers)`,
-                  toggleCalendar: true,
-                },
-              },
-            }
-          : null;
+      id: "ItemCatalog",
+      title: "Catalog",
+      type: "internal",
+      layout: { x: 0, y: 1, w: "4/4/3", h: 11 },
+      widget: {
+        name: "EodashItemCatalog",
       },
     },
     {

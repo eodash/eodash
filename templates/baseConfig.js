@@ -1,7 +1,8 @@
 import { deepmergeInto } from "deepmerge-ts";
-import light from "./light";
+import lite from "./lite";
 import expert from "./expert";
 import compare from "./compare";
+import explore from "./explore";
 
 /** @type {import("@/types").Eodash} */
 const baseConfig = {
@@ -53,7 +54,8 @@ const baseConfig = {
     footerText: "Demo configuration of eodash client",
   },
   templates: {
-    light,
+    explore,
+    lite,
     expert,
     compare,
   },

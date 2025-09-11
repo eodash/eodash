@@ -13,17 +13,24 @@
   </eox-itemfilter>
 </template>
 <script setup>
+import "@eox/itemfilter";
+import axios from "@/plugins/axios";
 import { useSTAcStore } from "@/store/stac";
 import { isFirstLoad } from "@/utils/states";
-import "@eox/itemfilter";
+import { toAbsolute } from "stac-js/src/http.js";
 import { computed, ref } from "vue";
 
 const store = useSTAcStore();
 const emit = defineEmits(["select"]);
-const items = store.isApi
-  ? store.stac
-  : store.stac?.filter((item) => item.rel === "child");
+const items = ref(
+  store.isApi ? store.stac : store.stac?.filter((item) => item.rel === "child"),
+);
+
 const props = defineProps({
+  explore: {
+    type: Boolean,
+    default: false,
+  },
   enableCompare: {
     type: Boolean,
     default: false,
@@ -88,29 +95,52 @@ const props = defineProps({
     ],
   },
 });
+
 /**
  *
  * @param  {Function} loader Function to load the item
  * @param {Function} reset Function to reset the selection
  */
-const createSelect = (loader, reset) => {
+const createSelect = (loader, reset, explore = props.explore) => {
   /**
    * @param {import("stac-ts").StacLink | import("stac-ts").StacCollection} item
    */
-  return async (item) => {
-    if (item) {
-      if (isFirstLoad.value) {
-        // prevent the map from jumping to the initial position
-        isFirstLoad.value = false;
-      }
+  return explore
+    ? /**
+       * @param {import("stac-ts").StacLink | import("stac-ts").StacCollection} item
+       */ async (item) => {
+        // Implement explore mode selection logic
+        if (item) {
+          const colUrl = store.isApi
+            ? store.stacEndpoint + "/collections/" + item.id
+            : //@ts-expect-error todo
+              toAbsolute(item.href, store.stacEndpoint);
+          store.$patch({
+            selectedStac: await axios.get(colUrl).then((res) => res.data),
+          });
+        } else {
+          reset();
+        }
+        emit("select", item);
+      } /**
+       * @param {import("stac-ts").StacLink | import("stac-ts").StacCollection} item
+       */
+    : async (item) => {
+        if (item) {
+          if (isFirstLoad.value) {
+            // prevent the map from jumping to the initial position
+            isFirstLoad.value = false;
+          }
 
-      const href = /** @type {string} */ (store.isApi ? item.id : item.href);
-      await loader(href);
-      emit("select", item);
-    } else {
-      reset();
-    }
-  };
+          const href = /** @type {string} */ (
+            store.isApi ? item.id : item.href
+          );
+          await loader(href);
+          emit("select", item);
+        } else {
+          reset();
+        }
+      };
 };
 const selectIndicator = createSelect(
   store.loadSelectedSTAC,
