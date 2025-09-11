@@ -1,6 +1,20 @@
 # Changelog
 
 
+## [5.2.0](https://github.com/eodash/eodash/compare/eodash-v5.1.0...eodash-v5.2.0) (2025-09-11)
+
+
+### Features
+
+* add zoom buttons, scale line and cursor coordinates ([#225](https://github.com/eodash/eodash/issues/225)) ([3dbd0e3](https://github.com/eodash/eodash/commit/3dbd0e3ab32bf2efd7b15a38ae99bbfab0ae09e4))
+* new handler for geodb feature assets ([#231](https://github.com/eodash/eodash/issues/231)) ([f0f16bf](https://github.com/eodash/eodash/commit/f0f16bfd87a695b8301b69060319a934ad47d6e8))
+
+
+### Bug Fixes
+
+* downloading of eoxhub process object output type results ([#230](https://github.com/eodash/eodash/issues/230)) ([d60e953](https://github.com/eodash/eodash/commit/d60e9531d1f93c396a3fcd5ba5bee0f74a51bb6e))
+* Support eox:colorlegend from collection config for process results and add support for flatgeobuf as eoxhub process result ([#227](https://github.com/eodash/eodash/issues/227)) ([96b9b17](https://github.com/eodash/eodash/commit/96b9b178bd52f26c979dc9a100a94dcd01e866cd))
+
 ## [5.1.0](https://github.com/eodash/eodash/compare/eodash-v5.0.0...eodash-v5.1.0) (2025-08-21)
 
 
