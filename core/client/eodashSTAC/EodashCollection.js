@@ -200,7 +200,6 @@ export class EodashCollection {
       );
 
       jsonArray.push(
-        ...links,
         ...(await createLayersFromAssets(
           this.#collectionStac?.id ?? "",
           title || this.#collectionStac?.title || item.id,
@@ -211,6 +210,8 @@ export class EodashCollection {
           layerDatetime,
           extraProperties,
         )),
+        ...links, 
+        // We add the links after the assets so they are layered underneath assets
       );
     } else {
       // fallback to STAC
