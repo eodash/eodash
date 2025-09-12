@@ -26,7 +26,7 @@ export default {
       properties: {
         enableCompare: true,
         btns: {
-          enableExportMap: true,
+          enableExportMap: false,
           enableChangeProjection: false,
           enableCompareIndicators: false,
           enableBackToPOIs: false,
