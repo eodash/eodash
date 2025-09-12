@@ -3,55 +3,56 @@
     <button
       v-if="enableZoom"
       class="small circle small-elevate"
-      :title="'Zoom in'"
       @click="onMapZoomIn"
     >
       <i class="small"><svg viewBox="0 0 24 24"><path :d="mdiPlus" /></svg></i>
+      <div class="tooltip left">Zoom in</div>
     </button>
 
     <button
       v-if="enableZoom"
       class="small circle small-elevate"
-      :title="'Zoom out'"
       @click="onMapZoomOut"
     >
       <i class="small"><svg viewBox="0 0 24 24"><path :d="mdiMinus" /></svg></i>
+      <div class="tooltip left">Zoom out</div>
     </button>
 
     <button
       v-if="exportMap"
       class="small circle small-elevate"
-      :title="'Extract Storytelling configuration'"
       @click="showMapState = !showMapState"
     >
       <i class="small"><svg viewBox="0 0 24 24"><path :d="mdiMapPlus" /></svg></i>
+      <div class="tooltip left">Extract storytelling configuration</div>
     </button>
     <ExportState v-if="exportMap" v-model="showMapState" />
 
     <button
       v-if="changeProjection && !!availableMapProjection"
       class="small circle small-elevate"
-      :title="'Change map projection'"
       @click="changeMapProjection(availableMapProjection)"
     >
       <i class="small"><svg viewBox="0 0 24 24"><path :d="mdiEarthBox" /></svg></i>
+      <div class="tooltip left">Change map projection</div>
     </button>
     <button
       v-if="compareIndicators"
       class="small circle small-elevate"
-      :title="'Compare mode'"
       @click="onCompareClick"
     >
       <i class="small"><svg viewBox="0 0 24 24"><path :d="compareIcon" /></svg></i>
+      <div class="tooltip left">Compare mode</div>
     </button>
     <button
       v-if="backToPOIs && (poi || comparePoi)"
       class="small circle small-elevate"
-      :title="'back to POIs'"
       @click="loadPOiIndicator()"
     >
       <i class="small"><svg viewBox="0 0 24 24"><path :d="mdiStarFourPointsCircleOutline" /></svg></i>
+      <div class="tooltip left">Back to POIs</div>
     </button>
+    <!-- TODO: Implement tooltip support in `eox-geosearch` -->
     <eox-geosearch
       v-if="enableSearch"
       :for="mapEl"
