@@ -182,25 +182,31 @@ const tooltipProperties = ref([]);
 /** @type {import("vue").Ref<Exclude<import("@/types").EodashStyleJson["tooltip"], undefined>>} */
 const compareTooltipProperties = ref([]);
 /** @type {import("vue").ComputedRef<Record<string, any>>} */
-const controls = computed(() => ({
-  Attribution: {
-    collapsible: true,
-  },
-  ScaleLine: props.enableScaleLine
-    ? {
-        target: scaleLineRef.value || undefined,
-      }
-    : undefined,
-  MousePosition: props.enableCursorCoordinates
-    ? {
-        projection: "EPSG:4326",
-        coordinateFormat: (/** @type {[number, number]} */ c) => {
-          return `${c[1].toFixed(3)} °N, ${c[0].toFixed(3)} °E`;
-        },
-        target: cursorCoordsRef.value || undefined,
-      }
-    : undefined,
-}));
+const controls = computed(() => {
+  const controlsObj = {
+    Attribution: {
+      collapsible: true,
+    },
+  };
+
+  if (props.enableScaleLine && scaleLineRef.value) {
+    controlsObj.ScaleLine = {
+      target: scaleLineRef.value,
+    };
+  }
+
+  if (props.enableCursorCoordinates && cursorCoordsRef.value) {
+    controlsObj.MousePosition = {
+      projection: "EPSG:4326",
+      coordinateFormat: (/** @type {[number, number]} */ c) => {
+        return `${c[1].toFixed(3)} °N, ${c[0].toFixed(3)} °E`;
+      },
+      target: cursorCoordsRef.value,
+    };
+  }
+
+  return controlsObj;
+});
 
 const initialCenter = toRaw(props.center);
 const initialZoom = toRaw(mapPosition.value?.[2] ?? props.zoom);

@@ -25,6 +25,8 @@ export default {
       name: "EodashMap",
       properties: {
         enableCompare: true,
+        enableCursorCoordinates: false,
+        enableScaleLine: false,
         btns: {
           enableExportMap: false,
           enableChangeProjection: false,
