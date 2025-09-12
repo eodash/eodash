@@ -1,57 +1,57 @@
 <template>
-  <div ref="rootRef" class="d-flex flex-column align-end">
-    <v-btn
+  <div ref="rootRef" class="map-buttons d-flex flex-column align-end">
+    <button
       v-if="enableZoom"
-      class="map-btn"
-      :icon="[mdiPlus]"
-      size="small"
-      v-tooltip:bottom="'Zoom in'"
+      class="small circle small-elevate"
+      :title="'Zoom in'"
       @click="onMapZoomIn"
-    />
+    >
+      <i class="small"><svg viewBox="0 0 24 24"><path :d="mdiPlus" /></svg></i>
+    </button>
 
-    <v-btn
+    <button
       v-if="enableZoom"
-      class="map-btn"
-      :icon="[mdiMinus]"
-      size="small"
-      v-tooltip:bottom="'Zoom out'"
+      class="small circle small-elevate"
+      :title="'Zoom out'"
       @click="onMapZoomOut"
-    />
+    >
+      <i class="small"><svg viewBox="0 0 24 24"><path :d="mdiMinus" /></svg></i>
+    </button>
 
-    <v-btn
+    <button
       v-if="exportMap"
-      class="map-btn"
-      :icon="[mdiMapPlus]"
-      size="small"
-      v-tooltip:bottom="'Extract Storytelling configuration'"
+      class="small circle small-elevate"
+      :title="'Extract Storytelling configuration'"
       @click="showMapState = !showMapState"
-    />
+    >
+      <i class="small"><svg viewBox="0 0 24 24"><path :d="mdiMapPlus" /></svg></i>
+    </button>
     <ExportState v-if="exportMap" v-model="showMapState" />
 
-    <v-btn
+    <button
       v-if="changeProjection && !!availableMapProjection"
-      class="map-btn"
-      :icon="[mdiEarthBox]"
-      size="small"
-      v-tooltip:bottom="'Change map projection'"
+      class="small circle small-elevate"
+      :title="'Change map projection'"
       @click="changeMapProjection(availableMapProjection)"
-    />
-    <v-btn
+    >
+      <i class="small"><svg viewBox="0 0 24 24"><path :d="mdiEarthBox" /></svg></i>
+    </button>
+    <button
       v-if="compareIndicators"
-      class="map-btn"
-      :icon="[compareIcon]"
-      size="small"
-      v-tooltip:bottom="'Compare mode'"
+      class="small circle small-elevate"
+      :title="'Compare mode'"
       @click="onCompareClick"
-    />
-    <v-btn
+    >
+      <i class="small"><svg viewBox="0 0 24 24"><path :d="compareIcon" /></svg></i>
+    </button>
+    <button
       v-if="backToPOIs && (poi || comparePoi)"
-      class="map-btn"
-      :icon="[mdiStarFourPointsCircleOutline]"
-      size="small"
-      v-tooltip:bottom="'back to POIs'"
+      class="small circle small-elevate"
+      :title="'back to POIs'"
       @click="loadPOiIndicator()"
-    />
+    >
+      <i class="small"><svg viewBox="0 0 24 24"><path :d="mdiStarFourPointsCircleOutline" /></svg></i>
+    </button>
     <eox-geosearch
       v-if="enableSearch"
       :for="mapEl"
@@ -238,11 +238,10 @@ const opencageUrl = `https://api.opencagedata.com/geocode/v1/json?key=${opencage
 </script>
 
 <style>
-.map-btn {
-  width: 36px;
-  height: 36px;
-  border-radius: 25%;
-  margin: 4px;
+@import url("@eox/ui/style.css");
+
+.map-buttons button {
+  margin-bottom: 5px;
 }
 
 /* Container constraints removal */
