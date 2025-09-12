@@ -343,6 +343,12 @@ const tooltipPropertyTransform = (map) => {
   max-height: 24px;
 }
 
+@media (max-width: 959px) {
+  #cursor-coordinates {
+    display: none;
+  }
+}
+
 #scale-line {
   position: fixed;
   left: 24px;
