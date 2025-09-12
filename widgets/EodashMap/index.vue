@@ -117,7 +117,7 @@ const props = defineProps({
   btnsPosition: {
     type: Object,
     default: () => ({
-      x: "12/9/8",
+      x: "12/9/10",
       y: 1,
       gap: 16,
     }),
