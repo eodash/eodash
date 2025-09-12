@@ -43,17 +43,16 @@
     :style="`margin: ${btnsPosition.gap}px 0 ${btnsPosition.gap}px 0`"
   >
     <EodashMapBtns
-      v-if="indicator || compareIndicator"
       :style="{
-        gridColumn: responsiveX,
+        gridColumn: (indicator || compareIndicator) ? responsiveX : '12',
         gridRow: responsiveY,
       }"
-      :exportMap="btnsProps.exportMap"
-      :changeProjection="btnsProps.changeProjection"
-      :compareIndicators="btnsProps.compareIndicators"
-      :backToPOIs="btnsProps.backToPOIs"
-      :enableSearch="btnsProps.enableSearch"
-      :enableZoom="btnsProps.enableZoom"
+      :exportMap="(indicator || compareIndicator) ? btnsProps.exportMap : false"
+      :changeProjection="(indicator || compareIndicator) ? btnsProps.changeProjection : false"
+      :compareIndicators="(indicator || compareIndicator) ? btnsProps.compareIndicators : false"
+      :backToPOIs="(indicator || compareIndicator) ? btnsProps.backToPOIs : false"
+      :enableSearch="true"
+      :enableZoom="true"
     />
   </div>
 </template>
