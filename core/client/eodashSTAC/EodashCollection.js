@@ -36,6 +36,8 @@ export class EodashCollection {
 
   /** @type {import("stac-ts").StacCollection | undefined} */
   #collectionStac;
+  /** @type {import("stac-ts").StacItem[] | undefined} */
+  #stacItems;
 
   /**
    * @type {import("stac-ts").StacLink
@@ -282,14 +284,23 @@ export class EodashCollection {
 
   /**
    * Returns all item links sorted by datetime ascendingly
+   * @param {boolean} [first] - if true, returns the first page of items only (for API collections)
    * @returns {Promise<import("stac-ts").StacLink[] | import("stac-ts").StacItem[] | undefined>}
    */
-  async getItems() {
+  async getItems(first = false) {
     const items = this.#collectionStac?.links.filter((i) => i.rel === "item");
 
     if (this.isAPI && !items?.length) {
-      const itemUrl = this.#collectionUrl + "/items";
-      return await fetchApiItems(itemUrl, `fields=properties`);
+      if (!this.#stacItems) {
+        const itemUrl = this.#collectionUrl + "/items";
+        this.#stacItems = await fetchApiItems(
+          itemUrl,
+          `fields=properties`,
+          100,
+          first,
+        );
+      }
+      return this.#stacItems;
     }
 
     const datetimeProperty = getDatetimeProperty(this.#collectionStac?.links);
@@ -366,7 +377,7 @@ export class EodashCollection {
    **/
   async getItem(date) {
     if (!date) {
-      return (await this.getItems())?.[0];
+      return (await this.getItems(true))?.[0];
     }
     if (this.isAPI) {
       const collectionId = /** @type {string} */ (this.collectionStac?.id);
@@ -380,7 +391,7 @@ export class EodashCollection {
     const datetimeProperty = getDatetimeProperty(this.#collectionStac?.links);
     if (!datetimeProperty) {
       // in case no datetime property is found, return the first item
-      return (await this.getItems())?.[0];
+      return (await this.getItems(true))?.[0];
     }
     return date
       ? (await this.getItems())?.sort((a, b) => {
@@ -394,7 +405,7 @@ export class EodashCollection {
           );
           return distanceA - distanceB;
         })[0]
-      : (await this.getItems())?.at(-1);
+      : (await this.getItems(true))?.at(-1);
   }
 
   async getToolTipProperties() {
