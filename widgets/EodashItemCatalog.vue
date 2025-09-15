@@ -14,7 +14,7 @@
   </eox-itemfilter>
 </template>
 <script setup>
-import "@eox/itemfilter"
+import "@eox/itemfilter";
 import axios from "@/plugins/axios";
 import { useSTAcStore } from "@/store/stac";
 import { ref, toRaw } from "vue";
@@ -38,7 +38,12 @@ const items = await (async () => {
   if (store.isApi) {
     return await axios
       .get(
-       new URL(store.stacEndpoint + "/collections/" + store.selectedStac.id + "/items").toString(),
+        new URL(
+          store.stacEndpoint +
+            "/collections/" +
+            store.selectedStac.id +
+            "/items",
+        ).toString(),
       )
       .then((res) => ref(res.data.features));
   } else {
@@ -51,12 +56,12 @@ store.$subscribe(async ({ type }) => {
     items.value = await axios
       .get(
         store.stacEndpoint + "/collections/" + store.selectedStac.id + "/items",
-        )
-        .then((res) =>
+      )
+      .then((res) =>
         //@ts-expect-error todo
         res.data.features.map((item) => ({ ...item, ...item.properties })),
       );
-      firstSelection.value = true;
+    firstSelection.value = true;
   }
 });
 

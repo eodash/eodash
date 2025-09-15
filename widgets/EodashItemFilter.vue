@@ -122,10 +122,11 @@ const createSelect = (loader, reset, explore = props.explore) => {
           reset();
         }
         emit("select", item);
-      } /**
+      }
+    : /**
        * @param {import("stac-ts").StacLink | import("stac-ts").StacCollection} item
        */
-    : async (item) => {
+      async (item) => {
         if (item) {
           if (isFirstLoad.value) {
             // prevent the map from jumping to the initial position
