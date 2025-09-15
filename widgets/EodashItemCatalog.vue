@@ -14,6 +14,7 @@
   </eox-itemfilter>
 </template>
 <script setup>
+import "@eox/itemfilter"
 import axios from "@/plugins/axios";
 import { useSTAcStore } from "@/store/stac";
 import { ref, toRaw } from "vue";
@@ -28,7 +29,7 @@ defineProps({
     default: "Items",
   },
 });
-
+const firstSelection = ref(true);
 const store = useSTAcStore();
 const items = await (async () => {
   if (!store.selectedStac) {
@@ -37,7 +38,7 @@ const items = await (async () => {
   if (store.isApi) {
     return await axios
       .get(
-        store.stacEndpoint + "/collections/" + store.selectedStac.id + "/items",
+       new URL(store.stacEndpoint + "/collections/" + store.selectedStac.id + "/items").toString(),
       )
       .then((res) => ref(res.data.features));
   } else {
@@ -50,9 +51,12 @@ store.$subscribe(async ({ type }) => {
     items.value = await axios
       .get(
         store.stacEndpoint + "/collections/" + store.selectedStac.id + "/items",
-      )
-      //@ts-expect-error todo
-      .then((res) => res.data.features.map(item => ({...item, ...item.properties})));
+        )
+        .then((res) =>
+        //@ts-expect-error todo
+        res.data.features.map((item) => ({ ...item, ...item.properties })),
+      );
+      firstSelection.value = true;
   }
 });
 
@@ -61,17 +65,23 @@ store.$subscribe(async ({ type }) => {
  * @param {CustomEvent} evt
  */
 const onSelect = async (evt) => {
-  const item = evt.detail
+  const item = evt.detail;
   store.selectedItem = item;
-  console.log(store.selectedStac?.id, store.selectedItem);
-
-  store.loadSelectedSTAC(store.selectedStac?.id);
+  console.log(
+    "selected STAC Item",
+    store.selectedStac?.id,
+    store.selectedItem?.id,
+  );
+  if (firstSelection.value) {
+    firstSelection.value = false;
+    store.loadSelectedSTAC(store.selectedStac?.id);
+  }
 };
 
 // Configuration for item cards & STAC-relevant filters
 const config = {
   resultType: "cards",
-  titleProperty: "title",
+  titleProperty: "id",
   subTitleProperty: "id", // fallback if no subtitle field
   imageProperty: "thumbnail",
   expandMultipleFilters: true,
@@ -100,5 +110,5 @@ const config = {
     // { key: 'platform', title: 'Platform', type: 'multiselect', expanded: false },
     // { key: 'instruments', title: 'Instrument', type: 'multiselect', expanded: false },
   ],
-}
+};
 </script>
