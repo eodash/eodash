@@ -239,10 +239,10 @@ export async function loadPreviousProcess({
  *
  * @param {string} jobID
  * @param {string} indicator
-*/
+ */
 export const getJobStatusUrl = (jobID, indicator) => {
   /** @type {string[]} */
   const jobsUrls = JSON.parse(localStorage.getItem(indicator) || "[]");
   const jobUrl = jobsUrls.find((url) => url.includes(jobID));
   return jobUrl;
-}
+};
