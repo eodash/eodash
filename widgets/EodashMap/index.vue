@@ -44,13 +44,17 @@
   >
     <EodashMapBtns
       :style="{
-        gridColumn: (indicator || compareIndicator) ? responsiveX : '12',
+        gridColumn: indicator || compareIndicator ? responsiveX : '12',
         gridRow: responsiveY,
       }"
-      :exportMap="(indicator || compareIndicator) ? btnsProps.exportMap : false"
-      :changeProjection="(indicator || compareIndicator) ? btnsProps.changeProjection : false"
-      :compareIndicators="(indicator || compareIndicator) ? btnsProps.compareIndicators : false"
-      :backToPOIs="(indicator || compareIndicator) ? btnsProps.backToPOIs : false"
+      :exportMap="indicator || compareIndicator ? btnsProps.exportMap : false"
+      :changeProjection="
+        indicator || compareIndicator ? btnsProps.changeProjection : false
+      "
+      :compareIndicators="
+        indicator || compareIndicator ? btnsProps.compareIndicators : false
+      "
+      :backToPOIs="indicator || compareIndicator ? btnsProps.backToPOIs : false"
       :enableSearch="true"
       :enableZoom="true"
     />

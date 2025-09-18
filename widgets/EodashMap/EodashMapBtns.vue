@@ -5,7 +5,9 @@
       class="small circle small-elevate"
       @click="onMapZoomIn"
     >
-      <i class="small"><svg viewBox="0 0 24 24"><path :d="mdiPlus" /></svg></i>
+      <i class="small"
+        ><svg viewBox="0 0 24 24"><path :d="mdiPlus" /></svg
+      ></i>
       <div class="tooltip left">Zoom in</div>
     </button>
 
@@ -14,7 +16,9 @@
       class="small circle small-elevate"
       @click="onMapZoomOut"
     >
-      <i class="small"><svg viewBox="0 0 24 24"><path :d="mdiMinus" /></svg></i>
+      <i class="small"
+        ><svg viewBox="0 0 24 24"><path :d="mdiMinus" /></svg
+      ></i>
       <div class="tooltip left">Zoom out</div>
     </button>
 
@@ -23,7 +27,9 @@
       class="small circle small-elevate"
       @click="showMapState = !showMapState"
     >
-      <i class="small"><svg viewBox="0 0 24 24"><path :d="mdiMapPlus" /></svg></i>
+      <i class="small"
+        ><svg viewBox="0 0 24 24"><path :d="mdiMapPlus" /></svg
+      ></i>
       <div class="tooltip left">Extract storytelling configuration</div>
     </button>
     <ExportState v-if="exportMap" v-model="showMapState" />
@@ -33,7 +39,9 @@
       class="small circle small-elevate"
       @click="changeMapProjection(availableMapProjection)"
     >
-      <i class="small"><svg viewBox="0 0 24 24"><path :d="mdiEarthBox" /></svg></i>
+      <i class="small"
+        ><svg viewBox="0 0 24 24"><path :d="mdiEarthBox" /></svg
+      ></i>
       <div class="tooltip left">Change map projection</div>
     </button>
     <button
@@ -41,7 +49,9 @@
       class="small circle small-elevate"
       @click="onCompareClick"
     >
-      <i class="small"><svg viewBox="0 0 24 24"><path :d="compareIcon" /></svg></i>
+      <i class="small"
+        ><svg viewBox="0 0 24 24"><path :d="compareIcon" /></svg
+      ></i>
       <div class="tooltip left">Compare mode</div>
     </button>
     <button
@@ -49,7 +59,10 @@
       class="small circle small-elevate"
       @click="loadPOiIndicator()"
     >
-      <i class="small"><svg viewBox="0 0 24 24"><path :d="mdiStarFourPointsCircleOutline" /></svg></i>
+      <i class="small"
+        ><svg viewBox="0 0 24 24">
+          <path :d="mdiStarFourPointsCircleOutline" /></svg
+      ></i>
       <div class="tooltip left">Back to POIs</div>
     </button>
     <eox-geosearch

@@ -67,8 +67,7 @@ const mainRectBtmPx = ref("");
 onMounted(() => {
   mainRectTopPx.value = mainRect.value.top + "px";
   mainRectBtmPx.value = (mainRect.value.bottom || 48) + "px";
-  tabsHeightFromBtm.value =
-    mainRect.value.bottom + 48 + "px";
+  tabsHeightFromBtm.value = mainRect.value.bottom + 48 + 32 + "px"; // 48px nav height + 32px bottom offset
 });
 </script>
 <style scoped>
@@ -103,13 +102,15 @@ onMounted(() => {
 
 .tabs {
   position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  width: 100%;
+  bottom: 32px;
+  left: 12px;
+  right: 12px;
+  width: calc(100% - 24px);
   height: 48px;
   z-index: 10;
   background: white;
+  border-radius: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 :deep(.bg-surface) {
   backdrop-filter: blur(10px) !important;
