@@ -52,7 +52,6 @@
       <i class="small"><svg viewBox="0 0 24 24"><path :d="mdiStarFourPointsCircleOutline" /></svg></i>
       <div class="tooltip left">Back to POIs</div>
     </button>
-    <!-- TODO: Implement tooltip support in `eox-geosearch` -->
     <eox-geosearch
       v-if="enableSearch"
       :for="mapEl"
@@ -63,6 +62,8 @@
       button
       list-direction="left"
       results-direction="down"
+      tooltip="Search"
+      tooltip-direction="left"
     ></eox-geosearch>
     <PopUp
       v-model="showCompareIndicators"
