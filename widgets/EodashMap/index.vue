@@ -351,7 +351,7 @@ const tooltipPropertyTransform = (map) => {
 
 @media (max-width: 959px) {
   #cursor-coordinates {
-    display: none;
+    bottom: 116px; /* Adjusted for mobile bottom nav (72px + 44px) */
   }
 }
 
@@ -360,6 +360,12 @@ const tooltipPropertyTransform = (map) => {
   left: 24px;
   bottom: 42px;
   color: #fff;
+}
+
+@media (max-width: 959px) {
+  #scale-line {
+    bottom: 86px; /* Adjusted for mobile bottom nav (42px + 44px) */
+  }
 }
 
 :deep(.ol-scale-line) {
