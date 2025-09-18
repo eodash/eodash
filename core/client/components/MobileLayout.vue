@@ -37,20 +37,17 @@
       </div>
     </template>
 
-    <v-tabs
-      ref="tabs"
-      align-tabs="center"
-      bg-color="surface"
-      class="tabs"
-      show-arrows
-      v-model="activeIdx"
-    >
+    <nav class="tabbed tabs">
       <template v-for="(importedWidget, idx) in importedWidgets" :key="idx">
-        <v-tab v-if="importedWidget.value.component" :value="idx">
-          {{ importedWidget.value.title }}
-        </v-tab>
+        <a
+          v-if="importedWidget.value.component"
+          :class="{ active: activeIdx === idx }"
+          @click="activeIdx = activeIdx === idx ? -1 : idx"
+        >
+          <span>{{ importedWidget.value.title }}</span>
+        </a>
       </template>
-    </v-tabs>
+    </nav>
   </v-main>
 </template>
 <script setup>
@@ -63,8 +60,6 @@ const { mainRect } = useLayout();
 
 const activeIdx = ref(-1);
 
-/** @type {import("vue").Ref<import("vuetify/components").VTabs | null>} */
-const tabs = ref(null);
 const tabsHeightFromBtm = ref("");
 const mainRectTopPx = ref("");
 const mainRectBtmPx = ref("");
@@ -73,10 +68,20 @@ onMounted(() => {
   mainRectTopPx.value = mainRect.value.top + "px";
   mainRectBtmPx.value = (mainRect.value.bottom || 48) + "px";
   tabsHeightFromBtm.value =
-    mainRect.value.bottom + (tabs.value?.$el?.clientHeight ?? 48) + "px";
+    mainRect.value.bottom + 48 + "px";
 });
 </script>
 <style scoped>
+#bg-widget {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+}
+
 .panel {
   bottom: v-bind("tabsHeightFromBtm");
   top: v-bind("mainRectTopPx");
@@ -97,9 +102,14 @@ onMounted(() => {
 }
 
 .tabs {
-  bottom: v-bind("mainRectBtmPx");
-  position: relative;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  height: 48px;
   z-index: 10;
+  background: white;
 }
 :deep(.bg-surface) {
   backdrop-filter: blur(10px) !important;
