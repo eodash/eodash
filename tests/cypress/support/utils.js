@@ -103,7 +103,7 @@ export const mockEodash = {
         widget: {
           name: "EodashDatePicker",
         },
-      }
+      },
     ],
   },
 };

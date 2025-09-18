@@ -17,7 +17,14 @@
       <tbody>
         <tr v-for="item in currentJobs" :key="item.jobID">
           <td>
-            <a class="processUrl" target="_blank" :href="getJobStatusUrl(item.jobID, currentIndicator)">{{ new Date(item.job_start_datetime).toISOString().slice(0, 16) }}</a>
+            <a
+              class="processUrl"
+              target="_blank"
+              :href="getJobStatusUrl(item.jobID, currentIndicator)"
+              >{{
+                new Date(item.job_start_datetime).toISOString().slice(0, 16)
+              }}</a
+            >
           </td>
           <td>{{ item.status }}</td>
           <td style="padding: 0px">
