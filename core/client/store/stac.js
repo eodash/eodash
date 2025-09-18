@@ -120,9 +120,11 @@ export const useSTAcStore = defineStore("stac", () => {
     await axios
       .get(absoluteUrl.value)
       .then(async (resp) => {
+        const collectionJson = resp.data;
+        collectionJson.isPoi = isPoi;
         await updateEodashCollections(
           eodashCollections,
-          resp.data,
+          collectionJson,
           absoluteUrl.value,
           collectionsPalette,
         );

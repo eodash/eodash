@@ -9,12 +9,14 @@ import log from "loglevel";
  *   | null
  * } selectedIndicator
  * @param {EodashCollection[]} eodashCols
+ * @param {import("vue").Ref<Record<string,any>[]>} mapLayers
  * @param {string} [updatedTime]
  */
 
 export const createLayersConfig = async (
   selectedIndicator,
   eodashCols,
+  mapLayers,
   updatedTime,
 ) => {
   log.debug(
@@ -27,7 +29,7 @@ export const createLayersConfig = async (
   const dataLayers = {
     type: "Group",
     properties: {
-      id: "AnalysisGroup",
+      id: "Analysis Group",
       title: "Data Layers",
       layerControlExpand: true,
     },
@@ -47,6 +49,18 @@ export const createLayersConfig = async (
       dl.properties.layerControlToolsExpand = true;
     });
     dataLayers.layers.push(...layers);
+  }
+
+  // if poi collection we add data as new group and keep the previous
+  // layers untouched, allowing us to keep the initial indicator layers
+  if (selectedIndicator?.isPoi) {
+    if (dataLayers.layers.length) {
+      dataLayers.properties.id = `Location Layers - ${selectedIndicator.id}`;
+      dataLayers.properties.title = `Location Layers - ${selectedIndicator.id}`;
+      layersCollection.push(dataLayers);
+      layersCollection.push(...mapLayers.value);
+      return layersCollection;
+    }
   }
 
   layersCollection.push(dataLayers);
