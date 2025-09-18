@@ -9,7 +9,7 @@ import log from "loglevel";
  *   | null
  * } selectedIndicator
  * @param {EodashCollection[]} eodashCols
- * @param {import("vue").Ref<Record<string,any>[]>} mapLayers
+ * @param {Record<string,any>[]} mapLayers
  * @param {string} [updatedTime]
  */
 
@@ -55,10 +55,13 @@ export const createLayersConfig = async (
   // layers untouched, allowing us to keep the initial indicator layers
   if (selectedIndicator?.isPoi) {
     if (dataLayers.layers.length) {
-      dataLayers.properties.id = `Location Layers - ${selectedIndicator.id}`;
+      dataLayers.properties.id = `LocationLayers`;
       dataLayers.properties.title = `Location Layers - ${selectedIndicator.id}`;
       layersCollection.push(dataLayers);
-      layersCollection.push(...mapLayers.value);
+      // Convert proxies to plain objects before pushing
+      layersCollection.push(
+        ...mapLayers
+      );
       return layersCollection;
     }
   }
