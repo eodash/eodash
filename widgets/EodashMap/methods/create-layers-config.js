@@ -29,7 +29,7 @@ export const createLayersConfig = async (
   const dataLayers = {
     type: "Group",
     properties: {
-      id: "Analysis Group",
+      id: "AnalysisGroup",
       title: "Data Layers",
       layerControlExpand: true,
     },
