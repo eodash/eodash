@@ -257,6 +257,7 @@ const opencageUrl = `https://api.opencagedata.com/geocode/v1/json?key=${opencage
 
 .map-buttons button {
   margin-bottom: 5px;
+  background-color: var(--primary);
 }
 
 /* Container constraints removal */
