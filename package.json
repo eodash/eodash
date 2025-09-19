@@ -67,7 +67,7 @@
   "dependencies": {
     "@eox/chart": "^1.0.1",
     "@eox/drawtools": "^1.1.2",
-    "@eox/geosearch": "^1.0.1",
+    "@eox/geosearch": "^1.1.0",
     "@eox/itemfilter": "^1.10.3",
     "@eox/jsonform": "^1.3.2",
     "@eox/layercontrol": "^1.1.2",
