@@ -1,60 +1,34 @@
 <template>
-  <span>
-    <eox-map-compare
+  <eox-map-compare
+    class="fill-height fill-width overflow-none"
+    .enabled="showCompare"
+  >
+    <eox-map
       class="fill-height fill-width overflow-none"
-      .enabled="showCompare"
+      slot="first"
+      ref="eoxMap"
+      id="main"
+      .animationOptions="animationOptions"
+      .center="initialCenter"
+      .zoom="initialZoom"
+      .layers="eoxMapLayers"
+      .controls="controls"
     >
-      <eox-map
-        class="fill-height fill-width overflow-none"
-        slot="first"
-        ref="eoxMap"
-        id="main"
-        .animationOptions="animationOptions"
-        .center="initialCenter"
-        .zoom="initialZoom"
-        .layers="eoxMapLayers"
-        .controls="controls"
-      >
-        <eox-map-tooltip
-          :style="mainTooltipStyles"
-          .propertyTransform="tooltipPropertyTransform('main')"
-        />
-      </eox-map>
-      <eox-map
-        class="fill-height fill-width overflow-none"
-        id="compare"
-        slot="second"
-        ref="compareMap"
-        .layers="eoxMapCompareLayers"
-      >
-        <eox-map-tooltip
-          :style="compareTooltipStyles"
-          .propertyTransform="tooltipPropertyTransform('compare')"
-        />
-      </eox-map>
-    </eox-map-compare>
-    <div
-      v-if="enableCursorCoordinates"
-      id="cursor-coordinates"
-      ref="cursor-coords"
-    />
-    <span v-if="enableScaleLine" id="scale-line" ref="scale-line" />
-    <div
-      class="map-buttons-container"
-      :style="`margin: ${btnsPosition.gap}px 0 ${btnsPosition.gap}px 0`"
+      <eox-map-tooltip
+        :style="mainTooltipStyles"
+        .propertyTransform="tooltipPropertyTransform('main')"
+      />
+    </eox-map>
+    <eox-map
+      class="fill-height fill-width overflow-none"
+      id="compare"
+      slot="second"
+      ref="compareMap"
+      .layers="eoxMapCompareLayers"
     >
-      <EodashMapBtns
-        v-if="indicator || compareIndicator"
-        :style="{
-          gridColumn: responsiveX,
-          gridRow: responsiveY,
-        }"
-        :exportMap="btnsProps.exportMap"
-        :changeProjection="btnsProps.changeProjection"
-        :compareIndicators="btnsProps.compareIndicators"
-        :backToPOIs="btnsProps.backToPOIs"
-        :enableSearch="btnsProps.enableSearch"
-        :enableZoom="btnsProps.enableZoom"
+      <eox-map-tooltip
+        :style="compareTooltipStyles"
+        .propertyTransform="tooltipPropertyTransform('compare')"
       />
     </eox-map>
   </eox-map-compare>
