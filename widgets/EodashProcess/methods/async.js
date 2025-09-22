@@ -233,3 +233,16 @@ export async function loadPreviousProcess({
   log.debug("rendered layers after loading previous process:", layers);
   applyProcessLayersToMap(mapElement, layers);
 }
+
+/**
+ * extracts job status url from local storage based on identifier
+ *
+ * @param {string} jobID
+ * @param {string} indicator
+ */
+export const getJobStatusUrl = (jobID, indicator) => {
+  /** @type {string[]} */
+  const jobsUrls = JSON.parse(localStorage.getItem(indicator) || "[]");
+  const jobUrl = jobsUrls.find((url) => url.includes(jobID));
+  return jobUrl;
+};
