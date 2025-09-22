@@ -181,7 +181,9 @@ export async function handleProcesses({
       for (const layer of newLayers) {
         if (layer.type === "WebGLTile" && layer.source?.type === "GeoTIFF") {
           processResults.value.push(...(layer.source.sources ?? []));
+          //@ts-expect-error TODO
         } else if (layer.source && "url" in layer.source) {
+          //@ts-expect-error TODO
           processResults.value.push(layer.source.url);
         }
       }
