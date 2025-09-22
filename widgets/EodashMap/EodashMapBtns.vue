@@ -252,7 +252,7 @@ const opencageUrl = `https://api.opencagedata.com/geocode/v1/json?key=${opencage
   .renderRoot.querySelector("menu");*/
 </script>
 
-<style>
+<style scoped>
 @import url("@eox/ui/style.css");
 
 .map-buttons button {
