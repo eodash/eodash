@@ -2,7 +2,7 @@
   <div ref="rootRef" class="map-buttons d-flex flex-column align-end">
     <button
       v-if="enableZoom"
-      class="small circle small-elevate"
+      class="primary small circle small-elevate"
       @click="onMapZoomIn"
     >
       <i class="small"
@@ -13,7 +13,7 @@
 
     <button
       v-if="enableZoom"
-      class="small circle small-elevate"
+      class="primary small circle small-elevate"
       @click="onMapZoomOut"
     >
       <i class="small"
@@ -24,7 +24,7 @@
 
     <button
       v-if="exportMap"
-      class="small circle small-elevate"
+      class="primary small circle small-elevate"
       @click="showMapState = !showMapState"
     >
       <i class="small"
@@ -36,7 +36,7 @@
 
     <button
       v-if="changeProjection && !!availableMapProjection"
-      class="small circle small-elevate"
+      class="primary small circle small-elevate"
       @click="changeMapProjection(availableMapProjection)"
     >
       <i class="small"
@@ -46,7 +46,7 @@
     </button>
     <button
       v-if="compareIndicators"
-      class="small circle small-elevate"
+      class="primary small circle small-elevate"
       @click="onCompareClick"
     >
       <i class="small"
@@ -56,7 +56,7 @@
     </button>
     <button
       v-if="backToPOIs && (poi || comparePoi)"
-      class="small circle small-elevate"
+      class="primary small circle small-elevate"
       @click="loadPOiIndicator()"
     >
       <i class="small"
