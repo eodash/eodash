@@ -66,7 +66,7 @@
       <div class="tooltip left">Back to POIs</div>
     </button>
     <eox-geosearch
-      v-if="enableSearch"
+      v-if="mapEl && enableSearch"
       :for="mapEl"
       :endpoint="opencageUrl"
       class="geosearch-detached"
