@@ -103,8 +103,6 @@ export const useSTAcStore = defineStore("stac", () => {
     await axios
       .get(url)
       .then((resp) => {
-        console.log("STAC response", url, resp.data);
-
         //@ts-expect-error TODO
         const links = resp.data[property].map((link) => {
           if (!link.title) {
@@ -137,7 +135,6 @@ export const useSTAcStore = defineStore("stac", () => {
       // construct absolute URL of a poi
       absoluteUrl.value = constructPoiUrl(relativePath, indicator.value);
     }
-    console.log("Loading selected STAC", absoluteUrl.value, isPoi);
 
     await axios
       .get(absoluteUrl.value)

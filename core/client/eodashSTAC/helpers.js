@@ -573,10 +573,10 @@ export function isSTACItem(stacObject) {
   return (
     stacObject &&
     typeof stacObject === "object" &&
-    "type" in stacObject &&
-    stacObject.type === "Feature" &&
-    "properties" in stacObject &&
-    "geometry" in stacObject
+    stacObject.collection &&
+    stacObject.id &&
+    stacObject.properties &&
+    typeof stacObject.properties === "object"
   );
 }
 /**

@@ -284,14 +284,21 @@ export class EodashCollection {
 
   /**
    * Returns all item links sorted by datetime ascendingly
+   * @param {boolean} [fields=false] if true, fetch items from API with only properties
    * @returns {Promise<import("stac-ts").StacLink[] | import("stac-ts").StacItem[] | undefined>}
    */
-  async getItems() {
+  async getItems(fields = false) {
     const items = this.#collectionStac?.links.filter((i) => i.rel === "item");
 
     if (this.isAPI && !items?.length) {
       const itemUrl = this.#collectionUrl + "/items";
-      return await fetchApiItems(itemUrl, `fields=properties`);
+      if (fields) {
+        return await fetchApiItems(
+          itemUrl,
+          `fields=properties,-assets,-geometry,-links,-bbox`,
+        );
+      }
+      return await fetchApiItems(itemUrl);
     }
 
     const datetimeProperty = getDatetimeProperty(this.#collectionStac?.links);
@@ -311,7 +318,7 @@ export class EodashCollection {
   }
 
   async getDates() {
-    const items = await this.getItems();
+    const items = await this.getItems(true);
 
     const datetimeProperty = getDatetimeProperty(
       this.isAPI ? items : this.#collectionStac?.links,
@@ -420,7 +427,7 @@ export class EodashCollection {
    */
   async updateLayerJson(datetime, layer, map) {
     await this.fetchCollection();
-    const datetimeProperty = getDatetimeProperty(await this.getItems());
+    const datetimeProperty = getDatetimeProperty(await this.getItems(true));
     if (!datetimeProperty) {
       console.warn("[eodash] no datetime property found in collection");
       return;
