@@ -71,6 +71,8 @@ onMounted(() => {
 });
 </script>
 <style scoped>
+@import url("@eox/ui/style.css");
+
 #bg-widget {
   position: absolute;
   top: 0;
