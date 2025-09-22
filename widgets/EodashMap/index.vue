@@ -185,8 +185,17 @@ const cursorCoordsRef = useTemplateRef("cursor-coords");
 const tooltipProperties = ref([]);
 /** @type {import("vue").Ref<Exclude<import("@/types").EodashStyleJson["tooltip"], undefined>>} */
 const compareTooltipProperties = ref([]);
-/** @type {import("vue").ComputedRef<Record<string, any>>} */
+/** @type {import("vue").ComputedRef<{
+  Attribution: { collapsible: boolean };
+  ScaleLine?: { target: HTMLElement };
+  MousePosition?: { projection: string; coordinateFormat: (c: [number, number]) => string; target: HTMLElement };
+}>} */
 const controls = computed(() => {
+  /** @type {{
+    Attribution: { collapsible: boolean };
+    ScaleLine?: { target: HTMLElement };
+    MousePosition?: { projection: string; coordinateFormat: (c: [number, number]) => string; target: HTMLElement };
+  }} */
   const controlsObj = {
     Attribution: {
       collapsible: true,
