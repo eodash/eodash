@@ -5,7 +5,7 @@
     ref="eoxItemFilter"
     style="overflow: auto; --background-color: none"
     @select="onSelect"
-    .items="store.stac?.filter((item) => item.rel === 'child')"
+    .items="items"
   >
     <h4 slot="filterstitle" style="margin: 14px 8px">{{ filtersTitle }}</h4>
 
@@ -20,7 +20,9 @@ import { computed, ref } from "vue";
 
 const store = useSTAcStore();
 const emit = defineEmits(["select"]);
-
+const items = store.isApi
+  ? store.stac
+  : store.stac?.filter((item) => item.rel === "child");
 const props = defineProps({
   enableCompare: {
     type: Boolean,
@@ -87,31 +89,37 @@ const props = defineProps({
   },
 });
 /**
- * @param {import("stac-ts").StacLink} item
+ *
+ * @param  {Function} loader Function to load the item
+ * @param {Function} reset Function to reset the selection
  */
-const selectIndicator = async (item) => {
-  if (item) {
-    if (isFirstLoad.value) {
-      // prevent the map from jumping to the initial position
-      isFirstLoad.value = false;
+const createSelect = (loader, reset) => {
+  /**
+   * @param {import("stac-ts").StacLink | import("stac-ts").StacCollection} item
+   */
+  return async (item) => {
+    if (item) {
+      if (isFirstLoad.value) {
+        // prevent the map from jumping to the initial position
+        isFirstLoad.value = false;
+      }
+
+      const href = /** @type {string} */ (store.isApi ? item.id : item.href);
+      await loader(href);
+      emit("select", item);
+    } else {
+      reset();
     }
-    await store.loadSelectedSTAC(item.href);
-    emit("select", item);
-  } else {
-    store.selectedStac = null;
-  }
+  };
 };
-/**
- * @param {import("stac-ts").StacLink} item
- */
-const selectCompareIndicator = (item) => {
-  if (item) {
-    store.loadSelectedCompareSTAC(item.href);
-    emit("select", item);
-  } else {
-    store.resetSelectedCompareSTAC();
-  }
-};
+const selectIndicator = createSelect(
+  store.loadSelectedSTAC,
+  () => (store.selectedStac = null),
+);
+const selectCompareIndicator = createSelect(
+  store.loadSelectedCompareSTAC,
+  store.resetSelectedCompareSTAC,
+);
 /** @param {any} evt*/
 const onSelect = async (evt) => {
   const item = /** @type {import('stac-ts').StacLink} */ evt.detail;

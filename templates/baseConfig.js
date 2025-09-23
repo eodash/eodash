@@ -9,8 +9,11 @@ const baseConfig = {
   options: {
     // useSubCode: true,
   },
-  stacEndpoint:
-    "https://esa-eodashboards.github.io/eodashboard-catalog/trilateral/catalog.json",
+  stacEndpoint: {
+    endpoint: "https://openveda.cloud/api/stac/",
+    api: true,
+    rasterEndpoint: "https://openveda.cloud/api/raster/",
+  },
   brand: {
     noLayout: true,
     name: "Demo",
