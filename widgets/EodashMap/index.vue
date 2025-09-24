@@ -351,7 +351,7 @@ const tooltipPropertyTransform = (map) => {
 #cursor-coordinates {
   position: fixed;
   left: 24px;
-  bottom: 72px;
+  bottom: 54px; /* Tighter spacing: watermark at 6px + ~48px */
   color: rgba(0, 0, 0, 0.9);
   font-size: 11px;
   font-family: var(--eox-body-font-family);
@@ -364,20 +364,20 @@ const tooltipPropertyTransform = (map) => {
 
 @media (max-width: 959px) {
   #cursor-coordinates {
-    bottom: 116px; /* Adjusted for mobile bottom nav (72px + 44px) */
+    bottom: 126px; /* Adjusted for mobile bottom nav (72px + 44px + 10px) */
   }
 }
 
 #scale-line {
   position: fixed;
   left: 24px;
-  bottom: 42px;
+  bottom: 28px; /* Tighter spacing: watermark at 6px + ~22px */
   color: #fff;
 }
 
 @media (max-width: 959px) {
   #scale-line {
-    bottom: 86px; /* Adjusted for mobile bottom nav (42px + 44px) */
+    bottom: 102px; /* Adjusted for mobile bottom nav - closer to coordinates */
   }
 }
 
@@ -385,10 +385,10 @@ const tooltipPropertyTransform = (map) => {
   background: #fffe !important;
   border-radius: 4px !important;
   border: none !important;
-  padding: 0 3px !important;
+  padding: 0px 3px 3px 3px !important;
   font-size: 10px !important;
   font-family: var(--eox-body-font-family);
-  max-height: 30px;
+  max-height: 20px;
 }
 :deep(.ol-scale-line-inner) {
   display: flex;
@@ -397,7 +397,7 @@ const tooltipPropertyTransform = (map) => {
   border-top: none !important;
   color: #333 !important;
   font-weight: 500 !important;
-  margin-top: 6px;
+  transform: translateY(1px);
 }
 
 .map-buttons-container {

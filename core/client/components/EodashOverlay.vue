@@ -42,7 +42,7 @@ const base64Logo = btoa(eoxLogo);
   pointer-events: none;
   p {
     position: fixed;
-    bottom: -4px;
+    bottom: 6px;
     left: 24px;
     color: rgba(var(--v-theme-on-secondary), 1);
   }
