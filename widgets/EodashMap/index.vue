@@ -364,7 +364,7 @@ const tooltipPropertyTransform = (map) => {
 
 @media (max-width: 959px) {
   #cursor-coordinates {
-    bottom: 126px; /* Adjusted for mobile bottom nav (72px + 44px + 10px) */
+    display: none; /* Hidden in mobile mode */
   }
 }
 
