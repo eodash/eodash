@@ -1,5 +1,5 @@
 <template>
-  <v-main class="overflow-hidden">
+  <v-main class="overflow-hidden pa-0">
     <Suspense suspensible>
       <component
         id="bg-widget"
@@ -18,9 +18,17 @@
         class="pa-2 panel bg-surface"
       >
         <div class="d-flex py-2 justify-end align-end">
-          <v-btn icon variant="text" class="close-btn" @click="activeIdx = -1"
-            >&#x2715;</v-btn
+          <button
+            class="circle small transparent close-btn"
+            @click="activeIdx = -1"
           >
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+              <title>close</title>
+              <path
+                d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"
+              />
+            </svg>
+          </button>
         </div>
         <Suspense suspensible>
           <div
@@ -37,20 +45,17 @@
       </div>
     </template>
 
-    <v-tabs
-      ref="tabs"
-      align-tabs="center"
-      bg-color="surface"
-      class="tabs"
-      show-arrows
-      v-model="activeIdx"
-    >
+    <nav class="tabbed tabs">
       <template v-for="(importedWidget, idx) in importedWidgets" :key="idx">
-        <v-tab v-if="importedWidget.value.component" :value="idx">
-          {{ importedWidget.value.title }}
-        </v-tab>
+        <a
+          v-if="importedWidget.value.component"
+          :class="{ active: activeIdx === idx }"
+          @click="activeIdx = activeIdx === idx ? -1 : idx"
+        >
+          <span>{{ importedWidget.value.title }}</span>
+        </a>
       </template>
-    </v-tabs>
+    </nav>
   </v-main>
 </template>
 <script setup>
@@ -63,8 +68,6 @@ const { mainRect } = useLayout();
 
 const activeIdx = ref(-1);
 
-/** @type {import("vue").Ref<import("vuetify/components").VTabs | null>} */
-const tabs = ref(null);
 const tabsHeightFromBtm = ref("");
 const mainRectTopPx = ref("");
 const mainRectBtmPx = ref("");
@@ -72,11 +75,22 @@ const mainRectBtmPx = ref("");
 onMounted(() => {
   mainRectTopPx.value = mainRect.value.top + "px";
   mainRectBtmPx.value = (mainRect.value.bottom || 48) + "px";
-  tabsHeightFromBtm.value =
-    mainRect.value.bottom + (tabs.value?.$el?.clientHeight ?? 48) + "px";
+  tabsHeightFromBtm.value = mainRect.value.bottom + 48 + 32 + "px"; // 48px nav height + 32px bottom offset
 });
 </script>
 <style scoped>
+@import url("@eox/ui/style.css");
+
+#bg-widget {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+}
+
 .panel {
   bottom: v-bind("tabsHeightFromBtm");
   top: v-bind("mainRectTopPx");
@@ -97,9 +111,16 @@ onMounted(() => {
 }
 
 .tabs {
-  bottom: v-bind("mainRectBtmPx");
-  position: relative;
+  position: fixed;
+  bottom: 32px;
+  left: 12px;
+  right: 12px;
+  width: calc(100% - 24px);
+  height: 48px;
   z-index: 10;
+  background: white;
+  border-radius: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 :deep(.bg-surface) {
   backdrop-filter: blur(10px) !important;

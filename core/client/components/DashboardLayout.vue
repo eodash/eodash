@@ -1,5 +1,5 @@
 <template>
-  <v-main>
+  <v-main class="pa-0">
     <eox-layout
       :mediaBreakpoints="[0, 960, 1920]"
       :gap="gap"
