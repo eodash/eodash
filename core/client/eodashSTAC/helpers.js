@@ -579,42 +579,20 @@ export function isSTACItem(stacObject) {
     typeof stacObject.properties === "object"
   );
 }
-/**
- *
- * @param {[string|null,string|null]} param0
- * @param {string} density
- */
-export function createDatesFromRange([startDate, endDate], density) {
-  if (!startDate || !endDate) {
-    return [];
-  }
-  if (!density) {
-    return [startDate, endDate];
-  }
 
-  const start = new Date(startDate);
-  const end = new Date(endDate);
-  const dates = [];
-  let current = start;
-  while (current <= end) {
-    dates.push(current.toISOString());
-    if (["daily", "day"].includes(density)) {
-      current.setDate(current.getDate() + 1);
-    } else if (["monthly", "month"].includes(density)) {
-      current.setMonth(current.getMonth() + 1);
-    } else if (["yearly", "year", "annual"].includes(density)) {
-      current.setFullYear(current.getFullYear() + 1);
-    }
-  }
-  return dates;
-}
 /**
  * Fetch all STAC items from a STAC API endpoint.
  * @param {string} itemsUrl
  * @param {string} [query]
  * @param {number} [limit=100] - The maximum number of items to fetch per request.
+ * @param {boolean} [returnFirst] - If true, only the first page of results will be returned.
  */
-export async function fetchApiItems(itemsUrl, query, limit = 100) {
+export async function fetchApiItems(
+  itemsUrl,
+  query,
+  limit = 100,
+  returnFirst = false,
+) {
   itemsUrl = itemsUrl.includes("?") ? itemsUrl.split("?")[0] : itemsUrl;
   itemsUrl += query ? `?limit=${limit}&${query}` : `?limit=${limit}`;
 
@@ -628,25 +606,27 @@ export async function fetchApiItems(itemsUrl, query, limit = 100) {
     (link) => link.rel === "next",
   );
 
-  if (nextLink) {
-    let [nextLinkURL, nextLinkQuery] = nextLink.href.split("?");
-    nextLinkQuery = nextLinkQuery.replace(/limit=\d+/, "");
-    if (query) {
-      const queryParams = new URLSearchParams(query);
-      const nextLinkParams = new URLSearchParams(nextLinkQuery);
-
-      for (const key of nextLinkParams.keys()) {
-        queryParams.delete(key);
-      }
-      const remainingQuery = queryParams.toString();
-      if (remainingQuery) {
-        nextLinkQuery += `&${remainingQuery}`;
-      }
-    }
-
-    const nextPage = await fetchApiItems(nextLinkURL, nextLinkQuery);
-    items.push(...nextPage);
+  if (!nextLink || returnFirst) {
+    return items;
   }
+
+  let [nextLinkURL, nextLinkQuery] = nextLink.href.split("?");
+  nextLinkQuery = nextLinkQuery.replace(/limit=\d+/, "");
+  if (query) {
+    const queryParams = new URLSearchParams(query);
+    const nextLinkParams = new URLSearchParams(nextLinkQuery);
+
+    for (const key of nextLinkParams.keys()) {
+      queryParams.delete(key);
+    }
+    const remainingQuery = queryParams.toString();
+    if (remainingQuery) {
+      nextLinkQuery += `&${remainingQuery}`;
+    }
+  }
+
+  const nextPage = await fetchApiItems(nextLinkURL, nextLinkQuery);
+  items.push(...nextPage);
   return items;
 }
 /**

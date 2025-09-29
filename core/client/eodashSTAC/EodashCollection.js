@@ -285,9 +285,10 @@ export class EodashCollection {
   /**
    * Returns all item links sorted by datetime ascendingly
    * @param {boolean} [fields=false] if true, fetch items from API with only properties
+   * @param {boolean} [first] - if true, returns the first page of items only (for API collections)
    * @returns {Promise<import("stac-ts").StacLink[] | import("stac-ts").StacItem[] | undefined>}
    */
-  async getItems(fields = false) {
+  async getItems(fields = false,first = false) {
     const items = this.#collectionStac?.links.filter((i) => i.rel === "item");
 
     if (this.isAPI && !items?.length) {
@@ -296,9 +297,11 @@ export class EodashCollection {
         return await fetchApiItems(
           itemUrl,
           `fields=properties,-assets,-geometry,-links,-bbox`,
+          100,
+          first
         );
       }
-      return await fetchApiItems(itemUrl);
+      return await fetchApiItems(itemUrl, undefined, 100, first);
     }
 
     const datetimeProperty = getDatetimeProperty(this.#collectionStac?.links);
@@ -318,11 +321,9 @@ export class EodashCollection {
   }
 
   async getDates() {
-    const items = await this.getItems(true);
+    const items = await this.getItems(true,false);
 
-    const datetimeProperty = getDatetimeProperty(
-      this.isAPI ? items : this.#collectionStac?.links,
-    );
+    const datetimeProperty = getDatetimeProperty(items);
     if (!datetimeProperty || !items?.length) {
       return [];
     }
@@ -375,7 +376,7 @@ export class EodashCollection {
    **/
   async getItem(date) {
     if (!date) {
-      return (await this.getItems())?.[0];
+      return (await this.getItems(false, true))?.[0];
     }
     if (this.isAPI) {
       const collectionId = /** @type {string} */ (this.collectionStac?.id);
@@ -389,7 +390,7 @@ export class EodashCollection {
     const datetimeProperty = getDatetimeProperty(this.#collectionStac?.links);
     if (!datetimeProperty) {
       // in case no datetime property is found, return the first item
-      return (await this.getItems())?.[0];
+      return (await this.getItems(false, true))?.[0];
     }
     return date
       ? (await this.getItems())?.sort((a, b) => {
@@ -403,7 +404,7 @@ export class EodashCollection {
           );
           return distanceA - distanceB;
         })[0]
-      : (await this.getItems())?.at(-1);
+      : (await this.getItems(false, true))?.at(-1);
   }
 
   async getToolTipProperties() {
@@ -427,7 +428,7 @@ export class EodashCollection {
    */
   async updateLayerJson(datetime, layer, map) {
     await this.fetchCollection();
-    const datetimeProperty = getDatetimeProperty(await this.getItems(true));
+    const datetimeProperty = getDatetimeProperty(await this.getItems(true,true));
     if (!datetimeProperty) {
       console.warn("[eodash] no datetime property found in collection");
       return;
