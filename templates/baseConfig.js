@@ -12,7 +12,7 @@ const baseConfig = {
   stacEndpoint: {
     endpoint: "https://api.explorer.eopf.copernicus.eu/stac",
     api: true,
-    rasterEndpoint: "https://api.explorer.eopf.copernicus.eu/tiler/",
+    rasterEndpoint: "https://api.explorer.eopf.copernicus.eu/raster/",
   },
   brand: {
     noLayout: true,
