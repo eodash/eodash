@@ -25,7 +25,7 @@ export default {
       name: "EodashMap",
       properties: {
         enableCompare: true,
-        zoomToExtent: false,
+        zoomToExtent: true,
         btns: {
           enableZoom: true,
           enableExportMap: true,
