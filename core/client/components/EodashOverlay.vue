@@ -1,5 +1,5 @@
 <template>
-  <div class="eodash-overlay" v-if="$vuetify.display.mdAndUp">
+  <div class="eodash-overlay">
     <p>
       <a href="https://github.com/eodash/eodash" target="_blank"
         >eodash v{{ version }}</a
@@ -41,10 +41,9 @@ const base64Logo = btoa(eoxLogo);
   z-index: 9999;
   pointer-events: none;
   p {
-    position: absolute;
-    bottom: -4px;
-    left: 95px;
-    transform: translate(-50%, -50%);
+    position: fixed;
+    bottom: 6px;
+    left: 24px;
     color: rgba(var(--v-theme-on-secondary), 1);
   }
   a {

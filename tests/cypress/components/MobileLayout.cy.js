@@ -38,7 +38,7 @@ describe("<MobileLayout />", () => {
         );
 
       widgets.forEach((widget, idx) => {
-        cy.get(`button[value="${idx}"]`).contains(widget.title ?? "");
+        cy.get(`.tabbed.tabs a:nth-child(${idx + 1})`).contains(widget.title ?? "");
       });
     });
   });
@@ -61,7 +61,7 @@ describe("<MobileLayout />", () => {
         (options.global?.provide?.[eodashKey])?.template.widgets.filter(
           onlyStatic,
         ).length - 1;
-      cy.get(`.v-slide-group__content button[value=${lastIdx}]`).click({
+      cy.get(`.tabbed.tabs a:nth-child(${lastIdx + 1})`).click({
         force: true,
       });
 

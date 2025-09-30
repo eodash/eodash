@@ -1,61 +1,68 @@
 <template>
-  <eox-map-compare
-    class="fill-height fill-width overflow-none"
-    .enabled="showCompare"
-  >
-    <eox-map
+  <span>
+    <eox-map-compare
       class="fill-height fill-width overflow-none"
-      slot="first"
-      ref="eoxMap"
-      id="main"
-      .animationOptions="animationOptions"
-      .center="initialCenter"
-      .zoom="initialZoom"
-      .layers="eoxMapLayers"
-      .controls="controls"
+      .enabled="showCompare"
     >
-      <eox-map-tooltip
-        :style="mainTooltipStyles"
-        .propertyTransform="tooltipPropertyTransform('main')"
-      />
-    </eox-map>
-    <eox-map
-      class="fill-height fill-width overflow-none"
-      id="compare"
-      slot="second"
-      ref="compareMap"
-      .layers="eoxMapCompareLayers"
-    >
-      <eox-map-tooltip
-        :style="compareTooltipStyles"
-        .propertyTransform="tooltipPropertyTransform('compare')"
-      />
-    </eox-map>
-  </eox-map-compare>
-  <div
-    v-if="enableCursorCoordinates"
-    id="cursor-coordinates"
-    ref="cursor-coords"
-  />
-  <span v-if="enableScaleLine" id="scale-line" ref="scale-line" />
-  <div
-    class="map-buttons-container"
-    :style="`margin: ${btnsPosition.gap}px 0 ${btnsPosition.gap}px 0`"
-  >
-    <EodashMapBtns
-      v-if="indicator || compareIndicator"
-      :style="{
-        gridColumn: responsiveX,
-        gridRow: responsiveY,
-      }"
-      :exportMap="btnsProps.exportMap"
-      :changeProjection="btnsProps.changeProjection"
-      :compareIndicators="btnsProps.compareIndicators"
-      :backToPOIs="btnsProps.backToPOIs"
-      :enableSearch="btnsProps.enableSearch"
-      :enableZoom="btnsProps.enableZoom"
+      <eox-map
+        class="fill-height fill-width overflow-none"
+        slot="first"
+        ref="eoxMap"
+        id="main"
+        .animationOptions="animationOptions"
+        .center="initialCenter"
+        .zoom="initialZoom"
+        .layers="eoxMapLayers"
+        .controls="controls"
+      >
+        <eox-map-tooltip
+          :style="mainTooltipStyles"
+          .propertyTransform="tooltipPropertyTransform('main')"
+        />
+      </eox-map>
+      <eox-map
+        class="fill-height fill-width overflow-none"
+        id="compare"
+        slot="second"
+        ref="compareMap"
+        .layers="eoxMapCompareLayers"
+      >
+        <eox-map-tooltip
+          :style="compareTooltipStyles"
+          .propertyTransform="tooltipPropertyTransform('compare')"
+        />
+      </eox-map>
+    </eox-map-compare>
+    <div
+      v-if="enableCursorCoordinates"
+      id="cursor-coordinates"
+      ref="cursor-coords"
     />
-  </div>
+    <span v-if="enableScaleLine" id="scale-line" ref="scale-line" />
+    <div
+      class="map-buttons-container"
+      :style="`margin: ${btnsPosition.gap}px 0 ${btnsPosition.gap}px 0`"
+    >
+      <EodashMapBtns
+        :style="{
+          gridColumn: indicator || compareIndicator ? responsiveX : '12',
+          gridRow: responsiveY,
+        }"
+        :exportMap="indicator || compareIndicator ? btnsProps.exportMap : false"
+        :changeProjection="
+          indicator || compareIndicator ? btnsProps.changeProjection : false
+        "
+        :compareIndicators="
+          indicator || compareIndicator ? btnsProps.compareIndicators : false
+        "
+        :backToPOIs="
+          indicator || compareIndicator ? btnsProps.backToPOIs : false
+        "
+        :enableSearch="true"
+        :enableZoom="true"
+      />
+    </div>
+  </span>
 </template>
 <script setup>
 import "@eox/map";
@@ -117,7 +124,7 @@ const props = defineProps({
   btnsPosition: {
     type: Object,
     default: () => ({
-      x: "12/9/8",
+      x: "12/9/10",
       y: 1,
       gap: 16,
     }),
@@ -182,26 +189,41 @@ const cursorCoordsRef = useTemplateRef("cursor-coords");
 const tooltipProperties = ref([]);
 /** @type {import("vue").Ref<Exclude<import("@/types").EodashStyleJson["tooltip"], undefined>>} */
 const compareTooltipProperties = ref([]);
-/** @type {import("vue").ComputedRef<Record<string, any>>} */
-const controls = computed(() => ({
-  Attribution: {
-    collapsible: true,
-  },
-  ScaleLine: props.enableScaleLine
-    ? {
-        target: scaleLineRef.value || undefined,
-      }
-    : undefined,
-  MousePosition: props.enableCursorCoordinates
-    ? {
-        projection: "EPSG:4326",
-        coordinateFormat: (/** @type {[number, number]} */ c) => {
-          return `${c[1].toFixed(3)} °N, ${c[0].toFixed(3)} °E`;
-        },
-        target: cursorCoordsRef.value || undefined,
-      }
-    : undefined,
-}));
+/** @type {import("vue").ComputedRef<{
+  Attribution: { collapsible: boolean };
+  ScaleLine?: { target: HTMLElement };
+  MousePosition?: { projection: string; coordinateFormat: (c: [number, number]) => string; target: HTMLElement };
+}>} */
+const controls = computed(() => {
+  /** @type {{
+    Attribution: { collapsible: boolean };
+    ScaleLine?: { target: HTMLElement };
+    MousePosition?: { projection: string; coordinateFormat: (c: [number, number]) => string; target: HTMLElement };
+  }} */
+  const controlsObj = {
+    Attribution: {
+      collapsible: true,
+    },
+  };
+
+  if (props.enableScaleLine && scaleLineRef.value) {
+    controlsObj.ScaleLine = {
+      target: scaleLineRef.value,
+    };
+  }
+
+  if (props.enableCursorCoordinates && cursorCoordsRef.value) {
+    controlsObj.MousePosition = {
+      projection: "EPSG:4326",
+      coordinateFormat: (/** @type {[number, number]} */ c) => {
+        return `${c[1].toFixed(3)} °N, ${c[0].toFixed(3)} °E`;
+      },
+      target: cursorCoordsRef.value,
+    };
+  }
+
+  return controlsObj;
+});
 
 const initialCenter = toRaw(props.center);
 const initialZoom = toRaw(mapPosition.value?.[2] ?? props.zoom);
@@ -333,31 +355,44 @@ const tooltipPropertyTransform = (map) => {
 #cursor-coordinates {
   position: fixed;
   left: 24px;
-  bottom: 56px;
-  padding: 0 2px;
+  bottom: 54px; /* Tighter spacing: watermark at 6px + ~48px */
   color: rgba(0, 0, 0, 0.9);
-  font-size: 13px;
+  font-size: 11px;
+  font-family: var(--eox-body-font-family);
   background: #fffe;
   border-radius: 4px;
   border: none;
-  padding: 4px 8px;
+  padding: 0px 3px;
+  max-height: 24px;
+}
+
+@media (max-width: 959px) {
+  #cursor-coordinates {
+    display: none; /* Hidden in mobile mode */
+  }
 }
 
 #scale-line {
   position: fixed;
   left: 24px;
-  bottom: 24px;
+  bottom: 28px; /* Tighter spacing: watermark at 6px + ~22px */
   color: #fff;
+}
+
+@media (max-width: 959px) {
+  #scale-line {
+    bottom: 102px; /* Adjusted for mobile bottom nav - closer to coordinates */
+  }
 }
 
 :deep(.ol-scale-line) {
   background: #fffe !important;
   border-radius: 4px !important;
   border: none !important;
-  padding: 4px 8px !important;
-  font-size: 12px !important;
-  font-family:
-    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+  padding: 0px 3px 3px 3px !important;
+  font-size: 10px !important;
+  font-family: var(--eox-body-font-family);
+  max-height: 20px;
 }
 :deep(.ol-scale-line-inner) {
   display: flex;
@@ -366,6 +401,7 @@ const tooltipPropertyTransform = (map) => {
   border-top: none !important;
   color: #333 !important;
   font-weight: 500 !important;
+  transform: translateY(1px);
 }
 
 .map-buttons-container {
