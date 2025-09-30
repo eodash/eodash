@@ -120,6 +120,7 @@ export const useInitMap = (
           layersCollection = await createLayersConfig(
             updatedStac,
             eodashCols,
+            [...(mapElement.value?.layers ?? [])].reverse(),
             updatedTime,
           );
           log.debug(
@@ -142,6 +143,7 @@ export const useInitMap = (
         layersCollection = await createLayersConfig(
           updatedStac,
           eodashCols,
+          [...(mapElement.value?.layers ?? [])].reverse(),
           datetime.value,
         );
 

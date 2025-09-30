@@ -9,12 +9,14 @@ import log from "loglevel";
  *   | null
  * } selectedIndicator
  * @param {EodashCollection[]} eodashCols
+ * @param {Record<string,any>[]} mapLayers
  * @param {string} [updatedTime]
  */
 
 export const createLayersConfig = async (
   selectedIndicator,
   eodashCols,
+  mapLayers,
   updatedTime,
 ) => {
   log.debug(
@@ -47,6 +49,21 @@ export const createLayersConfig = async (
       dl.properties.layerControlToolsExpand = true;
     });
     dataLayers.layers.push(...layers);
+  }
+
+  // if poi collection we add data as new group and keep the previous
+  // layers untouched, allowing us to keep the initial indicator layers
+  if (selectedIndicator?.isPoi) {
+    if (dataLayers.layers.length) {
+      dataLayers.properties.id = `LocationLayers`;
+      dataLayers.properties.title = `Location Layers - ${selectedIndicator.id}`;
+      layersCollection.push(dataLayers);
+      // Convert proxies to plain objects before pushing
+      layersCollection.push(
+        ...mapLayers
+      );
+      return layersCollection;
+    }
   }
 
   layersCollection.push(dataLayers);
