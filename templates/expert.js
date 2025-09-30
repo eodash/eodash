@@ -28,7 +28,7 @@ export default {
         zoomToExtent: false,
         btns: {
           enableZoom: true,
-          enableExportMap: false,
+          enableExportMap: true,
           enableChangeProjection: false,
           enableCompareIndicators: {
             fallbackTemplate: "expert",
@@ -38,7 +38,7 @@ export default {
         },
         btnsPosition: {
           x: "12/9/9",
-          y: 1,
+          y: 2,
         }
       },
     },
