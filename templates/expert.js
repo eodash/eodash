@@ -25,6 +25,22 @@ export default {
       name: "EodashMap",
       properties: {
         enableCompare: true,
+        zoomToExtent: true,
+        btns: {
+          enableZoom: true,
+          enableExportMap: true,
+          enableChangeProjection: true,
+          enableCompareIndicators: {
+            fallbackTemplate: "expert",
+          },
+          enableBackToPOIs: true,
+          enableSearch: true,
+        },
+        btnsPosition: {
+          x: "12/9/9",
+          y: 1,
+          gap: 16
+        }
       },
     },
   },
