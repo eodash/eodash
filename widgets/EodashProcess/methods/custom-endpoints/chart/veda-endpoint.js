@@ -78,15 +78,15 @@ async function fetchVedaCOGsConfig(selectedStac, absoluteUrl) {
             .get(toAbsolute(link.href, absoluteUrl))
             .then((resp) => resp.data)
             .then((collection) => {
-               // code path for directly linked items
+              // items in geoparquet handling specially to get item links
               const parquetAsset = Object.values(collection.assets ?? {}).find(
                 (asset) =>
                   asset.type === "application/vnd.apache.parquet" &&
                   asset.roles?.includes("collection-mirror"),
               );
+              const parquetAbsoluteUrl = toAbsolute(parquetAsset.href, toAbsolute(link.href, absoluteUrl));
               if (parquetAsset) {
-                // items in geoparquet handling
-                readParquetItems(toAbsolute(parquetAsset.href, toAbsolute(link.href, absoluteUrl))).then((items) => {
+                readParquetItems(parquetAbsoluteUrl).then((items) => {
                   collection.links.push(...generateLinksFromItems(items));
                 });
               }
