@@ -82,10 +82,10 @@ async function fetchVedaCOGsConfig(selectedStac, absoluteUrl) {
               const parquetAsset = Object.values(collection.assets ?? {}).find(
                 (asset) =>
                   asset.type === "application/vnd.apache.parquet" &&
-                  asset.roles?.includes("collection-mirror"),
+                asset.roles?.includes("collection-mirror"),
               );
-              const parquetAbsoluteUrl = toAbsolute(parquetAsset.href, toAbsolute(link.href, absoluteUrl));
               if (parquetAsset) {
+                const parquetAbsoluteUrl = toAbsolute(parquetAsset.href, toAbsolute(link.href, absoluteUrl));
                 readParquetItems(parquetAbsoluteUrl).then((items) => {
                   collection.links.push(...generateLinksFromItems(items));
                 });
