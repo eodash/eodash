@@ -156,6 +156,8 @@ export const setCollectionsPalette = (colors) => {
  * @param {string} absoluteUrl - The absolute indicator URL
  * @param {import('@/eodashSTAC/EodashCollection').EodashCollection[]} eodashCollections  - The array of existing eodash collections to be updated
  * @param {string[]} colorPalette - The color palette to assign to each collection
+ * @param {boolean} isAPI - Flag indicating if the collection is fetched from an API
+ * @param {string | null} rasterEndpoint - Optional raster endpoint URL
  * @async
  * @description This function extracts collection URLs from the indicator, fetches collection data,
  * processes parquet items if available, and updates the eodashCollections array with new collection data.
@@ -166,6 +168,8 @@ export const updateEodashCollections = async (
   selectedStac,
   absoluteUrl,
   colorPalette,
+  isAPI,
+  rasterEndpoint = null,
 ) => {
   // init eodash collections
   const collectionUrls = extractCollectionUrls(selectedStac, absoluteUrl);
@@ -173,11 +177,10 @@ export const updateEodashCollections = async (
   await Promise.all(
     collectionUrls.map((cu, idx) => {
       return new Promise((resolve, _reject) => {
-        const ec = new EodashCollection(cu);
+        const ec = new EodashCollection(cu, isAPI, rasterEndpoint);
         ec.fetchCollection().then((col) => {
           // assign color from the palette
           ec.color = colorPalette[idx % colorPalette.length];
-
           const parquetAsset = Object.values(col.assets ?? {}).find(
             (asset) =>
               asset.type === "application/vnd.apache.parquet" &&
