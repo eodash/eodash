@@ -164,6 +164,12 @@ export interface TEodashLayoutSwitcher {
     typeof import("^/EodashLayoutSwitcher.vue").default
   >["$props"];
 }
+export interface TEodashItemCatalog {
+  name: "EodashItemCatalog";
+  properties?: InstanceType<
+    typeof import("^/EodashItemCatalog/index.vue").default
+  >["$props"];
+}
 
 /** @group Widgets */
 export interface TExportState {
@@ -201,6 +207,7 @@ export type ComponentWidget =
   | TEodashMapBtns
   | TEodashTools
   | TEodashLayoutSwitcher
+  | TEodashItemCatalog
   | TExportState
   | TPopUp
   | TWidgetsContainer;
@@ -540,4 +547,27 @@ export interface TitilerSTACParameters {
   algorithm?: string;
   /** JSON encoded algorithm parameters. */
   algorithm_params?: string;
+}
+/**
+ * Generic GeoJSON Feature interface that can hold additional properties.
+ * @group GeoJSON
+ */
+export interface GeoJsonFeature<T = Record<string, any>, G = GeoJSON.Geometry> {
+  type: "Feature";
+  geometry: G;
+  properties: T & Record<string, any>;
+  id?: string | number;
+}
+
+/**
+ * Generic GeoJSON FeatureCollection interface that can hold additional properties.
+ * @group GeoJSON
+ */
+export interface GeoJsonFeatureCollection<
+  T = Record<string, any>,
+  G = GeoJSON.Geometry,
+> {
+  type: "FeatureCollection";
+  features: Array<GeoJsonFeature<T, G>>;
+  properties?: T & Record<string, any>;
 }

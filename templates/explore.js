@@ -1,6 +1,5 @@
-import { includesProcess } from "@/store/actions";
+// import { includesProcess } from "@/store/actions";
 /** @type {import("@/types").Template} */
-//@ts-expect-error todo
 export default {
   gap: 16,
   loading: {
@@ -30,32 +29,14 @@ export default {
   },
   widgets: [
     {
-      id: "Tools",
+      id: "Layercontrol",
       type: "internal",
-      title: "Tools",
-      layout: { x: 0, y: 0, w: "3/3/2", h: 1 },
+      title: "Layers",
+      layout: { x: "9/9/10", y: 6, w: "3/3/2", h: 5 },
       widget: {
-        name: "EodashTools",
-        properties: {
-          itemFilterConfig: {
-            explore: true,
-            resultType: "cards",
-            subTitleProperty: "subtitle",
-            imageProperty: "thumbnail",
-            aggregateResults: "collection_group",
-          },
-        },
+        name: "EodashLayerControl",
       },
     },
-    // {
-    //   id: "Layercontrol",
-    //   type: "internal",
-    //   title: "Layers",
-    //   layout: { x: 0, y: 6, w: "3/3/2", h: 5 },
-    //   widget: {
-    //     name: "EodashLayerControl",
-    //   },
-    // },
     {
       defineWidget: (selectedSTAC) => {
         return selectedSTAC
@@ -75,22 +56,22 @@ export default {
       id: "ItemCatalog",
       title: "Catalog",
       type: "internal",
-      layout: { x: 0, y: 1, w: "4/4/3", h: 11 },
+      layout: { x: 0, y: 0, w: "3/3/2", h: 12 },
       widget: {
         name: "EodashItemCatalog",
       },
     },
-    {
-      defineWidget: (selectedSTAC) =>
-        includesProcess(selectedSTAC) && {
-          id: "Processes",
-          type: "internal",
-          title: "Processes",
-          layout: { x: "9/9/10", y: 6, w: "3/3/2", h: 5 },
-          widget: {
-            name: "EodashProcess",
-          },
-        },
-    },
+    // {
+    //   defineWidget: (selectedSTAC) =>
+    //     includesProcess(selectedSTAC) && {
+    //       id: "Processes",
+    //       type: "internal",
+    //       title: "Processes",
+    //       layout: { x: "9/9/10", y: 6, w: "3/3/2", h: 5 },
+    //       widget: {
+    //         name: "EodashProcess",
+    //       },
+    //     },
+    // },
   ],
 };

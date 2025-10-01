@@ -7,6 +7,7 @@ import { storeToRefs } from "pinia";
 import { isFirstLoad } from "@/utils/states";
 import { useEmitLayersUpdate, useOnLayersUpdate } from "@/composables";
 import { mapPosition } from "@/store/states";
+import { sanitizeBbox } from "@/eodashSTAC/helpers";
 /**
  * Holder for previous compare map view as it is overwritten by sync
  * @type { import("ol").View | null} mapElement
@@ -194,12 +195,7 @@ export const useInitMap = (
           ) {
             // Sanitize extent,
             const b = updatedStac.extent?.spatial.bbox[0];
-            const sanitizedExtent = [
-              b?.[0] > -180 ? b?.[0] : -180,
-              b?.[1] > -90 ? b?.[1] : -90,
-              b?.[2] < 180 ? b?.[2] : 180,
-              b?.[3] < 90 ? b?.[3] : 90,
-            ];
+            const sanitizedExtent = sanitizeBbox(b);
 
             const reprojExtent = mapElement.value?.transformExtent(
               sanitizedExtent,

@@ -11,9 +11,9 @@ const baseConfig = {
     // useSubCode: true,
   },
   stacEndpoint: {
-    endpoint: "https://openveda.cloud/api/stac/",
+    endpoint: "https://api.explorer.eopf.copernicus.eu/stac/",
     api: true,
-    rasterEndpoint: "https://openveda.cloud/api/raster/",
+    rasterEndpoint: "https://api.explorer.eopf.copernicus.eu/raster/",
   },
   brand: {
     noLayout: true,
