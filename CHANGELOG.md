@@ -1,6 +1,26 @@
 # Changelog
 
 
+## [5.2.0](https://github.com/eodash/eodash/compare/eodash-v5.1.0...eodash-v5.2.0) (2025-10-01)
+
+
+### Features
+
+* add zoom buttons, scale line and cursor coordinates ([#225](https://github.com/eodash/eodash/issues/225)) ([3dbd0e3](https://github.com/eodash/eodash/commit/3dbd0e3ab32bf2efd7b15a38ae99bbfab0ae09e4))
+* new handler for geodb feature assets ([#231](https://github.com/eodash/eodash/issues/231)) ([f0f16bf](https://github.com/eodash/eodash/commit/f0f16bfd87a695b8301b69060319a934ad47d6e8))
+
+
+### Bug Fixes
+
+* downloading of eoxhub process object output type results ([#230](https://github.com/eodash/eodash/issues/230)) ([d60e953](https://github.com/eodash/eodash/commit/d60e9531d1f93c396a3fcd5ba5bee0f74a51bb6e))
+* layers update event and format ([#236](https://github.com/eodash/eodash/issues/236)) ([cccca59](https://github.com/eodash/eodash/commit/cccca594ca34d597f2e2ebf75182f3b3b009f96c))
+* month was being shown as minutes ([#235](https://github.com/eodash/eodash/issues/235)) ([ce7afb3](https://github.com/eodash/eodash/commit/ce7afb3ae054cbcac414df489ab8da4b73ffed56))
+* multiple issues in the ui ([#234](https://github.com/eodash/eodash/issues/234)) ([39d1363](https://github.com/eodash/eodash/commit/39d136366296ce4cb32e0d3f550373a354a72eaa))
+* parquetItems read need to be awaited, otherwise function is exited earlier ([#242](https://github.com/eodash/eodash/issues/242)) ([17058ba](https://github.com/eodash/eodash/commit/17058bacdf7e717a3edbc543e669c701872d6b49))
+* passing props to buttons to disable, add buttons to expert template ([#241](https://github.com/eodash/eodash/issues/241)) ([2a21a3d](https://github.com/eodash/eodash/commit/2a21a3dac57adac57f185a7360fd64cdfc37d02e))
+* Support eox:colorlegend from collection config for process results and add support for flatgeobuf as eoxhub process result ([#227](https://github.com/eodash/eodash/issues/227)) ([96b9b17](https://github.com/eodash/eodash/commit/96b9b178bd52f26c979dc9a100a94dcd01e866cd))
+* veda statistics for geoparquet items ([#240](https://github.com/eodash/eodash/issues/240)) ([e62ed4e](https://github.com/eodash/eodash/commit/e62ed4e0c8ca6b573f22c545f2e954aec69f6de9))
+
 ## [5.1.0](https://github.com/eodash/eodash/compare/eodash-v5.0.0...eodash-v5.1.0) (2025-08-21)
 
 
