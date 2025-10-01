@@ -123,7 +123,7 @@ export const eodashViteConfig = /** @type {import("vite").UserConfigFn} */ (
             "@eox/stacinfo",
             "@eox/elements-utils",
             "@eox/geosearch",
-            "@eox/timeslider"
+            "@eox/timeslider",
           ],
           noDiscovery: true,
         },

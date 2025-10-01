@@ -100,7 +100,7 @@ export default {
               id: "stacinfo-light",
               type: "internal",
               title: "Information",
-              layout: { x: "9/9/10", y: 0, w: "3/3/2", h: 12 },
+              layout: { x: "9/9/10", y: 0, w: "3/3/2", h: 10 },
               widget: {
                 name: "EodashStacInfo",
                 properties: {
@@ -144,7 +144,7 @@ export default {
               layout: { x: 0, y: 10, w: 12, h: 5 },
               title: "Date",
               widget: {
-                name: "EodashTimeSlider"
+                name: "EodashTimeSlider",
               },
             }
           : null;

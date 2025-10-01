@@ -172,69 +172,65 @@ export const getProjectionCode = (projection) => {
  * @param {import("stac-ts").StacLink[]} [links]
  * @param {string|null} [currentStep]
  **/
-export const extractLayerDatetime = (links, currentStep) => {
+export const extractLayerTimeValues = (links, currentStep) => {
   if (!currentStep || !links?.length) {
-    return undefined;
+    return { layerDatetime: undefined, timeControlValues: undefined };
   }
 
   // check if links has a datetime value
   const dateProperty = getDatetimeProperty(links);
 
   if (!dateProperty) {
-    return undefined;
+    return { layerDatetime: undefined, timeControlValues: undefined };
   }
-
-  /** @type {string[]} */
-  const controlValues = [];
+  /** @type {{date:string;itemId:string}[]} */
+  const timeValues = [];
   try {
     currentStep = new Date(currentStep).toISOString();
     links.reduce((vals, link) => {
       if (link[dateProperty] && link.rel === "item") {
-        vals.push(
-          new Date(/** @type {string} */ (link[dateProperty])).toISOString(),
-        );
+        vals.push({
+          itemId: /** @type {string} */ (link.id),
+          date: new Date(
+            /** @type {string} */ (link[dateProperty]),
+          ).toISOString(),
+        });
       }
       return vals;
-    }, controlValues);
+    }, timeValues);
   } catch (e) {
     console.warn("[eodash] not supported datetime format was provided", e);
-    return undefined;
+    return { layerDatetime: undefined, timeControlValues: undefined };
   }
-  // not enough controlValues
-  if (controlValues.length <= 1) {
-    return undefined;
+  // not enough timeValues
+  if (timeValues.length <= 1) {
+    return { layerDatetime: undefined, timeControlValues: undefined };
   }
 
   // item datetime is not included in the item links datetime
-  if (!controlValues.includes(currentStep)) {
+  if (!timeValues.some((val) => val.date === currentStep)) {
     const currentStepTime = new Date(currentStep).getTime();
-    currentStep = controlValues.reduce((a, b) => {
-      const aDiff = Math.abs(new Date(a).getTime() - currentStepTime);
-      const bDiff = Math.abs(new Date(b).getTime() - currentStepTime);
-      return bDiff < aDiff ? b : a;
-    });
+    currentStep = timeValues.reduce((time, step) => {
+      const aDiff = Math.abs(new Date(time).getTime() - currentStepTime);
+      const bDiff = Math.abs(new Date(step.date).getTime() - currentStepTime);
+      return bDiff < aDiff ? step.date : time;
+    }, timeValues[0].date);
   }
 
-  return {
-    controlValues,
+  const layerDatetime = {
+    controlValues: timeValues.map((d) => d.date),
     currentStep,
     slider: true,
     navigation: true,
     play: false,
-    displayFormat: "DD.MM.YYYY HH:mm",
+    displayFormat: "DD.MM.YYYY HH:MM",
+  };
+
+  return {
+    layerDatetime,
+    timeControlValues: timeValues,
   };
 };
-/**
- * Extracts time control values from layer datetime
- * @param {ReturnType<typeof extractLayerDatetime>} layerDatetime
- */
-export function extractTimeControlValues(layerDatetime) {
-  if (!layerDatetime?.controlValues.length) {
-    return undefined;
-  }
-
-  return layerDatetime.controlValues.map((dt) => ({ date: dt }));
-}
 
 /**
  * Find JSON layer by ID

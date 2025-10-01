@@ -72,28 +72,7 @@ export default {
           : null;
       },
     },
-    // {
-    //   defineWidget: (selectedSTAC) => {
-    //     return selectedSTAC
-    //       ? {
-    //           id: "expert-datepicker",
-    //           type: "internal",
-    //           layout: { x: 4, y: 7, w: 4, h: 5 },
-    //           title: "Date",
-    //           widget: {
-    //             name: "EodashDatePicker",
-    //             properties: {
-    //               hintText: `<b>Hint:</b> closest available date is displayed <br />
-    //                         on map (see Analysis Layers)`,
-    //               toggleCalendar: true,
-    //             },
-    //           },
-    //         }
-    //       : null;
-    //   },
-    // },
     {
-
       defineWidget: (selectedSTAC) => {
         return selectedSTAC
           ? {
@@ -102,7 +81,7 @@ export default {
               layout: { x: 0, y: 10, w: 12, h: 5 },
               title: "Date",
               widget: {
-                name: "EodashTimeSlider"
+                name: "EodashTimeSlider",
               },
             }
           : null;
@@ -114,7 +93,7 @@ export default {
           id: "Processes",
           type: "internal",
           title: "Processes",
-          layout: { x: "9/9/10", y: 6, w: "3/3/2", h: 5 },
+          layout: { x: "9/9/10", y: 5, w: "3/3/2", h: 5 },
           widget: {
             name: "EodashProcess",
           },

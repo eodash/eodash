@@ -2,7 +2,6 @@ import { Collection, Item } from "stac-js";
 import { toAbsolute } from "stac-js/src/http.js";
 import {
   extractLayerConfig,
-  extractLayerDatetime,
   extractRoles,
   fetchStyle,
   findLayer,
@@ -10,7 +9,7 @@ import {
   getDatetimeProperty,
   replaceLayer,
   extractLayerLegend,
-  extractTimeControlValues,
+  extractLayerTimeValues,
 } from "./helpers";
 import {
   getLayers,
@@ -167,13 +166,12 @@ export class EodashCollection {
       await fetchStyle(item, itemUrl),
     );
 
-    const layerDatetime = extractLayerDatetime(
+    const { layerDatetime, timeControlValues } = extractLayerTimeValues(
       this.getItems(),
       item.properties?.datetime ??
         item.properties.start_datetime ??
         itemDatetime,
     );
-    const timeControlValues = extractTimeControlValues(layerDatetime)
 
     const dataAssets = Object.keys(item?.assets ?? {}).reduce((data, ast) => {
       if (item.assets[ast].roles?.includes("data")) {
@@ -191,7 +189,10 @@ export class EodashCollection {
       extraProperties = {
         ...extraProperties,
         ...(this.color && { color: this.color }),
-        ...(timeControlValues && {  timeControlValues }),
+        ...(timeControlValues && {
+          timeControlValues,
+          timeControlProperty: "TIME",
+        }),
       };
 
       const links = await createLayersFromLinks(

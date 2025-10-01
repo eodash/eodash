@@ -117,7 +117,6 @@ export interface TEodashTimeSlider {
   >["$props"];
 }
 
-
 /** @group Widgets */
 export interface TEodashItemFilter {
   name: "EodashItemFilter";
