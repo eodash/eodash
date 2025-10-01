@@ -222,7 +222,6 @@ export class EodashCollection {
       );
 
       jsonArray.push(
-        ...links,
         ...((this.rasterEndpoint &&
           createLayerFromRender(
             this.rasterEndpoint,
@@ -245,6 +244,8 @@ export class EodashCollection {
           layerDatetime,
           extraProperties,
         )),
+        ...links,
+        // We add the links after the assets so they are layered underneath assets
       );
     } else {
       // fallback to STAC

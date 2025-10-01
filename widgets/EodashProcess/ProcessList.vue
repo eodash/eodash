@@ -17,7 +17,14 @@
       <tbody>
         <tr v-for="item in currentJobs" :key="item.jobID">
           <td>
-            {{ new Date(item.job_start_datetime).toISOString().slice(0, 16) }}
+            <a
+              class="processUrl"
+              target="_blank"
+              :href="getJobStatusUrl(item.jobID, currentIndicator)"
+              >{{
+                new Date(item.job_start_datetime).toISOString().slice(0, 16)
+              }}</a
+            >
           </td>
           <td>{{ item.status }}</td>
           <td style="padding: 0px">
@@ -73,6 +80,7 @@ import {
   downloadPreviousResults,
   loadProcess,
   updateJobsStatus,
+  getJobStatusUrl,
 } from "./methods/async";
 import { useOnLayersUpdate } from "@/composables";
 import { compareJobs, jobs } from "./states";
@@ -102,5 +110,9 @@ useOnLayersUpdate(() => updateJobsStatus(currentJobs, currentIndicator.value));
 div.v-table__wrapper {
   overflow: hidden !important;
   height: max-content !important;
+}
+.processUrl {
+  text-decoration: none;
+  color: var(--v-theme-primary);
 }
 </style>
