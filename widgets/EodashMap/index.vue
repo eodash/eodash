@@ -43,7 +43,7 @@
       class="map-buttons-container"
       :style="`margin: ${btnsPosition.gap}px 0 ${btnsPosition.gap}px 0`"
     >
-<EodashMapBtns
+      <EodashMapBtns
         :style="{
           gridColumn: indicator || compareIndicator ? responsiveX : '12',
           gridRow: responsiveY,
@@ -272,11 +272,8 @@ const showCompare = computed(() =>
 useHandleMapMoveEnd(eoxMap, mapPosition);
 
 onMounted(() => {
-  const {
-    selectedCompareStac,
-    selectedStac,
-    selectedItem
-  } = storeToRefs(useSTAcStore());
+  const { selectedCompareStac, selectedStac, selectedItem } =
+    storeToRefs(useSTAcStore());
   // assign map Element state to eox map
   mapEl.value = eoxMap.value;
 

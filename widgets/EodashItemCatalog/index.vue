@@ -75,15 +75,14 @@ const props = defineProps({
 const store = useSTAcStore();
 const itemfilterEl = useTemplateRef("itemfilter");
 
-
 // Reactive state
 /** @type {import("vue").Ref<import("@/types").GeoJsonFeature[]>} */
 const currentItems = ref([]);
 
 // Initial data fetch
 await axios
-.get(store.stacEndpoint + "/search?limit=100")
-.then((res) => (currentItems.value = res.data.features));
+  .get(store.stacEndpoint + "/search?limit=100")
+  .then((res) => (currentItems.value = res.data.features));
 
 const items = currentItems.value;
 

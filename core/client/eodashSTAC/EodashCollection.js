@@ -97,15 +97,22 @@ export class EodashCollection {
     if (isSTACItem(itemOrItemLink)) {
       this.selectedItem = itemOrItemLink;
       stacItemUrl = this.#collectionUrl + `/items/${this.selectedItem.id}`;
-    } else if (itemOrItemLink) {
-      if (itemOrItemLink?.href?.startsWith("blob:")) {
-        stacItemUrl = itemOrItemLink.href;
-      } else {
-        stacItemUrl = toAbsolute(itemOrItemLink.href, this.#collectionUrl);
-      }
       this.selectedItem = await axios
         .get(stacItemUrl)
         .then((resp) => resp.data);
+    } else if (itemOrItemLink) {
+      if (itemOrItemLink?.href?.startsWith("blob:")) {
+        stacItemUrl = itemOrItemLink.href;
+        // Use native fetch for blob URLs to avoid axios/cache interceptor issues
+        this.selectedItem = await fetch(stacItemUrl).then(
+          async (resp) => await resp.json(),
+        );
+      } else {
+        stacItemUrl = toAbsolute(itemOrItemLink.href, this.#collectionUrl);
+        this.selectedItem = await axios
+          .get(stacItemUrl)
+          .then((resp) => resp.data);
+      }
     }
     if (!this.selectedItem) {
       this.selectedItem = await this.getItem();
@@ -114,12 +121,22 @@ export class EodashCollection {
           "[eodash] the selected collection does not include any items",
         );
         return [];
-      } else if (this.selectedItem.href) {
-        //@ts-expect-error if selected item is a link, we fetch the item
-        stacItemUrl = toAbsolute(this.selectedItem.href, this.#collectionUrl);
-        this.selectedItem = await axios
-          .get(stacItemUrl)
-          .then((resp) => resp.data);
+      } else if (
+        this.selectedItem.href &&
+        typeof this.selectedItem.href === "string"
+      ) {
+        if (this.selectedItem.href.startsWith("blob:")) {
+          // Use native fetch for blob URLs
+          stacItemUrl = this.selectedItem.href;
+          this.selectedItem = await fetch(stacItemUrl).then((resp) =>
+            resp.json(),
+          );
+        } else {
+          stacItemUrl = toAbsolute(this.selectedItem.href, this.#collectionUrl);
+          this.selectedItem = await axios
+            .get(stacItemUrl)
+            .then((resp) => resp.data);
+        }
       }
     }
 

@@ -424,12 +424,20 @@ export async function mergeGeojsons(geojsonUrls) {
     features: [],
   };
   await Promise.all(
-    geojsonUrls.map((url) =>
-      axios.get(url).then((resp) => {
+    geojsonUrls.map((url) => {
+      // Use native fetch for blob URLs to avoid axios/cache interceptor issues
+      if (url.startsWith("blob:")) {
+        return fetch(url)
+          .then(async(resp) => await resp.json())
+          .then((geojson) => {
+            merged.features.push(...(geojson.features ?? []));
+          });
+      }
+      return axios.get(url).then((resp) => {
         const geojson = resp.data;
         merged.features.push(...(geojson.features ?? []));
-      }),
-    ),
+      });
+    }),
   );
 
   return encodeURI(
