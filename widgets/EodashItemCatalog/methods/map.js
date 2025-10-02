@@ -79,7 +79,7 @@ export function renderItemsFeatures(features) {
 }
 
 /**
- * @param {import("vue").Ref<import("@eox/itemfilter").EOxItemFilter>} itemFilter
+ * @param {import("vue").Ref<any>} itemFilter
  * @param {boolean} bboxFilter
  */
 export const useSearchOnMapMove = (itemFilter, bboxFilter) => {
@@ -91,7 +91,6 @@ export const useSearchOnMapMove = (itemFilter, bboxFilter) => {
   const handler = () => {
     clearTimeout(timeout);
     timeout = setTimeout(() => {
-      //@ts-expect-error  todo
       itemFilter.value?.search();
     }, 800); // 800ms debounce
   };
