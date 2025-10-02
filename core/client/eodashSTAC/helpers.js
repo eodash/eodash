@@ -428,7 +428,7 @@ export async function mergeGeojsons(geojsonUrls) {
       // Use native fetch for blob URLs to avoid axios/cache interceptor issues
       if (url.startsWith("blob:")) {
         return fetch(url)
-          .then(async(resp) => await resp.json())
+          .then(async (resp) => await resp.json())
           .then((geojson) => {
             merged.features.push(...(geojson.features ?? []));
           });

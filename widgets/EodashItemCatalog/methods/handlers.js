@@ -30,9 +30,20 @@ export const onSelect = (evt, store) => {
   // trigger the rendering of the item using the collection watchers
   store.loadSelectedSTAC(item.collection);
   // zoom to the item on the map
-  mapEl.value?.selectInteractions[item.id].highlightById([item.id], {
+  mapEl.value?.selectInteractions["stac-items"]?.highlightById([item.id], {
     padding: [100, 100, 100, 100],
     duration: 1200,
     easing: inAndOut,
   });
+};
+
+/**
+ *
+ * @param {CustomEvent} evt
+ */
+export const onMouseEnterResult = (evt) => {
+  mapEl.value?.selectInteractions["stac-items"]?.highlightById([evt.detail.id]);
+};
+export const onMouseLeaveResult = () => {
+  mapEl.value?.selectInteractions["stac-items"]?.highlightById([]);
 };

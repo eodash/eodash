@@ -27,42 +27,37 @@ export function renderItemsFeatures(features) {
   }
 
   const stacItemsLayer = {
-    type: "Group",
+    type: "Vector",
     properties: {
       id: "stac-items",
       title: "STAC Items",
     },
-    layers: features?.map((feature) => ({
+    source: {
       type: "Vector",
-      properties: {
-        id: "item-" + feature.id,
-        title: feature.id,
-      },
-      source: {
-        type: "Vector",
-        url:
-          "data:application/geo+json," +
-          encodeURIComponent(JSON.stringify(feature)),
-        format: "GeoJSON",
-      },
-      style: {
-        "fill-color": "transparent",
-        "stroke-color": "#003170",
-      },
-      interactions: [
-        {
-          type: "select",
-          options: {
-            id: feature.id,
-            condition: "click",
-            style: {
-              "stroke-color": "white",
-              "stroke-width": 3,
-            },
+      url:
+        "data:application/geo+json," +
+        encodeURIComponent(
+          JSON.stringify({ type: "FeatureCollection", features }),
+        ),
+      format: "GeoJSON",
+    },
+    style: {
+      "fill-color": "transparent",
+      "stroke-color": "#003170",
+    },
+    interactions: [
+      {
+        type: "select",
+        options: {
+          id: "stac-items",
+          condition: "click",
+          style: {
+            "stroke-color": "white",
+            "stroke-width": 3,
           },
         },
-      ],
-    })),
+      },
+    ],
   };
   const exists = analysisLayers.layers.some(
     (l) => l.properties?.id === "stac-items",
@@ -134,3 +129,27 @@ export const useRenderItemsFeatures = (currentItems) => {
     renderOnUpdate();
   });
 };
+/**
+ *
+ * @param {import("vue").Ref<import("@eox/itemfilter").EOxItemFilter>} itemfilterEl
+ */
+export function useRenderOnFeatureHover(itemfilterEl) {
+  /**
+   *
+   * @param {CustomEvent} evt
+   */
+  const handler = (evt) => {
+    console.log("selected feature", evt.detail?.feature);
+    itemfilterEl.value.selectedResult = itemfilterEl.value.results.find(
+      (r) => r.id === evt.detail?.feature?.getId(),
+    );
+  };
+  onMounted(() => {
+    //@ts-expect-error todo
+    mapEl.value?.addEventListener("select", handler);
+  });
+  onUnmounted(() => {
+    //@ts-expect-error todo
+    mapEl.value?.removeEventListener("select", handler);
+  });
+}
