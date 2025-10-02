@@ -1,17 +1,29 @@
+import { useOnLayersUpdate } from "@/composables";
 import { mapEl } from "@/store/states";
-import { onMounted, onUnmounted } from "vue";
+import { onMounted, onUnmounted, watch } from "vue";
 
 /**
  *
  * @param {import("@/types").GeoJsonFeature[]} features
  */
 export function renderItemsFeatures(features) {
-  const analysisLayers =
+  let analysisLayers =
     /** @type {import("@eox/map/src/layers").EOxLayerTypeGroup} */ (
       mapEl.value?.layers?.find((l) => l.properties?.id === "AnalysisGroup")
     );
-  if (!mapEl.value || !analysisLayers || !features) {
+  if (!mapEl.value || !features) {
     return;
+  }
+  if (!analysisLayers) {
+    analysisLayers = {
+      type: "Group",
+      properties: {
+        id: "AnalysisGroup",
+        title: "Data Layers",
+      },
+      layers: [],
+    };
+    mapEl.value.layers = [analysisLayers, ...mapEl.value.layers.reverse()];
   }
 
   const stacItemsLayer = {
@@ -70,18 +82,56 @@ export function renderItemsFeatures(features) {
  * @param {import("vue").Ref<import("@eox/itemfilter").EOxItemFilter>} itemFilter
  * @param {boolean} bboxFilter
  */
-export const useSearchOnMapMove = (itemFilter,bboxFilter) => {
-  if(!bboxFilter){
+export const useSearchOnMapMove = (itemFilter, bboxFilter) => {
+  if (!bboxFilter) {
     return;
   }
+  /** @type {NodeJS.Timeout} */
+  let timeout;
   const handler = () => {
-    //@ts-expect-error  todo
-    itemFilter.value?.search();
+    clearTimeout(timeout);
+    timeout = setTimeout(() => {
+      //@ts-expect-error  todo
+      itemFilter.value?.search();
+    }, 800); // 800ms debounce
   };
   onMounted(() => {
     mapEl.value?.map.on("moveend", handler);
   });
   onUnmounted(() => {
     mapEl.value?.map.un("moveend", handler);
+  });
+};
+/**
+ *
+ * @param {import("vue").Ref<import("@/types").GeoJsonFeature[]>} currentItems
+ */
+export const useRenderItemsFeatures = (currentItems) => {
+  const renderOnUpdate = () =>
+    useOnLayersUpdate(() => {
+      console.log("[eodash] map layers updated, re-rendering items...");
+      // consider cases where this is not needed
+      renderItemsFeatures(currentItems.value);
+    });
+  onMounted(() => {
+    if (!mapEl.value) {
+      console.log("[eodash] waiting for map to be ready...");
+
+      watch(
+        mapEl,
+        () => {
+          console.log("[eodash] map is ready, rendering items...");
+          renderItemsFeatures(currentItems.value);
+          renderOnUpdate();
+        },
+        { once: true, immediate: false },
+      );
+
+      return;
+    }
+    console.log("[eodash] map was found, rendering items...");
+
+    renderItemsFeatures(currentItems.value);
+    renderOnUpdate();
   });
 };

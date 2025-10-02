@@ -1,5 +1,5 @@
 import { sanitizeBbox } from "@/eodashSTAC/helpers";
-import { mapEl } from "@/store/states";
+import { indicator, mapEl } from "@/store/states";
 import { useSTAcStore } from "@/store/stac";
 
 /**
@@ -25,9 +25,7 @@ export const createFilterProperties = (filtersConfig) => {
       placeholder: "Select collections",
       inline: false,
       filterKeys: store.stac?.map((col) => col.id) || [],
-      state: {
-        "sentinel-2-l2a": true,
-      },
+      ...(indicator.value && { state: { [indicator.value]: true } }),
     },
     // {
     //   key: "properties.datetime",
@@ -35,7 +33,6 @@ export const createFilterProperties = (filtersConfig) => {
     //   type: "range",
     //   format: "date",
     // }
-
   ];
 
   const dynamicFilters = filtersConfig
@@ -135,10 +132,9 @@ export const buildStacFilters = (filters, propsFilters) => {
  * @param {Record<string,any>} filters
  * @param {Array<any>} propsFilters
  * @param {boolean} bboxFilter
- * @param {boolean} datetimeFilter
  * @returns {string}
  */
-export const buildSearchUrl = (filters, propsFilters,bboxFilter,datetimeFilter) => {
+export const buildSearchUrl = (filters, propsFilters, bboxFilter) => {
   const store = useSTAcStore();
   const params = new URLSearchParams();
 
@@ -146,13 +142,6 @@ export const buildSearchUrl = (filters, propsFilters,bboxFilter,datetimeFilter) 
   if (filters.collection?.stringifiedState) {
     params.append("collections", filters.collection.stringifiedState);
   }
-
-  // if (filters["properties.datetime"]?.state && datetimeFilter) {
-
-  //   const {min, max} = filters["properties.datetime"].state;
-  //   const dt = `${new Date(min).toISOString()}/${new Date(max).toISOString()}`;
-  //   params.append("datetime", dt);
-  // }
 
   if (mapEl.value?.lonLatExtent && bboxFilter) {
     params.append(
@@ -178,11 +167,10 @@ export const buildSearchUrl = (filters, propsFilters,bboxFilter,datetimeFilter) 
  * @param {Record<string,any>} filters
  * @param {import("../types").FiltersConfig} propsFilters
  * @param {boolean} bboxFilter
- * @param {boolean} datetimeFilter
  */
-export const externalFilter = (filters, propsFilters,bboxFilter,datetimeFilter) => {
+export const externalFilter = (filters, propsFilters, bboxFilter) => {
   return {
-    url: buildSearchUrl(filters, propsFilters,bboxFilter,datetimeFilter),
+    url: buildSearchUrl(filters, propsFilters, bboxFilter),
     key: "features",
   };
 };

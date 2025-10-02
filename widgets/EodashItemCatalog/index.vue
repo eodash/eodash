@@ -1,30 +1,49 @@
 <template>
-  <eox-itemfilter
-    ref="itemfilter"
-    titleProperty="id"
-    imageProperty="preview"
-    .filterProperties="filterProperties"
-    .items="items"
-    @select="onSelectItem"
-    @filter="onFilter"
-    :externalFilter="externalFilterHandler"
-  >
-    <h4 slot="filterstitle" style="margin: 14px 8px">{{ filtersTitle }}</h4>
-    <h4 slot="resultstitle" style="margin: 14px 8px">{{ resultsTitle }}</h4>
-  </eox-itemfilter>
+  <span>
+    <v-row class="title align-center justify-space-between">
+      <h4>Catalog Items</h4>
+      <EodashLayoutSwitcher :target="layoutTarget" :icon="layoutIcon" />
+    </v-row>
+    <eox-itemfilter
+      ref="itemfilter"
+      titleProperty="id"
+      imageProperty="preview"
+      .filterProperties="filterProperties"
+      .items="items"
+      @select="onSelectItem"
+      @filter="onFilter"
+      :externalFilter="externalFilterHandler"
+    >
+      <h4 slot="filterstitle" style="margin: 14px 8px">{{ filtersTitle }}</h4>
+      <h4 slot="resultstitle" style="margin: 14px 8px">{{ resultsTitle }}</h4>
+    </eox-itemfilter>
+  </span>
 </template>
 
 <script setup>
-import { ref, useTemplateRef, onMounted } from "vue";
+import { ref, useTemplateRef } from "vue";
 import { useSTAcStore } from "@/store/stac";
 import { createFilterProperties, externalFilter } from "./methods/filters";
-import { useSearchOnMapMove, renderItemsFeatures } from "./methods/map";
+import { useSearchOnMapMove, useRenderItemsFeatures } from "./methods/map";
 import { onSelect, onFilter as onFilterHandler } from "./methods/handlers";
 import axios from "@/plugins/axios";
-import { useOnLayersUpdate } from "@/composables";
+import { mdiViewDashboard } from "@mdi/js";
+import EodashLayoutSwitcher from "^/EodashLayoutSwitcher.vue";
 
 // Props definition
 const props = defineProps({
+  title: {
+    type: String,
+    default: "Explore Catalog",
+  },
+  layoutTarget: {
+    type: String,
+    default: "lite",
+  },
+  layoutIcon: {
+    type: String,
+    default: mdiViewDashboard,
+  },
   filtersTitle: {
     type: String,
     default: "Filters:",
@@ -33,13 +52,9 @@ const props = defineProps({
     type: String,
     default: "Items:",
   },
-  datetimeFilter:{
+  bboxFilter: {
     type: Boolean,
-    default: true
-  },
-  bboxFilter:{
-    type: Boolean,
-    default: true
+    default: true,
   },
   filters: {
     /** @type {import("vue").PropType<import("./types").FiltersConfig>} */
@@ -56,16 +71,10 @@ const props = defineProps({
   },
 });
 
-/**
- * @param {any[]} _
- * @param {Record<string,any>} filters
- */
-const externalFilterHandler = (_, filters) => {
-  return externalFilter(filters, props.filters, props.bboxFilter, props.datetimeFilter);
-};
 // Store and template refs
 const store = useSTAcStore();
 const itemfilterEl = useTemplateRef("itemfilter");
+
 
 // Reactive state
 /** @type {import("vue").Ref<import("@/types").GeoJsonFeature[]>} */
@@ -73,12 +82,19 @@ const currentItems = ref([]);
 
 // Initial data fetch
 await axios
-  .get(store.stacEndpoint + "/search?limit=100")
-  .then((res) => (currentItems.value = res.data.features));
+.get(store.stacEndpoint + "/search?limit=100")
+.then((res) => (currentItems.value = res.data.features));
 
 const items = currentItems.value;
 
 const filterProperties = createFilterProperties(props.filters);
+/**
+ * @param {any[]} _
+ * @param {Record<string,any>} filters
+ */
+const externalFilterHandler = (_, filters) => {
+  return externalFilter(filters, props.filters, props.bboxFilter);
+};
 
 // Event handlers
 /**
@@ -95,18 +111,12 @@ const onSelectItem = (evt) => {
   onSelect(evt, store);
 };
 
-onMounted(() => {
-  renderItemsFeatures(currentItems.value);
-});
+// composables
 
-useOnLayersUpdate(() => {
-  // consider cases where this is not needed
-  renderItemsFeatures(currentItems.value);
-});
-
+// Render items features on the map
+useRenderItemsFeatures(currentItems);
 // Search on map move logic
-useSearchOnMapMove(itemfilterEl,props.bboxFilter);
-
+useSearchOnMapMove(itemfilterEl, props.bboxFilter);
 </script>
 <style scoped lang="scss">
 eox-itemfilter {
@@ -114,6 +124,11 @@ eox-itemfilter {
   height: 100%;
   overflow: hidden !important;
   padding: 1rem;
-  // --item-select-color: var(--v-theme-primary) !important;
+  --eox-itemfilter-results-color: var(--v-theme-surface) !important;
+}
+.title {
+  // padding: 1em;
+  padding: 1em;
+  margin: 0.2em;
 }
 </style>
