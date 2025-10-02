@@ -36,8 +36,6 @@ export class EodashCollection {
 
   /** @type {import("stac-ts").StacCollection | undefined} */
   #collectionStac;
-  /** @type {import("stac-ts").StacItem[] | undefined} */
-  #stacItems;
 
   /**
    * @type {import("stac-ts").StacLink
@@ -70,7 +68,7 @@ export class EodashCollection {
 
   /**
    * @async
-   * @param { import("stac-ts").StacItem | import('stac-ts').StacLink | Date } [linkOrDate]
+   * @param {import('stac-ts').StacLink | Date } [linkOrDate]
    * @returns
    */
   createLayersJson = async (linkOrDate) => {
@@ -244,8 +242,8 @@ export class EodashCollection {
           layerDatetime,
           extraProperties,
         )),
-        ...links,
         // We add the links after the assets so they are layered underneath assets
+        ...links,
       );
     } else {
       // fallback to STAC
@@ -268,6 +266,7 @@ export class EodashCollection {
       );
       jsonArray.push(json);
     }
+    console.log("jsonArray", jsonArray);
 
     return jsonArray;
   }
@@ -285,23 +284,24 @@ export class EodashCollection {
 
   /**
    * Returns all item links sorted by datetime ascendingly
+   * @param {boolean} [fields=false] if true, fetch items from API with only properties
    * @param {boolean} [first] - if true, returns the first page of items only (for API collections)
    * @returns {Promise<import("stac-ts").StacLink[] | import("stac-ts").StacItem[] | undefined>}
    */
-  async getItems(first = false) {
+  async getItems(fields = false, first = false) {
     const items = this.#collectionStac?.links.filter((i) => i.rel === "item");
 
     if (this.isAPI && !items?.length) {
-      if (!this.#stacItems) {
-        const itemUrl = this.#collectionUrl + "/items";
-        this.#stacItems = await fetchApiItems(
+      const itemUrl = this.#collectionUrl + "/items";
+      if (fields) {
+        return await fetchApiItems(
           itemUrl,
-          `fields=properties`,
+          `fields=properties,-assets,-geometry,-links,-bbox`,
           100,
           first,
         );
       }
-      return this.#stacItems;
+      return await fetchApiItems(itemUrl, undefined, 100, first);
     }
 
     const datetimeProperty = getDatetimeProperty(this.#collectionStac?.links);
@@ -321,11 +321,9 @@ export class EodashCollection {
   }
 
   async getDates() {
-    const items = await this.getItems();
+    const items = await this.getItems(true, false);
 
-    const datetimeProperty = getDatetimeProperty(
-      this.isAPI ? items : this.#collectionStac?.links,
-    );
+    const datetimeProperty = getDatetimeProperty(items);
     if (!datetimeProperty || !items?.length) {
       return [];
     }
@@ -342,33 +340,6 @@ export class EodashCollection {
   async getExtent() {
     return this.#collectionStac?.extent;
   }
-  apiSearchUrl = "";
-  /**
-   * @param {import("@/types").SearchParams} params
-   * @returns {Promise<import("stac-ts").StacItem[]>}
-   * */
-  async queryAPI(params) {
-    // wip
-    if (!this.apiSearchUrl) {
-      const urlArr = this.#collectionUrl.split("/");
-      const removeIdx = urlArr.indexOf("collections");
-      this.apiSearchUrl = urlArr.slice(0, removeIdx).join("/") + "/search";
-    }
-    const [collection] = params.collections || [];
-    const datetime = params.query?.datetime?.eq;
-    const limit = params.limit;
-    // this needs to be refactored, I am not sure how the search should work,
-    // seems in this instance get works better than post
-    return await axios
-      .get(this.apiSearchUrl, {
-        params: {
-          collections: collection,
-          datetime,
-          limit,
-        },
-      })
-      .then((resp) => resp.data?.features);
-  }
 
   /**
    * Get closest Item Link from a certain date,
@@ -378,35 +349,34 @@ export class EodashCollection {
    **/
   async getItem(date) {
     if (!date) {
-      return (await this.getItems(true))?.[0];
+      return (await this.getItems(false, true))?.[0];
     }
-    if (this.isAPI) {
-      const collectionId = /** @type {string} */ (this.collectionStac?.id);
-      return await this.queryAPI({
-        collections: [collectionId],
-        query: { datetime: { eq: date.toISOString() } },
-      }).then((items) => {
-        return items?.[0];
-      });
-    }
-    const datetimeProperty = getDatetimeProperty(this.#collectionStac?.links);
+
+    const items = await this.getItems();
+    const datetimeProperty = getDatetimeProperty(items);
     if (!datetimeProperty) {
       // in case no datetime property is found, return the first item
-      return (await this.getItems(true))?.[0];
+      return (await this.getItems(false, true))?.[0];
     }
-    return date
-      ? (await this.getItems())?.sort((a, b) => {
-          const distanceA = Math.abs(
-            new Date(/** @type {number} */ (a[datetimeProperty])).getTime() -
-              date.getTime(),
-          );
-          const distanceB = Math.abs(
-            new Date(/** @type {number} */ (b[datetimeProperty])).getTime() -
-              date.getTime(),
-          );
-          return distanceA - distanceB;
-        })[0]
-      : (await this.getItems(true))?.at(-1);
+    return (await this.getItems())?.sort((a, b) => {
+      const distanceA = Math.abs(
+        new Date(
+          /** @type {number} */ (
+            //@ts-expect-error TODO
+            this.isAPI ? a.properties[datetimeProperty] : a[datetimeProperty]
+          ),
+        ).getTime() - date.getTime(),
+      );
+      const distanceB = Math.abs(
+        new Date(
+          /** @type {number} */ (
+            //@ts-expect-error TODO
+            this.isAPI ? b.properties[datetimeProperty] : b[datetimeProperty]
+          ),
+        ).getTime() - date.getTime(),
+      );
+      return distanceA - distanceB;
+    })[0];
   }
 
   async getToolTipProperties() {
@@ -430,7 +400,9 @@ export class EodashCollection {
    */
   async updateLayerJson(datetime, layer, map) {
     await this.fetchCollection();
-    const datetimeProperty = getDatetimeProperty(await this.getItems());
+    const datetimeProperty = getDatetimeProperty(
+      await this.getItems(true, true),
+    );
     if (!datetimeProperty) {
       console.warn("[eodash] no datetime property found in collection");
       return;

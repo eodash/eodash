@@ -454,8 +454,6 @@ export function createLayerFromRender(
         assetsCollection["assets"]?.[renders[key].assets[0]]?.rescale,
     };
     const paramsStr = encodeURLObject(paramsObject);
-    console.log("Creating layer from render", paramsStr);
-
     const url = `${rasterURL}/collections/${collection.id}/items/${item.id}/tiles/WebMercatorQuad/{z}/{x}/{y}?${paramsStr}`;
     layers.push({
       /** @type {"Tile"} */

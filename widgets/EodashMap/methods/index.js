@@ -59,7 +59,6 @@ export const useHandleMapMoveEnd = (mapElement, mapPosition) => {
  * @param {import("vue").Ref<Record<string,any>[]>} mapLayers
  * @param {import("vue").Ref<import("@eox/map").EOxMap| null>} partnerMap
  * @param {boolean} zoomToExtent
- * @param {import("vue").Ref<import("stac-ts").StacItem | import("stac-ts").StacLink | null>} [selectedItem]
  */
 export const useInitMap = (
   mapElement,
@@ -69,7 +68,6 @@ export const useInitMap = (
   mapLayers,
   partnerMap,
   zoomToExtent,
-  selectedItem,
 ) => {
   log.debug(
     "InitMap",
@@ -78,22 +76,10 @@ export const useInitMap = (
     eodashCols.values,
     datetime.value,
   );
-  // watch selectedItem if provided
-  const watching = selectedItem
-    ? [selectedIndicator, datetime, selectedItem]
-    : [selectedIndicator, datetime];
-  const stopIndicatorWatcher = watch(
-    watching,
-    async (updated, previous) => {
-      const [updatedStac, updatedTime, updatedItem] =
-        /** @type {[import("stac-ts").StacCollection, string, import("stac-ts").StacItem]} */ (
-          selectedItem ? updated : [updated[0], updated[1], null]
-        );
-      const [previousStac, previousTime, previousItem] =
-        /** @type {[import("stac-ts").StacCollection, string, import("stac-ts").StacItem]} */ (
-          selectedItem ? previous : [previous[0], previous[1], null]
-        );
 
+  const stopIndicatorWatcher = watch(
+    [selectedIndicator, datetime],
+    async ([updatedStac, updatedTime], [previousStac, previousTime]) => {
       if (updatedStac) {
         log.debug(
           "Selected Indicator watch triggered",
@@ -113,9 +99,7 @@ export const useInitMap = (
         let layersCollection = [];
 
         const onlyTimeChanged =
-          updatedStac?.id === previousStac?.id &&
-          (updatedTime !== previousTime ||
-            (selectedItem && updatedItem?.id !== previousItem?.id));
+          updatedStac?.id === previousStac?.id && updatedTime !== previousTime;
 
         const { selectedCompareStac } = storeToRefs(useSTAcStore());
         if (mapElement?.value?.id === "main") {
@@ -137,7 +121,7 @@ export const useInitMap = (
           layersCollection = await createLayersConfig(
             updatedStac,
             eodashCols,
-            selectedItem ? updatedItem : updatedTime,
+            updatedTime,
           );
           log.debug(
             "Assigned layers after changing time only",
@@ -159,7 +143,7 @@ export const useInitMap = (
         layersCollection = await createLayersConfig(
           updatedStac,
           eodashCols,
-          selectedItem ? updatedItem : updatedTime,
+          datetime.value,
         );
 
         // We try to set the current time selection to latest extent date

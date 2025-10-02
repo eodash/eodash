@@ -2,7 +2,6 @@ import { deepmergeInto } from "deepmerge-ts";
 import lite from "./lite";
 import expert from "./expert";
 import compare from "./compare";
-import explore from "./explore";
 
 /** @type {import("@/types").Eodash} */
 const baseConfig = {
@@ -11,9 +10,9 @@ const baseConfig = {
     // useSubCode: true,
   },
   stacEndpoint: {
-    endpoint: "https://api.explorer.eopf.copernicus.eu/stac/",
+    endpoint: "https://api.explorer.eopf.copernicus.eu/stac",
     api: true,
-    rasterEndpoint: "https://api.explorer.eopf.copernicus.eu/raster/",
+    rasterEndpoint: "https://api.explorer.eopf.copernicus.eu/raster",
   },
   brand: {
     noLayout: true,
@@ -54,7 +53,6 @@ const baseConfig = {
     footerText: "Demo configuration of eodash client",
   },
   templates: {
-    explore,
     lite,
     expert,
     compare,

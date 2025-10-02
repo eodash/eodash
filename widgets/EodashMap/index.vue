@@ -272,8 +272,7 @@ const showCompare = computed(() =>
 useHandleMapMoveEnd(eoxMap, mapPosition);
 
 onMounted(() => {
-  const { selectedCompareStac, selectedStac, selectedItem } =
-    storeToRefs(useSTAcStore());
+  const { selectedCompareStac, selectedStac } = storeToRefs(useSTAcStore());
   // assign map Element state to eox map
   mapEl.value = eoxMap.value;
 
@@ -303,7 +302,6 @@ onMounted(() => {
     eoxMapLayers,
     compareMap,
     props.zoomToExtent,
-    selectedItem,
   );
 });
 
