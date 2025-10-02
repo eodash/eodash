@@ -26,6 +26,7 @@ import {
 import axios from "@/plugins/axios";
 import log from "loglevel";
 import { dataThemesBrands } from "@/utils/states";
+import { exampleSchema } from "@/utils/bands-editor";
 
 export class EodashCollection {
   #collectionUrl = "";
@@ -151,6 +152,12 @@ export class EodashCollection {
       console.warn("[eodash] no item provided to buildJsonArray");
       return [];
     }
+    // to be removed
+    // if (item.links.some((l) => l.rel === "xyz")) {
+
+    item["eodash:tileform"] = exampleSchema;
+    console.log("Adding example schema to item", item["eodash:tileform"]);
+    // }
     log.debug(
       "Building JSON array",
       item,
@@ -184,7 +191,10 @@ export class EodashCollection {
     let { layerConfig, style } = extractLayerConfig(
       this.#collectionStac?.id ?? "",
       await fetchStyle(item, itemUrl),
+      //@ts-expect-error todo
+      item["eodash:tileform"],
     );
+    console.log("extracted layerConfig", layerConfig, style);
 
     const layerDatetime = extractLayerDatetime(
       await this.getDates(),
@@ -209,6 +219,7 @@ export class EodashCollection {
       extraProperties = {
         ...extraProperties,
         ...(this.color && { color: this.color }),
+        ...(layerConfig && { layerConfig }),
       };
 
       const links = await createLayersFromLinks(

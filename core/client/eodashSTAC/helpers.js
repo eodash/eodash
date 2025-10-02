@@ -46,12 +46,28 @@ export function generateFeatures(links, extraProperties = {}, rel = "item") {
  *
  * @param {string} collectionId
  *  @param { import("@/types").EodashStyleJson} [style]
+ * @param {Record<string,any>} [tileJsonform]
  * */
-export function extractLayerConfig(collectionId, style) {
-  if (!style) {
+export function extractLayerConfig(collectionId, style, tileJsonform) {
+  if (!style && !tileJsonform) {
+    console.log("no style nor tileJsonform provided");
+
     return { layerConfig: undefined, style: undefined };
   }
-  style = { ...style };
+  if (style) {
+    style = { ...style };
+  }
+
+  if (tileJsonform) {
+    return {
+      layerConfig: {
+        schema: tileJsonform.jsonform,
+        legend: tileJsonform.legend,
+        type: "tileUrl",
+      },
+      style,
+    };
+  }
 
   if (Object.keys(style.variables ?? {}).length) {
     style.variables = getStyleVariablesState(collectionId, style.variables);

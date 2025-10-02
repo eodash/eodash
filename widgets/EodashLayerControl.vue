@@ -7,7 +7,6 @@
       :for="mapElement"
       @datetime:updated="debouncedHandleDateTime"
       toolsAsList="true"
-      style="--eox-background-color: transparent"
       ref="eoxLayercontrol"
       @layerConfig:change="onLayerConfigChange"
     >
@@ -28,7 +27,7 @@ import "@eox/jsonform";
 import "@eox/timecontrol";
 import "color-legend-element";
 
-import { computed, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 import { mapEl, mapCompareEl } from "@/store/states";
 import { getColFromLayer } from "@/eodashSTAC/helpers";
 import {
@@ -39,6 +38,8 @@ import {
 } from "@/utils/states";
 import { storeToRefs } from "pinia";
 import { useSTAcStore } from "@/store/stac";
+import { watch } from "vue";
+import { bandsEditorInterface } from "@/utils/bands-editor";
 
 const props = defineProps({
   map: {
@@ -138,6 +139,18 @@ const onLayerConfigChange = (evt) => {
     layerControlFormValue.value = evt.detail.jsonformValue;
   }
 };
+onMounted(()=>{
+
+  // watch(eoxLayercontrol, (updatedLayerControl) => {
+    setTimeout(() => {
+      const jsonform = eoxLayercontrol.value?.shadowRoot?.querySelector("eox-layercontrol-layer-list > ul > li:nth-child(2) > eox-layercontrol-layer-group > details > eox-layercontrol-layer-list > ul > li > eox-layercontrol-layer > eox-layercontrol-layer-tools")?.shadowRoot?.querySelector("details > eox-layercontrol-tools-items > div:nth-child(6) > eox-layercontrol-layerconfig > eox-jsonform");
+      // @ts-expect-error todo
+      jsonform.customEditorInterfaces = bandsEditorInterface
+    }, 1000);
+
+  })
+
+// });
 </script>
 <style scoped>
 eox-layercontrol {
