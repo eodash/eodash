@@ -131,7 +131,7 @@ export const useRenderItemsFeatures = (currentItems) => {
 };
 /**
  *
- * @param {import("vue").Ref<import("@eox/itemfilter").EOxItemFilter>} itemfilterEl
+ * @param {import("vue").Ref<any>} itemfilterEl
  */
 export function useRenderOnFeatureHover(itemfilterEl) {
   /**
