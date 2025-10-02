@@ -80,7 +80,7 @@ async function fetchVedaCOGsConfig(selectedStac, absoluteUrl) {
           axios
             .get(toAbsolute(link.href, absoluteUrl))
             .then((resp) => resp.data)
-            .then((collection) => {
+            .then(async (collection) => {
               // items in geoparquet handling specially to get item links
               const parquetAsset = Object.values(collection.assets ?? {}).find(
                 (asset) =>
@@ -88,11 +88,8 @@ async function fetchVedaCOGsConfig(selectedStac, absoluteUrl) {
                   asset.roles?.includes("collection-mirror"),
               );
               if (parquetAsset) {
-                const parquetAbsoluteUrl = toAbsolute(
-                  parquetAsset.href,
-                  toAbsolute(link.href, absoluteUrl),
-                );
-                readParquetItems(parquetAbsoluteUrl).then((items) => {
+                const parquetAbsoluteUrl = toAbsolute(parquetAsset.href, toAbsolute(link.href, absoluteUrl));
+                await readParquetItems(parquetAbsoluteUrl).then((items) => {
                   collection.links.push(...generateLinksFromItems(items));
                 });
               }
