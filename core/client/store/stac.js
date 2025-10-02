@@ -55,6 +55,11 @@ export const useSTAcStore = defineStore("stac", () => {
    * >}
    */
   const selectedCompareStac = ref(null);
+  /**
+   * Currently selected item
+   * @type {import("vue").Ref<import("stac-ts").StacLink | import("stac-ts").StacItem | null>}
+   */
+  const selectedItem = ref(null);
 
   /**
    * Initializes the store by assigning the STAC endpoint.
@@ -236,5 +241,6 @@ export const useSTAcStore = defineStore("stac", () => {
     resetSelectedCompareSTAC,
     selectedStac,
     selectedCompareStac,
+    selectedItem,
   };
 });

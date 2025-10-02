@@ -68,7 +68,7 @@ export class EodashCollection {
 
   /**
    * @async
-   * @param {import('stac-ts').StacLink | Date } [linkOrDate]
+   * @param {import("stac-ts").StacItem | import('stac-ts').StacLink | Date } [linkOrDate]
    * @returns
    */
   createLayersJson = async (linkOrDate) => {
@@ -266,7 +266,6 @@ export class EodashCollection {
       );
       jsonArray.push(json);
     }
-    console.log("jsonArray", jsonArray);
 
     return jsonArray;
   }

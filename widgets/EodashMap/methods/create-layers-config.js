@@ -9,19 +9,19 @@ import log from "loglevel";
  *   | null
  * } selectedIndicator
  * @param {EodashCollection[]} eodashCols
- * @param {string} [updatedTime]
+ * @param {string | import("stac-ts").StacItem | null} [timeOrItem] - time as a string, or a stac item
  */
 
 export const createLayersConfig = async (
   selectedIndicator,
   eodashCols,
-  updatedTime,
+  timeOrItem,
 ) => {
   log.debug(
     "Creating layers config",
     selectedIndicator,
     eodashCols,
-    updatedTime,
+    timeOrItem,
   );
   const layersCollection = [];
   const dataLayers = {
@@ -36,10 +36,12 @@ export const createLayersConfig = async (
 
   for (const ec of eodashCols) {
     let layers;
-    if (updatedTime) {
-      layers = await ec.createLayersJson(new Date(updatedTime));
+    if (timeOrItem) {
+      const dateOrItem =
+        typeof timeOrItem === "string" ? new Date(timeOrItem) : timeOrItem;
+      layers = await ec.createLayersJson(dateOrItem);
     } else {
-      layers = await ec.createLayersJson();
+      layers = await ec.createLayersJson(undefined);
     }
     // Add expand to all analysis layers
     layers.forEach((dl) => {
