@@ -141,6 +141,7 @@ export function useRenderOnFeatureHover(itemfilterEl) {
   const handler = (evt) => {
     console.log("selected feature", evt.detail?.feature);
     itemfilterEl.value.selectedResult = itemfilterEl.value.results.find(
+      //@ts-expect-error todo
       (r) => r.id === evt.detail?.feature?.getId(),
     );
   };
