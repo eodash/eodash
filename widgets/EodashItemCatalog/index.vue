@@ -42,6 +42,10 @@ import axios from "@/plugins/axios";
 import { mdiViewDashboard } from "@mdi/js";
 import EodashLayoutSwitcher from "^/EodashLayoutSwitcher.vue";
 
+if (!customElements.get("eox-itemfilter")) {
+  await import("@eox/itemfilter");
+}
+
 // Props definition
 const props = defineProps({
   title: {
