@@ -3,6 +3,40 @@ import { indicator, mapEl } from "@/store/states";
 import { useSTAcStore } from "@/store/stac";
 
 /**
+ *
+ * @param {import("../types").FiltersConfig} filtersConfig
+ */
+export const createSubtitleProperty = (filtersConfig) => {
+  /**
+   * @param {Record<string, any>} item
+   */ // should be dynamic based on a prop
+  return (item) => {
+    let subtitle = "";
+    filtersConfig.forEach((filter) => {
+      const property = filter.property;
+      if ((!filter.icon && !filter.unitLabel) || !item.properties[property]) {
+        return;
+      }
+      if (filter.icon) {
+        subtitle += filter.icon;
+      }
+
+      let value = item.properties[property];
+      if (typeof value === "number" && !Number.isInteger(value)) {
+        value = value.toFixed(1);
+      }
+
+      subtitle += value;
+
+      if (filter.unitLabel) {
+        subtitle += filter.unitLabel;
+      }
+    });
+    return subtitle;
+  };
+};
+
+/**
  * @param {Array<{
  *   property: string,
  *   type: "range" | "multiselect" | "select",

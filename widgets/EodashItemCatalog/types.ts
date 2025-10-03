@@ -7,6 +7,9 @@ export interface FilterConfigItem {
   filterKeys?: string[];
   state?: Record<string, boolean>;
   placeholder?: string;
+  /** svg icon */
+  icon?: string;
+  unitLabel?: string;
 }
 
 export type FiltersConfig = FilterConfigItem[];
