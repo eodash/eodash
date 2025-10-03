@@ -17,14 +17,6 @@ export const onFilter = (evt, currentItems) => {
  * @returns
  */
 export const createOnSelectHandler = (store) => {
-  // make sure to clear the selectedItem (from the old collection)
-  // when collection changes, without triggering the effects
-  store.$onAction(({ name, store }) => {
-    if (name === "loadSelectedSTAC" && store.selectedStac) {
-      store.$patch({ selectedItem: null });
-    }
-  });
-
   /** @param {CustomEvent} evt */
   return async (evt) => {
     const item = /** @type {import("stac-ts").StacItem} */ (evt.detail);
@@ -34,9 +26,7 @@ export const createOnSelectHandler = (store) => {
     if (store.selectedStac?.id === item.collection) {
       store.selectedItem = item;
     } else {
-      await store.loadSelectedSTAC(item.collection).then(() => {
-        store.selectedItem = item;
-      });
+      await store.loadSelectedSTAC(item.collection, false, item);
     }
 
     mapEl.value?.selectInteractions["stac-items"]?.highlightById([item.id], {
