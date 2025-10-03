@@ -137,7 +137,7 @@ export const useInitMap = (
           layersCollection = await createLayersConfig(
             updatedStac,
             eodashCols,
-            selectedItem ? updatedItem : updatedTime,
+            updatedItem ?? updatedTime,
           );
           log.debug(
             "Assigned layers after changing time only",

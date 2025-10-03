@@ -24,7 +24,7 @@
 </template>
 
 <script setup>
-import { ref, useTemplateRef } from "vue";
+import { onUnmounted, ref, useTemplateRef } from "vue";
 import { useSTAcStore } from "@/store/stac";
 import {
   createFilterProperties,
@@ -141,6 +141,10 @@ useRenderItemsFeatures(currentItems);
 useSearchOnMapMove(itemfilterEl, props.bboxFilter);
 
 useRenderOnFeatureHover(itemfilterEl);
+
+onUnmounted(() => {
+  store.selectedItem = null;
+});
 </script>
 <style scoped lang="scss">
 eox-itemfilter {
