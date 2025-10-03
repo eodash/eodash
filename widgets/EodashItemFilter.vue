@@ -14,8 +14,12 @@
 <script setup>
 import { useSTAcStore } from "@/store/stac";
 import { isFirstLoad } from "@/utils/states";
-import "@eox/itemfilter";
 import { computed, ref } from "vue";
+
+if (!customElements.get("eox-itemfilter")) {
+  await import("@eox/itemfilter");
+}
+
 const store = useSTAcStore();
 const emit = defineEmits(["select"]);
 const items = store.isApi
