@@ -11,30 +11,40 @@ export const onFilter = (evt, currentItems) => {
   currentItems.value = evt.detail.results;
   renderItemsFeatures(currentItems.value);
 };
-
 /**
  *
- * @param {CustomEvent} evt
  * @param {ReturnType<typeof import("@/store/stac.js").useSTAcStore>} store
+ * @returns
  */
-export const onSelect = (evt, store) => {
-  const item = /** @type {import("stac-ts").StacItem} */ (evt.detail);
-  if (!item) {
-    return;
-  }
-  // todo: consider triggering the render using the item
-  store.$patch({
-    //@ts-expect-error todo
-    selectedItem: item,
+export const createOnSelectHandler = (store) => {
+  // make sure to clear the selectedItem (from the old collection)
+  // when collection changes, without triggering the effects
+  store.$onAction(({ name, store }) => {
+    if (name === "loadSelectedSTAC" && store.selectedStac) {
+      store.$patch({ selectedItem: null });
+    }
   });
-  // trigger the rendering of the item using the collection watchers
-  store.loadSelectedSTAC(item.collection);
-  // zoom to the item on the map
-  mapEl.value?.selectInteractions["stac-items"]?.highlightById([item.id], {
-    padding: [100, 100, 100, 100],
-    duration: 1200,
-    easing: inAndOut,
-  });
+
+  /** @param {CustomEvent} evt */
+  return async (evt) => {
+    const item = /** @type {import("stac-ts").StacItem} */ (evt.detail);
+    if (!item) {
+      return;
+    }
+    if (store.selectedStac?.id === item.collection) {
+      store.selectedItem = item;
+    } else {
+      await store.loadSelectedSTAC(item.collection).then(() => {
+        store.selectedItem = item;
+      });
+    }
+
+    mapEl.value?.selectInteractions["stac-items"]?.highlightById([item.id], {
+      padding: [100, 100, 100, 100],
+      duration: 1200,
+      easing: inAndOut,
+    });
+  };
 };
 
 /**

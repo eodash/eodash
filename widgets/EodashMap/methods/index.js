@@ -86,7 +86,7 @@ export const useInitMap = (
     watching,
     async (updated, previous) => {
       const [updatedStac, updatedTime, updatedItem] =
-        /** @type {[import("stac-ts").StacCollection, string, import("stac-ts").StacItem]} */ (
+        /** @type {[import("stac-ts").StacCollection, string, import("stac-ts").StacItem | null]} */ (
           selectedItem ? updated : [updated[0], updated[1], null]
         );
       const [previousStac, previousTime, previousItem] =
@@ -115,7 +115,7 @@ export const useInitMap = (
         const onlyTimeChanged =
           updatedStac?.id === previousStac?.id &&
           (updatedTime !== previousTime ||
-            (selectedItem && updatedItem?.id !== previousItem?.id));
+            (updatedItem && updatedItem?.id !== previousItem?.id));
 
         const { selectedCompareStac } = storeToRefs(useSTAcStore());
         if (mapElement?.value?.id === "main") {
@@ -174,6 +174,7 @@ export const useInitMap = (
           );
         }
         if (
+          !updatedItem &&
           endInterval !== null &&
           endInterval.toISOString() !== datetime.value &&
           !isFirstLoad.value
@@ -185,6 +186,7 @@ export const useInitMap = (
           // Try to move map view to extent only when main
           // indicator and map changes
           if (
+            !updatedItem &&
             mapElement?.value?.id === "main" &&
             updatedStac.extent?.spatial.bbox &&
             !(

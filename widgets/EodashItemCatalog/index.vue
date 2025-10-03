@@ -37,7 +37,7 @@ import {
   useRenderOnFeatureHover,
 } from "./methods/map";
 import {
-  onSelect,
+  createOnSelectHandler,
   onFilter as onFilterHandler,
   onMouseEnterResult,
   onMouseLeaveResult,
@@ -131,9 +131,7 @@ const onFilter = (evt) => {
 /**
  * @param {CustomEvent} evt
  */
-const onSelectItem = (evt) => {
-  onSelect(evt, store);
-};
+const onSelectItem = createOnSelectHandler(store);
 
 // composables
 

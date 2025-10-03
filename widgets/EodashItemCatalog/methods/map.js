@@ -103,18 +103,14 @@ export const useSearchOnMapMove = (itemFilter, bboxFilter) => {
 export const useRenderItemsFeatures = (currentItems) => {
   const renderOnUpdate = () =>
     useOnLayersUpdate(() => {
-      console.log("[eodash] map layers updated, re-rendering items...");
       // consider cases where this is not needed
       renderItemsFeatures(currentItems.value);
     });
   onMounted(() => {
     if (!mapEl.value) {
-      console.log("[eodash] waiting for map to be ready...");
-
       watch(
         mapEl,
         () => {
-          console.log("[eodash] map is ready, rendering items...");
           renderItemsFeatures(currentItems.value);
           renderOnUpdate();
         },
@@ -123,7 +119,6 @@ export const useRenderItemsFeatures = (currentItems) => {
 
       return;
     }
-    console.log("[eodash] map was found, rendering items...");
 
     renderItemsFeatures(currentItems.value);
     renderOnUpdate();
@@ -139,7 +134,6 @@ export function useRenderOnFeatureHover(itemfilterEl) {
    * @param {CustomEvent} evt
    */
   const handler = (evt) => {
-    console.log("selected feature", evt.detail?.feature);
     itemfilterEl.value.selectedResult = itemfilterEl.value.results.find(
       //@ts-expect-error todo
       (r) => r.id === evt.detail?.feature?.getId(),
