@@ -19,9 +19,15 @@ import { updateEodashCollections } from "@/utils";
 export const useSTAcStore = defineStore("stac", () => {
   /**
    * STAC catalog endpoint URL
-   * @type {import("vue").Ref<import("@/types").StacEndpoint | null>}
+   * @type {import("vue").Ref<string| null>}
    */
   const stacEndpoint = ref(null);
+  /**
+   * Raster endpoint URL
+   * @type {import("vue").Ref<string | null>}
+   */
+  const rasterEndpoint = ref(null);
+  const isApi = ref(false);
 
   /**
    * Links of the root STAC catalog
@@ -49,20 +55,35 @@ export const useSTAcStore = defineStore("stac", () => {
    * >}
    */
   const selectedCompareStac = ref(null);
+  /**
+   * Currently selected item
+   * @type {import("vue").Ref<import("stac-ts").StacLink | import("stac-ts").StacItem | null>}
+   */
+  const selectedItem = ref(null);
 
   /**
    * Initializes the store by assigning the STAC endpoint.
    * @param {import("@/types").StacEndpoint} endpoint
    */
   function init(endpoint) {
-    stacEndpoint.value = endpoint;
+    if (!endpoint) {
+      throw new Error("STAC endpoint is not defined");
+    }
+
+    if (typeof endpoint === "string") {
+      stacEndpoint.value = endpoint;
+      return;
+    }
+    stacEndpoint.value = endpoint.endpoint;
+    isApi.value = endpoint.api ?? false;
+    rasterEndpoint.value = endpoint.rasterEndpoint ?? null;
   }
 
   /**
    * Fetches root stac catalog and assign it to `stac`
    *
-   * @param {import("@/types").StacEndpoint} [url=eodash.stacEndpoint] Default
-   *   is `eodash.stacEndpoint`
+   * @param {string} [url=stacEndpoint] Default
+   *   is  the configured `stacEndpoint` url
    * @returns {Promise<void>}
    * @see {@link stac}
    */
@@ -78,14 +99,17 @@ export const useSTAcStore = defineStore("stac", () => {
       stac.value = null;
       return;
     }
+    if (isApi.value) {
+      url = url + "/collections";
+    }
+    const property = isApi.value ? "collections" : "links";
 
     log.debug("Loading STAC endpoint", url);
     await axios
       .get(url)
       .then((resp) => {
-        const links = /** @type {import("stac-ts").StacCatalog} */ (
-          resp.data
-        ).links.map((link) => {
+        //@ts-expect-error TODO
+        const links = resp.data[property].map((link) => {
           if (!link.title) {
             link.title = `${link.rel} ${link.href}`;
           }
@@ -104,10 +128,11 @@ export const useSTAcStore = defineStore("stac", () => {
    *
    * @param {string} relativePath - Stac link href
    * @param {boolean} [isPoi=false] - If true, the STAC is loaded for a point of interest
+   * @param {Object} [stacItem] - The STAC item to load
    * @returns {Promise<void>}
    * @see {@link selectedStac}
    */
-  async function loadSelectedSTAC(relativePath = "", isPoi = false) {
+  async function loadSelectedSTAC(relativePath = "", isPoi = false, stacItem) {
     if (!stacEndpoint.value) {
       return Promise.reject(new Error("STAC endpoint is not defined"));
     }
@@ -115,6 +140,11 @@ export const useSTAcStore = defineStore("stac", () => {
     if (isPoi) {
       // construct absolute URL of a poi
       absoluteUrl.value = constructPoiUrl(relativePath, indicator.value);
+    }
+    //@ts-expect-error "this" type is not exported by pinia
+    const patch = this?.$patch;
+    if (stacItem && patch) {
+      patch({ selectedItem: stacItem });
     }
 
     await axios
@@ -125,6 +155,8 @@ export const useSTAcStore = defineStore("stac", () => {
           resp.data,
           absoluteUrl.value,
           collectionsPalette,
+          isApi.value,
+          rasterEndpoint.value,
         );
         selectedStac.value = resp.data;
         // set indicator and poi
@@ -141,6 +173,7 @@ export const useSTAcStore = defineStore("stac", () => {
    * Fetches selected stac object and assign it to `selectedCompareStac`
    *
    * @param {string} relativePath - Stac link href
+   * @param {boolean} [isPOI=false] - If true, the STAC is loaded for a point of interest
    * @returns {Promise<void>}
    * @see {@link selectedCompareStac}
    */
@@ -163,6 +196,8 @@ export const useSTAcStore = defineStore("stac", () => {
           resp.data,
           absoluteUrl.value,
           [...collectionsPalette].reverse(),
+          isApi.value,
+          rasterEndpoint.value,
         );
         selectedCompareStac.value = resp.data;
         compareIndicator.value = isPOI
@@ -203,6 +238,8 @@ export const useSTAcStore = defineStore("stac", () => {
   }
 
   return {
+    stacEndpoint,
+    isApi,
     stac,
     init,
     loadSTAC,
@@ -211,5 +248,6 @@ export const useSTAcStore = defineStore("stac", () => {
     resetSelectedCompareSTAC,
     selectedStac,
     selectedCompareStac,
+    selectedItem,
   };
 });

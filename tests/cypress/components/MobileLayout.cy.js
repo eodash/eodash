@@ -38,7 +38,9 @@ describe("<MobileLayout />", () => {
         );
 
       widgets.forEach((widget, idx) => {
-        cy.get(`.tabbed.tabs a:nth-child(${idx + 1})`).contains(widget.title ?? "");
+        cy.get(`.tabbed.tabs a:nth-child(${idx + 1})`).contains(
+          widget.title ?? "",
+        );
       });
     });
   });

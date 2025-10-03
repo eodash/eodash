@@ -4,7 +4,7 @@ import { includesProcess } from "@/store/actions";
 /** @type {import("@/types").Template} */
 export default {
   loading: {
-    id: Symbol(),
+    id: "loading",
     type: "web-component",
     widget: {
       // https://uiball.com/ldrs/
@@ -39,8 +39,8 @@ export default {
         btnsPosition: {
           x: "12/9/9",
           y: 1,
-          gap: 16
-        }
+          gap: 16,
+        },
       },
     },
   },
@@ -53,7 +53,7 @@ export default {
       widget: {
         name: "EodashTools",
         properties: {
-          layoutTarget: "light",
+          layoutTarget: "lite",
           layoutIcon: mdiViewDashboard,
           itemFilterConfig: {
             resultType: "cards",

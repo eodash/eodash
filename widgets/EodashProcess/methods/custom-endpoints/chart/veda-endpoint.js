@@ -2,7 +2,10 @@ import axios from "@/plugins/axios";
 import { getBboxProperty } from "../../utils";
 import { toAbsolute } from "stac-js/src/http.js";
 import { currentCompareUrl, currentUrl } from "@/store/states";
-import { getDatetimeProperty, generateLinksFromItems } from "@/eodashSTAC/helpers";
+import {
+  getDatetimeProperty,
+  generateLinksFromItems,
+} from "@/eodashSTAC/helpers";
 import { readParquetItems } from "@/eodashSTAC/parquet";
 
 /**
@@ -82,7 +85,7 @@ async function fetchVedaCOGsConfig(selectedStac, absoluteUrl) {
               const parquetAsset = Object.values(collection.assets ?? {}).find(
                 (asset) =>
                   asset.type === "application/vnd.apache.parquet" &&
-                asset.roles?.includes("collection-mirror"),
+                  asset.roles?.includes("collection-mirror"),
               );
               if (parquetAsset) {
                 const parquetAbsoluteUrl = toAbsolute(parquetAsset.href, toAbsolute(link.href, absoluteUrl));
