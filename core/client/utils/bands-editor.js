@@ -2,21 +2,21 @@
  * Custom band combination editor interface for eox-jsonform
  */
 //@ts-expect-error TODO
-import { JSONEditor } from '@json-editor/json-editor/src/core.js';
+import { JSONEditor } from "@json-editor/json-editor/src/core.js";
 
 export class BandsEditor extends JSONEditor.AbstractEditor {
   build() {
     super.build();
-    console.log('BandsEditor build', this.schema);
+    console.log("BandsEditor build", this.schema);
 
     const colors =
       this.schema.items.options.colors ??
       this.schema.items.enum.map(
         () =>
-          '#' +
+          "#" +
           Math.floor(Math.random() * 16777215)
             .toString(16)
-            .padStart(6, '0')
+            .padStart(6, "0"),
       );
     /**
      * Get the color associated with a specific band.
@@ -26,16 +26,16 @@ export class BandsEditor extends JSONEditor.AbstractEditor {
       const idx =
         /** @type {string[]} */
         (this.schema.items.enum).indexOf(band);
-      return colors[idx] || '#f0f0f0';
+      return colors[idx] || "#f0f0f0";
     };
 
     // control
-    this.control = document.createElement('div');
-    this.control.classList.add('form-control');
+    this.control = document.createElement("div");
+    this.control.classList.add("form-control");
     const bands = this.schema.items.enum;
     const bandTitles = this.schema.items.options?.enum_titles || bands;
 
-    const style = document.createElement('style');
+    const style = document.createElement("style");
     style.innerHTML = `
     [data-band], [data-slot] {
       display: inline-flex;
@@ -54,10 +54,10 @@ export class BandsEditor extends JSONEditor.AbstractEditor {
       .map(
         (band) =>
           `[data-band="${band}"] { background: ${getBandColor(
-            band
-          )}; color: black; }`
+            band,
+          )}; color: black; }`,
       )
-      .join('\n')}
+      .join("\n")}
 
     [data-slot] {
       height: 50px;
@@ -87,12 +87,12 @@ export class BandsEditor extends JSONEditor.AbstractEditor {
 
     // Bands
     const createBandDiv = (enumValue, title) => {
-      const div = document.createElement('div');
+      const div = document.createElement("div");
       div.dataset.band = enumValue;
       div.textContent = title;
       div.draggable = true;
       div.ondragstart = (e) => {
-        e.dataTransfer.setData('band', e.target.dataset.band);
+        e.dataTransfer.setData("band", e.target.dataset.band);
       };
       return div;
     };
@@ -102,17 +102,17 @@ export class BandsEditor extends JSONEditor.AbstractEditor {
       this.control.appendChild(bandDiv);
     });
 
-    this.control.appendChild(document.createElement('hr'));
+    this.control.appendChild(document.createElement("hr"));
 
     // Band slots
-    ['R', 'G', 'B'].forEach((slot, index) => {
-      const slotDiv = document.createElement('div');
+    ["R", "G", "B"].forEach((slot, index) => {
+      const slotDiv = document.createElement("div");
       slotDiv.dataset.slot = slot;
       slotDiv.ondrop = (e) => {
         e.preventDefault();
-        const target = e.target.closest('[data-slot]');
-        const existingBand = target?.querySelector('[data-band]');
-        const enumValue = e.dataTransfer.getData('band');
+        const target = e.target.closest("[data-slot]");
+        const existingBand = target?.querySelector("[data-band]");
+        const enumValue = e.dataTransfer.getData("band");
         const enumIndex = bands.indexOf(enumValue);
         const title = bandTitles[enumIndex] || enumValue;
         const bandDiv = createBandDiv(enumValue, title);
@@ -142,8 +142,8 @@ export class BandsEditor extends JSONEditor.AbstractEditor {
     });
 
     // label
-    this.label = document.createElement('span');
-    this.label.classList.add('je-header');
+    this.label = document.createElement("span");
+    this.label.classList.add("je-header");
     this.label.textContent = this.schema.title;
 
     // appends
@@ -151,7 +151,6 @@ export class BandsEditor extends JSONEditor.AbstractEditor {
     this.container.appendChild(this.control);
   }
 }
-
 
 const enums = [
   "/conditions/geometry:sun_angles",
@@ -181,7 +180,6 @@ const enums = [
   "/measurements/reflectance/r10m:b04",
   "/measurements/reflectance/r10m:b08",
   "/quality/l2a_quicklook/r10m:tci",
-
 ];
 
 const enum_titles = [
@@ -226,86 +224,98 @@ export default bandsEditorInterface;
 
 const schema = {
   type: "object",
+  options: {
+    removeProperties: ["bidx", "variables"],
+  },
   properties: {
-    variable: {
+    variables: {
       title: "Custom Band Combination (drag&drop)",
       type: "array",
       format: "bands",
+      default: [
+        "/measurements/reflectance/r20m:b04",
+        "/measurements/reflectance/r20m:b03",
+        "/measurements/reflectance/r20m:b02",
+      ],
       items: {
         type: "string",
         title: "Slot",
         enum: enums,
         options: {
           enum_titles,
-          colors: (() => {
-            // Generate a random hex color for each enum value
-            const enumLength = 26; // number of enum values above
-            const colors = [];
-            for (let i = 0; i < enumLength; i++) {
-              colors.push(
-                "#" +
-                  Math.floor(Math.random() * 16777215)
-                    .toString(16)
-                    .padStart(6, "0"),
-              );
-            }
-            return colors;
-          })(),
+          colors: [
+            "#FFD700", // /conditions/geometry:sun_angles
+            "#6ECFF6", // r60m:b01
+            "#4F81BD", // r60m:b02
+            "#9BBB59", // r60m:b03
+            "#C0504D", // r60m:b04
+            "#C4D79B", // r60m:b05
+            "#76923C", // r60m:b06
+            "#375623", // r60m:b07
+            "#8064A2", // r60m:b09
+            "#F79646", // r60m:b11
+            "#7F6000", // r60m:b12
+            "#E26B8A", // r60m:b8a
+            "#6ECFF6", // r20m:b01
+            "#4F81BD", // r20m:b02
+            "#9BBB59", // r20m:b03
+            "#C0504D", // r20m:b04
+            "#C4D79B", // r20m:b05
+            "#76923C", // r20m:b06
+            "#375623", // r20m:b07
+            "#F79646", // r20m:b11
+            "#7F6000", // r20m:b12
+            "#E26B8A", // r20m:b8a
+            "#4F81BD", // r10m:b02
+            "#9BBB59", // r10m:b03
+            "#C0504D", // r10m:b04
+            "#E26B8A", // r10m:b08
+            "#A0A0A0", // l2a_quicklook:r10m:tci
+          ],
         },
       },
     },
+    bidx: {
+      type: "string",
+      default: "1",
+      const: "1",
+      options: {
+        hidden: true,
+      },
+    },
     rescaleminmax: {
-      type: 'object',
+      type: "object",
       properties: {
         min: {
-          type: 'number',
+          type: "number",
           minimum: -2,
           maximum: 2,
           default: 0,
-          format: 'range',
+          format: "range",
         },
         max: {
-          type: 'number',
+          type: "number",
           minimum: -2,
           maximum: 2,
-          default: 1,
-          format: 'range',
+          default: 0.25,
+          format: "range",
         },
       },
-      title: 'RescaleMinMax',
-      format: 'minmax',
+      title: "RescaleMinMax",
+      format: "minmax",
       // keep_values: false,
       // not_included_in_result: true,
     },
     rescale: {
-      type: 'string',
-      watch: {
-        "rescaleminmax":"rescaleminmax",
-      },
-      template: '{{rescaleminmax.min}},{{rescaleminmax.max}}',
-    },
-    colormap_name: {
-      id: "colormap_name",
       type: "string",
-      title: "Colormap Name",
-      enum: [
-        "solar_r",
-        "oxy_r",
-        "autumn_r",
-        "blues_r",
-        "rainbow_r",
-        "turbo_r",
-        "inferno",
-        "tab20_r",
-        "bugn",
-        "blues",
-        "thermal_r",
-        "rdbu_r",
-        "hsv_r",
-        "orrd",
-        "rdylbu_r"
-      ],
-    },
+      watch: {
+        rescaleminmax: "rescaleminmax",
+      },
+      template: "{{rescaleminmax.min}},{{rescaleminmax.max}}",
+      options: {
+        hidden: true,
+      },
+    }
   },
 };
 
