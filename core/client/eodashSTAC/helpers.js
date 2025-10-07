@@ -69,7 +69,7 @@ export function extractLayerConfig(collectionId, style, tileJsonform) {
     };
   }
 
-  if (Object.keys(style.variables ?? {}).length) {
+  if (style?.variables && Object.keys(style.variables ?? {}).length) {
     style.variables = getStyleVariablesState(collectionId, style.variables);
   }
 
