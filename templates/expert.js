@@ -39,8 +39,8 @@ export default {
         btnsPosition: {
           x: "12/9/9",
           y: 1,
-          gap: 16
-        }
+          gap: 16,
+        },
       },
     },
   },
