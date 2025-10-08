@@ -26,7 +26,7 @@ import {
 import axios from "@/plugins/axios";
 import log from "loglevel";
 import { dataThemesBrands } from "@/utils/states";
-import { exampleSchema } from "@/utils/bands-editor";
+import exampleSchema from "@/utils/bands-editor/exampleSchema.json";
 
 export class EodashCollection {
   #collectionUrl = "";

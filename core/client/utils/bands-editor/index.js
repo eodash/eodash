@@ -5,7 +5,6 @@ import { AbstractEditor } from "@json-editor/json-editor/src/editor";
 import { generateBandColors } from "./colors";
 import { buildRGBInterface } from "./rgb.js";
 import { buildArithmeticInterface } from "./arithmetic.js";
-import { exampleSchema } from "./schema.js";
 
 export class BandsEditor extends AbstractEditor {
   /** @type {Record<string, HTMLElement[]>} */
@@ -67,5 +66,3 @@ export const bandsEditorInterface = [
 ];
 
 export default bandsEditorInterface;
-
-export { exampleSchema };
