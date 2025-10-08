@@ -2,7 +2,8 @@ import axios from "@/plugins/axios";
 import { getBboxProperty } from "../../utils";
 import { toAbsolute } from "stac-js/src/http.js";
 import { currentCompareUrl, currentUrl } from "@/store/states";
-import { getDatetimeProperty } from "@/eodashSTAC/helpers";
+import { getDatetimeProperty, generateLinksFromItems } from "@/eodashSTAC/helpers";
+import { readParquetItems } from "@/eodashSTAC/parquet";
 
 /**
  * @param {import("^/EodashProcess/types").CustomEnpointInput} inputs
@@ -75,7 +76,22 @@ async function fetchVedaCOGsConfig(selectedStac, absoluteUrl) {
         collectionLinks.map((link) =>
           axios
             .get(toAbsolute(link.href, absoluteUrl))
-            .then((resp) => resp.data),
+            .then((resp) => resp.data)
+            .then(async (collection) => {
+              // items in geoparquet handling specially to get item links
+              const parquetAsset = Object.values(collection.assets ?? {}).find(
+                (asset) =>
+                  asset.type === "application/vnd.apache.parquet" &&
+                asset.roles?.includes("collection-mirror"),
+              );
+              if (parquetAsset) {
+                const parquetAbsoluteUrl = toAbsolute(parquetAsset.href, toAbsolute(link.href, absoluteUrl));
+                await readParquetItems(parquetAbsoluteUrl).then((items) => {
+                  collection.links.push(...generateLinksFromItems(items));
+                });
+              }
+              return collection;
+            }),
         ),
       )),
     );
@@ -86,7 +102,7 @@ async function fetchVedaCOGsConfig(selectedStac, absoluteUrl) {
     const datetimeProperty = /** @type string **/ (
       getDatetimeProperty(collection.links)
     );
-    let itemLinks = collection.links.filter((link) => link.rel == "item");
+    const itemLinks = collection.links.filter((link) => link.rel == "item");
     configs.push(
       ...itemLinks.map((link) => ({
         endpoint: /** @type {string} */ (link["cog_href"]),
