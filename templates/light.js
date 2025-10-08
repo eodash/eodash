@@ -100,7 +100,7 @@ export default {
               id: "stacinfo-light",
               type: "internal",
               title: "Information",
-              layout: { x: "9/9/10", y: 0, w: "3/3/2", h: 10 },
+              layout: { x: "9/9/10", y: 0, w: "3/3/2", h: 12 },
               widget: {
                 name: "EodashStacInfo",
                 properties: {

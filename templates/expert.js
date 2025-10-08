@@ -68,7 +68,7 @@ export default {
       id: "Layercontrol",
       type: "internal",
       title: "Layers",
-      layout: { x: 0, y: 1, w: "3/3/2", h: 9 },
+      layout: { x: 0, y: 1, w: "3/3/2", h: 11 },
       widget: {
         name: "EodashLayerControl",
       },
@@ -92,12 +92,17 @@ export default {
       defineWidget: (selectedSTAC) => {
         return selectedSTAC
           ? {
-              id: "datepicker",
+              id: "expert-datepicker",
               type: "internal",
-              layout: { x: 0, y: 9, w: 12, h: 3 },
+              layout: { x: 4, y: 7, w: 4, h: 5 },
               title: "Date",
               widget: {
-                name: "EodashTimeSlider",
+                name: "EodashDatePicker",
+                properties: {
+                  hintText: `<b>Hint:</b> closest available date is displayed <br />
+                            on map (see Analysis Layers)`,
+                  toggleCalendar: true,
+                },
               },
             }
           : null;
@@ -109,7 +114,7 @@ export default {
           id: "Processes",
           type: "internal",
           title: "Processes",
-          layout: { x: "9/9/10", y: 5, w: "3/3/2", h: 4 },
+          layout: { x: "9/9/10", y: 6, w: "3/3/2", h: 5 },
           widget: {
             name: "EodashProcess",
           },
