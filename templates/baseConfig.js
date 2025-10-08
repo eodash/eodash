@@ -1,5 +1,5 @@
 import { deepmergeInto } from "deepmerge-ts";
-import light from "./light";
+import lite from "./lite";
 import expert from "./expert";
 import compare from "./compare";
 
@@ -9,8 +9,11 @@ const baseConfig = {
   options: {
     // useSubCode: true,
   },
-  stacEndpoint:
-    "https://esa-eodashboards.github.io/eodashboard-catalog/trilateral/catalog.json",
+  stacEndpoint: {
+    endpoint: "https://api.explorer.eopf.copernicus.eu/stac",
+    api: true,
+    rasterEndpoint: "https://api.explorer.eopf.copernicus.eu/raster/",
+  },
   brand: {
     noLayout: true,
     name: "Demo",
@@ -50,7 +53,7 @@ const baseConfig = {
     footerText: "Demo configuration of eodash client",
   },
   templates: {
-    light,
+    lite,
     expert,
     compare,
   },

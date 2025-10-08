@@ -100,6 +100,10 @@ export function extractCollectionUrls(stacObject, basepath) {
     return collectionUrls;
   }
   children.forEach((link) => {
+    if (link.href.startsWith("http")) {
+      collectionUrls.push(link.href);
+      return;
+    }
     collectionUrls.push(toAbsolute(link.href, basepath));
   });
   return collectionUrls;
@@ -169,18 +173,11 @@ export const getProjectionCode = (projection) => {
 
 /**
  * Extracts layercontrol LayerDatetime property from STAC Links
- * @param {import("stac-ts").StacLink[]} [links]
+ * @param {Date[]} [dates]
  * @param {string|null} [currentStep]
  **/
-export const extractLayerDatetime = (links, currentStep) => {
-  if (!currentStep || !links?.length) {
-    return undefined;
-  }
-
-  // check if links has a datetime value
-  const dateProperty = getDatetimeProperty(links);
-
-  if (!dateProperty) {
+export const extractLayerDatetime = (dates, currentStep) => {
+  if (!currentStep || !dates?.length) {
     return undefined;
   }
 
@@ -188,12 +185,8 @@ export const extractLayerDatetime = (links, currentStep) => {
   const controlValues = [];
   try {
     currentStep = new Date(currentStep).toISOString();
-    links.reduce((vals, link) => {
-      if (link[dateProperty] && link.rel === "item") {
-        vals.push(
-          new Date(/** @type {string} */ (link[dateProperty])).toISOString(),
-        );
-      }
+    dates.reduce((vals, date) => {
+      vals.push(date.toISOString());
       return vals;
     }, controlValues);
   } catch (e) {
@@ -287,23 +280,23 @@ export const replaceLayer = (currentLayers, oldLayer, newLayers) => {
  */
 export const getColFromLayer = (indicators, layer) => {
   // init cols
-  const collections = indicators.map((ind) => ind.collectionStac);
+  // const collections = indicators.map((ind) => ind.collectionStac);
   const [collectionId, itemId, ..._other] = layer.get("id").split(";:;");
 
-  const chosen = collections.find((col) => {
-    const isInd =
-      col?.id === collectionId &&
-      col?.links?.some(
-        (link) =>
-          link.rel === "item" &&
-          (link.href.includes(itemId) ||
-            link.id === itemId ||
-            //@ts-expect-error attaching the item in link when parsing .parquet items, see @/eodashSTAC/parquet.js
-            (link["item"] && link["item"].id === itemId)),
+  return indicators.find(async (ind) => {
+    const isCollection = ind.collectionStac?.id === collectionId;
+    if (!isCollection) {
+      return false;
+    }
+    /** @type {string[]} */
+    const itemIds = [];
+    await ind.getItems().then((items) => {
+      itemIds.push(
+        ...(items?.map((item) => /** @type {string} */ (item.id)) ?? []),
       );
-    return isInd;
+    });
+    return itemIds.includes(itemId);
   });
-  return indicators.find((ind) => ind.collectionStac?.id === chosen?.id);
 };
 
 /**
@@ -532,16 +525,37 @@ export const addTooltipInteraction = (layer, style) => {
 
 /**
  *
- * @param {import("stac-ts").StacLink[]} [links]
+ * @param {import("stac-ts").StacLink[] | import("stac-ts").StacItem[] |undefined |null} [linksOrItems]
  */
-export function getDatetimeProperty(links) {
-  if (!links?.length) {
+export function getDatetimeProperty(linksOrItems) {
+  if (!linksOrItems?.length) {
     return undefined;
   }
+  const first = linksOrItems[0];
+  let checkProperties = false;
+  if (isSTACItem(first)) {
+    checkProperties = true;
+  }
+
   // TODO: consider other properties for datetime ranges
   const datetimeProperties = ["datetime", "start_datetime", "end_datetime"];
+  if (checkProperties) {
+    for (const prop of datetimeProperties) {
+      const propExists = linksOrItems.some(
+        (l) =>
+          //@ts-expect-error TODO
+          l["properties"]?.[prop] &&
+          //@ts-expect-error TODO
+          typeof l["properties"]?.[prop] === "string",
+      );
+      if (!propExists) {
+        continue;
+      }
+      return prop;
+    }
+  }
   for (const prop of datetimeProperties) {
-    const propExists = links.some(
+    const propExists = linksOrItems.some(
       (l) => l[prop] && typeof l[prop] === "string",
     );
     if (!propExists) {
@@ -550,7 +564,81 @@ export function getDatetimeProperty(links) {
     return prop;
   }
 }
+/**
+ *
+ * @param {*} stacObject
+ * @returns {stacObject is import("stac-ts").StacItem}
+ */
+export function isSTACItem(stacObject) {
+  return (
+    stacObject &&
+    typeof stacObject === "object" &&
+    stacObject.collection &&
+    stacObject.id &&
+    stacObject.properties &&
+    typeof stacObject.properties === "object"
+  );
+}
 
+/**
+ * Fetch all STAC items from a STAC API endpoint.
+ * @param {string} itemsUrl
+ * @param {string} [query]
+ * @param {number} [limit=100] - The maximum number of items to fetch per request.
+ * @param {boolean} [returnFirst] - If true, only the first page of results will be returned.
+ * @param {number} [maxNumber=1000] - if the matched number of items exceed this, only the first page will be returned.
+ */
+export async function fetchApiItems(
+  itemsUrl,
+  query,
+  limit = 100,
+  returnFirst = false,
+  maxNumber = 1000
+) {
+  itemsUrl = itemsUrl.includes("?") ? itemsUrl.split("?")[0] : itemsUrl;
+  itemsUrl += query ? `?limit=${limit}&${query}` : `?limit=${limit}`;
+
+  const itemsFeatureCollection = await axios
+    .get(itemsUrl)
+    .then((resp) => resp.data);
+  /** @type {import("stac-ts").StacItem[]} */
+  const items = itemsFeatureCollection.features;
+  const nextLink = itemsFeatureCollection.links?.find(
+    //@ts-expect-error TODO: itemsFeatureCollection is not typed
+    (link) => link.rel === "next",
+  );
+
+  if (!nextLink || returnFirst) {
+    return items;
+  }
+  /** @type {number} */
+  const matchedItems = itemsFeatureCollection.numberMatched;
+  // Avoid fetching too many items
+  if (matchedItems >= maxNumber) {
+    console.warn(`[eodash] The number of items matched (${matchedItems}) exceeds the maximum allowed (${maxNumber})`);
+    return items;
+  }
+
+
+  let [nextLinkURL, nextLinkQuery] = nextLink.href.split("?");
+  nextLinkQuery = nextLinkQuery.replace(/limit=\d+/, "");
+  if (query) {
+    const queryParams = new URLSearchParams(query);
+    const nextLinkParams = new URLSearchParams(nextLinkQuery);
+
+    for (const key of nextLinkParams.keys()) {
+      queryParams.delete(key);
+    }
+    const remainingQuery = queryParams.toString();
+    if (remainingQuery) {
+      nextLinkQuery += `&${remainingQuery}`;
+    }
+  }
+
+  const nextPage = await fetchApiItems(nextLinkURL, nextLinkQuery);
+  items.push(...nextPage);
+  return items;
+}
 /**
  * @param {import ("stac-ts").StacCollection | undefined | null} collection
  * @returns {object}

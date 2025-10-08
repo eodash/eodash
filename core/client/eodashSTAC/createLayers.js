@@ -400,3 +400,132 @@ export const createLayersFromLinks = async (
   }
   return jsonArray;
 };
+/**
+ * Implementation of a function that creates a layer from the render extention
+ * @param {import("stac-ts").StacCollection | undefined | null} collection
+ * @param {import("stac-ts").StacItem | undefined | null} item
+ * @param {string} rasterURL
+ * @param {Record<string, any>} [extraProperties]
+ * @returns {import("@eox/map/src/layers").EOxLayerType<"Tile","XYZ">[]}
+ */
+export function createLayerFromRender(
+  rasterURL,
+  collection,
+  item,
+  extraProperties,
+) {
+  if (!collection || !collection.renders || !item) {
+    return [];
+  }
+
+  const renders = /** @type {Record<string,import("@/types").Render>} */ (
+    collection.renders ?? item?.renders
+  );
+  const layers = [];
+  // special case for rescale
+  for (const key in renders) {
+    const title = renders[key].title;
+
+    const assetsCollection =
+      renders[key].assets[0] in item["assets"] ? item : collection;
+
+    const paramsObject = {
+      assets: renders[key].assets,
+      expression:
+        renders[key].expression ??
+        assetsCollection["assets"]?.[renders[key].assets[0]]?.expression,
+      nodata:
+        renders[key].nodata ??
+        assetsCollection["assets"]?.[renders[key].assets[0]]?.nodata,
+      resampling:
+        renders[key].resampling ??
+        assetsCollection["assets"]?.[renders[key].assets[0]]?.resampling,
+      color_formula:
+        renders[key].color_formula ??
+        assetsCollection["assets"]?.[renders[key].assets[0]]?.color_formula,
+      colormap:
+        renders[key].colormap ??
+        assetsCollection["assets"]?.[renders[key].assets[0]]?.colormap,
+      colormap_name:
+        renders[key].colormap_name ??
+        assetsCollection["assets"]?.[renders[key].assets[0]]?.colormap_name,
+      rescale:
+        renders[key].rescale ??
+        assetsCollection["assets"]?.[renders[key].assets[0]]?.rescale,
+    };
+    const paramsStr = encodeURLObject(paramsObject);
+    const url = `${rasterURL}/collections/${collection.id}/items/${item.id}/tiles/WebMercatorQuad/{z}/{x}/{y}?${paramsStr}`;
+    layers.push({
+      /** @type {"Tile"} */
+      type: "Tile",
+      properties: {
+        id: createLayerID(
+          collection.id,
+          item.id,
+          { id: item.id, href: "", title, rel: "" },
+          "EPSG:3857",
+        ),
+        title,
+        roles: item.roles,
+        ...extraProperties,
+      },
+      source: {
+        /** @type {"XYZ"} */
+        type: "XYZ",
+        url,
+        projection: "EPSG:3857",
+      },
+    });
+  }
+
+  return layers;
+}
+/**
+ *
+ * @param {Record<string,any>} obj
+ * @returns {string}
+ */
+function encodeURLObject(obj) {
+  let str = "";
+  for (const key in obj) {
+    const value = obj[key];
+    if (value === null || value === undefined || value === "") {
+      continue;
+    }
+
+    const valueType = Array.isArray(value) ? "array" : typeof value;
+
+    switch (valueType) {
+      case "array": {
+        // Check if any element in the array is itself an array (multi-dimensional)
+        const hasNestedArrays = value.some((/** @type {any} */ item) =>
+          Array.isArray(item),
+        );
+
+        if (hasNestedArrays) {
+          // For multi-dimensional arrays, repeat the key with different values
+          for (const val of value) {
+            if (Array.isArray(val)) {
+              str += `${key}=${val.join(",")}&`;
+            } else {
+              str += `${key}=${val}&`;
+            }
+          }
+        } else {
+          // For simple arrays, join with commas
+          str += `${key}=${value.join(",")}&`;
+        }
+        break;
+      }
+      case "object": {
+        str += `${key}=${encodeURI(JSON.stringify(value))}&`;
+        break;
+      }
+      default: {
+        str += `${key}=${encodeURIComponent(value)}&`;
+        break;
+      }
+    }
+  }
+  return str;
+}
