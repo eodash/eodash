@@ -586,12 +586,14 @@ export function isSTACItem(stacObject) {
  * @param {string} [query]
  * @param {number} [limit=100] - The maximum number of items to fetch per request.
  * @param {boolean} [returnFirst] - If true, only the first page of results will be returned.
+ * @param {number} [maxNumber=1000] - if the matched number of items exceed this, only the first page will be returned.
  */
 export async function fetchApiItems(
   itemsUrl,
   query,
   limit = 100,
   returnFirst = false,
+  maxNumber = 1000
 ) {
   itemsUrl = itemsUrl.includes("?") ? itemsUrl.split("?")[0] : itemsUrl;
   itemsUrl += query ? `?limit=${limit}&${query}` : `?limit=${limit}`;
@@ -609,6 +611,14 @@ export async function fetchApiItems(
   if (!nextLink || returnFirst) {
     return items;
   }
+  /** @type {number} */
+  const matchedItems = itemsFeatureCollection.numberMatched;
+  // Avoid fetching too many items
+  if (matchedItems >= maxNumber) {
+    console.warn(`[eodash] The number of items matched (${matchedItems}) exceeds the maximum allowed (${maxNumber})`);
+    return items;
+  }
+
 
   let [nextLinkURL, nextLinkQuery] = nextLink.href.split("?");
   nextLinkQuery = nextLinkQuery.replace(/limit=\d+/, "");
