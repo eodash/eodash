@@ -173,16 +173,16 @@ export const getProjectionCode = (projection) => {
 
 /**
  * Extracts layercontrol LayerDatetime property from STAC Links
- * @param {import("stac-ts").StacLink[]} [links]
+ * @param {import("stac-ts").StacLink[] | import("stac-ts").StacItem[] | undefined} [items]
  * @param {string|null} [currentStep]
  **/
-export const extractLayerTimeValues = (links, currentStep) => {
-  if (!currentStep || !links?.length) {
+export const extractLayerTimeValues = (items, currentStep) => {
+  if (!currentStep || !items?.length) {
     return { layerDatetime: undefined, timeControlValues: undefined };
   }
 
-  // check if links has a datetime value
-  const dateProperty = getDatetimeProperty(links);
+  // check if items has a datetime value
+  const dateProperty = getDatetimeProperty(items);
 
   if (!dateProperty) {
     return { layerDatetime: undefined, timeControlValues: undefined };
@@ -190,8 +190,11 @@ export const extractLayerTimeValues = (links, currentStep) => {
   /** @type {{date:string;itemId:string}[]} */
   const timeValues = [];
   try {
-    currentStep = new Date(currentStep).toISOString();
-    links.reduce((vals, link) => {
+    /**
+     *  @param {typeof timeValues} vals
+     *  @param {import("stac-ts").StacLink} link
+     */
+    const reduceLinks = (vals, link) => {
       if (link[dateProperty] && link.rel === "item") {
         vals.push({
           itemId: /** @type {string} */ (link.id),
@@ -201,7 +204,27 @@ export const extractLayerTimeValues = (links, currentStep) => {
         });
       }
       return vals;
-    }, timeValues);
+    };
+
+    /**
+     *
+     * @param {typeof timeValues} vals
+     * @param {import("stac-ts").StacItem} item
+     */
+    const reduceItems = (vals, item) => {
+      const date = item.properties?.[dateProperty];
+      if (date) {
+        vals.push({
+          itemId: /** @type {string} */ (item.id),
+          date: new Date(/** @type {string} */ (date)).toISOString(),
+          ...item.properties,
+        });
+      }
+      return vals;
+    };
+    currentStep = new Date(currentStep).toISOString();
+    //@ts-expect-error TODO
+    items.reduce(isSTACItem(items[0]) ? reduceItems : reduceLinks, timeValues);
   } catch (e) {
     console.warn("[eodash] not supported datetime format was provided", e);
     return { layerDatetime: undefined, timeControlValues: undefined };
@@ -611,7 +634,7 @@ export async function fetchApiItems(
   query,
   limit = 100,
   returnFirst = false,
-  maxNumber = 1000
+  maxNumber = 1000,
 ) {
   itemsUrl = itemsUrl.includes("?") ? itemsUrl.split("?")[0] : itemsUrl;
   itemsUrl += query ? `?limit=${limit}&${query}` : `?limit=${limit}`;
@@ -633,10 +656,11 @@ export async function fetchApiItems(
   const matchedItems = itemsFeatureCollection.numberMatched;
   // Avoid fetching too many items
   if (matchedItems >= maxNumber) {
-    console.warn(`[eodash] The number of items matched (${matchedItems}) exceeds the maximum allowed (${maxNumber})`);
+    console.warn(
+      `[eodash] The number of items matched (${matchedItems}) exceeds the maximum allowed (${maxNumber})`,
+    );
     return items;
   }
-
 
   let [nextLinkURL, nextLinkQuery] = nextLink.href.split("?");
   nextLinkQuery = nextLinkQuery.replace(/limit=\d+/, "");

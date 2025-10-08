@@ -270,7 +270,6 @@ export class EodashCollection {
       );
       jsonArray.push(json);
     }
-    console.log("jsonArray", jsonArray);
 
     return jsonArray;
   }
