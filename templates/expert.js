@@ -39,8 +39,8 @@ export default {
         btnsPosition: {
           x: "12/9/9",
           y: 1,
-          gap: 16
-        }
+          gap: 16,
+        },
       },
     },
   },
@@ -68,7 +68,7 @@ export default {
       id: "Layercontrol",
       type: "internal",
       title: "Layers",
-      layout: { x: 0, y: 1, w: "3/3/2", h: 11 },
+      layout: { x: 0, y: 1, w: "3/3/2", h: 9 },
       widget: {
         name: "EodashLayerControl",
       },
@@ -94,7 +94,7 @@ export default {
           ? {
               id: "datepicker",
               type: "internal",
-              layout: { x: 0, y: 10, w: 12, h: 5 },
+              layout: { x: 0, y: 9, w: 12, h: 3 },
               title: "Date",
               widget: {
                 name: "EodashTimeSlider",
@@ -109,7 +109,7 @@ export default {
           id: "Processes",
           type: "internal",
           title: "Processes",
-          layout: { x: "9/9/10", y: 5, w: "3/3/2", h: 5 },
+          layout: { x: "9/9/10", y: 5, w: "3/3/2", h: 4 },
           widget: {
             name: "EodashProcess",
           },
