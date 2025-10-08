@@ -3,7 +3,7 @@
  */
 import { AbstractEditor } from "@json-editor/json-editor/src/editor";
 import { generateBandColors } from "./colors";
-import { buildBandsInterface } from "./rgb.js";
+import { buildRGBInterface } from "./rgb.js";
 import { buildArithmeticInterface } from "./arithmetic.js";
 import { exampleSchema } from "./schema.js";
 
@@ -37,7 +37,7 @@ export class BandsEditor extends AbstractEditor {
     this.control.classList.add("form-control");
 
     if (format === "bands") {
-      buildBandsInterface(this, this.colors, this.bands, this.bandTitles);
+      buildRGBInterface(this, this.colors, this.bands, this.bandTitles);
     } else if (format === "bands-arithmetic") {
       buildArithmeticInterface(this, this.colors, this.bands, this.bandTitles);
     }
@@ -68,5 +68,4 @@ export const bandsEditorInterface = [
 
 export default bandsEditorInterface;
 
-// Re-export the example schema for external use
 export { exampleSchema };

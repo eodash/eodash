@@ -1,10 +1,9 @@
-import { addDraggableBands } from "./dom.js";
 import {
-  createUnifiedSlotStyles,
-  createUnifiedSlot,
+  createSlotStyles,
+  createSlot,
   fillSlotWithBand,
-  initializeSlotWithValue,
-} from "./slots.js";
+  addDraggableBands,
+} from "./dom";
 
 /**
  * Build the traditional RGB bands interface
@@ -13,9 +12,9 @@ import {
  * @param {Array<string>} bands - Array of band identifiers
  * @param {Array<string>} bandTitles - Array of band titles
  */
-export function buildBandsInterface(editor, colors, bands, bandTitles) {
+export function buildRGBInterface(editor, colors, bands, bandTitles) {
   // Use unified styles instead of creating separate styles
-  const style = createUnifiedSlotStyles(bands, colors);
+  const style = createSlotStyles(bands, colors);
   editor.control?.appendChild(style);
 
   // Add draggable bands
@@ -34,6 +33,10 @@ export function buildBandsInterface(editor, colors, bands, bandTitles) {
  * @param {Array<string>} bandTitles - Array of band titles
  */
 export function addRGBSlots(editor, bands, bandTitles) {
+  // Create a container for RGB slots
+  const rgbContainer = document.createElement("div");
+  rgbContainer.classList.add("slots-container");
+
   ["R", "G", "B"].forEach((slot, index) => {
     const onDrop = (/** @type {DragEvent} */ e) => {
       e.preventDefault();
@@ -43,7 +46,6 @@ export function addRGBSlots(editor, bands, bandTitles) {
       const enumIndex = bands.indexOf(enumValue);
       const title = bandTitles[enumIndex] || enumValue;
 
-      // Use unified slot filling
       fillSlotWithBand(editor, slotDiv, enumValue, title, "rgb");
 
       // Get current value as array or create new one
@@ -53,8 +55,8 @@ export function addRGBSlots(editor, bands, bandTitles) {
       editor.onChange(true);
     };
 
-    const slotDiv = createUnifiedSlot("rgb", slot, onDrop);
-    editor.control?.appendChild(slotDiv);
+    const slotDiv = createSlot("rgb", slot, onDrop);
+    rgbContainer.appendChild(slotDiv);
 
     // Initialize with existing value
     setTimeout(() => {
@@ -63,8 +65,12 @@ export function addRGBSlots(editor, bands, bandTitles) {
         const enumValue = currentValue[index];
         const enumIndex = bands.indexOf(enumValue);
         const title = bandTitles[enumIndex] || enumValue;
-        initializeSlotWithValue(editor, slotDiv, enumValue, title, "rgb");
+        if (enumValue) {
+          fillSlotWithBand(editor, slotDiv, enumValue, title, "rgb");
+        }
       }
     });
   });
+
+  editor.control?.appendChild(rgbContainer);
 }

@@ -1,9 +1,5 @@
 import { addDraggableBands } from "./dom.js";
-import {
-  createUnifiedSlotStyles,
-  createUnifiedSlot,
-  fillSlotWithBand as unifiedFillSlot,
-} from "./slots.js";
+import { createSlotStyles, createSlot, fillSlotWithBand } from "./dom";
 
 /**
  * Build the arithmetic expression interface
@@ -17,7 +13,7 @@ export function buildArithmeticInterface(editor, colors, bands, bandTitles) {
   const variables = parseFormulaVariables(formulaTemplate);
 
   // Use unified styles instead of creating separate styles
-  const style = createUnifiedSlotStyles(bands, colors);
+  const style = createSlotStyles(bands, colors);
   editor.control?.appendChild(style);
 
   // Add draggable bands first
@@ -79,7 +75,7 @@ export function addFormulaSlots(
   bandTitles,
 ) {
   const formulaContainer = document.createElement("div");
-  formulaContainer.classList.add("formula-container");
+  formulaContainer.classList.add("slots-container");
 
   // Initialize slots tracking
   editor.variableSlots = {};
@@ -91,7 +87,7 @@ export function addFormulaSlots(
     if (part.match(/\{\{([^}]+)\}\}/)) {
       // This is a variable placeholder
       const variable = part.replace(/[{}]/g, "").trim();
-      const slotElement = createUnifiedSlot(
+      const slotElement = createSlot(
         "arithmetic",
         variable,
         (/** @type {DragEvent} */ e) => {
@@ -173,7 +169,7 @@ export function initializeSlots(editor) {
 export function updateAllSlotsForVariable(editor, variable, enumValue, title) {
   if (editor.variableSlots && editor.variableSlots[variable]) {
     editor.variableSlots[variable].forEach((slot) => {
-      unifiedFillSlot(editor, slot, enumValue, title, "arithmetic");
+      fillSlotWithBand(editor, slot, enumValue, title, "arithmetic");
     });
   }
 }
