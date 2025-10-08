@@ -3,10 +3,12 @@ import { toAbsolute } from "stac-js/src/http.js";
 import {
   extractLayerConfig,
   extractRoles,
+  fetchApiItems,
   fetchStyle,
   findLayer,
   generateFeatures,
   getDatetimeProperty,
+  isSTACItem,
   replaceLayer,
   extractLayerLegend,
   extractLayerTimeValues,
@@ -16,13 +18,21 @@ import {
   getCompareLayers,
   registerProjection,
 } from "@/store/actions";
-import { createLayersFromAssets, createLayersFromLinks } from "./createLayers";
+import {
+  createLayerFromRender,
+  createLayersFromAssets,
+  createLayersFromLinks,
+} from "./createLayers";
 import axios from "@/plugins/axios";
 import log from "loglevel";
 import { dataThemesBrands } from "@/utils/states";
 
 export class EodashCollection {
   #collectionUrl = "";
+
+  isAPI = true;
+  /** @type {string | null} */
+  rasterEndpoint = null;
 
   /** @type {import("stac-ts").StacCollection | undefined} */
   #collectionStac;
@@ -45,81 +55,87 @@ export class EodashCollection {
     return this.#collectionStac;
   }
 
-  /** @param {string} collectionUrl */
-  constructor(collectionUrl) {
+  /**
+   * @param {string} collectionUrl
+   * @param {boolean} isAPI
+   * @param {string | null} rasterEndpoint
+   */
+  constructor(collectionUrl, isAPI = true, rasterEndpoint = null) {
     this.#collectionUrl = collectionUrl;
+    this.isAPI = isAPI;
+    this.rasterEndpoint = rasterEndpoint;
   }
 
   /**
    * @async
-   * @param {import('stac-ts').StacLink | Date} [linkOrDate]
+   * @param {import('stac-ts').StacLink | Date } [linkOrDate]
    * @returns
    */
   createLayersJson = async (linkOrDate) => {
     /**
-     * @type {import("stac-ts").StacLink | undefined}
+     * @type {import("stac-ts").StacLink | import("stac-ts").StacItem | undefined}
      **/
-    let itemLink;
+    let itemOrItemLink;
 
-    /**
-     * @type {import("stac-ts").StacCollection | import("stac-ts").StacItem | undefined}
-     **/
-    let stac;
     // TODO get auxiliary layers from collection
     /** @type {Record<string,any>[]} */
     let layersJson = [];
 
-    // Load collectionstac if not yet initialized
-    stac = await this.fetchCollection();
+    // Load collectionstac if not yet initialized // TODO
+    await this.fetchCollection();
 
-    const isObservationPoint = stac?.endpointtype === "GeoDB";
+    const isObservationPoint = this.#collectionStac?.endpointtype === "GeoDB";
 
     if (linkOrDate instanceof Date) {
       // if collectionStac not yet initialized we do it here
-      itemLink = this.getItem(linkOrDate);
+      itemOrItemLink = await this.getItem(linkOrDate);
     } else {
-      itemLink = linkOrDate;
+      itemOrItemLink = linkOrDate;
     }
+
     let stacItemUrl = "";
-    if (itemLink?.href.startsWith("blob:")) {
-      stacItemUrl = itemLink.href;
-    } else {
-      stacItemUrl = itemLink
-        ? toAbsolute(itemLink.href, this.#collectionUrl)
-        : this.#collectionUrl;
-    }
-
-    stac = await axios.get(stacItemUrl).then((resp) => resp.data);
-
-    if (!itemLink) {
-      // no specific item was requested; render last item
-      this.#collectionStac = new Collection(stac);
-      this.selectedItem = this.getItem();
-
-      if (this.selectedItem) {
-        layersJson = await this.createLayersJson(this.selectedItem);
+    if (isSTACItem(itemOrItemLink)) {
+      this.selectedItem = itemOrItemLink;
+      stacItemUrl = this.#collectionUrl + `/items/${this.selectedItem.id}`;
+    } else if (itemOrItemLink) {
+      if (itemOrItemLink?.href?.startsWith("blob:")) {
+        stacItemUrl = itemOrItemLink.href;
       } else {
+        stacItemUrl = toAbsolute(itemOrItemLink.href, this.#collectionUrl);
+      }
+      this.selectedItem = await axios
+        .get(stacItemUrl)
+        .then((resp) => resp.data);
+    }
+    if (!this.selectedItem) {
+      this.selectedItem = await this.getItem();
+      if (!this.selectedItem) {
         console.warn(
           "[eodash] the selected collection does not include any items",
         );
+        return [];
+      } else if (this.selectedItem.href) {
+        //@ts-expect-error if selected item is a link, we fetch the item
+        stacItemUrl = toAbsolute(this.selectedItem.href, this.#collectionUrl);
+        this.selectedItem = await axios
+          .get(stacItemUrl)
+          .then((resp) => resp.data);
       }
-      return [];
-    } else {
-      // specific item was requested
-      const item = new Item(stac);
-      this.selectedItem = item;
-      const title =
-        this.#collectionStac?.title || this.#collectionStac?.id || "";
-      layersJson.unshift(
-        ...(await this.buildJsonArray(
-          item,
-          stacItemUrl,
-          title,
-          isObservationPoint,
-        )),
-      );
-      return layersJson;
     }
+
+    // specific item was requested
+    const item = new Item(this.selectedItem);
+    this.selectedItem = item;
+    const title = this.#collectionStac?.title || this.#collectionStac?.id || "";
+    layersJson.unshift(
+      ...(await this.buildJsonArray(
+        item,
+        stacItemUrl,
+        title,
+        isObservationPoint,
+      )),
+    );
+    return layersJson;
   };
 
   /**
@@ -131,6 +147,10 @@ export class EodashCollection {
    * @returns {Promise<Record<string,any>[]>} layers
    * */
   async buildJsonArray(item, itemUrl, title, isObservationPoint, itemDatetime) {
+    if (!item) {
+      console.warn("[eodash] no item provided to buildJsonArray");
+      return [];
+    }
     log.debug(
       "Building JSON array",
       item,
@@ -167,7 +187,7 @@ export class EodashCollection {
     );
 
     const { layerDatetime, timeControlValues } = extractLayerTimeValues(
-      this.getItems(),
+      await this.getItems(),
       item.properties?.datetime ??
         item.properties.start_datetime ??
         itemDatetime,
@@ -204,6 +224,18 @@ export class EodashCollection {
       );
 
       jsonArray.push(
+        ...((this.rasterEndpoint &&
+          createLayerFromRender(
+            this.rasterEndpoint,
+            this.#collectionStac,
+            item,
+            {
+              ...extraProperties,
+              ...(layerConfig && { layerConfig }),
+              ...(layerDatetime && { layerDatetime }),
+            },
+          )) ||
+          []),
         ...(await createLayersFromAssets(
           this.#collectionStac?.id ?? "",
           title || this.#collectionStac?.title || item.id,
@@ -214,8 +246,8 @@ export class EodashCollection {
           layerDatetime,
           extraProperties,
         )),
-        ...links,
         // We add the links after the assets so they are layered underneath assets
+        ...links,
       );
     } else {
       // fallback to STAC
@@ -238,27 +270,45 @@ export class EodashCollection {
       );
       jsonArray.push(json);
     }
+    console.log("jsonArray", jsonArray);
 
     return jsonArray;
   }
 
   async fetchCollection() {
     if (!this.#collectionStac) {
-      log.debug("Fetching collection file", this.#collectionUrl);
       const col = await axios
         .get(this.#collectionUrl)
         .then((resp) => resp.data);
       this.#collectionStac = new Collection(col);
+      log.debug("Fetching collection file", this.#collectionUrl);
     }
     return this.#collectionStac;
   }
 
   /**
    * Returns all item links sorted by datetime ascendingly
+   * @param {boolean} [fields=false] if true, fetch items from API with only properties
+   * @param {boolean} [first] - if true, returns the first page of items only (for API collections)
+   * @returns {Promise<import("stac-ts").StacLink[] | import("stac-ts").StacItem[] | undefined>}
    */
-  getItems() {
-    const datetimeProperty = getDatetimeProperty(this.#collectionStac?.links);
+  async getItems(fields = false, first = false) {
     const items = this.#collectionStac?.links.filter((i) => i.rel === "item");
+
+    if (this.isAPI && !items?.length) {
+      const itemUrl = this.#collectionUrl + "/items";
+      if (fields) {
+        return await fetchApiItems(
+          itemUrl,
+          `fields=properties,-assets,-geometry,-links,-bbox`,
+          100,
+          first,
+        );
+      }
+      return await fetchApiItems(itemUrl, undefined, 100, first);
+    }
+
+    const datetimeProperty = getDatetimeProperty(this.#collectionStac?.links);
     if (!datetimeProperty) {
       return items;
     }
@@ -274,14 +324,21 @@ export class EodashCollection {
     );
   }
 
-  getDates() {
-    const datetimeProperty = getDatetimeProperty(this.#collectionStac?.links);
-    if (!datetimeProperty) {
+  async getDates() {
+    const items = await this.getItems(true, false);
+
+    const datetimeProperty = getDatetimeProperty(items);
+    if (!datetimeProperty || !items?.length) {
       return [];
     }
-    return this.getItems()?.map(
-      (i) => new Date(/** @type {number} */ (i[datetimeProperty])),
-    );
+
+    const mapToDates = this.isAPI
+      ? //@ts-expect-error todo
+        (i) =>
+          new Date(/** @type {string} */ (i.properties?.[datetimeProperty]))
+      : //@ts-expect-error todo
+        (i) => new Date(/** @type {string} */ (i[datetimeProperty]));
+    return items?.map(mapToDates) || [];
   }
 
   async getExtent() {
@@ -292,26 +349,38 @@ export class EodashCollection {
    * Get closest Item Link from a certain date,
    * get the latest if no date provided
    *  @param {Date} [date]
+   *  @return {Promise<import("stac-ts").StacItem | import("stac-ts").StacLink | undefined>} item
    **/
-  getItem(date) {
-    const datetimeProperty = getDatetimeProperty(this.#collectionStac?.links);
+  async getItem(date) {
+    if (!date) {
+      return (await this.getItems(false, true))?.[0];
+    }
+
+    const items = await this.getItems();
+    const datetimeProperty = getDatetimeProperty(items);
     if (!datetimeProperty) {
       // in case no datetime property is found, return the first item
-      return this.getItems()?.[0];
+      return (await this.getItems(false, true))?.[0];
     }
-    return date
-      ? this.getItems()?.sort((a, b) => {
-          const distanceA = Math.abs(
-            new Date(/** @type {number} */ (a[datetimeProperty])).getTime() -
-              date.getTime(),
-          );
-          const distanceB = Math.abs(
-            new Date(/** @type {number} */ (b[datetimeProperty])).getTime() -
-              date.getTime(),
-          );
-          return distanceA - distanceB;
-        })[0]
-      : this.getItems()?.at(-1);
+    return (await this.getItems())?.sort((a, b) => {
+      const distanceA = Math.abs(
+        new Date(
+          /** @type {number} */ (
+            //@ts-expect-error TODO
+            this.isAPI ? a.properties[datetimeProperty] : a[datetimeProperty]
+          ),
+        ).getTime() - date.getTime(),
+      );
+      const distanceB = Math.abs(
+        new Date(
+          /** @type {number} */ (
+            //@ts-expect-error TODO
+            this.isAPI ? b.properties[datetimeProperty] : b[datetimeProperty]
+          ),
+        ).getTime() - date.getTime(),
+      );
+      return distanceA - distanceB;
+    })[0];
   }
 
   async getToolTipProperties() {
@@ -335,17 +404,15 @@ export class EodashCollection {
    */
   async updateLayerJson(datetime, layer, map) {
     await this.fetchCollection();
-    const datetimeProperty = getDatetimeProperty(this.#collectionStac?.links);
+    const datetimeProperty = getDatetimeProperty(
+      await this.getItems(true, true),
+    );
     if (!datetimeProperty) {
       console.warn("[eodash] no datetime property found in collection");
       return;
     }
     // get the link of the specified date
-    const specifiedLink = this.getItems()?.find(
-      (item) =>
-        typeof item[datetimeProperty] === "string" &&
-        new Date(item[datetimeProperty]).toISOString() === datetime,
-    );
+    const specifiedLink = await this.getItem(new Date(datetime));
 
     if (!specifiedLink) {
       console.warn(
@@ -354,9 +421,22 @@ export class EodashCollection {
       );
       return;
     }
-
-    // create json layers from the item
-    const newLayers = await this.createLayersJson(specifiedLink);
+    /** @type {Record<string, any>[]} */
+    let newLayers = [];
+    if (isSTACItem(specifiedLink)) {
+      // if specifiedLink is an item, we create layers from it
+      newLayers = await this.buildJsonArray(
+        specifiedLink,
+        this.#collectionUrl + `/items/${specifiedLink.id}`,
+        this.#collectionStac?.title || this.#collectionStac?.id || "",
+        this.#collectionStac?.endpointtype === "GeoDB" ||
+          !!this.#collectionStac?.locations,
+        datetime,
+      );
+    } else {
+      // create json layers from the item
+      newLayers = await this.createLayersJson(specifiedLink);
+    }
 
     let currentLayers = getLayers();
     if (map === "second") {

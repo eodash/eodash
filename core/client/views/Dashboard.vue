@@ -52,7 +52,7 @@ await loadFont(eodash?.brand?.font, props.isWebComponent);
 
 const { loadSTAC, init } = useSTAcStore();
 init(eodash.stacEndpoint);
-await loadSTAC(eodash.stacEndpoint);
+await loadSTAC();
 
 const { smAndDown } = useDisplay();
 

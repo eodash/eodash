@@ -61,7 +61,7 @@ const props = defineProps({
   },
   layoutTarget: {
     type: String,
-    default: "light",
+    default: "lite",
   },
   // mdi/js icon
   layoutIcon: {

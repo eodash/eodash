@@ -129,7 +129,6 @@ import { mdiRayStartArrow, mdiRayEndArrow } from "@mdi/js";
 import { eodashCollections, eodashCompareCollections } from "@/utils/states";
 import log from "loglevel";
 import { useTransparentPanel } from "@/composables";
-import { getDatetimeProperty } from "@/eodashSTAC/helpers";
 import { storeToRefs } from "pinia";
 
 const { lgAndDown } = useDisplay();
@@ -254,24 +253,15 @@ async function fetchCollectionsAttributes(eodashCollections) {
 
   return await Promise.all(
     eodashCollections.map((ec, idx) => {
-      return ec.fetchCollection().then(() => {
-        const dateProperty = getDatetimeProperty(ec.getItems());
-        if (!dateProperty) {
-          return [];
+      return ec.fetchCollection().then(async () => {
+        const dates = await ec.getDates();
+        if (!dates || !dates.length) {
+          log.debug(
+            `Collection ${ec.collectionStac?.id} has no dates, skipping datepicker attribute`,
+          );
+          return undefined;
         }
-        const dates = [
-          ...new Set(
-            ec.getItems()?.reduce((valid, item) => {
-              const parsed = Date.parse(
-                /** @type {string} */ (item[dateProperty]),
-              );
-              if (parsed) {
-                valid.push(new Date(parsed));
-              }
-              return valid;
-            }, /** @type {Date[]} */ ([])),
-          ),
-        ];
+
         return {
           key: "id-" + idx.toString() + Math.random().toString(16).slice(2),
           dot: {

@@ -336,7 +336,7 @@ export async function processVector(links, jsonformValue, layerId) {
       type: "Vector",
       source: {
         type: "Vector",
-        //@ts-expect-error todo
+        //@ts-expect-error TODO
         url: mustache.render(link.href, {
           ...(jsonformValue ?? {}),
         }),
