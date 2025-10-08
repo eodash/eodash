@@ -68,7 +68,7 @@ export default {
       id: "Layercontrol",
       type: "internal",
       title: "Layers",
-      layout: { x: 0, y: 1, w: "5/5/6", h: 11 },
+      layout: { x: 0, y: 1, w: "3/3/4", h: 11 },
       widget: {
         name: "EodashLayerControl",
       },
