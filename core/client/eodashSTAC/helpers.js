@@ -245,7 +245,7 @@ export const extractLayerTimeValues = (items, currentStep) => {
   }
 
   const layerDatetime = {
-    controlValues: timeValues.map((d) => d.date),
+    controlValues: timeValues.map((d) => d.date).sort(),
     currentStep,
     slider: true,
     navigation: true,
