@@ -1,6 +1,15 @@
 # Changelog
 
 
+## [5.2.1](https://github.com/eodash/eodash/compare/eodash-v5.2.0...eodash-v5.2.1) (2025-10-10)
+
+
+### Features
+
+* EOxTimeslider Integration ([#245](https://github.com/eodash/eodash/issues/245)) ([f2c23a3](https://github.com/eodash/eodash/commit/f2c23a35fc718797d798d1422db7f7011b2d5463))
+* Explore Template ([#243](https://github.com/eodash/eodash/issues/243)) ([f6a800f](https://github.com/eodash/eodash/commit/f6a800f5c7a2ff7bbd14c78801bc90137ab90c11))
+* Support STAC API & Render Extension ([#226](https://github.com/eodash/eodash/issues/226)) ([92a8aa5](https://github.com/eodash/eodash/commit/92a8aa507ba2f393d1fad4f4aa2e7a7345c2e332))
+
 ## [5.2.0](https://github.com/eodash/eodash/compare/eodash-v5.1.0...eodash-v5.2.0) (2025-10-01)
 
 
