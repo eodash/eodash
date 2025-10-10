@@ -3,7 +3,6 @@
     <eox-layout
       :mediaBreakpoints="[0, 960, 1920]"
       :gap="gap"
-      class="layout-container"
       :style="layoutStyle"
     >
       <eox-layout-item

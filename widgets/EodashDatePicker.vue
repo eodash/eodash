@@ -149,10 +149,12 @@ const currentDate = customRef((track, trigger) => ({
     log.debug("Datepicker setting currentDate", datetime.value);
     const date = new Date(num);
 
+    // Validate the date before setting
     if (isNaN(date.getTime())) {
-      log.warn("Invalid date selected, ignoring", num);
+      log.warn("Invalid date value provided to datepicker:", num);
       return;
     }
+
     datetime.value = date.toISOString();
     //@ts-expect-error supports move method https://vcalendar.io/datepicker/basics.html#basics
     datePickerEl.value?.move({

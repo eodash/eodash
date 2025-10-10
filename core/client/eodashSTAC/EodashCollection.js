@@ -2,7 +2,6 @@ import { Collection, Item } from "stac-js";
 import { toAbsolute } from "stac-js/src/http.js";
 import {
   extractLayerConfig,
-  extractLayerDatetime,
   extractRoles,
   fetchApiItems,
   fetchStyle,
@@ -12,6 +11,7 @@ import {
   isSTACItem,
   replaceLayer,
   extractLayerLegend,
+  extractLayerTimeValues,
 } from "./helpers";
 import {
   getLayers,
@@ -186,8 +186,8 @@ export class EodashCollection {
       await fetchStyle(item, itemUrl),
     );
 
-    const layerDatetime = extractLayerDatetime(
-      await this.getDates(),
+    const { layerDatetime, timeControlValues } = extractLayerTimeValues(
+      await this.getItems(),
       item.properties?.datetime ??
         item.properties.start_datetime ??
         itemDatetime,
@@ -209,6 +209,10 @@ export class EodashCollection {
       extraProperties = {
         ...extraProperties,
         ...(this.color && { color: this.color }),
+        ...(timeControlValues && {
+          timeControlValues,
+          timeControlProperty: "TIME",
+        }),
       };
 
       const links = await createLayersFromLinks(
@@ -266,7 +270,6 @@ export class EodashCollection {
       );
       jsonArray.push(json);
     }
-    console.log("jsonArray", jsonArray);
 
     return jsonArray;
   }
