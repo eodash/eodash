@@ -70,7 +70,7 @@
     "@eox/geosearch": "^1.1.0",
     "@eox/itemfilter": "^1.12.0",
     "@eox/jsonform": "^1.4.2",
-    "@eox/layercontrol": "^1.2.1",
+    "@eox/layercontrol": "^1.2.2-dev.1760104411.0",
     "@eox/layout": "^1.0.0",
     "@eox/map": "^1.26.0",
     "@eox/stacinfo": "^1.0.1",

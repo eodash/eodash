@@ -153,11 +153,9 @@ export class EodashCollection {
       return [];
     }
     // to be removed
-    // if (item.links.some((l) => l.rel === "xyz")) {
-
-    item["eodash:tileform"] = exampleSchema;
-    console.log("Adding example schema to item", item["eodash:tileform"]);
-    // }
+    if (this.#collectionStac?.id === "sentinel-2-l2a") {
+      this.#collectionStac["eodash:rasterform"] = exampleSchema;
+    }
     log.debug(
       "Building JSON array",
       item,
@@ -192,7 +190,7 @@ export class EodashCollection {
       this.#collectionStac?.id ?? "",
       await fetchStyle(item, itemUrl),
       //@ts-expect-error todo
-      item["eodash:tileform"],
+      this.#collectionStac["eodash:rasterform"],
     );
     console.log("extracted layerConfig", layerConfig, style);
 
