@@ -68,10 +68,10 @@ export class EodashCollection {
 
   /**
    * @async
-   * @param {import("stac-ts").StacItem | import('stac-ts').StacLink | Date } [linkOrDate]
-   * @returns
+   * @param {import("stac-ts").StacItem | import('stac-ts').StacLink | Date } [itemOrDate]
+   * @returns {Promise<Record<string,any>[]>} layers
    */
-  createLayersJson = async (linkOrDate) => {
+  createLayersJson = async (itemOrDate) => {
     /**
      * @type {import("stac-ts").StacLink | import("stac-ts").StacItem | undefined}
      **/
@@ -86,11 +86,11 @@ export class EodashCollection {
 
     const isObservationPoint = this.#collectionStac?.endpointtype === "GeoDB";
 
-    if (linkOrDate instanceof Date) {
+    if (itemOrDate instanceof Date) {
       // if collectionStac not yet initialized we do it here
-      itemOrItemLink = await this.getItem(linkOrDate);
+      itemOrItemLink = await this.getItem(itemOrDate);
     } else {
-      itemOrItemLink = linkOrDate;
+      itemOrItemLink = itemOrDate;
     }
 
     let stacItemUrl = "";

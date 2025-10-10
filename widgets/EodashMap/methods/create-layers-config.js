@@ -35,6 +35,7 @@ export const createLayersConfig = async (
   };
 
   for (const ec of eodashCols) {
+    /** @type {Record<string,any>[]} */
     let layers;
     if (timeOrItem) {
       const dateOrItem =
