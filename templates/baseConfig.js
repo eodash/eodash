@@ -13,7 +13,7 @@ const baseConfig = {
   stacEndpoint: {
     endpoint: "https://api.explorer.eopf.copernicus.eu/stac",
     api: true,
-    rasterEndpoint: "https://api.explorer.eopf.copernicus.eu/raster",
+    rasterEndpoint: "https://api.explorer.eopf.copernicus.eu/raster/",
   },
   brand: {
     noLayout: true,
@@ -54,10 +54,10 @@ const baseConfig = {
     footerText: "Demo configuration of eodash client",
   },
   templates: {
-    explore,
     lite,
     expert,
     compare,
+    explore,
   },
 };
 

@@ -100,7 +100,7 @@ export const useSTAcStore = defineStore("stac", () => {
       return;
     }
     if (isApi.value) {
-      url = url + "/collections";
+      url = url + "/collections?limit=1000"; // to get all collections
     }
     const property = isApi.value ? "collections" : "links";
 

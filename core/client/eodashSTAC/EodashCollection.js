@@ -2,7 +2,6 @@ import { Collection, Item } from "stac-js";
 import { toAbsolute } from "stac-js/src/http.js";
 import {
   extractLayerConfig,
-  extractLayerDatetime,
   extractRoles,
   fetchApiItems,
   fetchStyle,
@@ -12,6 +11,7 @@ import {
   isSTACItem,
   replaceLayer,
   extractLayerLegend,
+  extractLayerTimeValues,
 } from "./helpers";
 import {
   getLayers,
@@ -97,9 +97,6 @@ export class EodashCollection {
     if (isSTACItem(itemOrItemLink)) {
       this.selectedItem = itemOrItemLink;
       stacItemUrl = this.#collectionUrl + `/items/${this.selectedItem.id}`;
-      this.selectedItem = await axios
-        .get(stacItemUrl)
-        .then((resp) => resp.data);
     } else if (itemOrItemLink) {
       if (itemOrItemLink?.href?.startsWith("blob:")) {
         stacItemUrl = itemOrItemLink.href;
@@ -113,30 +110,16 @@ export class EodashCollection {
           .get(stacItemUrl)
           .then((resp) => resp.data);
       }
-    }
-    if (!this.selectedItem) {
+    } else if (!this.selectedItem) {
       this.selectedItem = await this.getItem();
       if (!this.selectedItem) {
         console.warn(
           "[eodash] the selected collection does not include any items",
         );
         return [];
-      } else if (
-        this.selectedItem.href &&
-        typeof this.selectedItem.href === "string"
-      ) {
-        if (this.selectedItem.href.startsWith("blob:")) {
-          // Use native fetch for blob URLs
-          stacItemUrl = this.selectedItem.href;
-          this.selectedItem = await fetch(stacItemUrl).then((resp) =>
-            resp.json(),
-          );
-        } else {
-          stacItemUrl = toAbsolute(this.selectedItem.href, this.#collectionUrl);
-          this.selectedItem = await axios
-            .get(stacItemUrl)
-            .then((resp) => resp.data);
-        }
+      } else if (this.selectedItem) {
+        // if no specific item was requested, we create layers from the latest item
+        return this.createLayersJson(this.selectedItem);
       }
     }
 
@@ -203,8 +186,8 @@ export class EodashCollection {
       await fetchStyle(item, itemUrl),
     );
 
-    const layerDatetime = extractLayerDatetime(
-      await this.getDates(),
+    const { layerDatetime, timeControlValues } = extractLayerTimeValues(
+      await this.getItems(),
       item.properties?.datetime ??
         item.properties.start_datetime ??
         itemDatetime,
@@ -226,6 +209,10 @@ export class EodashCollection {
       extraProperties = {
         ...extraProperties,
         ...(this.color && { color: this.color }),
+        ...(timeControlValues && {
+          timeControlValues,
+          timeControlProperty: "TIME",
+        }),
       };
 
       const links = await createLayersFromLinks(

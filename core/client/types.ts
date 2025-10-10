@@ -110,6 +110,14 @@ export interface TEodashDatePicker {
 }
 
 /** @group Widgets */
+export interface TEodashTimeSlider {
+  name: "EodashTimeSlider";
+  properties?: InstanceType<
+    typeof import("^/EodashTimeSlider.vue").default
+  >["$props"];
+}
+
+/** @group Widgets */
 export interface TEodashItemFilter {
   name: "EodashItemFilter";
   properties?: InstanceType<
@@ -210,7 +218,8 @@ export type ComponentWidget =
   | TEodashItemCatalog
   | TExportState
   | TPopUp
-  | TWidgetsContainer;
+  | TWidgetsContainer
+  | TEodashTimeSlider;
 /**
  * Widget type: `internal` API. Internal widgets are Vue components provided by
  * eodash.
@@ -458,7 +467,7 @@ export type EodashStyleJson = import("ol/style/flat").FlatStyleLike & {
   jsonform?: import("json-schema").JSONSchema7;
   tooltip?: { id: string; title?: string; appendix?: string }[];
 };
-
+/** @ignore */
 export type LayersEventBusKeys =
   | "layers:updated"
   | "time:updated"
@@ -468,6 +477,7 @@ export type LayersEventBusKeys =
   | "compareProcess:updated";
 
 //// STAC API types
+/** @ignore */
 export interface SearchParams {
   /** Collection IDs to search within */
   collections: string[];
@@ -486,7 +496,7 @@ export interface StacItemsAPIResponse {
   type: "FeatureCollection";
   features: import("stac-ts").StacItem[];
 }
-
+/** @ignore */
 export interface Render {
   /** REQUIRED. Array of asset keys referencing the assets that are used to make the rendering */
   assets: string[];
@@ -509,7 +519,7 @@ export interface Render {
   /** Zoom levels range applicable for the visualization */
   minmax_zoom?: number[];
 }
-
+/** @ignore */
 export interface TitilerSTACParameters {
   /** STAC Item URL. Required */
   url: string;
@@ -550,7 +560,7 @@ export interface TitilerSTACParameters {
 }
 /**
  * Generic GeoJSON Feature interface that can hold additional properties.
- * @group GeoJSON
+ * @ignore
  */
 export interface GeoJsonFeature<T = Record<string, any>, G = GeoJSON.Geometry> {
   type: "Feature";
@@ -561,7 +571,7 @@ export interface GeoJsonFeature<T = Record<string, any>, G = GeoJSON.Geometry> {
 
 /**
  * Generic GeoJSON FeatureCollection interface that can hold additional properties.
- * @group GeoJSON
+ * @ignore
  */
 export interface GeoJsonFeatureCollection<
   T = Record<string, any>,
