@@ -1,6 +1,6 @@
 import { useOnLayersUpdate } from "@/composables";
 import { mapEl } from "@/store/states";
-import { onMounted, onUnmounted, watch } from "vue";
+import { onMounted, onUnmounted } from "vue";
 
 /**
  *
@@ -50,7 +50,7 @@ export function renderItemsFeatures(features) {
         type: "select",
         options: {
           id: "stac-items",
-          condition: "click",
+          condition: "pointermove",
           style: {
             "stroke-color": "white",
             "stroke-width": 3,
@@ -107,19 +107,6 @@ export const useRenderItemsFeatures = (currentItems) => {
       renderItemsFeatures(currentItems.value);
     });
   onMounted(() => {
-    if (!mapEl.value) {
-      watch(
-        mapEl,
-        () => {
-          renderItemsFeatures(currentItems.value);
-          renderOnUpdate();
-        },
-        { once: true, immediate: false },
-      );
-
-      return;
-    }
-
     renderItemsFeatures(currentItems.value);
     renderOnUpdate();
   });
@@ -134,10 +121,17 @@ export function useRenderOnFeatureHover(itemfilterEl) {
    * @param {CustomEvent} evt
    */
   const handler = (evt) => {
-    itemfilterEl.value.selectedResult = itemfilterEl.value.results.find(
+    const itemId = evt.detail?.feature?.getId();
+    if (!itemId) {
+      return;
+    }
+    const item = itemfilterEl.value.items?.find(
       //@ts-expect-error todo
-      (r) => r.id === evt.detail?.feature?.getId(),
+      (r) => r.id === itemId,
     );
+    if (item) {
+      itemfilterEl.value.selectedResult = item;
+    }
   };
   onMounted(() => {
     //@ts-expect-error todo

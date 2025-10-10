@@ -198,13 +198,16 @@ export const buildSearchUrl = (filters, propsFilters, bboxFilter) => {
 
 /**
  *
- * @param {Record<string,any>} filters
  * @param {import("../types").FiltersConfig} propsFilters
  * @param {boolean} bboxFilter
  */
-export const externalFilter = (filters, propsFilters, bboxFilter) => {
-  return {
+export const createExternalFilter = (propsFilters, bboxFilter) => {
+  /**
+   * @param {Array<any>} _items
+   * @param {Record<string,any>} filters
+   */
+  return (_items, filters) => ({
     url: buildSearchUrl(filters, propsFilters, bboxFilter),
     key: "features",
-  };
+  });
 };

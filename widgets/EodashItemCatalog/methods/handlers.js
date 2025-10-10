@@ -3,13 +3,14 @@ import { inAndOut } from "ol/easing";
 import { renderItemsFeatures } from "./map";
 
 /**
- *
- * @param {CustomEvent} evt
  * @param {import("vue").Ref<import("@/types").GeoJsonFeature[]>} currentItems
  */
-export const onFilter = (evt, currentItems) => {
-  currentItems.value = evt.detail.results;
-  renderItemsFeatures(currentItems.value);
+export const createOnFilterHandler = (currentItems) => {
+  /** @param {CustomEvent} evt */
+  return (evt) => {
+    currentItems.value = evt.detail.results;
+    renderItemsFeatures(currentItems.value);
+  };
 };
 /**
  *

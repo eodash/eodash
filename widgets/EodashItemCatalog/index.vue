@@ -27,9 +27,9 @@
 import { onUnmounted, ref, useTemplateRef } from "vue";
 import { useSTAcStore } from "@/store/stac";
 import {
+  createExternalFilter,
   createFilterProperties,
   createSubtitleProperty,
-  externalFilter,
 } from "./methods/filters";
 import {
   useSearchOnMapMove,
@@ -37,8 +37,8 @@ import {
   useRenderOnFeatureHover,
 } from "./methods/map";
 import {
+  createOnFilterHandler,
   createOnSelectHandler,
-  onFilter as onFilterHandler,
   onMouseEnterResult,
   onMouseLeaveResult,
 } from "./methods/handlers";
@@ -112,21 +112,16 @@ const filterProperties = createFilterProperties(props.filters);
 
 const subTitleProperty = createSubtitleProperty(props.filters);
 
-/**
- * @param {any[]} _
- * @param {Record<string,any>} filters
- */
-const externalFilterHandler = (_, filters) => {
-  return externalFilter(filters, props.filters, props.bboxFilter);
-};
+const externalFilterHandler = createExternalFilter(
+  props.filters,
+  props.bboxFilter,
+);
 
 // Event handlers
 /**
  * @param {CustomEvent} evt
  */
-const onFilter = (evt) => {
-  onFilterHandler(evt, currentItems);
-};
+const onFilter = createOnFilterHandler(currentItems);
 
 /**
  * @param {CustomEvent} evt
