@@ -75,7 +75,25 @@ export function extractLayerConfig(collectionId, style) {
 
   return { layerConfig, style };
 }
+/**
+ *
+ * @param {number[]} bbox
+ * @returns
+ */
+export const sanitizeBbox = (bbox) => {
+  if (!bbox || !bbox.length || bbox.length !== 4) {
+    return [0, 0, 0, 0];
+  }
+  let [minX, minY, maxX, maxY] = bbox;
+  // Normalize longitudes to be within -180 to 180
+  minX = ((((minX + 180) % 360) + 360) % 360) - 180;
+  maxX = ((((maxX + 180) % 360) + 360) % 360) - 180;
+  // Normalize latitudes to be within -90 to 90
+  minY = ((((minY + 90) % 180) + 180) % 180) - 90;
+  maxY = ((((maxY + 90) % 180) + 180) % 180) - 90;
 
+  return [minX, minY, maxX, maxY];
+};
 /**
  * Function to extract collection urls from an indicator
  * @param {import("stac-ts").StacCatalog
@@ -447,12 +465,20 @@ export async function mergeGeojsons(geojsonUrls) {
     features: [],
   };
   await Promise.all(
-    geojsonUrls.map((url) =>
-      axios.get(url).then((resp) => {
+    geojsonUrls.map((url) => {
+      // Use native fetch for blob URLs to avoid axios/cache interceptor issues
+      if (url.startsWith("blob:")) {
+        return fetch(url)
+          .then(async (resp) => await resp.json())
+          .then((geojson) => {
+            merged.features.push(...(geojson.features ?? []));
+          });
+      }
+      return axios.get(url).then((resp) => {
         const geojson = resp.data;
         merged.features.push(...(geojson.features ?? []));
-      }),
-    ),
+      });
+    }),
   );
 
   return encodeURI(

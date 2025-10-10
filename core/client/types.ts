@@ -172,6 +172,12 @@ export interface TEodashLayoutSwitcher {
     typeof import("^/EodashLayoutSwitcher.vue").default
   >["$props"];
 }
+export interface TEodashItemCatalog {
+  name: "EodashItemCatalog";
+  properties?: InstanceType<
+    typeof import("^/EodashItemCatalog/index.vue").default
+  >["$props"];
+}
 
 /** @group Widgets */
 export interface TExportState {
@@ -209,6 +215,7 @@ export type ComponentWidget =
   | TEodashMapBtns
   | TEodashTools
   | TEodashLayoutSwitcher
+  | TEodashItemCatalog
   | TExportState
   | TPopUp
   | TWidgetsContainer
@@ -460,7 +467,7 @@ export type EodashStyleJson = import("ol/style/flat").FlatStyleLike & {
   jsonform?: import("json-schema").JSONSchema7;
   tooltip?: { id: string; title?: string; appendix?: string }[];
 };
-
+/** @ignore */
 export type LayersEventBusKeys =
   | "layers:updated"
   | "time:updated"
@@ -470,6 +477,7 @@ export type LayersEventBusKeys =
   | "compareProcess:updated";
 
 //// STAC API types
+/** @ignore */
 export interface SearchParams {
   /** Collection IDs to search within */
   collections: string[];
@@ -488,7 +496,7 @@ export interface StacItemsAPIResponse {
   type: "FeatureCollection";
   features: import("stac-ts").StacItem[];
 }
-
+/** @ignore */
 export interface Render {
   /** REQUIRED. Array of asset keys referencing the assets that are used to make the rendering */
   assets: string[];
@@ -511,7 +519,7 @@ export interface Render {
   /** Zoom levels range applicable for the visualization */
   minmax_zoom?: number[];
 }
-
+/** @ignore */
 export interface TitilerSTACParameters {
   /** STAC Item URL. Required */
   url: string;
@@ -549,4 +557,27 @@ export interface TitilerSTACParameters {
   algorithm?: string;
   /** JSON encoded algorithm parameters. */
   algorithm_params?: string;
+}
+/**
+ * Generic GeoJSON Feature interface that can hold additional properties.
+ * @ignore
+ */
+export interface GeoJsonFeature<T = Record<string, any>, G = GeoJSON.Geometry> {
+  type: "Feature";
+  geometry: G;
+  properties: T & Record<string, any>;
+  id?: string | number;
+}
+
+/**
+ * Generic GeoJSON FeatureCollection interface that can hold additional properties.
+ * @ignore
+ */
+export interface GeoJsonFeatureCollection<
+  T = Record<string, any>,
+  G = GeoJSON.Geometry,
+> {
+  type: "FeatureCollection";
+  features: Array<GeoJsonFeature<T, G>>;
+  properties?: T & Record<string, any>;
 }

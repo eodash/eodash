@@ -55,6 +55,11 @@ export const useSTAcStore = defineStore("stac", () => {
    * >}
    */
   const selectedCompareStac = ref(null);
+  /**
+   * Currently selected item
+   * @type {import("vue").Ref<import("stac-ts").StacLink | import("stac-ts").StacItem | null>}
+   */
+  const selectedItem = ref(null);
 
   /**
    * Initializes the store by assigning the STAC endpoint.
@@ -123,10 +128,11 @@ export const useSTAcStore = defineStore("stac", () => {
    *
    * @param {string} relativePath - Stac link href
    * @param {boolean} [isPoi=false] - If true, the STAC is loaded for a point of interest
+   * @param {Object} [stacItem] - The STAC item to load
    * @returns {Promise<void>}
    * @see {@link selectedStac}
    */
-  async function loadSelectedSTAC(relativePath = "", isPoi = false) {
+  async function loadSelectedSTAC(relativePath = "", isPoi = false, stacItem) {
     if (!stacEndpoint.value) {
       return Promise.reject(new Error("STAC endpoint is not defined"));
     }
@@ -134,6 +140,11 @@ export const useSTAcStore = defineStore("stac", () => {
     if (isPoi) {
       // construct absolute URL of a poi
       absoluteUrl.value = constructPoiUrl(relativePath, indicator.value);
+    }
+    //@ts-expect-error "this" type is not exported by pinia
+    const patch = this?.$patch;
+    if (stacItem && patch) {
+      patch({ selectedItem: stacItem });
     }
 
     await axios
@@ -162,6 +173,7 @@ export const useSTAcStore = defineStore("stac", () => {
    * Fetches selected stac object and assign it to `selectedCompareStac`
    *
    * @param {string} relativePath - Stac link href
+   * @param {boolean} [isPOI=false] - If true, the STAC is loaded for a point of interest
    * @returns {Promise<void>}
    * @see {@link selectedCompareStac}
    */
@@ -236,5 +248,6 @@ export const useSTAcStore = defineStore("stac", () => {
     resetSelectedCompareSTAC,
     selectedStac,
     selectedCompareStac,
+    selectedItem,
   };
 });

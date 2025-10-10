@@ -7,6 +7,7 @@ import { storeToRefs } from "pinia";
 import { isFirstLoad } from "@/utils/states";
 import { useEmitLayersUpdate, useOnLayersUpdate } from "@/composables";
 import { mapPosition } from "@/store/states";
+import { sanitizeBbox } from "@/eodashSTAC/helpers";
 /**
  * Holder for previous compare map view as it is overwritten by sync
  * @type { import("ol").View | null} mapElement
@@ -58,6 +59,7 @@ export const useHandleMapMoveEnd = (mapElement, mapPosition) => {
  * @param {import("vue").Ref<Record<string,any>[]>} mapLayers
  * @param {import("vue").Ref<import("@eox/map").EOxMap| null>} partnerMap
  * @param {boolean} zoomToExtent
+ * @param {import("vue").Ref<import("stac-ts").StacItem | import("stac-ts").StacLink | null>} [selectedItem]
  */
 export const useInitMap = (
   mapElement,
@@ -67,6 +69,7 @@ export const useInitMap = (
   mapLayers,
   partnerMap,
   zoomToExtent,
+  selectedItem,
 ) => {
   log.debug(
     "InitMap",
@@ -75,10 +78,22 @@ export const useInitMap = (
     eodashCols.values,
     datetime.value,
   );
-
+  // watch selectedItem if provided
+  const watching = selectedItem
+    ? [selectedIndicator, datetime, selectedItem]
+    : [selectedIndicator, datetime];
   const stopIndicatorWatcher = watch(
-    [selectedIndicator, datetime],
-    async ([updatedStac, updatedTime], [previousStac, previousTime]) => {
+    watching,
+    async (updated, previous) => {
+      const [updatedStac, updatedTime, updatedItem] =
+        /** @type {[import("stac-ts").StacCollection, string, import("stac-ts").StacItem | null]} */ (
+          selectedItem ? updated : [updated[0], updated[1], null]
+        );
+      const [previousStac, previousTime, previousItem] =
+        /** @type {[import("stac-ts").StacCollection, string, import("stac-ts").StacItem]} */ (
+          selectedItem ? previous : [previous[0], previous[1], null]
+        );
+
       if (updatedStac) {
         log.debug(
           "Selected Indicator watch triggered",
@@ -98,7 +113,9 @@ export const useInitMap = (
         let layersCollection = [];
 
         const onlyTimeChanged =
-          updatedStac?.id === previousStac?.id && updatedTime !== previousTime;
+          updatedStac?.id === previousStac?.id &&
+          (updatedTime !== previousTime ||
+            (updatedItem && updatedItem?.id !== previousItem?.id));
 
         const { selectedCompareStac } = storeToRefs(useSTAcStore());
         if (mapElement?.value?.id === "main") {
@@ -115,12 +132,12 @@ export const useInitMap = (
           }
         }
 
-        // We re-crate the configuration if time changed
+        // We re-create the configuration if time changed
         if (onlyTimeChanged) {
           layersCollection = await createLayersConfig(
             updatedStac,
             eodashCols,
-            updatedTime,
+            updatedItem ?? updatedTime,
           );
           log.debug(
             "Assigned layers after changing time only",
@@ -142,7 +159,7 @@ export const useInitMap = (
         layersCollection = await createLayersConfig(
           updatedStac,
           eodashCols,
-          datetime.value,
+          selectedItem ? updatedItem : updatedTime,
         );
 
         // We try to set the current time selection to latest extent date
@@ -157,6 +174,7 @@ export const useInitMap = (
           );
         }
         if (
+          !updatedItem &&
           endInterval !== null &&
           endInterval.toISOString() !== datetime.value &&
           !isFirstLoad.value
@@ -168,6 +186,7 @@ export const useInitMap = (
           // Try to move map view to extent only when main
           // indicator and map changes
           if (
+            !updatedItem &&
             mapElement?.value?.id === "main" &&
             updatedStac.extent?.spatial.bbox &&
             !(
@@ -178,12 +197,7 @@ export const useInitMap = (
           ) {
             // Sanitize extent,
             const b = updatedStac.extent?.spatial.bbox[0];
-            const sanitizedExtent = [
-              b?.[0] > -180 ? b?.[0] : -180,
-              b?.[1] > -90 ? b?.[1] : -90,
-              b?.[2] < 180 ? b?.[2] : 180,
-              b?.[3] < 90 ? b?.[3] : 90,
-            ];
+            const sanitizedExtent = sanitizeBbox(b);
 
             const reprojExtent = mapElement.value?.transformExtent(
               sanitizedExtent,

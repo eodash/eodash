@@ -2,6 +2,7 @@ import { deepmergeInto } from "deepmerge-ts";
 import lite from "./lite";
 import expert from "./expert";
 import compare from "./compare";
+import explore from "./explore";
 
 /** @type {import("@/types").Eodash} */
 const baseConfig = {
@@ -56,6 +57,7 @@ const baseConfig = {
     lite,
     expert,
     compare,
+    explore,
   },
 };
 
