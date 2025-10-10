@@ -43,26 +43,22 @@
       class="map-buttons-container"
       :style="`margin: ${btnsPosition.gap}px 0 ${btnsPosition.gap}px 0`"
     >
+      <!-- prettier-ignore -->
       <EodashMapBtns
         :style="{
-          gridColumn: indicator || compareIndicator ? responsiveX : '12',
+          gridColumn: (indicator || compareIndicator) ? responsiveX : '12',
           gridRow: responsiveY,
         }"
-        :exportMap="indicator || compareIndicator ? btnsProps.exportMap : false"
-        :changeProjection="
-          indicator || compareIndicator ? btnsProps.changeProjection : false
+        :exportMap="(indicator || compareIndicator) ? btnsProps.exportMap : false"
+        :changeProjection="(indicator || compareIndicator) ? btnsProps.changeProjection : false
         "
-        :compareIndicators="
-          indicator || compareIndicator ? btnsProps.compareIndicators : false
+        :compareIndicators="(indicator || compareIndicator) ? btnsProps.compareIndicators : false
         "
-        :backToPOIs="
-          indicator || compareIndicator ? btnsProps.backToPOIs : false
+        :backToPOIs="(indicator || compareIndicator) ? btnsProps.backToPOIs : false
         "
-        :enableSearch="
-          indicator || compareIndicator ? btnsProps.enableSearch : false
+        :enableSearch="(indicator || compareIndicator) ? btnsProps.enableSearch : false
         "
-        :enableZoom="
-          indicator || compareIndicator ? btnsProps.enableZoom : false
+        :enableZoom="(indicator || compareIndicator) ? btnsProps.enableZoom : false
         "
       />
     </div>
@@ -272,7 +268,8 @@ const showCompare = computed(() =>
 useHandleMapMoveEnd(eoxMap, mapPosition);
 
 onMounted(() => {
-  const { selectedCompareStac, selectedStac } = storeToRefs(useSTAcStore());
+  const { selectedCompareStac, selectedStac, selectedItem } =
+    storeToRefs(useSTAcStore());
   // assign map Element state to eox map
   mapEl.value = eoxMap.value;
 
@@ -302,6 +299,7 @@ onMounted(() => {
     eoxMapLayers,
     compareMap,
     props.zoomToExtent,
+    selectedItem,
   );
 });
 

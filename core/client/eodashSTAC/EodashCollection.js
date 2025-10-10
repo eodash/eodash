@@ -2,7 +2,6 @@ import { Collection, Item } from "stac-js";
 import { toAbsolute } from "stac-js/src/http.js";
 import {
   extractLayerConfig,
-  extractLayerDatetime,
   extractRoles,
   fetchApiItems,
   fetchStyle,
@@ -12,6 +11,7 @@ import {
   isSTACItem,
   replaceLayer,
   extractLayerLegend,
+  extractLayerTimeValues,
 } from "./helpers";
 import {
   getLayers,
@@ -69,10 +69,10 @@ export class EodashCollection {
 
   /**
    * @async
-   * @param {import('stac-ts').StacLink | Date } [linkOrDate]
-   * @returns
+   * @param {import("stac-ts").StacItem | import('stac-ts').StacLink | Date } [itemOrDate]
+   * @returns {Promise<Record<string,any>[]>} layers
    */
-  createLayersJson = async (linkOrDate) => {
+  createLayersJson = async (itemOrDate) => {
     /**
      * @type {import("stac-ts").StacLink | import("stac-ts").StacItem | undefined}
      **/
@@ -87,11 +87,11 @@ export class EodashCollection {
 
     const isObservationPoint = this.#collectionStac?.endpointtype === "GeoDB";
 
-    if (linkOrDate instanceof Date) {
+    if (itemOrDate instanceof Date) {
       // if collectionStac not yet initialized we do it here
-      itemOrItemLink = await this.getItem(linkOrDate);
+      itemOrItemLink = await this.getItem(itemOrDate);
     } else {
-      itemOrItemLink = linkOrDate;
+      itemOrItemLink = itemOrDate;
     }
 
     let stacItemUrl = "";
@@ -101,26 +101,26 @@ export class EodashCollection {
     } else if (itemOrItemLink) {
       if (itemOrItemLink?.href?.startsWith("blob:")) {
         stacItemUrl = itemOrItemLink.href;
+        // Use native fetch for blob URLs to avoid axios/cache interceptor issues
+        this.selectedItem = await fetch(stacItemUrl).then(
+          async (resp) => await resp.json(),
+        );
       } else {
         stacItemUrl = toAbsolute(itemOrItemLink.href, this.#collectionUrl);
+        this.selectedItem = await axios
+          .get(stacItemUrl)
+          .then((resp) => resp.data);
       }
-      this.selectedItem = await axios
-        .get(stacItemUrl)
-        .then((resp) => resp.data);
-    }
-    if (!this.selectedItem) {
+    } else if (!this.selectedItem) {
       this.selectedItem = await this.getItem();
       if (!this.selectedItem) {
         console.warn(
           "[eodash] the selected collection does not include any items",
         );
         return [];
-      } else if (this.selectedItem.href) {
-        //@ts-expect-error if selected item is a link, we fetch the item
-        stacItemUrl = toAbsolute(this.selectedItem.href, this.#collectionUrl);
-        this.selectedItem = await axios
-          .get(stacItemUrl)
-          .then((resp) => resp.data);
+      } else if (this.selectedItem) {
+        // if no specific item was requested, we create layers from the latest item
+        return this.createLayersJson(this.selectedItem);
       }
     }
 
@@ -196,8 +196,8 @@ export class EodashCollection {
     );
     console.log("extracted layerConfig", layerConfig, style);
 
-    const layerDatetime = extractLayerDatetime(
-      await this.getDates(),
+    const { layerDatetime, timeControlValues } = extractLayerTimeValues(
+      await this.getItems(),
       item.properties?.datetime ??
         item.properties.start_datetime ??
         itemDatetime,
@@ -220,6 +220,10 @@ export class EodashCollection {
         ...extraProperties,
         ...(this.color && { color: this.color }),
         ...(layerConfig && { layerConfig }),
+        ...(timeControlValues && {
+          timeControlValues,
+          timeControlProperty: "TIME",
+        }),
       };
 
       const links = await createLayersFromLinks(

@@ -24,7 +24,7 @@ const { mobile } = useDisplay();
 defineProps({
   target: {
     type: String,
-    default: "main",
+    default: "expert",
   },
   // mdi/js icon
   icon: {

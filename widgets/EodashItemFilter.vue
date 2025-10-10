@@ -8,15 +8,17 @@
     .items="items"
   >
     <h4 slot="filterstitle" style="margin: 14px 8px">{{ filtersTitle }}</h4>
-
     <h4 slot="resultstitle" style="margin: 14px 8px">{{ resultsTitle }}</h4>
   </eox-itemfilter>
 </template>
 <script setup>
 import { useSTAcStore } from "@/store/stac";
 import { isFirstLoad } from "@/utils/states";
-import "@eox/itemfilter";
 import { computed, ref } from "vue";
+
+if (!customElements.get("eox-itemfilter")) {
+  await import("@eox/itemfilter");
+}
 
 const store = useSTAcStore();
 const emit = defineEmits(["select"]);
@@ -103,7 +105,6 @@ const createSelect = (loader, reset) => {
         // prevent the map from jumping to the initial position
         isFirstLoad.value = false;
       }
-
       const href = /** @type {string} */ (store.isApi ? item.id : item.href);
       await loader(href);
       emit("select", item);
@@ -129,7 +130,6 @@ const onSelect = async (evt) => {
     selectIndicator(item);
   }
 };
-
 const config = computed(() => ({
   titleProperty: props.titleProperty,
   enableHighlighting: props.enableHighlighting,
@@ -146,7 +146,6 @@ const config = computed(() => ({
 /** @type {import("vue").Ref<HTMLElement & Record<string,any> | null>} */
 const eoxItemFilter = ref(null);
 </script>
-
 <style scoped>
 eox-itemfilter {
   --form-flex-direction: row;

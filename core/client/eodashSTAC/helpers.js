@@ -91,7 +91,25 @@ export function extractLayerConfig(collectionId, style, tileJsonform) {
 
   return { layerConfig, style };
 }
+/**
+ *
+ * @param {number[]} bbox
+ * @returns
+ */
+export const sanitizeBbox = (bbox) => {
+  if (!bbox || !bbox.length || bbox.length !== 4) {
+    return [0, 0, 0, 0];
+  }
+  let [minX, minY, maxX, maxY] = bbox;
+  // Normalize longitudes to be within -180 to 180
+  minX = ((((minX + 180) % 360) + 360) % 360) - 180;
+  maxX = ((((maxX + 180) % 360) + 360) % 360) - 180;
+  // Normalize latitudes to be within -90 to 90
+  minY = ((((minY + 90) % 180) + 180) % 180) - 90;
+  maxY = ((((maxY + 90) % 180) + 180) % 180) - 90;
 
+  return [minX, minY, maxX, maxY];
+};
 /**
  * Function to extract collection urls from an indicator
  * @param {import("stac-ts").StacCatalog
@@ -189,48 +207,89 @@ export const getProjectionCode = (projection) => {
 
 /**
  * Extracts layercontrol LayerDatetime property from STAC Links
- * @param {Date[]} [dates]
+ * @param {import("stac-ts").StacLink[] | import("stac-ts").StacItem[] | undefined} [items]
  * @param {string|null} [currentStep]
  **/
-export const extractLayerDatetime = (dates, currentStep) => {
-  if (!currentStep || !dates?.length) {
-    return undefined;
+export const extractLayerTimeValues = (items, currentStep) => {
+  if (!currentStep || !items?.length) {
+    return { layerDatetime: undefined, timeControlValues: undefined };
   }
 
-  /** @type {string[]} */
-  const controlValues = [];
+  // check if items has a datetime value
+  const dateProperty = getDatetimeProperty(items);
+
+  if (!dateProperty) {
+    return { layerDatetime: undefined, timeControlValues: undefined };
+  }
+  /** @type {{date:string;itemId:string}[]} */
+  const timeValues = [];
   try {
-    currentStep = new Date(currentStep).toISOString();
-    dates.reduce((vals, date) => {
-      vals.push(date.toISOString());
+    /**
+     *  @param {typeof timeValues} vals
+     *  @param {import("stac-ts").StacLink} link
+     */
+    const reduceLinks = (vals, link) => {
+      if (link[dateProperty] && link.rel === "item") {
+        vals.push({
+          itemId: /** @type {string} */ (link.id),
+          date: new Date(
+            /** @type {string} */ (link[dateProperty]),
+          ).toISOString(),
+        });
+      }
       return vals;
-    }, controlValues);
+    };
+
+    /**
+     *
+     * @param {typeof timeValues} vals
+     * @param {import("stac-ts").StacItem} item
+     */
+    const reduceItems = (vals, item) => {
+      const date = item.properties?.[dateProperty];
+      if (date) {
+        vals.push({
+          itemId: /** @type {string} */ (item.id),
+          date: new Date(/** @type {string} */ (date)).toISOString(),
+          ...item.properties,
+        });
+      }
+      return vals;
+    };
+    currentStep = new Date(currentStep).toISOString();
+    //@ts-expect-error TODO
+    items.reduce(isSTACItem(items[0]) ? reduceItems : reduceLinks, timeValues);
   } catch (e) {
     console.warn("[eodash] not supported datetime format was provided", e);
-    return undefined;
+    return { layerDatetime: undefined, timeControlValues: undefined };
   }
-  // not enough controlValues
-  if (controlValues.length <= 1) {
-    return undefined;
+  // not enough timeValues
+  if (timeValues.length <= 1) {
+    return { layerDatetime: undefined, timeControlValues: undefined };
   }
 
   // item datetime is not included in the item links datetime
-  if (!controlValues.includes(currentStep)) {
+  if (!timeValues.some((val) => val.date === currentStep)) {
     const currentStepTime = new Date(currentStep).getTime();
-    currentStep = controlValues.reduce((a, b) => {
-      const aDiff = Math.abs(new Date(a).getTime() - currentStepTime);
-      const bDiff = Math.abs(new Date(b).getTime() - currentStepTime);
-      return bDiff < aDiff ? b : a;
-    });
+    currentStep = timeValues.reduce((time, step) => {
+      const aDiff = Math.abs(new Date(time).getTime() - currentStepTime);
+      const bDiff = Math.abs(new Date(step.date).getTime() - currentStepTime);
+      return bDiff < aDiff ? step.date : time;
+    }, timeValues[0].date);
   }
 
-  return {
-    controlValues,
+  const layerDatetime = {
+    controlValues: timeValues.map((d) => d.date).sort(),
     currentStep,
     slider: true,
     navigation: true,
     play: false,
     displayFormat: "DD.MM.YYYY HH:mm",
+  };
+
+  return {
+    layerDatetime,
+    timeControlValues: timeValues,
   };
 };
 
@@ -422,12 +481,20 @@ export async function mergeGeojsons(geojsonUrls) {
     features: [],
   };
   await Promise.all(
-    geojsonUrls.map((url) =>
-      axios.get(url).then((resp) => {
+    geojsonUrls.map((url) => {
+      // Use native fetch for blob URLs to avoid axios/cache interceptor issues
+      if (url.startsWith("blob:")) {
+        return fetch(url)
+          .then(async (resp) => await resp.json())
+          .then((geojson) => {
+            merged.features.push(...(geojson.features ?? []));
+          });
+      }
+      return axios.get(url).then((resp) => {
         const geojson = resp.data;
         merged.features.push(...(geojson.features ?? []));
-      }),
-    ),
+      });
+    }),
   );
 
   return encodeURI(
@@ -602,12 +669,14 @@ export function isSTACItem(stacObject) {
  * @param {string} [query]
  * @param {number} [limit=100] - The maximum number of items to fetch per request.
  * @param {boolean} [returnFirst] - If true, only the first page of results will be returned.
+ * @param {number} [maxNumber=1000] - if the matched number of items exceed this, only the first page will be returned.
  */
 export async function fetchApiItems(
   itemsUrl,
   query,
   limit = 100,
   returnFirst = false,
+  maxNumber = 1000,
 ) {
   itemsUrl = itemsUrl.includes("?") ? itemsUrl.split("?")[0] : itemsUrl;
   itemsUrl += query ? `?limit=${limit}&${query}` : `?limit=${limit}`;
@@ -623,6 +692,15 @@ export async function fetchApiItems(
   );
 
   if (!nextLink || returnFirst) {
+    return items;
+  }
+  /** @type {number} */
+  const matchedItems = itemsFeatureCollection.numberMatched;
+  // Avoid fetching too many items
+  if (matchedItems >= maxNumber) {
+    console.warn(
+      `[eodash] The number of items matched (${matchedItems}) exceeds the maximum allowed (${maxNumber})`,
+    );
     return items;
   }
 
