@@ -130,6 +130,18 @@ const props = defineProps({
     }),
   },
   btns: {
+    /** @type {import("vue").PropType<{
+     * enableExportMap?: boolean;
+     * enableChangeProjection?: boolean;
+     * enableBackToPOIs?: boolean;
+     * enableSearch?: boolean;
+     * enableZoom?: boolean;
+     * enableCompareIndicators?: boolean | {
+     *   compareTemplate?:string;
+     *   fallbackTemplate?:string;
+     *   itemFilterConfig?:InstanceType<import("../EodashItemFilter.vue").default>["$props"]
+     * };
+     * }> }*/
     type: Object,
     default: () => ({
       enableExportMap: true,

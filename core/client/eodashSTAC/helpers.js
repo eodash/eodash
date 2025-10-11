@@ -46,14 +46,30 @@ export function generateFeatures(links, extraProperties = {}, rel = "item") {
  *
  * @param {string} collectionId
  *  @param { import("@/types").EodashStyleJson} [style]
+ * @param {Record<string,any>} [rasterJsonform]
  * */
-export function extractLayerConfig(collectionId, style) {
-  if (!style) {
+export function extractLayerConfig(collectionId, style, rasterJsonform) {
+  if (!style && !rasterJsonform) {
+    console.log("no style nor rasterJsonform provided");
+
     return { layerConfig: undefined, style: undefined };
   }
-  style = { ...style };
+  if (style) {
+    style = { ...style };
+  }
 
-  if (Object.keys(style.variables ?? {}).length) {
+  if (rasterJsonform) {
+    return {
+      layerConfig: {
+        schema: rasterJsonform.jsonform,
+        legend: rasterJsonform.legend,
+        type: "tileUrl",
+      },
+      style,
+    };
+  }
+
+  if (style?.variables && Object.keys(style.variables ?? {}).length) {
     style.variables = getStyleVariablesState(collectionId, style.variables);
   }
 
