@@ -13,18 +13,6 @@
           "removeProperties": ["expression", "colormap_name"]
         },
         "properties": {
-          "colormap_name": {
-            "type": "string",
-            "options": {
-              "hidden": true
-            }
-          },
-          "expression": {
-            "type": "string",
-            "options": {
-              "hidden": true
-            }
-          },
           "bidx": {
             "$ref": "#/definitions/bidx"
           },
@@ -93,7 +81,7 @@
       },
       {
         "type": "object",
-        "title": "Band Arithmetic Expression",
+        "title": "Normalized Difference Indices",
         "options": {
           "removeProperties": ["variables"]
         },
@@ -134,6 +122,103 @@
             "type": "string",
             "format": "bands-arithmetic",
             "formulaTemplate": "({{A}}-{{B}})/({{A}}+{{B}})",
+            "default": "(/measurements/reflectance/r60m:b8a−/measurements/reflectance/r60m:b04) / (/measurements/reflectance/r60m:b8a+/measurements/reflectance/r60m:b04)",
+            "title": "Band Arithmetic Expression",
+            "enum": [
+              "/measurements/reflectance/r60m:b01",
+              "/measurements/reflectance/r60m:b02",
+              "/measurements/reflectance/r60m:b03",
+              "/measurements/reflectance/r60m:b04",
+              "/measurements/reflectance/r60m:b05",
+              "/measurements/reflectance/r60m:b06",
+              "/measurements/reflectance/r60m:b07",
+              "/measurements/reflectance/r60m:b09",
+              "/measurements/reflectance/r60m:b11",
+              "/measurements/reflectance/r60m:b12",
+              "/measurements/reflectance/r60m:b8a"
+            ],
+            "options": {
+              "enum_titles": [
+                "B01",
+                "B02",
+                "B03",
+                "B04",
+                "B05",
+                "B06",
+                "B07",
+                "B09",
+                "B11",
+                "B12",
+                "B8A"
+              ],
+              "colors": [
+                "#66CCFF",
+                "#0070FF",
+                "#00C800",
+                "#FF0000",
+                "#C00040",
+                "#A00060",
+                "#CC0088",
+                "#9900FF",
+                "#FF9900",
+                "#8B4513",
+                "#CC33CC"
+              ]
+            }
+          }
+        },
+        "required": [
+          "expression",
+          "colormap_name",
+          "rescale",
+          "rescaleminmax",
+          "bidx"
+        ]
+      },
+      {
+        "type": "object",
+        "title": "Spectral Ratio Indices",
+        "options": {
+          "removeProperties": ["variables"]
+        },
+        "properties": {
+          "variables": {
+            "type": "array",
+            "options": {
+              "hidden": true
+            }
+          },
+          "colormap_name": {
+            "type": "string",
+            "title": "Colormap Name",
+            "default": "viridis",
+            "enum": [
+              "viridis",
+              "inferno",
+              "blues",
+              "ylorrd",
+              "coolwarm",
+              "seismic",
+              "terrain",
+              "ocean",
+              "rdylgn",
+              "jet"
+            ]
+          },
+          "rescale": {
+            "$ref": "#/definitions/rescale"
+          },
+          "rescaleminmax": {
+            "$ref": "#/definitions/rescaleminmax",
+            "default": { "min": -1.5, "max": 1.5 }
+          },
+          "bidx": {
+            "$ref": "#/definitions/bidx"
+          },
+          "expression": {
+            "type": "string",
+            "format": "bands-arithmetic",
+            "formulaTemplate": "({{A}})/({{B}})",
             "title": "Band Arithmetic Expression",
             "enum": [
               "/measurements/reflectance/r60m:b01",

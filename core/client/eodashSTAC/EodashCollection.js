@@ -26,7 +26,6 @@ import {
 import axios from "@/plugins/axios";
 import log from "loglevel";
 import { dataThemesBrands } from "@/utils/states";
-import exampleSchema from "@/utils/bands-editor/exampleSchema.json";
 
 export class EodashCollection {
   #collectionUrl = "";
@@ -152,10 +151,7 @@ export class EodashCollection {
       console.warn("[eodash] no item provided to buildJsonArray");
       return [];
     }
-    // to be removed
-    if (this.#collectionStac?.id === "sentinel-2-l2a") {
-      this.#collectionStac["eodash:rasterform"] = exampleSchema;
-    }
+
     log.debug(
       "Building JSON array",
       item,
@@ -186,11 +182,17 @@ export class EodashCollection {
     // will try to extract anything it supports but for which we have
     // less control.
 
+    const rasterformURL = /** @type {string|undefined} */ (
+      this.#collectionStac?.["eodash:rasterform"]
+    );
+    /** @type {import("@/types").EodashRasterJSONForm|undefined} */
+    const rasterForm = rasterformURL
+      ? await axios.get(rasterformURL).then((resp) => resp.data)
+      : undefined;
     let { layerConfig, style } = extractLayerConfig(
       this.#collectionStac?.id ?? "",
       await fetchStyle(item, itemUrl),
-      //@ts-expect-error todo
-      this.#collectionStac["eodash:rasterform"],
+      rasterForm,
     );
     console.log("extracted layerConfig", layerConfig, style);
 
