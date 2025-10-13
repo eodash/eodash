@@ -1,13 +1,16 @@
 import { registerProjection } from "@/store/actions";
 import { mapEl } from "@/store/states";
+import axios from "@/plugins/axios";
 import {
   extractRoles,
   getProjectionCode,
   createLayerID,
   createAssetID,
   mergeGeojsons,
+  extractLayerConfig,
   addTooltipInteraction,
 } from "./helpers";
+import { handleAuthenticationOfLink } from "./auth";
 import log from "loglevel";
 
 /**
@@ -209,6 +212,7 @@ export const createLayersFromLinks = async (
   const wmsArray = item.links.filter((l) => l.rel === "wms");
   const wmtsArray = item.links.filter((l) => l.rel === "wmts");
   const xyzArray = item.links.filter((l) => l.rel === "xyz") ?? [];
+  const vectorTileArray = item.links.filter((l) => l.rel === "vector-tile") ?? [];
 
   // Taking projection code from main map view, as main view defines
   // projection for comparison map
@@ -393,6 +397,66 @@ export const createLayersFromLinks = async (
     };
 
     extractRoles(json.properties, xyzLink);
+    if (extraProperties !== null) {
+      json.properties = { ...json.properties, ...extraProperties };
+    }
+    jsonArray.push(json);
+  }
+
+  for (const vectorTileLink of vectorTileArray ?? []) {
+    const vectorTileLinkProjection =
+      /** @type {number | string | {name: string, def: string} | undefined} */
+      (vectorTileLink?.["proj:epsg"] || vectorTileLink?.["eodash:proj4_def"]);
+
+    await registerProjection(vectorTileLinkProjection);
+    const projectionCode = getProjectionCode(vectorTileLinkProjection || "EPSG:3857");
+    const linkId = createLayerID(
+      collectionId,
+      item.id,
+      vectorTileLink,
+      viewProjectionCode,
+    );
+    log.debug("Vector Tile Layer added", linkId);
+    // // TODO REDO different key to link rel style
+    // let flatStyleJSON = null;
+    // if ("eox:flatstyle" in (vectorTileLink ?? {})) {
+    //   flatStyleJSON = await axios
+    //     .get(/** @type {string} */ (vectorTileLink["eox:flatstyle"]))
+    //     .then((resp) => resp.data);
+    // }
+  
+    // let layerConfig;
+    // let style;
+    // if (flatStyleJSON) {
+    //   const extracted = extractLayerConfig(linkId ?? "", flatStyleJSON);
+    //   layerConfig = extracted.layerConfig;
+    //   style = extracted.style;
+    // }
+    let href = vectorTileLink.href;
+    if ("auth:schemes" in item && "auth:refs" in vectorTileLink) {
+      href = handleAuthenticationOfLink(/** @type { import("@/types").StacAuthItem} */ (item), /** @type { import("@/types").StacAuthLink} */ (vectorTileLink));
+    }
+    let json = {
+      type: "VectorTile",
+      declutter: true,
+      properties: {
+        id: linkId,
+        title: vectorTileLink.title || title || item.id,
+        roles: vectorTileLink.roles,
+        layerDatetime,
+        // ...(layerConfig && { layerConfig: layerConfig }),
+      },
+      source: {
+        type: "VectorTile",
+        format: "MVT",
+        url: href,
+        projection: projectionCode,
+        attributions: vectorTileLink.attribution,
+      },
+      // ...(style && { style: style }),
+    };
+
+    extractRoles(json.properties, vectorTileLink);
     if (extraProperties !== null) {
       json.properties = { ...json.properties, ...extraProperties };
     }

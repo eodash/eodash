@@ -581,3 +581,73 @@ export interface GeoJsonFeatureCollection<
   features: Array<GeoJsonFeature<T, G>>;
   properties?: T & Record<string, any>;
 }
+/**
+ * Partial STAC Authentication Extension v1.1.0
+ * Generated from https://stac-extensions.github.io/authentication/v1.1.0/schema.json
+ */
+
+export interface AuthScheme {
+  /** Scheme keyword, e.g. http, s3, signedUrl, oauth2, apiKey, openIdConnect */
+  type:
+    | "http"
+    | "s3"
+    | "signedUrl"
+    | "oauth2"
+    | "apiKey"
+    | "openIdConnect"
+    | string;
+
+  description?: string;
+
+  name?: string;
+  in?: string;
+
+  scheme?: string;
+
+  flows?: Record<string, OAuth2Flow | SignedUrlFlow>;
+
+  openIdConnectUrl?: string;
+}
+
+export interface OAuth2Flow {
+  authorizationUrl?: string;
+  tokenUrl?: string;
+  refreshUrl?: string;
+  scopes: Record<string, string>;
+}
+
+
+/** Signed URL flow configuration */
+export interface SignedUrlFlow {
+  authorizationApi: string;
+  method: string;
+  responseField?: string;
+  parameters?: Record<
+    string,
+    {
+      in: "query" | "header" | "body" | string;
+      required: boolean;
+      description?: string;
+      schema?: object;
+    }
+  >;
+}
+
+export interface ApiKeyAuthScheme extends AuthScheme {
+   type: "apiKey",
+   name: string;
+   in: string;
+}
+
+import { StacItem, StacLink, StacAsset } from "stac-ts";
+export interface StacAuthItem extends StacItem {
+  "auth:schemes": {
+    [key: string]: AuthScheme;
+  },
+}
+export interface StacAuthLink extends StacLink {
+  "auth:refs": [string],
+}
+export interface StacAuthAsset extends StacAsset {
+  "auth:refs": [string],
+}

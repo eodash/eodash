@@ -200,7 +200,7 @@ export class EodashCollection {
       return data;
     }, /** @type {Record<string,import('stac-ts').StacAsset>} */ ({}));
     const isSupported =
-      item.links.some((link) => ["wms", "xyz", "wmts"].includes(link.rel)) ||
+      item.links.some((link) => ["wms", "xyz", "wmts", "vector-tile"].includes(link.rel)) ||
       Object.keys(dataAssets).length;
 
     if (isSupported) {
