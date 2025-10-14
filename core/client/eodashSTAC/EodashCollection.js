@@ -5,6 +5,7 @@ import {
   extractRoles,
   fetchApiItems,
   fetchStyle,
+  fetchAllStyles,
   findLayer,
   generateFeatures,
   getDatetimeProperty,
@@ -219,6 +220,7 @@ export class EodashCollection {
         this.#collectionStac?.id ?? "",
         title,
         item,
+        itemUrl,
         layerDatetime,
         extraProperties,
       );
@@ -386,12 +388,20 @@ export class EodashCollection {
     if (!(this.selectedItem instanceof Item)) {
       return [];
     }
-    let styles = await fetchStyle(
+    // get all style links, which could contribute by tooltip config and aggregate them
+    const styles = await fetchAllStyles(
       this.selectedItem,
       `${this.#collectionUrl}/${this.selectedItem.id}`,
     );
-    const { tooltip } = styles || { tooltip: [] };
-    this.#tooltipProperties = tooltip ?? [];
+    // get only unique ids to avoid duplicates
+    const aggregatedTooltips = [
+      ...new Map(
+        styles
+          .flatMap(style => style.tooltip || [])
+          .map(entry => [entry.id, entry])
+      ).values()
+    ];
+    this.#tooltipProperties = aggregatedTooltips ?? [];
     return this.#tooltipProperties;
   }
 
@@ -474,10 +484,10 @@ export class EodashCollection {
     );
 
     return [
+        //@ts-expect-error indicator instead of item
       ...(await createLayersFromLinks(
         indicator?.id ?? "",
         indicator?.title || indicator.id,
-        //@ts-expect-error indicator instead of item
         indicator,
       )),
       ...(await createLayersFromAssets(

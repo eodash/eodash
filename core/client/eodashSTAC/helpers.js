@@ -146,13 +146,19 @@ export const extractRoles = (properties, linkOrAsset) => {
 };
 
 /**
- * Extracts style JSON from a STAC Item
+ * Extracts a single non-link style JSON from a STAC Item optionally for a selected key mapping
  * @param {import("stac-ts").StacItem} item
  * @param {string} itemUrl
- * @returns
+ * @param {string | undefined} key
+ * @returns 
  **/
-export const fetchStyle = async (item, itemUrl) => {
-  const styleLink = item.links.find((link) => link.rel.includes("style"));
+export const fetchStyle = async (item, itemUrl, key=undefined) => {
+  let styleLink = null;
+  if (key) {
+    styleLink = item.links.find((link) => link.rel.includes("style") && link["links:keys"] && /** @type {Array<string>} */ (link["links:keys"]).includes(key) );
+  } else {
+    styleLink = item.links.find((link) => link.rel.includes("style") && !link["links:keys"]);
+  }
   if (styleLink) {
     let url = "";
     if (styleLink.href.startsWith("http")) {
@@ -167,6 +173,27 @@ export const fetchStyle = async (item, itemUrl) => {
     log.debug("fetched styles JSON", JSON.parse(JSON.stringify(styleJson)));
     return { ...styleJson };
   }
+};
+
+/**
+ * Extracts a single non-link style JSON from a STAC Item optionally for a selected key mapping
+ * @param {import("stac-ts").StacItem} item
+ * @param {string} itemUrl
+ * @returns { Promise <Array<import("@/types").EodashStyleJson>>}
+ **/
+export const fetchAllStyles = async (item, itemUrl) => {
+  const styleLinks = item.links.filter((link) => link.rel.includes("style"));
+  const fetchPromises = styleLinks.map(async (link) => {
+    let url = link.href.startsWith("http")
+      ? link.href
+      : toAbsolute(link.href, itemUrl);
+
+    const styleJson = await axios.get(url).then((resp) => resp.data);
+    log.debug("fetched styles JSON", JSON.parse(JSON.stringify(styleJson)));
+    return styleJson;
+  });
+  const results = await Promise.all(fetchPromises);
+  return results;
 };
 
 /**

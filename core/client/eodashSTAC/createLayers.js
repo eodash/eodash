@@ -1,6 +1,6 @@
 import { registerProjection } from "@/store/actions";
 import { mapEl } from "@/store/states";
-import axios from "@/plugins/axios";
+
 import {
   extractRoles,
   getProjectionCode,
@@ -9,6 +9,7 @@ import {
   mergeGeojsons,
   extractLayerConfig,
   addTooltipInteraction,
+  fetchStyle,
 } from "./helpers";
 import { handleAuthenticationOfLink } from "./auth";
 import log from "loglevel";
@@ -196,6 +197,7 @@ export async function createLayersFromAssets(
  * @param {string} collectionId
  * @param {import('stac-ts').StacItem} item
  * @param {string} title
+ * @param {string} itemUrl
  * @param {Record<string,any>} [layerDatetime]
  * @param {object | null} [extraProperties]
  */
@@ -203,6 +205,7 @@ export const createLayersFromLinks = async (
   collectionId,
   title,
   item,
+  itemUrl,
   layerDatetime,
   extraProperties,
 ) => {
@@ -417,26 +420,20 @@ export const createLayersFromLinks = async (
       viewProjectionCode,
     );
     log.debug("Vector Tile Layer added", linkId);
-    // // TODO REDO different key to link rel style
-    // let flatStyleJSON = null;
-    // if ("eox:flatstyle" in (vectorTileLink ?? {})) {
-    //   flatStyleJSON = await axios
-    //     .get(/** @type {string} */ (vectorTileLink["eox:flatstyle"]))
-    //     .then((resp) => resp.data);
-    // }
-  
-    // let layerConfig;
-    // let style;
-    // if (flatStyleJSON) {
-    //   const extracted = extractLayerConfig(linkId ?? "", flatStyleJSON);
-    //   layerConfig = extracted.layerConfig;
-    //   style = extracted.style;
-    // }
+    const key = /** @type {string | undefined} */ (vectorTileLink["key"]) || undefined;
+    // fetch styles and separate them by their mapping between links and assets
+    const styles = await fetchStyle(item, itemUrl, key);
+    // get the correct style which is not attached to a link
+    let { layerConfig, style } = extractLayerConfig(
+      linkId ?? "",
+      styles,
+    );
+   
     let href = vectorTileLink.href;
     if ("auth:schemes" in item && "auth:refs" in vectorTileLink) {
       href = handleAuthenticationOfLink(/** @type { import("@/types").StacAuthItem} */ (item), /** @type { import("@/types").StacAuthLink} */ (vectorTileLink));
     }
-    let json = {
+    const json = {
       type: "VectorTile",
       declutter: true,
       properties: {
@@ -444,7 +441,7 @@ export const createLayersFromLinks = async (
         title: vectorTileLink.title || title || item.id,
         roles: vectorTileLink.roles,
         layerDatetime,
-        // ...(layerConfig && { layerConfig: layerConfig }),
+        ...(layerConfig && { layerConfig: layerConfig }),
       },
       source: {
         type: "VectorTile",
@@ -453,9 +450,10 @@ export const createLayersFromLinks = async (
         projection: projectionCode,
         attributions: vectorTileLink.attribution,
       },
-      // ...(style && { style: style }),
+      interactions: [],
+      ...(style && { style: style }),
     };
-
+    addTooltipInteraction(json, style);
     extractRoles(json.properties, vectorTileLink);
     if (extraProperties !== null) {
       json.properties = { ...json.properties, ...extraProperties };

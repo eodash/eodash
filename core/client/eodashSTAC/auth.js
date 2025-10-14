@@ -10,9 +10,10 @@ export function handleAuthenticationOfLink(item, linkOrAsset) {
     const authSchemes  = item["auth:schemes"];
     if (authRef in authSchemes) {
       switch (authSchemes[authRef].type) {
-        case "apiKey":
-        //@ts-expect-error TODO
-        return handleApiKeyBasedAuth(authSchemes[authRef], linkOrAsset.href);
+        case "apiKey": {
+          //@ts-expect-error TODO
+          return handleApiKeyBasedAuth(authSchemes[authRef], linkOrAsset.href);
+        }
         // case "signedUrl":
         // case "s3":
         // case "http":
@@ -37,9 +38,8 @@ function handleApiKeyBasedAuth(schemeDef, href) {
   // add token to query parameters of href
   let url = href;
   switch (schemeDef.in) {
-    case "query":
+    case "query": {
       const apiKey = schemeDef.name;
-      // this this 
       const envVar = "EODASH_" + apiKey;
       const envValue = process.env[envVar];
       if (envValue) {
@@ -48,6 +48,7 @@ function handleApiKeyBasedAuth(schemeDef, href) {
         console.error(`env variable ${envVar} for authentication parameter ${apiKey} not set`);
       }
       break
+    }
     default:
       console.error('eodash does not support any referenced handler');
   }
