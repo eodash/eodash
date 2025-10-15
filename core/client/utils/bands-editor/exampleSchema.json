@@ -3,15 +3,12 @@
     "properties": {},
     "options": {
       "removeProperties": ["bidx", "variables"],
-      "cleanupIncompatibleProperties": true
+      "no_additional_properties": true
     },
     "oneOf": [
       {
         "type": "object",
         "title": "RGB Band Combination",
-        "options": {
-          "removeProperties": ["expression", "colormap_name"]
-        },
         "properties": {
           "bidx": {
             "$ref": "#/definitions/bidx"
@@ -26,11 +23,6 @@
             "title": "Custom Band Combination",
             "type": "array",
             "format": "bands",
-            "default": [
-              "/measurements/reflectance/r60m:b04",
-              "/measurements/reflectance/r60m:b03",
-              "/measurements/reflectance/r60m:b02"
-            ],
             "items": {
               "type": "string",
               "enum": [
@@ -41,10 +33,11 @@
                 "/measurements/reflectance/r60m:b05",
                 "/measurements/reflectance/r60m:b06",
                 "/measurements/reflectance/r60m:b07",
+                "/measurements/reflectance/r10m:b08",
+                "/measurements/reflectance/r60m:b8a",
                 "/measurements/reflectance/r60m:b09",
                 "/measurements/reflectance/r60m:b11",
-                "/measurements/reflectance/r60m:b12",
-                "/measurements/reflectance/r60m:b8a"
+                "/measurements/reflectance/r60m:b12"
               ],
               "options": {
                 "enum_titles": [
@@ -55,10 +48,11 @@
                   "B05",
                   "B06",
                   "B07",
+                  "B08",
+                  "B8A",
                   "B09",
                   "B11",
-                  "B12",
-                  "B8A"
+                  "B12"
                 ],
                 "colors": [
                   "#66CCFF",
@@ -68,23 +62,21 @@
                   "#C00040",
                   "#A00060",
                   "#CC0088",
+                  "#FF3366",
+                  "#CC33CC",
                   "#9900FF",
                   "#FF9900",
-                  "#8B4513",
-                  "#CC33CC"
+                  "#8B4513"
                 ]
               }
             }
           }
         },
-        "required": ["variables", "rescale", "rescaleminmax", "bidx"]
+        "required": ["variables", "rescale", "rescaleminmax"]
       },
       {
         "type": "object",
         "title": "Normalized Difference Indices",
-        "options": {
-          "removeProperties": ["variables"]
-        },
         "properties": {
           "variables": {
             "type": "array",
@@ -121,8 +113,8 @@
           "expression": {
             "type": "string",
             "format": "bands-arithmetic",
-            "formulaTemplate": "({{A}}-{{B}})/({{A}}+{{B}})",
-            "default": "(/measurements/reflectance/r60m:b8a−/measurements/reflectance/r60m:b04) / (/measurements/reflectance/r60m:b8a+/measurements/reflectance/r60m:b04)",
+            "formulaTemplate": "({{X}}-{{Y}})/({{X}}+{{Y}})",
+            "default": "(/measurements/reflectance/r60m:b8a−/measurements/reflectance/r60m:b04)/(/measurements/reflectance/r60m:b8a+/measurements/reflectance/r60m:b04)",
             "title": "Band Arithmetic Expression",
             "enum": [
               "/measurements/reflectance/r60m:b01",
@@ -132,10 +124,11 @@
               "/measurements/reflectance/r60m:b05",
               "/measurements/reflectance/r60m:b06",
               "/measurements/reflectance/r60m:b07",
+              "/measurements/reflectance/r10m:b08",
+              "/measurements/reflectance/r60m:b8a",
               "/measurements/reflectance/r60m:b09",
               "/measurements/reflectance/r60m:b11",
-              "/measurements/reflectance/r60m:b12",
-              "/measurements/reflectance/r60m:b8a"
+              "/measurements/reflectance/r60m:b12"
             ],
             "options": {
               "enum_titles": [
@@ -146,10 +139,11 @@
                 "B05",
                 "B06",
                 "B07",
+                "B08",
+                "B8A",
                 "B09",
                 "B11",
-                "B12",
-                "B8A"
+                "B12"
               ],
               "colors": [
                 "#66CCFF",
@@ -159,10 +153,11 @@
                 "#C00040",
                 "#A00060",
                 "#CC0088",
+                "#FF3366",
+                "#CC33CC",
                 "#9900FF",
                 "#FF9900",
-                "#8B4513",
-                "#CC33CC"
+                "#8B4513"
               ]
             }
           }
@@ -178,9 +173,6 @@
       {
         "type": "object",
         "title": "Spectral Ratio Indices",
-        "options": {
-          "removeProperties": ["variables"]
-        },
         "properties": {
           "variables": {
             "type": "array",
@@ -228,10 +220,11 @@
               "/measurements/reflectance/r60m:b05",
               "/measurements/reflectance/r60m:b06",
               "/measurements/reflectance/r60m:b07",
+              "/measurements/reflectance/r10m:b08",
+              "/measurements/reflectance/r60m:b8a",
               "/measurements/reflectance/r60m:b09",
               "/measurements/reflectance/r60m:b11",
-              "/measurements/reflectance/r60m:b12",
-              "/measurements/reflectance/r60m:b8a"
+              "/measurements/reflectance/r60m:b12"
             ],
             "options": {
               "enum_titles": [
@@ -242,10 +235,11 @@
                 "B05",
                 "B06",
                 "B07",
+                "B08",
+                "B8A",
                 "B09",
                 "B11",
-                "B12",
-                "B8A"
+                "B12"
               ],
               "colors": [
                 "#66CCFF",
@@ -255,10 +249,11 @@
                 "#C00040",
                 "#A00060",
                 "#CC0088",
+                "#FF3366",
+                "#CC33CC",
                 "#9900FF",
                 "#FF9900",
-                "#8B4513",
-                "#CC33CC"
+                "#8B4513"
               ]
             }
           }
@@ -282,10 +277,11 @@
           "/measurements/reflectance/r60m:b05",
           "/measurements/reflectance/r60m:b06",
           "/measurements/reflectance/r60m:b07",
+          "/measurements/reflectance/r10m:b08",
+          "/measurements/reflectance/r60m:b8a",
           "/measurements/reflectance/r60m:b09",
           "/measurements/reflectance/r60m:b11",
-          "/measurements/reflectance/r60m:b12",
-          "/measurements/reflectance/r60m:b8a"
+          "/measurements/reflectance/r60m:b12"
         ],
         "options": {
           "enum_titles": [
@@ -296,10 +292,11 @@
             "B05",
             "B06",
             "B07",
+            "B08",
+            "B8A",
             "B09",
             "B11",
-            "B12",
-            "B8A"
+            "B12"
           ],
           "colors": [
             "#66CCFF",
@@ -309,10 +306,11 @@
             "#C00040",
             "#A00060",
             "#CC0088",
+            "#FF3366",
+            "#CC33CC",
             "#9900FF",
             "#FF9900",
-            "#8B4513",
-            "#CC33CC"
+            "#8B4513"
           ]
         }
       },

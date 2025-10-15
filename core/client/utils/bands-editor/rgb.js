@@ -36,7 +36,6 @@ export function addRGBSlots(editor, bands, bandTitles) {
   // Create a container for RGB slots
   const rgbContainer = document.createElement("div");
   rgbContainer.classList.add("slots-container");
-
   ["R", "G", "B"].forEach((slot, index) => {
     const onDrop = (/** @type {DragEvent} */ e) => {
       e.preventDefault();
@@ -46,8 +45,7 @@ export function addRGBSlots(editor, bands, bandTitles) {
       const enumIndex = bands.indexOf(enumValue);
       const title = bandTitles[enumIndex] || enumValue;
 
-      fillSlotWithBand(editor, slotDiv, enumValue, title, "rgb");
-
+      fillSlotWithBand(slotDiv, enumValue, title);
       // Get current value as array or create new one
       const currentValue = editor.getValue() || [];
       currentValue[index] = enumValue;
@@ -55,7 +53,8 @@ export function addRGBSlots(editor, bands, bandTitles) {
       editor.onChange(true);
     };
 
-    const slotDiv = createSlot("rgb", slot, onDrop);
+    const slotDiv = createSlot(slot, onDrop);
+    addRGBSlotStyle(slotDiv);
     rgbContainer.appendChild(slotDiv);
 
     // Initialize with existing value
@@ -66,11 +65,38 @@ export function addRGBSlots(editor, bands, bandTitles) {
         const enumIndex = bands.indexOf(enumValue);
         const title = bandTitles[enumIndex] || enumValue;
         if (enumValue) {
-          fillSlotWithBand(editor, slotDiv, enumValue, title, "rgb");
+          fillSlotWithBand(slotDiv, enumValue, title);
         }
       }
     });
   });
 
   editor.control?.appendChild(rgbContainer);
+}
+
+/**
+ * Create specific styles for RGB slots
+ * @param {HTMLElement} rgbSlot - Array of RGB slot elements
+ */
+function addRGBSlotStyle(rgbSlot) {
+  rgbSlot.style.border = "2px dashed";
+  switch (rgbSlot.dataset.slot) {
+    case "R": {
+      rgbSlot.style.borderColor = "#F88";
+      rgbSlot.style.background = "#FEE";
+      break;
+    }
+    case "G": {
+      rgbSlot.style.borderColor = "#8F8";
+      rgbSlot.style.background = "#EFE";
+      break;
+    }
+    case "B": {
+      rgbSlot.style.borderColor = "#88F";
+      rgbSlot.style.background = "#EEF";
+      break;
+    }
+    default:
+      break;
+  }
 }
