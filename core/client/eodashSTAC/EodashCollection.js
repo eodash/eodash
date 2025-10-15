@@ -194,7 +194,6 @@ export class EodashCollection {
       await fetchStyle(item, itemUrl),
       rasterForm,
     );
-    console.log("extracted layerConfig", layerConfig, style);
 
     const { layerDatetime, timeControlValues } = extractLayerTimeValues(
       await this.getItems(),
@@ -281,7 +280,6 @@ export class EodashCollection {
       );
       jsonArray.push(json);
     }
-    console.log("jsonArray", jsonArray);
 
     return jsonArray;
   }

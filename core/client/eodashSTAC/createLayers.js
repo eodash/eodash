@@ -394,8 +394,6 @@ export const createLayersFromLinks = async (
 
     extractRoles(json.properties, xyzLink);
     if (extraProperties !== null) {
-      console.log("XYZ extraProperties", extraProperties);
-
       json.properties = { ...json.properties, ...extraProperties };
     }
     jsonArray.push(json);

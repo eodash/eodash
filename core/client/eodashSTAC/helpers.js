@@ -50,8 +50,6 @@ export function generateFeatures(links, extraProperties = {}, rel = "item") {
  * */
 export function extractLayerConfig(collectionId, style, rasterJsonform) {
   if (!style && !rasterJsonform) {
-    console.log("no style nor rasterJsonform provided");
-
     return { layerConfig: undefined, style: undefined };
   }
   if (style) {
