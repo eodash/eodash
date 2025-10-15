@@ -174,7 +174,10 @@ export const buildSearchUrl = (filters, propsFilters, bboxFilter) => {
 
   // Add collections
   if (filters.collection?.stringifiedState) {
-    params.append("collections", filters.collection.stringifiedState);
+    params.append(
+      "collections",
+      filters.collection.stringifiedState.replaceAll(" ", ""),
+    );
   }
 
   if (mapEl.value?.lonLatExtent && bboxFilter) {

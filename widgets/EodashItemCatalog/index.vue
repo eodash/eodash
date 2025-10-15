@@ -7,7 +7,7 @@
     <eox-itemfilter
       ref="itemfilter"
       titleProperty="id"
-      imageProperty="assets.thumbnail.href"
+      .imageProperty="imageProperty"
       .subTitleProperty="subTitleProperty"
       .filterProperties="filterProperties"
       .items="items"
@@ -75,6 +75,10 @@ const props = defineProps({
   bboxFilter: {
     type: Boolean,
     default: true,
+  },
+  imageProperty: {
+    type: String,
+    default: "assets.thumbnail.href",
   },
   filters: {
     /** @type {import("vue").PropType<import("./types").FiltersConfig>} */
