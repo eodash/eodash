@@ -11,9 +11,8 @@ const baseConfig = {
     // useSubCode: true,
   },
   stacEndpoint: {
-    endpoint: "https://api.explorer.eopf.copernicus.eu/stac",
-    api: true,
-    rasterEndpoint: "https://api.explorer.eopf.copernicus.eu/raster/",
+    endpoint: "https://esa-eodashboards.github.io/eodashboard-catalog/trilateral/catalog.json",
+    api: false,
   },
   brand: {
     noLayout: true,

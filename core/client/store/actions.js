@@ -5,6 +5,8 @@ import {
   activeTemplate,
   poi,
   comparePoi,
+  chartEl,
+  compareChartEl,
 } from "@/store/states";
 import { getProjectionCode } from "@/eodashSTAC/helpers";
 import log from "loglevel";
@@ -21,6 +23,18 @@ export const getLayers = () => mapEl.value?.layers.toReversed() ?? [];
  */
 export const getCompareLayers = () =>
   mapCompareEl.value?.layers.toReversed() ?? [];
+
+/**
+ * Returns the current chart spec from {@link chartEl}
+ * @returns {import("vega-lite").TopLevelSpec | null}
+ */
+export const getChartSpec = () => chartEl.value?.spec ?? null;
+
+/**
+ * Returns the current chart spec from {@link compareChartEl}
+ * @returns {import("vega-lite").TopLevelSpec | null}
+ */
+export const getCompareChartSpec = () => compareChartEl.value?.spec ?? null;
 
 /**
  * Register EPSG projection in `eox-map`
