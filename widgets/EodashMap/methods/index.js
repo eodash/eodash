@@ -197,7 +197,7 @@ export const useInitMap = (
           ) {
             // Sanitize extent,
             const b = updatedStac.extent?.spatial.bbox[0];
-            const sanitizedExtent = sanitizeBbox(b);
+            const sanitizedExtent = sanitizeBbox([...b]);
 
             const reprojExtent = mapElement.value?.transformExtent(
               sanitizedExtent,
