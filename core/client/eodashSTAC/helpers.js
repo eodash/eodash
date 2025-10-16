@@ -100,11 +100,11 @@ export const sanitizeBbox = (bbox) => {
   }
   let [minX, minY, maxX, maxY] = bbox;
   // Normalize longitudes to be within -180 to 180
-  minX = ((((minX + 180) % 360) + 360) % 360) - 180;
-  maxX = ((((maxX + 180) % 360) + 360) % 360) - 180;
+  minX = ((minX + 180) % 360) - 180;
+  maxX = ((maxX + 180) % 360) - 180;
   // Normalize latitudes to be within -90 to 90
-  minY = ((((minY + 90) % 180) + 180) % 180) - 90;
-  maxY = ((((maxY + 90) % 180) + 180) % 180) - 90;
+  minY = ((minY + 90) % 180) - 90;
+  maxY = ((maxY + 90) % 180) - 90;
 
   return [minX, minY, maxX, maxY];
 };
