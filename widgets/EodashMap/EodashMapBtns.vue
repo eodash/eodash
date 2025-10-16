@@ -86,15 +86,8 @@
       :height="popupHeight"
     >
       <EodashItemFilter
+        v-bind="itemFilterConfig"
         :enableCompare="true"
-        :enableHighlighting="false"
-        resultType="cards"
-        style="--select-filter-max-items: 8"
-        filters-title="Select an indicator to compare"
-        subTitleProperty="subtitle"
-        imageProperty="thumbnail"
-        aggregateResults="collection_group"
-        results-title=""
         @select="onSelectCompareIndicator"
       />
     </PopUp>
@@ -148,7 +141,11 @@ const {
     default: true,
   },
   compareIndicators: {
-    /** @type {import("vue").PropType<boolean | {compareTemplate?:string;fallbackTemplate?:string}> }*/
+    /** @type {import("vue").PropType<boolean | {
+    compareTemplate?:string;
+    fallbackTemplate?:string;
+    itemFilterConfig?:Partial<InstanceType<import("./EodashItemFilter.vue").default>["$props"]>
+    }> }*/
     type: [Boolean, Object],
     default: true,
   },
@@ -181,6 +178,18 @@ const compareIcon = computed(() =>
     ? mdiCompareRemove
     : mdiCompare,
 );
+const itemFilterConfig = {
+  enableHighlighting: false,
+  resultType: "cards",
+  style: "--select-filter-max-items: 8",
+  "filters-title": "Select an indicator to compare",
+  subTitleProperty: "subtitle",
+  imageProperty: "thumbnail",
+  aggregateResults: "collection_group",
+  "results-title": "",
+  ...(typeof compareIndicators === "object" &&
+    compareIndicators.itemFilterConfig),
+};
 
 const onCompareClick = () => {
   showCompareIndicators.value =

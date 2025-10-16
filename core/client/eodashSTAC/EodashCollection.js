@@ -151,6 +151,7 @@ export class EodashCollection {
       console.warn("[eodash] no item provided to buildJsonArray");
       return [];
     }
+
     log.debug(
       "Building JSON array",
       item,
@@ -181,9 +182,17 @@ export class EodashCollection {
     // will try to extract anything it supports but for which we have
     // less control.
 
+    const rasterformURL = /** @type {string|undefined} */ (
+      this.#collectionStac?.["eodash:rasterform"]
+    );
+    /** @type {import("@/types").EodashRasterJSONForm|undefined} */
+    const rasterForm = rasterformURL
+      ? await axios.get(rasterformURL).then((resp) => resp.data)
+      : undefined;
     let { layerConfig, style } = extractLayerConfig(
       this.#collectionStac?.id ?? "",
       await fetchStyle(item, itemUrl),
+      rasterForm,
     );
 
     const { layerDatetime, timeControlValues } = extractLayerTimeValues(
@@ -209,6 +218,7 @@ export class EodashCollection {
       extraProperties = {
         ...extraProperties,
         ...(this.color && { color: this.color }),
+        ...(layerConfig && { layerConfig }),
         ...(timeControlValues && {
           timeControlValues,
           timeControlProperty: "TIME",
