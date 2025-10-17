@@ -26,13 +26,13 @@ export const getCompareLayers = () =>
 
 /**
  * Returns the current chart spec from {@link chartEl}
- * @returns {import("vega-lite").TopLevelSpec | null}
+ * @returns {import("vega-lite").VisualizationSpec | null}
  */
 export const getChartSpec = () => chartEl.value?.spec ?? null;
 
 /**
  * Returns the current chart spec from {@link compareChartEl}
- * @returns {import("vega-lite").TopLevelSpec | null}
+ * @returns {import("vega-lite").VisualizationSpec | null}
  */
 export const getCompareChartSpec = () => compareChartEl.value?.spec ?? null;
 
