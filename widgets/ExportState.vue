@@ -13,7 +13,7 @@
           {{ removeUnneededProperties(getLayers()) }}
         </div>
 
-        <div v-if="props.getChartSpec()" class="mb-4">
+        <div v-if="props.getChartSpec?.()" class="mb-4">
           <p class="text-body-2 mb-2">
             <strong>Chart Spec (for export)</strong>
           </p>
@@ -106,7 +106,7 @@ const copyBtns = [
     copyFn: async () =>
       await copyToClipBoard(getChartExportCode(), copySuccess),
     copyAs: "chart",
-    showIf: () => !!props.getChartSpec(),
+    showIf: () => !!props.getChartSpec?.(),
   },
 ];
 
@@ -129,7 +129,7 @@ const getMapEntryCode = () => {
 };
 
 const getChartExportCode = () => {
-  const chartSpec = props.getChartSpec();
+  const chartSpec = props.getChartSpec?.();
   if (!chartSpec) return "";
   const preTag = "## Chart Example <!" + '--{as="eox-chart" spec=';
   const endTag = " }-->";
