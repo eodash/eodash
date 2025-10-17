@@ -11,7 +11,8 @@ const baseConfig = {
     // useSubCode: true,
   },
   stacEndpoint: {
-    endpoint: "https://esa-eodashboards.github.io/eodashboard-catalog/trilateral/catalog.json",
+    endpoint:
+      "https://esa-eodashboards.github.io/eodashboard-catalog/trilateral/catalog.json",
     api: false,
   },
   brand: {

@@ -62,7 +62,10 @@ import { mdiClipboardCheckOutline, mdiContentCopy } from "@mdi/js";
 import PopUp from "./PopUp.vue";
 import { copyToClipBoard } from "@/utils";
 import { ref } from "vue";
-import { getLayers as getLayerAction, getChartSpec as getChartSpecAction } from "@/store/actions";
+import {
+  getLayers as getLayerAction,
+  getChartSpec as getChartSpecAction,
+} from "@/store/actions";
 import { mapPosition, availableMapProjection } from "@/store/states";
 import { removeUnneededProperties } from "@/eodashSTAC/helpers";
 
@@ -100,7 +103,8 @@ const copyBtns = [
   },
   {
     id: Symbol(),
-    copyFn: async () => await copyToClipBoard(getChartExportCode(), copySuccess),
+    copyFn: async () =>
+      await copyToClipBoard(getChartExportCode(), copySuccess),
     copyAs: "chart",
     showIf: () => !!props.getChartSpec(),
   },
