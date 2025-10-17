@@ -133,7 +133,7 @@ const getChartExportCode = () => {
   if (!chartSpec) return "";
   const preTag = "## Chart Example <!" + '--{as="eox-chart" spec=';
   const endTag = " }-->";
-  return `${preTag}${JSON.stringify(chartSpec)}${endTag}`;
+  return `${preTag}'${JSON.stringify(chartSpec)}'${endTag}`;
 };
 </script>
 <style scoped>
