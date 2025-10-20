@@ -190,7 +190,7 @@ export const fetchStyle = async (item, itemUrl, key=undefined) => {
 };
 
 /**
- * Extracts a single non-link style JSON from a STAC Item optionally for a selected key mapping
+ * Fetches all style JSONs from a STAC Item and returns an array with style objects
  * @param {import("stac-ts").StacItem} item
  * @param {string} itemUrl
  * @returns { Promise <Array<import("@/types").EodashStyleJson>>}
