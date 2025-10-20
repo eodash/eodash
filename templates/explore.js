@@ -24,6 +24,18 @@ export default {
       name: "EodashMap",
       properties: {
         enableCompare: true,
+        btns: {
+          enableZoom: true,
+          enableExportMap: true,
+          enableChangeProjection: true,
+          enableCompareIndicators: {
+            fallbackTemplate: "explore",
+            itemFilterConfig: {
+              imageProperty: "assets.thumbnail.href",
+            },
+          },
+          enableSearch: true,
+        },
       },
     },
   },
@@ -46,17 +58,5 @@ export default {
         name: "EodashItemCatalog",
       },
     },
-    // {
-    //   defineWidget: (selectedSTAC) =>
-    //     includesProcess(selectedSTAC) && {
-    //       id: "Processes",
-    //       type: "internal",
-    //       title: "Processes",
-    //       layout: { x: "9/9/10", y: 6, w: "3/3/2", h: 5 },
-    //       widget: {
-    //         name: "EodashProcess",
-    //       },
-    //     },
-    // },
   ],
 };

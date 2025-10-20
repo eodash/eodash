@@ -46,14 +46,28 @@ export function generateFeatures(links, extraProperties = {}, rel = "item") {
  *
  * @param {string} collectionId
  *  @param { import("@/types").EodashStyleJson} [style]
+ * @param {Record<string,any>} [rasterJsonform]
  * */
-export function extractLayerConfig(collectionId, style) {
-  if (!style) {
+export function extractLayerConfig(collectionId, style, rasterJsonform) {
+  if (!style && !rasterJsonform) {
     return { layerConfig: undefined, style: undefined };
   }
-  style = { ...style };
+  if (style) {
+    style = { ...style };
+  }
 
-  if (Object.keys(style.variables ?? {}).length) {
+  if (rasterJsonform) {
+    return {
+      layerConfig: {
+        schema: rasterJsonform.jsonform,
+        legend: rasterJsonform.legend,
+        type: "tileUrl",
+      },
+      style,
+    };
+  }
+
+  if (style?.variables && Object.keys(style.variables ?? {}).length) {
     style.variables = getStyleVariablesState(collectionId, style.variables);
   }
 
@@ -86,11 +100,11 @@ export const sanitizeBbox = (bbox) => {
   }
   let [minX, minY, maxX, maxY] = bbox;
   // Normalize longitudes to be within -180 to 180
-  minX = ((((minX + 180) % 360) + 360) % 360) - 180;
-  maxX = ((((maxX + 180) % 360) + 360) % 360) - 180;
+  minX = Math.max(((minX + 180) % 360) - 180,-180);
+  maxX = Math.min(((maxX - 180) % 360) + 180,180);
   // Normalize latitudes to be within -90 to 90
-  minY = ((((minY + 90) % 180) + 180) % 180) - 90;
-  maxY = ((((maxY + 90) % 180) + 180) % 180) - 90;
+  minY = Math.max(((minY + 90) % 180) - 90,-90);
+  maxY = Math.min(((maxY - 90) % 180) + 90,90);
 
   return [minX, minY, maxX, maxY];
 };
