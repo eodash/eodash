@@ -441,7 +441,12 @@ export const createLayersFromLinks = async (
         title: vectorTileLink.title || title || item.id,
         roles: vectorTileLink.roles,
         layerDatetime,
-        ...(layerConfig && { layerConfig: layerConfig }),
+        ...(layerConfig && {
+            layerConfig: {
+              ...layerConfig,
+              style,
+            },
+          }),
       },
       source: {
         type: "VectorTile",
@@ -451,7 +456,7 @@ export const createLayersFromLinks = async (
         attributions: vectorTileLink.attribution,
       },
       interactions: [],
-      ...(style && { style: style }),
+      ...(!style?.variables && { style }),
     };
     addTooltipInteraction(json, style);
     extractRoles(json.properties, vectorTileLink);
