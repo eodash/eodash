@@ -6,6 +6,30 @@
       </v-card-title>
 
       <v-card-text class="py-5 overflow-auto" style="height: 400px">
+        <div class="d-flex flex-wrap gap-2 mb-4">
+          <v-btn
+            v-for="btn in copyBtns"
+            v-show="!btn.showIf || btn.showIf()"
+            class="text-body-2"
+            @click="btn.copyFn"
+            :key="btn.id"
+            small
+            variant="text"
+            :prepend-icon="[mdiContentCopy]"
+          >
+            copy as {{ btn.copyAs }}
+          </v-btn>
+        </div>
+
+        <div style="position: absolute; bottom: 15px">
+          <v-expand-transition>
+            <div v-if="copySuccess" class="text-success mr-3">
+              <v-icon color="success" left :icon="[mdiClipboardCheckOutline]" />
+              <small>copied!</small>
+            </div>
+          </v-expand-transition>
+        </div>
+
         <p class="text-body-2 mb-2">
           <strong>Map Layers Configuration</strong>
         </p>
@@ -21,31 +45,6 @@
             {{ getChartExportCode() }}
           </div>
         </div>
-
-        <div style="position: absolute; bottom: 15px">
-          <v-expand-transition>
-            <div v-if="copySuccess" class="text-success mr-3">
-              <v-icon color="success" left :icon="[mdiClipboardCheckOutline]" />
-              <small>copied!</small>
-            </div>
-          </v-expand-transition>
-        </div>
-        <v-row class="d-flex pt-3 justify-end">
-          <v-col cols="6" class="flex-column align-center text-end">
-            <v-btn
-              v-for="btn in copyBtns"
-              v-show="!btn.showIf || btn.showIf()"
-              class="text-body-2"
-              @click="btn.copyFn"
-              :key="btn.id"
-              small
-              variant="text"
-              :prepend-icon="[mdiContentCopy]"
-            >
-              copy as {{ btn.copyAs }}
-            </v-btn>
-          </v-col>
-        </v-row>
       </v-card-text>
 
       <v-divider></v-divider>
