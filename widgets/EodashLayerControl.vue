@@ -5,9 +5,9 @@
       :key="mapElement"
       v-bind="config"
       :for="mapElement"
+      .customEditorInterfaces="bandsEditorInterface"
       @datetime:updated="debouncedHandleDateTime"
       toolsAsList="true"
-      style="--eox-background-color: transparent"
       ref="eoxLayercontrol"
       @layerConfig:change="onLayerConfigChange"
     >
@@ -22,12 +22,8 @@
   </span>
 </template>
 <script setup>
-import "@eox/layercontrol";
-
-import "@eox/jsonform";
-import "@eox/timecontrol";
 import "color-legend-element";
-
+import "@eox/timecontrol";
 import { computed, ref } from "vue";
 import { mapEl, mapCompareEl } from "@/store/states";
 import { getColFromLayer } from "@/eodashSTAC/helpers";
@@ -39,6 +35,14 @@ import {
 } from "@/utils/states";
 import { storeToRefs } from "pinia";
 import { useSTAcStore } from "@/store/stac";
+import { bandsEditorInterface } from "@/utils/bands-editor";
+
+if (!customElements.get("eox-layercontrol")) {
+  await import("@eox/layercontrol");
+}
+if (!customElements.get("eox-jsonform")) {
+  await import("@eox/jsonform");
+}
 
 const props = defineProps({
   map: {
