@@ -45,3 +45,9 @@ export const poi = ref("");
  * Selected point of interest for comparison, used for location collections
  */
 export const comparePoi = ref("");
+
+/** @type {import("vue").Ref<import("@eox/chart").EOxChart | null>} */
+export const chartEl = shallowRef(null);
+
+/** @type {import("vue").Ref<import("@eox/chart").EOxChart | null>} */
+export const compareChartEl = shallowRef(null);

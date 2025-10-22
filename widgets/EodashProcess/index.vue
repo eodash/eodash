@@ -9,6 +9,7 @@
       .schema="jsonformSchema"
     ></eox-jsonform>
     <eox-chart
+      ref="chartElRef"
       class="chart"
       v-if="isProcessed && chartSpec"
       .spec="toRaw(chartSpec)"
@@ -45,7 +46,7 @@ import "@eox/drawtools";
 import "@eox/jsonform";
 import { useSTAcStore } from "@/store/stac";
 import { storeToRefs } from "pinia";
-import { computed, ref, toRaw, useTemplateRef } from "vue";
+import { computed, ref, toRaw, useTemplateRef, watch } from "vue";
 import ProcessList from "./ProcessList.vue";
 import { handleProcesses, onChartClick } from "./methods/handling";
 import { useInitProcess, useAutoExec } from "./methods/composables";
@@ -55,6 +56,8 @@ import {
   indicator,
   mapCompareEl,
   mapEl,
+  chartEl,
+  compareChartEl,
 } from "@/store/states";
 import { download } from "./methods/utils";
 import { compareJobs, jobs } from "./states";
@@ -85,6 +88,10 @@ const jsonformSchema = ref(null);
 const jsonformEl =
   /** @type {Readonly<import("vue").ShallowRef<import("@eox/jsonform").EOxJSONForm | null>>} */ (
     useTemplateRef("jsonformEl")
+  );
+const chartElRef =
+  /** @type {Readonly<import("vue").ShallowRef<import("@eox/chart").EOxChart | null>>} */ (
+    useTemplateRef("chartElRef")
   );
 const isAsync = computed(
   () =>
@@ -207,6 +214,15 @@ const chartStyles = computed(() => {
       ) + "px";
   }
   return styles;
+});
+
+// Assign chart element to global state based on compare mode
+watch(chartElRef, (newVal) => {
+  if (enableCompare) {
+    compareChartEl.value = newVal;
+  } else {
+    chartEl.value = newVal;
+  }
 });
 </script>
 <style>
