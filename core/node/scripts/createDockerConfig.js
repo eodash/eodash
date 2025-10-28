@@ -1,7 +1,7 @@
 /*
-  This script creates a runtime configuration file eodash based on
+  This script creates a runtime configuration file based on
   environment variables set in the Dockerfile.
-  Should be run after building the app
+  Should be executed after building the app
  */
 import fs from "fs";
 import path from "path";
