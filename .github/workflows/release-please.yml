@@ -34,7 +34,7 @@ jobs:
           npx pkg-pr-new publish --comment=update
         if: ${{ !steps.release.outputs.release_created }}
       - name: Login ghcr 🔧
-        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u $ --password-stdin
+        run: echo "${{ secrets.GH_TOKEN }}" | docker login ghcr.io -u $ --password-stdin
         if: ${{ fromJSON(steps.release.outputs.releases_created) }}
       - name: Build SPA 🔧
         run: npm run build 
