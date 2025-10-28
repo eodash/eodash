@@ -6,12 +6,19 @@
       </v-card-title>
 
       <v-card-text class="py-5 overflow-auto" style="height: 400px">
-        <p class="text-body-2">
-          Copy and paste this code into the map <b>layers field</b> of the
-          storytelling editor:
-        </p>
-        <div class="pa-3 code-block">
-          {{ removeUnneededProperties(getLayers()) }}
+        <div class="d-flex flex-wrap gap-2 mb-4">
+          <v-btn
+            v-for="btn in copyBtns"
+            v-show="!btn.showIf || btn.showIf()"
+            class="text-body-2"
+            @click="btn.copyFn"
+            :key="btn.id"
+            small
+            variant="text"
+            :prepend-icon="[mdiContentCopy]"
+          >
+            copy as {{ btn.copyAs }}
+          </v-btn>
         </div>
 
         <div style="position: absolute; bottom: 15px">
@@ -22,21 +29,22 @@
             </div>
           </v-expand-transition>
         </div>
-        <v-row class="d-flex pt-3 justify-end">
-          <v-col cols="6" class="flex-column align-center text-end">
-            <v-btn
-              v-for="btn in copyBtns"
-              class="text-body-2"
-              @click="btn.copyFn"
-              :key="btn.id"
-              small
-              variant="text"
-              :prepend-icon="[mdiContentCopy]"
-            >
-              copy as {{ btn.copyAs }}
-            </v-btn>
-          </v-col>
-        </v-row>
+
+        <p class="text-body-2 mb-2">
+          <strong>Map Layers Configuration</strong>
+        </p>
+        <div class="pa-3 code-block mb-4">
+          {{ removeUnneededProperties(getLayers()) }}
+        </div>
+
+        <div v-if="props.getChartSpec?.()" class="mb-4">
+          <p class="text-body-2 mb-2">
+            <strong>Chart Spec (for export)</strong>
+          </p>
+          <div class="pa-3 code-block">
+            {{ getChartExportCode() }}
+          </div>
+        </div>
       </v-card-text>
 
       <v-divider></v-divider>
@@ -53,7 +61,10 @@ import { mdiClipboardCheckOutline, mdiContentCopy } from "@mdi/js";
 import PopUp from "./PopUp.vue";
 import { copyToClipBoard } from "@/utils";
 import { ref } from "vue";
-import { getLayers as getLayerAction } from "@/store/actions";
+import {
+  getLayers as getLayerAction,
+  getChartSpec as getChartSpecAction,
+} from "@/store/actions";
 import { mapPosition, availableMapProjection } from "@/store/states";
 import { removeUnneededProperties } from "@/eodashSTAC/helpers";
 
@@ -63,6 +74,10 @@ const props = defineProps({
   getLayers: {
     type: Function,
     default: getLayerAction,
+  },
+  getChartSpec: {
+    type: Function,
+    default: getChartSpecAction,
   },
 });
 
@@ -85,6 +100,13 @@ const copyBtns = [
     copyFn: async () => await copyToClipBoard(getMapStepCode(), copySuccess),
     copyAs: "map tour section",
   },
+  {
+    id: Symbol(),
+    copyFn: async () =>
+      await copyToClipBoard(getChartExportCode(), copySuccess),
+    copyAs: "chart",
+    showIf: () => !!props.getChartSpec?.(),
+  },
 ];
 
 const getMapStepCode = () => {
@@ -103,6 +125,14 @@ const getMapEntryCode = () => {
     '--{as="eox-map" style="width: 100%; height: 500px;" layers=';
   const endTag = `zoom="${z}" center=[${[x, y]}] projection="${availableMapProjection.value}" }-->`;
   return `${preTag}'${JSON.stringify(removeUnneededProperties(props.getLayers()))}' ${endTag}`;
+};
+
+const getChartExportCode = () => {
+  const chartSpec = props.getChartSpec?.();
+  if (!chartSpec) return "";
+  const preTag = "## Chart Example <!" + '--{as="eox-chart" style="height: 300px;" spec=';
+  const endTag = " }-->";
+  return `${preTag}'${JSON.stringify(chartSpec)}'${endTag}`;
 };
 </script>
 <style scoped>
