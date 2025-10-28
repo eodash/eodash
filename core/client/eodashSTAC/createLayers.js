@@ -45,7 +45,6 @@ export async function createLayersFromAssets(
 
   const geoJsonSources = [];
   let geoJsonRoles = {};
-
   for (const [idx, ast] of Object.keys(assets).entries()) {
     // register projection if exists
     const assetProjection =
@@ -53,6 +52,7 @@ export async function createLayersFromAssets(
         assets[ast]?.["proj:epsg"] || assets[ast]?.["eodash:proj4_def"]
       );
     await registerProjection(assetProjection);
+    const projection = getProjectionCode(assetProjection) || "EPSG:4326";
     if (assets[ast]?.type === "application/geo+json") {
       geoJsonSources.push(assets[ast].href);
       geoJsonIdx = idx;
@@ -68,7 +68,7 @@ export async function createLayersFromAssets(
         source: {
           type: "FlatGeoBuf",
           url: assets[ast].href,
-          format: "GeoJSON",
+          projection,
           attributions: assets[ast].attribution,
         },
         properties: {
@@ -135,13 +135,16 @@ export async function createLayersFromAssets(
   if (geoJsonSources.length) {
     const assetId = createAssetID(collectionId, item.id, geoJsonIdx);
     log.debug(`Creating Vector layer from GeoJsons`, assetId);
-
+    // assumption that each GeoJSON asset is in same projection due to their merging
     const layer = {
       type: "Vector",
       source: {
         type: "Vector",
         url: await mergeGeojsons(geoJsonSources),
-        format: "GeoJSON",
+        format: {
+          "type": "GeoJSON",
+          "dataProjection": dataProjection
+        },
         attributions: geoJsonAttributions,
       },
       properties: {

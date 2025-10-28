@@ -75,6 +75,7 @@ export function extractLayerConfig(collectionId, style, rasterJsonform) {
   let layerConfig = undefined;
 
   if (style?.jsonform) {
+    // this explicitly sets legend only if jsonform is configured
     layerConfig = { schema: style.jsonform, type: "style" };
     delete style.jsonform;
     if (style?.legend) {
