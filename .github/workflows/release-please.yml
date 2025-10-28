@@ -33,3 +33,15 @@ jobs:
         run: |
           npx pkg-pr-new publish --comment=update
         if: ${{ !steps.release.outputs.release_created }}
+      - name: Login ghcr 🔧
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u $ --password-stdin
+        if: ${{ fromJSON(steps.release.outputs.releases_created) }}
+      - name: Build SPA 🔧
+        run: npm run build 
+        if: ${{ fromJSON(steps.release.outputs.releases_created) }}
+      - name: Build image 🔧
+        run: docker build -t ghcr.io/eodash/eodash:${{ steps.release.outputs.tag_name }} .
+        if: ${{ fromJSON(steps.release.outputs.releases_created) }}
+      - name: Push ghcr 🚀
+        run: docker push ghcr.io/eodash/eodash:${{ steps.release.outputs.tag_name }}
+        if: ${{ fromJSON(steps.release.outputs.releases_created) }}
