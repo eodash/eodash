@@ -169,7 +169,7 @@ function searchForPackageRoot(
   }
 }
 
-export const indexHtml = `
+export const indexHtml = /* html */ `
 <!DOCTYPE html>
 <html lang="en" style="overflow: hidden">
 
@@ -192,10 +192,10 @@ export const indexHtml = `
 <body>
 ${
   userConfig.lib
-    ? `<eo-dash style="height:100%;"/>
+    ? /* html */ `<eo-dash style="height:100%;"/>
 <script type="module" src="${path.resolve(`/@fs/${appPath}`, `core/client/asWebComponent.js`)}"></script>
 `
-    : ` <div id="app" style="height:100%;" />
+    : /* html */ ` <div id="app" style="height:100%;" />
 <script type="module" src="${path.resolve(`/@fs/${appPath}`, `core/client/render.js`)}"></script>
 `
 }
