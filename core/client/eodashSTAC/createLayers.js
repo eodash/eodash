@@ -45,6 +45,7 @@ export async function createLayersFromAssets(
 
   const geoJsonSources = [];
   let geoJsonRoles = {};
+  let projection = undefined;
   for (const [idx, ast] of Object.keys(assets).entries()) {
     // register projection if exists
     const assetProjection =
@@ -52,7 +53,7 @@ export async function createLayersFromAssets(
         assets[ast]?.["proj:epsg"] || assets[ast]?.["eodash:proj4_def"]
       );
     await registerProjection(assetProjection);
-    const projection = getProjectionCode(assetProjection) || "EPSG:4326";
+    projection = getProjectionCode(assetProjection) || "EPSG:4326";
     if (assets[ast]?.type === "application/geo+json") {
       geoJsonSources.push(assets[ast].href);
       geoJsonIdx = idx;
@@ -141,7 +142,7 @@ export async function createLayersFromAssets(
       source: {
         type: "Vector",
         url: await mergeGeojsons(geoJsonSources),
-        format: "GeoJSON",
+        format: {"type": "GeoJSON", "dataProjection": projection},
         attributions: geoJsonAttributions,
       },
       properties: {
