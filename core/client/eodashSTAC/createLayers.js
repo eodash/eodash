@@ -141,10 +141,7 @@ export async function createLayersFromAssets(
       source: {
         type: "Vector",
         url: await mergeGeojsons(geoJsonSources),
-        format: {
-          "type": "GeoJSON",
-          "dataProjection": dataProjection
-        },
+        format: "GeoJSON",
         attributions: geoJsonAttributions,
       },
       properties: {
