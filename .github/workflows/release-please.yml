@@ -33,3 +33,33 @@ jobs:
         run: |
           npx pkg-pr-new publish --comment=update
         if: ${{ !steps.release.outputs.release_created }}
+      - name: Login to ghcr 🔧
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+        if: ${{ steps.release.outputs.release_created }}
+      - name: Get Pre-release tag 🏷️
+        id: prerelease
+        run: |
+          TAG=$(node core/node/scripts/createPrereleaseTag.js)
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "Generated prerelease tag: $TAG"
+        if: ${{ !steps.release.outputs.release_created }}
+      - name: Build SPA ⚙️
+        run: npm run build
+      - name: Build image 🔧
+        run: |
+          if [ "${{ steps.release.outputs.release_created }}" == "true" ]; then
+            docker build -t ghcr.io/eodash/eodash:${{ steps.release.outputs.tag_name }} .
+          else
+            docker build -t ghcr.io/eodash/eodash:${{ steps.prerelease.outputs.tag }} .
+          fi
+      - name: Push ghcr 🚀
+        run: |
+          if [ "${{ steps.release.outputs.release_created }}" == "true" ]; then
+            docker push ghcr.io/eodash/eodash:${{ steps.release.outputs.tag_name }}
+          else
+            docker push ghcr.io/eodash/eodash:${{ steps.prerelease.outputs.tag }}
+          fi

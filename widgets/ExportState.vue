@@ -130,7 +130,8 @@ const getMapEntryCode = () => {
 const getChartExportCode = () => {
   const chartSpec = props.getChartSpec?.();
   if (!chartSpec) return "";
-  const preTag = "## Chart Example <!" + '--{as="eox-chart" style="height: 300px;" spec=';
+  const preTag =
+    "## Chart Example <!" + '--{as="eox-chart" style="height: 300px;" spec=';
   const endTag = " }-->";
   return `${preTag}'${JSON.stringify(chartSpec)}'${endTag}`;
 };
