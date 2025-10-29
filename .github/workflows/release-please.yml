@@ -39,13 +39,27 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-        if: ${{ fromJSON(steps.release.outputs.releases_created) }}
-      - name: Build SPA 🔧
-        run: npm run build 
-        if: ${{ fromJSON(steps.release.outputs.releases_created) }}
+        if: ${{ steps.release.outputs.release_created }}
+      - name: Get Pre-release tag 🏷️
+        id: prerelease
+        run: |
+          TAG=$(node core/node/scripts/createPrereleaseTag.js)
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "Generated prerelease tag: $TAG"
+        if: ${{ !steps.release.outputs.release_created }}
+      - name: Build SPA ⚙️
+        run: npm run build
       - name: Build image 🔧
-        run: docker build -t ghcr.io/eodash/eodash:${{ steps.release.outputs.tag_name }} .
-        if: ${{ fromJSON(steps.release.outputs.releases_created) }}
+        run: |
+          if [ "${{ steps.release.outputs.release_created }}" == "true" ]; then
+            docker build -t ghcr.io/eodash/eodash:${{ steps.release.outputs.tag_name }} .
+          else
+            docker build -t ghcr.io/eodash/eodash:${{ steps.prerelease.outputs.tag }} .
+          fi
       - name: Push ghcr 🚀
-        run: docker push ghcr.io/eodash/eodash:${{ steps.release.outputs.tag_name }}
-        if: ${{ fromJSON(steps.release.outputs.releases_created) }}
+        run: |
+          if [ "${{ steps.release.outputs.release_created }}" == "true" ]; then
+            docker push ghcr.io/eodash/eodash:${{ steps.release.outputs.tag_name }}
+          else
+            docker push ghcr.io/eodash/eodash:${{ steps.prerelease.outputs.tag }}
+          fi
