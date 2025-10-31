@@ -69,7 +69,7 @@ export function getStyleVariablesState(collectionId, variables) {
     ];
     return (
       collection === collectionId &&
-      ["Vector", "WebGLTile"].includes(layer?.type ?? "")
+      ["Vector", "WebGLTile", "VectorTile"].includes(layer?.type ?? "")
     );
   });
 
