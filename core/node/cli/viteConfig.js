@@ -136,6 +136,18 @@ export const eodashViteConfig = /** @type {import("vite").UserConfigFn} */ (
         emptyOutDir: true,
         target: "esnext",
         cssMinify: true,
+        // spa build configuration
+        ...(!userConfig.lib &&
+          command === "build" && {
+            manifest: true,
+            rollupOptions: {
+              input: {
+                main: path.join(appPath, "index.html"),
+                templates: path.join(appPath, "templates/index.js"),
+              },
+            },
+          }),
+        // lib build configuration
         ...(userConfig.lib &&
           command === "build" && {
             minify: false,
