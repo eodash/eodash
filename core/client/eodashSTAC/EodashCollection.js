@@ -219,7 +219,6 @@ export class EodashCollection {
       extraProperties = {
         ...extraProperties,
         ...(this.color && { color: this.color }),
-        ...(layerConfig && { layerConfig }),
         ...(timeControlValues && {
           timeControlValues,
           timeControlProperty: "TIME",
