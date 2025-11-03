@@ -451,7 +451,10 @@ export const createLayersFromLinks = async (
       },
       source: {
         type: "VectorTile",
-        format: "MVT",
+        format: {
+          type: "MVT",
+          idProperty: vectorTileLink.idProperty,
+        },
         url: href,
         projection: projectionCode,
         attributions: vectorTileLink.attribution,
