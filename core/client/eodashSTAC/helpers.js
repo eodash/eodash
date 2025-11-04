@@ -75,6 +75,7 @@ export function extractLayerConfig(collectionId, style, rasterJsonform) {
   let layerConfig = undefined;
 
   if (style?.jsonform) {
+    // this explicitly sets legend only if jsonform is configured
     layerConfig = { schema: style.jsonform, type: "style" };
     delete style.jsonform;
     if (style?.legend) {
@@ -151,6 +152,8 @@ export const extractRoles = (properties, linkOrAsset) => {
   roles?.forEach((role) => {
     if (role === "visible") {
       properties.visible = true;
+    } else if (role === "invisible") {
+      properties.visible = false;
     }
     if (role === "overlay" || role === "baselayer") {
       properties.group = role;
@@ -160,13 +163,19 @@ export const extractRoles = (properties, linkOrAsset) => {
 };
 
 /**
- * Extracts style JSON from a STAC Item
+ * Extracts a single non-link style JSON from a STAC Item optionally for a selected key mapping
  * @param {import("stac-ts").StacItem} item
  * @param {string} itemUrl
- * @returns
+ * @param {string | undefined} key
+ * @returns 
  **/
-export const fetchStyle = async (item, itemUrl) => {
-  const styleLink = item.links.find((link) => link.rel.includes("style"));
+export const fetchStyle = async (item, itemUrl, key=undefined) => {
+  let styleLink = null;
+  if (key) {
+    styleLink = item.links.find((link) => link.rel.includes("style") && link["links:keys"] && /** @type {Array<string>} */ (link["links:keys"]).includes(key) );
+  } else {
+    styleLink = item.links.find((link) => link.rel.includes("style") && !link["links:keys"]);
+  }
   if (styleLink) {
     let url = "";
     if (styleLink.href.startsWith("http")) {
@@ -181,6 +190,27 @@ export const fetchStyle = async (item, itemUrl) => {
     log.debug("fetched styles JSON", JSON.parse(JSON.stringify(styleJson)));
     return { ...styleJson };
   }
+};
+
+/**
+ * Fetches all style JSONs from a STAC Item and returns an array with style objects
+ * @param {import("stac-ts").StacItem} item
+ * @param {string} itemUrl
+ * @returns { Promise <Array<import("@/types").EodashStyleJson>>}
+ **/
+export const fetchAllStyles = async (item, itemUrl) => {
+  const styleLinks = item.links.filter((link) => link.rel.includes("style"));
+  const fetchPromises = styleLinks.map(async (link) => {
+    let url = link.href.startsWith("http")
+      ? link.href
+      : toAbsolute(link.href, itemUrl);
+
+    const styleJson = await axios.get(url).then((resp) => resp.data);
+    log.debug("fetched styles JSON", JSON.parse(JSON.stringify(styleJson)));
+    return styleJson;
+  });
+  const results = await Promise.all(fetchPromises);
+  return results;
 };
 
 /**

@@ -1,6 +1,4 @@
 import { parquetRead } from "hyparquet";
-import WKB from "ol/format/WKB.js";
-import GeoJSON from "ol/format/GeoJSON";
 import log from "loglevel";
 
 /**
@@ -62,8 +60,6 @@ export const adjustParquetItems = (items) => {
 
     return /** @type {import("stac-ts").StacItem} */ ({
       ...item,
-      //@ts-expect-error geometry wkb conversion by stac-geoparquet
-      geometry: wkbToGeometry(item.geometry),
 
       assets: ((assets) => {
         for (const [key, value] of Object.entries(assets)) {
@@ -82,15 +78,6 @@ export const adjustParquetItems = (items) => {
     });
   });
 };
-/**
- *  @param {Uint8Array} wkb - Well Known Binary
- */
-function wkbToGeometry(wkb) {
-  const geoJsonFormatter = new GeoJSON();
-  const wkbReader = new WKB();
-  const olGeometry = wkbReader.readGeometry(wkb);
-  return geoJsonFormatter.writeGeometryObject(olGeometry);
-}
 
 /**
  *

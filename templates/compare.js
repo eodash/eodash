@@ -33,7 +33,7 @@ export default {
       id: "Tools",
       type: "internal",
       title: "Tools",
-      layout: { x: 0, y: 0, w: "3/3/2", h: 1 },
+      layout: { x: 0, y: 0, w: "3/3/2", h: 2 },
       widget: {
         name: "EodashTools",
         properties: {
@@ -53,7 +53,7 @@ export default {
       id: "CompareTools",
       type: "internal",
       title: "Tools",
-      layout: { x: "9/9/10", y: 0, w: "3/3/2", h: 1 },
+      layout: { x: "9/9/10", y: 0, w: "3/3/2", h: 2 },
       widget: {
         name: "EodashTools",
         properties: {

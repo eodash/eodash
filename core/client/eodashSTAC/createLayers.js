@@ -1,13 +1,17 @@
 import { registerProjection } from "@/store/actions";
 import { mapEl } from "@/store/states";
+
 import {
   extractRoles,
   getProjectionCode,
   createLayerID,
   createAssetID,
   mergeGeojsons,
+  extractLayerConfig,
   addTooltipInteraction,
+  fetchStyle,
 } from "./helpers";
+import { handleAuthenticationOfLink } from "./auth";
 import log from "loglevel";
 
 /**
@@ -41,7 +45,7 @@ export async function createLayersFromAssets(
 
   const geoJsonSources = [];
   let geoJsonRoles = {};
-
+  let projection = undefined;
   for (const [idx, ast] of Object.keys(assets).entries()) {
     // register projection if exists
     const assetProjection =
@@ -49,6 +53,7 @@ export async function createLayersFromAssets(
         assets[ast]?.["proj:epsg"] || assets[ast]?.["eodash:proj4_def"]
       );
     await registerProjection(assetProjection);
+    projection = getProjectionCode(assetProjection) || "EPSG:4326";
     if (assets[ast]?.type === "application/geo+json") {
       geoJsonSources.push(assets[ast].href);
       geoJsonIdx = idx;
@@ -64,7 +69,7 @@ export async function createLayersFromAssets(
         source: {
           type: "FlatGeoBuf",
           url: assets[ast].href,
-          format: "GeoJSON",
+          projection,
           attributions: assets[ast].attribution,
         },
         properties: {
@@ -131,13 +136,13 @@ export async function createLayersFromAssets(
   if (geoJsonSources.length) {
     const assetId = createAssetID(collectionId, item.id, geoJsonIdx);
     log.debug(`Creating Vector layer from GeoJsons`, assetId);
-
+    // assumption that each GeoJSON asset is in same projection due to their merging
     const layer = {
       type: "Vector",
       source: {
         type: "Vector",
         url: await mergeGeojsons(geoJsonSources),
-        format: "GeoJSON",
+        format: {"type": "GeoJSON", "dataProjection": projection},
         attributions: geoJsonAttributions,
       },
       properties: {
@@ -193,6 +198,7 @@ export async function createLayersFromAssets(
  * @param {string} collectionId
  * @param {import('stac-ts').StacItem} item
  * @param {string} title
+ * @param {string} itemUrl
  * @param {Record<string,any>} [layerDatetime]
  * @param {object | null} [extraProperties]
  */
@@ -200,6 +206,7 @@ export const createLayersFromLinks = async (
   collectionId,
   title,
   item,
+  itemUrl,
   layerDatetime,
   extraProperties,
 ) => {
@@ -209,6 +216,7 @@ export const createLayersFromLinks = async (
   const wmsArray = item.links.filter((l) => l.rel === "wms");
   const wmtsArray = item.links.filter((l) => l.rel === "wmts");
   const xyzArray = item.links.filter((l) => l.rel === "xyz") ?? [];
+  const vectorTileArray = item.links.filter((l) => l.rel === "vector-tile") ?? [];
 
   // Taking projection code from main map view, as main view defines
   // projection for comparison map
@@ -393,6 +401,69 @@ export const createLayersFromLinks = async (
     };
 
     extractRoles(json.properties, xyzLink);
+    if (extraProperties !== null) {
+      json.properties = { ...json.properties, ...extraProperties };
+    }
+    jsonArray.push(json);
+  }
+
+  for (const vectorTileLink of vectorTileArray ?? []) {
+    const vectorTileLinkProjection =
+      /** @type {number | string | {name: string, def: string} | undefined} */
+      (vectorTileLink?.["proj:epsg"] || vectorTileLink?.["eodash:proj4_def"]);
+
+    await registerProjection(vectorTileLinkProjection);
+    const projectionCode = getProjectionCode(vectorTileLinkProjection || "EPSG:3857");
+    const linkId = createLayerID(
+      collectionId,
+      item.id,
+      vectorTileLink,
+      viewProjectionCode,
+    );
+    log.debug("Vector Tile Layer added", linkId);
+    const key = /** @type {string | undefined} */ (vectorTileLink["key"]) || undefined;
+    // fetch styles and separate them by their mapping between links and assets
+    const styles = await fetchStyle(item, itemUrl, key);
+    // get the correct style which is not attached to a link
+    let { layerConfig, style } = extractLayerConfig(
+      linkId ?? "",
+      styles,
+    );
+   
+    let href = vectorTileLink.href;
+    if ("auth:schemes" in item && "auth:refs" in vectorTileLink) {
+      href = handleAuthenticationOfLink(/** @type { import("@/types").StacAuthItem} */ (item), /** @type { import("@/types").StacAuthLink} */ (vectorTileLink));
+    }
+    const json = {
+      type: "VectorTile",
+      declutter: true,
+      properties: {
+        id: linkId,
+        title: vectorTileLink.title || title || item.id,
+        roles: vectorTileLink.roles,
+        layerDatetime,
+        ...(layerConfig && {
+            layerConfig: {
+              ...layerConfig,
+              style,
+            },
+          }),
+      },
+      source: {
+        type: "VectorTile",
+        format: {
+          type: "MVT",
+          idProperty: vectorTileLink.idProperty,
+        },
+        url: href,
+        projection: projectionCode,
+        attributions: vectorTileLink.attribution,
+      },
+      interactions: [],
+      ...(!style?.variables && { style }),
+    };
+    addTooltipInteraction(json, style);
+    extractRoles(json.properties, vectorTileLink);
     if (extraProperties !== null) {
       json.properties = { ...json.properties, ...extraProperties };
     }
