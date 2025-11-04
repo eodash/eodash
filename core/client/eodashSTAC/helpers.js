@@ -152,6 +152,8 @@ export const extractRoles = (properties, linkOrAsset) => {
   roles?.forEach((role) => {
     if (role === "visible") {
       properties.visible = true;
+    } else if (role === "invisible") {
+      properties.visible = false;
     }
     if (role === "overlay" || role === "baselayer") {
       properties.group = role;
