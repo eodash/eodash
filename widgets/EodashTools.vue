@@ -83,6 +83,6 @@ useTransparentPanel(rootEl);
 </script>
 <style lang="scss" scoped>
 .v-btn--size-default {
-  --v-btn-height: 26px;
+  --v-btn-height: 30px;
 }
 </style>
