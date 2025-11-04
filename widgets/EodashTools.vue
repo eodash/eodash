@@ -1,7 +1,7 @@
 <template>
   <div ref="rootEl" class="d-flex flex-column fill-height bg-primary">
     <div
-      class="d-flex flex-row align-center fill-height justify-space-between pa-2 align-center"
+      class="d-flex flex-row align-center fill-height justify-space-between pa-1 align-center"
     >
       <v-btn
         v-if="props.showIndicatorsBtn"
@@ -81,4 +81,8 @@ const props = defineProps({
 const rootEl = ref(null);
 useTransparentPanel(rootEl);
 </script>
-<style lang="scss" scoped></style>
+<style lang="scss" scoped>
+.v-btn--size-default {
+  --v-btn-height: 26px;
+}
+</style>
