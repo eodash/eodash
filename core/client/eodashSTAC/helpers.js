@@ -381,25 +381,17 @@ export const replaceLayer = (currentLayers, oldLayer, newLayers) => {
  * @param {import('../eodashSTAC/EodashCollection.js').EodashCollection[]} indicators
  * @param {import('ol/layer').Layer} layer
  */
-export const getColFromLayer = (indicators, layer) => {
-  // init cols
-  // const collections = indicators.map((ind) => ind.collectionStac);
+export const getColFromLayer = async (indicators, layer) => {
   const [collectionId, itemId, ..._other] = layer.get("id").split(";:;");
 
-  return indicators.find(async (ind) => {
-    const isCollection = ind.collectionStac?.id === collectionId;
-    if (!isCollection) {
-      return false;
+  for (const ind of indicators) {
+    if (ind.collectionStac?.id !== collectionId) continue;
+    const items = await ind.getItems();
+    const itemIds = items?.map(item => item.id || item.datetime) ?? [];
+    if (itemIds.includes(itemId)) {
+      return ind;
     }
-    /** @type {string[]} */
-    const itemIds = [];
-    await ind.getItems().then((items) => {
-      itemIds.push(
-        ...(items?.map((item) => /** @type {string} */ (item.id)) ?? []),
-      );
-    });
-    return itemIds.includes(itemId);
-  });
+  }
 };
 
 /**
