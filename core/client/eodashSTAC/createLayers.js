@@ -39,7 +39,7 @@ export async function createLayersFromAssets(
   let geoTIFFSources = [];
   /** @type {number|null} */
   let geoTIFFIdx = null;
-  // let geoJsonLayers = [];
+
   let geoJsonIdx = 0;
   let geoJsonAttributions = [];
 
@@ -113,14 +113,31 @@ export async function createLayersFromAssets(
         );
         continue;
       }
-      const features = responseData.map((item) => {
-        return {
-          type: "Feature",
-          geometry: item.geometry,
-          // we pass the item making sure to remove geometry to avoid duplication
-          properties: { ...item, geometry: undefined },
-        };
+      /** @type {Record<string,any>[]} */
+      const features = [];
+      responseData.forEach((ftr) => {
+        const { geometry, ...properties } = ftr;
+        if (geometry.type === 'MultiPoint' || geometry.type === 'MultiPolygon') {
+          geometry.coordinates.forEach((/** @type {Record<string,any>[]} */ coordPair) => {
+            const singleGeometry = {
+              type: geometry.type === 'MultiPoint' ? 'Point' : 'Polygon',
+              coordinates: coordPair,
+            };
+            features.push({
+              type: 'Feature',
+              properties,
+              geometry: singleGeometry,
+            });
+          });
+        } else {
+          features.push({
+            type: 'Feature',
+            properties,
+            geometry: geometry,
+          });
+        }
       });
+      
       const geojson = {
         type: "FeatureCollection",
         features: features,
