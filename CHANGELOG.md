@@ -1,6 +1,18 @@
 # Changelog
 
 
+## [5.3.0](https://github.com/eodash/eodash/compare/eodash-v5.2.0...eodash-v5.3.0) (2025-11-04)
+
+
+### Features
+
+* Add Docker image ([#252](https://github.com/eodash/eodash/issues/252)) ([d49f208](https://github.com/eodash/eodash/commit/d49f208a97abb584c039042bbee1487f0ee77a1d))
+* add support for storytelling chart export ([#249](https://github.com/eodash/eodash/issues/249)) ([fe854d3](https://github.com/eodash/eodash/commit/fe854d305577a49278b3a7bbc73e26da49acf33e))
+* EOxTimeslider Integration ([#245](https://github.com/eodash/eodash/issues/245)) ([f2c23a3](https://github.com/eodash/eodash/commit/f2c23a35fc718797d798d1422db7f7011b2d5463))
+* Explore Template ([#243](https://github.com/eodash/eodash/issues/243)) ([f6a800f](https://github.com/eodash/eodash/commit/f6a800f5c7a2ff7bbd14c78801bc90137ab90c11))
+* Introduce Raster JSON form & Bands Editor ([#244](https://github.com/eodash/eodash/issues/244)) ([0a7ffe2](https://github.com/eodash/eodash/commit/0a7ffe23153ca4accb2aca4d448cd49460d668ca))
+* Support STAC API & Render Extension ([#226](https://github.com/eodash/eodash/issues/226)) ([92a8aa5](https://github.com/eodash/eodash/commit/92a8aa507ba2f393d1fad4f4aa2e7a7345c2e332))
+
 ## [5.2.0](https://github.com/eodash/eodash/compare/eodash-v5.1.0...eodash-v5.2.0) (2025-10-01)
 
 
