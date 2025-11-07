@@ -1,6 +1,13 @@
 # Changelog
 
 
+## [5.3.1](https://github.com/eodash/eodash/compare/eodash-v5.3.0...eodash-v5.3.1) (2025-11-07)
+
+
+### Bug Fixes
+
+* regression of timecontrol switch for stac catalogs ([#261](https://github.com/eodash/eodash/issues/261)) ([d428f21](https://github.com/eodash/eodash/commit/d428f21bd0622ff07de7cf06aced2ac5d4525812))
+
 ## [5.3.0](https://github.com/eodash/eodash/compare/eodash-v5.2.0...eodash-v5.3.0) (2025-11-04)
 
 
