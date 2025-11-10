@@ -115,16 +115,17 @@ export async function createLayersFromAssets(
       }
       /** @type {Record<string,any>[]} */
       const features = [];
-      responseData.forEach((ftr) => {
+      responseData.forEach((ftr, i) => {
         const { geometry, ...properties } = ftr;
         if (geometry.type === 'MultiPoint' || geometry.type === 'MultiPolygon') {
-          geometry.coordinates.forEach((/** @type {Record<string,any>[]} */ coordPair) => {
+          geometry.coordinates.forEach((/** @type {Record<string,any>[]} */ coordPair, j) => {
             const singleGeometry = {
               type: geometry.type === 'MultiPoint' ? 'Point' : 'Polygon',
               coordinates: coordPair,
             };
             features.push({
               type: 'Feature',
+              id: `${i}_${j}`,
               properties,
               geometry: singleGeometry,
             });
@@ -133,6 +134,7 @@ export async function createLayersFromAssets(
           features.push({
             type: 'Feature',
             properties,
+            id: `${i}`,
             geometry: geometry,
           });
         }
