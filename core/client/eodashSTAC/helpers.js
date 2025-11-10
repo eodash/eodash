@@ -321,6 +321,38 @@ export const extractLayerTimeValues = (items, currentStep) => {
   };
 };
 
+
+/**
+ * Recursively find all layers whose ID up to the first ; is same as given layer
+ *
+ * @param {import("@eox/map").EoxLayer[]} layers
+ * @param {import("@eox/map").EoxLayer | undefined} referenceLayer - layer 
+ * @returns {import("@eox/map").EoxLayer[]} Matching layer objects.
+ */
+export const findLayersByLayerPrefix = (layers, referenceLayer) => {
+  const refId = referenceLayer?.properties?.id;
+
+  if (typeof refId !== "string" || !refId.includes(";")) {
+    throw new Error("Reference layer ID must contain a ';' separator.");
+  }
+
+  const prefix = refId.split(";")[0];
+  const matches = [];
+
+  for (const layer of layers) {
+    if (layer.type === "Group" && Array.isArray(layer.layers)) {
+      matches.push(...findLayersByLayerPrefix(layer.layers, referenceLayer));
+    } else {
+      const id = layer?.properties?.id;
+      if (typeof id === "string" && id.startsWith(prefix)) {
+        matches.push(layer);
+      }
+    }
+  }
+
+  return matches;
+};
+
 /**
  * Find JSON layer by ID
  *  @param {string} layer
@@ -341,6 +373,51 @@ export const findLayer = (layers, layer) => {
     }
   }
 };
+
+/**
+ * Removes a list of layers (and nested ones) from a layer/group structure,
+ * and inserts new layers in place of the first removed one.
+ *
+ * @param {import("@eox/map").EoxLayer[]} layers - Array of layers or groups.
+ * @param {import("@eox/map").EoxLayer[]} toRemove - Array of layers to remove (by id).
+ * @param {Record<string, any>[]} toInsert - Array of layers to insert instead.
+ * @returns {Record<string, any>[]} New array with replacements applied.
+ */
+export const replaceLayersInStructure = (layers, toRemove, toInsert) => {
+  const result = [];
+  let inserted = false;
+
+  for (const layer of layers) {
+    if (layer.type === "Group" && Array.isArray(layer.layers)) {
+      // Recurse into group layers
+      const newGroupLayers = replaceLayersInStructure(layer.layers, toRemove, toInsert);
+      result.push({ ...layer, layers: newGroupLayers });
+      continue;
+    }
+
+    // Match by reference or id
+    const id = layer?.properties?.id;
+    const isToRemove = toRemove.some((rem) => {
+      const remId = rem?.properties?.id;
+      return remId === id;
+    });
+
+    if (isToRemove) {
+      // On first removed occurrence, insert the new layers
+      if (!inserted) {
+        result.push(...toInsert);
+        inserted = true;
+      }
+      // Skip this layer (it’s removed)
+      continue;
+    }
+
+    result.push(layer);
+  }
+
+  return result;
+};
+
 
 /**
  * Removes the layer with the id provided and injects an array of layers in its position

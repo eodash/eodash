@@ -10,7 +10,8 @@ import {
   generateFeatures,
   getDatetimeProperty,
   isSTACItem,
-  replaceLayer,
+  findLayersByLayerPrefix,
+  replaceLayersInStructure,
   extractLayerLegend,
   extractLayerTimeValues,
 } from "./helpers";
@@ -461,15 +462,16 @@ export class EodashCollection {
       currentLayers = getCompareLayers();
     }
 
-    /** @type {string | undefined} */
-    const oldLayerID = findLayer(currentLayers, layer)?.properties?.id;
 
-    if (!oldLayerID) {
+    const oldLayer = findLayer(currentLayers, layer);
+
+
+    const toBeReplacedLayers = findLayersByLayerPrefix(currentLayers, oldLayer);
+
+    if (!toBeReplacedLayers) {
       return;
     }
-
-    //@ts-expect-error TODO
-    const updatedLayers = replaceLayer(currentLayers, oldLayerID, newLayers);
+    const updatedLayers = replaceLayersInStructure(currentLayers, toBeReplacedLayers, newLayers);
 
     return updatedLayers;
   }
