@@ -118,7 +118,7 @@ export async function createLayersFromAssets(
       responseData.forEach((ftr, i) => {
         const { geometry, ...properties } = ftr;
         if (geometry.type === 'MultiPoint' || geometry.type === 'MultiPolygon') {
-          geometry.coordinates.forEach((/** @type {Record<string,any>[]} */ coordPair, j) => {
+          geometry.coordinates.forEach((/** @type {Record<string,any>[]} */ coordPair, /** @type {number} */j) => {
             const singleGeometry = {
               type: geometry.type === 'MultiPoint' ? 'Point' : 'Polygon',
               coordinates: coordPair,
