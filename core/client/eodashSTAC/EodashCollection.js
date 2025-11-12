@@ -10,7 +10,8 @@ import {
   generateFeatures,
   getDatetimeProperty,
   isSTACItem,
-  replaceLayer,
+  findLayersByLayerPrefix,
+  replaceLayersInStructure,
   extractLayerLegend,
   extractLayerTimeValues,
 } from "./helpers";
@@ -363,14 +364,18 @@ export class EodashCollection {
    **/
   async getItem(date) {
     if (!date) {
-      return (await this.getItems(false, true))?.[0];
+      const items = await this.getItems(false, true);
+      // in case no datetime property is found, return the last item
+      return items && items.at(-1);
     }
 
     const items = await this.getItems();
     const datetimeProperty = getDatetimeProperty(items);
     if (!datetimeProperty) {
-      // in case no datetime property is found, return the first item
-      return (await this.getItems(false, true))?.[0];
+      // in case no datetime property is found, return the last item
+      const items = await this.getItems(false, true);
+      // in case no datetime property is found, return the last item
+      return items && items.at(-1);
     }
     return (await this.getItems())?.sort((a, b) => {
       const distanceA = Math.abs(
@@ -461,15 +466,16 @@ export class EodashCollection {
       currentLayers = getCompareLayers();
     }
 
-    /** @type {string | undefined} */
-    const oldLayerID = findLayer(currentLayers, layer)?.properties?.id;
 
-    if (!oldLayerID) {
+    const oldLayer = findLayer(currentLayers, layer);
+
+
+    const toBeReplacedLayers = findLayersByLayerPrefix(currentLayers, oldLayer);
+
+    if (!toBeReplacedLayers) {
       return;
     }
-
-    //@ts-expect-error TODO
-    const updatedLayers = replaceLayer(currentLayers, oldLayerID, newLayers);
+    const updatedLayers = replaceLayersInStructure(currentLayers, toBeReplacedLayers, newLayers);
 
     return updatedLayers;
   }

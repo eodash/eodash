@@ -46,19 +46,19 @@
       <!-- prettier-ignore -->
       <EodashMapBtns
         :style="{
-          gridColumn: (indicator || compareIndicator) ? responsiveX : '12',
+          gridColumn: (indicator || compareIndicator || poi) ? responsiveX : '12',
           gridRow: responsiveY,
         }"
-        :exportMap="(indicator || compareIndicator) ? btnsProps.exportMap : false"
-        :changeProjection="(indicator || compareIndicator) ? btnsProps.changeProjection : false
+        :exportMap="(indicator || compareIndicator || poi) ? btnsProps.exportMap : false"
+        :changeProjection="(indicator || compareIndicator || poi) ? btnsProps.changeProjection : false
         "
-        :compareIndicators="(indicator || compareIndicator) ? btnsProps.compareIndicators : false
+        :compareIndicators="(indicator || compareIndicator || poi) ? btnsProps.compareIndicators : false
         "
-        :backToPOIs="(indicator || compareIndicator) ? btnsProps.backToPOIs : false
+        :backToPOIs="(indicator || compareIndicator || poi) ? btnsProps.backToPOIs : false
         "
-        :enableSearch="(indicator || compareIndicator) ? btnsProps.enableSearch : false
+        :enableSearch="(indicator || compareIndicator || poi) ? btnsProps.enableSearch : false
         "
-        :enableZoom="(indicator || compareIndicator) ? btnsProps.enableZoom : false
+        :enableZoom="(indicator || compareIndicator || poi) ? btnsProps.enableZoom : false
         "
       />
     </div>
@@ -75,6 +75,7 @@ import {
   mapCompareEl,
   indicator,
   compareIndicator,
+  poi,
 } from "@/store/states";
 import { storeToRefs } from "pinia";
 import { useSTAcStore } from "@/store/stac";
