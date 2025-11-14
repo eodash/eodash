@@ -1,6 +1,13 @@
 # Changelog
 
 
+## [5.3.2](https://github.com/eodash/eodash/compare/eodash-v5.3.1...eodash-v5.3.2) (2025-11-14)
+
+
+### Bug Fixes
+
+* updating drawtools to allow vectortile feature selection ([#267](https://github.com/eodash/eodash/issues/267)) ([9dd267e](https://github.com/eodash/eodash/commit/9dd267edb80c701847ea35909b9e0ff0cb08a99b))
+
 ## [5.3.1](https://github.com/eodash/eodash/compare/eodash-v5.3.0...eodash-v5.3.1) (2025-11-07)
 
 
