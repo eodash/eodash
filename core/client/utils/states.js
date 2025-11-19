@@ -9,6 +9,9 @@ import {
   mdiSnowflake,
   mdiWater,
   mdiWeatherWindy,
+  mdiAccountMultiple,
+  mdiHiking,
+  mdiVolleyball,
 } from "@mdi/js";
 import { reactive, ref, shallowReactive } from "vue";
 
@@ -97,9 +100,21 @@ export const dataThemesBrands = {
     icon: mdiWeatherWindy,
     color: "#475faf",
   },
+  climate: {
+    icon: mdiWeatherWindy,
+    color: "#475faf",
+  },
   economy: {
     icon: mdiCurrencyEur,
     color: "#8E81AF",
+  },
+  commerce: {
+    icon: mdiCurrencyEur,
+    color: "#8E81AF",
+  },
+  society: {
+    icon: mdiAccountMultiple,
+    color: "#8ac501",
   },
   biomass: {
     icon: mdiLeaf,
@@ -108,6 +123,18 @@ export const dataThemesBrands = {
   extremes: {
     icon: mdiLightningBolt,
     color: "#a1280a",
+  },
+  energy: {
+    icon: mdiLightningBolt,
+    color: "#475faf",
+  },
+  tourism: {
+    icon: mdiHiking,
+    color: "#80510aff",
+  },
+  sport: {
+    icon: mdiVolleyball,
+    color: "#e98e65ff",
   },
   cryosphere: {
     icon: mdiSnowflake,
