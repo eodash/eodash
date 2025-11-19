@@ -3,8 +3,7 @@ import { execSync } from "child_process";
 const PRERELEASE_TYPE = "beta";
 
 // latest tag from git
-const latestTag =
-execSync(
+const latestTag = execSync(
   "git describe --tags `git rev-list --tags --max-count=1`",
   { encoding: "utf-8" },
 )

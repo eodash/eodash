@@ -155,7 +155,6 @@ export const useInitMap = (
           return;
         }
 
-
         // We try to set the current time selection to latest extent date
         let endInterval = null;
         const interval = updatedStac?.extent?.temporal?.interval;

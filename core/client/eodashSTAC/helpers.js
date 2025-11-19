@@ -167,14 +167,21 @@ export const extractRoles = (properties, linkOrAsset) => {
  * @param {import("stac-ts").StacItem} item
  * @param {string} itemUrl
  * @param {string | undefined} key
- * @returns 
+ * @returns
  **/
-export const fetchStyle = async (item, itemUrl, key=undefined) => {
+export const fetchStyle = async (item, itemUrl, key = undefined) => {
   let styleLink = null;
   if (key) {
-    styleLink = item.links.find((link) => link.rel.includes("style") && link["links:keys"] && /** @type {Array<string>} */ (link["links:keys"]).includes(key) );
+    styleLink = item.links.find(
+      (link) =>
+        link.rel.includes("style") &&
+        link["links:keys"] &&
+        /** @type {Array<string>} */ (link["links:keys"]).includes(key),
+    );
   } else {
-    styleLink = item.links.find((link) => link.rel.includes("style") && !link["links:keys"]);
+    styleLink = item.links.find(
+      (link) => link.rel.includes("style") && !link["links:keys"],
+    );
   }
   if (styleLink) {
     let url = "";
@@ -321,12 +328,11 @@ export const extractLayerTimeValues = (items, currentStep) => {
   };
 };
 
-
 /**
  * Recursively find all layers whose ID up to the first ; is same as given layer
  *
  * @param {import("@eox/map").EoxLayer[]} layers
- * @param {import("@eox/map").EoxLayer | undefined} referenceLayer - layer 
+ * @param {import("@eox/map").EoxLayer | undefined} referenceLayer - layer
  * @returns {import("@eox/map").EoxLayer[]} Matching layer objects.
  */
 export const findLayersByLayerPrefix = (layers, referenceLayer) => {
@@ -390,7 +396,11 @@ export const replaceLayersInStructure = (layers, toRemove, toInsert) => {
   for (const layer of layers) {
     if (layer.type === "Group" && Array.isArray(layer.layers)) {
       // Recurse into group layers
-      const newGroupLayers = replaceLayersInStructure(layer.layers, toRemove, toInsert);
+      const newGroupLayers = replaceLayersInStructure(
+        layer.layers,
+        toRemove,
+        toInsert,
+      );
       result.push({ ...layer, layers: newGroupLayers });
       continue;
     }
@@ -417,7 +427,6 @@ export const replaceLayersInStructure = (layers, toRemove, toInsert) => {
 
   return result;
 };
-
 
 /**
  * Removes the layer with the id provided and injects an array of layers in its position
@@ -464,7 +473,7 @@ export const getColFromLayer = async (indicators, layer) => {
   for (const ind of indicators) {
     if (ind.collectionStac?.id !== collectionId) continue;
     const items = await ind.getItems();
-    const itemIds = items?.map(item => item.id || item.datetime) ?? [];
+    const itemIds = items?.map((item) => item.id || item.datetime) ?? [];
     if (itemIds.includes(itemId)) {
       return ind;
     }

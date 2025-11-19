@@ -620,7 +620,6 @@ export interface OAuth2Flow {
   scopes: Record<string, string>;
 }
 
-
 /** Signed URL flow configuration */
 export interface SignedUrlFlow {
   authorizationApi: string;
@@ -638,20 +637,20 @@ export interface SignedUrlFlow {
 }
 
 export interface ApiKeyAuthScheme extends AuthScheme {
-   type: "apiKey",
-   name: string;
-   in: string;
+  type: "apiKey";
+  name: string;
+  in: string;
 }
 
 import { StacItem, StacLink, StacAsset } from "stac-ts";
 export interface StacAuthItem extends StacItem {
   "auth:schemes": {
     [key: string]: AuthScheme;
-  },
+  };
 }
 export interface StacAuthLink extends StacLink {
-  "auth:refs": [string],
+  "auth:refs": [string];
 }
 export interface StacAuthAsset extends StacAsset {
-  "auth:refs": [string],
+  "auth:refs": [string];
 }
