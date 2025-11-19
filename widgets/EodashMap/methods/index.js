@@ -159,7 +159,7 @@ export const useInitMap = (
         layersCollection = await createLayersConfig(
           updatedStac,
           eodashCols,
-          selectedItem ? updatedItem : updatedTime,
+          updatedItem ?? updatedTime,
         );
 
         // We try to set the current time selection to latest extent date
