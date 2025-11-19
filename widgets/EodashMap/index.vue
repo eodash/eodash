@@ -368,7 +368,6 @@ const { mainRect } = useLayout();
 const btnsTop = ref(0);
 onMounted(() => {
   const eoDash = document.querySelector("eo-dash");
-  console.log("btnsTop", eoDash?.getBoundingClientRect().x, mainRect.value.top);
   btnsTop.value =
     (mainRect.value.top || eoDash?.getBoundingClientRect().top) ?? 0;
 });

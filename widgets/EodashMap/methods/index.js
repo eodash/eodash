@@ -155,12 +155,6 @@ export const useInitMap = (
           return;
         }
 
-        /** @type {Record<string,any>[]} */
-        layersCollection = await createLayersConfig(
-          updatedStac,
-          eodashCols,
-          updatedItem ?? updatedTime,
-        );
 
         // We try to set the current time selection to latest extent date
         let endInterval = null;
@@ -180,7 +174,16 @@ export const useInitMap = (
           !isFirstLoad.value
         ) {
           datetime.value = endInterval.toISOString();
+        } else if (isFirstLoad.value && !datetime.value && endInterval) {
+          datetime.value = endInterval.toISOString();
         }
+
+        /** @type {Record<string,any>[]} */
+        layersCollection = await createLayersConfig(
+          updatedStac,
+          eodashCols,
+          updatedItem ?? updatedTime,
+        );
 
         if (zoomToExtent) {
           // Try to move map view to extent only when main
