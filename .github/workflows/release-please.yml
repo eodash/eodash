@@ -17,7 +17,7 @@ jobs:
       - name: Checkout 🛎
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Fetch all history and tags
+          fetch-depth: 0 # Fetch all history and tags
       - name: Setup node env 🏗
         uses: actions/setup-node@v4
         with:
