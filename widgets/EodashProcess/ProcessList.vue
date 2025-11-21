@@ -20,10 +20,11 @@
             <a
               class="processUrl"
               target="_blank"
+              v-tooltip="'Process details'"
               :href="getJobStatusUrl(item.jobID, currentIndicator)"
               >{{
                 new Date(item.job_start_datetime).toISOString().slice(0, 16)
-              }}</a
+              }} <v-icon>mdi-open-in-new</v-icon></a
             >
           </td>
           <td>{{ item.status }}</td>
@@ -71,7 +72,7 @@
   </div>
 </template>
 <script setup>
-import { mdiUploadBox, mdiDownloadBox, mdiTrashCanOutline } from "@mdi/js";
+import { mdiUploadBox, mdiDownloadBox, mdiTrashCanOutline, mdiOpenInNew } from "@mdi/js";
 import { onMounted, toRef, toRefs } from "vue";
 import { useSTAcStore } from "@/store/stac";
 import { compareIndicator, indicator } from "@/store/states";
