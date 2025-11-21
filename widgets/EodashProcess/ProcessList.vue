@@ -72,6 +72,7 @@
   </div>
 </template>
 <script setup>
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { mdiUploadBox, mdiDownloadBox, mdiTrashCanOutline, mdiOpenInNew } from "@mdi/js";
 import { onMounted, toRef, toRefs } from "vue";
 import { useSTAcStore } from "@/store/stac";
