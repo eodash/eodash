@@ -42,7 +42,7 @@
   "browser": "./core/client/main.js",
   "scripts": {
     "start": "npx eodash dev --entryPoint templates/baseConfig.js",
-    "prepare": "rollup -c",
+    "prepare": "rollup -c && chmod +x dist/node/cli.js",
     "prepack": "npm run build:lib && npm run build:types",
     "dev": "npx eodash dev --entryPoint templates/baseConfig.js",
     "dev:lib": "npx eodash dev --entryPoint templates/baseConfig.js --lib",
