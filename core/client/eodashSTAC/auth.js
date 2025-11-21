@@ -1,13 +1,13 @@
 /**
-* Generic handler for possible authentications schemes as defined in STAC authentication extension.
-* @param {import("@/types").StacAuthItem } item
-* @param {import("@/types").StacAuthLink | import("@/types").StacAuthAsset} linkOrAsset
-* @returns {string}
-*/
+ * Generic handler for possible authentications schemes as defined in STAC authentication extension.
+ * @param {import("@/types").StacAuthItem } item
+ * @param {import("@/types").StacAuthLink | import("@/types").StacAuthAsset} linkOrAsset
+ * @returns {string}
+ */
 export function handleAuthenticationOfLink(item, linkOrAsset) {
   // browse through all authentication refs on a link to find a first one we support
   for (const authRef of linkOrAsset["auth:refs"] || []) {
-    const authSchemes  = item["auth:schemes"];
+    const authSchemes = item["auth:schemes"];
     if (authRef in authSchemes) {
       switch (authSchemes[authRef].type) {
         case "apiKey": {
@@ -22,18 +22,20 @@ export function handleAuthenticationOfLink(item, linkOrAsset) {
         // case "oauth2":
         // todo add more handlers when needed
         default:
-        console.error(`eodash does not support referenced authentication scheme ${authRef}`);
+          console.error(
+            `eodash does not support referenced authentication scheme ${authRef}`,
+          );
       }
     }
   }
   return linkOrAsset.href;
 }
 /**
-* Generic handler for possible authentications schemes as defined in STAC authentication extension.
-* @param {import("@/types").ApiKeyAuthScheme } schemeDef
-* @param { string } href
-* @returns { string }
-*/
+ * Generic handler for possible authentications schemes as defined in STAC authentication extension.
+ * @param {import("@/types").ApiKeyAuthScheme } schemeDef
+ * @param { string } href
+ * @returns { string }
+ */
 function handleApiKeyBasedAuth(schemeDef, href) {
   // add token to query parameters of href
   let url = href;
@@ -45,12 +47,14 @@ function handleApiKeyBasedAuth(schemeDef, href) {
       if (envValue) {
         url = setQueryParam(href, apiKey, envValue);
       } else {
-        console.error(`env variable ${envVar} for authentication parameter ${apiKey} not set`);
+        console.error(
+          `env variable ${envVar} for authentication parameter ${apiKey} not set`,
+        );
       }
-      break
+      break;
     }
     default:
-      console.error('eodash does not support any referenced handler');
+      console.error("eodash does not support any referenced handler");
   }
   return url;
 }

@@ -117,29 +117,37 @@ export async function createLayersFromAssets(
       const features = [];
       responseData.forEach((ftr, i) => {
         const { geometry, ...properties } = ftr;
-        if (geometry.type === 'MultiPoint' || geometry.type === 'MultiPolygon') {
-          geometry.coordinates.forEach((/** @type {Record<string,any>[]} */ coordPair, /** @type {number} */j) => {
-            const singleGeometry = {
-              type: geometry.type === 'MultiPoint' ? 'Point' : 'Polygon',
-              coordinates: coordPair,
-            };
-            features.push({
-              type: 'Feature',
-              id: `${i}_${j}`,
-              properties,
-              geometry: singleGeometry,
-            });
-          });
+        if (
+          geometry.type === "MultiPoint" ||
+          geometry.type === "MultiPolygon"
+        ) {
+          geometry.coordinates.forEach(
+            (
+              /** @type {Record<string,any>[]} */ coordPair,
+              /** @type {number} */ j,
+            ) => {
+              const singleGeometry = {
+                type: geometry.type === "MultiPoint" ? "Point" : "Polygon",
+                coordinates: coordPair,
+              };
+              features.push({
+                type: "Feature",
+                id: `${i}_${j}`,
+                properties,
+                geometry: singleGeometry,
+              });
+            },
+          );
         } else {
           features.push({
-            type: 'Feature',
+            type: "Feature",
             properties,
             id: `${i}`,
             geometry: geometry,
           });
         }
       });
-      
+
       const geojson = {
         type: "FeatureCollection",
         features: features,
@@ -161,7 +169,7 @@ export async function createLayersFromAssets(
       source: {
         type: "Vector",
         url: await mergeGeojsons(geoJsonSources),
-        format: {"type": "GeoJSON", "dataProjection": projection},
+        format: { type: "GeoJSON", dataProjection: projection },
         attributions: geoJsonAttributions,
       },
       properties: {
@@ -235,7 +243,8 @@ export const createLayersFromLinks = async (
   const wmsArray = item.links.filter((l) => l.rel === "wms");
   const wmtsArray = item.links.filter((l) => l.rel === "wmts");
   const xyzArray = item.links.filter((l) => l.rel === "xyz") ?? [];
-  const vectorTileArray = item.links.filter((l) => l.rel === "vector-tile") ?? [];
+  const vectorTileArray =
+    item.links.filter((l) => l.rel === "vector-tile") ?? [];
 
   // Taking projection code from main map view, as main view defines
   // projection for comparison map
@@ -432,7 +441,9 @@ export const createLayersFromLinks = async (
       (vectorTileLink?.["proj:epsg"] || vectorTileLink?.["eodash:proj4_def"]);
 
     await registerProjection(vectorTileLinkProjection);
-    const projectionCode = getProjectionCode(vectorTileLinkProjection || "EPSG:3857");
+    const projectionCode = getProjectionCode(
+      vectorTileLinkProjection || "EPSG:3857",
+    );
     const linkId = createLayerID(
       collectionId,
       item.id,
@@ -440,18 +451,19 @@ export const createLayersFromLinks = async (
       viewProjectionCode,
     );
     log.debug("Vector Tile Layer added", linkId);
-    const key = /** @type {string | undefined} */ (vectorTileLink["key"]) || undefined;
+    const key =
+      /** @type {string | undefined} */ (vectorTileLink["key"]) || undefined;
     // fetch styles and separate them by their mapping between links and assets
     const styles = await fetchStyle(item, itemUrl, key);
     // get the correct style which is not attached to a link
-    let { layerConfig, style } = extractLayerConfig(
-      linkId ?? "",
-      styles,
-    );
-   
+    let { layerConfig, style } = extractLayerConfig(linkId ?? "", styles);
+
     let href = vectorTileLink.href;
     if ("auth:schemes" in item && "auth:refs" in vectorTileLink) {
-      href = handleAuthenticationOfLink(/** @type { import("@/types").StacAuthItem} */ (item), /** @type { import("@/types").StacAuthLink} */ (vectorTileLink));
+      href = handleAuthenticationOfLink(
+        /** @type { import("@/types").StacAuthItem} */ (item),
+        /** @type { import("@/types").StacAuthLink} */ (vectorTileLink),
+      );
     }
     const json = {
       type: "VectorTile",
@@ -462,11 +474,11 @@ export const createLayersFromLinks = async (
         roles: vectorTileLink.roles,
         layerDatetime,
         ...(layerConfig && {
-            layerConfig: {
-              ...layerConfig,
-              style,
-            },
-          }),
+          layerConfig: {
+            ...layerConfig,
+            style,
+          },
+        }),
       },
       source: {
         type: "VectorTile",

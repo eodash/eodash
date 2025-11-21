@@ -41,7 +41,7 @@
     <span v-if="enableScaleLine" id="scale-line" ref="scale-line" />
     <div
       class="map-buttons-container"
-      :style="`margin: ${btnsPosition.gap}px 0 ${btnsPosition.gap}px 0`"
+      :style="`margin: ${btnsPosition.gap}px 0 ${btnsPosition.gap}px 0; top: ${btnsTop}px;`"
     >
       <!-- prettier-ignore -->
       <EodashMapBtns
@@ -79,7 +79,7 @@ import {
 } from "@/store/states";
 import { storeToRefs } from "pinia";
 import { useSTAcStore } from "@/store/stac";
-import { useDisplay } from "vuetify";
+import { useDisplay, useLayout } from "vuetify";
 import {
   eodashCollections,
   eodashCompareCollections,
@@ -364,6 +364,13 @@ const tooltipPropertyTransform = (map) => {
     };
   };
 };
+const { mainRect } = useLayout();
+const btnsTop = ref(0);
+onMounted(() => {
+  const eoDash = document.querySelector("eo-dash");
+  btnsTop.value =
+    (mainRect.value.top || eoDash?.getBoundingClientRect().top) ?? 0;
+});
 </script>
 
 <style scoped>
@@ -421,7 +428,6 @@ const tooltipPropertyTransform = (map) => {
 
 .map-buttons-container {
   position: fixed;
-  top: 0;
   left: 0;
   width: 100%;
   height: 100%;

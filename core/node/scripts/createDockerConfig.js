@@ -68,7 +68,6 @@ async function fetchBrand(workspaceId = "eox"){
   .then(m => m.config.theme).catch(e => {
     console.warn("[eodash] Could not load brand config for workspace:", workspaceId, e)
   })
-  console.log("theme", theme)
   return {
     primary: theme?.primary_color,
     secondary: theme?.secondary_color ?? theme?.primary_color

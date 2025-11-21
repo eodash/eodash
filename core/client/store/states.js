@@ -11,7 +11,7 @@ export const currentUrl = ref("");
 export const currentCompareUrl = ref("");
 
 /** Currently selected datetime */
-export const datetime = ref(new Date().toISOString());
+export const datetime = ref("");
 
 /** Currently selected indicator */
 export const indicator = ref("");

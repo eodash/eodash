@@ -211,8 +211,9 @@ export class EodashCollection {
       return data;
     }, /** @type {Record<string,import('stac-ts').StacAsset>} */ ({}));
     const isSupported =
-      item.links.some((link) => ["wms", "xyz", "wmts", "vector-tile"].includes(link.rel)) ||
-      Object.keys(dataAssets).length;
+      item.links.some((link) =>
+        ["wms", "xyz", "wmts", "vector-tile"].includes(link.rel),
+      ) || Object.keys(dataAssets).length;
 
     if (isSupported) {
       // Checking for potential legend asset
@@ -411,9 +412,9 @@ export class EodashCollection {
     const aggregatedTooltips = [
       ...new Map(
         styles
-          .flatMap(style => style.tooltip || [])
-          .map(entry => [entry.id, entry])
-      ).values()
+          .flatMap((style) => style.tooltip || [])
+          .map((entry) => [entry.id, entry]),
+      ).values(),
     ];
     this.#tooltipProperties = aggregatedTooltips ?? [];
     return this.#tooltipProperties;
@@ -466,16 +467,18 @@ export class EodashCollection {
       currentLayers = getCompareLayers();
     }
 
-
     const oldLayer = findLayer(currentLayers, layer);
-
 
     const toBeReplacedLayers = findLayersByLayerPrefix(currentLayers, oldLayer);
 
     if (!toBeReplacedLayers) {
       return;
     }
-    const updatedLayers = replaceLayersInStructure(currentLayers, toBeReplacedLayers, newLayers);
+    const updatedLayers = replaceLayersInStructure(
+      currentLayers,
+      toBeReplacedLayers,
+      newLayers,
+    );
 
     return updatedLayers;
   }
@@ -499,7 +502,7 @@ export class EodashCollection {
     );
 
     return [
-        //@ts-expect-error indicator instead of item
+      //@ts-expect-error indicator instead of item
       ...(await createLayersFromLinks(
         indicator?.id ?? "",
         indicator?.title || indicator.id,
