@@ -12,6 +12,7 @@ import {
   mdiAccountMultiple,
   mdiHiking,
   mdiVolleyball,
+  mdiWrench,
 } from "@mdi/js";
 import { reactive, ref, shallowReactive } from "vue";
 
@@ -140,4 +141,8 @@ export const dataThemesBrands = {
     icon: mdiSnowflake,
     color: "#42C7B8",
   },
+  industry: {
+    icon: mdiWrench,
+    color: "#8d845cff",
+  }
 };
