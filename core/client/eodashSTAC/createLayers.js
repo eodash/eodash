@@ -18,9 +18,7 @@ import log from "loglevel";
  * @param {string} collectionId
  * @param {string} title
  * @param {Record<string,import("stac-ts").StacAsset>} assets
- * @param {import("stac-ts").StacItem } item
- * @param {import("@/types").EodashStyleJson} [style]
- * @param {Record<string, unknown>} [layerConfig]
+ * @param {import("stac-ts").StacItem | import("stac-ts").StacCollection } stacObject
  * @param {Record<string, unknown>} [layerDatetime]
  * @param {object | null} [extraProperties]
  **/
@@ -28,80 +26,46 @@ export async function createLayersFromAssets(
   collectionId,
   title,
   assets,
-  item,
-  style,
-  layerConfig,
+  stacObject,
   layerDatetime,
   extraProperties,
 ) {
   log.debug("Creating layers from assets");
-  let jsonArray = [];
-  let geoTIFFSources = [];
-  /** @type {number|null} */
-  let geoTIFFIdx = null;
-
-  let geoJsonIdx = 0;
-  let geoJsonAttributions = [];
+  const jsonArray = [];
+  const geoTIFFSources = [];
+  const geoTIFFIdx = [];
 
   const geoJsonSources = [];
-  let geoJsonRoles = {};
+  const geoJsonIdx = [];
+
+  const fgbIdx = [];
+  const fgbSources = [];
+  const assetIds = [];
+  let attributions = [];
+
   let projection = undefined;
-  for (const [idx, ast] of Object.keys(assets).entries()) {
-    // register projection if exists
-    const assetProjection =
-      /** @type {string | number | {name: string, def: string, extent?:number[]} | undefined} */ (
-        assets[ast]?.["proj:epsg"] || assets[ast]?.["eodash:proj4_def"]
-      );
-    await registerProjection(assetProjection);
-    projection = getProjectionCode(assetProjection) || "EPSG:4326";
-    if (assets[ast]?.type === "application/geo+json") {
-      geoJsonSources.push(assets[ast].href);
-      geoJsonIdx = idx;
-      if (assets[ast].attribution)
-        geoJsonAttributions.push(assets[ast].attribution);
-      extractRoles(geoJsonRoles, assets[ast]);
-    } else if (assets[ast]?.type === "application/vnd.flatgeobuf") {
-      const assetId = createAssetID(collectionId, item.id, idx);
-      log.debug(`Creating Vector layer from FlatGeoBuf`, assetId);
 
-      const layer = {
-        type: "Vector",
-        source: {
-          type: "FlatGeoBuf",
-          url: assets[ast].href,
-          projection,
-          attributions: assets[ast].attribution,
-        },
-        properties: {
-          id: assetId,
-          title,
-          layerDatetime,
-          ...(layerConfig && {
-            layerConfig: {
-              ...layerConfig,
-              style,
-            },
-          }),
-        },
-        ...(!style?.variables && { style }),
-        interactions: [],
-      };
-      // add tooltip interaction if style has tooltip
-      addTooltipInteraction(layer, style);
+  for (const [idx, assetId] of Object.keys(assets).entries()) {
+    assetIds.push(assetId);
+    if (assets[assetId].attribution)
+      attributions.push(assets[assetId].attribution);
 
-      extractRoles(layer.properties, assets[ast]);
+    if (assets[assetId]?.type === "application/geo+json") {
+      geoJsonSources.push(assets[assetId].href);
+      geoJsonIdx.push(idx);
 
-      layer.properties = { ...layer.properties, ...(extraProperties ?? {}) };
-
-      jsonArray.push(layer);
-    } else if (assets[ast]?.type === "image/tiff") {
-      geoTIFFIdx = idx;
+    } else if (assets[assetId]?.type === "application/vnd.flatgeobuf") {
+      fgbSources.push(assets[assetId].href);
+      fgbIdx.push(idx);
+    } else if (assets[assetId]?.type === "image/tiff") {
+      geoTIFFIdx.push(idx);
       geoTIFFSources.push({
-        url: assets[ast].href,
-        attributions: assets[ast].attribution,
+        url: assets[assetId].href,
+        attributions: assets[assetId].attribution,
       });
-    } else if (assets[ast]?.type === "application/geodb+json") {
-      const responseData = await (await fetch(assets[ast].href)).json();
+    } else if (assets[assetId]?.type === "application/geodb+json") {
+      const responseData = await (await fetch(assets[assetId].href)).json();
+      geoJsonIdx.push(idx);
       if (
         !responseData ||
         !Array.isArray(responseData) ||
@@ -161,61 +125,143 @@ export async function createLayersFromAssets(
   }
 
   if (geoJsonSources.length) {
-    const assetId = createAssetID(collectionId, item.id, geoJsonIdx);
-    log.debug(`Creating Vector layer from GeoJsons`, assetId);
-    // assumption that each GeoJSON asset is in same projection due to their merging
-    const layer = {
-      type: "Vector",
-      source: {
+    for (const [i, geoJsonSource] of geoJsonSources.entries()) {
+      // fetch styles and separate them by their mapping between links and assets
+      const assetName = assetIds[geoJsonIdx[i]];
+      const styles = await fetchStyle(stacObject, undefined, assetName);
+      // get the correct style which is not attached to a link
+      let { layerConfig, style } = extractLayerConfig(collectionId, styles);
+      const assetLayerId = createAssetID(collectionId, stacObject.id, geoJsonIdx[i]);
+      log.debug(`Creating Vector layer from GeoJsons`, assetLayerId);
+      // register projection if exists
+      const assetProjection =
+      /** @type {string | number | {name: string, def: string, extent?:number[]} | undefined} */ (
+        assets[assetName]?.["proj:epsg"] || assets[assetName]?.["eodash:proj4_def"]
+      );
+      await registerProjection(assetProjection);
+      projection = getProjectionCode(assetProjection) || "EPSG:4326";
+      const geoJSONURL = stacObject?.merge_assets === false ? geoJsonSource : await mergeGeojsons(geoJsonSources);
+      const layer = {
         type: "Vector",
-        url: await mergeGeojsons(geoJsonSources),
-        format: { type: "GeoJSON", dataProjection: projection },
-        attributions: geoJsonAttributions,
-      },
-      properties: {
-        ...geoJsonRoles,
-        id: assetId,
-        title,
-        layerDatetime,
-        ...(layerConfig && {
-          layerConfig: {
-            ...layerConfig,
-            style,
-          },
-        }),
-      },
-      ...(!style?.variables && { style }),
-      interactions: [],
-    };
-
-    layer.properties = { ...layer.properties, ...(extraProperties ?? {}) };
-    addTooltipInteraction(layer, style);
-    jsonArray.push(layer);
-  }
-  if (geoTIFFSources.length && typeof geoTIFFIdx === "number") {
-    const geotiffSourceID = collectionId + ";:;GeoTIFF";
-    log.debug("Creating WebGLTile layer from GeoTIFF", geotiffSourceID);
-    log.debug("Configured Sources", geoTIFFSources);
-    const layer = {
-      type: "WebGLTile",
-      source: {
-        type: "GeoTIFF",
-        normalize: !style,
-        interpolate: false,
-        sources: geoTIFFSources,
-      },
-      properties: {
-        id: createAssetID(collectionId, item.id, geoTIFFIdx),
-        title,
-        layerConfig,
-        layerDatetime,
-      },
-      style,
-    };
-    if (extraProperties) {
-      layer.properties = { ...layer.properties, ...extraProperties };
+        source: {
+          type: "Vector",
+          url: geoJSONURL,
+          format: { type: "GeoJSON", dataProjection: projection },
+          attributions: assets[assetName].attribution,
+        },
+        properties: {
+          id: assetLayerId,
+          title: assets[assetName]?.title || title,
+          layerDatetime,
+          ...(layerConfig && {
+            layerConfig: {
+              ...layerConfig,
+              style,
+            },
+          }),
+        },
+        ...(!style?.variables && { style }),
+        interactions: [],
+      };
+      layer.properties = { ...layer.properties, ...(extraProperties ?? {}) };
+      extractRoles(layer.properties, assets[assetName]);
+      addTooltipInteraction(layer, style);
+      jsonArray.push(layer);
+      // if we merged assets (default yes), then we can break from this loop
+      if (stacObject?.merge_assets !== false) 
+        break
     }
-    jsonArray.push(layer);
+  }
+  if (fgbSources.length) {
+    for (const [i, fgbSource] of fgbSources.entries()) {
+      // fetch styles and separate them by their mapping between links and assets
+      const assetName = assetIds[fgbIdx[i]];
+      const styles = await fetchStyle(stacObject, undefined, assetName);
+      // get the correct style which is not attached to a link
+      let { layerConfig, style } = extractLayerConfig(collectionId, styles);
+      const assetLayerId = createAssetID(collectionId, stacObject.id, fgbIdx[i]);
+      log.debug(`Creating Vector layer from FlatGeoBuf`, assetLayerId);
+      // register projection if exists
+      const assetProjection =
+      /** @type {string | number | {name: string, def: string, extent?:number[]} | undefined} */ (
+        assets[assetName]?.["proj:epsg"] || assets[assetName]?.["eodash:proj4_def"]
+      );
+      await registerProjection(assetProjection);
+      projection = getProjectionCode(assetProjection) || "EPSG:4326";
+      // in case we merge them, we pass urls, else just single url
+      const urlsObject = {
+        url: fgbSource
+        // TODO uncomment this once fgb merging supported on source
+        // url: stacObject?.merge_assets === false ? fgbSource : undefined,
+        // urls: stacObject?.merge_assets !== false ? fgbSources : undefined,
+      }
+      const layer = {
+        type: "Vector",
+        source: {
+          ...urlsObject,
+          type: "FlatGeoBuf",
+          projection,
+          attributions: assets[assetName].attribution,
+        },
+        properties: {
+          id: assetLayerId,
+          title: assets[assetName]?.title || title,
+          layerDatetime,
+          ...(layerConfig && {
+            layerConfig: {
+              ...layerConfig,
+              style,
+            },
+          }),
+        },
+        ...(!style?.variables && { style }),
+        interactions: [],
+      };
+      layer.properties = { ...layer.properties, ...(extraProperties ?? {}) };
+      extractRoles(layer.properties, assets[assetName]);
+      addTooltipInteraction(layer, style);
+      jsonArray.push(layer);
+      // if we merged assets (default yes), then we can break from this loop
+      // TODO uncomment this once fgb merging supported on source
+      // if (stacObject?.merge_assets !== false) 
+      //   break
+    }
+  }
+
+  if (geoTIFFSources.length) {
+    for (const [i, geotiffSource] of fgbSources.entries()) {
+      const assetName = assetIds[fgbIdx[i]];
+      const styles = await fetchStyle(stacObject, undefined, assetName);
+      // get the correct style which is not attached to a link
+      let { layerConfig, style } = extractLayerConfig(collectionId, styles);
+      const assetLayerId = createAssetID(collectionId, stacObject.id, geoTIFFIdx[i]);
+      log.debug("Creating WebGLTile layer from GeoTIFF", assetLayerId);
+      log.debug("Configured Sources", geoTIFFSources);
+      const sources = stacObject?.merge_assets !== false ? geoTIFFSources : geotiffSource;
+      const layer = {
+        type: "WebGLTile",
+        source: {
+          type: "GeoTIFF",
+          normalize: !style,
+          interpolate: false,
+          sources,
+        },
+        properties: {
+          id: assetLayerId,
+          title,
+          layerConfig,
+          layerDatetime,
+        },
+        style,
+      };
+      if (extraProperties) {
+        layer.properties = { ...layer.properties, ...extraProperties };
+      }
+      extractRoles(layer.properties, assets[assetName]);
+      jsonArray.push(layer);
+      if (stacObject?.merge_assets !== false) 
+        break
+    }
   }
 
   return jsonArray;
@@ -225,7 +271,6 @@ export async function createLayersFromAssets(
  * @param {string} collectionId
  * @param {import('stac-ts').StacItem} item
  * @param {string} title
- * @param {string} itemUrl
  * @param {Record<string,any>} [layerDatetime]
  * @param {object | null} [extraProperties]
  */
@@ -233,7 +278,6 @@ export const createLayersFromLinks = async (
   collectionId,
   title,
   item,
-  itemUrl,
   layerDatetime,
   extraProperties,
 ) => {
@@ -454,7 +498,7 @@ export const createLayersFromLinks = async (
     const key =
       /** @type {string | undefined} */ (vectorTileLink["key"]) || undefined;
     // fetch styles and separate them by their mapping between links and assets
-    const styles = await fetchStyle(item, itemUrl, key);
+    const styles = await fetchStyle(item, key);
     // get the correct style which is not attached to a link
     let { layerConfig, style } = extractLayerConfig(linkId ?? "", styles);
 

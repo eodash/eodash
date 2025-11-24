@@ -132,7 +132,6 @@ export class EodashCollection {
     layersJson.unshift(
       ...(await this.buildJsonArray(
         item,
-        stacItemUrl,
         title,
         isObservationPoint,
       )),
@@ -142,13 +141,12 @@ export class EodashCollection {
 
   /**
    * @param {import("stac-ts").StacItem} item
-   * @param {string} itemUrl
    * @param {string} title
    * @param {boolean} isObservationPoint
    * @param {string} [itemDatetime]
    * @returns {Promise<Record<string,any>[]>} layers
    * */
-  async buildJsonArray(item, itemUrl, title, isObservationPoint, itemDatetime) {
+  async buildJsonArray(item, title, isObservationPoint, itemDatetime) {
     if (!item) {
       console.warn("[eodash] no item provided to buildJsonArray");
       return [];
@@ -157,7 +155,6 @@ export class EodashCollection {
     log.debug(
       "Building JSON array",
       item,
-      itemUrl,
       title,
       isObservationPoint,
       itemDatetime,
@@ -193,7 +190,7 @@ export class EodashCollection {
       : undefined;
     let { layerConfig, style } = extractLayerConfig(
       this.#collectionStac?.id ?? "",
-      await fetchStyle(item, itemUrl),
+      await fetchStyle(item),
       rasterForm,
     );
 
@@ -210,11 +207,13 @@ export class EodashCollection {
       }
       return data;
     }, /** @type {Record<string,import('stac-ts').StacAsset>} */ ({}));
+
+    
     const isSupported =
       item.links.some((link) =>
         ["wms", "xyz", "wmts", "vector-tile"].includes(link.rel),
-      ) || Object.keys(dataAssets).length;
-
+      ) || Object.keys(dataAssets).length ;
+    
     if (isSupported) {
       // Checking for potential legend asset
       let extraProperties = extractLayerLegend(this.#collectionStac);
@@ -231,13 +230,13 @@ export class EodashCollection {
         this.#collectionStac?.id ?? "",
         title,
         item,
-        itemUrl,
         layerDatetime,
         extraProperties,
       );
 
       jsonArray.push(
         ...((this.rasterEndpoint &&
+          // tODO: LUBO check dis
           createLayerFromRender(
             this.rasterEndpoint,
             this.#collectionStac,
@@ -254,8 +253,6 @@ export class EodashCollection {
           title || this.#collectionStac?.title || item.id,
           dataAssets,
           item,
-          style,
-          layerConfig,
           layerDatetime,
           extraProperties,
         )),
@@ -406,7 +403,6 @@ export class EodashCollection {
     // get all style links, which could contribute by tooltip config and aggregate them
     const styles = await fetchAllStyles(
       this.selectedItem,
-      `${this.#collectionUrl}/${this.selectedItem.id}`,
     );
     // get only unique ids to avoid duplicates
     const aggregatedTooltips = [
@@ -451,7 +447,6 @@ export class EodashCollection {
       // if specifiedLink is an item, we create layers from it
       newLayers = await this.buildJsonArray(
         specifiedLink,
-        this.#collectionUrl + `/items/${specifiedLink.id}`,
         this.#collectionStac?.title || this.#collectionStac?.id || "",
         this.#collectionStac?.endpointtype === "GeoDB" ||
           !!this.#collectionStac?.locations,
@@ -502,17 +497,16 @@ export class EodashCollection {
     );
 
     return [
-      //@ts-expect-error indicator instead of item
       ...(await createLayersFromLinks(
         indicator?.id ?? "",
         indicator?.title || indicator.id,
+        //@ts-expect-error indicator instead of item
         indicator,
       )),
       ...(await createLayersFromAssets(
         indicator?.id ?? "",
         indicator?.title || indicator.id,
         indicatorAssets,
-        //@ts-expect-error indicator instead of item
         indicator,
       )),
     ];
