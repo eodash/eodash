@@ -53,7 +53,6 @@ export async function createLayersFromAssets(
     if (assets[assetId]?.type === "application/geo+json") {
       geoJsonSources.push(assets[assetId].href);
       geoJsonIdx.push(idx);
-
     } else if (assets[assetId]?.type === "application/vnd.flatgeobuf") {
       fgbSources.push(assets[assetId].href);
       fgbIdx.push(idx);
@@ -131,16 +130,24 @@ export async function createLayersFromAssets(
       const styles = await fetchStyle(stacObject, undefined, assetName);
       // get the correct style which is not attached to a link
       let { layerConfig, style } = extractLayerConfig(collectionId, styles);
-      const assetLayerId = createAssetID(collectionId, stacObject.id, geoJsonIdx[i]);
+      const assetLayerId = createAssetID(
+        collectionId,
+        stacObject.id,
+        geoJsonIdx[i],
+      );
       log.debug(`Creating Vector layer from GeoJsons`, assetLayerId);
       // register projection if exists
       const assetProjection =
-      /** @type {string | number | {name: string, def: string, extent?:number[]} | undefined} */ (
-        assets[assetName]?.["proj:epsg"] || assets[assetName]?.["eodash:proj4_def"]
-      );
+        /** @type {string | number | {name: string, def: string, extent?:number[]} | undefined} */ (
+          assets[assetName]?.["proj:epsg"] ||
+            assets[assetName]?.["eodash:proj4_def"]
+        );
       await registerProjection(assetProjection);
       projection = getProjectionCode(assetProjection) || "EPSG:4326";
-      const geoJSONURL = stacObject?.merge_assets === false ? geoJsonSource : await mergeGeojsons(geoJsonSources);
+      const geoJSONURL =
+        stacObject?.merge_assets === false
+          ? geoJsonSource
+          : await mergeGeojsons(geoJsonSources);
       const layer = {
         type: "Vector",
         source: {
@@ -168,8 +175,7 @@ export async function createLayersFromAssets(
       addTooltipInteraction(layer, style);
       jsonArray.push(layer);
       // if we merged assets (default yes), then we can break from this loop
-      if (stacObject?.merge_assets !== false) 
-        break
+      if (stacObject?.merge_assets !== false) break;
     }
   }
   if (fgbSources.length) {
@@ -179,22 +185,27 @@ export async function createLayersFromAssets(
       const styles = await fetchStyle(stacObject, undefined, assetName);
       // get the correct style which is not attached to a link
       let { layerConfig, style } = extractLayerConfig(collectionId, styles);
-      const assetLayerId = createAssetID(collectionId, stacObject.id, fgbIdx[i]);
+      const assetLayerId = createAssetID(
+        collectionId,
+        stacObject.id,
+        fgbIdx[i],
+      );
       log.debug(`Creating Vector layer from FlatGeoBuf`, assetLayerId);
       // register projection if exists
       const assetProjection =
-      /** @type {string | number | {name: string, def: string, extent?:number[]} | undefined} */ (
-        assets[assetName]?.["proj:epsg"] || assets[assetName]?.["eodash:proj4_def"]
-      );
+        /** @type {string | number | {name: string, def: string, extent?:number[]} | undefined} */ (
+          assets[assetName]?.["proj:epsg"] ||
+            assets[assetName]?.["eodash:proj4_def"]
+        );
       await registerProjection(assetProjection);
       projection = getProjectionCode(assetProjection) || "EPSG:4326";
       // in case we merge them, we pass urls, else just single url
       const urlsObject = {
-        url: fgbSource
+        url: fgbSource,
         // TODO uncomment this once fgb merging supported on source
         // url: stacObject?.merge_assets === false ? fgbSource : undefined,
         // urls: stacObject?.merge_assets !== false ? fgbSources : undefined,
-      }
+      };
       const layer = {
         type: "Vector",
         source: {
@@ -223,7 +234,7 @@ export async function createLayersFromAssets(
       jsonArray.push(layer);
       // if we merged assets (default yes), then we can break from this loop
       // TODO uncomment this once fgb merging supported on source
-      // if (stacObject?.merge_assets !== false) 
+      // if (stacObject?.merge_assets !== false)
       //   break
     }
   }
@@ -234,10 +245,15 @@ export async function createLayersFromAssets(
       const styles = await fetchStyle(stacObject, undefined, assetName);
       // get the correct style which is not attached to a link
       let { layerConfig, style } = extractLayerConfig(collectionId, styles);
-      const assetLayerId = createAssetID(collectionId, stacObject.id, geoTIFFIdx[i]);
+      const assetLayerId = createAssetID(
+        collectionId,
+        stacObject.id,
+        geoTIFFIdx[i],
+      );
       log.debug("Creating WebGLTile layer from GeoTIFF", assetLayerId);
       log.debug("Configured Sources", geoTIFFSources);
-      const sources = stacObject?.merge_assets !== false ? geoTIFFSources : geotiffSource;
+      const sources =
+        stacObject?.merge_assets !== false ? geoTIFFSources : geotiffSource;
       const layer = {
         type: "WebGLTile",
         source: {
@@ -259,8 +275,7 @@ export async function createLayersFromAssets(
       }
       extractRoles(layer.properties, assets[assetName]);
       jsonArray.push(layer);
-      if (stacObject?.merge_assets !== false) 
-        break
+      if (stacObject?.merge_assets !== false) break;
     }
   }
 

@@ -130,11 +130,7 @@ export class EodashCollection {
     this.selectedItem = item;
     const title = this.#collectionStac?.title || this.#collectionStac?.id || "";
     layersJson.unshift(
-      ...(await this.buildJsonArray(
-        item,
-        title,
-        isObservationPoint,
-      )),
+      ...(await this.buildJsonArray(item, title, isObservationPoint)),
     );
     return layersJson;
   };
@@ -208,12 +204,11 @@ export class EodashCollection {
       return data;
     }, /** @type {Record<string,import('stac-ts').StacAsset>} */ ({}));
 
-    
     const isSupported =
       item.links.some((link) =>
         ["wms", "xyz", "wmts", "vector-tile"].includes(link.rel),
-      ) || Object.keys(dataAssets).length ;
-    
+      ) || Object.keys(dataAssets).length;
+
     if (isSupported) {
       // Checking for potential legend asset
       let extraProperties = extractLayerLegend(this.#collectionStac);
@@ -401,9 +396,7 @@ export class EodashCollection {
       return [];
     }
     // get all style links, which could contribute by tooltip config and aggregate them
-    const styles = await fetchAllStyles(
-      this.selectedItem,
-    );
+    const styles = await fetchAllStyles(this.selectedItem);
     // get only unique ids to avoid duplicates
     const aggregatedTooltips = [
       ...new Map(

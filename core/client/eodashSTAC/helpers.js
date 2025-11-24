@@ -170,7 +170,11 @@ export const extractRoles = (properties, linkOrAsset) => {
  * @param {string | undefined} assetKey
  * @returns
  **/
-export const fetchStyle = async (stacObject, linkKey = undefined, assetKey = undefined) => {
+export const fetchStyle = async (
+  stacObject,
+  linkKey = undefined,
+  assetKey = undefined,
+) => {
   let styleLink = null;
   if (linkKey) {
     styleLink = stacObject.links.find(
@@ -191,7 +195,7 @@ export const fetchStyle = async (stacObject, linkKey = undefined, assetKey = und
     styleLink = stacObject.links.find(
       (link) => link.rel.includes("style") && !link["links:keys"],
     );
-    log.warn("Neither  ")
+    log.warn("Neither  ");
   }
   if (styleLink) {
     /** @type {import("@/types").EodashStyleJson} */
@@ -208,7 +212,9 @@ export const fetchStyle = async (stacObject, linkKey = undefined, assetKey = und
  * @returns { Promise <Array<import("@/types").EodashStyleJson>>}
  **/
 export const fetchAllStyles = async (stacObject) => {
-  const styleLinks = stacObject.links.filter((link) => link.rel.includes("style"));
+  const styleLinks = stacObject.links.filter((link) =>
+    link.rel.includes("style"),
+  );
   const fetchPromises = styleLinks.map(async (link) => {
     const styleJson = await axios.get(link.href).then((resp) => resp.data);
     log.debug("fetched styles JSON", JSON.parse(JSON.stringify(styleJson)));
