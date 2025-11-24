@@ -41,14 +41,9 @@ export async function createLayersFromAssets(
   const fgbIdx = [];
   const fgbSources = [];
   const assetIds = [];
-  let attributions = [];
-
-  let projection = undefined;
 
   for (const [idx, assetId] of Object.keys(assets).entries()) {
     assetIds.push(assetId);
-    if (assets[assetId].attribution)
-      attributions.push(assets[assetId].attribution);
 
     if (assets[assetId]?.type === "application/geo+json") {
       geoJsonSources.push(assets[assetId].href);
@@ -130,11 +125,19 @@ export async function createLayersFromAssets(
       const styles = await fetchStyle(stacObject, undefined, assetName);
       // get the correct style which is not attached to a link
       let { layerConfig, style } = extractLayerConfig(collectionId, styles);
-      const assetLayerId = createAssetID(
+      let assetLayerId = createAssetID(
         collectionId,
         stacObject.id,
         geoJsonIdx[i],
       );
+      if (
+        assets[assetName]?.roles?.includes("overlay") ||
+        assets[assetName]?.roles?.includes("baselayer")
+      ) {
+        // to prevent them being removed by date change on main dataset
+        assetLayerId = assetName;
+      }
+
       log.debug(`Creating Vector layer from GeoJsons`, assetLayerId);
       // register projection if exists
       const assetProjection =
@@ -143,7 +146,7 @@ export async function createLayersFromAssets(
             assets[assetName]?.["eodash:proj4_def"]
         );
       await registerProjection(assetProjection);
-      projection = getProjectionCode(assetProjection) || "EPSG:4326";
+      const projection = getProjectionCode(assetProjection) || "EPSG:4326";
       const geoJSONURL =
         stacObject?.merge_assets === false
           ? geoJsonSource
@@ -185,11 +188,14 @@ export async function createLayersFromAssets(
       const styles = await fetchStyle(stacObject, undefined, assetName);
       // get the correct style which is not attached to a link
       let { layerConfig, style } = extractLayerConfig(collectionId, styles);
-      const assetLayerId = createAssetID(
-        collectionId,
-        stacObject.id,
-        fgbIdx[i],
-      );
+      let assetLayerId = createAssetID(collectionId, stacObject.id, fgbIdx[i]);
+      if (
+        assets[assetName]?.roles?.includes("overlay") ||
+        assets[assetName]?.roles?.includes("baselayer")
+      ) {
+        // to prevent them being removed by date change on main dataset
+        assetLayerId = assetName;
+      }
       log.debug(`Creating Vector layer from FlatGeoBuf`, assetLayerId);
       // register projection if exists
       const assetProjection =
@@ -198,7 +204,7 @@ export async function createLayersFromAssets(
             assets[assetName]?.["eodash:proj4_def"]
         );
       await registerProjection(assetProjection);
-      projection = getProjectionCode(assetProjection) || "EPSG:4326";
+      const projection = getProjectionCode(assetProjection) || "EPSG:4326";
       // in case we merge them, we pass urls, else just single url
       const urlsObject = {
         url: fgbSource,
@@ -240,16 +246,23 @@ export async function createLayersFromAssets(
   }
 
   if (geoTIFFSources.length) {
-    for (const [i, geotiffSource] of fgbSources.entries()) {
-      const assetName = assetIds[fgbIdx[i]];
+    for (const [i, geotiffSource] of geoTIFFSources.entries()) {
+      const assetName = assetIds[geoTIFFIdx[i]];
       const styles = await fetchStyle(stacObject, undefined, assetName);
       // get the correct style which is not attached to a link
       let { layerConfig, style } = extractLayerConfig(collectionId, styles);
-      const assetLayerId = createAssetID(
+      let assetLayerId = createAssetID(
         collectionId,
         stacObject.id,
         geoTIFFIdx[i],
       );
+      if (
+        assets[assetName]?.roles?.includes("overlay") ||
+        assets[assetName]?.roles?.includes("baselayer")
+      ) {
+        // to prevent them being removed by date change on main dataset
+        assetLayerId = assetName;
+      }
       log.debug("Creating WebGLTile layer from GeoTIFF", assetLayerId);
       log.debug("Configured Sources", geoTIFFSources);
       const sources =
