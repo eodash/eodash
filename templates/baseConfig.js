@@ -12,22 +12,7 @@ const baseConfig = {
   },
   stacEndpoint: {
     endpoint:
-      // "http://gtif-cerulean.github.io/cerulean-catalog/cerulean/catalog.json",
-      // "https://gtif-ukif.github.io/gtif-ukif-catalog/gtif-ukif/catalog.json",
-      // "https://esa-eodashboards.github.io/RACE-catalog/RACE/catalog.json",
-      // "https://gtif-austria.github.io/public-catalog/GTIF-Austria/catalog.json",
-      // "https://esa-eodashboards.github.io/eodashboard-catalog/trilateral/catalog.json",
-      // "http://0.0.0.0:8000/baltic/catalog.json",
-      // "http://0.0.0.0:8000/gtif-ukif/catalog.json",
-      // "http://0.0.0.0:8000/RACE/catalog.json",
-      // "http://0.0.0.0:8003/gtif-ukif/catalog.json",
-      "http://0.0.0.0:8002/cerulean/catalog.json",
-    // "http://0.0.0.0:8000/cerulean/catalog.json",
-    // "http://0.0.0.0:8001/trilateral/catalog.json",
-    // "http://0.0.0.0:8001/GTIF-Austria/catalog.json",
-    // "https://api.explorer.eopf.copernicus.eu/stac",
-    // api: true,
-    // rasterEndpoint: " https://api.explorer.eopf.copernicus.eu/raster/",
+      "https://esa-eodashboards.github.io/eodashboard-catalog/trilateral/catalog.json",
     api: false,
   },
   brand: {
