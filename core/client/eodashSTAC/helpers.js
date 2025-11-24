@@ -195,7 +195,6 @@ export const fetchStyle = async (
     styleLink = stacObject.links.find(
       (link) => link.rel.includes("style") && !link["links:keys"],
     );
-    log.warn("Neither  ");
   }
   if (styleLink) {
     /** @type {import("@/types").EodashStyleJson} */

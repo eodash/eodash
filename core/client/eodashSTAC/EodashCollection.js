@@ -184,6 +184,7 @@ export class EodashCollection {
     const rasterForm = rasterformURL
       ? await axios.get(rasterformURL).then((resp) => resp.data)
       : undefined;
+    // todo review if really needed for render extension
     let { layerConfig, style } = extractLayerConfig(
       this.#collectionStac?.id ?? "",
       await fetchStyle(item),
@@ -231,13 +232,13 @@ export class EodashCollection {
 
       jsonArray.push(
         ...((this.rasterEndpoint &&
-          // tODO: LUBO check dis
           createLayerFromRender(
             this.rasterEndpoint,
             this.#collectionStac,
             item,
             {
               ...extraProperties,
+              // todo review if really needed for render extension
               ...(layerConfig && { layerConfig }),
               ...(layerDatetime && { layerDatetime }),
             },
