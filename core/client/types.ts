@@ -465,7 +465,12 @@ export type EodashStyleJson = import("ol/style/flat").FlatStyleLike & {
   variables?: Record<string, string | number | boolean | null | undefined>;
   legend?: import("@eox/layercontrol/src/components/layer-config.js").EOxLayerControlLayerConfig["layerConfig"]["legend"];
   jsonform?: import("json-schema").JSONSchema7;
-  tooltip?: { id: string; title?: string; appendix?: string, decimals?: number, }[];
+  tooltip?: {
+    id: string;
+    title?: string;
+    appendix?: string;
+    decimals?: number;
+  }[];
 };
 export type EodashRasterJSONForm = {
   jsonform: Record<string, any>;
