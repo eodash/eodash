@@ -1,6 +1,14 @@
 # Changelog
 
 
+## [5.3.3](https://github.com/eodash/eodash/compare/eodash-v5.3.2...eodash-v5.3.3) (2025-11-26)
+
+
+### Bug Fixes
+
+* configure templates for docker & format ([#278](https://github.com/eodash/eodash/issues/278)) ([8a9e549](https://github.com/eodash/eodash/commit/8a9e549120bb1b6da5fefaac95adf8ef7941f6c1))
+* Passing datetime item ([#273](https://github.com/eodash/eodash/issues/273)) ([e25eb46](https://github.com/eodash/eodash/commit/e25eb460818c9d7848b0e2ee40abcc56a43e2b6a))
+
 ## [5.3.2](https://github.com/eodash/eodash/compare/eodash-v5.3.1...eodash-v5.3.2) (2025-11-14)
 
 
