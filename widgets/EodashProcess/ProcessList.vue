@@ -24,7 +24,8 @@
               :href="getJobStatusUrl(item.jobID, currentIndicator)"
               >{{
                 new Date(item.job_start_datetime).toISOString().slice(0, 16)
-              }} <v-icon>mdi-open-in-new</v-icon></a
+              }}
+              <v-icon>mdi-open-in-new</v-icon></a
             >
           </td>
           <td>{{ item.status }}</td>
@@ -73,7 +74,12 @@
 </template>
 <script setup>
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { mdiUploadBox, mdiDownloadBox, mdiTrashCanOutline, mdiOpenInNew } from "@mdi/js";
+import {
+  mdiUploadBox,
+  mdiDownloadBox,
+  mdiTrashCanOutline,
+  mdiOpenInNew,
+} from "@mdi/js";
 import { onMounted, toRef, toRefs } from "vue";
 import { useSTAcStore } from "@/store/stac";
 import { compareIndicator, indicator } from "@/store/states";

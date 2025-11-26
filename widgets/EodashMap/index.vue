@@ -355,7 +355,9 @@ const tooltipPropertyTransform = (map) => {
       param.value = JSON.stringify(param.value);
     }
     if (!isNaN(Number(param.value))) {
-      const decimals = !isNaN(Number(tooltipProp.decimals)) ? Number(tooltipProp.decimals) : 4;
+      const decimals = !isNaN(Number(tooltipProp.decimals))
+        ? Number(tooltipProp.decimals)
+        : 4;
       param.value = Number(param.value).toFixed(decimals).toString();
     }
 
