@@ -144,5 +144,5 @@ export const dataThemesBrands = {
   industry: {
     icon: mdiWrench,
     color: "#8d845cff",
-  }
+  },
 };

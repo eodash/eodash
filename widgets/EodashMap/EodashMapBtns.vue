@@ -6,8 +6,8 @@
       @click="onMapZoomIn"
     >
       <i class="small"
-        ><svg viewBox="0 0 24 24"><path :d="mdiPlus" /></svg
-      ></i>
+        ><svg viewBox="0 0 24 24"><path :d="mdiPlus" /></svg>
+      </i>
       <div class="tooltip left">Zoom in</div>
     </button>
 
@@ -17,8 +17,8 @@
       @click="onMapZoomOut"
     >
       <i class="small"
-        ><svg viewBox="0 0 24 24"><path :d="mdiMinus" /></svg
-      ></i>
+        ><svg viewBox="0 0 24 24"><path :d="mdiMinus" /></svg>
+      </i>
       <div class="tooltip left">Zoom out</div>
     </button>
 
@@ -28,8 +28,8 @@
       @click="showMapState = !showMapState"
     >
       <i class="small"
-        ><svg viewBox="0 0 24 24"><path :d="mdiMapPlus" /></svg
-      ></i>
+        ><svg viewBox="0 0 24 24"><path :d="mdiMapPlus" /></svg>
+      </i>
       <div class="tooltip left">Extract storytelling configuration</div>
     </button>
     <ExportState v-if="exportMap" v-model="showMapState" />
@@ -40,8 +40,8 @@
       @click="changeMapProjection(availableMapProjection)"
     >
       <i class="small"
-        ><svg viewBox="0 0 24 24"><path :d="mdiEarthBox" /></svg
-      ></i>
+        ><svg viewBox="0 0 24 24"><path :d="mdiEarthBox" /></svg>
+      </i>
       <div class="tooltip left">Change map projection</div>
     </button>
     <button
@@ -50,8 +50,8 @@
       @click="onCompareClick"
     >
       <i class="small"
-        ><svg viewBox="0 0 24 24"><path :d="compareIcon" /></svg
-      ></i>
+        ><svg viewBox="0 0 24 24"><path :d="compareIcon" /></svg>
+      </i>
       <div class="tooltip left">Compare mode</div>
     </button>
     <button
@@ -61,9 +61,20 @@
     >
       <i class="small"
         ><svg viewBox="0 0 24 24">
-          <path :d="mdiStarFourPointsCircleOutline" /></svg
-      ></i>
+          <path :d="mdiStarFourPointsCircleOutline" />
+        </svg>
+      </i>
       <div class="tooltip left">Back to POIs</div>
+    </button>
+    <button class="primary small circle small-elevate" @click="switchGlobe()">
+      <i class="small"
+        ><svg viewBox="0 0 24 24">
+          <path :d="mdiEarth" />
+        </svg>
+      </i>
+      <div class="tooltip left">
+        {{ globeEnabled ?  "switch to 2D" : "switch to 3D" }}
+      </div>
     </button>
     <eox-geosearch
       v-if="mapEl && enableSearch"
@@ -95,7 +106,11 @@
 </template>
 <script setup>
 import { useTransparentPanel } from "@/composables";
-import { changeMapProjection, setActiveTemplate } from "@/store/actions";
+import {
+  changeMapProjection,
+  getLayers,
+  setActiveTemplate,
+} from "@/store/actions";
 import {
   activeTemplate,
   availableMapProjection,
@@ -111,6 +126,7 @@ import {
   mdiMinus,
   mdiPlus,
   mdiStarFourPointsCircleOutline,
+  mdiEarth,
 } from "@mdi/js";
 import ExportState from "^/ExportState.vue";
 import { computed, ref, triggerRef } from "vue";
@@ -168,6 +184,7 @@ const { smAndDown } = useDisplay();
 const popupWidth = computed(() => (smAndDown.value ? "80%" : "70%"));
 const popupHeight = computed(() => (smAndDown.value ? "90%" : "70%"));
 
+const globeEnabled = ref(false);
 const showMapState = ref(false);
 const showCompareIndicators = ref(false);
 const compareIcon = computed(() =>
@@ -251,6 +268,50 @@ const onMapZoomIn = () => {
         easing: easeOut,
       });
     }
+  }
+};
+const switchGlobe = () => {
+  if (!mapEl.value) {
+    return;
+  }
+  if (!globeEnabled.value) {
+    mapEl.value.layers = addCorsAnonym([...getLayers()]);
+  }
+  mapEl.value.projection = globeEnabled.value ? "EPSG:3857" : "globe";
+  globeEnabled.value = !globeEnabled.value;
+  /**
+   *
+   * @param {import("@eox/map").EoxLayer[]} layers
+   * @return {import("@eox/map").EoxLayer[]}
+   */
+  function addCorsAnonym(layers) {
+    //@ts-expect-error todo
+    return layers.map((layer) => {
+      if (layer.type === "Group") {
+        layer.layers = addCorsAnonym([...(layer.layers ?? [])]);
+        return layer;
+      }
+      // check if not mapbox style as a fix for ts error
+      if (layer.type === "MapboxStyle") {
+        return layer
+      }
+
+      return {
+        ...layer,
+        ...(layer.source && {
+          source: {
+            ...layer.source,
+            crossOrigin: "anonymous",
+          },
+        ...(layer.sources && {
+          sources:layer.sources.map(source=>({
+            ...source,
+            crossOrigin:"anonymous"
+          }))
+        })
+        }),
+      }
+    });
   }
 };
 const opencageApiKey = process.env.EODASH_OPENCAGE || "NO_KEY_FOUND";
