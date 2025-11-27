@@ -148,7 +148,7 @@ export async function createLayersFromAssets(
       await registerProjection(assetProjection);
       const projection = getProjectionCode(assetProjection) || "EPSG:4326";
       const geoJSONURL =
-        stacObject?.merge_assets === false
+        stacObject?.["eodash:merge_assets"] === false
           ? geoJsonSource
           : await mergeGeojsons(geoJsonSources);
       const layer = {
@@ -178,7 +178,7 @@ export async function createLayersFromAssets(
       addTooltipInteraction(layer, style);
       jsonArray.push(layer);
       // if we merged assets (default yes), then we can break from this loop
-      if (stacObject?.merge_assets !== false) break;
+      if (stacObject?.["eodash:merge_assets"] !== false) break;
     }
   }
   if (fgbSources.length) {
@@ -209,8 +209,8 @@ export async function createLayersFromAssets(
       const urlsObject = {
         url: fgbSource,
         // TODO uncomment this once fgb merging supported on source
-        // url: stacObject?.merge_assets === false ? fgbSource : undefined,
-        // urls: stacObject?.merge_assets !== false ? fgbSources : undefined,
+        // url: stacObject?.["eodash:merge_assets"] === false ? fgbSource : undefined,
+        // urls: stacObject?.["eodash:merge_assets"] !== false ? fgbSources : undefined,
       };
       const layer = {
         type: "Vector",
@@ -240,7 +240,7 @@ export async function createLayersFromAssets(
       jsonArray.push(layer);
       // if we merged assets (default yes), then we can break from this loop
       // TODO uncomment this once fgb merging supported on source
-      // if (stacObject?.merge_assets !== false)
+      // if (stacObject?.["eodash:merge_assets"] !== false)
       //   break
     }
   }
@@ -266,7 +266,7 @@ export async function createLayersFromAssets(
       log.debug("Creating WebGLTile layer from GeoTIFF", assetLayerId);
       log.debug("Configured Sources", geoTIFFSources);
       const sources =
-        stacObject?.merge_assets !== false ? geoTIFFSources : geotiffSource;
+        stacObject?.["eodash:merge_assets"] !== false ? geoTIFFSources : geotiffSource;
       const layer = {
         type: "WebGLTile",
         source: {
@@ -288,7 +288,7 @@ export async function createLayersFromAssets(
       }
       extractRoles(layer.properties, assets[assetName]);
       jsonArray.push(layer);
-      if (stacObject?.merge_assets !== false) break;
+      if (stacObject?.["eodash:merge_assets"] !== false) break;
     }
   }
 
