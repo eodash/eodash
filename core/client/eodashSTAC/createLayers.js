@@ -1,5 +1,6 @@
 import { registerProjection } from "@/store/actions";
 import { mapEl } from "@/store/states";
+import axios from "@/plugins/axios";
 
 import {
   extractRoles,
@@ -301,6 +302,7 @@ export async function createLayersFromAssets(
  * @param {string} title
  * @param {Record<string,any>} [layerDatetime]
  * @param {object | null} [extraProperties]
+ * @param {import('stac-ts').StacCollection} [collection]
  */
 export const createLayersFromLinks = async (
   collectionId,
@@ -308,6 +310,7 @@ export const createLayersFromLinks = async (
   item,
   layerDatetime,
   extraProperties,
+  collection,
 ) => {
   log.debug("Creating layers from links");
   /** @type {Record<string,any>[]} */
@@ -391,6 +394,13 @@ export const createLayersFromLinks = async (
       (wmtsLink?.["proj:epsg"] || wmtsLink?.["eodash:proj4_def"]);
 
     await registerProjection(wmtsLinkProjection);
+    const key =
+    /** @type {string | undefined} */ (wmtsLink["key"]) || undefined;
+
+    const styles = await fetchStyle(item, key);
+    // get the correct style which is attached to a link
+    const returnedLayerConfig = extractLayerConfig(collectionId, styles, undefined, "tileUrl");
+    const styleDef = returnedLayerConfig.style;
     const projectionCode = getProjectionCode(wmtsLinkProjection || "EPSG:3857");
     // TODO: WARNING! This is a temporary project specific implementation
     // that needs to be removed once catalog and wmts creation from capabilities
@@ -432,6 +442,12 @@ export const createLayersFromLinks = async (
           tileGrid: {
             tileSize: [128, 128],
           },
+          ...(returnedLayerConfig.layerConfig && {
+            layerConfig: {
+              ...returnedLayerConfig.layerConfig,
+              style: styleDef,
+            },
+          }),
           attributions: wmtsLink.attribution,
           dimensions: dimensionsWithoutStyle,
         },
@@ -474,7 +490,18 @@ export const createLayersFromLinks = async (
     const xyzLinkProjection =
       /** @type {number | string | {name: string, def: string} | undefined} */
       (xyzLink?.["proj:epsg"] || xyzLink?.["eodash:proj4_def"]);
-
+    const key =
+      /** @type {string | undefined} */ (xyzLink["key"]) || undefined;
+    const rasterformURL = /** @type {string|undefined} */ (
+      collection?.["eodash:rasterform"]
+    );
+    /** @type {import("@/types").EodashRasterJSONForm|undefined} */
+    const rasterForm = rasterformURL
+    ? await axios.get(rasterformURL).then((resp) => resp.data)
+    : undefined;
+    const styles = await fetchStyle(item, key);
+    // get the correct style which is attached to a link
+    let { layerConfig, style } = extractLayerConfig(collectionId, styles, rasterForm, "tileUrl");
     await registerProjection(xyzLinkProjection);
     const projectionCode = getProjectionCode(xyzLinkProjection || "EPSG:3857");
     const linkId = createLayerID(
@@ -491,6 +518,12 @@ export const createLayersFromLinks = async (
         title: xyzLink.title || title || item.id,
         roles: xyzLink.roles,
         layerDatetime,
+        ...(layerConfig && {
+          layerConfig: {
+            ...layerConfig,
+            style,
+          },
+        }),
       },
       source: {
         type: "XYZ",
@@ -581,17 +614,30 @@ export const createLayersFromLinks = async (
  * @param {import("stac-ts").StacItem | undefined | null} item
  * @param {string} rasterURL
  * @param {Record<string, any>} [extraProperties]
- * @returns {import("@eox/map/src/layers").EOxLayerType<"Tile","XYZ">[]}
+ * @returns {Promise<import("@eox/map/src/layers").EOxLayerType<"Tile","XYZ">[]>}
  */
-export function createLayerFromRender(
+export const createLayerFromRender = async (
   rasterURL,
   collection,
   item,
   extraProperties,
-) {
+) => {
   if (!collection || !collection.renders || !item) {
     return [];
   }
+
+  const rasterformURL = /** @type {string|undefined} */ (
+      collection?.["eodash:rasterform"]
+    );
+  /** @type {import("@/types").EodashRasterJSONForm|undefined} */
+  const rasterForm = rasterformURL
+    ? await axios.get(rasterformURL).then((resp) => resp.data)
+    : undefined;
+  let { layerConfig } = extractLayerConfig(
+    collection.id,
+    await fetchStyle(item),
+    rasterForm,
+  );
 
   const renders = /** @type {Record<string,import("@/types").Render>} */ (
     collection.renders ?? item?.renders
@@ -643,6 +689,9 @@ export function createLayerFromRender(
         title,
         roles: item.roles,
         ...extraProperties,
+        layerConfig: {
+          ...layerConfig,
+        },
       },
       source: {
         /** @type {"XYZ"} */

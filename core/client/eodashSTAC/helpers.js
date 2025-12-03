@@ -42,18 +42,23 @@ export function generateFeatures(links, extraProperties = {}, rel = "item") {
 }
 
 /**
- * Sperates and extracts layerConfig (jsonform schema & legend) from a style json
+ * Spearates and extracts layerConfig (jsonform schema & legend) from a style json
  *
  * @param {string} collectionId
  *  @param { import("@/types").EodashStyleJson} [style]
  * @param {Record<string,any>} [rasterJsonform]
+ * @param {string} [layerConfigType]
  * */
-export function extractLayerConfig(collectionId, style, rasterJsonform) {
+export function extractLayerConfig(collectionId, style, rasterJsonform, layerConfigType) {
   if (!style && !rasterJsonform) {
     return { layerConfig: undefined, style: undefined };
   }
   if (style) {
     style = { ...style };
+  }
+
+  if (style?.variables && Object.keys(style.variables ?? {}).length) {
+    style.variables = getStyleVariablesState(collectionId, style.variables);
   }
 
   if (rasterJsonform) {
@@ -67,16 +72,12 @@ export function extractLayerConfig(collectionId, style, rasterJsonform) {
     };
   }
 
-  if (style?.variables && Object.keys(style.variables ?? {}).length) {
-    style.variables = getStyleVariablesState(collectionId, style.variables);
-  }
-
   /** @type {Record<string,unknown> | undefined} */
   let layerConfig = undefined;
 
   if (style?.jsonform) {
     // this explicitly sets legend only if jsonform is configured
-    layerConfig = { schema: style.jsonform, type: "style" };
+    layerConfig = { schema: style.jsonform, type: layerConfigType || "style" };
     delete style.jsonform;
     if (style?.legend) {
       layerConfig.legend = style.legend;
@@ -193,7 +194,7 @@ export const fetchStyle = async (
   } else {
     // legacy behavior for rasterform/api mode
     styleLink = stacObject.links.find(
-      (link) => link.rel.includes("style") && !link["links:keys"],
+      (link) => link.rel.includes("style")
     );
   }
   if (styleLink) {

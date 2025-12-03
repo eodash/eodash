@@ -177,20 +177,6 @@ export class EodashCollection {
     // will try to extract anything it supports but for which we have
     // less control.
 
-    const rasterformURL = /** @type {string|undefined} */ (
-      this.#collectionStac?.["eodash:rasterform"]
-    );
-    /** @type {import("@/types").EodashRasterJSONForm|undefined} */
-    const rasterForm = rasterformURL
-      ? await axios.get(rasterformURL).then((resp) => resp.data)
-      : undefined;
-    // todo review if really needed for render extension
-    let { layerConfig, style } = extractLayerConfig(
-      this.#collectionStac?.id ?? "",
-      await fetchStyle(item),
-      rasterForm,
-    );
-
     const { layerDatetime, timeControlValues } = extractLayerTimeValues(
       await this.getItems(),
       item.properties?.datetime ??
@@ -228,18 +214,17 @@ export class EodashCollection {
         item,
         layerDatetime,
         extraProperties,
+        this.#collectionStac,
       );
 
       jsonArray.push(
         ...((this.rasterEndpoint &&
-          createLayerFromRender(
+          await createLayerFromRender(
             this.rasterEndpoint,
             this.#collectionStac,
             item,
             {
               ...extraProperties,
-              // todo review if really needed for render extension
-              ...(layerConfig && { layerConfig }),
               ...(layerDatetime && { layerDatetime }),
             },
           )) ||
@@ -256,6 +241,10 @@ export class EodashCollection {
         ...links,
       );
     } else {
+      // get the correct style which is not attached to a link
+      const id = this.#collectionStac?.id ?? "";
+      const styles = await fetchStyle(item);
+      let { layerConfig, style } = extractLayerConfig(id, styles);
       // fallback to STAC
       const json = {
         type: "STAC",
@@ -263,7 +252,7 @@ export class EodashCollection {
         displayFootprint: false,
         data: item,
         properties: {
-          id: this.#collectionStac?.id ?? "",
+          id,
           title: title || item.id,
           layerConfig,
         },
