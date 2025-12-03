@@ -13,11 +13,12 @@ const runtimePath = path.join(dirname, "/config.js");
 fs.writeFileSync(runtimePath, createRuntimeConfig(), { encoding: "utf-8" });
 
 function createRuntimeConfig(
-  stacEndpoint = process.env.STAC_ENDPOINT,
-  isApi = process.env.API,
-  brand = process.env.BRAND,
+  stacEndpointEnv = process.env.STAC_ENDPOINT,
+  apiEnv = process.env.API,
+  brandEnv = process.env.BRAND,
+  templatesStrEnv = process.env.TEMPLATES,
 ) {
-  const api = isApi === "true";
+  const api = apiEnv === "true";
   return /* js */ `
   // fetch base config from built manifest
 const manifest = await fetch("./.vite/manifest.json").then(res=>res.json())
@@ -27,17 +28,30 @@ const fileConfig = manifest["templates/index.js"]
 const importedModule = await import("./" + fileConfig.file)
 .then(m => m.default || m)
 const key = Object.keys(importedModule)[0]
-const baseConfig = importedModule[key].default
 const getBaseConfig = importedModule[key].getBaseConfig
+const baseConfig = importedModule[key].default
+
 const lite = baseConfig.templates.lite
 const expert = baseConfig.templates.expert
 const compare = baseConfig.templates.compare
 const explore = baseConfig.templates.explore
 
+const baseTemplates = { lite, expert, compare, explore }
 
-const stacEndpoint = ${stacEndpoint ? `"${stacEndpoint}"` : undefined}
+const stacEndpoint = ${stacEndpointEnv ? `"${stacEndpointEnv}"` : undefined}
 const api = ${api}
-const brand = await fetchBrand(${brand ? `"${brand}"` : undefined})
+const brand = ${brandEnv ? `"${brandEnv}"` : undefined}
+const brandConfig =  await fetchBrand(brand)
+const templatesStr = ${templatesStrEnv ? `"${templatesStrEnv}"` : undefined}
+
+// determine templates to include
+const templateKeys = (() => {
+  if (templatesStr) {
+    return templatesStr.split(",").map(t => t.trim())
+  } else {
+    return api ? ["explore"] : ["lite","expert","compare","explore"]
+  }
+})()
 
 
 const config = await getBaseConfig({
@@ -46,21 +60,17 @@ const config = await getBaseConfig({
     api
   },
   brand:{
-    name:${brand ? `"${brand}"` : undefined},
+    name:brand,
     theme:{
       colors:{
-        primary: brand.primary,
-        secondary: brand.secondary
+        primary: brandConfig.primary,
+        secondary: brandConfig.secondary
       }
     }
-  },
-})
-// if it's api mode, only include explore template
-if(api){
-  config.templates = {
-    explore
   }
-}
+})
+config.templates = Object.fromEntries(templateKeys.map(key => [key, baseTemplates[key]]))
+
 export default config
 
 async function fetchBrand(workspaceId = "eox"){
