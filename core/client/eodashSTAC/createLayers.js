@@ -400,7 +400,6 @@ export const createLayersFromLinks = async (
     const styles = await fetchStyle(item, key);
     // get the correct style which is attached to a link
     const returnedLayerConfig = extractLayerConfig(collectionId, styles, undefined, "tileUrl");
-    const styleDef = returnedLayerConfig.style;
     const projectionCode = getProjectionCode(wmtsLinkProjection || "EPSG:3857");
     // TODO: WARNING! This is a temporary project specific implementation
     // that needs to be removed once catalog and wmts creation from capabilities
@@ -418,6 +417,14 @@ export const createLayersFromLinks = async (
     let { style, ...dimensionsWithoutStyle } = { ...dimensions };
     let extractedStyle = /** @type { string } */ (style || "default");
 
+    // update dimensions with current value of style variables if applicable
+    const variables = returnedLayerConfig?.style?.variables;
+    if (variables) {
+      for (const [kk, vv] of Object.entries(variables)) {
+        dimensionsWithoutStyle[kk] == vv;
+      }
+    }
+    
     if (wmtsLink.title === "wmts capabilities") {
       log.debug(
         "Warning: WMTS Layer from capabilities added, function needs to be updated",
@@ -429,6 +436,7 @@ export const createLayersFromLinks = async (
           id: linkId,
           title: title || item.id,
           layerDatetime,
+          layerConfig: returnedLayerConfig.layerConfig,
         },
         source: {
           type: "WMTS",
@@ -442,12 +450,6 @@ export const createLayersFromLinks = async (
           tileGrid: {
             tileSize: [128, 128],
           },
-          ...(returnedLayerConfig.layerConfig && {
-            layerConfig: {
-              ...returnedLayerConfig.layerConfig,
-              style: styleDef,
-            },
-          }),
           attributions: wmtsLink.attribution,
           dimensions: dimensionsWithoutStyle,
         },
@@ -510,6 +512,18 @@ export const createLayersFromLinks = async (
       xyzLink,
       viewProjectionCode,
     );
+    let xyzUrl = xyzLink.href;
+    // update url query params with current value of style variables if applicable
+    const variables = style?.variables;
+    if (variables) {
+      const [base, query] = xyzUrl.split("?");
+      const params = new URLSearchParams(query);
+      for (const [kk, vv] of Object.entries(variables)) {
+        params.set(kk, JSON.stringify(vv));
+      }
+      xyzUrl = `${base}?${params.toString()}`;
+    }
+
     log.debug("XYZ Layer added", linkId);
     let json = {
       type: "Tile",
@@ -518,16 +532,11 @@ export const createLayersFromLinks = async (
         title: xyzLink.title || title || item.id,
         roles: xyzLink.roles,
         layerDatetime,
-        ...(layerConfig && {
-          layerConfig: {
-            ...layerConfig,
-            style,
-          },
-        }),
+        layerConfig,
       },
       source: {
         type: "XYZ",
-        url: xyzLink.href,
+        url: xyzUrl,
         projection: projectionCode,
         attributions: xyzLink.attribution,
       },
@@ -561,7 +570,7 @@ export const createLayersFromLinks = async (
     // fetch styles and separate them by their mapping between links and assets
     const styles = await fetchStyle(item, key);
     // get the correct style which is not attached to a link
-    let { layerConfig, style } = extractLayerConfig(linkId ?? "", styles);
+    let { layerConfig, style } = extractLayerConfig(collectionId, styles);
 
     let href = vectorTileLink.href;
     if ("auth:schemes" in item && "auth:refs" in vectorTileLink) {

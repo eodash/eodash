@@ -67,10 +67,7 @@ export function getStyleVariablesState(collectionId, variables) {
       "",
       "",
     ];
-    return (
-      collection === collectionId &&
-      ["Vector", "WebGLTile", "VectorTile"].includes(layer?.type ?? "")
-    );
+    return collection === collectionId;
   });
 
   if (!matchingLayer) {
@@ -78,13 +75,16 @@ export function getStyleVariablesState(collectionId, variables) {
   }
 
   const olLayer = mapElement.getLayerById(matchingLayer.properties?.id ?? "");
-  const oldVariablesState =
+  let oldVariablesState =
     /** @type {import("ol/layer").Vector} */ (
       olLayer
       //@ts-expect-error variables doesn't exist in non-flat style
     ).getStyle?.()?.variables ??
     //@ts-expect-error (styleVariables_ is a private property)
     /** @type {import("ol/layer").WebGLTile} */ (olLayer).styleVariables_;
+  if (!oldVariablesState) {
+    oldVariablesState = /** @type {import("ol/source").WMTS} */(/** @type {import("ol/layer").Tile} */ (olLayer).getSource())?.getDimensions?.();
+  }
 
   if (!oldVariablesState) {
     return variables;
@@ -99,3 +99,4 @@ export function getStyleVariablesState(collectionId, variables) {
     );
   return matchingKeys ? oldVariablesState : variables;
 }
+
