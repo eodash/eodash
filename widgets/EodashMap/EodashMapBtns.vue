@@ -5,10 +5,21 @@
       class="primary small circle small-elevate"
       @click="onMapZoomIn"
     >
-      <i class="small"
-        ><svg viewBox="0 0 24 24"><path :d="mdiPlus" /></svg
-      ></i>
+      <i class="small">
+        <svg viewBox="0 0 24 24"><path :d="mdiPlus"></path></svg>
+      </i>
       <div class="tooltip left">Zoom in</div>
+    </button>
+
+    <button
+      v-if="mosaicState.showButton"
+      class="primary small circle small-elevate"
+      @click="showMosaicLayer"
+    >
+      <i class="small">
+        <svg viewBox="0 0 24 24"><path :d="mdiArrowLeft"></path></svg>
+      </i>
+      <div class="tooltip left">Back to Mosaic</div>
     </button>
 
     <button
@@ -16,9 +27,9 @@
       class="primary small circle small-elevate"
       @click="onMapZoomOut"
     >
-      <i class="small"
-        ><svg viewBox="0 0 24 24"><path :d="mdiMinus" /></svg
-      ></i>
+      <i class="small">
+        <svg viewBox="0 0 24 24"><path :d="mdiMinus"></path></svg>
+      </i>
       <div class="tooltip left">Zoom out</div>
     </button>
 
@@ -27,9 +38,9 @@
       class="primary small circle small-elevate"
       @click="showMapState = !showMapState"
     >
-      <i class="small"
-        ><svg viewBox="0 0 24 24"><path :d="mdiMapPlus" /></svg
-      ></i>
+      <i class="small">
+        <svg viewBox="0 0 24 24"><path :d="mdiMapPlus"></path></svg>
+      </i>
       <div class="tooltip left">Extract storytelling configuration</div>
     </button>
     <ExportState v-if="exportMap" v-model="showMapState" />
@@ -39,9 +50,9 @@
       class="primary small circle small-elevate"
       @click="changeMapProjection(availableMapProjection)"
     >
-      <i class="small"
-        ><svg viewBox="0 0 24 24"><path :d="mdiEarthBox" /></svg
-      ></i>
+      <i class="small">
+        <svg viewBox="0 0 24 24"><path :d="mdiEarthBox"></path></svg>
+      </i>
       <div class="tooltip left">Change map projection</div>
     </button>
     <button
@@ -49,9 +60,9 @@
       class="primary small circle small-elevate"
       @click="onCompareClick"
     >
-      <i class="small"
-        ><svg viewBox="0 0 24 24"><path :d="compareIcon" /></svg
-      ></i>
+      <i class="small">
+        <svg viewBox="0 0 24 24"><path :d="compareIcon"></path></svg>
+      </i>
       <div class="tooltip left">Compare mode</div>
     </button>
     <button
@@ -59,10 +70,11 @@
       class="primary small circle small-elevate"
       @click="loadPOiIndicator()"
     >
-      <i class="small"
-        ><svg viewBox="0 0 24 24">
-          <path :d="mdiStarFourPointsCircleOutline" /></svg
-      ></i>
+      <i class="small">
+        <svg viewBox="0 0 24 24">
+          <path :d="mdiStarFourPointsCircleOutline"></path>
+        </svg>
+      </i>
       <div class="tooltip left">Back to POIs</div>
     </button>
     <eox-geosearch
@@ -95,7 +107,11 @@
 </template>
 <script setup>
 import { useTransparentPanel } from "@/composables";
-import { changeMapProjection, setActiveTemplate } from "@/store/actions";
+import {
+  changeMapProjection,
+  getLayers,
+  setActiveTemplate,
+} from "@/store/actions";
 import {
   activeTemplate,
   availableMapProjection,
@@ -103,7 +119,9 @@ import {
   mapEl,
   poi,
 } from "@/store/states";
+import { mosaicState } from "@/utils/states";
 import {
+  mdiArrowLeft,
   mdiCompare,
   mdiCompareRemove,
   mdiEarthBox,
@@ -121,8 +139,16 @@ import { useSTAcStore } from "@/store/stac";
 import { storeToRefs } from "pinia";
 import { loadPOiIndicator } from "^/EodashProcess/methods/handling";
 import { easeOut } from "ol/easing.js";
-
+import { renderMosaic, } from "@/eodashSTAC/mosaic";
 import "@eox/geosearch";
+
+
+const store = useSTAcStore();
+const showMosaicLayer = async () => {
+  if (store.mosaicEndpoint) {
+    await renderMosaic(getLayers(), store.mosaicEndpoint, mosaicState.query);
+  }
+};
 
 const {
   compareIndicators,

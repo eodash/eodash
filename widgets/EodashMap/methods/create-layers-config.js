@@ -37,13 +37,19 @@ export const createLayersConfig = async (
   for (const ec of eodashCols) {
     /** @type {Record<string,any>[]} */
     let layers;
+    let dateOrItem;
     if (timeOrItem) {
-      const dateOrItem =
-        typeof timeOrItem === "string" ? new Date(timeOrItem) : timeOrItem;
-      layers = await ec.createLayersJson(dateOrItem);
+      if (typeof timeOrItem === "string" && timeOrItem.includes("/")) {
+        dateOrItem = timeOrItem;
+      } else {
+        dateOrItem =
+          typeof timeOrItem === "string" ? new Date(timeOrItem) : timeOrItem;
+      }
+      layers = await ec.createLayersJson(/** @type {any} */ (dateOrItem));
     } else {
       layers = await ec.createLayersJson(undefined);
     }
+
     // Add expand to all analysis layers
     layers.forEach((dl) => {
       dl.properties.layerControlExpand = true;

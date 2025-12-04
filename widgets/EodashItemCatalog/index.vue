@@ -95,20 +95,87 @@ const props = defineProps({
       },
     ],
   },
+  useMosaic: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 // Store and template refs
 const store = useSTAcStore();
 const itemfilterEl = useTemplateRef("itemfilter");
 
+// Mosaic Logic
+import { updateMosaicLayer } from "@/eodashSTAC/mosaic";
+import { mapEl } from "@/store/states";
+import { mosaicState } from "@/utils/states";
+
+import { watch } from "vue";
+import { getLayers } from "@/store/actions";
+
+/// todo: move this to a composable
+/** @type {import("ol/events").EventsKey | null} */
+let mapListener = null;
+const setupMapListener = () => {
+  if (mapEl.value && mapEl.value.map) {
+    if (mapListener) {
+      // already set up
+      return;
+    }
+    mapListener = mapEl.value.map.on("moveend", async () => {
+      const latLonExtent = mapEl.value?.lonLatExtent;
+      if (!latLonExtent || !store.mosaicEndpoint) {
+        return;
+      }
+      const [minLon, minLat, maxLon, maxLat] = latLonExtent;
+      mosaicState.filters.spatial = {
+        op: "s_intersects",
+        args: [
+          { property: "geometry" },
+          {
+            type: "Polygon",
+            coordinates: [
+              [
+                [minLon, minLat],
+                [maxLon, minLat],
+                [maxLon, maxLat],
+                [minLon, maxLat],
+                [minLon, minLat],
+              ],
+            ],
+          },
+        ],
+      };
+      await updateMosaicLayer([...getLayers()], store.mosaicEndpoint);
+    });
+  }
+};
+/////
+
+if (props.useMosaic && store.mosaicEndpoint) {
+ // Initial render
+ await updateMosaicLayer([...getLayers()], store.mosaicEndpoint);
+ mosaicState.showButton = false;
+
+ // Setup listener
+ setupMapListener();
+
+ // Watch for map availability
+ watch(mapEl, () => {
+   setupMapListener();
+ },{deep: false});
+}
+
 // Reactive state
 /** @type {import("vue").Ref<import("@/types").GeoJsonFeature[]>} */
 const currentItems = ref([]);
 
 // Initial data fetch
-await axios
-  .get(store.stacEndpoint + "/search?limit=100")
-  .then((res) => (currentItems.value = res.data.features));
+if (store.stacEndpoint) {
+  await axios
+    .get(store.stacEndpoint + "/search?limit=100")
+    .then((res) => (currentItems.value = res.data.features));
+}
 
 const items = currentItems.value;
 
@@ -143,6 +210,13 @@ useRenderOnFeatureHover(itemfilterEl);
 
 onUnmounted(() => {
   store.selectedItem = null;
+  mosaicState.showButton = false;
+  mosaicState.filters.spatial = null;
+  if (mapListener && mapEl.value?.map) {
+    //@ts-expect-error todo
+    mapEl.value.map.un("moveend", mapListener);
+    mapListener = null;
+  }
 });
 </script>
 <style scoped lang="scss">
