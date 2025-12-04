@@ -67,25 +67,25 @@ export function getStyleVariablesState(collectionId, variables) {
       "",
       "",
     ];
-    return (
-      collection === collectionId &&
-      ["Vector", "WebGLTile", "VectorTile"].includes(layer?.type ?? "")
-    );
+    return collection === collectionId;
   });
 
   if (!matchingLayer) {
     return variables;
   }
+  // TODO instead tap into store for changed variables state per layer
+  // because XYZ and WMTS use tileurlfunction update, where we can not retrieve
+  // current values from OL layers anyhow
 
   const olLayer = mapElement.getLayerById(matchingLayer.properties?.id ?? "");
-  const oldVariablesState =
+  let oldVariablesState =
     /** @type {import("ol/layer").Vector} */ (
       olLayer
       //@ts-expect-error variables doesn't exist in non-flat style
     ).getStyle?.()?.variables ??
     //@ts-expect-error (styleVariables_ is a private property)
     /** @type {import("ol/layer").WebGLTile} */ (olLayer).styleVariables_;
-
+  
   if (!oldVariablesState) {
     return variables;
   }
@@ -99,3 +99,4 @@ export function getStyleVariablesState(collectionId, variables) {
     );
   return matchingKeys ? oldVariablesState : variables;
 }
+

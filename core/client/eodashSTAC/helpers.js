@@ -42,18 +42,23 @@ export function generateFeatures(links, extraProperties = {}, rel = "item") {
 }
 
 /**
- * Sperates and extracts layerConfig (jsonform schema & legend) from a style json
+ * Spearates and extracts layerConfig (jsonform schema & legend) from a style json
  *
  * @param {string} collectionId
  *  @param { import("@/types").EodashStyleJson} [style]
  * @param {Record<string,any>} [rasterJsonform]
+ * @param {string} [layerConfigType]
  * */
-export function extractLayerConfig(collectionId, style, rasterJsonform) {
+export function extractLayerConfig(collectionId, style, rasterJsonform, layerConfigType) {
   if (!style && !rasterJsonform) {
     return { layerConfig: undefined, style: undefined };
   }
   if (style) {
     style = { ...style };
+  }
+
+  if (style?.variables && Object.keys(style.variables ?? {}).length) {
+    style.variables = getStyleVariablesState(collectionId, style.variables);
   }
 
   if (rasterJsonform) {
@@ -67,16 +72,12 @@ export function extractLayerConfig(collectionId, style, rasterJsonform) {
     };
   }
 
-  if (style?.variables && Object.keys(style.variables ?? {}).length) {
-    style.variables = getStyleVariablesState(collectionId, style.variables);
-  }
-
   /** @type {Record<string,unknown> | undefined} */
   let layerConfig = undefined;
 
   if (style?.jsonform) {
     // this explicitly sets legend only if jsonform is configured
-    layerConfig = { schema: style.jsonform, type: "style" };
+    layerConfig = { schema: style.jsonform, type: layerConfigType || "style" };
     delete style.jsonform;
     if (style?.legend) {
       layerConfig.legend = style.legend;
@@ -90,6 +91,7 @@ export function extractLayerConfig(collectionId, style, rasterJsonform) {
 
   return { layerConfig, style };
 }
+
 /**
  *
  * @param {number[]} bbox
@@ -164,35 +166,40 @@ export const extractRoles = (properties, linkOrAsset) => {
 
 /**
  * Extracts a single non-link style JSON from a STAC Item optionally for a selected key mapping
- * @param {import("stac-ts").StacItem} item
- * @param {string} itemUrl
- * @param {string | undefined} key
+ * @param { import("stac-ts").StacItem | import("stac-ts").StacCollection } stacObject
+ * @param {string | undefined} linkKey
+ * @param {string | undefined} assetKey
  * @returns
  **/
-export const fetchStyle = async (item, itemUrl, key = undefined) => {
+export const fetchStyle = async (
+  stacObject,
+  linkKey = undefined,
+  assetKey = undefined,
+) => {
   let styleLink = null;
-  if (key) {
-    styleLink = item.links.find(
+  if (linkKey) {
+    styleLink = stacObject.links.find(
       (link) =>
         link.rel.includes("style") &&
         link["links:keys"] &&
-        /** @type {Array<string>} */ (link["links:keys"]).includes(key),
+        /** @type {Array<string>} */ (link["links:keys"]).includes(linkKey),
+    );
+  } else if (assetKey) {
+    styleLink = stacObject.links.find(
+      (link) =>
+        link.rel.includes("style") &&
+        link["asset:keys"] &&
+        /** @type {Array<string>} */ (link["asset:keys"]).includes(assetKey),
     );
   } else {
-    styleLink = item.links.find(
-      (link) => link.rel.includes("style") && !link["links:keys"],
+    // legacy behavior for rasterform/api mode
+    styleLink = stacObject.links.find(
+      (link) => link.rel.includes("style")
     );
   }
   if (styleLink) {
-    let url = "";
-    if (styleLink.href.startsWith("http")) {
-      url = styleLink.href;
-    } else {
-      url = toAbsolute(styleLink.href, itemUrl);
-    }
-
     /** @type {import("@/types").EodashStyleJson} */
-    const styleJson = await axios.get(url).then((resp) => resp.data);
+    const styleJson = await axios.get(styleLink.href).then((resp) => resp.data);
 
     log.debug("fetched styles JSON", JSON.parse(JSON.stringify(styleJson)));
     return { ...styleJson };
@@ -201,18 +208,15 @@ export const fetchStyle = async (item, itemUrl, key = undefined) => {
 
 /**
  * Fetches all style JSONs from a STAC Item and returns an array with style objects
- * @param {import("stac-ts").StacItem} item
- * @param {string} itemUrl
+ * @param {import("stac-ts").StacItem | import("stac-ts").StacCollection} stacObject
  * @returns { Promise <Array<import("@/types").EodashStyleJson>>}
  **/
-export const fetchAllStyles = async (item, itemUrl) => {
-  const styleLinks = item.links.filter((link) => link.rel.includes("style"));
+export const fetchAllStyles = async (stacObject) => {
+  const styleLinks = stacObject.links.filter((link) =>
+    link.rel.includes("style"),
+  );
   const fetchPromises = styleLinks.map(async (link) => {
-    let url = link.href.startsWith("http")
-      ? link.href
-      : toAbsolute(link.href, itemUrl);
-
-    const styleJson = await axios.get(url).then((resp) => resp.data);
+    const styleJson = await axios.get(link.href).then((resp) => resp.data);
     log.debug("fetched styles JSON", JSON.parse(JSON.stringify(styleJson)));
     return styleJson;
   });
