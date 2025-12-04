@@ -288,6 +288,7 @@ export async function createLayersFromAssets(
         layer.properties = { ...layer.properties, ...extraProperties };
       }
       extractRoles(layer.properties, assets[assetName]);
+      addTooltipInteraction(layer, style);
       jsonArray.push(layer);
       if (stacObject?.["eodash:merge_assets"] !== false) break;
     }
