@@ -1,6 +1,13 @@
 # Changelog
 
 
+## [5.3.4](https://github.com/eodash/eodash/compare/eodash-v5.3.3...eodash-v5.3.4) (2025-12-04)
+
+
+### Bug Fixes
+
+* Raw overlay baselayers, possible to spread assets, add style links handling to XYZ/WMTS layers ([#277](https://github.com/eodash/eodash/issues/277)) ([0577ae4](https://github.com/eodash/eodash/commit/0577ae432c8b9d096ff30d382737d3066364e9d0))
+
 ## [5.3.3](https://github.com/eodash/eodash/compare/eodash-v5.3.2...eodash-v5.3.3) (2025-11-26)
 
 
