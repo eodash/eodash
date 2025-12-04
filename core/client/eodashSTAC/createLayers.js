@@ -417,11 +417,14 @@ export const createLayersFromLinks = async (
     let { style, ...dimensionsWithoutStyle } = { ...dimensions };
     let extractedStyle = /** @type { string } */ (style || "default");
 
+    // TODO, this does not yet work between layer time changes because we do not get
+    // updated variables from OL layer due to usage of tileurlfunction
+    
     // update dimensions with current value of style variables if applicable
     const variables = returnedLayerConfig?.style?.variables;
     if (variables) {
       for (const [kk, vv] of Object.entries(variables)) {
-        dimensionsWithoutStyle[kk] == vv;
+        dimensionsWithoutStyle[kk] = vv;
       }
     }
     
@@ -513,6 +516,10 @@ export const createLayersFromLinks = async (
       viewProjectionCode,
     );
     let xyzUrl = xyzLink.href;
+
+    // TODO, this does not yet work between layer time changes because we do not get
+    // updated variables from OL layer due to usage of tileurlfunction
+
     // update url query params with current value of style variables if applicable
     const variables = style?.variables;
     if (variables) {

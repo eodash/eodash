@@ -73,6 +73,9 @@ export function getStyleVariablesState(collectionId, variables) {
   if (!matchingLayer) {
     return variables;
   }
+  // TODO instead tap into store for changed variables state per layer
+  // because XYZ and WMTS use tileurlfunction update, where we can not retrieve
+  // current values from OL layers anyhow
 
   const olLayer = mapElement.getLayerById(matchingLayer.properties?.id ?? "");
   let oldVariablesState =
@@ -82,10 +85,7 @@ export function getStyleVariablesState(collectionId, variables) {
     ).getStyle?.()?.variables ??
     //@ts-expect-error (styleVariables_ is a private property)
     /** @type {import("ol/layer").WebGLTile} */ (olLayer).styleVariables_;
-  if (!oldVariablesState) {
-    oldVariablesState = /** @type {import("ol/source").WMTS} */(/** @type {import("ol/layer").Tile} */ (olLayer).getSource())?.getDimensions?.();
-  }
-
+  
   if (!oldVariablesState) {
     return variables;
   }
