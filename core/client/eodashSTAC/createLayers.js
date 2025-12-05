@@ -380,6 +380,10 @@ export const createLayersFromLinks = async (
       // Expand all dimensions into the params attribute
       Object.assign(json.source.params, wmsLink["wms:dimensions"]);
     }
+    if ("wms:styles" in wmsLink) {
+      // @ts-expect-error
+      json.source.params["STYLES"] = wmsLink["wms:styles"];
+    }
     if (extraProperties !== null) {
       json.properties = { ...json.properties, ...extraProperties };
     }

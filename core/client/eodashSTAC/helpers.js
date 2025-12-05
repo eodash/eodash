@@ -476,11 +476,6 @@ export const getColFromLayer = async (indicators, layer) => {
 
   for (const ind of indicators) {
     if (ind.collectionStac?.id !== collectionId) continue;
-    const items = await ind.getItems();
-    const itemIds = items?.map((item) => item.id || item.datetime) ?? [];
-    if (itemIds.includes(itemId)) {
-      return ind;
-    }
   }
 };
 
