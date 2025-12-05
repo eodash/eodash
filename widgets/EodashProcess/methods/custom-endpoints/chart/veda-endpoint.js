@@ -19,7 +19,7 @@ export async function handleVedaEndpoint({
   enableCompare = false,
 }) {
   const vedaLink = links.find(
-    (link) => link.rel === "service" && link.endpoint === "veda",
+    (link) => link.rel === "service" && (link.endpoint === "veda" || link.endpoint === "veda_stac"),
   );
   if (!vedaLink) {
     return;
@@ -32,12 +32,17 @@ export async function handleVedaEndpoint({
   const configs = await fetchVedaCOGsConfig(
     selectedStac,
     enableCompare ? currentCompareUrl.value : currentUrl.value,
+    vedaLink,
   );
   // TODO: convert jsonform bbox type to geojson in the schema to avoid the conversion here
   return await Promise.all(
     configs.map(({ endpoint, datetime }) => {
+      const url = new URL(vedaEndpoint);
+      const key = vedaLink.endpoint === "veda_stac" ? "ids" : "url";
+      url.searchParams.set(key, endpoint);
+
       return axios
-        .post(vedaEndpoint + `?url=${endpoint}`, {
+        .post(url.toString(), {
           ...{
             type: "Feature",
             properties: {},
@@ -63,8 +68,9 @@ export async function handleVedaEndpoint({
  * Fetches the COGs endpoints from the STAC collections
  * @param {import("stac-ts").StacCollection} selectedStac
  * @param {string} absoluteUrl
+ * @param {import("stac-ts").StacLink} vedaLink
  */
-async function fetchVedaCOGsConfig(selectedStac, absoluteUrl) {
+async function fetchVedaCOGsConfig(selectedStac, absoluteUrl, vedaLink) {
   // retrieve the collections from the indicator
   const collectionLinks = selectedStac.links.filter(
     (link) => link.rel == "child",
@@ -110,10 +116,13 @@ async function fetchVedaCOGsConfig(selectedStac, absoluteUrl) {
     );
     const itemLinks = collection.links.filter((link) => link.rel == "item");
     configs.push(
-      ...itemLinks.map((link) => ({
-        endpoint: /** @type {string} */ (link["cog_href"]),
+      ...itemLinks.map((link) => {
+        const endpoint = /** @type {string} */ (vedaLink.endpoint === "veda_stac" ? link.id : link["cog_href"]);
+        return {
+        endpoint,
         datetime: /** @type string **/ (link[datetimeProperty]),
-      })),
+      }
+    })
     );
   }
 
