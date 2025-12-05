@@ -476,6 +476,7 @@ export const getColFromLayer = async (indicators, layer) => {
 
   for (const ind of indicators) {
     if (ind.collectionStac?.id !== collectionId) continue;
+    return ind;
   }
 };
 
