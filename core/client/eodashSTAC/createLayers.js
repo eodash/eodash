@@ -381,7 +381,7 @@ export const createLayersFromLinks = async (
       Object.assign(json.source.params, wmsLink["wms:dimensions"]);
     }
     if ("wms:styles" in wmsLink) {
-      // @ts-expect-error
+      // @ts-expect-error no type for eox-map
       json.source.params["STYLES"] = wmsLink["wms:styles"];
     }
     if (extraProperties !== null) {
