@@ -28,6 +28,8 @@ import {
 import axios from "@/plugins/axios";
 import log from "loglevel";
 import { dataThemesBrands } from "@/utils/states";
+import { useEventBus } from "@vueuse/core";
+import { eoxLayersKey } from "@/utils/keys";
 
 export class EodashCollection {
   #collectionUrl = "";
@@ -457,6 +459,10 @@ export class EodashCollection {
       toBeReplacedLayers,
       newLayers,
     );
+
+    // Emit event to update potential widget dependencies such as process layer ids
+    const layersEvents = useEventBus(eoxLayersKey);
+    layersEvents.emit("layertime:updated", {layers: newLayers});
 
     return updatedLayers;
   }

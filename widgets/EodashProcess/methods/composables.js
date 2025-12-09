@@ -1,8 +1,9 @@
-import { initProcess } from "./handling";
+import { initProcess, updateJsonformIdentifier } from "./handling";
 import { useEventBus } from "@vueuse/core";
 import { nextTick, onMounted, watch } from "vue";
 import { eoxLayersKey } from "@/utils/keys";
 import { useOnLayersUpdate } from "@/composables";
+import { getLayers } from "@/store/actions";
 
 /**
  * Composable resposible of timing the Initialization of the process
@@ -67,6 +68,19 @@ export const useInitProcess = ({
   const evtKey =
     mapElement?.id === "compare" ? "compareLayers:updated" : "layers:updated";
   useOnLayersUpdate(async (evt, _payload) => {
+    if (evt == "layertime:updated" || evt == "compareLayertime:updated") {
+      await updateJsonformIdentifier({
+        jsonformSchema,
+        newLayers: _payload?.layers,
+      });
+    }
+    if (evt == "time:updated" || evt == "compareTime:updated") {
+      await updateJsonformIdentifier({
+        jsonformSchema,
+        // @ts-expect-error TODO: i am not sure about the payload structure here
+        newLayers: _payload,
+      });
+    }
     if (evt !== evtKey) {
       return;
     }

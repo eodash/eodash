@@ -18,6 +18,7 @@ import { handleLayersCustomEndpoints } from "./custom-endpoints/layers";
 import { handleChartCustomEndpoints } from "./custom-endpoints/chart";
 import { useSTAcStore } from "@/store/stac";
 import { useGetSubCodeId } from "@/composables";
+import { getCompareLayers, getLayers } from "@/store/actions";
 
 /**
  * Fetch and set the jsonform schema to initialize the process
@@ -70,10 +71,67 @@ export async function initProcess({
 
   await jsonformEl.value?.editor.destroy();
   if (updatedJsonform) {
+    // make sure correct target layer id is used in jsonform
+    if (updatedJsonform.properties?.feature?.options?.drawtools?.layerId) {
+      await updateJsonformIdentifier({
+        jsonformSchema,
+        newLayers: await getLayers(),
+      });
+    }
     if (enableCompare) {
       updatedJsonform = updateJsonformSchemaTarget(updatedJsonform);
     }
     jsonformSchema.value = updatedJsonform;
+  }
+}
+
+/**
+ * Update the jsonform schema to have the correct layer id from the map
+ *
+ * @export
+ * @async
+ * @param {Object} params
+ * @param {import("vue").Ref<Record<string,any> | null>} params.jsonformSchema params.jsonformSchema
+ * @param {Record<string, any>[] | undefined} params.newLayers params.newLayers
+ */
+export async function updateJsonformIdentifier({
+  jsonformSchema: jsonformSchema,
+  newLayers: newLayers,
+}) {
+  const form = jsonformSchema.value;
+  if (newLayers && form?.properties?.feature?.options?.drawtools?.layerId) {
+    // get partial or full id and try to match with correct eoxmap layer
+    const layers = newLayers;
+    const layerId =
+      form.properties.feature.options.drawtools.layerId.split(";:;")[0];
+    let matchedLayerId = null;
+    // layers are not flat can be grouped, we need to recursively search
+    const traverseLayers = (/** @type {Record<string, any>[] | undefined} */ layersArray) => {
+      if (!layersArray) {
+        return;
+      }
+      for (const layer of layersArray) {
+        if (layer.layers) {
+          traverseLayers(layer.layers);
+        } else {
+          if (layer.properties?.id?.startsWith(layerId)) {
+            matchedLayerId = layer.properties.id;
+            break;
+          }
+        }
+      }
+    };
+    traverseLayers(layers);
+    if (matchedLayerId) {
+      form.properties.feature.options.drawtools.layerId =
+        matchedLayerId;
+      // trigger jsonform update in next tick
+      jsonformSchema.value = null;
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      jsonformSchema.value = form;
+    } else {
+      throw new Error(`Could not find matching layer for processing form with id: ${layerId}`);
+    }
   }
 }
 
