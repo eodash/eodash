@@ -472,15 +472,11 @@ export const replaceLayer = (currentLayers, oldLayer, newLayers) => {
  * @param {import('ol/layer').Layer} layer
  */
 export const getColFromLayer = async (indicators, layer) => {
-  const [collectionId, itemId, ..._other] = layer.get("id").split(";:;");
+  const [collectionId, ..._other] = layer.get("id").split(";:;");
 
   for (const ind of indicators) {
     if (ind.collectionStac?.id !== collectionId) continue;
-    const items = await ind.getItems();
-    const itemIds = items?.map((item) => item.id || item.datetime) ?? [];
-    if (itemIds.includes(itemId)) {
-      return ind;
-    }
+    return ind;
   }
 };
 
