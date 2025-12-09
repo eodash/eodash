@@ -17,10 +17,10 @@ export async function registerMosaic(mosaicEndpoint, cqlQuery) {
   const url = mosaicEndpoint;
   const body = cqlQuery
     ? {
-      "filter-lang": "cql2-json",
-      filter: cqlQuery,
-      sortby: [{ field: "datetime", direction: "desc" }],
-    }
+        "filter-lang": "cql2-json",
+        filter: cqlQuery,
+        sortby: [{ field: "datetime", direction: "desc" }],
+      }
     : null;
   if (!body) {
     console.trace("[eodash] No query provided for mosaic registration");
@@ -56,7 +56,10 @@ export async function createMosaicLayer(mosaicEndpoint, cqlQuery) {
     return [];
   }
   // todo: fetch the assets properly
-  const url = tileJSONLink.href + "?" + "tile_scale=2&assets=B04&assets=B03&assets=B02&color_formula=Gamma%20RGB%203.2%20Saturation%200.8%20Sigmoidal%20RGB%2025%200.35&nodata=0&minzoom=9&collection=sentinel-2-l2a&format=png";
+  const url =
+    tileJSONLink.href +
+    "?" +
+    "tile_scale=2&assets=B04&assets=B03&assets=B02&color_formula=Gamma%20RGB%203.2%20Saturation%200.8%20Sigmoidal%20RGB%2025%200.35&nodata=0&minzoom=9&collection=sentinel-2-l2a&format=png";
   console.log("[eodash] Created mosaic layer with tileJSON:", url);
   // todo: use createLayersFromLinks
   return [
@@ -145,12 +148,12 @@ export async function updateMosaicLayer(
               [maxx, miny],
               [maxx, maxy],
               [minx, maxy],
-              [minx, miny]
-            ]
-          ]
-        }
-      ]
-    }
+              [minx, miny],
+            ],
+          ],
+        },
+      ],
+    };
     filters.push(spatialQuery);
     mosaicState.filters.spatial = spatialQuery;
   }

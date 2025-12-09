@@ -111,14 +111,14 @@ import { mosaicState } from "@/utils/states";
 
 import { getLayers } from "@/store/actions";
 
-onMounted(async()=>{
-    if (props.useMosaic && store.mosaicEndpoint) {
-      await updateMosaicLayer([...getLayers()], store.mosaicEndpoint, {
-        collection: "sentinel-2-l2a",
-      });
-      mosaicState.showButton = false;
-    }
-})
+onMounted(async () => {
+  if (props.useMosaic && store.mosaicEndpoint) {
+    await updateMosaicLayer([...getLayers()], store.mosaicEndpoint, {
+      collection: "sentinel-2-l2a",
+    });
+    mosaicState.showButton = false;
+  }
+});
 
 // Reactive state
 /** @type {import("vue").Ref<import("@/types").GeoJsonFeature[]>} */
