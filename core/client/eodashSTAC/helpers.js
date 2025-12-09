@@ -192,10 +192,8 @@ export const fetchStyle = async (
         /** @type {Array<string>} */ (link["asset:keys"]).includes(assetKey),
     );
   } else {
-    // legacy behavior for rasterform/api mode
-    styleLink = stacObject.links.find(
-      (link) => link.rel.includes("style")
-    );
+    log.debug("Neither link key, nor asset key input, can not match any style to layer.", stacObject.id);
+   return {};
   }
   if (styleLink) {
     /** @type {import("@/types").EodashStyleJson} */
@@ -846,6 +844,21 @@ export function extractLayerLegend(collection) {
   if (collection && collection["eox:colorlegend"]) {
     extraProperties = {
       layerLegend: collection["eox:colorlegend"],
+    };
+  }
+  return extraProperties;
+}
+
+
+/**
+ * @param { import ("stac-ts").StacLink } link
+ * @returns {object}
+ */
+export function extractEoxLegendLink(link) {
+  let extraProperties = {};
+  if (link["eox:colorlegend"]) {
+    extraProperties = {
+      layerLegend: link["eox:colorlegend"],
     };
   }
   return extraProperties;
