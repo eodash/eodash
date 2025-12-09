@@ -149,10 +149,10 @@ export const dataThemesBrands = {
 
 export const mosaicState = reactive({
   showButton: false,
-  /** @type {{ time: string | object | null, spatial: string | object | null }} */
+  /** @type {{ time: string | object | null, collection: string | null }} */
   filters: {
     time: null,
-    spatial: null,
+    collection: null,
   },
   /** @type {string | object | null | undefined} */
   query: null,

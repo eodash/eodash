@@ -139,13 +139,13 @@ import { useSTAcStore } from "@/store/stac";
 import { storeToRefs } from "pinia";
 import { loadPOiIndicator } from "^/EodashProcess/methods/handling";
 import { easeOut } from "ol/easing.js";
-import { renderMosaic, } from "@/eodashSTAC/mosaic";
+import { renderMosaic } from "@/eodashSTAC/mosaic";
 import "@eox/geosearch";
-
 
 const store = useSTAcStore();
 const showMosaicLayer = async () => {
   if (store.mosaicEndpoint) {
+    // change to save the STAC in state and retrieve it from there
     await renderMosaic(getLayers(), store.mosaicEndpoint, mosaicState.query);
   }
 };

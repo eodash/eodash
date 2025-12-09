@@ -88,20 +88,38 @@ export default {
           : null;
       },
     },
+    // {
+    //   defineWidget: (selectedSTAC) => {
+    //     return selectedSTAC
+    //       ? {
+    //           id: "expert-datepicker",
+    //           type: "internal",
+    //           layout: { x: 4, y: 7, w: 4, h: 5 },
+    //           title: "Date",
+    //           widget: {
+    //             name: "EodashDatePicker",
+    //             properties: {
+    //               hintText: `<b>Hint:</b> closest available date is displayed <br />
+    //                         on map (see Analysis Layers)`,
+    //               toggleCalendar: true,
+    //             },
+    //           },
+    //         }
+    //       : null;
+    //   },
+    // },
     {
       defineWidget: (selectedSTAC) => {
         return selectedSTAC
           ? {
-              id: "expert-datepicker",
-              type: "internal",
-              layout: { x: 4, y: 7, w: 4, h: 5 },
+              id: "timeslider",
+              layout: { x: 2, y: 9, w: 8, h: 3 },
               title: "Date",
+              type: "internal",
               widget: {
-                name: "EodashDatePicker",
+                name: "EodashTimeSlider",
                 properties: {
-                  hintText: `<b>Hint:</b> closest available date is displayed <br />
-                            on map (see Analysis Layers)`,
-                  toggleCalendar: true,
+                  useMosaic: true,
                 },
               },
             }

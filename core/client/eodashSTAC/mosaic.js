@@ -15,8 +15,19 @@ export async function registerMosaic(mosaicEndpoint, cqlQuery) {
   }
 
   const url = mosaicEndpoint;
-  const body = cqlQuery ? { filter: cqlQuery } : {};
+  const body = cqlQuery
+    ? {
+      "filter-lang": "cql2-json",
+      filter: cqlQuery,
+      sortby: [{ field: "datetime", direction: "desc" }],
+    }
+    : null;
+  if (!body) {
+    console.trace("[eodash] No query provided for mosaic registration");
+    return null;
+  }
 
+  console.log("[eodash] Registering mosaic with query:", body);
   return await axios
     .post(url, body)
     .then((response) => response.data)
@@ -44,20 +55,23 @@ export async function createMosaicLayer(mosaicEndpoint, cqlQuery) {
   if (!tileJSONLink) {
     return [];
   }
-  /** @type {import("ol/source/TileJSON").Options["tileJSON"]} */
-  const tileJSON = await axios.get(tileJSONLink.href).then((response) => response.data);
-  return [{
-    type: "Tile",
-    properties: {
-      id: "Mosaic",
-      title: "Mosaic",
+  // todo: fetch the assets properly
+  const url = tileJSONLink.href + "?" + "tile_scale=2&assets=B04&assets=B03&assets=B02&color_formula=Gamma%20RGB%203.2%20Saturation%200.8%20Sigmoidal%20RGB%2025%200.35&nodata=0&minzoom=9&collection=sentinel-2-l2a&format=png";
+  console.log("[eodash] Created mosaic layer with tileJSON:", url);
+  // todo: use createLayersFromLinks
+  return [
+    {
+      type: "Tile",
+      properties: {
+        id: "Mosaic" + Date.now(),
+        title: "Mosaic",
+      },
+      source: {
+        type: "TileJSON",
+        url,
+      },
     },
-    source: {
-      type: "TileJSON",
-      tileJSON
-    }
-  }]
-
+  ];
   // // create layers from links
   // const layers = await createLayersFromLinks(
   //   item.id,
@@ -96,15 +110,56 @@ export async function renderMosaic(layersCollection, mosaicEndpoint, cqlQuery) {
  * Updates the mosaic layer based on the current filters in mosaicState.
  * @param {Record<string, any>[]} layersCollection - The layers collection to modify.
  * @param {string} mosaicEndpoint - The URL of the mosaic endpoint.
+ * @param {{ timeRange?: [string, string]; bbox?: [number, number, number, number]; collection?: string }} queries - Optional CQL queries.
  */
-export async function updateMosaicLayer(layersCollection, mosaicEndpoint) {
+export async function updateMosaicLayer(
+  layersCollection,
+  mosaicEndpoint,
+  { timeRange, bbox, collection } = {},
+) {
   /** @type {(string|object)[]} */
   const filters = [];
-  if (mosaicState.filters.time) {
-    filters.push(mosaicState.filters.time);
+  if (timeRange && Array.isArray(timeRange) && timeRange.length === 2) {
+    const timeFilter = {
+      op: "between",
+      args: [
+        { property: "datetime" },
+        { timestamp: timeRange[0] },
+        { timestamp: timeRange[1] },
+      ],
+    };
+    filters.push(timeFilter);
+    mosaicState.filters.time = timeFilter;
   }
-  if (mosaicState.filters.spatial) {
-    filters.push(mosaicState.filters.spatial);
+  if (bbox && Array.isArray(bbox) && bbox.length === 4) {
+    const [minx, miny, maxx, maxy] = bbox;
+    const spatialQuery = {
+      op: "s_intersects",
+      args: [
+        { property: "geometry" },
+        {
+          type: "Polygon",
+          coordinates: [
+            [
+              [minx, miny],
+              [maxx, miny],
+              [maxx, maxy],
+              [minx, maxy],
+              [minx, miny]
+            ]
+          ]
+        }
+      ]
+    }
+    filters.push(spatialQuery);
+    mosaicState.filters.spatial = spatialQuery;
+  }
+  if (collection) {
+    mosaicState.filters.collection = collection;
+    filters.push({
+      op: "=",
+      args: [{ property: "collection" }, collection],
+    });
   }
 
   let cqlQuery = null;

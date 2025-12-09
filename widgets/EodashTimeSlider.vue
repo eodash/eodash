@@ -2,7 +2,7 @@
   <eox-timeslider
     v-if="hasMultipleItems"
     :key="mapEl"
-    @select="onSelect"
+    @update="onSelect"
     .externalMapRendering="true"
     .filters="filters"
     titleKey="title"
@@ -32,18 +32,18 @@ const props = defineProps({
 });
 
 const store = useSTAcStore();
+// need to update the timeslider to accept ranges to test this
+// // TODO: move this to a composable
+// if (props.useMosaic && store.mosaicEndpoint) {
+//   // Initial render
+//   await updateMosaicLayer([...getLayers()], store.mosaicEndpoint);
+//   mosaicState.showButton = false;
+// }
 
-// TODO: move this to a composable
-if (props.useMosaic && store.mosaicEndpoint) {
-  // Initial render
-  await updateMosaicLayer([...getLayers()], store.mosaicEndpoint);
-  mosaicState.showButton = false;
-}
-
-onUnmounted(() => {
-  mosaicState.showButton = false;
-  mosaicState.filters.time = null;
-});
+// onUnmounted(() => {
+//   mosaicState.showButton = false;
+//   mosaicState.filters.time = null;
+// });
 ///
 
 const hasMultipleItems = computed(() => {
@@ -63,23 +63,13 @@ const onSelect = async (e) => {
   // const dateVal = e.detail.date.toISOString();
 
   // if (props.useMosaic && store.mosaicEndpoint) {
-  //   if (dateVal.includes("/")) {
-  //     // Range selected: Update mosaic filter, do NOT update global datetime (avoids map reset)
-  //     const [start, end] = dateVal.split("/");
-  //     mosaicState.filters.time = {
-  //       op: "and",
-  //       args: [
-  //         { op: ">=", args: [{ property: "datetime" }, start] },
-  //         { op: "<=", args: [{ property: "datetime" }, end] },
-  //       ],
-  //     };
-  //     await updateMosaicLayer(mapLayers.value, store.mosaicEndpoint);
+  //   const from = e.detail.date[0]
+  //   const to = e.detail.date[1]
+  //     await updateMosaicLayer(getLayers(), store.mosaicEndpoint, {
+  //       collection: "sentinel-2-l2a",
+  //       timRange:[from,to]
+  //     });
   //     mosaicState.showButton = false;
-  //   } else {
-  //     // Single date selected: Update global datetime (triggers map reset, removes mosaic)
-  //     datetime.value = dateVal;
-  //     mosaicState.showButton = true;
-  //   }
   // } else {
   //   datetime.value = dateVal;
   // }
