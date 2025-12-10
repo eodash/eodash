@@ -18,7 +18,7 @@ import { handleLayersCustomEndpoints } from "./custom-endpoints/layers";
 import { handleChartCustomEndpoints } from "./custom-endpoints/chart";
 import { useSTAcStore } from "@/store/stac";
 import { useGetSubCodeId } from "@/composables";
-import { getCompareLayers, getLayers } from "@/store/actions";
+import { getLayers } from "@/store/actions";
 
 /**
  * Fetch and set the jsonform schema to initialize the process
@@ -94,10 +94,7 @@ export async function initProcess({
  * @param {import("vue").Ref<Record<string,any> | null>} params.jsonformSchema params.jsonformSchema
  * @param {Record<string, any>[] | undefined} params.newLayers params.newLayers
  */
-export async function updateJsonformIdentifier({
-  jsonformSchema: jsonformSchema,
-  newLayers: newLayers,
-}) {
+export async function updateJsonformIdentifier({ jsonformSchema, newLayers }) {
   const form = jsonformSchema.value;
   if (newLayers && form?.properties?.feature?.options?.drawtools?.layerId) {
     // get partial or full id and try to match with correct eoxmap layer
@@ -106,7 +103,9 @@ export async function updateJsonformIdentifier({
       form.properties.feature.options.drawtools.layerId.split(";:;")[0];
     let matchedLayerId = null;
     // layers are not flat can be grouped, we need to recursively search
-    const traverseLayers = (/** @type {Record<string, any>[] | undefined} */ layersArray) => {
+    const traverseLayers = (
+      /** @type {Record<string, any>[] | undefined} */ layersArray,
+    ) => {
       if (!layersArray) {
         return;
       }
@@ -123,14 +122,15 @@ export async function updateJsonformIdentifier({
     };
     traverseLayers(layers);
     if (matchedLayerId) {
-      form.properties.feature.options.drawtools.layerId =
-        matchedLayerId;
+      form.properties.feature.options.drawtools.layerId = matchedLayerId;
       // trigger jsonform update in next tick
       jsonformSchema.value = null;
       await new Promise((resolve) => setTimeout(resolve, 0));
       jsonformSchema.value = form;
     } else {
-      throw new Error(`Could not find matching layer for processing form with id: ${layerId}`);
+      throw new Error(
+        `Could not find matching layer for processing form with id: ${layerId}`,
+      );
     }
   }
 }
