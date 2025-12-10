@@ -3,6 +3,7 @@ import {
   applyProcessLayersToMap,
   extractGeometries,
   getBboxProperty,
+  getDrawToolsProperty,
   updateJsonformSchemaTarget,
 } from "./utils";
 import {
@@ -96,11 +97,28 @@ export async function initProcess({
  */
 export async function updateJsonformIdentifier({ jsonformSchema, newLayers }) {
   const form = jsonformSchema.value;
-  if (newLayers && form?.properties?.feature?.options?.drawtools?.layerId) {
+  if (!form) {
+    return;
+  }
+  const drawToolsProperty = getDrawToolsProperty(form);
+  if (
+    drawToolsProperty &&
+    newLayers &&
+    form?.properties[drawToolsProperty]?.options?.drawtools?.layerId
+  ) {
     // get partial or full id and try to match with correct eoxmap layer
-    const layers = newLayers;
+    // check if newLayers is an array or an object with layers property
+    let layers = newLayers;
+    // @ts-expect-error TODO payload coming from time update sometimes is not an object with layers property
+    if (newLayers.layers && Array.isArray(newLayers.layers)) {
+      // @ts-expect-error TODO payload coming from time update sometimes is not an object with layers property
+      layers = newLayers.layers;
+    }
+
     const layerId =
-      form.properties.feature.options.drawtools.layerId.split(";:;")[0];
+      form.properties[drawToolsProperty].options.drawtools.layerId.split(
+        ";:;",
+      )[0];
     let matchedLayerId = null;
     // layers are not flat can be grouped, we need to recursively search
     const traverseLayers = (
@@ -111,7 +129,8 @@ export async function updateJsonformIdentifier({ jsonformSchema, newLayers }) {
       }
       for (const layer of layersArray) {
         if (layer.layers) {
-          traverseLayers(layer.layers);
+          // @ts-expect-error TODO payload coming from time update events is not an object with layers property
+          traverseLayers(layer);
         } else {
           if (layer.properties?.id?.startsWith(layerId)) {
             matchedLayerId = layer.properties.id;
