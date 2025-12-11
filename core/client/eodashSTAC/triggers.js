@@ -85,7 +85,7 @@ export function getStyleVariablesState(collectionId, variables) {
     ).getStyle?.()?.variables ??
     //@ts-expect-error (styleVariables_ is a private property)
     /** @type {import("ol/layer").WebGLTile} */ (olLayer).styleVariables_;
-  
+
   if (!oldVariablesState) {
     return variables;
   }
@@ -99,4 +99,3 @@ export function getStyleVariablesState(collectionId, variables) {
     );
   return matchingKeys ? oldVariablesState : variables;
 }
-

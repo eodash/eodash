@@ -49,7 +49,12 @@ export function generateFeatures(links, extraProperties = {}, rel = "item") {
  * @param {Record<string,any>} [rasterJsonform]
  * @param {string} [layerConfigType]
  * */
-export function extractLayerConfig(collectionId, style, rasterJsonform, layerConfigType) {
+export function extractLayerConfig(
+  collectionId,
+  style,
+  rasterJsonform,
+  layerConfigType,
+) {
   if (!style && !rasterJsonform) {
     return { layerConfig: undefined, style: undefined };
   }
@@ -192,8 +197,11 @@ export const fetchStyle = async (
         /** @type {Array<string>} */ (link["asset:keys"]).includes(assetKey),
     );
   } else {
-    log.debug("Neither link key, nor asset key input, can not match any style to layer.", stacObject.id);
-   return {};
+    log.debug(
+      "Neither link key, nor asset key input, can not match any style to layer.",
+      stacObject.id,
+    );
+    return {};
   }
   if (styleLink) {
     /** @type {import("@/types").EodashStyleJson} */
@@ -848,7 +856,6 @@ export function extractLayerLegend(collection) {
   }
   return extraProperties;
 }
-
 
 /**
  * @param { import ("stac-ts").StacLink } link

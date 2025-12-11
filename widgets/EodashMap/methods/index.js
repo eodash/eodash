@@ -6,6 +6,7 @@ import { useSTAcStore } from "@/store/stac";
 import { storeToRefs } from "pinia";
 import { isFirstLoad } from "@/utils/states";
 import { useEmitLayersUpdate, useOnLayersUpdate } from "@/composables";
+export { useEmitLayersUpdate, useOnLayersUpdate };
 import { mapPosition } from "@/store/states";
 import { sanitizeBbox } from "@/eodashSTAC/helpers";
 /**
@@ -139,6 +140,7 @@ export const useInitMap = (
             eodashCols,
             updatedItem ?? updatedTime,
           );
+
           log.debug(
             "Assigned layers after changing time only",
             JSON.parse(JSON.stringify(layersCollection)),

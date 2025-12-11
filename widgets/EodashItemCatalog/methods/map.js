@@ -24,6 +24,7 @@ export function renderItemsFeatures(features) {
       layers: [],
     };
     mapEl.value.layers = [analysisLayers, ...mapEl.value.layers.reverse()];
+    return;
   }
 
   const stacItemsLayer = {
@@ -87,7 +88,7 @@ export const useSearchOnMapMove = (itemFilter, bboxFilter) => {
     clearTimeout(timeout);
     timeout = setTimeout(() => {
       itemFilter.value?.search();
-    }, 800); // 800ms debounce
+    }, 1500);
   };
   onMounted(() => {
     mapEl.value?.map.on("moveend", handler);
@@ -104,7 +105,18 @@ export const useRenderItemsFeatures = (currentItems) => {
   const renderOnUpdate = () =>
     useOnLayersUpdate(() => {
       // consider cases where this is not needed
-      renderItemsFeatures(currentItems.value);
+      /** @type {import("@/types").GeoJsonFeature[]} */
+      const features = currentItems.value.map((f) => ({
+        geometry: f.geometry,
+        properties: {
+          id: f.id,
+          title: f.properties?.title,
+          description: f.properties?.description,
+        },
+        id: f.id,
+        type: "Feature",
+      }));
+      renderItemsFeatures(features);
     });
   onMounted(() => {
     renderItemsFeatures(currentItems.value);

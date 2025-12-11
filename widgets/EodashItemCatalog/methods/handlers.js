@@ -1,6 +1,7 @@
 import { mapEl } from "@/store/states";
 import { inAndOut } from "ol/easing";
 import { renderItemsFeatures } from "./map";
+import { mosaicState } from "@/utils/states";
 
 /**
  * @param {import("vue").Ref<import("@/types").GeoJsonFeature[]>} currentItems
@@ -29,6 +30,7 @@ export const createOnSelectHandler = (store) => {
     } else {
       await store.loadSelectedSTAC(item.collection, false, item);
     }
+    mosaicState.showButton = true;
 
     mapEl.value?.selectInteractions["stac-items"]?.highlightById([item.id], {
       padding: [100, 100, 100, 100],
