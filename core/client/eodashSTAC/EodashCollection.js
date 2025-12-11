@@ -221,7 +221,7 @@ export class EodashCollection {
 
       jsonArray.push(
         ...((this.rasterEndpoint &&
-          await createLayerFromRender(
+          (await createLayerFromRender(
             this.rasterEndpoint,
             this.#collectionStac,
             item,
@@ -229,7 +229,7 @@ export class EodashCollection {
               ...extraProperties,
               ...(layerDatetime && { layerDatetime }),
             },
-          )) ||
+          ))) ||
           []),
         ...(await createLayersFromAssets(
           this.#collectionStac?.id ?? "",

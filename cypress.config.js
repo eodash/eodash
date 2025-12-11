@@ -39,7 +39,7 @@ export default defineConfig({
             "@": fileURLToPath(new URL("./core/client", import.meta.url)),
             "^": fileURLToPath(new URL("./widgets", import.meta.url)),
             "user:config": fileURLToPath(
-              new URL("./core/client/eodash.js", import.meta.url),
+              new URL("./templates/baseConfig.js", import.meta.url),
             ),
             "user:widgets": fileURLToPath(
               new URL("./widgets", import.meta.url),

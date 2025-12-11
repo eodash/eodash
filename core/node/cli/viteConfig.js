@@ -115,6 +115,7 @@ export const eodashViteConfig = /** @type {import("vite").UserConfigFn} */ (
             "color-legend-element",
             "@eox/map",
             "@eox/map/src/plugins/advancedLayersAndSources",
+            "@eox/map/src/plugins/globe",
             "@eox/layercontrol",
             "@eox/timecontrol",
             "@eox/jsonform",
