@@ -1,6 +1,20 @@
 # Changelog
 
 
+## [5.4.0](https://github.com/eodash/eodash/compare/eodash-v5.3.3...eodash-v5.4.0) (2025-12-11)
+
+
+### Features
+
+* implemented logic of fetching correct full layer id  ([#290](https://github.com/eodash/eodash/issues/290)) ([b2099c5](https://github.com/eodash/eodash/commit/b2099c5a2939fdd44d358e80581508ff61906827))
+
+
+### Bug Fixes
+
+* allow to pass search params to geosearch via prop, add tooltip interaction to COG ([#285](https://github.com/eodash/eodash/issues/285)) ([58409ae](https://github.com/eodash/eodash/commit/58409aef6bd7d54a9b934fbb4f9f8fc59caa0820))
+* Raw overlay baselayers, possible to spread assets, add style links handling to XYZ/WMTS layers ([#277](https://github.com/eodash/eodash/issues/277)) ([0577ae4](https://github.com/eodash/eodash/commit/0577ae432c8b9d096ff30d382737d3066364e9d0))
+* support direct legends on links, fix regression of fallback style without keys ([#288](https://github.com/eodash/eodash/issues/288)) ([e213d2d](https://github.com/eodash/eodash/commit/e213d2d9a5315054e2018ccd39dfa4da372c2812))
+
 ## [5.3.3](https://github.com/eodash/eodash/compare/eodash-v5.3.2...eodash-v5.3.3) (2025-11-26)
 
 
