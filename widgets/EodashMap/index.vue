@@ -69,7 +69,6 @@
 <script setup>
 import "@eox/map";
 import "@eox/map/src/plugins/advancedLayersAndSources";
-import "@eox/map/src/plugins/globe";
 import { computed, onMounted, ref, toRaw, useTemplateRef } from "vue";
 import {
   datetime,
@@ -204,6 +203,9 @@ const btnsProps = computed(() => ({
   searchParams: props.btns.searchParams,
 }));
 
+if (btnsProps.value.enableGlobe) {
+   await import("@eox/map/src/plugins/globe");
+}
 // Prepare containers for scale line and cursor coordinates
 const scaleLineRef = useTemplateRef("scale-line");
 const cursorCoordsRef = useTemplateRef("cursor-coords");
