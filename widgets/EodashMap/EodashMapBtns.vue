@@ -1,7 +1,7 @@
 <template>
   <div ref="rootRef" class="map-buttons d-flex flex-column align-end">
     <button
-      v-if="enableZoom"
+      v-if="enableZoom && !isGlobe"
       class="primary small circle small-elevate"
       @click="onMapZoomIn"
     >
@@ -12,7 +12,7 @@
     </button>
 
     <button
-      v-if="enableZoom"
+      v-if="enableZoom && !isGlobe"
       class="primary small circle small-elevate"
       @click="onMapZoomOut"
     >
@@ -45,9 +45,9 @@
       <div class="tooltip left">Change map projection</div>
     </button>
     <button
-      v-if="compareIndicators"
+      v-if="compareIndicators && !isGlobe"
       class="primary small circle small-elevate"
-      @click="onCompareClick"
+      @click="onCompareClick(compareIndicators)"
     >
       <i class="small"
         ><svg viewBox="0 0 24 24"><path :d="compareIcon" /></svg>
@@ -66,18 +66,22 @@
       </i>
       <div class="tooltip left">Back to POIs</div>
     </button>
-    <button class="primary small circle small-elevate" @click="switchGlobe()">
+    <button
+      v-if="enableGlobe && !isInCompareMode"
+      class="primary small circle small-elevate"
+      @click="switchGlobe"
+    >
       <i class="small"
         ><svg viewBox="0 0 24 24">
           <path :d="mdiEarth" />
         </svg>
       </i>
       <div class="tooltip left">
-        {{ globeEnabled ?  "switch to 2D" : "switch to 3D" }}
+        {{ isGlobe ? "switch to 2D" : "switch to 3D" }}
       </div>
     </button>
     <eox-geosearch
-      v-if="mapEl && enableSearch"
+      v-if="mapEl && !isGlobe && enableSearch"
       :for="mapEl"
       :endpoint="opencageUrl"
       :params="searchParams"
@@ -107,15 +111,12 @@
 </template>
 <script setup>
 import { useTransparentPanel } from "@/composables";
-import {
-  changeMapProjection,
-  getLayers,
-  setActiveTemplate,
-} from "@/store/actions";
+import { changeMapProjection } from "@/store/actions";
 import {
   activeTemplate,
   availableMapProjection,
   comparePoi,
+  isGlobe,
   mapEl,
   poi,
 } from "@/store/states";
@@ -130,15 +131,19 @@ import {
   mdiEarth,
 } from "@mdi/js";
 import ExportState from "^/ExportState.vue";
-import { computed, ref, triggerRef } from "vue";
+import { computed, ref } from "vue";
 import PopUp from "^/PopUp.vue";
 import EodashItemFilter from "^/EodashItemFilter.vue";
 import { useDisplay } from "vuetify";
-import { useSTAcStore } from "@/store/stac";
-import { storeToRefs } from "pinia";
 import { loadPOiIndicator } from "^/EodashProcess/methods/handling";
-import { easeOut } from "ol/easing.js";
-
+import {
+  onCompareClick,
+  onSelectCompareIndicator,
+  switchGlobe,
+  onMapZoomOut,
+  onMapZoomIn,
+  showCompareIndicators,
+} from "./methods/btns";
 import "@eox/geosearch";
 
 const {
@@ -149,6 +154,7 @@ const {
   enableSearch,
   enableZoom,
   searchParams,
+  enableGlobe,
 } = defineProps({
   exportMap: {
     type: Boolean,
@@ -183,23 +189,26 @@ const {
     type: Boolean,
     default: true,
   },
+  enableGlobe: {
+    type: Boolean,
+    default: true,
+  },
 });
-const { selectedStac, selectedCompareStac } = storeToRefs(useSTAcStore());
-const { resetSelectedCompareSTAC } = useSTAcStore();
+
 const { smAndDown } = useDisplay();
 const popupWidth = computed(() => (smAndDown.value ? "80%" : "70%"));
 const popupHeight = computed(() => (smAndDown.value ? "90%" : "70%"));
 
-const globeEnabled = ref(false);
 const showMapState = ref(false);
-const showCompareIndicators = ref(false);
+const isInCompareMode = computed(
+  () =>
+    activeTemplate.value ===
+    ((typeof compareIndicators === "object" &&
+      compareIndicators?.compareTemplate) ||
+      "compare"),
+);
 const compareIcon = computed(() =>
-  activeTemplate.value ===
-  ((typeof compareIndicators === "object" &&
-    compareIndicators?.compareTemplate) ||
-    "compare")
-    ? mdiCompareRemove
-    : mdiCompare,
+  isInCompareMode.value ? mdiCompareRemove : mdiCompare,
 );
 const itemFilterConfig = {
   enableHighlighting: false,
@@ -214,118 +223,13 @@ const itemFilterConfig = {
     compareIndicators.itemFilterConfig),
 };
 
-const onCompareClick = () => {
-  showCompareIndicators.value =
-    activeTemplate.value !==
-    ((typeof compareIndicators === "object" &&
-      compareIndicators.compareTemplate) ||
-      "compare");
-
-  const fallbackTemplate =
-    (typeof compareIndicators === "object" &&
-      compareIndicators.fallbackTemplate) ||
-    "expert";
-  selectedCompareStac.value = null;
-  resetSelectedCompareSTAC();
-  setActiveTemplate(fallbackTemplate);
-  triggerRef(selectedStac);
-};
-
 /** @type {import("vue").Ref<HTMLDivElement|null>} */
 const rootRef = ref(null);
 
-const onSelectCompareIndicator = () => {
-  const compareTemplate =
-    (typeof compareIndicators === "object" &&
-      compareIndicators.compareTemplate) ||
-    "compare";
-  setActiveTemplate(compareTemplate);
-  showCompareIndicators.value = !showCompareIndicators.value;
-};
-
 useTransparentPanel(rootRef);
 
-const onMapZoomOut = () => {
-  const map = mapEl.value?.map;
-  const currentZoom = map?.getView().getZoom();
-  if (currentZoom !== undefined && currentZoom !== null) {
-    const view = map?.getView();
-
-    if (view !== undefined && view.getZoom()) {
-      view.animate({
-        zoom: currentZoom - 1,
-        duration: 250,
-        easing: easeOut,
-      });
-    }
-  }
-};
-
-const onMapZoomIn = () => {
-  const map = mapEl.value?.map;
-  const currentZoom = map?.getView().getZoom();
-  if (currentZoom !== undefined && currentZoom !== null) {
-    const view = map?.getView();
-
-    if (view !== undefined && view.getZoom()) {
-      view.animate({
-        zoom: currentZoom + 1,
-        duration: 250,
-        easing: easeOut,
-      });
-    }
-  }
-};
-const switchGlobe = () => {
-  if (!mapEl.value) {
-    return;
-  }
-  if (!globeEnabled.value) {
-    mapEl.value.layers = addCorsAnonym([...getLayers()]);
-  }
-  mapEl.value.projection = globeEnabled.value ? "EPSG:3857" : "globe";
-  globeEnabled.value = !globeEnabled.value;
-  /**
-   *
-   * @param {import("@eox/map").EoxLayer[]} layers
-   * @return {import("@eox/map").EoxLayer[]}
-   */
-  function addCorsAnonym(layers) {
-    //@ts-expect-error todo
-    return layers.map((layer) => {
-      if (layer.type === "Group") {
-        layer.layers = addCorsAnonym([...(layer.layers ?? [])]);
-        return layer;
-      }
-      // check if not mapbox style as a fix for ts error
-      if (layer.type === "MapboxStyle") {
-        return layer
-      }
-
-      return {
-        ...layer,
-        ...(layer.source && {
-          source: {
-            ...layer.source,
-            crossOrigin: "anonymous",
-          },
-        ...(layer.sources && {
-          sources:layer.sources.map(source=>({
-            ...source,
-            crossOrigin:"anonymous"
-          }))
-        })
-        }),
-      }
-    });
-  }
-};
 const opencageApiKey = process.env.EODASH_OPENCAGE || "NO_KEY_FOUND";
 const opencageUrl = `https://api.opencagedata.com/geocode/v1/json?key=${opencageApiKey}`;
-
-/*const menu = document
-  .querySelector("eox-geosearch")
-  .renderRoot.querySelector("menu");*/
 </script>
 
 <style scoped>

@@ -51,3 +51,6 @@ export const chartEl = shallowRef(null);
 
 /** @type {import("vue").Ref<import("@eox/chart").EOxChart | null>} */
 export const compareChartEl = shallowRef(null);
+
+/** Whether the map is in globe mode */
+export const isGlobe = ref(false);
