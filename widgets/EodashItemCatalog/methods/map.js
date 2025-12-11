@@ -24,6 +24,7 @@ export function renderItemsFeatures(features) {
       layers: [],
     };
     mapEl.value.layers = [analysisLayers, ...mapEl.value.layers.reverse()];
+    return;
   }
 
   const stacItemsLayer = {
@@ -87,7 +88,7 @@ export const useSearchOnMapMove = (itemFilter, bboxFilter) => {
     clearTimeout(timeout);
     timeout = setTimeout(() => {
       itemFilter.value?.search();
-    }, 800);
+    }, 1500);
   };
   onMounted(() => {
     mapEl.value?.map.on("moveend", handler);
