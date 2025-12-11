@@ -15,7 +15,8 @@ const baseConfig = {
       // "https://esa-eodashboards.github.io/eodashboard-catalog/trilateral/catalog.json",
       "https://api.explorer.eopf.copernicus.eu/stac",
     api: true,
-    mosaicEndpoint: "https://planetarycomputer.microsoft.com/api/data/v1/mosaic/register",
+    mosaicEndpoint:
+      "https://planetarycomputer.microsoft.com/api/data/v1/mosaic/register",
   },
   brand: {
     noLayout: true,

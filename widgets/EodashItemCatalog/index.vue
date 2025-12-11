@@ -1,10 +1,11 @@
 <template>
-  <span>
-    <v-row class="title align-center justify-space-between">
+  <div ref="root" class="d-flex flex-column item-catalog-container">
+    <v-row class="title align-center justify-space-between flex-shrink-0">
       <h4>Catalog Items</h4>
       <EodashLayoutSwitcher :target="layoutTarget" :icon="layoutIcon" />
     </v-row>
     <eox-itemfilter
+      class="itemfilter-scroll"
       ref="itemfilter"
       titleProperty="id"
       .imageProperty="imageProperty"
@@ -20,7 +21,7 @@
       <h4 slot="filterstitle" style="margin: 14px 8px">{{ filtersTitle }}</h4>
       <h4 slot="resultstitle" style="margin: 14px 8px">{{ resultsTitle }}</h4>
     </eox-itemfilter>
-  </span>
+  </div>
 </template>
 
 <script setup>
@@ -50,6 +51,44 @@ if (!customElements.get("eox-itemfilter")) {
   await import("@eox/itemfilter");
 }
 
+// Template refs
+const root = useTemplateRef("root");
+const itemfilterEl = useTemplateRef("itemfilter");
+
+/** @type {HTMLElement | null} */
+let parentPanel = null;
+
+// Override parent panel's overflow to allow internal scrolling
+onMounted(async () => {
+  parentPanel = root.value?.parentElement ?? null;
+  if (parentPanel) {
+    parentPanel.style.overflow = "hidden";
+    parentPanel.style.display = "flex";
+    parentPanel.style.flexDirection = "column";
+  }
+});
+
+onUnmounted(() => {
+  // Restore parent panel's original overflow
+  if (parentPanel) {
+    parentPanel.style.overflow = "";
+    parentPanel.style.display = "";
+    parentPanel.style.flexDirection = "";
+  }
+  store.selectedItem = null;
+  mosaicState.showButton = false;
+});
+
+// todo: move to composable
+onMounted(async () => {
+  // Mosaic Logic
+  if (props.useMosaic && store.mosaicEndpoint) {
+    await updateMosaicLayer([...getLayers()], store.mosaicEndpoint, {
+      collection: "sentinel-2-l2a",
+    });
+    mosaicState.showButton = false;
+  }
+});
 // Props definition
 const props = defineProps({
   title: {
@@ -101,24 +140,13 @@ const props = defineProps({
   },
 });
 
-// Store and template refs
-const store = useSTAcStore();
-const itemfilterEl = useTemplateRef("itemfilter");
-
 // Mosaic Logic
 import { updateMosaicLayer } from "@/eodashSTAC/mosaic";
 import { mosaicState } from "@/utils/states";
 
 import { getLayers } from "@/store/actions";
 
-onMounted(async () => {
-  if (props.useMosaic && store.mosaicEndpoint) {
-    await updateMosaicLayer([...getLayers()], store.mosaicEndpoint, {
-      collection: "sentinel-2-l2a",
-    });
-    mosaicState.showButton = false;
-  }
-});
+const store = useSTAcStore();
 
 // Reactive state
 /** @type {import("vue").Ref<import("@/types").GeoJsonFeature[]>} */
@@ -161,24 +189,23 @@ useRenderItemsFeatures(currentItems);
 useSearchOnMapMove(itemfilterEl, props.bboxFilter);
 
 useRenderOnFeatureHover(itemfilterEl);
-
-onUnmounted(() => {
-  store.selectedItem = null;
-  mosaicState.showButton = false;
-  mosaicState.filters.spatial = null;
-});
 </script>
 <style scoped lang="scss">
-eox-itemfilter {
-  flex-basis: 20%;
-  height: 100%;
-  overflow: hidden !important;
-  padding: 1rem;
-  --eox-itemfilter-results-color: var(--v-theme-surface) !important;
+.item-catalog-container {
+  overflow: hidden;
 }
+
+.itemfilter-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  padding: 0.5rem;
+  --eox-itemfilter-results-color: var(--v-theme-primary) !important;
+}
+
 .title {
-  // padding: 1em;
   padding: 1em;
   margin: 0.2em;
+  flex-shrink: 0;
 }
 </style>
