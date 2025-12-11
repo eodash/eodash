@@ -9,6 +9,7 @@ import {
   createAssetID,
   mergeGeojsons,
   extractLayerConfig,
+  extractEoxLegendLink,
   addTooltipInteraction,
   fetchStyle,
 } from "./helpers";
@@ -152,6 +153,7 @@ export async function createLayersFromAssets(
         stacObject?.["eodash:merge_assets"] === false
           ? geoJsonSource
           : await mergeGeojsons(geoJsonSources);
+
       const layer = {
         type: "Vector",
         source: {
@@ -328,7 +330,6 @@ export const createLayersFromLinks = async (
 
   for (const wmsLink of wmsArray ?? []) {
     // Registering setting sub wms link projection
-
     const wmsLinkProjection =
       /** @type {number | string | {name: string, def: string} | undefined} */
       (wmsLink?.["proj:epsg"] || wmsLink?.["eodash:proj4_def"]);
@@ -386,7 +387,7 @@ export const createLayersFromLinks = async (
       json.source.params["STYLES"] = wmsLink["wms:styles"];
     }
     if (extraProperties !== null) {
-      json.properties = { ...json.properties, ...extraProperties };
+      json.properties = { ...json.properties, ...extraProperties, ...extractEoxLegendLink(wmsLink) };
     }
     jsonArray.push(json);
   }
@@ -491,7 +492,7 @@ export const createLayersFromLinks = async (
     }
     extractRoles(json.properties, wmtsLink);
     if (extraProperties !== null) {
-      json.properties = { ...json.properties, ...extraProperties };
+      json.properties = { ...json.properties, ...extraProperties, ...extractEoxLegendLink(wmtsLink) };
     }
     jsonArray.push(json);
   }
@@ -556,7 +557,7 @@ export const createLayersFromLinks = async (
 
     extractRoles(json.properties, xyzLink);
     if (extraProperties !== null) {
-      json.properties = { ...json.properties, ...extraProperties };
+      json.properties = { ...json.properties, ...extraProperties, ...extractEoxLegendLink(xyzLink) };
     }
     jsonArray.push(json);
   }
@@ -623,7 +624,7 @@ export const createLayersFromLinks = async (
     addTooltipInteraction(json, style);
     extractRoles(json.properties, vectorTileLink);
     if (extraProperties !== null) {
-      json.properties = { ...json.properties, ...extraProperties };
+      json.properties = { ...json.properties, ...extraProperties, ...extractEoxLegendLink(vectorTileLink) };
     }
     jsonArray.push(json);
   }

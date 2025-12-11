@@ -1,4 +1,4 @@
-import { initProcess } from "./handling";
+import { initProcess, updateJsonformIdentifier } from "./handling";
 import { useEventBus } from "@vueuse/core";
 import { nextTick, onMounted, watch } from "vue";
 import { eoxLayersKey } from "@/utils/keys";
@@ -67,6 +67,18 @@ export const useInitProcess = ({
   const evtKey =
     mapElement?.id === "compare" ? "compareLayers:updated" : "layers:updated";
   useOnLayersUpdate(async (evt, _payload) => {
+    if (
+      evt == "layertime:updated" ||
+      evt == "compareLayertime:updated" ||
+      evt == "time:updated" ||
+      evt == "compareTime:updated"
+    ) {
+      await updateJsonformIdentifier({
+        jsonformSchema,
+        // @ts-expect-error TODO payload coming from time update events is not an object with layers property
+        newLayers: _payload,
+      });
+    }
     if (evt !== evtKey) {
       return;
     }

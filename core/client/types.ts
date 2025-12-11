@@ -482,9 +482,11 @@ export type LayersEventBusKeys =
   | "layers:updated"
   | "time:updated"
   | "process:updated"
+  | "layertime:updated"
   | "compareLayers:updated"
   | "compareTime:updated"
-  | "compareProcess:updated";
+  | "compareProcess:updated"
+  | "compareLayertime:updated";
 
 //// STAC API types
 /** @ignore */

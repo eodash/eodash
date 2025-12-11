@@ -508,6 +508,16 @@ export function extractAsyncResults(resultItem) {
   }
   return extracted;
 }
+
+/** @param {*} jsonformSchema */
+export const getDrawToolsProperty = (jsonformSchema) => {
+  for (const property in jsonformSchema.properties) {
+    if (jsonformSchema.properties[property]?.options?.drawtools) {
+      return property;
+    }
+  }
+};
+
 /**
  * @param {import("@eox/map").EOxMap | null} mapElement
  * @param {import("@eox/map").EoxLayer[]} processLayers
