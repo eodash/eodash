@@ -80,6 +80,7 @@
       v-if="mapEl && enableSearch"
       :for="mapEl"
       :endpoint="opencageUrl"
+      :params="searchParams"
       class="geosearch-detached"
       label="Search"
       small
@@ -147,6 +148,7 @@ const {
   backToPOIs,
   enableSearch,
   enableZoom,
+  searchParams,
 } = defineProps({
   exportMap: {
     type: Boolean,
@@ -171,6 +173,10 @@ const {
   },
   enableSearch: {
     type: Boolean,
+    default: true,
+  },
+  searchParams: {
+    type: [Boolean, Object],
     default: true,
   },
   enableZoom: {

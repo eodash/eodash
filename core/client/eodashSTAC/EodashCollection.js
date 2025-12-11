@@ -28,6 +28,8 @@ import {
 import axios from "@/plugins/axios";
 import log from "loglevel";
 import { dataThemesBrands } from "@/utils/states";
+import { useEventBus } from "@vueuse/core";
+import { eoxLayersKey } from "@/utils/keys";
 
 export class EodashCollection {
   #collectionUrl = "";
@@ -130,25 +132,19 @@ export class EodashCollection {
     this.selectedItem = item;
     const title = this.#collectionStac?.title || this.#collectionStac?.id || "";
     layersJson.unshift(
-      ...(await this.buildJsonArray(
-        item,
-        stacItemUrl,
-        title,
-        isObservationPoint,
-      )),
+      ...(await this.buildJsonArray(item, title, isObservationPoint)),
     );
     return layersJson;
   };
 
   /**
    * @param {import("stac-ts").StacItem} item
-   * @param {string} itemUrl
    * @param {string} title
    * @param {boolean} isObservationPoint
    * @param {string} [itemDatetime]
    * @returns {Promise<Record<string,any>[]>} layers
    * */
-  async buildJsonArray(item, itemUrl, title, isObservationPoint, itemDatetime) {
+  async buildJsonArray(item, title, isObservationPoint, itemDatetime) {
     if (!item) {
       console.warn("[eodash] no item provided to buildJsonArray");
       return [];
@@ -157,7 +153,6 @@ export class EodashCollection {
     log.debug(
       "Building JSON array",
       item,
-      itemUrl,
       title,
       isObservationPoint,
       itemDatetime,
@@ -184,19 +179,6 @@ export class EodashCollection {
     // will try to extract anything it supports but for which we have
     // less control.
 
-    const rasterformURL = /** @type {string|undefined} */ (
-      this.#collectionStac?.["eodash:rasterform"]
-    );
-    /** @type {import("@/types").EodashRasterJSONForm|undefined} */
-    const rasterForm = rasterformURL
-      ? await axios.get(rasterformURL).then((resp) => resp.data)
-      : undefined;
-    let { layerConfig, style } = extractLayerConfig(
-      this.#collectionStac?.id ?? "",
-      await fetchStyle(item, itemUrl),
-      rasterForm,
-    );
-
     const { layerDatetime, timeControlValues } = extractLayerTimeValues(
       await this.getItems(),
       item.properties?.datetime ??
@@ -210,6 +192,7 @@ export class EodashCollection {
       }
       return data;
     }, /** @type {Record<string,import('stac-ts').StacAsset>} */ ({}));
+
     const isSupported =
       item.links.some((link) =>
         ["wms", "xyz", "wmts", "vector-tile"].includes(link.rel),
@@ -231,20 +214,19 @@ export class EodashCollection {
         this.#collectionStac?.id ?? "",
         title,
         item,
-        itemUrl,
         layerDatetime,
         extraProperties,
+        this.#collectionStac,
       );
 
       jsonArray.push(
         ...((this.rasterEndpoint &&
-          createLayerFromRender(
+          await createLayerFromRender(
             this.rasterEndpoint,
             this.#collectionStac,
             item,
             {
               ...extraProperties,
-              ...(layerConfig && { layerConfig }),
               ...(layerDatetime && { layerDatetime }),
             },
           )) ||
@@ -254,8 +236,6 @@ export class EodashCollection {
           title || this.#collectionStac?.title || item.id,
           dataAssets,
           item,
-          style,
-          layerConfig,
           layerDatetime,
           extraProperties,
         )),
@@ -263,6 +243,10 @@ export class EodashCollection {
         ...links,
       );
     } else {
+      // get the correct style which is not attached to a link
+      const id = this.#collectionStac?.id ?? "";
+      const styles = await fetchStyle(item);
+      let { layerConfig, style } = extractLayerConfig(id, styles);
       // fallback to STAC
       const json = {
         type: "STAC",
@@ -270,7 +254,7 @@ export class EodashCollection {
         displayFootprint: false,
         data: item,
         properties: {
-          id: this.#collectionStac?.id ?? "",
+          id,
           title: title || item.id,
           layerConfig,
         },
@@ -404,10 +388,7 @@ export class EodashCollection {
       return [];
     }
     // get all style links, which could contribute by tooltip config and aggregate them
-    const styles = await fetchAllStyles(
-      this.selectedItem,
-      `${this.#collectionUrl}/${this.selectedItem.id}`,
-    );
+    const styles = await fetchAllStyles(this.selectedItem);
     // get only unique ids to avoid duplicates
     const aggregatedTooltips = [
       ...new Map(
@@ -451,7 +432,6 @@ export class EodashCollection {
       // if specifiedLink is an item, we create layers from it
       newLayers = await this.buildJsonArray(
         specifiedLink,
-        this.#collectionUrl + `/items/${specifiedLink.id}`,
         this.#collectionStac?.title || this.#collectionStac?.id || "",
         this.#collectionStac?.endpointtype === "GeoDB" ||
           !!this.#collectionStac?.locations,
@@ -480,6 +460,10 @@ export class EodashCollection {
       newLayers,
     );
 
+    // Emit event to update potential widget dependencies such as process layer ids
+    const layersEvents = useEventBus(eoxLayersKey);
+    layersEvents.emit("layertime:updated", newLayers);
+
     return updatedLayers;
   }
 
@@ -502,17 +486,16 @@ export class EodashCollection {
     );
 
     return [
-      //@ts-expect-error indicator instead of item
       ...(await createLayersFromLinks(
         indicator?.id ?? "",
         indicator?.title || indicator.id,
+        //@ts-expect-error indicator instead of item
         indicator,
       )),
       ...(await createLayersFromAssets(
         indicator?.id ?? "",
         indicator?.title || indicator.id,
         indicatorAssets,
-        //@ts-expect-error indicator instead of item
         indicator,
       )),
     ];

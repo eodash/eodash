@@ -13,5 +13,7 @@ RUN chmod +x /entrypoint.sh
 ENV STAC_ENDPOINT=
 ENV API=false
 ENV BRAND=
+ENV TEMPLATES=
+
 
 ENTRYPOINT ["/entrypoint.sh"]
