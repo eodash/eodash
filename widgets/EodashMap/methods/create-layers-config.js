@@ -52,6 +52,29 @@ export const createLayersConfig = async (
     dataLayers.layers.push(...layers);
   }
 
+  /* check for roles in indicator links to assign visibility property for the data layers */
+  if (selectedIndicator?.links) {
+    const visibilityLinks = selectedIndicator.links.filter(
+      (link) =>
+        link.roles &&
+        (link.roles.includes("disable") || link.roles.includes("hidden")),
+    );
+    if (visibilityLinks.length > 0) {
+      visibilityLinks.forEach((vl) => {
+        const targetLayerId = vl.id;
+        const targetLayer = dataLayers.layers.find(
+          (dl) => dl.properties.id.split(";:;")[0] === targetLayerId,
+        );
+        if (targetLayer) {
+          if (vl.roles.includes("disable")) {
+            targetLayer.properties.visible = false;
+          } else if (vl.roles.includes("hidden")) {
+            targetLayer.properties.layerControlHide = true;
+          }
+        }
+      });
+    }
+  }
   layersCollection.push(dataLayers);
   const indicatorLayers =
     //@ts-expect-error indicator is collection
