@@ -56,7 +56,7 @@ export const createLayersConfig = async (
   if (selectedIndicator?.links) {
     const visibilityLinks = selectedIndicator.links.filter(
       (link) =>
-        link.roles &&
+        Array.isArray(link.roles) &&
         (link.roles.includes("disable") || link.roles.includes("hidden")),
     );
     if (visibilityLinks.length > 0) {
@@ -66,9 +66,9 @@ export const createLayersConfig = async (
           (dl) => dl.properties.id.split(";:;")[0] === targetLayerId,
         );
         if (targetLayer) {
-          if (vl.roles.includes("disable")) {
+          if (Array.isArray(vl.roles) && vl.roles.includes("disable")) {
             targetLayer.properties.visible = false;
-          } else if (vl.roles.includes("hidden")) {
+          } else if (Array.isArray(vl.roles) && vl.roles.includes("hidden")) {
             targetLayer.properties.layerControlHide = true;
           }
         }
