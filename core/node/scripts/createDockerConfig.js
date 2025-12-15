@@ -12,9 +12,9 @@ const runtimePath = path.join(dirname, "/config.js");
 const runtimeConfigEnv = process.env.EODASH_RUNTIME_CONFIG;
 
 if (runtimeConfigEnv) {
-  updateEnvRuntimeConfig(runtimeConfigEnv).finally(()=>{
+  updateEnvRuntimeConfig(runtimeConfigEnv, dirname).finally(() => {
     process.exit(0);
-  })
+  });
 }
 
 fs.writeFileSync(runtimePath, createRuntimeConfig(), { encoding: "utf-8" });
@@ -101,7 +101,7 @@ async function updateEnvRuntimeConfig(
     return;
   }
 
-  // pattern matching the  minified variable 
+  // pattern matching the  minified variable
   const pattern = /\w+\.EODASH_RUNTIME_CONFIG/g;
 
   const processFile = (filePath) => {
