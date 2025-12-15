@@ -10,7 +10,9 @@ import { inject, reactive } from "vue";
  * @returns {Promise<import("@/types").Eodash | null | undefined>}
  * @see {@linkplain '@/eodash.js'}
  */
-export const useEodashRuntime = async (runtimeConfig) => {
+export const useEodashRuntime = async (
+  runtimeConfig = process.env.EODASH_RUNTIME_CONFIG,
+) => {
   let eodashConfig;
   const eodash = /** @type {import("@/types").Eodash} */ (inject(eodashKey));
 
