@@ -9,6 +9,13 @@ import path from "path";
 const dirname =
   process.argv[process.argv.findIndex((arg) => arg === "--dir") + 1];
 const runtimePath = path.join(dirname, "/config.js");
+const runtimeConfigEnv = process.env.EODASH_RUNTIME_CONFIG;
+
+if (runtimeConfigEnv) {
+  updateEnvRuntimeConfig(runtimeConfigEnv).finally(()=>{
+    process.exit(0);
+  })
+}
 
 fs.writeFileSync(runtimePath, createRuntimeConfig(), { encoding: "utf-8" });
 
@@ -21,7 +28,7 @@ function createRuntimeConfig(
   const api = apiEnv === "true";
   return /* js */ `
   // fetch base config from built manifest
-const manifest = await fetch("./.vite/manifest.json").then(res=>res.json())
+const manifest = await fetch("./.vite/manifest.json").then(async res=> await res.json())
 
 const fileConfig = manifest["templates/index.js"]
 
@@ -85,4 +92,41 @@ async function fetchBrand(workspaceId = "eox"){
 }
 
   `;
+}
+async function updateEnvRuntimeConfig(
+  runtimeConfigEnv = process.env.EODASH_RUNTIME_CONFIG,
+  baseDir = "/usr/share/nginx/html",
+) {
+  if (!runtimeConfigEnv) {
+    return;
+  }
+
+  // pattern matching the  minified variable 
+  const pattern = /\w+\.EODASH_RUNTIME_CONFIG/g;
+
+  const processFile = (filePath) => {
+    const content = fs.readFileSync(filePath, "utf-8");
+    if (pattern.test(content)) {
+      const updated = content.replace(
+        pattern,
+        JSON.stringify(runtimeConfigEnv),
+      );
+      fs.writeFileSync(filePath, updated, "utf-8");
+      console.log(`[eodash] Updated EODASH_RUNTIME_CONFIG in: ${filePath}`);
+    }
+  };
+
+  const walkDir = (dir) => {
+    const entries = fs.readdirSync(dir, { withFileTypes: true });
+    for (const entry of entries) {
+      const fullPath = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        walkDir(fullPath);
+      } else if (entry.isFile() && /\.(js)$/.test(entry.name)) {
+        processFile(fullPath);
+      }
+    }
+  };
+
+  walkDir(baseDir);
 }
