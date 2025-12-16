@@ -91,32 +91,32 @@ export default {
     {
       defineWidget: (selectedSTAC) => {
         return selectedSTAC
-          ?  {
-                id: "expert-datetime",
-                type: "internal",
-                layout: { x: 1, y: 8, w: 8, h: 3},
-                title: "Time Slider",
-                widget: {
-                  name: "EodashTimeSlider",
-                  properties: {
-                    // filters: [
-                    //   {
-                    //     key: "eo:cloud_cover",
-                    //     title: "Cloud Coverage %",
-                    //     type: "range",
-                    //     expanded: true,
-                    //     min: 0,
-                    //     max: 100,
-                    //     step: 5,
-                    //     state: {
-                    //       min: 0,
-                    //       max: 100,
-                    //       },
-                    //     },
-                    //   ],
-                    },
-                  },
-                }
+          ? {
+              id: "expert-datetime",
+              type: "internal",
+              layout: { x: 1, y: 8, w: 8, h: 3 },
+              title: "Time Slider",
+              widget: {
+                name: "EodashTimeSlider",
+                properties: {
+                  // filters: [
+                  //   {
+                  //     key: "eo:cloud_cover",
+                  //     title: "Cloud Coverage %",
+                  //     type: "range",
+                  //     expanded: true,
+                  //     min: 0,
+                  //     max: 100,
+                  //     step: 5,
+                  //     state: {
+                  //       min: 0,
+                  //       max: 100,
+                  //       },
+                  //     },
+                  //   ],
+                },
+              },
+            }
           : null;
       },
     },
