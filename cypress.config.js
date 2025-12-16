@@ -5,6 +5,7 @@ import { fileURLToPath } from "url";
 
 export default defineConfig({
   component: {
+    specPattern: "tests/cypress/**/*.cy.{js,jsx,ts,tsx}",
     devServer: {
       framework: "vue",
       bundler: "vite",
