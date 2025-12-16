@@ -146,3 +146,14 @@ export const dataThemesBrands = {
     color: "#8d845cff",
   },
 };
+
+export const mosaicState = reactive({
+  showButton: false,
+  /** @type {{ time: string | object | null, collection: string | null }} */
+  filters: {
+    time: null,
+    collection: null,
+  },
+  /** @type {string | object | null | undefined} */
+  query: null,
+});

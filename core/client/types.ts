@@ -322,6 +322,7 @@ export type StacEndpoint =
       api?: boolean;
       rasterEndpoint?: string;
       vectorEndpoint?: string;
+      mosaicEndpoint?: string;
     };
 
 /** @group Eodash */

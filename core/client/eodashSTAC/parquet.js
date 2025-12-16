@@ -95,7 +95,7 @@ function moveItemProperties(item) {
     "id",
     "collection",
     "properties",
-    "auth:schemes"
+    "auth:schemes",
   ];
   for (const key in item) {
     if (!stacProperties.includes(key)) {

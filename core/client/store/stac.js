@@ -27,6 +27,11 @@ export const useSTAcStore = defineStore("stac", () => {
    * @type {import("vue").Ref<string | null>}
    */
   const rasterEndpoint = ref(null);
+  /**
+   * Mosaic endpoint URL
+   * @type {import("vue").Ref<string | null>}
+   */
+  const mosaicEndpoint = ref(null);
   const isApi = ref(false);
 
   /**
@@ -77,6 +82,7 @@ export const useSTAcStore = defineStore("stac", () => {
     stacEndpoint.value = endpoint.endpoint;
     isApi.value = endpoint.api ?? false;
     rasterEndpoint.value = endpoint.rasterEndpoint ?? null;
+    mosaicEndpoint.value = endpoint.mosaicEndpoint ?? null;
   }
 
   /**
@@ -241,6 +247,7 @@ export const useSTAcStore = defineStore("stac", () => {
     stacEndpoint,
     isApi,
     stac,
+    mosaicEndpoint,
     init,
     loadSTAC,
     loadSelectedSTAC,

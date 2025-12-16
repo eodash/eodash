@@ -221,7 +221,7 @@ export class EodashCollection {
 
       jsonArray.push(
         ...((this.rasterEndpoint &&
-          await createLayerFromRender(
+          (await createLayerFromRender(
             this.rasterEndpoint,
             this.#collectionStac,
             item,
@@ -229,7 +229,7 @@ export class EodashCollection {
               ...extraProperties,
               ...(layerDatetime && { layerDatetime }),
             },
-          )) ||
+          ))) ||
           []),
         ...(await createLayersFromAssets(
           this.#collectionStac?.id ?? "",
@@ -281,6 +281,16 @@ export class EodashCollection {
     }
     return this.#collectionStac;
   }
+  #itemsCache = {
+    /** @type {import("stac-ts").StacItem[] | import("stac-ts").StacLink[] | null} */
+    whole: null,
+    /** @type {import("stac-ts").StacItem[] | import("stac-ts").StacLink[] | null} */
+    propertiesOnly: null,
+    /** @type {import("stac-ts").StacItem[] | import("stac-ts").StacLink[] | null} */
+    firstPage: null,
+    /** @type {import("stac-ts").StacItem[] | import("stac-ts").StacLink[] | null} */
+    firstPagePropertiesOnly: null,
+  };
 
   /**
    * Returns all item links sorted by datetime ascendingly
@@ -294,14 +304,30 @@ export class EodashCollection {
     if (this.isAPI && !items?.length) {
       const itemUrl = this.#collectionUrl + "/items";
       if (fields) {
-        return await fetchApiItems(
+        const cacheKey = first ? "firstPagePropertiesOnly" : "propertiesOnly";
+        if (this.#itemsCache[cacheKey]) {
+          return this.#itemsCache[cacheKey];
+        }
+
+        this.#itemsCache[cacheKey] = await fetchApiItems(
           itemUrl,
           `fields=properties,-assets,-geometry,-links,-bbox`,
           100,
           first,
         );
+        return this.#itemsCache[cacheKey];
       }
-      return await fetchApiItems(itemUrl, undefined, 100, first);
+      const cacheKey = first ? "firstPage" : "whole";
+      if (this.#itemsCache[cacheKey]) {
+        return this.#itemsCache[cacheKey];
+      }
+      this.#itemsCache[cacheKey] = await fetchApiItems(
+        itemUrl,
+        undefined,
+        100,
+        first,
+      );
+      return this.#itemsCache[cacheKey];
     }
 
     const datetimeProperty = getDatetimeProperty(this.#collectionStac?.links);
