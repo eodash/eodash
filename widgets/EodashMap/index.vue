@@ -204,7 +204,7 @@ const btnsProps = computed(() => ({
 }));
 
 if (btnsProps.value.enableGlobe) {
-   await import("@eox/map/src/plugins/globe");
+  await import("@eox/map/src/plugins/globe");
 }
 // Prepare containers for scale line and cursor coordinates
 const scaleLineRef = useTemplateRef("scale-line");

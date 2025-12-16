@@ -15,14 +15,13 @@ import log from "loglevel";
  * Returns the current layers of {@link mapEl}
  * @returns {import("@eox/map").EoxLayer[]}
  */
-export const getLayers = () => mapEl.value?.layers.toReversed() ?? [];
+export const getLayers = () => mapEl.value?.layers ?? [];
 
 /**
  * Returns the current layers of {@link mapCompareEl}
  * * @returns {import("@eox/map").EoxLayer[]}
  */
-export const getCompareLayers = () =>
-  mapCompareEl.value?.layers.toReversed() ?? [];
+export const getCompareLayers = () => mapCompareEl.value?.layers ?? [];
 
 /**
  * Returns the current chart spec from {@link chartEl}

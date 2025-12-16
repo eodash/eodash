@@ -21,7 +21,7 @@ export const registerPlugins = async (app, options) => {
   app.use(options.pinia);
 };
 
-/** @type {import("../../../core/client/types").Eodash} */
+/** @type {import("@/types").Eodash} */
 export const mockEodash = {
   id: "mocked",
   stacEndpoint:
@@ -54,9 +54,10 @@ export const mockEodash = {
     },
     background: {
       id: Symbol(),
-      type: "internal",
+      type: "web-component",
       widget: {
-        name: "EodashMap",
+        tagName: "div",
+        properties: { id: "mock-bg" },
       },
     },
     widgets: [

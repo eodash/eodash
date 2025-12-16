@@ -543,7 +543,7 @@ export const applyProcessLayersToMap = (mapElement, processLayers) => {
       (l) => l.properties?.id === layer.properties?.id,
     );
     if (!exists) {
-      analysisGroup.layers.unshift(layer);
+      analysisGroup.layers.push(layer);
     } else {
       analysisGroup.layers = replaceLayer(
         analysisGroup.layers,

@@ -23,7 +23,7 @@ export function renderItemsFeatures(features) {
       },
       layers: [],
     };
-    mapEl.value.layers = [analysisLayers, ...mapEl.value.layers.reverse()];
+    mapEl.value.layers = [analysisLayers, ...mapEl.value.layers];
   }
 
   const stacItemsLayer = {
@@ -68,8 +68,8 @@ export function renderItemsFeatures(features) {
     return;
   } else {
     //@ts-expect-error todo
-    analysisLayers.layers.unshift(stacItemsLayer);
-    mapEl.value.layers = [...mapEl.value.layers].reverse();
+    analysisLayers.layers.push(stacItemsLayer);
+    mapEl.value.layers = [...mapEl.value.layers];
   }
 }
 
@@ -101,21 +101,20 @@ export const useSearchOnMapMove = (itemFilter, bboxFilter) => {
  * @param {import("vue").Ref<import("@/types").GeoJsonFeature[]>} currentItems
  */
 export const useRenderItemsFeatures = (currentItems) => {
-  const renderOnUpdate = () =>
-    useOnLayersUpdate(() => {
-      // consider cases where this is not needed
-      renderItemsFeatures(currentItems.value);
-    });
   onMounted(() => {
     renderItemsFeatures(currentItems.value);
-    renderOnUpdate();
+  });
+
+  useOnLayersUpdate(() => {
+    // consider cases where this is not needed
+    renderItemsFeatures(currentItems.value);
   });
 };
 /**
  *
  * @param {import("vue").Ref<any>} itemfilterEl
  */
-export function useRenderOnFeatureHover(itemfilterEl) {
+export function useHighlightOnFeatureHover(itemfilterEl) {
   /**
    *
    * @param {CustomEvent} evt
