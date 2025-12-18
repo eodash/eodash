@@ -10,6 +10,7 @@ import log from "loglevel";
  * } selectedIndicator
  * @param {EodashCollection[]} eodashCols
  * @param {string | import("stac-ts").StacItem | null} [timeOrItem] - time as a string, or a stac item
+ * @returns {Promise<Record<string, any>[]>}
  */
 
 export const createLayersConfig = async (
@@ -58,6 +59,29 @@ export const createLayersConfig = async (
     dataLayers.layers.push(...layers);
   }
 
+  /* check for roles in indicator links to assign visibility property for the data layers */
+  if (selectedIndicator?.links) {
+    const visibilityLinks = selectedIndicator.links.filter(
+      (link) =>
+        Array.isArray(link.roles) &&
+        (link.roles.includes("disable") || link.roles.includes("hidden")),
+    );
+    if (visibilityLinks.length > 0) {
+      visibilityLinks.forEach((vl) => {
+        const targetLayerId = vl.id;
+        const targetLayer = dataLayers.layers.find(
+          (dl) => dl.properties.id.split(";:;")[0] === targetLayerId,
+        );
+        if (targetLayer) {
+          if (Array.isArray(vl.roles) && vl.roles.includes("disable")) {
+            targetLayer.properties.visible = false;
+          } else if (Array.isArray(vl.roles) && vl.roles.includes("hidden")) {
+            targetLayer.properties.layerControlHide = true;
+          }
+        }
+      });
+    }
+  }
   layersCollection.push(dataLayers);
   const indicatorLayers =
     //@ts-expect-error indicator is collection
