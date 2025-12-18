@@ -59,7 +59,7 @@ import {
   chartEl,
   compareChartEl,
 } from "@/store/states";
-import { download } from "./methods/utils";
+import { download, getDrawToolsProperty } from "./methods/utils";
 import { compareJobs, jobs } from "./states";
 import { mdiCogPlayOutline, mdiDownloadCircleOutline } from "@mdi/js";
 
@@ -155,14 +155,6 @@ const downloadResults = () => {
 };
 
 const startProcess = async () => {
-  /** @param {*} jsonformSchema */
-  const getDrawToolsProperty = (jsonformSchema) => {
-    for (const property in jsonformSchema.properties) {
-      if (jsonformSchema.properties[property]?.options?.drawtools) {
-        return property;
-      }
-    }
-  };
   const drawToolsProperty = getDrawToolsProperty(jsonformSchema.value);
   const propertyIsEmpty =
     drawToolsProperty &&

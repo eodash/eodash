@@ -69,6 +69,7 @@
       v-if="mapEl && enableSearch"
       :for="mapEl"
       :endpoint="opencageUrl"
+      :params="searchParams"
       class="geosearch-detached"
       label="Search"
       small
@@ -131,6 +132,7 @@ const {
   backToPOIs,
   enableSearch,
   enableZoom,
+  searchParams,
 } = defineProps({
   exportMap: {
     type: Boolean,
@@ -155,6 +157,10 @@ const {
   },
   enableSearch: {
     type: Boolean,
+    default: true,
+  },
+  searchParams: {
+    type: [Boolean, Object],
     default: true,
   },
   enableZoom: {
@@ -263,10 +269,19 @@ const opencageUrl = `https://api.opencagedata.com/geocode/v1/json?key=${opencage
 
 <style scoped>
 @import url("@eox/ui/style.css");
+/* Make sure panel does pass click event through */
+.map-buttons {
+  pointer-events: none !important;
+}
 
 .map-buttons button {
+  pointer-events: auto !important;
   margin-bottom: 5px;
   background-color: var(--primary);
+}
+/* Make sure buttons have pointer event */
+.geosearch-detached {
+  pointer-events: auto !important;
 }
 
 /* Container constraints removal */
