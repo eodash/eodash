@@ -10,6 +10,7 @@ import log from "loglevel";
  * } selectedIndicator
  * @param {EodashCollection[]} eodashCols
  * @param {string | import("stac-ts").StacItem | null} [timeOrItem] - time as a string, or a stac item
+ * @returns {Promise<Record<string, any>[]>}
  */
 
 export const createLayersConfig = async (

@@ -269,7 +269,9 @@ export async function createLayersFromAssets(
       log.debug("Creating WebGLTile layer from GeoTIFF", assetLayerId);
       log.debug("Configured Sources", geoTIFFSources);
       const sources =
-        stacObject?.["eodash:merge_assets"] !== false ? geoTIFFSources : geotiffSource;
+        stacObject?.["eodash:merge_assets"] !== false
+          ? geoTIFFSources
+          : geotiffSource;
       const layer = {
         type: "WebGLTile",
         source: {
@@ -387,7 +389,11 @@ export const createLayersFromLinks = async (
       json.source.params["STYLES"] = wmsLink["wms:styles"];
     }
     if (extraProperties !== null) {
-      json.properties = { ...json.properties, ...extraProperties, ...extractEoxLegendLink(wmsLink) };
+      json.properties = {
+        ...json.properties,
+        ...extraProperties,
+        ...extractEoxLegendLink(wmsLink),
+      };
     }
     jsonArray.push(json);
   }
@@ -401,11 +407,16 @@ export const createLayersFromLinks = async (
 
     await registerProjection(wmtsLinkProjection);
     const key =
-    /** @type {string | undefined} */ (wmtsLink["key"]) || undefined;
+      /** @type {string | undefined} */ (wmtsLink["key"]) || undefined;
 
     const styles = await fetchStyle(item, key);
     // get the correct style which is attached to a link
-    const returnedLayerConfig = extractLayerConfig(collectionId, styles, undefined, "tileUrl");
+    const returnedLayerConfig = extractLayerConfig(
+      collectionId,
+      styles,
+      undefined,
+      "tileUrl",
+    );
     const projectionCode = getProjectionCode(wmtsLinkProjection || "EPSG:3857");
     // TODO: WARNING! This is a temporary project specific implementation
     // that needs to be removed once catalog and wmts creation from capabilities
@@ -425,7 +436,7 @@ export const createLayersFromLinks = async (
 
     // TODO, this does not yet work between layer time changes because we do not get
     // updated variables from OL layer due to usage of tileurlfunction
-    
+
     // update dimensions with current value of style variables if applicable
     const variables = returnedLayerConfig?.style?.variables;
     if (variables) {
@@ -433,7 +444,7 @@ export const createLayersFromLinks = async (
         dimensionsWithoutStyle[kk] = vv;
       }
     }
-    
+
     if (wmtsLink.title === "wmts capabilities") {
       log.debug(
         "Warning: WMTS Layer from capabilities added, function needs to be updated",
@@ -492,7 +503,11 @@ export const createLayersFromLinks = async (
     }
     extractRoles(json.properties, wmtsLink);
     if (extraProperties !== null) {
-      json.properties = { ...json.properties, ...extraProperties, ...extractEoxLegendLink(wmtsLink) };
+      json.properties = {
+        ...json.properties,
+        ...extraProperties,
+        ...extractEoxLegendLink(wmtsLink),
+      };
     }
     jsonArray.push(json);
   }
@@ -501,18 +516,22 @@ export const createLayersFromLinks = async (
     const xyzLinkProjection =
       /** @type {number | string | {name: string, def: string} | undefined} */
       (xyzLink?.["proj:epsg"] || xyzLink?.["eodash:proj4_def"]);
-    const key =
-      /** @type {string | undefined} */ (xyzLink["key"]) || undefined;
+    const key = /** @type {string | undefined} */ (xyzLink["key"]) || undefined;
     const rasterformURL = /** @type {string|undefined} */ (
       collection?.["eodash:rasterform"]
     );
     /** @type {import("@/types").EodashRasterJSONForm|undefined} */
     const rasterForm = rasterformURL
-    ? await axios.get(rasterformURL).then((resp) => resp.data)
-    : undefined;
+      ? await axios.get(rasterformURL).then((resp) => resp.data)
+      : undefined;
     const styles = await fetchStyle(item, key);
     // get the correct style which is attached to a link
-    let { layerConfig, style } = extractLayerConfig(collectionId, styles, rasterForm, "tileUrl");
+    let { layerConfig, style } = extractLayerConfig(
+      collectionId,
+      styles,
+      rasterForm,
+      "tileUrl",
+    );
     await registerProjection(xyzLinkProjection);
     const projectionCode = getProjectionCode(xyzLinkProjection || "EPSG:3857");
     const linkId = createLayerID(
@@ -557,7 +576,11 @@ export const createLayersFromLinks = async (
 
     extractRoles(json.properties, xyzLink);
     if (extraProperties !== null) {
-      json.properties = { ...json.properties, ...extraProperties, ...extractEoxLegendLink(xyzLink) };
+      json.properties = {
+        ...json.properties,
+        ...extraProperties,
+        ...extractEoxLegendLink(xyzLink),
+      };
     }
     jsonArray.push(json);
   }
@@ -624,7 +647,11 @@ export const createLayersFromLinks = async (
     addTooltipInteraction(json, style);
     extractRoles(json.properties, vectorTileLink);
     if (extraProperties !== null) {
-      json.properties = { ...json.properties, ...extraProperties, ...extractEoxLegendLink(vectorTileLink) };
+      json.properties = {
+        ...json.properties,
+        ...extraProperties,
+        ...extractEoxLegendLink(vectorTileLink),
+      };
     }
     jsonArray.push(json);
   }
@@ -649,8 +676,8 @@ export const createLayerFromRender = async (
   }
 
   const rasterformURL = /** @type {string|undefined} */ (
-      collection?.["eodash:rasterform"]
-    );
+    collection?.["eodash:rasterform"]
+  );
   /** @type {import("@/types").EodashRasterJSONForm|undefined} */
   const rasterForm = rasterformURL
     ? await axios.get(rasterformURL).then((resp) => resp.data)
@@ -725,7 +752,7 @@ export const createLayerFromRender = async (
   }
 
   return layers;
-}
+};
 /**
  *
  * @param {Record<string,any>} obj
