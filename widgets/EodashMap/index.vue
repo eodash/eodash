@@ -97,6 +97,20 @@ import mustache from "mustache";
 import EodashMapBtns from "^/EodashMap/EodashMapBtns.vue";
 
 const props = defineProps({
+  initialLayers: {
+    type: Array,
+    /** @type {import("vue").PropType<import("@eox/map").EoxLayer[]>} */
+    default: () => [
+      {
+        type: "Tile",
+        source: { type: "OSM" },
+        properties: {
+          id: "osm",
+          title: "Background",
+        },
+      },
+    ],
+  },
   enableCompare: {
     type: Boolean,
     default: false,
@@ -245,16 +259,7 @@ const controls = computed(() => {
 const initialCenter = toRaw(props.center);
 const initialZoom = toRaw(mapPosition.value?.[2] ?? props.zoom);
 /** @type {import("vue").Ref<Record<string,any>[]>} */
-const eoxMapLayers = ref([
-  {
-    type: "Tile",
-    source: { type: "OSM" },
-    properties: {
-      id: "osm",
-      title: "Background",
-    },
-  },
-]);
+const eoxMapLayers = ref(/** @type {Record<string,any>[]} */ (props.initialLayers));
 
 /** @type {import("vue").Ref<Record<string,any>[]>} */
 const eoxMapCompareLayers = ref([
