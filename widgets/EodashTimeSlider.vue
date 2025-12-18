@@ -85,7 +85,7 @@ const { selectedStac } = storeToRefs(useSTAcStore());
  */
 const onExport = async (evt) => {
   const { generate, selectedRangeItems } = evt.detail;
-  console.log("Export requested for:", evt.detail);
+
   const mapLayers = await Promise.all(
     Object.values(selectedRangeItems).flatMap(async (itemSet) => {
       /** @type {Array<{ layers: Record<string, any>[]; date: string }>} */
@@ -106,8 +106,6 @@ const onExport = async (evt) => {
       return mapLayersArr;
     }),
   ).then((results) => results.flat());
-
-  console.log("Generated mapLayers for export:", mapLayers, selectedRangeItems);
 
   generate({
     mapLayers,
