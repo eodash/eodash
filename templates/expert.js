@@ -123,21 +123,21 @@ export default {
               widget: {
                 name: "EodashTimeSlider",
                 properties: {
-                  // filters: [
-                  //   {
-                  //     key: "eo:cloud_cover",
-                  //     title: "Cloud Coverage %",
-                  //     type: "range",
-                  //     expanded: true,
-                  //     min: 0,
-                  //     max: 100,
-                  //     step: 5,
-                  //     state: {
-                  //       min: 0,
-                  //       max: 100,
-                  //       },
-                  //     },
-                  //   ],
+                  filters: [
+                    {
+                      key: "eo:cloud_cover",
+                      title: "Cloud Coverage %",
+                      type: "range",
+                      expanded: true,
+                      min: 0,
+                      max: 100,
+                      step: 5,
+                      state: {
+                        min: 0,
+                        max: 100,
+                      },
+                    },
+                  ],
                 },
               },
             }

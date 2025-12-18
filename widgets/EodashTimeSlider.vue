@@ -37,9 +37,10 @@ import { getLayers } from "@/store/actions";
 import { useSTAcStore } from "@/store/stac";
 import { datetime, mapEl } from "@/store/states";
 import { eodashCollections, mosaicState } from "@/utils/states";
-import "@eox/timeslider";
+import "@eox/timecontrol";
+import "@eox/itemfilter";
 import { storeToRefs } from "pinia";
-import { computed, onMounted, useTemplateRef } from "vue";
+import { computed, unref } from "vue";
 import { createLayersConfig } from "./EodashMap/methods/create-layers-config";
 
 const props = defineProps({
@@ -71,7 +72,6 @@ const store = useSTAcStore();
 //   mosaicState.filters.time = null;
 // });
 
-
 const hasMultipleItems = computed(() => {
   return eodashCollections.some((ec) => {
     const itemLinks = ec.collectionStac?.links.filter((l) => l.rel === "item");
@@ -91,11 +91,11 @@ const onSelect = async (e) => {
   if (!props.useMosaic || !store.mosaicEndpoint) {
     return;
   }
-      await updateMosaicLayer(getLayers(), store.mosaicEndpoint, {
-        collection: "sentinel-2-l2a",
-        timeRange:[from,to]
-      });
-      mosaicState.showButton = false;
+  await updateMosaicLayer(getLayers(), store.mosaicEndpoint, {
+    collection: "sentinel-2-l2a",
+    timeRange: [from, to],
+  });
+  mosaicState.showButton = false;
 };
 
 const { selectedStac } = storeToRefs(useSTAcStore());
@@ -138,7 +138,6 @@ const onExport = async (evt) => {
     mapLayers,
   });
 };
-
 
 /**
  *
