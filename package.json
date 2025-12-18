@@ -75,7 +75,6 @@
     "@eox/map": "^1.26.2",
     "@eox/stacinfo": "^1.0.2",
     "@eox/timecontrol": "^2.0.0",
-    "@eox/timeslider": "file:eox-timeslider-0.0.1.tgz",
     "@eox/ui": "^0.5.1",
     "@mdi/js": "^7.4.47",
     "@vitejs/plugin-vue": "^5.2.4",

@@ -5,42 +5,38 @@
     ref="eoxTimecontrol"
     .for="mapEl"
     @select="onSelect"
-    .filters="unref(filters)"
     titleKey="title"
     .externalMapRendering="true"
     .animate="true"
+    .initDate="datetime"
   >
+    <div class="d-flex g-10 align-center">
+      <eox-timecontrol-date class="flex-grow-1"></eox-timecontrol-date>
+      <eox-timecontrol-picker
+        .range="false"
+        .showDots="true"
+        .showItems="true"
+        .popup="true"
+      ></eox-timecontrol-picker>
 
-  <eox-timecontrol-date></eox-timecontrol-date>
-  <eox-timecontrol-picker
-  .range="false"
-  .showDots="true"
-  .showItems="true"
-  .popup="true"
-  ></eox-timecontrol-picker>
-  <eox-timecontrol-timelapse></eox-timecontrol-timelapse>
-    <eox-timecontrol-timeline></eox-timecontrol-timeline>
+      <eox-itemfilter
+        v-if="filters.length"
+        .inlineMode="true"
+        :showResults="false"
+        .filters="unref(filters)"
+      ></eox-itemfilter>
+      <eox-timecontrol-timelapse @export="onExport"></eox-timecontrol-timelapse>
+    </div>
+
+    <eox-timecontrol-timeline class="mt-2"></eox-timecontrol-timeline>
   </eox-timecontrol>
-
-  <!-- <eox-timeslider
-    v-if="hasMultipleItems"
-    ref="timeslider"
-    :key="unref(mapEl)"
-    @update="update"
-    .externalMapRendering="true"
-    .filters="unref(filters)"
-    titleKey="title"
-    layerIdKey="id"
-    for="eox-map#main"
-    .animate
-    @export="onExport"
-  /> -->
 </template>
 <script setup>
 import { datetime, mapEl } from "@/store/states";
 import { eodashCollections } from "@/utils/states";
-// import "@eox/timeslider";
 import "@eox/timecontrol";
+import "@eox/itemfilter";
+
 import { computed, onMounted, unref, useTemplateRef } from "vue";
 import { createLayersConfig } from "./EodashMap/methods/create-layers-config";
 import { storeToRefs } from "pinia";
@@ -49,23 +45,7 @@ import { useSTAcStore } from "@/store/stac";
 const { animate } = defineProps({
   filters: {
     type: Array,
-    default: () =>
-    // []
-    [
-        {
-          key: "cloudCoverage",
-          title: "Cloud Coverage",
-          type: "range",
-          expanded: true,
-          min: 0,
-          max: 100,
-          step: 5,
-          state: {
-            min: 0,
-            max: 40,
-          },
-        },
-      ],
+    default: () => [],
   },
   animate: {
     type: Boolean,
@@ -87,9 +67,9 @@ const hasMultipleItems = computed(() => {
  */
 const onSelect = (e) => {
   console.log("TimeControl onSelect event:", e.detail);
-  const {date} = e.detail;
+  const { date } = e.detail;
   const [from, _to] = date;
-  datetime.value =from.toISOString();
+  datetime.value = from.toISOString();
 };
 const { selectedStac } = storeToRefs(useSTAcStore());
 /**
@@ -105,6 +85,7 @@ const { selectedStac } = storeToRefs(useSTAcStore());
  */
 const onExport = async (evt) => {
   const { generate, selectedRangeItems } = evt.detail;
+  console.log("Export requested for:", evt.detail);
   const mapLayers = await Promise.all(
     Object.values(selectedRangeItems).flatMap(async (itemSet) => {
       /** @type {Array<{ layers: Record<string, any>[]; date: string }>} */
@@ -143,7 +124,8 @@ onMounted(() => {
 });
 /**
  *
- * @param {import("@eox/map").EoxLayer[]} layers
+ * @param {Record<string, any>[]} layers
+ * @returns {Record<string, any>[]}
  */
 function anonimizeLayersCORS(layers) {
   return layers.map((layer) => {
@@ -158,3 +140,8 @@ function anonimizeLayersCORS(layers) {
   });
 }
 </script>
+<style scoped>
+eox-itemfilter {
+  --inline-container-height: 40px;
+}
+</style>
