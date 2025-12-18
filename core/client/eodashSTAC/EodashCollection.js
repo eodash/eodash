@@ -300,34 +300,17 @@ export class EodashCollection {
    */
   async getItems(fields = false, first = false) {
     const items = this.#collectionStac?.links.filter((i) => i.rel === "item");
-
     if (this.isAPI && !items?.length) {
       const itemUrl = this.#collectionUrl + "/items";
       if (fields) {
-        const cacheKey = first ? "firstPagePropertiesOnly" : "propertiesOnly";
-        if (this.#itemsCache[cacheKey]) {
-          return this.#itemsCache[cacheKey];
-        }
-
-        this.#itemsCache[cacheKey] = await fetchApiItems(
+        return await fetchApiItems(
           itemUrl,
           `fields=properties,-assets,-geometry,-links,-bbox`,
           100,
           first,
         );
-        return this.#itemsCache[cacheKey];
       }
-      const cacheKey = first ? "firstPage" : "whole";
-      if (this.#itemsCache[cacheKey]) {
-        return this.#itemsCache[cacheKey];
-      }
-      this.#itemsCache[cacheKey] = await fetchApiItems(
-        itemUrl,
-        undefined,
-        100,
-        first,
-      );
-      return this.#itemsCache[cacheKey];
+      return await fetchApiItems(itemUrl, undefined, 100, first);
     }
 
     const datetimeProperty = getDatetimeProperty(this.#collectionStac?.links);

@@ -259,7 +259,9 @@ const controls = computed(() => {
 const initialCenter = toRaw(props.center);
 const initialZoom = toRaw(mapPosition.value?.[2] ?? props.zoom);
 /** @type {import("vue").Ref<Record<string,any>[]>} */
-const eoxMapLayers = ref(/** @type {Record<string,any>[]} */ (props.initialLayers));
+const eoxMapLayers = ref(
+  /** @type {Record<string,any>[]} */ (props.initialLayers),
+);
 
 /** @type {import("vue").Ref<Record<string,any>[]>} */
 const eoxMapCompareLayers = ref([

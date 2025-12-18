@@ -775,6 +775,7 @@ export function isSTACItem(stacObject) {
   );
 }
 
+const itemsCache = new Map();
 /**
  * Fetch all STAC items from a STAC API endpoint.
  * @param {string} itemsUrl
@@ -790,6 +791,17 @@ export async function fetchApiItems(
   returnFirst = false,
   maxNumber = 1000,
 ) {
+  const cacheKey = JSON.stringify({
+    itemsUrl,
+    query,
+    limit,
+    returnFirst,
+    maxNumber,
+  });
+  if (itemsCache.has(cacheKey)) {
+    return itemsCache.get(cacheKey);
+  }
+
   itemsUrl = itemsUrl.includes("?") ? itemsUrl.split("?")[0] : itemsUrl;
   itemsUrl += query ? `?limit=${limit}&${query}` : `?limit=${limit}`;
 
@@ -804,6 +816,7 @@ export async function fetchApiItems(
   );
 
   if (!nextLink || returnFirst) {
+    itemsCache.set(cacheKey, items);
     return items;
   }
   /** @type {number} */
@@ -813,6 +826,7 @@ export async function fetchApiItems(
     console.warn(
       `[eodash] The number of items matched (${matchedItems}) exceeds the maximum allowed (${maxNumber})`,
     );
+    itemsCache.set(cacheKey, items);
     return items;
   }
 
@@ -833,6 +847,7 @@ export async function fetchApiItems(
 
   const nextPage = await fetchApiItems(nextLinkURL, nextLinkQuery);
   items.push(...nextPage);
+  itemsCache.set(cacheKey, items);
   return items;
 }
 /**
