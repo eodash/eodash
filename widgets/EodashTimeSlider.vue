@@ -66,7 +66,6 @@ const hasMultipleItems = computed(() => {
  * @param {CustomEvent} e
  */
 const onSelect = (e) => {
-  console.log("TimeControl onSelect event:", e.detail);
   const { date } = e.detail;
   const [from, _to] = date;
   datetime.value = from.toISOString();
