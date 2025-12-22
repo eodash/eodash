@@ -180,7 +180,13 @@ export class EodashCollection {
     // less control.
 
     const { layerDatetime, timeControlValues } = extractLayerTimeValues(
-      await this.getItems(),
+      await this.getItems(
+        true,
+        false,
+        item.properties?.datetime ??
+          item.properties.start_datetime ??
+          itemDatetime,
+      ),
       item.properties?.datetime ??
         item.properties.start_datetime ??
         itemDatetime,
@@ -281,24 +287,15 @@ export class EodashCollection {
     }
     return this.#collectionStac;
   }
-  #itemsCache = {
-    /** @type {import("stac-ts").StacItem[] | import("stac-ts").StacLink[] | null} */
-    whole: null,
-    /** @type {import("stac-ts").StacItem[] | import("stac-ts").StacLink[] | null} */
-    propertiesOnly: null,
-    /** @type {import("stac-ts").StacItem[] | import("stac-ts").StacLink[] | null} */
-    firstPage: null,
-    /** @type {import("stac-ts").StacItem[] | import("stac-ts").StacLink[] | null} */
-    firstPagePropertiesOnly: null,
-  };
 
   /**
    * Returns all item links sorted by datetime ascendingly
    * @param {boolean} [fields=false] if true, fetch items from API with only properties
    * @param {boolean} [first] - if true, returns the first page of items only (for API collections)
+   * @param {string | Date} [centerDatetime] - Date to center the search around if items exceed maxNumber
    * @returns {Promise<import("stac-ts").StacLink[] | import("stac-ts").StacItem[] | undefined>}
    */
-  async getItems(fields = false, first = false) {
+  async getItems(fields = false, first = false, centerDatetime = undefined) {
     const items = this.#collectionStac?.links.filter((i) => i.rel === "item");
     if (this.isAPI && !items?.length) {
       const itemUrl = this.#collectionUrl + "/items";
@@ -308,9 +305,18 @@ export class EodashCollection {
           `fields=properties,-assets,-geometry,-links,-bbox`,
           100,
           first,
+          1000,
+          centerDatetime,
         );
       }
-      return await fetchApiItems(itemUrl, undefined, 100, first);
+      return await fetchApiItems(
+        itemUrl,
+        undefined,
+        100,
+        first,
+        1000,
+        centerDatetime,
+      );
     }
 
     const datetimeProperty = getDatetimeProperty(this.#collectionStac?.links);
@@ -357,21 +363,19 @@ export class EodashCollection {
    *  @return {Promise<import("stac-ts").StacItem | import("stac-ts").StacLink | undefined>} item
    **/
   async getItem(date) {
+    let items = await this.getItems(false, true);
     if (!date) {
-      const items = await this.getItems(false, true);
-      // in case no datetime property is found, return the last item
+      // in case no date was provided, return the last item
       return items && items.at(-1);
     }
 
-    const items = await this.getItems();
+    const allItems = await this.getItems(false, false, date);
     const datetimeProperty = getDatetimeProperty(items);
     if (!datetimeProperty) {
       // in case no datetime property is found, return the last item
-      const items = await this.getItems(false, true);
-      // in case no datetime property is found, return the last item
       return items && items.at(-1);
     }
-    return (await this.getItems())?.sort((a, b) => {
+    return allItems?.sort((a, b) => {
       const distanceA = Math.abs(
         new Date(
           /** @type {number} */ (

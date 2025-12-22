@@ -2,6 +2,7 @@ import { toAbsolute } from "stac-js/src/http.js";
 import axios from "@/plugins/axios";
 import log from "loglevel";
 import { getStyleVariablesState } from "./triggers.js";
+import { itemsCache, splitItemsCache } from "@/utils/states.js";
 
 /**
  *  @param {import("stac-ts").StacLink[]} [links]
@@ -733,7 +734,12 @@ export function getDatetimeProperty(linksOrItems) {
   }
 
   // TODO: consider other properties for datetime ranges
-  const datetimeProperties = ["datetime", "start_datetime", "end_datetime"];
+
+  const datetimeProperties = /** @type {const} */ ([
+    "datetime",
+    "start_datetime",
+    "end_datetime",
+  ]);
   if (checkProperties) {
     for (const prop of datetimeProperties) {
       const propExists = linksOrItems.some(
@@ -775,7 +781,65 @@ export function isSTACItem(stacObject) {
   );
 }
 
-const itemsCache = new Map();
+/**
+ * Fetches items using a split strategy (past/future) around a center date
+ * @param {string} itemsUrl
+ * @param {string} query
+ * @param {string | Date} centerDatetime
+ * @param {number} maxNumber
+ * @returns {Promise<import("stac-ts").StacItem[]>}
+ */
+export const fetchSplitItems = async (
+  itemsUrl,
+  query,
+  centerDatetime,
+  maxNumber,
+) => {
+  const center = new Date(centerDatetime).toISOString();
+  const limit = Math.ceil(maxNumber / 2);
+
+  /** @param {"past"|"future"} direction */
+  const fetchSide = async (direction) => {
+    const isPast = direction === "past";
+    const datetimeRange = isPast ? `../${center}` : `${center}/..`;
+    const sortOrder = isPast ? "-datetime" : "+datetime";
+    const queryParams = new URLSearchParams(query);
+
+    queryParams.set("limit", limit.toString());
+    queryParams.set("datetime", datetimeRange);
+    queryParams.set("sortby", sortOrder);
+
+    const splitUrl = itemsUrl.split("/");
+    const collectionId = /** @type {string} */ (splitUrl.at(-2));
+    queryParams.set("collection", collectionId);
+
+    const searchEndpoint = `${splitUrl.slice(0, -3).join("/")}/search`;
+    const items = await axios
+      .get(searchEndpoint, { params: queryParams })
+      .then((res) => res.data.features);
+    return items;
+  };
+
+  const [pastItems, futureItems] = await Promise.all([
+    fetchSide("past"),
+    fetchSide("future"),
+  ]);
+
+  const allItems = [...pastItems, ...futureItems];
+
+  // check for duplicates by ids
+  const seen = new Set();
+  const uniqueItems = [];
+  for (const item of allItems) {
+    if (!seen.has(item.id)) {
+      seen.add(item.id);
+      uniqueItems.push(item);
+    }
+  }
+
+  return uniqueItems;
+};
+
 /**
  * Fetch all STAC items from a STAC API endpoint.
  * @param {string} itemsUrl
@@ -783,6 +847,8 @@ const itemsCache = new Map();
  * @param {number} [limit=100] - The maximum number of items to fetch per request.
  * @param {boolean} [returnFirst] - If true, only the first page of results will be returned.
  * @param {number} [maxNumber=1000] - if the matched number of items exceed this, only the first page will be returned.
+ * @param {string | Date} [centerDatetime] - Date to center the search around if items exceed maxNumber
+ * @returns {Promise<import("stac-ts").StacItem[]>}
  */
 export async function fetchApiItems(
   itemsUrl,
@@ -790,7 +856,9 @@ export async function fetchApiItems(
   limit = 100,
   returnFirst = false,
   maxNumber = 1000,
+  centerDatetime,
 ) {
+  // Exclude centerDatetime from cache key - it's only used for split search fallback
   const cacheKey = JSON.stringify({
     itemsUrl,
     query,
@@ -798,27 +866,32 @@ export async function fetchApiItems(
     returnFirst,
     maxNumber,
   });
+
   if (itemsCache.has(cacheKey)) {
-    return itemsCache.get(cacheKey);
+    return itemsCache.get(cacheKey) ?? [];
   }
 
-  itemsUrl = itemsUrl.includes("?") ? itemsUrl.split("?")[0] : itemsUrl;
-  itemsUrl += query ? `?limit=${limit}&${query}` : `?limit=${limit}`;
+  const urlQuery = new URLSearchParams(query);
+  urlQuery.set("limit", limit.toString());
+
+  let finalItemsUrl = itemsUrl.includes("?")
+    ? itemsUrl.split("?")[0]
+    : itemsUrl;
+  finalItemsUrl += urlQuery.keys().toArray().length
+    ? `?${urlQuery.toString()}`
+    : "";
 
   const itemsFeatureCollection = await axios
-    .get(itemsUrl)
+    .get(finalItemsUrl)
     .then((resp) => resp.data);
+
   /** @type {import("stac-ts").StacItem[]} */
   const items = itemsFeatureCollection.features;
-  const nextLink = itemsFeatureCollection.links?.find(
-    //@ts-expect-error TODO: itemsFeatureCollection is not typed
-    (link) => link.rel === "next",
-  );
-
-  if (!nextLink || returnFirst) {
+  if (returnFirst) {
     itemsCache.set(cacheKey, items);
     return items;
   }
+
   /** @type {number} */
   const matchedItems = itemsFeatureCollection.numberMatched;
   // Avoid fetching too many items
@@ -826,27 +899,69 @@ export async function fetchApiItems(
     console.warn(
       `[eodash] The number of items matched (${matchedItems}) exceeds the maximum allowed (${maxNumber})`,
     );
+    // we try to narrow down the search around the center datetime
+    if (centerDatetime) {
+      // Check if we have a cached split result that covers this centerDatetime
+      const splitCacheKey = JSON.stringify({ itemsUrl, query, maxNumber });
+      const cachedSplit = splitItemsCache.get(splitCacheKey);
+      const centerTime = new Date(centerDatetime).getTime();
+
+      if (
+        cachedSplit &&
+        centerTime >= cachedSplit.minTime &&
+        centerTime <= cachedSplit.maxTime
+      ) {
+        return cachedSplit.items;
+      }
+
+      const narrowedItems = await fetchSplitItems(
+        itemsUrl,
+        query ?? "",
+        centerDatetime,
+        maxNumber,
+      );
+
+      if (!narrowedItems.length) {
+        return narrowedItems;
+      }
+      const datetimeProperty = getDatetimeProperty(narrowedItems);
+      if (!datetimeProperty) {
+        return narrowedItems;
+      }
+
+      const times = narrowedItems
+        .map((i) =>
+          i.properties[datetimeProperty]
+            ? new Date(i.properties[datetimeProperty]).getTime()
+            : null,
+        )
+        .filter((t) => t !== null);
+      if (!times.length) {
+        return narrowedItems;
+      }
+      splitItemsCache.set(splitCacheKey, {
+        items: narrowedItems,
+        minTime: Math.min(...times),
+        maxTime: Math.max(...times),
+      });
+
+      return narrowedItems;
+    }
+
     itemsCache.set(cacheKey, items);
     return items;
   }
 
-  let [nextLinkURL, nextLinkQuery] = nextLink.href.split("?");
-  nextLinkQuery = nextLinkQuery.replace(/limit=\d+/, "");
-  if (query) {
-    const queryParams = new URLSearchParams(query);
-    const nextLinkParams = new URLSearchParams(nextLinkQuery);
+  urlQuery.set("limit", maxNumber.toString());
 
-    for (const key of nextLinkParams.keys()) {
-      queryParams.delete(key);
-    }
-    const remainingQuery = queryParams.toString();
-    if (remainingQuery) {
-      nextLinkQuery += `&${remainingQuery}`;
-    }
-  }
-
-  const nextPage = await fetchApiItems(nextLinkURL, nextLinkQuery);
-  items.push(...nextPage);
+  const allItems = await axios
+    .get(itemsUrl + "?" + urlQuery.toString())
+    .then((resp) => resp.data.features)
+    .catch((err) => {
+      console.error(err);
+      return [];
+    });
+  items.splice(0, items.length, ...allItems);
   itemsCache.set(cacheKey, items);
   return items;
 }
