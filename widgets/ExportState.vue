@@ -132,7 +132,7 @@ const getChartExportCode = () => {
   const chartSpec = props.getChartSpec?.();
   if (!chartSpec) return "";
   const preTag =
-    "## Chart Example <!" + '--{as="eox-chart" style="height: 300px;" specbase64=';
+    "## Chart Example <!" + '--{as="eox-chart" style="height: 300px;" spec=';
   const endTag = " }-->";
   const escapedSpec = base64EncodeSpec(chartSpec)
   return `${preTag}'${escapedSpec}'${endTag}`;
