@@ -220,7 +220,7 @@ export class EodashCollection {
         this.#collectionStac?.id ?? "",
         title,
         item,
-        layerDatetime,
+        this.isAPI ? undefined : layerDatetime,
         extraProperties,
         this.#collectionStac,
       );
@@ -233,7 +233,7 @@ export class EodashCollection {
             item,
             {
               ...extraProperties,
-              ...(layerDatetime && { layerDatetime }),
+              ...(layerDatetime && !this.isAPI && { layerDatetime }),
             },
           ))) ||
           []),
@@ -242,7 +242,7 @@ export class EodashCollection {
           title || this.#collectionStac?.title || item.id,
           dataAssets,
           item,
-          layerDatetime,
+          this.isAPI ? undefined : layerDatetime,
           extraProperties,
         )),
         // We add the links after the assets so they are layered underneath assets
