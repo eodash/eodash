@@ -35,7 +35,8 @@ import {
 import {
   useSearchOnMapMove,
   useRenderItemsFeatures,
-  useRenderOnFeatureHover,
+  useHighlightOnFeatureHover,
+  useRenderOnFeatureClick,
 } from "./methods/map";
 import {
   createOnFilterHandler,
@@ -187,8 +188,10 @@ const onSelectItem = createOnSelectHandler(store);
 useRenderItemsFeatures(currentItems);
 // Search on map move logic
 useSearchOnMapMove(itemfilterEl, props.bboxFilter);
-
-useRenderOnFeatureHover(itemfilterEl);
+// Render on feature click
+useRenderOnFeatureClick(itemfilterEl, store);
+// highlight on feature hover
+useHighlightOnFeatureHover(itemfilterEl);
 </script>
 <style scoped lang="scss">
 .item-catalog-container {

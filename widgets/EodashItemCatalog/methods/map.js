@@ -1,6 +1,7 @@
 import { useOnLayersUpdate } from "@/composables";
 import { mapEl } from "@/store/states";
 import { onMounted, onUnmounted } from "vue";
+import { createOnSelectHandler } from "./handlers";
 
 /**
  *
@@ -58,6 +59,17 @@ export function renderItemsFeatures(features) {
           },
         },
       },
+      {
+        type: "select",
+        options: {
+          id: "stac-items",
+          condition: "click",
+          style: {
+            "stroke-color": "white",
+            "stroke-width": 3,
+          },
+        },
+      },
     ],
   };
   const exists = analysisLayers.layers.some(
@@ -88,7 +100,7 @@ export const useSearchOnMapMove = (itemFilter, bboxFilter) => {
     clearTimeout(timeout);
     timeout = setTimeout(() => {
       itemFilter.value?.search();
-    }, 1500);
+    }, 800);
   };
   onMounted(() => {
     mapEl.value?.map.on("moveend", handler);
@@ -111,7 +123,6 @@ export const useRenderItemsFeatures = (currentItems) => {
         properties: {
           id: f.id,
           title: f.properties?.title,
-          description: f.properties?.description,
         },
         id: f.id,
         type: "Feature",
@@ -127,17 +138,20 @@ export const useRenderItemsFeatures = (currentItems) => {
  *
  * @param {import("vue").Ref<any>} itemfilterEl
  */
-export function useRenderOnFeatureHover(itemfilterEl) {
+export function useHighlightOnFeatureHover(itemfilterEl) {
   /**
    *
    * @param {CustomEvent} evt
    */
   const handler = (evt) => {
+    if (evt.detail.originalEvent.type !== "pointermove") {
+      return;
+    }
     const itemId = evt.detail?.feature?.getId();
     if (!itemId) {
       return;
     }
-    const item = itemfilterEl.value.items?.find(
+    const item = itemfilterEl.value.results?.find(
       //@ts-expect-error todo
       (r) => r.id === itemId,
     );
@@ -145,6 +159,45 @@ export function useRenderOnFeatureHover(itemfilterEl) {
       itemfilterEl.value.selectedResult = item;
     }
   };
+  onMounted(() => {
+    //@ts-expect-error todo
+    mapEl.value?.addEventListener("select", handler);
+  });
+  onUnmounted(() => {
+    //@ts-expect-error todo
+    mapEl.value?.removeEventListener("select", handler);
+  });
+}
+
+/**
+ *
+ * @param {import("vue").Ref<any>} itemfilterEl
+ * @param {import("@/store/stac").STACStore} store
+ */
+export function useRenderOnFeatureClick(itemfilterEl, store) {
+  const onSelectItem = createOnSelectHandler(store);
+  /**
+   *
+   * @param {CustomEvent} evt
+   */
+  const handler = (evt) => {
+    if (evt.detail.originalEvent.type !== "click") {
+      return;
+    }
+    const itemId = evt.detail?.feature?.getId();
+    if (!itemId) {
+      return;
+    }
+    const item = itemfilterEl.value.results?.find(
+      //@ts-expect-error todo
+      (r) => r?.id === itemId,
+    );
+
+    if (item) {
+      onSelectItem(new CustomEvent("select", { detail: item }));
+    }
+  };
+
   onMounted(() => {
     //@ts-expect-error todo
     mapEl.value?.addEventListener("select", handler);
