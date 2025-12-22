@@ -51,3 +51,8 @@ export const chartEl = shallowRef(null);
 
 /** @type {import("vue").Ref<import("@eox/chart").EOxChart | null>} */
 export const compareChartEl = shallowRef(null);
+
+/**
+ * Global loading state
+ */
+export const loading = ref(false);

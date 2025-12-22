@@ -1,5 +1,10 @@
 <template>
   <div class="eodash-overlay">
+    <v-progress-linear
+      :active="loading"
+      color="secondary"
+      indeterminate
+    ></v-progress-linear>
     <p>
       <a href="https://github.com/eodash/eodash" target="_blank"
         >eodash v{{ version }}</a
@@ -14,6 +19,7 @@
 <script setup>
 import { useTheme } from "vuetify";
 import pkgJson from "../../../package.json";
+import { loading } from "@/store/states";
 const { computedThemes } = useTheme();
 
 const version = pkgJson.version;
