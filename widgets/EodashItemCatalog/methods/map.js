@@ -23,7 +23,7 @@ export function renderItemsFeatures(features) {
       },
       layers: [],
     };
-    mapEl.value.layers = [analysisLayers, ...mapEl.value.layers];
+    mapEl.value.layers = [...mapEl.value.layers, analysisLayers];
   }
 
   const stacItemsLayer = {
