@@ -67,6 +67,7 @@ import {
 } from "@/store/actions";
 import { mapPosition, availableMapProjection } from "@/store/states";
 import { removeUnneededProperties } from "@/eodashSTAC/helpers";
+import { base64EncodeSpec } from "@eox/chart";
 
 const dialog = defineModel({ type: Boolean, required: true, default: false });
 
@@ -133,7 +134,8 @@ const getChartExportCode = () => {
   const preTag =
     "## Chart Example <!" + '--{as="eox-chart" style="height: 300px;" spec=';
   const endTag = " }-->";
-  return `${preTag}'${JSON.stringify(chartSpec)}'${endTag}`;
+  const escapedSpec = base64EncodeSpec(chartSpec);
+  return `${preTag}'${escapedSpec}'${endTag}`;
 };
 </script>
 <style scoped>

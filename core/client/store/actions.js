@@ -28,13 +28,13 @@ export const getCompareLayers = () =>
  * Returns the current chart spec from {@link chartEl}
  * @returns {import("vega-embed").VisualizationSpec | null}
  */
-export const getChartSpec = () => chartEl.value?.spec ?? null;
+export const getChartSpec = () => /** @type import("vega-embed").VisualizationSpec */ (chartEl.value?.spec) ?? null;
 
 /**
  * Returns the current chart spec from {@link compareChartEl}
  * @returns {import("vega-embed").VisualizationSpec | null}
  */
-export const getCompareChartSpec = () => compareChartEl.value?.spec ?? null;
+export const getCompareChartSpec = () => /** @type import("vega-embed").VisualizationSpec */ (compareChartEl.value?.spec) ?? null;
 
 /**
  * Register EPSG projection in `eox-map`
