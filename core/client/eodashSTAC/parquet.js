@@ -95,6 +95,8 @@ function moveItemProperties(item) {
     "id",
     "collection",
     "properties",
+    "auth:schemes",
+    "eodash:merge_assets"
   ];
   for (const key in item) {
     if (!stacProperties.includes(key)) {
