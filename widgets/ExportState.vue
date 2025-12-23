@@ -134,11 +134,9 @@ const getChartExportCode = () => {
   const preTag =
     "## Chart Example <!" + '--{as="eox-chart" style="height: 300px;" spec=';
   const endTag = " }-->";
-  const escapedSpec = base64EncodeSpec(chartSpec)
+  const escapedSpec = base64EncodeSpec(chartSpec);
   return `${preTag}'${escapedSpec}'${endTag}`;
 };
-
-
 </script>
 <style scoped>
 .code-block {

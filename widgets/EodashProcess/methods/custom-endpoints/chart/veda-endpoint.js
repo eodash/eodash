@@ -19,7 +19,9 @@ export async function handleVedaEndpoint({
   enableCompare = false,
 }) {
   const vedaLink = links.find(
-    (link) => link.rel === "service" && (link.endpoint === "veda" || link.endpoint === "veda_stac"),
+    (link) =>
+      link.rel === "service" &&
+      (link.endpoint === "veda" || link.endpoint === "veda_stac"),
   );
   if (!vedaLink) {
     return;
@@ -117,12 +119,14 @@ async function fetchVedaCOGsConfig(selectedStac, absoluteUrl, vedaLink) {
     const itemLinks = collection.links.filter((link) => link.rel == "item");
     configs.push(
       ...itemLinks.map((link) => {
-        const endpoint = /** @type {string} */ (vedaLink.endpoint === "veda_stac" ? link.id : link["cog_href"]);
+        const endpoint = /** @type {string} */ (
+          vedaLink.endpoint === "veda_stac" ? link.id : link["cog_href"]
+        );
         return {
-        endpoint,
-        datetime: /** @type string **/ (link[datetimeProperty]),
-      }
-    })
+          endpoint,
+          datetime: /** @type string **/ (link[datetimeProperty]),
+        };
+      }),
     );
   }
 
