@@ -35,6 +35,7 @@ export default {
           },
           enableBackToPOIs: true,
           enableSearch: true,
+          enableGlobe: true,
           // searchParams: {
           //   countrycode: "gb,ie,fr"
           //   bounds: "-84.26514,41.58998,-77.54150,46.14246"

@@ -5,6 +5,7 @@ import { fileURLToPath } from "url";
 
 export default defineConfig({
   component: {
+    specPattern: "tests/cypress/**/*.cy.{js,jsx,ts,tsx}",
     devServer: {
       framework: "vue",
       bundler: "vite",
@@ -39,7 +40,7 @@ export default defineConfig({
             "@": fileURLToPath(new URL("./core/client", import.meta.url)),
             "^": fileURLToPath(new URL("./widgets", import.meta.url)),
             "user:config": fileURLToPath(
-              new URL("./core/client/eodash.js", import.meta.url),
+              new URL("./templates/baseConfig.js", import.meta.url),
             ),
             "user:widgets": fileURLToPath(
               new URL("./widgets", import.meta.url),
