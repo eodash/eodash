@@ -17,7 +17,7 @@ import { isFirstLoad } from "@/utils/states";
  * @param {Record<string,any>} options.jsonformSchema
  * @param {import("vue").Ref<import("../types").AsyncJob[]>} options.jobs
  * @param {boolean} [options.enableCompare=false] - Whether to enable compare mode
- * @returns {Promise<[import("@eox/chart").EOxChart["spec"] | null,Record<string,any>|null]>}
+ * @returns {Promise<[import("vega-embed").VisualizationSpec | null,Record<string,any>|null]>}
  **/
 export async function processCharts({
   links,
