@@ -1,6 +1,13 @@
 # Changelog
 
 
+## [5.4.1](https://github.com/eodash/eodash/compare/eodash-v5.4.0...eodash-v5.4.1) (2025-12-23)
+
+
+### Bug Fixes
+
+* bring eodash:merge_assets to item root in parquet mode ([#302](https://github.com/eodash/eodash/issues/302)) ([c075eca](https://github.com/eodash/eodash/commit/c075eca2d2e0c3f09f7373baaacfb64cf4aa212b))
+
 ## [5.4.0](https://github.com/eodash/eodash/compare/eodash-v5.3.3...eodash-v5.4.0) (2025-12-15)
 
 
