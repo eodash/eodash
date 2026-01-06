@@ -223,3 +223,19 @@ export const getElement = (selector) => {
   //@ts-expect-error selectior can be a string or an Element
   return eoDash.shadowRoot?.querySelector(selector);
 };
+
+/**
+ * Recursively searches parents for overlay HTML element (mobile tab root)
+ *
+ * @param { HTMLElement } el - HTML component, starting search from.
+ * @returns { HTMLElement | null }
+ */
+export const getOverlayParent = (el) => {
+  while (el) {
+    if (el.id === "overlay" || el.classList.contains("panel")) {
+      return el;
+    }
+    el = el.parentElement;
+  }
+  return null;
+};

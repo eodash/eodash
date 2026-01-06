@@ -83,7 +83,6 @@ export const useInitProcess = ({
       selectedStac,
       jsonformEl,
       jsonformSchema,
-      chartSpec,
       isProcessed,
       processResults,
       loading,

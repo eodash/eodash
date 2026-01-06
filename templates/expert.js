@@ -78,7 +78,7 @@ export default {
         name: "EodashLayerControl",
         properties: {
           cssVars: {
-            "--list-padding": "1rem"
+            "--list-padding": "1rem",
           },
         },
       },
@@ -135,8 +135,8 @@ export default {
         hasChartData() && {
           id: "ProcessResultChart",
           type: "internal",
-          title: "Process Results Chart",
-          layout: { x: 0, y: 0, w: 12, h: "3/4/5" },
+          title: "Chart",
+          layout: { x: 0, y: 0, w: 12, h: 6 },
           widget: {
             name: "EodashChart",
           },

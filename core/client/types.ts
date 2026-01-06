@@ -153,7 +153,7 @@ export interface TEodashProcess {
 export interface TEodashChart {
   name: "EodashChart";
   properties?: InstanceType<
-    typeof import("^/EodashProcess/Chart.vue").default
+    typeof import("^/EodashChart.vue").default
   >["$props"];
 }
 

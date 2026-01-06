@@ -1,5 +1,5 @@
 <template>
-  <div ref="container" class="pb-4">
+  <div ref="container" class="py-0">
     <ProcessList :map-element="mapElement" :enable-compare="enableCompare" />
     <eox-jsonform
       v-if="jsonformSchema"
@@ -7,13 +7,13 @@
       ref="jsonformEl"
       .schema="jsonformSchema"
     ></eox-jsonform>
-    <Chart
+    <EodashChart
       v-if="!areChartsSeparateLayout"
       :vega-embed-options="vegaEmbedOptions"
       :enable-compare="enableCompare"
     >
-    </Chart>
-    <div class="mt-4 text-right">
+    </EodashChart>
+    <div class="mt-2 text-right">
       <v-btn
         v-if="showExecBtn"
         :loading="loading"
@@ -43,7 +43,7 @@ import { useSTAcStore } from "@/store/stac";
 import { storeToRefs } from "pinia";
 import { computed, ref, useTemplateRef } from "vue";
 import ProcessList from "./ProcessList.vue";
-import Chart from "./Chart.vue";
+import EodashChart from "../EodashChart.vue";
 import { handleProcesses } from "./methods/handling";
 import { useInitProcess, useAutoExec } from "./methods/composables";
 import { updateJobsStatus } from "./methods/async";
@@ -98,10 +98,7 @@ const isPolling = ref(false);
 const processResults = ref([]);
 
 const showExecBtn = computed(
-  () =>
-    !autoExec.value &&
-    (!!jsonformSchema.value) &&
-    !!jsonformEl.value,
+  () => !autoExec.value && !!jsonformSchema.value && !!jsonformEl.value,
 );
 const { selectedStac, selectedCompareStac } = storeToRefs(useSTAcStore());
 const currentSelectedStac = enableCompare ? selectedCompareStac : selectedStac;
@@ -180,14 +177,8 @@ const startProcess = async () => {
   if (isAsync.value) updateJobsStatus(currentJobs, currentIndicator.value);
 };
 useAutoExec(autoExec, jsonformEl, jsonformSchema, startProcess);
-
-
 </script>
 <style>
-eox-chart {
-  --background-color: transparent;
-  padding-top: 1em;
-}
 eox-jsonform {
   padding: 0.7em;
   min-height: 0px;

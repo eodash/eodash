@@ -123,8 +123,8 @@ export default {
         hasChartData() && {
           id: "ProcessResultChart",
           type: "internal",
-          title: "Process Results Chart",
-          layout: { x: 0, y: 0, w: 6, h: "3/4/5" },
+          title: "Chart",
+          layout: { x: 0, y: 0, w: 6, h: 6 },
           widget: {
             name: "EodashChart",
           },
@@ -135,13 +135,13 @@ export default {
         hasChartData(true) && {
           id: "ProcessResultChartCompare",
           type: "internal",
-          title: "Process Results Chart Compare",
-          layout: { x: 0, y: 6, w: 6, h: "3/4/5" },
+          title: "Compare Chart",
+          layout: { x: 0, y: 6, w: 6, h: 6 },
           widget: {
             name: "EodashChart",
             properties: {
               enableCompare: true,
-            }
+            },
           },
         },
     },

@@ -18,14 +18,7 @@
 import "@eox/stacinfo";
 import { currentUrl } from "@/store/states";
 
-const {
-  allowHtml,
-  featured,
-  footer,
-  header,
-  body,
-  tags,
-} = defineProps({
+const { allowHtml, featured, footer, header, body, tags } = defineProps({
   allowHtml: {
     type: Boolean,
     default: true,
@@ -44,7 +37,14 @@ const {
   body: {
     /** @type {import("vue").PropType<string[]>}  */
     type: Array,
-    default: () => ["satellite", "sensor", "insituSources", "otherSources", "agency", "extent"],
+    default: () => [
+      "satellite",
+      "sensor",
+      "insituSources",
+      "otherSources",
+      "agency",
+      "extent",
+    ],
   },
   featured: {
     /** @type {import("vue").PropType<string[]>}  */

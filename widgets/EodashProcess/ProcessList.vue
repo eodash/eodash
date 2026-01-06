@@ -73,7 +73,6 @@
   </div>
 </template>
 <script setup>
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import {
   mdiUploadBox,
   mdiDownloadBox,
