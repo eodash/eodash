@@ -102,7 +102,7 @@ export const includesProcess = (collection, compare = false) => {
  * @param {boolean} [compare=false] - Whether to check for compare collection
  * @returns
  */
-export const hasChartData = (compare = false) => {
+export const shouldShowChartWidget = (compare = false) => {
   return (
     areChartsSeparateLayout.value &&
     (compare ? compareChartData.value : chartData.value)

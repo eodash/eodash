@@ -85,6 +85,8 @@ onMounted(() => {
     frameHeight.value = Math.max(225, Math.floor(parentHeight));
   }
 
+  // for mobile view, the overlay panel containing chart is initially hidden
+  // we create an observer when display of overlay is not none anymore
   const overlay = getOverlayParent(el);
   if (!overlay) return;
 
@@ -92,6 +94,7 @@ onMounted(() => {
     const style = getComputedStyle(overlay);
     const visible = style.display !== "none";
     if (visible) {
+      // forcibly rerender chart, otherwise size of canvas is 0
       chartRenderKey.value++;
     }
   });
@@ -124,8 +127,6 @@ function toggleLayout() {
 <style scoped>
 .chart-frame {
   position: relative;
-  width: 100%;
-  height: 100%;
 }
 
 .chart-toggle {
@@ -133,13 +134,6 @@ function toggleLayout() {
   top: 6px;
   left: 6px;
   z-index: 2;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  border: none;
-  border-radius: 4px;
   cursor: pointer;
 }
 </style>

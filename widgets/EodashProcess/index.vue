@@ -1,5 +1,5 @@
 <template>
-  <div ref="container" class="py-0">
+  <div ref="container" class="py-1">
     <ProcessList :map-element="mapElement" :enable-compare="enableCompare" />
     <eox-jsonform
       v-if="jsonformSchema"

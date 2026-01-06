@@ -1,5 +1,5 @@
 import { mdiViewDashboard } from "@mdi/js";
-import { includesProcess, hasChartData } from "@/store/actions";
+import { includesProcess, shouldShowChartWidget } from "@/store/actions";
 
 /** @type {import("@/types").Template} */
 export default {
@@ -132,7 +132,7 @@ export default {
     },
     {
       defineWidget: () =>
-        hasChartData() && {
+        shouldShowChartWidget() && {
           id: "ProcessResultChart",
           type: "internal",
           title: "Chart",
