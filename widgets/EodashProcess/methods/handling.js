@@ -34,7 +34,6 @@ import { getLayers } from "@/store/actions";
  * @param {import("vue").Ref<import("stac-ts").StacCollection | null>} params.selectedStac
  * @param {import("vue").Ref<import("@eox/jsonform").EOxJSONForm | null>} params.jsonformEl
  * @param {import("vue").Ref<Record<string,any> | null>} params.jsonformSchema
- * @param {import("vue").Ref<import("@eox/chart").EOxChart["spec"] | null>} params.chartSpec
  * @param {import("vue").Ref<any[]>} params.processResults
  * @param {import("vue").Ref<boolean>} params.isProcessed
  * @param {import("vue").Ref<boolean>} params.loading
@@ -45,7 +44,6 @@ export async function initProcess({
   selectedStac,
   jsonformEl,
   jsonformSchema,
-  chartSpec,
   isProcessed,
   processResults,
   loading,
@@ -68,10 +66,10 @@ export async function initProcess({
   resetProcess({
     loading,
     isProcessed,
-    chartSpec,
     jsonformSchema,
     isPolling,
     processResults,
+    enableCompare,
   });
 
   await jsonformEl.value?.editor.destroy();
@@ -225,9 +223,9 @@ export async function handleProcesses({
     }
 
     //@ts-expect-error we assume that the spec data is of type InlineData
-    if (finalChartSpec.data?.values?.length) {
+    if (tempChartSpec.data?.values?.length) {
       //@ts-expect-error we assume that the spec data is of type InlineData
-      processResults.value.push(finalChartSpec?.data.values);
+      processResults.value.push(tempChartSpec?.data.values);
     }
     if (tempChartSpec && !("background" in tempChartSpec)) {
       tempChartSpec["background"] = "transparent";
@@ -283,23 +281,24 @@ export async function handleProcesses({
  * @param {Object} params
  * @param {import("vue").Ref<boolean>} params.loading
  * @param {import("vue").Ref<boolean>} params.isProcessed
- * @param {import("vue").Ref<import("@eox/chart").EOxChart["spec"] | null>} params.chartSpec
  * @param {import("vue").Ref<boolean>} params.isPolling
  * @param {import("vue").Ref<any[]>} params.processResults
  * @param {import("vue").Ref<Record<string,any>|null>} params.jsonformSchema
+ * @param {boolean} params.enableCompare
  */
 export function resetProcess({
   loading,
   isProcessed,
-  chartSpec,
   jsonformSchema,
   processResults,
   isPolling,
+  enableCompare,
 }) {
   loading.value = false;
   isProcessed.value = false;
   isPolling.value = false;
-  chartSpec.value = null;
+  const usedChartSpec = enableCompare ? compareChartSpec : chartSpec;
+  usedChartSpec.value = null;
   processResults.value = [];
   jsonformSchema.value = null;
 }

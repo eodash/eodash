@@ -1,14 +1,17 @@
 <template>
   <div ref="container" class="pb-4">
     <ProcessList :map-element="mapElement" :enable-compare="enableCompare" />
-
     <eox-jsonform
       v-if="jsonformSchema"
       :key="jsonformKey"
       ref="jsonformEl"
       .schema="jsonformSchema"
     ></eox-jsonform>
-    <Chart :vega-embed-options="vegaEmbedOptions" :enable-compare="enableCompare">
+    <Chart
+      v-if="!areChartsSeparateLayout"
+      :vega-embed-options="vegaEmbedOptions"
+      :enable-compare="enableCompare"
+    >
     </Chart>
     <div class="mt-4 text-right">
       <v-btn
@@ -50,7 +53,8 @@ import {
   mapCompareEl,
   mapEl,
   chartSpec,
-  compareChartSpec 
+  compareChartSpec,
+  areChartsSeparateLayout,
 } from "@/store/states";
 import { download, getDrawToolsProperty } from "./methods/utils";
 import { compareJobs, jobs } from "./states";
@@ -114,7 +118,6 @@ useInitProcess({
   mapElement: mapElement.value,
   jsonformEl,
   jsonformSchema,
-  chartSpec,
   isProcessed,
   processResults,
   loading,

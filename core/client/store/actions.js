@@ -7,6 +7,9 @@ import {
   comparePoi,
   chartEl,
   compareChartEl,
+  areChartsSeparateLayout,
+  chartData,
+  compareChartData,
 } from "@/store/states";
 import { getProjectionCode } from "@/eodashSTAC/helpers";
 import log from "loglevel";
@@ -106,4 +109,13 @@ export const includesProcess = (collection, compare = false) => {
   return (
     collection?.links?.some((link) => link.rel === "service") || isPoiAlive
   );
+};
+
+/**
+ * Check whether main or compare chart have data to show
+ * @param {boolean} [compare=false] - Whether to check for compare collection
+ * @returns
+*/
+export const hasChartData = (compare = false) => {
+  return areChartsSeparateLayout.value && (compare ? compareChartData.value : chartData.value);
 };

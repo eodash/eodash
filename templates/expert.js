@@ -1,6 +1,5 @@
 import { mdiViewDashboard } from "@mdi/js";
-import { includesProcess } from "@/store/actions";
-import { areChartsSeparateLayout, chartData } from "@/store/states";
+import { includesProcess, hasChartData } from "@/store/actions";
 
 /** @type {import("@/types").Template} */
 export default {
@@ -133,7 +132,7 @@ export default {
     },
     {
       defineWidget: () =>
-        chartData.value && areChartsSeparateLayout.value && {
+        hasChartData() && {
           id: "ProcessResultChart",
           type: "internal",
           title: "Process Results Chart",
