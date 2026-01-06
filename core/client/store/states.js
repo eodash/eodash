@@ -54,3 +54,29 @@ export const compareChartEl = shallowRef(null);
 
 /** Whether the map is in globe mode */
 export const isGlobe = ref(false);
+
+/** Whether the charts are in fullscreen mode
+ * @type {import("vue").Ref<boolean>}
+ */
+export const areChartsSeparateLayout = ref(true);
+
+/** Holds main chart data
+ *  @type {import("vue").Ref<Record<string,any>|null>}
+*/
+export const chartData = ref(null);
+
+/** Holds compare chart data
+ *  @type {import("vue").Ref<Record<string,any>|null>}
+*/
+export const compareChartData = ref(null);
+
+/** Holds main chart spec
+* @type {import("vue").Ref<import("@eox/chart").EOxChart["spec"] | null>}
+*/
+export const chartSpec = ref(null);
+
+/** Holds compare chart spec
+ * @type {import("vue").Ref<import("@eox/chart").EOxChart["spec"] | null>}
+*/
+export const compareChartSpec = ref(null);
+

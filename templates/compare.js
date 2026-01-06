@@ -1,4 +1,5 @@
 import { includesProcess } from "@/store/actions";
+import { areChartsSeparateLayout, chartData, compareChartData } from "@/store/states";
 
 /** @type {import("@/types").Template} */
 export default {
@@ -115,6 +116,30 @@ export default {
             properties: {
               enableCompare: true,
             },
+          },
+        },
+    },
+    {
+      defineWidget: () =>
+        chartData.value && areChartsSeparateLayout.value && {
+          id: "ProcessResultChart",
+          type: "internal",
+          title: "Process Results Chart",
+          layout: { x: 0, y: 0, w: 6, h: "3/4/5" },
+          widget: {
+            name: "EodashChart",
+          },
+        },
+    },
+    {
+      defineWidget: () =>
+        compareChartData.value && areChartsSeparateLayout.value && {
+          id: "ProcessResultChartCompare",
+          type: "internal",
+          title: "Process Results Chart Compare",
+          layout: { x: 0, y: 6, w: 6, h: "3/4/5" },
+          widget: {
+            name: "EodashChart",
           },
         },
     },

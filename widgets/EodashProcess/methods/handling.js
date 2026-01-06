@@ -12,6 +12,10 @@ import {
   datetime,
   indicator,
   poi,
+  chartData,
+  chartSpec,
+  compareChartData,
+  compareChartSpec,
 } from "@/store/states";
 import axios from "@/plugins/axios";
 import { processCharts, processLayers, processSTAC } from "./outputs";
@@ -161,8 +165,6 @@ export async function updateJsonformIdentifier({ jsonformSchema, newLayers }) {
  * @param {import("vue").Ref<import("stac-ts").StacCollection | null>} params.selectedStac
  * @param {import("vue").Ref<import("@eox/jsonform").EOxJSONForm | null>} params.jsonformEl
  * @param {import("vue").Ref<Record<string,any>|null>} params.jsonformSchema
- * @param {import("vue").Ref<import("@eox/chart").EOxChart["spec"] | null>} params.chartSpec
- * @param {import("vue").Ref<Record<string, any> | null>} params.chartData
  * @param {import("vue").Ref<boolean>} params.isPolling
  * @param {import("vue").Ref<any[]>} params.processResults
  * @param {import("@eox/map").EOxMap | null} params.mapElement
@@ -173,8 +175,6 @@ export async function handleProcesses({
   selectedStac,
   jsonformEl,
   jsonformSchema,
-  chartSpec,
-  chartData,
   isPolling,
   processResults,
   mapElement,
@@ -183,6 +183,7 @@ export async function handleProcesses({
   if (!jsonformEl.value || !jsonformSchema.value || !selectedStac.value) {
     return;
   }
+  const enableCompare = mapElement?.id === "compare";
 
   log.debug("Processing...");
   loading.value = true;
@@ -204,12 +205,14 @@ export async function handleProcesses({
       selectedStac.value?.["eodash:vegadefinition"]
     );
     const layerId = selectedStac.value?.id ?? "";
-
-    [chartSpec.value, chartData.value] = await processCharts({
+    const usedChartSpec = enableCompare ? compareChartSpec : chartSpec;
+    const usedChartData = enableCompare ? compareChartData : chartData;
+    let tempChartSpec = null;
+    [tempChartSpec, usedChartData.value] = await processCharts({
       links: serviceLinks,
       jsonformValue: { ...(jsonformValue ?? {}) },
       jsonformSchema: jsonformSchema.value,
-      enableCompare: mapElement?.id === "compare",
+      enableCompare,
       selectedStac: selectedStac.value,
       specUrl,
       isPolling,
@@ -217,19 +220,19 @@ export async function handleProcesses({
       customEndpointsHandler: handleChartCustomEndpoints,
     });
 
-    if (Object.keys(chartData.value ?? {}).length) {
-      processResults.value.push(chartData.value);
+    if (Object.keys(usedChartData.value ?? {}).length) {
+      processResults.value.push(usedChartData.value);
     }
 
     //@ts-expect-error we assume that the spec data is of type InlineData
-    if (chartSpec.value?.data?.values?.length) {
+    if (finalChartSpec.data?.values?.length) {
       //@ts-expect-error we assume that the spec data is of type InlineData
-      processResults.value.push(chartSpec.value?.data.values);
+      processResults.value.push(finalChartSpec?.data.values);
     }
-
-    if (chartSpec.value && !("background" in chartSpec.value)) {
-      chartSpec.value["background"] = "transparent";
+    if (tempChartSpec && !("background" in tempChartSpec)) {
+      tempChartSpec["background"] = "transparent";
     }
+    usedChartSpec.value = tempChartSpec;
 
     await processSTAC(
       serviceLinks,
