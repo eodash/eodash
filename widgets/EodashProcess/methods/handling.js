@@ -317,8 +317,8 @@ export const onChartClick = (evt) => {
   const chartSpec = evt.target?.spec;
   if (
     !chartSpec ||
-    !evt.detail?.item?.datum ||
-    !evt.detail?.item?.datum.datum
+    (!evt.detail?.item?.datum &&
+    !evt.detail?.item?.datum.datum)
   ) {
     return;
   }
