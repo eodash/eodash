@@ -65,11 +65,11 @@ export const chartData = ref(null);
 export const compareChartData = ref(null);
 
 /** Holds main chart spec
- * @type {import("vue").Ref<import("@eox/chart").EOxChart["spec"] | null>}
+ * @type {import("vue").Ref<import("vega-embed").VisualizationSpec | null>}
  */
 export const chartSpec = ref(null);
 
 /** Holds compare chart spec
- * @type {import("vue").Ref<import("@eox/chart").EOxChart["spec"] | null>}
+ * @type {import("vue").Ref<import("vega-embed").VisualizationSpec | null>}
  */
 export const compareChartSpec = ref(null);

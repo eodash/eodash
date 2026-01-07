@@ -220,7 +220,7 @@ export const getElement = (selector) => {
     //@ts-expect-error selectior can be a string or an Element
     return document.querySelector(selector);
   }
-  //@ts-expect-error selectior can be a string or an Element
+  //@ts-expect-error selector can be a string or an Element
   return eoDash.shadowRoot?.querySelector(selector);
 };
 
@@ -235,6 +235,7 @@ export const getOverlayParent = (el) => {
     if (el.id === "overlay" || el.classList.contains("panel")) {
       return el;
     }
+    //@ts-expect-error selector can be null or an Element
     el = el.parentElement;
   }
   return null;
