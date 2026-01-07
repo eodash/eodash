@@ -52,7 +52,7 @@ export const isGlobe = ref(false);
 /** Whether the charts are in fullscreen mode
  * @type {import("vue").Ref<boolean>}
  */
-export const areChartsSeparateLayout = ref(true);
+export const areChartsSeparateLayout = ref(false);
 
 /** Holds main chart data
  *  @type {import("vue").Ref<Record<string,any>|null>}

@@ -124,7 +124,7 @@ export default {
           id: "ProcessResultChart",
           type: "internal",
           title: "Chart",
-          layout: { x: 0, y: 0, w: 6, h: 6 },
+          layout: { x: 0, y: 0, w: 6, h: 8 },
           widget: {
             name: "EodashChart",
           },
@@ -136,7 +136,7 @@ export default {
           id: "ProcessResultChartCompare",
           type: "internal",
           title: "Compare Chart",
-          layout: { x: 6, y: 0, w: 6, h: 6 },
+          layout: { x: 6, y: 0, w: 6, h: 8 },
           widget: {
             name: "EodashChart",
             properties: {

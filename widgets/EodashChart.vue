@@ -7,7 +7,7 @@
         @click="toggleLayout"
         v-tooltip="areChartsSeparateLayout ? 'Minimize' : 'Maximize'"
       >
-        <svg viewBox="0 0 32 32" width="24" height="24" aria-hidden="true">
+        <svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true">
           <path :d="toggleIcon" />
         </svg>
       </button>
@@ -131,8 +131,8 @@ function toggleLayout() {
 
 .chart-toggle {
   position: absolute;
-  top: 6px;
-  left: 6px;
+  top: 38px;
+  right: 12px;
   z-index: 2;
   cursor: pointer;
 }
