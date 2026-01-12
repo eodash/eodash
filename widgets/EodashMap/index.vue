@@ -394,7 +394,7 @@ onMounted(() => {
   left: 24px;
   bottom: 54px; /* Tighter spacing: watermark at 6px + ~48px */
   color: rgba(0, 0, 0, 0.9);
-  font-size: 11px;
+  font-size: 10px;
   font-family: var(--eox-body-font-family);
   background: #fffe;
   border-radius: 4px;
