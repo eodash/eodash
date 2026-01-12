@@ -95,7 +95,7 @@ onMounted(() => {
     const visible = style.display !== "none";
     if (visible) {
       // forcibly rerender chart, otherwise size of canvas is 0
-      chartRenderKey.value++;
+      chartRenderKey.value = Math.random();
     }
   });
 

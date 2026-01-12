@@ -3,8 +3,8 @@ import { useSTAcStore } from "@/store/stac";
 import { storeToRefs } from "pinia";
 import {
   areChartsSeparateLayout,
-  chartData,
-  compareChartData,
+  chartSpec,
+  compareChartSpec,
 } from "@/store/states";
 /**
  * @typedef {{
@@ -79,8 +79,8 @@ export const useDefineWidgets = (widgetConfigs) => {
           selectedStac,
           selectedCompareStac,
           areChartsSeparateLayout,
-          chartData,
-          compareChartData,
+          chartSpec,
+          compareChartSpec,
         ],
         ([updatedStac, updatedCompareStac]) => {
           let definedConfig =
