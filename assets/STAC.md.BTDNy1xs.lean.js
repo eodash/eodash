@@ -1,0 +1,1 @@
+import{_ as i,c as a,o as t,ag as n}from"./chunks/framework.javlGjwI.js";const E=JSON.parse('{"title":"STAC","description":"","frontmatter":{},"headers":[],"relativePath":"STAC.md","filePath":"STAC.md"}'),e={name:"STAC.md"};function l(h,s,p,o,k,r){return t(),a("div",null,[...s[0]||(s[0]=[n("",110)])])}const c=i(e,[["render",l]]);export{E as __pageData,c as default};
