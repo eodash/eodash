@@ -37,7 +37,7 @@
           {{ removeUnneededProperties(getLayers()) }}
         </div>
 
-        <div v-if="props.getChartSpec?.()" class="mb-4">
+        <div v-if="chartSpec" class="mb-4">
           <p class="text-body-2 mb-2">
             <strong>Chart Spec (for export)</strong>
           </p>
@@ -61,11 +61,8 @@ import { mdiClipboardCheckOutline, mdiContentCopy } from "@mdi/js";
 import PopUp from "./PopUp.vue";
 import { copyToClipBoard } from "@/utils";
 import { ref } from "vue";
-import {
-  getLayers as getLayerAction,
-  getChartSpec as getChartSpecAction,
-} from "@/store/actions";
-import { mapPosition, availableMapProjection } from "@/store/states";
+import { getLayers as getLayerAction } from "@/store/actions";
+import { mapPosition, availableMapProjection, chartSpec } from "@/store/states";
 import { removeUnneededProperties } from "@/eodashSTAC/helpers";
 import { base64EncodeSpec } from "@eox/chart";
 
@@ -75,10 +72,6 @@ const props = defineProps({
   getLayers: {
     type: Function,
     default: getLayerAction,
-  },
-  getChartSpec: {
-    type: Function,
-    default: getChartSpecAction,
   },
 });
 
@@ -106,7 +99,7 @@ const copyBtns = [
     copyFn: async () =>
       await copyToClipBoard(getChartExportCode(), copySuccess),
     copyAs: "chart",
-    showIf: () => !!props.getChartSpec?.(),
+    showIf: () => chartSpec.value,
   },
 ];
 
@@ -129,12 +122,11 @@ const getMapEntryCode = () => {
 };
 
 const getChartExportCode = () => {
-  const chartSpec = props.getChartSpec?.();
-  if (!chartSpec) return "";
+  if (!chartSpec.value) return "";
   const preTag =
-    "## Chart Example <!" + '--{as="eox-chart" style="height: 300px;" spec=';
+    "## Chart Example <!" + '--{as="eox-chart" style="height: 400px;" spec=';
   const endTag = " }-->";
-  const escapedSpec = base64EncodeSpec(chartSpec);
+  const escapedSpec = base64EncodeSpec(chartSpec.value);
   return `${preTag}'${escapedSpec}'${endTag}`;
 };
 </script>

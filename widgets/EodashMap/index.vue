@@ -46,7 +46,7 @@
       <!-- prettier-ignore -->
       <EodashMapBtns
         :style="{
-          gridColumn: (indicator || compareIndicator || poi) ? responsiveX : '12',
+          gridColumn: (indicator || compareIndicator || poi) && !isGlobe ? responsiveX : '12',
           gridRow: responsiveY,
         }"
         :exportMap="(indicator || compareIndicator || poi) ? btnsProps.exportMap : false"
@@ -60,6 +60,7 @@
         "
         :enableZoom="(indicator || compareIndicator || poi) ? btnsProps.enableZoom : false
         "
+        :enableGlobe="(indicator || compareIndicator || poi) ? btnsProps.enableGlobe : false"
         :searchParams="btnsProps.searchParams"
       />
     </div>
@@ -77,6 +78,7 @@ import {
   indicator,
   compareIndicator,
   poi,
+  isGlobe,
 } from "@/store/states";
 import { storeToRefs } from "pinia";
 import { useSTAcStore } from "@/store/stac";
@@ -139,6 +141,7 @@ const props = defineProps({
      * enableSearch?: boolean;
      * searchParams?: object;
      * enableZoom?: boolean;
+     * enableGlobe?: boolean;
      * enableCompareIndicators?: boolean | {
      *   compareTemplate?:string;
      *   fallbackTemplate?:string;
@@ -153,6 +156,7 @@ const props = defineProps({
       enableBackToPOIs: true,
       enableSearch: true,
       enableZoom: true,
+      enableGlobe: true,
       searchParams: {},
     }),
   },
@@ -195,9 +199,13 @@ const btnsProps = computed(() => ({
   backToPOIs: props.btns.enableBackToPOIs ?? true,
   enableSearch: props.btns.enableSearch ?? true,
   enableZoom: props.btns.enableZoom ?? true,
+  enableGlobe: props.btns.enableGlobe ?? true,
   searchParams: props.btns.searchParams,
 }));
 
+if (btnsProps.value.enableGlobe) {
+  await import("@eox/map/src/plugins/globe");
+}
 // Prepare containers for scale line and cursor coordinates
 const scaleLineRef = useTemplateRef("scale-line");
 const cursorCoordsRef = useTemplateRef("cursor-coords");
@@ -386,7 +394,7 @@ onMounted(() => {
   left: 24px;
   bottom: 54px; /* Tighter spacing: watermark at 6px + ~48px */
   color: rgba(0, 0, 0, 0.9);
-  font-size: 11px;
+  font-size: 10px;
   font-family: var(--eox-body-font-family);
   background: #fffe;
   border-radius: 4px;

@@ -150,6 +150,14 @@ export interface TEodashProcess {
 }
 
 /** @group Widgets */
+export interface TEodashChart {
+  name: "EodashChart";
+  properties?: InstanceType<
+    typeof import("^/EodashChart.vue").default
+  >["$props"];
+}
+
+/** @group Widgets */
 export interface TEodashMapBtns {
   name: "EodashMapBtns";
   properties?: InstanceType<
@@ -212,6 +220,7 @@ export type ComponentWidget =
   | TEodashLayerControl
   | TEodashStacInfo
   | TEodashProcess
+  | TEodashChart
   | TEodashMapBtns
   | TEodashTools
   | TEodashLayoutSwitcher

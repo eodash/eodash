@@ -61,7 +61,7 @@ export async function processCharts({
   if (data && data.length) {
     //@ts-expect-error we assume data to exist in spec
     spec.data.values = data;
-    return [spec, dataValues];
+    return [structuredClone(spec), structuredClone(dataValues)];
   }
   const dataLinks = standardLinks.filter((link) => link.rel === "service");
 
@@ -144,7 +144,7 @@ export async function processCharts({
   } catch (e) {
     console.error("[eodash] Error while injecting Vega data", e);
   }
-  return [spec, dataValues];
+  return [structuredClone(spec), structuredClone(dataValues)];
 }
 
 /**

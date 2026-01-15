@@ -3,7 +3,7 @@ import { defineCustomElement } from "vue";
 import { registerPlugins } from "./plugins";
 /**
  *  @type {import("vue").VueElementConstructor<
- *  import("vue").ExtractPropTypes<{ config: string }>>}
+ *  import("vue").ExtractPropTypes<{ config?: string | Function }>>}
  * */
 const EodashConstructor = defineCustomElement(App, {
   //styles will be imported here using vite-plugin-vue-custom-element-style-injector

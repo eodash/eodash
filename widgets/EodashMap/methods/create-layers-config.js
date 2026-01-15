@@ -82,7 +82,7 @@ export const createLayersConfig = async (
   const observationPointsLayer =
     EodashCollection.getObservationPointsLayer(eodashCols);
   if (observationPointsLayer) {
-    dataLayers.layers.unshift(observationPointsLayer);
+    dataLayers.layers.push(observationPointsLayer);
   }
   const baseLayers = {
     type: "Group",
@@ -153,7 +153,7 @@ export const createLayersConfig = async (
   }
 
   if (baseLayers.layers.length) {
-    layersCollection.push(baseLayers);
+    layersCollection.unshift(baseLayers);
   }
 
   const overlayLayers = {
@@ -171,7 +171,7 @@ export const createLayersConfig = async (
 
   if (indicatorOverlays.length) {
     overlayLayers.layers.push(...indicatorOverlays);
-    layersCollection.unshift(overlayLayers);
+    layersCollection.push(overlayLayers);
   }
 
   return layersCollection;
