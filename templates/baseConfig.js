@@ -17,8 +17,7 @@ const baseConfig = {
       // "https://gtif-cerulean.github.io/cerulean-catalog/cerulean/catalog.json",
       "https://api.explorer.eopf.copernicus.eu/stac",
     api: true,
-    mosaicEndpoint:
-      "https://planetarycomputer.microsoft.com/api/data/v1/mosaic/register",
+    mosaicEndpoint: "dummy",
   },
   brand: {
     noLayout: true,

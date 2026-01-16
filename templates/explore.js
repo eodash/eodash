@@ -50,7 +50,7 @@ export default {
           enableZoom: true,
           enableExportMap: true,
           enableChangeProjection: true,
-          enableMosaic:false,
+          enableMosaic: false,
           enableCompareIndicators: {
             fallbackTemplate: "explore",
             itemFilterConfig: {

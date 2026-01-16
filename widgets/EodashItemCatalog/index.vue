@@ -136,7 +136,7 @@ const store = useSTAcStore();
 
 // Mosaic Logic
 if (props.useMosaic && store.mosaicEndpoint) {
-  useInitMosaic(store.mosaicEndpoint, { collection: indicator.value });
+  useInitMosaic(store.mosaicEndpoint, { collection: indicator.value }, store);
 }
 // Reactive state
 /** @type {import("vue").Ref<import("@/types").GeoJsonFeature[]>} */

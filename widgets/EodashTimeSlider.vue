@@ -67,9 +67,7 @@ const hasMultipleItems = computed(() => {
   });
 });
 if (props.useMosaic && store.mosaicEndpoint) {
-  useInitMosaic(store.mosaicEndpoint, {
-    collection: indicator.value,
-  });
+  useInitMosaic(store.mosaicEndpoint, undefined, store);
 }
 /**
  *
@@ -84,10 +82,14 @@ const onSelect = async (e) => {
     return;
   }
 
-  initMosaic(store.mosaicEndpoint, {
-    timeRange: [from.toISOString(), to.toISOString()],
-    collection: indicator.value,
-  });
+  initMosaic(
+    store.mosaicEndpoint,
+    {
+      timeRange: [from.toISOString(), to.toISOString()],
+      collection: indicator.value,
+    },
+    store,
+  );
 };
 
 const { selectedStac } = storeToRefs(useSTAcStore());

@@ -220,14 +220,15 @@ export class EodashCollection {
 
       // tmp hack
       const eodash = useEodash();
+      //@ts-expect-error todo
       const currentTemplate = eodash?.templates?.[activeTemplate.value];
       const layerControlTools = currentTemplate?.widgets?.find(
-        (w) => w.widget?.name === "EodashLayerControl", // TODO: this should be improved not to rely on name
+        //@ts-expect-error todo
+        (w) => w.widget?.name === "EodashLayerControl",
       )?.widget?.properties?.tools;
       const hasDatetime = layerControlTools
         ? layerControlTools.includes("datetime")
         : true;
-
 
       const links = await createLayersFromLinks(
         this.#collectionStac?.id ?? "",
