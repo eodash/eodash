@@ -9,6 +9,7 @@ import { useEmitLayersUpdate, useOnLayersUpdate } from "@/composables";
 export { useEmitLayersUpdate, useOnLayersUpdate };
 import { mapPosition } from "@/store/states";
 import { sanitizeBbox } from "@/eodashSTAC/helpers";
+import { transformExtent } from "@eox/map";
 /**
  * Holder for previous compare map view as it is overwritten by sync
  * @type { import("ol").View | null} mapElement
@@ -203,7 +204,7 @@ export const useInitMap = (
             const b = updatedStac.extent?.spatial.bbox[0];
             const sanitizedExtent = sanitizeBbox([...b]);
 
-            const reprojExtent = mapElement.value?.transformExtent(
+            const reprojExtent = transformExtent(
               sanitizedExtent,
               "EPSG:4326",
               mapElement.value?.map?.getView().getProjection(),

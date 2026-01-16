@@ -1,4 +1,4 @@
-import { includesProcess } from "@/store/actions";
+import { includesProcess, shouldShowChartWidget } from "@/store/actions";
 
 /** @type {import("@/types").Template} */
 export default {
@@ -160,6 +160,33 @@ export default {
     //       : null;
     //   },
     // },
+    {
+      defineWidget: () =>
+        shouldShowChartWidget() && {
+          id: "ProcessResultChart",
+          type: "internal",
+          title: "Chart",
+          layout: { x: 0, y: 0, w: 6, h: 8 },
+          widget: {
+            name: "EodashChart",
+          },
+        },
+    },
+    {
+      defineWidget: () =>
+        shouldShowChartWidget(true) && {
+          id: "ProcessResultChartCompare",
+          type: "internal",
+          title: "Compare Chart",
+          layout: { x: 6, y: 0, w: 6, h: 8 },
+          widget: {
+            name: "EodashChart",
+            properties: {
+              enableCompare: true,
+            },
+          },
+        },
+    },
     {
       defineWidget: (selectedSTAC) => {
         return selectedSTAC

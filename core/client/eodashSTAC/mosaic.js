@@ -97,7 +97,7 @@ function ensureAnalysisGroup(layersCollection) {
       },
       layers: [],
     };
-    layersCollection.unshift(analysisGroup);
+    layersCollection.push(analysisGroup);
   }
 
   return { layers: layersCollection, analysisGroup };

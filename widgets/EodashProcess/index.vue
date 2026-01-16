@@ -1,24 +1,19 @@
 <template>
-  <div ref="container" class="pb-4">
+  <div ref="container" class="py-1">
     <ProcessList :map-element="mapElement" :enable-compare="enableCompare" />
-
     <eox-jsonform
       v-if="jsonformSchema"
       :key="jsonformKey"
       ref="jsonformEl"
       .schema="jsonformSchema"
     ></eox-jsonform>
-    <eox-chart
-      ref="chartElRef"
-      class="chart"
-      v-if="isProcessed && chartSpec"
-      .spec="toRaw(chartSpec)"
-      .dataValues="toRaw(chartData)"
-      @click:item="onChartClick"
-      :style="chartStyles"
-      .opt="vegaEmbedOptions"
-    />
-    <div class="mt-4 text-right">
+    <EodashChart
+      v-if="!areChartsSeparateLayout"
+      :vega-embed-options="vegaEmbedOptions"
+      :enable-compare="enableCompare"
+    >
+    </EodashChart>
+    <div class="mt-2 text-right">
       <v-btn
         v-if="showExecBtn"
         :loading="loading"
@@ -46,9 +41,10 @@ import "@eox/drawtools";
 import "@eox/jsonform";
 import { useSTAcStore } from "@/store/stac";
 import { storeToRefs } from "pinia";
-import { computed, ref, toRaw, useTemplateRef, watch } from "vue";
+import { computed, ref, useTemplateRef } from "vue";
 import ProcessList from "./ProcessList.vue";
-import { handleProcesses, onChartClick } from "./methods/handling";
+import EodashChart from "../EodashChart.vue";
+import { handleProcesses } from "./methods/handling";
 import { useInitProcess, useAutoExec } from "./methods/composables";
 import { updateJobsStatus } from "./methods/async";
 import {
@@ -56,8 +52,9 @@ import {
   indicator,
   mapCompareEl,
   mapEl,
-  chartEl,
-  compareChartEl,
+  chartSpec,
+  compareChartSpec,
+  areChartsSeparateLayout,
 } from "@/store/states";
 import { download, getDrawToolsProperty } from "./methods/utils";
 import { compareJobs, jobs } from "./states";
@@ -75,11 +72,7 @@ const { enableCompare, vegaEmbedOptions } = defineProps({
     },
   },
 });
-/** @type {import("vue").Ref<import("vega").Spec|null>} */
-const chartSpec = ref(null);
 
-/** @type {import("vue").Ref<Record<string,any>|null>}  */
-const chartData = ref(null);
 const isProcessed = ref(false);
 
 /** @type {import("vue").Ref<Record<string,any>|null>} */
@@ -89,16 +82,12 @@ const jsonformEl =
   /** @type {Readonly<import("vue").ShallowRef<import("@eox/jsonform").EOxJSONForm | null>>} */ (
     useTemplateRef("jsonformEl")
   );
-const chartElRef =
-  /** @type {Readonly<import("vue").ShallowRef<import("@eox/chart").EOxChart | null>>} */ (
-    useTemplateRef("chartElRef")
-  );
+
 const isAsync = computed(
   () =>
     selectedStac.value?.links.filter((l) => l.endpoint === "eoxhub_workspaces")
       .length,
 );
-const containerEl = useTemplateRef("container");
 
 const loading = ref(false);
 
@@ -109,10 +98,7 @@ const isPolling = ref(false);
 const processResults = ref([]);
 
 const showExecBtn = computed(
-  () =>
-    !autoExec.value &&
-    (!!jsonformSchema.value || !!chartSpec.value) &&
-    !!jsonformEl.value,
+  () => !autoExec.value && !!jsonformSchema.value && !!jsonformEl.value,
 );
 const { selectedStac, selectedCompareStac } = storeToRefs(useSTAcStore());
 const currentSelectedStac = enableCompare ? selectedCompareStac : selectedStac;
@@ -129,7 +115,6 @@ useInitProcess({
   mapElement: mapElement.value,
   jsonformEl,
   jsonformSchema,
-  chartSpec,
   isProcessed,
   processResults,
   loading,
@@ -165,7 +150,8 @@ const startProcess = async () => {
 
   if (propertyIsEmpty) {
     isProcessed.value = false;
-    chartSpec.value = null;
+    const usedChartSpec = enableCompare ? compareChartSpec : chartSpec;
+    usedChartSpec.value = null;
     return;
   }
   const errors = jsonformEl.value?.editor.validate();
@@ -181,8 +167,6 @@ const startProcess = async () => {
     selectedStac: currentSelectedStac,
     jsonformEl,
     jsonformSchema,
-    chartSpec,
-    chartData,
     loading,
     isPolling,
     processResults,
@@ -193,35 +177,8 @@ const startProcess = async () => {
   if (isAsync.value) updateJobsStatus(currentJobs, currentIndicator.value);
 };
 useAutoExec(autoExec, jsonformEl, jsonformSchema, startProcess);
-
-const chartStyles = computed(() => {
-  /** @type {Record<string,string>} */
-  const styles = {};
-  if (!chartSpec.value?.["height"]) {
-    styles["height"] =
-      Math.max(
-        (containerEl.value?.offsetHeight ?? 0) -
-          (jsonformEl.value?.offsetHeight ?? 0),
-        200,
-      ) + "px";
-  }
-  return styles;
-});
-
-// Assign chart element to global state based on compare mode
-watch(chartElRef, (newVal) => {
-  if (enableCompare) {
-    compareChartEl.value = newVal;
-  } else {
-    chartEl.value = newVal;
-  }
-});
 </script>
 <style>
-eox-chart {
-  --background-color: transparent;
-  padding-top: 1em;
-}
 eox-jsonform {
   padding: 0.7em;
   min-height: 0px;

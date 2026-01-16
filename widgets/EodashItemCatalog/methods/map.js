@@ -24,8 +24,7 @@ export function renderItemsFeatures(features) {
       },
       layers: [],
     };
-    mapEl.value.layers = [analysisLayers, ...mapEl.value.layers.reverse()];
-    return;
+    mapEl.value.layers = [...mapEl.value.layers, analysisLayers];
   }
 
   const stacItemsLayer = {
@@ -81,8 +80,8 @@ export function renderItemsFeatures(features) {
     return;
   } else {
     //@ts-expect-error todo
-    analysisLayers.layers.unshift(stacItemsLayer);
-    mapEl.value.layers = [...mapEl.value.layers].reverse();
+    analysisLayers.layers.push(stacItemsLayer);
+    mapEl.value.layers = [...mapEl.value.layers];
   }
 }
 
@@ -114,24 +113,13 @@ export const useSearchOnMapMove = (itemFilter, bboxFilter) => {
  * @param {import("vue").Ref<import("@/types").GeoJsonFeature[]>} currentItems
  */
 export const useRenderItemsFeatures = (currentItems) => {
-  const renderOnUpdate = () =>
-    useOnLayersUpdate(() => {
-      // consider cases where this is not needed
-      /** @type {import("@/types").GeoJsonFeature[]} */
-      const features = currentItems.value.map((f) => ({
-        geometry: f.geometry,
-        properties: {
-          id: f.id,
-          title: f.properties?.title,
-        },
-        id: f.id,
-        type: "Feature",
-      }));
-      renderItemsFeatures(features);
-    });
   onMounted(() => {
     renderItemsFeatures(currentItems.value);
-    renderOnUpdate();
+  });
+
+  useOnLayersUpdate(() => {
+    // consider cases where this is not needed
+    renderItemsFeatures(currentItems.value);
   });
 };
 /**

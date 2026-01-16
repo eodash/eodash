@@ -1,5 +1,5 @@
 import { mdiViewDashboard } from "@mdi/js";
-import { includesProcess } from "@/store/actions";
+import { includesProcess, shouldShowChartWidget } from "@/store/actions";
 
 /** @type {import("@/types").Template} */
 export default {
@@ -57,6 +57,7 @@ export default {
           },
           enableBackToPOIs: true,
           enableSearch: true,
+          enableGlobe: true,
           // searchParams: {
           //   countrycode: "gb,ie,fr"
           //   bounds: "-84.26514,41.58998,-77.54150,46.14246"
@@ -97,6 +98,11 @@ export default {
       layout: { x: 0, y: 1, w: "3/3/2", h: 11 },
       widget: {
         name: "EodashLayerControl",
+        properties: {
+          cssVars: {
+            "--list-padding": "1rem",
+          },
+        },
       },
     },
     {
@@ -176,6 +182,18 @@ export default {
           layout: { x: "9/9/10", y: 5, w: "3/3/2", h: 5 },
           widget: {
             name: "EodashProcess",
+          },
+        },
+    },
+    {
+      defineWidget: () =>
+        shouldShowChartWidget() && {
+          id: "ProcessResultChart",
+          type: "internal",
+          title: "Chart",
+          layout: { x: 0, y: 0, w: 12, h: 8 },
+          widget: {
+            name: "EodashChart",
           },
         },
     },

@@ -131,7 +131,7 @@ export class EodashCollection {
     const item = new Item(this.selectedItem);
     this.selectedItem = item;
     const title = this.#collectionStac?.title || this.#collectionStac?.id || "";
-    layersJson.unshift(
+    layersJson.push(
       ...(await this.buildJsonArray(item, title, isObservationPoint)),
     );
     return layersJson;

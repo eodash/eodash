@@ -17,7 +17,7 @@ import { isFirstLoad } from "@/utils/states";
  * @param {Record<string,any>} options.jsonformSchema
  * @param {import("vue").Ref<import("../types").AsyncJob[]>} options.jobs
  * @param {boolean} [options.enableCompare=false] - Whether to enable compare mode
- * @returns {Promise<[import("@eox/chart").EOxChart["spec"] | null,Record<string,any>|null]>}
+ * @returns {Promise<[import("vega-embed").VisualizationSpec | null,Record<string,any>|null]>}
  **/
 export async function processCharts({
   links,
@@ -61,10 +61,50 @@ export async function processCharts({
   if (data && data.length) {
     //@ts-expect-error we assume data to exist in spec
     spec.data.values = data;
+    return [structuredClone(spec), structuredClone(dataValues)];
+  }
+  const dataLinks = standardLinks.filter((link) => link.rel === "service");
+
+  // We count if there are at least two application/json links, if yes,
+  // we download the data and assign them to specific data ids in the spec
+  const jsonLinks = dataLinks.filter(
+    (link) => link.type === "application/json",
+  );
+  if (jsonLinks.length >= 2) {
+    for (const link of jsonLinks ?? []) {
+      let linkType = link.type;
+      switch (linkType) {
+        case undefined:
+          continue;
+        case "application/json":
+          dataValues[/** @type {string} */ (link.id)] = await axios
+            .get(
+              mustache.render(link.href, {
+                ...(jsonformValue ?? {}),
+              }),
+            )
+            .then((resp) => resp.data);
+          // assign to spec datasets, assuming spec.data is InlineData
+          // Always assign values as an object with string keys
+          if (spec.data) {
+            /** @type {import("vega-lite/build/src/data").InlineData} */
+            (spec.data).values = {
+              ...(spec.data &&
+              "values" in spec.data &&
+              typeof spec.data.values === "object"
+                ? spec.data.values
+                : {}),
+              [/** @type {string} */ (link.id)]:
+                dataValues[/** @type {string} */ (link.id)],
+            };
+          }
+          break;
+        default:
+          break;
+      }
+    }
     return [spec, dataValues];
   }
-
-  const dataLinks = standardLinks.filter((link) => link.rel === "service");
   try {
     checkForData: for (const link of dataLinks ?? []) {
       switch (link.type) {
@@ -104,7 +144,7 @@ export async function processCharts({
   } catch (e) {
     console.error("[eodash] Error while injecting Vega data", e);
   }
-  return [spec, dataValues];
+  return [structuredClone(spec), structuredClone(dataValues)];
 }
 
 /**

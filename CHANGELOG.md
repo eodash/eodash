@@ -1,6 +1,19 @@
 # Changelog
 
 
+## [5.5.0](https://github.com/eodash/eodash/compare/eodash-v5.4.0...eodash-v5.5.0) (2026-01-15)
+
+
+### Features
+
+* Introduce 3D Globe & reverse layers order ([#293](https://github.com/eodash/eodash/issues/293)) ([e3b39ae](https://github.com/eodash/eodash/commit/e3b39aea413b3915b26efcaa4618f06147130b19))
+* introduced support for multi-endpoint data aggregation in processing ([77efb58](https://github.com/eodash/eodash/commit/77efb58a25c09d3332878683413562a2ac458a0b))
+
+
+### Bug Fixes
+
+* bring eodash:merge_assets to item root in parquet mode ([#302](https://github.com/eodash/eodash/issues/302)) ([c075eca](https://github.com/eodash/eodash/commit/c075eca2d2e0c3f09f7373baaacfb64cf4aa212b))
+
 ## [5.4.0](https://github.com/eodash/eodash/compare/eodash-v5.3.3...eodash-v5.4.0) (2025-12-15)
 
 

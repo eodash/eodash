@@ -433,7 +433,7 @@ export const replaceLayersInStructure = (layers, toRemove, toInsert) => {
       continue;
     }
 
-    result.push(layer);
+    result.unshift(layer);
   }
 
   return result;
