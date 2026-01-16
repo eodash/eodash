@@ -156,6 +156,7 @@ const props = defineProps({
      * searchParams?: object;
      * enableZoom?: boolean;
      * enableGlobe?: boolean;
+     * enableMosaic?: boolean;
      * enableCompareIndicators?: boolean | {
      *   compareTemplate?:string;
      *   fallbackTemplate?:string;
@@ -171,6 +172,7 @@ const props = defineProps({
       enableSearch: true,
       enableZoom: true,
       enableGlobe: true,
+      enableMosaic: true,
       searchParams: {},
     }),
   },
@@ -214,6 +216,7 @@ const btnsProps = computed(() => ({
   enableSearch: props.btns.enableSearch ?? true,
   enableZoom: props.btns.enableZoom ?? true,
   enableGlobe: props.btns.enableGlobe ?? true,
+  enableMosaic: props.btns.enableMosaic ?? true,
   searchParams: props.btns.searchParams,
 }));
 

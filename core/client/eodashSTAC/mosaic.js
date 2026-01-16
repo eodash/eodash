@@ -68,7 +68,7 @@ export async function createMosaicLayer(mosaicEndpoint, cqlQuery) {
     type: "Tile",
     properties: {
       id: "Mosaic" + Date.now(),
-      title: "Mosaic",
+      title: "Mosaic Layer",
     },
     source: {
       type: "TileJSON",
@@ -180,7 +180,9 @@ export async function updateMosaicLayer(
  * Renders the latest mosaic layer stored in mosaicState.
  */
 export function renderLatestMosaic() {
-  if (mosaicState.latestLayer) {
+  if (!mosaicState.latestLayer) {
+    return;
+  }
     const mapLayers = getLayers();
     const { analysisGroup, layers } = ensureAnalysisGroup(mapLayers);
 
@@ -192,7 +194,7 @@ export function renderLatestMosaic() {
         ...layers,
       ]);
     }
-  }
+
 }
 /**
  *

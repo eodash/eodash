@@ -21,7 +21,7 @@
       <div class="tooltip left">Zoom out</div>
     </button>
     <button
-      v-if="mosaicState.showButton"
+      v-if="mosaicState.showButton && enableMosaic"
       class="primary small circle small-elevate"
       @click="showMosaicLayer"
     >
@@ -206,6 +206,10 @@ const {
     default: true,
   },
   enableGlobe: {
+    type: Boolean,
+    default: true,
+  },
+  enableMosaic: {
     type: Boolean,
     default: true,
   },
