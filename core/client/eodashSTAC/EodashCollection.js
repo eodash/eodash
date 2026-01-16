@@ -30,6 +30,8 @@ import log from "loglevel";
 import { dataThemesBrands } from "@/utils/states";
 import { useEventBus } from "@vueuse/core";
 import { eoxLayersKey } from "@/utils/keys";
+import { activeTemplate } from "@/store/states";
+import { useEodash } from "@/composables";
 
 export class EodashCollection {
   #collectionUrl = "";
@@ -216,11 +218,22 @@ export class EodashCollection {
         }),
       };
 
+      // tmp hack
+      const eodash = useEodash();
+      const currentTemplate = eodash?.templates?.[activeTemplate.value];
+      const layerControlTools = currentTemplate?.widgets?.find(
+        (w) => w.widget?.name === "EodashLayerControl", // TODO: this should be improved not to rely on name
+      )?.widget?.properties?.tools;
+      const hasDatetime = layerControlTools
+        ? layerControlTools.includes("datetime")
+        : true;
+
+
       const links = await createLayersFromLinks(
         this.#collectionStac?.id ?? "",
         title,
         item,
-        layerDatetime,
+        hasDatetime ? layerDatetime : undefined,
         extraProperties,
         this.#collectionStac,
       );
@@ -233,7 +246,7 @@ export class EodashCollection {
             item,
             {
               ...extraProperties,
-              ...(layerDatetime && { layerDatetime }),
+              ...(layerDatetime && hasDatetime && { layerDatetime }),
             },
           ))) ||
           []),
@@ -242,7 +255,7 @@ export class EodashCollection {
           title || this.#collectionStac?.title || item.id,
           dataAssets,
           item,
-          layerDatetime,
+          hasDatetime ? layerDatetime : undefined,
           extraProperties,
         )),
         // We add the links after the assets so they are layered underneath assets

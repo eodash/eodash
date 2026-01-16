@@ -160,7 +160,7 @@ export function useHighlightOnFeatureHover(itemfilterEl) {
 /**
  *
  * @param {import("vue").Ref<any>} itemfilterEl
- * @param {import("@/store/stac").STACStore} store
+ * @param {ReturnType< typeof import("@/store/stac").useSTAcStore>} store
  */
 export function useRenderOnFeatureClick(itemfilterEl, store) {
   const onSelectItem = createOnSelectHandler(store);

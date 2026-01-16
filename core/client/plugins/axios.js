@@ -4,15 +4,17 @@ import { setupCache } from "axios-cache-interceptor";
 import { loading } from "@/store/states";
 
 const instance = Axios.create();
+export const axios = setupCache(instance, { cacheTakeover: false });
+
 let activeRequests = 0;
 
-instance.interceptors.request.use((config) => {
+axios.interceptors.request.use((config) => {
   activeRequests++;
   loading.value = true;
   return config;
 });
 
-instance.interceptors.response.use(
+axios.interceptors.response.use(
   (response) => {
     activeRequests--;
     if (activeRequests === 0) {
@@ -28,7 +30,5 @@ instance.interceptors.response.use(
     return Promise.reject(error);
   },
 );
-
-export const axios = setupCache(instance, { cacheTakeover: false });
 
 export default axios;
