@@ -65,17 +65,17 @@ export async function createMosaicLayer(mosaicEndpoint, cqlQuery) {
     "tile_scale=2&assets=B04&assets=B03&assets=B02&color_formula=Gamma%20RGB%203.2%20Saturation%200.8%20Sigmoidal%20RGB%2025%200.35&nodata=0&minzoom=9&collection=sentinel-2-l2a&format=png";
   // todo: use createLayersFromLinks
   mosaicState.latestLayer = {
-      type: "Tile",
-      properties: {
-        id: "Mosaic" + Date.now(),
-        title: "Mosaic",
-      },
-      source: {
-        type: "TileJSON",
-        url,
-      },
-    }
-    return [mosaicState.latestLayer];
+    type: "Tile",
+    properties: {
+      id: "Mosaic" + Date.now(),
+      title: "Mosaic",
+    },
+    source: {
+      type: "TileJSON",
+      url,
+    },
+  };
+  return [mosaicState.latestLayer];
 }
 
 /**

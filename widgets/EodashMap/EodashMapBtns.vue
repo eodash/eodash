@@ -20,7 +20,7 @@
       </i>
       <div class="tooltip left">Zoom out</div>
     </button>
-      <button
+    <button
       v-if="mosaicState.showButton"
       class="primary small circle small-elevate"
       @click="showMosaicLayer"
@@ -105,10 +105,7 @@
 </template>
 <script setup>
 import { useTransparentPanel } from "@/composables";
-import {
-  changeMapProjection,
-  setActiveTemplate,
-} from "@/store/actions";
+import { changeMapProjection, setActiveTemplate } from "@/store/actions";
 import {
   activeTemplate,
   availableMapProjection,
@@ -140,7 +137,7 @@ import { renderLatestMosaic } from "@/eodashSTAC/mosaic";
 import "@eox/geosearch";
 
 const showMosaicLayer = async () => {
-  renderLatestMosaic()
+  renderLatestMosaic();
   mosaicState.showButton = false;
 };
 

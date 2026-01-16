@@ -157,7 +157,7 @@ export const mosaicState = reactive({
   /** @type {string | object | null | undefined} */
   query: null,
   /** @type {Record<string, any> | null | undefined} */
-  latestLayer:null,
+  latestLayer: null,
 });
 
 /** @type {Map<string, import("stac-ts").StacItem[]>} */
