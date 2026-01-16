@@ -10,18 +10,6 @@
       </i>
       <div class="tooltip left">Zoom in</div>
     </button>
-
-    <button
-      v-if="mosaicState.showButton"
-      class="primary small circle small-elevate"
-      @click="showMosaicLayer"
-    >
-      <i class="small">
-        <svg viewBox="0 0 24 24"><path :d="mdiArrowLeft"></path></svg>
-      </i>
-      <div class="tooltip left">Back to Mosaic</div>
-    </button>
-
     <button
       v-if="enableZoom"
       class="primary small circle small-elevate"
@@ -32,7 +20,16 @@
       </i>
       <div class="tooltip left">Zoom out</div>
     </button>
-
+      <button
+      v-if="mosaicState.showButton"
+      class="primary small circle small-elevate"
+      @click="showMosaicLayer"
+    >
+      <i class="small">
+        <svg viewBox="0 0 24 24"><path :d="mdiMap"></path></svg>
+      </i>
+      <div class="tooltip left">Back to Mosaic</div>
+    </button>
     <button
       v-if="exportMap"
       class="primary small circle small-elevate"
@@ -110,7 +107,6 @@
 import { useTransparentPanel } from "@/composables";
 import {
   changeMapProjection,
-  getLayers,
   setActiveTemplate,
 } from "@/store/actions";
 import {
@@ -122,7 +118,7 @@ import {
 } from "@/store/states";
 import { mosaicState } from "@/utils/states";
 import {
-  mdiArrowLeft,
+  mdiMap,
   mdiCompare,
   mdiCompareRemove,
   mdiEarthBox,
@@ -140,15 +136,12 @@ import { useSTAcStore } from "@/store/stac";
 import { storeToRefs } from "pinia";
 import { loadPOiIndicator } from "^/EodashProcess/methods/handling";
 import { easeOut } from "ol/easing.js";
-import { renderMosaic } from "@/eodashSTAC/mosaic";
+import { renderLatestMosaic } from "@/eodashSTAC/mosaic";
 import "@eox/geosearch";
 
-const store = useSTAcStore();
 const showMosaicLayer = async () => {
-  if (store.mosaicEndpoint) {
-    // change to save the STAC in state and retrieve it from there
-    await renderMosaic(getLayers(), store.mosaicEndpoint, mosaicState.query);
-  }
+  renderLatestMosaic()
+  mosaicState.showButton = false;
 };
 
 const {

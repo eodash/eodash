@@ -24,6 +24,28 @@ export default {
     widget: {
       name: "EodashMap",
       properties: {
+        initialLayers: [
+          {
+            type: "Group",
+            properties: {
+              id: "BaseLayersGroup",
+              title: "Base Layers",
+            },
+            layers: [
+              {
+                type: "Tile",
+                properties: {
+                  id: "terrain-light;:;EPSG:3857",
+                  title: "Terrain Light",
+                },
+                source: {
+                  type: "XYZ",
+                  url: "https://s2maps-tiles.eu/wmts/1.0.0/terrain-light_3857/default/g/{z}/{y}/{x}.jpeg",
+                },
+              },
+            ],
+          },
+        ],
         enableCompare: true,
         zoomToExtent: true,
         btns: {
@@ -123,6 +145,7 @@ export default {
               widget: {
                 name: "EodashTimeSlider",
                 properties: {
+                  useMosaic: true,
                   filters: [
                     {
                       key: "eo:cloud_cover",

@@ -47,49 +47,13 @@ import {
 import axios from "@/plugins/axios";
 import { mdiViewDashboard } from "@mdi/js";
 import EodashLayoutSwitcher from "^/EodashLayoutSwitcher.vue";
+import { indicator } from "@/store/states";
+import { useInitMosaic } from "@/eodashSTAC/mosaic";
 
 if (!customElements.get("eox-itemfilter")) {
   await import("@eox/itemfilter");
 }
 
-// Template refs
-const root = useTemplateRef("root");
-const itemfilterEl = useTemplateRef("itemfilter");
-
-/** @type {HTMLElement | null} */
-let parentPanel = null;
-
-// Override parent panel's overflow to allow internal scrolling
-onMounted(async () => {
-  parentPanel = root.value?.parentElement ?? null;
-  if (parentPanel) {
-    parentPanel.style.overflow = "hidden";
-    parentPanel.style.display = "flex";
-    parentPanel.style.flexDirection = "column";
-  }
-});
-
-onUnmounted(() => {
-  // Restore parent panel's original overflow
-  if (parentPanel) {
-    parentPanel.style.overflow = "";
-    parentPanel.style.display = "";
-    parentPanel.style.flexDirection = "";
-  }
-  store.selectedItem = null;
-  mosaicState.showButton = false;
-});
-
-// todo: move to composable
-onMounted(async () => {
-  // Mosaic Logic
-  if (props.useMosaic && store.mosaicEndpoint) {
-    await updateMosaicLayer([...getLayers()], store.mosaicEndpoint, {
-      collection: "sentinel-2-l2a",
-    });
-    mosaicState.showButton = false;
-  }
-});
 // Props definition
 const props = defineProps({
   title: {
@@ -141,14 +105,39 @@ const props = defineProps({
   },
 });
 
-// Mosaic Logic
-import { updateMosaicLayer } from "@/eodashSTAC/mosaic";
-import { mosaicState } from "@/utils/states";
+// Template refs
+const root = useTemplateRef("root");
+const itemfilterEl = useTemplateRef("itemfilter");
 
-import { getLayers } from "@/store/actions";
+/** @type {HTMLElement | null} */
+let parentPanel = null;
+
+// Override parent panel's overflow to allow internal scrolling
+onMounted(async () => {
+  parentPanel = root.value?.parentElement ?? null;
+  if (parentPanel) {
+    parentPanel.style.overflow = "hidden";
+    parentPanel.style.display = "flex";
+    parentPanel.style.flexDirection = "column";
+  }
+});
+
+onUnmounted(() => {
+  // Restore parent panel's original overflow
+  if (parentPanel) {
+    parentPanel.style.overflow = "";
+    parentPanel.style.display = "";
+    parentPanel.style.flexDirection = "";
+  }
+  store.selectedItem = null;
+});
 
 const store = useSTAcStore();
 
+// Mosaic Logic
+if (props.useMosaic && store.mosaicEndpoint) {
+  useInitMosaic(store.mosaicEndpoint, { collection: indicator.value });
+}
 // Reactive state
 /** @type {import("vue").Ref<import("@/types").GeoJsonFeature[]>} */
 const currentItems = ref([]);

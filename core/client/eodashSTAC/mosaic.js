@@ -1,7 +1,10 @@
 import axios from "@/plugins/axios";
-import { createLayersFromLinks } from "./createLayers";
 import { Item } from "stac-js";
 import { mosaicState } from "@/utils/states";
+import { mapEl } from "@/store/states";
+import { getLayers } from "@/store/actions";
+import { onMounted, onUnmounted } from "vue";
+import { useOnLayersUpdate } from "@/composables";
 
 /**
  * Fetches the STAC definition for the mosaic. TODO: reuse registered queries
@@ -60,10 +63,8 @@ export async function createMosaicLayer(mosaicEndpoint, cqlQuery) {
     tileJSONLink.href +
     "?" +
     "tile_scale=2&assets=B04&assets=B03&assets=B02&color_formula=Gamma%20RGB%203.2%20Saturation%200.8%20Sigmoidal%20RGB%2025%200.35&nodata=0&minzoom=9&collection=sentinel-2-l2a&format=png";
-  console.log("[eodash] Created mosaic layer with tileJSON:", url);
   // todo: use createLayersFromLinks
-  return [
-    {
+  mosaicState.latestLayer = {
       type: "Tile",
       properties: {
         id: "Mosaic" + Date.now(),
@@ -73,52 +74,71 @@ export async function createMosaicLayer(mosaicEndpoint, cqlQuery) {
         type: "TileJSON",
         url,
       },
-    },
-  ];
-  // // create layers from links
-  // const layers = await createLayersFromLinks(
-  //   item.id,
-  //   item.id,
-  //   item,
-  //   mosaicEndpoint,
-  //   undefined,
-  //   {},
-  // );
+    }
+    return [mosaicState.latestLayer];
+}
 
-  // return layers;
+/**
+ * Ensure the AnalysisGroup exists in the layers collection.
+ * @param {Record<string, any>[]} layersCollection
+ * @returns {{ layers: Record<string, any>[], analysisGroup: Record<string, any> }}
+ */
+function ensureAnalysisGroup(layersCollection) {
+  let analysisGroup = layersCollection.find(
+    (l) => l?.properties?.id === "AnalysisGroup",
+  );
+
+  if (!analysisGroup) {
+    analysisGroup = {
+      type: "Group",
+      properties: {
+        id: "AnalysisGroup",
+        title: "Data Layers",
+      },
+      layers: [],
+    };
+    layersCollection.unshift(analysisGroup);
+  }
+
+  return { layers: layersCollection, analysisGroup };
 }
 
 /**
  * Modifies the layers collection to display the mosaic layer.
  * Removes existing layers in the AnalysisGroup and adds the mosaic layer.
- * @param {Record<string, any>[]} layersCollection - The layers collection to modify.
  * @param {string} mosaicEndpoint - The URL of the mosaic endpoint.
  * @param {string | object | null} [cqlQuery] - Optional CQL query.
  */
-export async function renderMosaic(layersCollection, mosaicEndpoint, cqlQuery) {
+export async function renderMosaic(mosaicEndpoint, cqlQuery) {
+  const mapLayers = getLayers();
+  const { analysisGroup, layers } = ensureAnalysisGroup(mapLayers);
   const mosaicLayers = await createMosaicLayer(mosaicEndpoint, cqlQuery);
 
-  if (mosaicLayers.length) {
-    const analysisGroup = layersCollection.find(
-      (l) => l.properties?.id === "AnalysisGroup",
-    );
-
-    if (analysisGroup) {
-      analysisGroup.layers = mosaicLayers;
-      mosaicState.showButton = false;
-    }
+  if (!mosaicLayers.length) {
+    return;
   }
+
+  analysisGroup.layers = mosaicLayers;
+  mosaicState.showButton = false;
+
+  if (mapEl.value) {
+    // Reassign to trigger map re-render after in-place layer mutation
+    mapEl.value.layers = /** @type {import("@eox/map").EoxLayer[]} */ ([
+      ...layers,
+    ]);
+  }
+
+  console.log("[eodash] Mosaic layer rendered.");
 }
+
 /**
  * Updates the mosaic layer based on the current filters in mosaicState.
- * @param {Record<string, any>[]} layersCollection - The layers collection to modify.
  * @param {string} mosaicEndpoint - The URL of the mosaic endpoint.
- * @param {{ timeRange?: [string, string]; bbox?: [number, number, number, number]; collection?: string }} queries - Optional CQL queries.
+ * @param {{ timeRange?: [string, string]; collection?: string }} queries - Optional CQL queries.
  */
 export async function updateMosaicLayer(
-  layersCollection,
   mosaicEndpoint,
-  { timeRange, bbox, collection } = {},
+  { timeRange, collection } = {},
 ) {
   /** @type {(string|object)[]} */
   const filters = [];
@@ -134,29 +154,7 @@ export async function updateMosaicLayer(
     filters.push(timeFilter);
     mosaicState.filters.time = timeFilter;
   }
-  if (bbox && Array.isArray(bbox) && bbox.length === 4) {
-    const [minx, miny, maxx, maxy] = bbox;
-    const spatialQuery = {
-      op: "s_intersects",
-      args: [
-        { property: "geometry" },
-        {
-          type: "Polygon",
-          coordinates: [
-            [
-              [minx, miny],
-              [maxx, miny],
-              [maxx, maxy],
-              [minx, maxy],
-              [minx, miny],
-            ],
-          ],
-        },
-      ],
-    };
-    filters.push(spatialQuery);
-    mosaicState.filters.spatial = spatialQuery;
-  }
+
   if (collection) {
     mosaicState.filters.collection = collection;
     filters.push({
@@ -176,5 +174,56 @@ export async function updateMosaicLayer(
   }
 
   mosaicState.query = cqlQuery;
-  await renderMosaic(layersCollection, mosaicEndpoint, cqlQuery);
+  await renderMosaic(mosaicEndpoint, cqlQuery);
+}
+/**
+ * Renders the latest mosaic layer stored in mosaicState.
+ */
+export function renderLatestMosaic() {
+  if (mosaicState.latestLayer) {
+    const mapLayers = getLayers();
+    const { analysisGroup, layers } = ensureAnalysisGroup(mapLayers);
+
+    analysisGroup.layers = [mosaicState.latestLayer];
+
+    if (mapEl.value) {
+      // Reassign to trigger map re-render after in-place layer mutation
+      mapEl.value.layers = /** @type {import("@eox/map").EoxLayer[]} */ ([
+        ...layers,
+      ]);
+    }
+  }
+}
+/**
+ *
+ * @param {string} mosaicEndpoint
+ * @param {{collection?:string, timeRange?:[string, string]}} filters
+ */
+export async function initMosaic(
+  mosaicEndpoint,
+  { timeRange, collection } = {},
+) {
+  await updateMosaicLayer(mosaicEndpoint, {
+    ...(collection && { collection }),
+    ...(timeRange && { timeRange }),
+  });
+  mosaicState.showButton = false;
+}
+
+/**
+ *
+ * @param {string} mosaicEndpoint
+ * @param {{collection?:string, timeRange?:[string, string]}} filters
+ */
+export function useInitMosaic(mosaicEndpoint, { collection, timeRange } = {}) {
+  // todo: move to composable
+  onMounted(async () => {
+    initMosaic(mosaicEndpoint, { collection, timeRange });
+  });
+  useOnLayersUpdate(() => {
+    initMosaic(mosaicEndpoint, { collection, timeRange });
+  });
+  onUnmounted(() => {
+    mosaicState.showButton = false;
+  });
 }

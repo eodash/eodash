@@ -32,11 +32,10 @@
   </eox-timecontrol>
 </template>
 <script setup>
-import { updateMosaicLayer } from "@/eodashSTAC/mosaic";
-import { getLayers } from "@/store/actions";
+import { initMosaic, useInitMosaic } from "@/eodashSTAC/mosaic";
 import { useSTAcStore } from "@/store/stac";
-import { datetime, mapEl } from "@/store/states";
-import { eodashCollections, mosaicState } from "@/utils/states";
+import { datetime, indicator, mapEl } from "@/store/states";
+import { eodashCollections } from "@/utils/states";
 import "@eox/timecontrol";
 import "@eox/itemfilter";
 import { storeToRefs } from "pinia";
@@ -59,18 +58,6 @@ const props = defineProps({
 });
 
 const store = useSTAcStore();
-// need to update the timeslider to accept ranges to test this
-// // TODO: move this to a composable
-// if (props.useMosaic && store.mosaicEndpoint) {
-//   // Initial render
-//   await updateMosaicLayer([...getLayers()], store.mosaicEndpoint);
-//   mosaicState.showButton = false;
-// }
-
-// onUnmounted(() => {
-//   mosaicState.showButton = false;
-//   mosaicState.filters.time = null;
-// });
 
 const hasMultipleItems = computed(() => {
   return eodashCollections.some((ec) => {
@@ -79,6 +66,11 @@ const hasMultipleItems = computed(() => {
     return (itemLinks && itemLinks.length > 1) || itemsLink;
   });
 });
+if (props.useMosaic && store.mosaicEndpoint) {
+  useInitMosaic(store.mosaicEndpoint, {
+    collection: indicator.value,
+  });
+}
 /**
  *
  * @param {CustomEvent} e
@@ -86,16 +78,16 @@ const hasMultipleItems = computed(() => {
 const onSelect = async (e) => {
   const { date } = e.detail;
   const [from, to] = date;
-  datetime.value = from.toISOString();
 
   if (!props.useMosaic || !store.mosaicEndpoint) {
+    datetime.value = from.toISOString();
     return;
   }
-  await updateMosaicLayer(getLayers(), store.mosaicEndpoint, {
-    collection: "sentinel-2-l2a",
-    timeRange: [from, to],
+
+  initMosaic(store.mosaicEndpoint, {
+    timeRange: [from.toISOString(), to.toISOString()],
+    collection: indicator.value,
   });
-  mosaicState.showButton = false;
 };
 
 const { selectedStac } = storeToRefs(useSTAcStore());

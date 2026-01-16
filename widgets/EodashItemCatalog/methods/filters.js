@@ -1,6 +1,7 @@
 import { sanitizeBbox } from "@/eodashSTAC/helpers";
 import { indicator, mapEl } from "@/store/states";
 import { useSTAcStore } from "@/store/stac";
+import axios from "@/plugins/axios";
 
 /**
  *
@@ -144,13 +145,11 @@ export const buildStacFilters = (filters, propsFilters) => {
       filterConfig.type === "multiselect" &&
       filterValue.stringifiedState
     ) {
-      // Handle multiselect filters
       const selectedValues = filterValue.stringifiedState;
       if (selectedValues.length > 0) {
         stacFilters.push(`${filterConfig.property} IN (${selectedValues})`);
       }
     } else if (filterConfig.type === "select" && filterValue.stringifiedState) {
-      // Handle single select filters
       const selectedValue = filterValue.stringifiedState;
       if (selectedValue) {
         stacFilters.push(`${filterConfig.property}='${selectedValue}'`);
@@ -172,7 +171,6 @@ export const buildSearchUrl = (filters, propsFilters, bboxFilter) => {
   const store = useSTAcStore();
   const params = new URLSearchParams();
 
-  // Add collections
   if (filters.collection?.stringifiedState) {
     params.append(
       "collections",
@@ -187,13 +185,11 @@ export const buildSearchUrl = (filters, propsFilters, bboxFilter) => {
     );
   }
 
-  // Add dynamic filters
   const stacFilter = buildStacFilters(filters, propsFilters);
   if (stacFilter) {
     params.append("filter", stacFilter);
   }
 
-  // Add limit
   params.append("limit", "100");
 
   return `${store.stacEndpoint}/search?${params.toString()}`;
@@ -205,12 +201,28 @@ export const buildSearchUrl = (filters, propsFilters, bboxFilter) => {
  * @param {boolean} bboxFilter
  */
 export const createExternalFilter = (propsFilters, bboxFilter) => {
+  let controller = new AbortController();
   /**
    * @param {Array<any>} _items
    * @param {Record<string,any>} filters
    */
   return (_items, filters) => ({
     url: buildSearchUrl(filters, propsFilters, bboxFilter),
-    key: "features",
+    /** @param {string} url */
+    fetchFn: async (url) => {
+      controller.abort();
+      controller = new AbortController();
+      const signal = controller.signal;
+      return await axios
+        .get(url, { signal })
+        .then((res) => res.data.features)
+        .catch((e) => {
+          if (e.message === "canceled") {
+            return [];
+          }
+          console.error(e);
+          return [];
+        });
+    },
   });
 };
