@@ -293,8 +293,8 @@ export async function initMosaic(
     {
       ...(collection && { collection }),
       ...(timeRange && { timeRange }),
-      //@ts-expect-error todo
     },
+    //@ts-expect-error todo
     rasterForm,
   );
   mosaicState.showButton = false;
