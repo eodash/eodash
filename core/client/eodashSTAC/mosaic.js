@@ -5,7 +5,7 @@ import { indicator, mapEl } from "@/store/states";
 import { getLayers } from "@/store/actions";
 import { onMounted, onUnmounted } from "vue";
 import { useOnLayersUpdate } from "@/composables";
-import { extractLayerConfig } from "./helpers";
+// import { extractLayerConfig } from "./helpers";
 
 /**
  * Fetches the STAC definition for the mosaic. TODO: reuse registered queries
@@ -69,6 +69,7 @@ export async function createMosaicLayer(
   mosaicEndpoint,
   cqlQuery,
   timeRange,
+  /* eslint-disable-next-line @typescript-eslint/no-unused-vars */
   rasterForm,
 ) {
   const mosaicStac = await registerMosaic(mosaicEndpoint, cqlQuery);

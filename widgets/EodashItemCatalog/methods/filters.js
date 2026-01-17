@@ -199,8 +199,13 @@ export const buildSearchUrl = (filters, propsFilters, bboxFilter) => {
  *
  * @param {import("../types").FiltersConfig} propsFilters
  * @param {boolean} bboxFilter
+ * @param {import("vue").Ref<import("@/types").GeoJsonFeature[]>} currentItems
  */
-export const createExternalFilter = (propsFilters, bboxFilter) => {
+export const createExternalFilter = (
+  propsFilters,
+  bboxFilter,
+  currentItems,
+) => {
   let controller = new AbortController();
   /**
    * @param {Array<any>} _items
@@ -217,8 +222,9 @@ export const createExternalFilter = (propsFilters, bboxFilter) => {
         .get(url, { signal })
         .then((res) => res.data.features)
         .catch((e) => {
-          if (e.message === "canceled") {
-            return [];
+          // return previous items if aborted
+          if (e.name === "AbortError" || e.name === "CanceledError") {
+            return currentItems.value;
           }
           console.error(e);
           return [];

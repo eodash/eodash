@@ -158,6 +158,7 @@ const subTitleProperty = createSubtitleProperty(props.filters);
 const externalFilterHandler = createExternalFilter(
   props.filters,
   props.bboxFilter,
+  currentItems,
 );
 
 // Event handlers
