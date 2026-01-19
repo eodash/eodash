@@ -21,7 +21,7 @@
       <div class="tooltip left">Zoom out</div>
     </button>
     <button
-      v-if="mosaicState.showButton && enableMosaic"
+      v-if="showMosaicButton"
       class="primary small circle small-elevate"
       @click="showMosaicLayer"
     >
@@ -112,7 +112,7 @@
       <EodashItemFilter
         v-bind="itemFilterConfig"
         :enableCompare="true"
-        @select="() => onSelectCompareIndicator(compareIndicators)"
+        @select="onSelectCompareIndicator(compareIndicators)"
       />
     </PopUp>
   </div>
@@ -141,7 +141,7 @@ import {
   mdiEarth,
 } from "@mdi/js";
 import ExportState from "^/ExportState.vue";
-import { computed, ref } from "vue";
+import { computed, inject, ref } from "vue";
 import PopUp from "^/PopUp.vue";
 import EodashItemFilter from "^/EodashItemFilter.vue";
 import { useDisplay } from "vuetify";
@@ -156,6 +156,7 @@ import {
   showCompareIndicators,
 } from "./methods/btns";
 import "@eox/geosearch";
+import { eodashKey } from "@/utils/keys";
 
 const showMosaicLayer = async () => {
   renderLatestMosaic();
@@ -171,6 +172,7 @@ const {
   enableZoom,
   searchParams,
   enableGlobe,
+  enableMosaic,
 } = defineProps({
   exportMap: {
     type: Boolean,
@@ -218,6 +220,24 @@ const {
 const { smAndDown } = useDisplay();
 const popupWidth = computed(() => (smAndDown.value ? "80%" : "70%"));
 const popupHeight = computed(() => (smAndDown.value ? "90%" : "70%"));
+
+const eodash = /** @type {import("@/types").Eodash} */ (inject(eodashKey));
+const showMosaicButton = computed(() => {
+  const currentTemplate =
+    "template" in eodash
+      ? eodash?.template
+      : eodash?.templates[activeTemplate.value];
+  const mosaicPropIsEnabled = currentTemplate?.widgets.some((w) => {
+    if ("defineWidget" in w) {
+      const sw = w.defineWidget(null);
+      //@ts-expect-error todo
+      return sw?.widget?.properties?.useMosaic;
+    }
+    //@ts-expect-error todo
+    return w?.widget?.properties && w?.widget?.properties?.useMosaic;
+  });
+  return mosaicState.showButton && enableMosaic && mosaicPropIsEnabled;
+});
 
 const showMapState = ref(false);
 const isInCompareMode = computed(

@@ -303,8 +303,12 @@ const showCompare = computed(() =>
 useHandleMapMoveEnd(eoxMap, mapPosition);
 
 onMounted(() => {
-  const { selectedCompareStac, selectedStac, selectedItem } =
-    storeToRefs(useSTAcStore());
+  const {
+    selectedCompareStac,
+    selectedStac,
+    selectedItem,
+    selectedCompareItem,
+  } = storeToRefs(useSTAcStore());
   // assign map Element state to eox map
   mapEl.value = eoxMap.value;
 
@@ -321,6 +325,7 @@ onMounted(() => {
       eoxMapCompareLayers,
       eoxMap,
       false,
+      selectedCompareItem,
     );
 
     useUpdateTooltipProperties(eodashCollections, compareTooltipProperties);

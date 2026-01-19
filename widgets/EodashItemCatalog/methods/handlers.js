@@ -1,52 +1,77 @@
-import { mapEl } from "@/store/states";
 import { inAndOut } from "ol/easing";
 import { renderItemsFeatures } from "./map";
 import { mosaicState } from "@/utils/states";
 
 /**
  * @param {import("vue").Ref<import("@/types").GeoJsonFeature[]>} currentItems
+ * @param {import("vue").Ref<import("@eox/map").EOxMap | null>} mapElement
  */
-export const createOnFilterHandler = (currentItems) => {
+export const createOnFilterHandler = (currentItems, mapElement) => {
   /** @param {CustomEvent} evt */
   return (evt) => {
     currentItems.value = evt.detail.results;
-    renderItemsFeatures(currentItems.value);
+    renderItemsFeatures(currentItems.value, mapElement);
   };
 };
 /**
  *
  * @param {ReturnType<typeof import("@/store/stac.js").useSTAcStore>} store
+ * @param {boolean} enableCompare
+ * @param {import("vue").Ref<import("@eox/map").EOxMap | null>} mapElement
  * @returns
  */
-export const createOnSelectHandler = (store) => {
+export const createOnSelectHandler = (store, enableCompare, mapElement) => {
   /** @param {CustomEvent} evt */
   return async (evt) => {
     const item = /** @type {import("stac-ts").StacItem} */ (evt.detail);
     if (!item) {
       return;
     }
-    if (store.selectedStac?.id === item.collection) {
-      store.selectedItem = item;
+    if (enableCompare) {
+      if (store.selectedCompareStac?.id === item.collection) {
+        store.selectedCompareItem = item;
+      } else {
+        await store.loadSelectedCompareSTAC(item.collection, false, item);
+      }
     } else {
-      await store.loadSelectedSTAC(item.collection, false, item);
+      if (store.selectedStac?.id === item.collection) {
+        store.selectedItem = item;
+      } else {
+        await store.loadSelectedSTAC(item.collection, false, item);
+      }
     }
     mosaicState.showButton = true;
 
-    mapEl.value?.selectInteractions["stac-items"]?.highlightById([item.id], {
-      padding: [100, 100, 100, 100],
-      duration: 1200,
-      easing: inAndOut,
-    });
+    mapElement.value?.selectInteractions["stac-items"]?.highlightById(
+      [item.id],
+      {
+        padding: [100, 100, 100, 100],
+        duration: 1200,
+        easing: inAndOut,
+      },
+    );
   };
 };
 
 /**
- *
- * @param {CustomEvent} evt
+ * @param {import("vue").Ref<import("@eox/map").EOxMap | null>} mapElement
  */
-export const onMouseEnterResult = (evt) => {
-  mapEl.value?.selectInteractions["stac-items"]?.highlightById([evt.detail.id]);
+export const createOnMouseEnterResult = (mapElement) => {
+  /**
+   * @param {CustomEvent} evt
+   */
+  return (evt) => {
+    mapElement.value?.selectInteractions["stac-items"]?.highlightById([
+      evt.detail.id,
+    ]);
+  };
 };
-export const onMouseLeaveResult = () => {
-  mapEl.value?.selectInteractions["stac-items"]?.highlightById([]);
+
+/**
+ * @param {import("vue").Ref<import("@eox/map").EOxMap | null>} mapElement
+ */
+export const createOnMouseLeaveResult = (mapElement) => {
+  return () => {
+    mapElement.value?.selectInteractions["stac-items"]?.highlightById([]);
+  };
 };

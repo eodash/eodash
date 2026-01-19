@@ -41,13 +41,13 @@ import {
 import {
   createOnFilterHandler,
   createOnSelectHandler,
-  onMouseEnterResult,
-  onMouseLeaveResult,
+  createOnMouseEnterResult,
+  createOnMouseLeaveResult,
 } from "./methods/handlers";
 import axios from "@/plugins/axios";
 import { mdiViewDashboard } from "@mdi/js";
 import EodashLayoutSwitcher from "^/EodashLayoutSwitcher.vue";
-import { indicator } from "@/store/states";
+import { indicator, mapCompareEl, mapEl } from "@/store/states";
 import { useInitMosaic } from "@/eodashSTAC/mosaic";
 
 if (!customElements.get("eox-itemfilter")) {
@@ -103,6 +103,10 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  enableCompare: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 // Template refs
@@ -110,25 +114,25 @@ const root = useTemplateRef("root");
 const itemfilterEl = useTemplateRef("itemfilter");
 
 /** @type {HTMLElement | null} */
-let parentPanel = null;
+// let parentPanel = null;
 
 // Override parent panel's overflow to allow internal scrolling
 onMounted(async () => {
-  parentPanel = root.value?.parentElement ?? null;
-  if (parentPanel) {
-    parentPanel.style.overflow = "hidden";
-    parentPanel.style.display = "flex";
-    parentPanel.style.flexDirection = "column";
-  }
+  // parentPanel = root.value?.parentElement ?? null;
+  // if (parentPanel) {
+  //   parentPanel.style.overflow = "hidden";
+  //   parentPanel.style.display = "flex";
+  //   parentPanel.style.flexDirection = "column";
+  // }
 });
 
 onUnmounted(() => {
   // Restore parent panel's original overflow
-  if (parentPanel) {
-    parentPanel.style.overflow = "";
-    parentPanel.style.display = "";
-    parentPanel.style.flexDirection = "";
-  }
+  // if (parentPanel) {
+  //   parentPanel.style.overflow = "";
+  //   parentPanel.style.display = "";
+  //   parentPanel.style.flexDirection = "";
+  // }
   store.selectedItem = null;
 });
 
@@ -165,23 +169,51 @@ const externalFilterHandler = createExternalFilter(
 /**
  * @param {CustomEvent} evt
  */
-const onFilter = createOnFilterHandler(currentItems);
+const onFilter = createOnFilterHandler(
+  currentItems,
+  props.enableCompare ? mapCompareEl : mapEl,
+);
 
 /**
  * @param {CustomEvent} evt
  */
-const onSelectItem = createOnSelectHandler(store);
+const onSelectItem = createOnSelectHandler(
+  store,
+  props.enableCompare,
+  props.enableCompare ? mapCompareEl : mapEl,
+);
 
 // composables
 
 // Render items features on the map
-useRenderItemsFeatures(currentItems);
+useRenderItemsFeatures(
+  currentItems,
+  props.enableCompare ? mapCompareEl : mapEl,
+);
 // Search on map move logic
-useSearchOnMapMove(itemfilterEl, props.bboxFilter);
+useSearchOnMapMove(
+  itemfilterEl,
+  props.bboxFilter,
+  props.enableCompare ? mapCompareEl : mapEl,
+);
 // Render on feature click
-useRenderOnFeatureClick(itemfilterEl, store);
+useRenderOnFeatureClick(
+  itemfilterEl,
+  store,
+  props.enableCompare ? mapCompareEl : mapEl,
+  props.enableCompare,
+);
 // highlight on feature hover
-useHighlightOnFeatureHover(itemfilterEl);
+useHighlightOnFeatureHover(
+  itemfilterEl,
+  props.enableCompare ? mapCompareEl : mapEl,
+);
+const onMouseEnterResult = createOnMouseEnterResult(
+  props.enableCompare ? mapCompareEl : mapEl,
+);
+const onMouseLeaveResult = createOnMouseLeaveResult(
+  props.enableCompare ? mapCompareEl : mapEl,
+);
 </script>
 <style scoped lang="scss">
 .item-catalog-container {
