@@ -7,7 +7,7 @@
     @select="onSelect"
     titleKey="title"
     .externalMapRendering="true"
-    .animate="true"
+    .animate="animate"
     .initDate="datetime"
   >
     <div class="d-flex g-10 align-center">
@@ -25,7 +25,7 @@
         :showResults="false"
         .filters="unref(filters)"
       ></eox-itemfilter>
-      <eox-timecontrol-timelapse @export="onExport"></eox-timecontrol-timelapse>
+      <eox-timecontrol-timelapse v-if="animate" @export="onExport"></eox-timecontrol-timelapse>
     </div>
 
     <eox-timecontrol-timeline class="mt-2"></eox-timecontrol-timeline>
