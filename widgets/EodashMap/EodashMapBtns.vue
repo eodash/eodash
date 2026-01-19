@@ -112,7 +112,7 @@
       <EodashItemFilter
         v-bind="itemFilterConfig"
         :enableCompare="true"
-        @select="onSelectCompareIndicator"
+        @select="() => onSelectCompareIndicator(compareIndicators)"
       />
     </PopUp>
   </div>
