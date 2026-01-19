@@ -1,5 +1,5 @@
 import { registerProjection } from "@/store/actions";
-import { mapEl } from "@/store/states";
+import { indicator, mapEl } from "@/store/states";
 import axios from "@/plugins/axios";
 
 import {
@@ -541,6 +541,12 @@ export const createLayersFromLinks = async (
       viewProjectionCode,
     );
     let xyzUrl = xyzLink.href;
+    // tmp hack
+    if (indicator.value === "sentinel-2-l2a" && xyzUrl.includes("color_formula")) {
+      const params = new URLSearchParams(xyzUrl.split("?")[1]);
+      params.delete("color_formula");
+      xyzUrl = `${xyzUrl.split("?")[0]}?${params.toString()}`;
+    }
 
     // TODO, this does not yet work between layer time changes because we do not get
     // updated variables from OL layer due to usage of tileurlfunction
