@@ -21,11 +21,23 @@ export const switchGlobe = () => {
       }
       if (layer.type === "Group") {
         const vectors = layer.layers.filter((l) => l.type === "Vector");
+        //@ts-expect-error todo
+        const xyzLayers = layer.layers.filter((l) => l.type === "Tile" && l.source?.type === "XYZ" && l.source?.url?.includes("sentinel-2"));
         if (!vectors.length) {
           return;
         }
+
         vectors.forEach((vectorLayer) => {
           layer.layers.splice(layer.layers.indexOf(vectorLayer), 1);
+        });
+        if (!xyzLayers.length) {
+          return
+        }
+        xyzLayers.forEach((xyzLayer) => {
+          const params = new URLSearchParams(xyzLayer.source.url.split("?")[1]);
+          params.set("color_formula", "gamma rgb 1.3, sigmoidal rgb 8 0.1, saturation 1.2");
+          //@ts-expect-error todo
+          xyzLayer.source.url = xyzLayer.source.url.split("?")[0] + "?" + params.toString();
         });
       }
     });
