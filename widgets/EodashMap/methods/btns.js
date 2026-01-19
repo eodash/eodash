@@ -34,6 +34,7 @@ export const switchGlobe = () => {
           return
         }
         xyzLayers.forEach((xyzLayer) => {
+          //@ts-expect-error todo
           const params = new URLSearchParams(xyzLayer.source.url.split("?")[1]);
           params.set("color_formula", "gamma rgb 1.3, sigmoidal rgb 8 0.1, saturation 1.2");
           //@ts-expect-error todo
