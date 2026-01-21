@@ -220,17 +220,7 @@ export class EodashCollection {
       );
 
       jsonArray.push(
-        ...((this.rasterEndpoint &&
-          (await createLayerFromRender(
-            this.rasterEndpoint,
-            this.#collectionStac,
-            item,
-            {
-              ...extraProperties,
-              ...(layerDatetime && { layerDatetime }),
-            },
-          ))) ||
-          []),
+        ...links,
         ...(await createLayersFromAssets(
           this.#collectionStac?.id ?? "",
           title || this.#collectionStac?.title || item.id,
@@ -239,8 +229,17 @@ export class EodashCollection {
           layerDatetime,
           extraProperties,
         )),
-        // We add the links after the assets so they are layered underneath assets
-        ...links,
+        ...((this.rasterEndpoint &&
+        (await createLayerFromRender(
+          this.rasterEndpoint,
+          this.#collectionStac,
+          item,
+            {
+              ...extraProperties,
+              ...(layerDatetime && { layerDatetime }),
+            },
+          ))) ||
+          []),
       );
     } else {
       // get the correct style which is not attached to a link
