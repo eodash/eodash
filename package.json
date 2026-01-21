@@ -68,7 +68,7 @@
     "@eox/chart": "^1.1.0",
     "@eox/drawtools": "^1.1.5",
     "@eox/geosearch": "^1.1.0",
-    "@eox/itemfilter": "https://pkg.pr.new/EOX-A/EOxElements/@eox/itemfilter@a917307",
+    "@eox/itemfilter": "https://pkg.pr.new/EOX-A/EOxElements/@eox/itemfilter@24d68d4",
     "@eox/jsonform": "^1.8.0",
     "@eox/layercontrol": "https://pkg.pr.new/EOX-A/EOxElements/@eox/layercontrol@ff9f844",
     "@eox/layout": "^1.0.0",
