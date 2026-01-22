@@ -129,13 +129,11 @@ export async function updateJsonformIdentifier({ jsonformSchema, newLayers }) {
       if (!layersArray) {
         return;
       }
-      // @ts-expect-error TODO payload coming from time update events is not an object with layers property
-      if (layersArray?.layers) {
-        // @ts-expect-error TODO payload coming from time update events is not an object with layers property
-        traverseLayers(layersArray.layers);
+      if (typeof layersArray === 'object') {
+        layersArray = [layersArray];
       }
       for (const layer of layersArray) {
-        if (layer.layers) {
+        if (layer.type === "Group" && Array.isArray(layer.layers)) {
           // @ts-expect-error TODO payload coming from time update events is not an object with layers property
           traverseLayers(layer);
         } else {
