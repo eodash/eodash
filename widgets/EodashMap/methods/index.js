@@ -164,21 +164,24 @@ export const useInitMap = (
         if (interval && interval.length > 0 && interval[0].length > 1) {
           // @ts-expect-error this is the defined STAC structure
           endInterval = new Date(interval[0][1]);
+          // If end interval is in the future, set to now,
+          // for item fetching based on search endpoint
+          if (endInterval.getTime() > Date.now()) {
+            endInterval = new Date();
+          }
           log.debug(
             "Indicator load: found stac extent, setting time to latest value",
             endInterval,
           );
         }
-        // commented temporarily
-        // if (
-        //   !updatedItem &&
-        //   endInterval !== null &&
-        //   endInterval.toISOString() !== datetime.value &&
-        //   !isFirstLoad.value
-        // ) {
-        //   datetime.value = endInterval.toISOString();
-        // } else
-          if (isFirstLoad.value && !datetime.value && endInterval) {
+        if (
+          !updatedItem &&
+          endInterval !== null &&
+          endInterval.toISOString() !== datetime.value &&
+          !isFirstLoad.value
+        ) {
+          datetime.value = endInterval.toISOString();
+        } else if (isFirstLoad.value && !datetime.value && endInterval) {
           datetime.value = endInterval.toISOString();
         }
 

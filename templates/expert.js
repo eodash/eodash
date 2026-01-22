@@ -151,7 +151,7 @@ export default {
               widget: {
                 name: "EodashTimeSlider",
                 properties: {
-                  useMosaic: true,
+                  useMosaic: ["sentinel-2-l2a"],
                   filters: [
                     {
                       key: "eo:cloud_cover",

@@ -62,6 +62,7 @@ export async function registerMosaic(mosaicEndpoint, cqlQuery) {
  * @param {string} mosaicEndpoint - The URL of the mosaic endpoint.
  * @param {string | object | null} [cqlQuery] - Optional CQL query.
  * @param {[string, string]} [timeRange] - Optional time range.
+ * @param {number} [cloudCover] - Optional cloud cover percentage.
  * @param {string} [rasterForm] - Optional rasterform to use for the mosaic.
  * @returns {Promise<Record<string, any>[]>}
  */
@@ -69,6 +70,7 @@ export async function createMosaicLayer(
   mosaicEndpoint,
   cqlQuery,
   timeRange,
+  cloudCover,
   /* eslint-disable-next-line @typescript-eslint/no-unused-vars */
   rasterForm,
 ) {
@@ -113,8 +115,8 @@ export async function createMosaicLayer(
   //   rasterFormObj = await axios.get(rasterForm).then((response) => response.data)
   //   layerConfig = extractLayerConfig(indicator.value,undefined,rasterFormObj).layerConfig
   // }
+  const params = new URLSearchParams();
   if (timeRange) {
-    const params = new URLSearchParams();
     params.set(
       "time",
       '["' +
@@ -123,13 +125,21 @@ export async function createMosaicLayer(
         timeRange[1].split("T")[0] +
         '"]',
     );
-    if (url.includes("?")) {
-      url = url + "&" + params.toString();
-    } else {
-      url = url + "?" + params.toString();
-    }
-    console.log("[eodash] Mosaic layer URL:", url);
+  } else {
+    params.delete("time");
   }
+  if (cloudCover && ![0, 100].includes(cloudCover)) {
+    params.set("cloud_cover", cloudCover.toString());
+  } else {
+    params.delete("cloud_cover");
+  }
+
+  if (url.includes("?")) {
+    url = url + "&" + params.toString();
+  } else {
+    url = url + "?" + params.toString();
+  }
+
   mosaicState.latestLayer = {
     type: "Tile",
     properties: {
@@ -176,12 +186,14 @@ function ensureAnalysisGroup(layersCollection) {
  * @param {string} mosaicEndpoint - The URL of the mosaic endpoint.
  * @param {string | object | null} [cqlQuery] - Optional CQL query.
  * @param {[string, string]} [timeRange] - Optional time range.
+ * @param {number} [cloudCover] - Optional cloud cover percentage.
  * @param {string} [rasterForm] - Optional rasterform to use for the mosaic.
  */
 export async function renderMosaic(
   mosaicEndpoint,
   cqlQuery,
   timeRange,
+  cloudCover,
   rasterForm,
 ) {
   const mapLayers = getLayers();
@@ -190,6 +202,7 @@ export async function renderMosaic(
     mosaicEndpoint,
     cqlQuery,
     timeRange,
+    cloudCover,
     rasterForm,
   );
 
@@ -197,7 +210,8 @@ export async function renderMosaic(
     return;
   }
   // tmp hack to preserve time control values
-  const timeControlValues = analysisGroup?.layers?.[0]?.properties?.timeControlValues;
+  const timeControlValues =
+    analysisGroup?.layers?.[0]?.properties?.timeControlValues;
   if (timeControlValues) {
     mosaicLayers[0].properties.timeControlValues = timeControlValues;
     mosaicLayers[0].properties.timeControlProperty = "TIME";
@@ -212,19 +226,19 @@ export async function renderMosaic(
     ]);
   }
 
-  console.log("[eodash] Mosaic layer rendered.");
+  console.log("[eodash] Mosaic layer rendered.", mosaicLayers[0].source.url);
 }
 
 /**
  * Updates the mosaic layer based on the current filters in mosaicState.
  * @param {string} mosaicEndpoint - The URL of the mosaic endpoint.
- * @param {{ timeRange?: [string, string]; collection?: string }} queries - Optional CQL queries.
+ * @param {{ timeRange?: [string, string]; collection?: string; cloudCover?: number }} queries - Optional CQL queries.
  * @param {string} [rasterForm] - Optional rasterform to use for the mosaic.
  */
 export async function updateMosaicLayer(
   mosaicEndpoint,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  { timeRange, collection } = {},
+  { timeRange, collection, cloudCover } = {},
   rasterForm,
 ) {
   /** @type {(string|object)[]} */
@@ -261,7 +275,13 @@ export async function updateMosaicLayer(
   // }
 
   // mosaicState.query = cqlQuery;
-  await renderMosaic(mosaicEndpoint, undefined, timeRange, rasterForm);
+  await renderMosaic(
+    mosaicEndpoint,
+    undefined,
+    timeRange,
+    cloudCover,
+    rasterForm,
+  );
 }
 /**
  * Renders the latest mosaic layer stored in mosaicState.
@@ -285,12 +305,12 @@ export function renderLatestMosaic() {
 /**
  *
  * @param {string} mosaicEndpoint
- * @param {{collection?:string, timeRange?:[string, string]}} filters
+ * @param {{collection?:string, timeRange?:[string, string], cloudCover?: number}} filters
  * @param {ReturnType<typeof import("@/store/stac").useSTAcStore>} store
  */
 export async function initMosaic(
   mosaicEndpoint,
-  { timeRange, collection } = {},
+  { timeRange, collection, cloudCover } = {},
   store,
 ) {
   const rasterForm = store.selectedStac?.["eodash:rasterform"];
@@ -299,6 +319,7 @@ export async function initMosaic(
     {
       ...(collection && { collection }),
       ...(timeRange && { timeRange }),
+      ...(cloudCover && { cloudCover }),
     },
     //@ts-expect-error todo
     rasterForm,
@@ -311,10 +332,18 @@ export async function initMosaic(
  * @param {string} mosaicEndpoint
  * @param {{collection?:string, timeRange?:[string, string]}} filters
  * @param {ReturnType<typeof import("@/store/stac").useSTAcStore>} store
+ * @param {string[]} [indicators]
  */
-export function useInitMosaic(mosaicEndpoint, { timeRange } = {}, store) {
-  // todo: move to composable
+export function useInitMosaic(
+  mosaicEndpoint,
+  { timeRange } = {},
+  store,
+  indicators,
+) {
   onMounted(async () => {
+    if (!indicators?.includes(store.selectedStac?.id ?? "")) {
+      return;
+    }
     initMosaic(
       mosaicEndpoint,
       { collection: store.selectedStac?.id, timeRange },
@@ -322,6 +351,9 @@ export function useInitMosaic(mosaicEndpoint, { timeRange } = {}, store) {
     );
   });
   useOnLayersUpdate(() => {
+    if (!indicators?.includes(store.selectedStac?.id ?? "")) {
+      return;
+    }
     initMosaic(
       mosaicEndpoint,
       { collection: store.selectedStac?.id, timeRange },

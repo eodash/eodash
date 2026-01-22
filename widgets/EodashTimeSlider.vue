@@ -11,8 +11,12 @@
     .initDate="datetime"
   >
     <div class="d-flex g-10 align-center">
-      <eox-timecontrol-date class="flex-grow-1"></eox-timecontrol-date>
+      <eox-timecontrol-date
+        :key="mapEl?.mapUpdateId"
+        class="flex-grow-1"
+      ></eox-timecontrol-date>
       <eox-timecontrol-picker
+        :key="mapEl?.mapUpdateId"
         .range="false"
         .showDots="true"
         .showItems="true"
@@ -20,16 +24,24 @@
       ></eox-timecontrol-picker>
 
       <eox-itemfilter
-      @filter="onFilter"
+        :key="mapEl?.mapUpdateId"
+        @filter="onFilter"
         v-if="filters.length"
         .inlineMode="true"
         :showResults="false"
         .filters="unref(filters)"
       ></eox-itemfilter>
-      <eox-timecontrol-timelapse v-if="animate" @export="onExport"></eox-timecontrol-timelapse>
+      <eox-timecontrol-timelapse
+        :key="mapEl?.mapUpdateId"
+        v-if="animate"
+        @export="onExport"
+      ></eox-timecontrol-timelapse>
     </div>
 
-    <eox-timecontrol-timeline class="mt-2"></eox-timecontrol-timeline>
+    <eox-timecontrol-timeline
+      :key="mapEl?.mapUpdateId"
+      class="mt-2"
+    ></eox-timecontrol-timeline>
   </eox-timecontrol>
 </template>
 <script setup>
@@ -54,26 +66,49 @@ const props = defineProps({
   },
   useMosaic: {
     type: Boolean,
-    default: false,
+    default: true,
+  },
+  mosaicIndicators: {
+    /** @type {import("vue").PropType<string[]>} */
+    type: Array,
   },
 });
 
 const store = useSTAcStore();
 
+/**
+ * Checks if the current indicator supports mosaic
+ */
+const isMosaicEnabled = computed(() => {
+  if (!props.useMosaic || !store.mosaicEndpoint) {
+    return false;
+  }
+  if (!props.mosaicIndicators || !props.mosaicIndicators.length) {
+    return true;
+  }
+  return props.mosaicIndicators.includes(indicator.value);
+});
+
 const hasMultipleItems = computed(() => {
   if (!mapEl.value) {
     return false;
   }
-  return (props.useMosaic && store.mosaicEndpoint)|| eodashCollections.some((ec) => {
-    const itemLinks = ec.collectionStac?.links.filter((l) => l.rel === "item");
-    const itemsLink = ec.collectionStac?.links.some((l) => l.rel === "items");
-    return (itemLinks && itemLinks.length > 1) || itemsLink;
-  });
+  return (
+    isMosaicEnabled.value ||
+    eodashCollections.some((ec) => {
+      const itemLinks = ec.collectionStac?.links.filter(
+        (l) => l.rel === "item",
+      );
+      const itemsLink = ec.collectionStac?.links.some((l) => l.rel === "items");
+      return (itemLinks && itemLinks.length > 1) || itemsLink;
+    })
+  );
 });
-if (props.useMosaic && store.mosaicEndpoint) {
-  useInitMosaic(store.mosaicEndpoint, undefined, store);
+if (store.mosaicEndpoint && props.useMosaic) {
+  useInitMosaic(store.mosaicEndpoint, undefined, store, props.mosaicIndicators);
 }
-let latestRange = [0,0]
+/** @type {[number, number]} */
+let latestRange = [0, 0];
 /**
  *
  * @param {CustomEvent} e
@@ -84,30 +119,61 @@ const onSelect = async (e) => {
   if (from == latestRange[0] && to == latestRange[1]) {
     return;
   }
-  console.log("Selected date range:",e.detail);
   latestRange = [from, to];
 
-  if (!props.useMosaic || !store.mosaicEndpoint) {
+  if (!isMosaicEnabled.value) {
     datetime.value = from.toISOString();
     return;
   }
 
   initMosaic(
+    //@ts-expect-error todo
     store.mosaicEndpoint,
     {
       timeRange: [from.toISOString(), to.toISOString()],
       collection: indicator.value,
+      cloudCover: latestCloudCover ? latestCloudCover : undefined,
     },
     store,
   );
 };
+/** @type {number|null} */
+let latestCloudCover = null;
 /**
  *
  * @param {CustomEvent} e
  */
 const onFilter = (e) => {
-  console.log("Selected filter items:", e.detail);
+  if (!isMosaicEnabled.value) {
+    return;
+  }
+  const { filters } = e.detail;
+  const cloudCover =
+    //@ts-expect-error todo
+    filters.find((f) => f.key === "eo:cloud_cover")?.state?.max || null;
+  if (
+    cloudCover === null ||
+    cloudCover === latestCloudCover ||
+    [0, 100].includes(cloudCover)
+  ) {
+    return;
+  }
+  latestCloudCover = cloudCover;
+  if (cloudCover === 100) {
+    latestCloudCover = null;
+  }
+  initMosaic(
+    //@ts-expect-error todo
+    store.mosaicEndpoint,
+    {
+      timeRange: latestRange?.map((d) => new Date(d).toISOString()),
+      collection: indicator.value,
+      cloudCover,
+    },
+    store,
+  );
 };
+
 const { selectedStac } = storeToRefs(useSTAcStore());
 /**
  *

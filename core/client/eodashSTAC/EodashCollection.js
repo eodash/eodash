@@ -311,7 +311,7 @@ export class EodashCollection {
    */
   async getItems(fields = false, first = false, centerDatetime = undefined) {
     const items = this.#collectionStac?.links.filter((i) => i.rel === "item");
-    if (this.isAPI && !items?.length) {
+    if (this.isAPI && !items?.length && !first) {
       const itemUrl = this.#collectionUrl + "/items";
       if (fields) {
         return await fetchApiItems(
@@ -319,7 +319,7 @@ export class EodashCollection {
           `fields=properties.datetime,-assets,-geometry,-links,-bbox`,
           100,
           first,
-          3000,
+          4000,
           centerDatetime,
         );
       }
@@ -328,7 +328,7 @@ export class EodashCollection {
         undefined,
         100,
         first,
-        3000, 
+        4000,
         centerDatetime,
       );
     }
@@ -383,13 +383,27 @@ export class EodashCollection {
       return items && items.at(-1);
     }
 
-    const allItems = await this.getItems(false, false, date);
+    if (this.isAPI) {
+      const urlArr = this.#collectionUrl.split("/").slice(0, -2);
+      const searchURL = urlArr.join("/") + "/search";
+      const targetItem = await axios
+        .get(searchURL, {
+          params: {
+            collections: [this.#collectionStac?.id],
+            datetime: `../${date.toISOString()}`,
+            limit: 1,
+            sortby: "-datetime",
+          },
+        })
+        .then((resp) => resp.data?.features?.[0]);
+      return targetItem;
+    }
     const datetimeProperty = getDatetimeProperty(items);
     if (!datetimeProperty) {
       // in case no datetime property is found, return the last item
       return items && items.at(-1);
     }
-    return allItems?.sort((a, b) => {
+    return items?.sort((a, b) => {
       const distanceA = Math.abs(
         new Date(
           /** @type {number} */ (
@@ -437,7 +451,7 @@ export class EodashCollection {
   async updateLayerJson(datetime, layer, map) {
     await this.fetchCollection();
     const datetimeProperty = getDatetimeProperty(
-      await this.getItems(true, true),
+      await this.getItems(false, true),
     );
     if (!datetimeProperty) {
       console.warn("[eodash] no datetime property found in collection");
