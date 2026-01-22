@@ -230,10 +230,10 @@ export class EodashCollection {
           extraProperties,
         )),
         ...((this.rasterEndpoint &&
-        (await createLayerFromRender(
-          this.rasterEndpoint,
-          this.#collectionStac,
-          item,
+          (await createLayerFromRender(
+            this.rasterEndpoint,
+            this.#collectionStac,
+            item,
             {
               ...extraProperties,
               ...(layerDatetime && { layerDatetime }),

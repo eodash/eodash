@@ -129,13 +129,9 @@ export async function updateJsonformIdentifier({ jsonformSchema, newLayers }) {
       if (!layersArray) {
         return;
       }
-      if (!Array.isArray(layersArray)) {
-        layersArray = [layersArray];
-      }
       for (const layer of layersArray) {
         if (layer.type === "Group" && Array.isArray(layer.layers)) {
-          // @ts-expect-error TODO payload coming from time update events is not an object with layers property
-          traverseLayers(layer);
+          traverseLayers(layer.layers);
         } else {
           if (layer.properties?.id?.startsWith(layerId)) {
             matchedLayerId = layer.properties.id;
