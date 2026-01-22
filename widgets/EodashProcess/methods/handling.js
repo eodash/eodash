@@ -223,7 +223,7 @@ export async function handleProcesses({
     }
 
     //@ts-expect-error we assume that the spec data is of type InlineData
-    if (tempChartSpec.data?.values?.length) {
+    if (tempChartSpec?.data?.values?.length) {
       //@ts-expect-error we assume that the spec data is of type InlineData
       processResults.value.push(tempChartSpec?.data.values);
     }
