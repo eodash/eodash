@@ -129,7 +129,7 @@ export async function updateJsonformIdentifier({ jsonformSchema, newLayers }) {
       if (!layersArray) {
         return;
       }
-      if (typeof layersArray === 'object') {
+      if (!Array.isArray(layersArray)) {
         layersArray = [layersArray];
       }
       for (const layer of layersArray) {
