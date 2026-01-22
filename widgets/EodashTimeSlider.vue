@@ -1,12 +1,12 @@
 <template>
   <eox-timecontrol
     v-if="hasMultipleItems"
-    :key="unref(mapEl)"
+    :key="mapEl?.mapUpdateId"
     ref="eoxTimecontrol"
     .for="mapEl"
     @select="onSelect"
     titleKey="title"
-    .externalMapRendering="true"
+    externalMapRendering
     .animate="animate"
     .initDate="datetime"
   >
@@ -20,6 +20,7 @@
       ></eox-timecontrol-picker>
 
       <eox-itemfilter
+      @filter="onFilter"
         v-if="filters.length"
         .inlineMode="true"
         :showResults="false"
@@ -60,7 +61,10 @@ const props = defineProps({
 const store = useSTAcStore();
 
 const hasMultipleItems = computed(() => {
-  return eodashCollections.some((ec) => {
+  if (!mapEl.value) {
+    return false;
+  }
+  return (props.useMosaic && store.mosaicEndpoint)|| eodashCollections.some((ec) => {
     const itemLinks = ec.collectionStac?.links.filter((l) => l.rel === "item");
     const itemsLink = ec.collectionStac?.links.some((l) => l.rel === "items");
     return (itemLinks && itemLinks.length > 1) || itemsLink;
@@ -69,6 +73,7 @@ const hasMultipleItems = computed(() => {
 if (props.useMosaic && store.mosaicEndpoint) {
   useInitMosaic(store.mosaicEndpoint, undefined, store);
 }
+let latestRange = [0,0]
 /**
  *
  * @param {CustomEvent} e
@@ -76,6 +81,11 @@ if (props.useMosaic && store.mosaicEndpoint) {
 const onSelect = async (e) => {
   const { date } = e.detail;
   const [from, to] = date;
+  if (from == latestRange[0] && to == latestRange[1]) {
+    return;
+  }
+  console.log("Selected date range:",e.detail);
+  latestRange = [from, to];
 
   if (!props.useMosaic || !store.mosaicEndpoint) {
     datetime.value = from.toISOString();
@@ -91,7 +101,13 @@ const onSelect = async (e) => {
     store,
   );
 };
-
+/**
+ *
+ * @param {CustomEvent} e
+ */
+const onFilter = (e) => {
+  console.log("Selected filter items:", e.detail);
+};
 const { selectedStac } = storeToRefs(useSTAcStore());
 /**
  *

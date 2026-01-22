@@ -169,14 +169,16 @@ export const useInitMap = (
             endInterval,
           );
         }
-        if (
-          !updatedItem &&
-          endInterval !== null &&
-          endInterval.toISOString() !== datetime.value &&
-          !isFirstLoad.value
-        ) {
-          datetime.value = endInterval.toISOString();
-        } else if (isFirstLoad.value && !datetime.value && endInterval) {
+        // commented temporarily
+        // if (
+        //   !updatedItem &&
+        //   endInterval !== null &&
+        //   endInterval.toISOString() !== datetime.value &&
+        //   !isFirstLoad.value
+        // ) {
+        //   datetime.value = endInterval.toISOString();
+        // } else
+          if (isFirstLoad.value && !datetime.value && endInterval) {
           datetime.value = endInterval.toISOString();
         }
 

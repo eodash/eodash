@@ -30,7 +30,7 @@ export const registeredProjections = ["EPSG:4326", "EPSG:3857"];
 /** available projection to be rendered by `EodashMap` */
 export const availableMapProjection = ref("EPSG:3857");
 
-/** @type {import("vue").Ref<import("@eox/map").EOxMap | null>} */
+/** @type {import("vue").Ref<import("@eox/map").EOxMap & { mapUpdateId?: number } | null>} */
 export const mapEl = shallowRef(null);
 
 /** @type {import("vue").Ref<import("@eox/map").EOxMap | null>} */

@@ -316,10 +316,10 @@ export class EodashCollection {
       if (fields) {
         return await fetchApiItems(
           itemUrl,
-          `fields=properties,-assets,-geometry,-links,-bbox`,
+          `fields=properties.datetime,-assets,-geometry,-links,-bbox`,
           100,
           first,
-          1000,
+          3000,
           centerDatetime,
         );
       }
@@ -328,7 +328,7 @@ export class EodashCollection {
         undefined,
         100,
         first,
-        1000,
+        3000, 
         centerDatetime,
       );
     }

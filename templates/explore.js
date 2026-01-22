@@ -84,6 +84,7 @@ export default {
         name: "EodashItemCatalog",
         properties: {
           useMosaic: false,
+          layoutTarget:"expert"
         },
       },
     },

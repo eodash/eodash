@@ -311,6 +311,8 @@ onMounted(() => {
   } = storeToRefs(useSTAcStore());
   // assign map Element state to eox map
   mapEl.value = eoxMap.value;
+  //@ts-expect-error todo
+  mapEl.value.mapUpdateId = Date.now();
 
   if (props.enableCompare) {
     mapCompareEl.value = compareMap.value;

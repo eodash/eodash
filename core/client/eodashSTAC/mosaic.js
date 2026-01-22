@@ -133,7 +133,7 @@ export async function createMosaicLayer(
   mosaicState.latestLayer = {
     type: "Tile",
     properties: {
-      id: "Mosaic" + Date.now(),
+      id: `sentinel2-l2a-;:;item;:;mosaic;:;${Date.now()}`,
       title: "Sentinel-2 L2A Mosaic",
       // ...(layerConfig && {layerConfig}),
     },
@@ -196,7 +196,12 @@ export async function renderMosaic(
   if (!mosaicLayers.length) {
     return;
   }
-
+  // tmp hack to preserve time control values
+  const timeControlValues = analysisGroup?.layers?.[0]?.properties?.timeControlValues;
+  if (timeControlValues) {
+    mosaicLayers[0].properties.timeControlValues = timeControlValues;
+    mosaicLayers[0].properties.timeControlProperty = "TIME";
+  }
   analysisGroup.layers = mosaicLayers;
   mosaicState.showButton = false;
 

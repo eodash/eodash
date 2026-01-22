@@ -347,6 +347,9 @@ export const extractLayerTimeValues = (items, currentStep) => {
  * @returns {import("@eox/map").EoxLayer[]} Matching layer objects.
  */
 export const findLayersByLayerPrefix = (layers, referenceLayer) => {
+  if (!layers || !referenceLayer) {
+    return [];
+  }
   const refId = referenceLayer?.properties?.id;
 
   if (typeof refId !== "string" || !refId.includes(";")) {
