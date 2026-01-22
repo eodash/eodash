@@ -129,6 +129,11 @@ export async function updateJsonformIdentifier({ jsonformSchema, newLayers }) {
       if (!layersArray) {
         return;
       }
+      // @ts-expect-error TODO payload coming from time update events is not an object with layers property
+      if (layersArray?.layers) {
+        // @ts-expect-error TODO payload coming from time update events is not an object with layers property
+        traverseLayers(layersArray.layers);
+      }
       for (const layer of layersArray) {
         if (layer.layers) {
           // @ts-expect-error TODO payload coming from time update events is not an object with layers property
@@ -149,7 +154,7 @@ export async function updateJsonformIdentifier({ jsonformSchema, newLayers }) {
       await new Promise((resolve) => setTimeout(resolve, 0));
       jsonformSchema.value = form;
     } else {
-      throw new Error(
+      console.warn(
         `Could not find matching layer for processing form with id: ${layerId}`,
       );
     }
@@ -223,7 +228,7 @@ export async function handleProcesses({
     }
 
     //@ts-expect-error we assume that the spec data is of type InlineData
-    if (tempChartSpec?.data?.values?.length) {
+    if (Object.keys(tempChartSpec?.data?.values ?? {}).length) {
       //@ts-expect-error we assume that the spec data is of type InlineData
       processResults.value.push(tempChartSpec?.data.values);
     }

@@ -131,8 +131,8 @@ function toggleLayout() {
 
 .chart-toggle {
   position: absolute;
-  top: 38px;
-  right: 12px;
+  top: 10px;
+  right: 40px;
   z-index: 2;
   cursor: pointer;
 }
