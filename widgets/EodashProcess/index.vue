@@ -13,14 +13,15 @@
       :enable-compare="enableCompare"
     >
     </EodashChart>
-    <div class="mt-2 text-right">
+    <div class="text-right">
       <v-btn
         v-if="showExecBtn"
         :loading="loading"
-        style="margin-right: 20px"
+        style="margin-right: 8px"
         :append-icon="[mdiCogPlayOutline]"
         @click="startProcess"
-        color="primary"
+        density="comfortable"
+        size="small"
       >
         Execute
       </v-btn>
@@ -29,6 +30,8 @@
         color="primary"
         :append-icon="[mdiDownloadCircleOutline]"
         @click="downloadResults"
+        size="small"
+        density="comfortable"
       >
         Download
       </v-btn>
