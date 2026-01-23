@@ -43,10 +43,8 @@ import { eodashCollections, timesliderUpdateRef } from "@/utils/states";
 import "@eox/timecontrol";
 import "@eox/itemfilter";
 import { storeToRefs } from "pinia";
-import { computed, customRef, ref, unref, watch } from "vue";
+import { computed, ref, unref, watch } from "vue";
 import { createLayersConfig } from "./EodashMap/methods/create-layers-config";
-import axios from "@/plugins/axios";
-import { useOnLayersUpdate } from "@/composables";
 
 const props = defineProps({
   filters: {
@@ -95,9 +93,8 @@ watch(
       timesliderUpdateRef.value += 1;
       return;
     }
-    //@ts-expect-error todo
     const analysisLayers = mapEl.value?.layers?.find(
-      (layer) => layer.properties.id === "AnalysisGroup",
+      (layer) => layer.properties?.id === "AnalysisGroup",
     );
     //@ts-expect-error todo
     if (!analysisLayers || !analysisLayers?.layers.length) {
