@@ -18,6 +18,7 @@ import {
   compareChartSpec,
 } from "@/store/states";
 import axios from "@/plugins/axios";
+import { toRef } from "vue";
 import { processCharts, processLayers, processSTAC } from "./outputs";
 import { handleLayersCustomEndpoints } from "./custom-endpoints/layers";
 import { handleChartCustomEndpoints } from "./custom-endpoints/chart";
@@ -75,16 +76,20 @@ export async function initProcess({
   await jsonformEl.value?.editor.destroy();
   if (updatedJsonform) {
     // make sure correct target layer id is used in jsonform
+    let newJsonForm = null;
     if (updatedJsonform.properties?.feature?.options?.drawtools?.layerId) {
-      await updateJsonformIdentifier({
-        jsonformSchema,
-        newLayers: await getLayers(),
+      newJsonForm = await updateJsonformIdentifier({
+        jsonformSchema: updatedJsonform,
+        newLayers: getLayers(),
       });
     }
     if (enableCompare) {
-      updatedJsonform = updateJsonformSchemaTarget(updatedJsonform);
+      newJsonForm = updateJsonformSchemaTarget(newJsonForm);
     }
-    jsonformSchema.value = updatedJsonform;
+    // trigger jsonform update in next tick
+    jsonformSchema.value = null;
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    jsonformSchema.value = newJsonForm;
   }
 }
 
@@ -94,11 +99,12 @@ export async function initProcess({
  * @export
  * @async
  * @param {Object} params
- * @param {import("vue").Ref<Record<string,any> | null>} params.jsonformSchema params.jsonformSchema
+ * @param {Record<string,any> | null} params.jsonformSchema params.jsonformSchema
  * @param {Record<string, any>[] | undefined} params.newLayers params.newLayers
+ * @returns {Promise<Record<string,any> | null | undefined>} updated jsonform schema
  */
 export async function updateJsonformIdentifier({ jsonformSchema, newLayers }) {
-  const form = jsonformSchema.value;
+  const form = jsonformSchema;
   if (!form) {
     return;
   }
@@ -143,14 +149,12 @@ export async function updateJsonformIdentifier({ jsonformSchema, newLayers }) {
     traverseLayers(layers);
     if (matchedLayerId) {
       form.properties.feature.options.drawtools.layerId = matchedLayerId;
-      // trigger jsonform update in next tick
-      jsonformSchema.value = null;
-      await new Promise((resolve) => setTimeout(resolve, 0));
-      jsonformSchema.value = form;
+      return form;
     } else {
       console.warn(
         `Could not find matching layer for processing form with id: ${layerId}`,
       );
+      return null;
     }
   }
 }

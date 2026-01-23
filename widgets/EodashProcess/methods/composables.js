@@ -70,7 +70,7 @@ export const useInitProcess = ({
       evt == "compareTime:updated"
     ) {
       await updateJsonformIdentifier({
-        jsonformSchema,
+        jsonformSchema: jsonformSchema.value,
         // @ts-expect-error TODO payload coming from time update events is not an object with layers property
         newLayers: _payload,
       });
