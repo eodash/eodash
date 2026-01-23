@@ -8,6 +8,8 @@ import {
   areChartsSeparateLayout,
   chartData,
   compareChartData,
+  processingPanelEnabledFlag,
+  processingPanelCompareEnabledFlag,
 } from "@/store/states";
 import { getProjectionCode } from "@/eodashSTAC/helpers";
 import log from "loglevel";
@@ -91,9 +93,12 @@ export const setActiveTemplate = (template) => {
  */
 export const includesProcess = (collection, compare = false) => {
   const isPoiAlive = compare ? !!comparePoi.value : !!poi.value;
-
+  const isProcessingPanelEnabledFlag = compare
+    ? processingPanelCompareEnabledFlag.value
+    : processingPanelEnabledFlag.value;
   return (
-    collection?.links?.some((link) => link.rel === "service") || isPoiAlive
+    (collection?.links?.some((link) => link.rel === "service") || isPoiAlive) &&
+    isProcessingPanelEnabledFlag
   );
 };
 

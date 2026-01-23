@@ -6,7 +6,11 @@ import { useSTAcStore } from "@/store/stac";
 import { storeToRefs } from "pinia";
 import { isFirstLoad } from "@/utils/states";
 import { useEmitLayersUpdate, useOnLayersUpdate } from "@/composables";
-import { mapPosition } from "@/store/states";
+import {
+  mapPosition,
+  processingPanelEnabledFlag,
+  processingPanelCompareEnabledFlag,
+} from "@/store/states";
 import { sanitizeBbox } from "@/eodashSTAC/helpers";
 import { transformExtent } from "@eox/map";
 /**
@@ -94,6 +98,15 @@ export const useInitMap = (
         /** @type {[import("stac-ts").StacCollection, string, import("stac-ts").StacItem]} */ (
           selectedItem ? previous : [previous[0], previous[1], null]
         );
+      if (updatedStac?.id !== previousStac?.id) {
+        // indicator changed, turn off corresponding processing panel at this point in time
+        log.warn("Emitting update flag to false", mapElement.value?.id);
+        const updateFlag =
+          mapElement.value?.id === "compare"
+            ? processingPanelCompareEnabledFlag
+            : processingPanelEnabledFlag;
+        // updateFlag.value = false;
+      }
 
       if (updatedStac) {
         log.debug(

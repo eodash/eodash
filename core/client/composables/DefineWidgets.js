@@ -5,6 +5,8 @@ import {
   areChartsSeparateLayout,
   chartSpec,
   compareChartSpec,
+  processingPanelEnabledFlag,
+  processingPanelCompareEnabledFlag,
 } from "@/store/states";
 /**
  * @typedef {{
@@ -81,6 +83,8 @@ export const useDefineWidgets = (widgetConfigs) => {
           areChartsSeparateLayout,
           chartSpec,
           compareChartSpec,
+          processingPanelEnabledFlag,
+          processingPanelCompareEnabledFlag,
         ],
         ([updatedStac, updatedCompareStac]) => {
           let definedConfig =

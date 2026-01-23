@@ -10,6 +10,8 @@ import {
   mapEl,
   mapPosition,
   poi,
+  processingPanelCompareEnabledFlag,
+  processingPanelEnabledFlag,
 } from "@/store/states";
 import { useTheme } from "vuetify";
 import { inject, nextTick, onMounted, onUnmounted, watch } from "vue";
@@ -363,6 +365,13 @@ export const useEmitLayersUpdate = async (event, mapEl, layers) => {
     mapEl?.updateComplete.then(async () => {
       await nextTick(() => {
         layersEvents.emit(event, layers);
+        log.warn("Emitting update flag to true", mapEl);
+        // not ideal place for this but works for now
+        const updateFlag =
+          mapEl?.id === "compare"
+            ? processingPanelCompareEnabledFlag
+            : processingPanelEnabledFlag;
+        updateFlag.value = true;
       });
     });
 

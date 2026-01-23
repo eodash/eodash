@@ -73,3 +73,13 @@ export const chartSpec = ref(null);
  * @type {import("vue").Ref<import("vega-embed").VisualizationSpec | null>}
  */
 export const compareChartSpec = ref(null);
+
+/** One of conditional flag for processing panel to show (it is forcibly changed to force between selecting indicator and finishing loading of a new one to prevent double load)
+ * @type {import("vue").Ref<boolean>}
+ */
+export const processingPanelEnabledFlag = ref(true);
+
+/** One of conditional flag for compare processing panel to show (it is forcibly changed to force between selecting compare indicator and finishing loading of a new one to prevent double load)
+ * @type {import("vue").Ref<boolean>}
+ */
+export const processingPanelCompareEnabledFlag = ref(true);
