@@ -76,12 +76,10 @@ export async function initProcess({
   if (updatedJsonform) {
     // make sure correct target layer id is used in jsonform
     let newJsonForm = null;
-    if (updatedJsonform.properties?.feature?.options?.drawtools?.layerId) {
-      newJsonForm = await updateJsonformIdentifier({
-        jsonformSchema: updatedJsonform,
-        newLayers: getLayers(),
-      });
-    }
+    newJsonForm = await updateJsonformIdentifier({
+      jsonformSchema: updatedJsonform,
+      newLayers: getLayers(),
+    });
     if (enableCompare) {
       newJsonForm = updateJsonformSchemaTarget(newJsonForm);
     }
@@ -156,6 +154,7 @@ export async function updateJsonformIdentifier({ jsonformSchema, newLayers }) {
       return null;
     }
   }
+  return form;
 }
 
 /**
