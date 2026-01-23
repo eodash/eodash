@@ -330,6 +330,7 @@ export const extractLayerTimeValues = (items, currentStep) => {
     navigation: true,
     play: false,
     displayFormat: "DD.MM.YYYY HH:mm",
+    animateOnClickInterval: false,
   };
 
   return {
