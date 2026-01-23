@@ -27,6 +27,11 @@ export const useSTAcStore = defineStore("stac", () => {
    * @type {import("vue").Ref<string | null>}
    */
   const rasterEndpoint = ref(null);
+  /**
+   * Mosaic endpoint URL
+   * @type {import("vue").Ref<string | null>}
+   */
+  const mosaicEndpoint = ref(null);
   const isApi = ref(false);
 
   /**
@@ -59,7 +64,16 @@ export const useSTAcStore = defineStore("stac", () => {
    * Currently selected item
    * @type {import("vue").Ref<import("stac-ts").StacLink | import("stac-ts").StacItem | null>}
    */
+  /**
+   * Currently selected item
+   * @type {import("vue").Ref<import("stac-ts").StacLink | import("stac-ts").StacItem | null>}
+   */
   const selectedItem = ref(null);
+  /**
+   * Currently selected compare item
+   * @type {import("vue").Ref<import("stac-ts").StacLink | import("stac-ts").StacItem | null>}
+   */
+  const selectedCompareItem = ref(null);
 
   /**
    * Initializes the store by assigning the STAC endpoint.
@@ -77,6 +91,7 @@ export const useSTAcStore = defineStore("stac", () => {
     stacEndpoint.value = endpoint.endpoint;
     isApi.value = endpoint.api ?? false;
     rasterEndpoint.value = endpoint.rasterEndpoint ?? null;
+    mosaicEndpoint.value = endpoint.mosaicEndpoint ?? null;
   }
 
   /**
@@ -174,10 +189,15 @@ export const useSTAcStore = defineStore("stac", () => {
    *
    * @param {string} relativePath - Stac link href
    * @param {boolean} [isPOI=false] - If true, the STAC is loaded for a point of interest
+   * @param {Object} [stacItem] - The STAC item to load
    * @returns {Promise<void>}
    * @see {@link selectedCompareStac}
    */
-  async function loadSelectedCompareSTAC(relativePath = "", isPOI = false) {
+  async function loadSelectedCompareSTAC(
+    relativePath = "",
+    isPOI = false,
+    stacItem,
+  ) {
     if (!stacEndpoint.value) {
       return Promise.reject(
         new Error("STAC endpoint is not defined in eodash configuration"),
@@ -187,6 +207,11 @@ export const useSTAcStore = defineStore("stac", () => {
     if (isPOI) {
       // construct absolute URL of a poi
       absoluteUrl.value = constructPoiUrl(relativePath, compareIndicator.value);
+    }
+    //@ts-expect-error "this" type is not exported by pinia
+    const patch = this?.$patch;
+    if (stacItem && patch) {
+      patch({ selectedCompareItem: stacItem });
     }
     await axios
       .get(absoluteUrl.value)
@@ -241,6 +266,7 @@ export const useSTAcStore = defineStore("stac", () => {
     stacEndpoint,
     isApi,
     stac,
+    mosaicEndpoint,
     init,
     loadSTAC,
     loadSelectedSTAC,
@@ -249,5 +275,6 @@ export const useSTAcStore = defineStore("stac", () => {
     selectedStac,
     selectedCompareStac,
     selectedItem,
+    selectedCompareItem,
   };
 });

@@ -23,15 +23,38 @@ export default {
     widget: {
       name: "EodashMap",
       properties: {
+        initialLayers: [
+          {
+            type: "Group",
+            properties: {
+              id: "BaseLayersGroup",
+              title: "Base Layers",
+            },
+            layers: [
+              {
+                type: "Tile",
+                properties: {
+                  id: "terrain-light;:;EPSG:3857",
+                  title: "Terrain Light",
+                },
+                source: {
+                  type: "XYZ",
+                  url: "https://s2maps-tiles.eu/wmts/1.0.0/terrain-light_3857/default/g/{z}/{y}/{x}.jpeg",
+                },
+              },
+            ],
+          },
+        ],
         enableCompare: true,
         btns: {
           enableZoom: true,
           enableExportMap: true,
           enableChangeProjection: true,
+          enableMosaic: false,
           enableCompareIndicators: {
             fallbackTemplate: "explore",
             itemFilterConfig: {
-              imageProperty: "assets.thumbnail.href",
+              // imageProperty: "assets.thumbnail.href",
             },
           },
           enableSearch: true,
@@ -47,6 +70,9 @@ export default {
       layout: { x: "9/9/10", y: 0, w: "3/3/2", h: 12 },
       widget: {
         name: "EodashLayerControl",
+        properties: {
+          tools: ["info", "config", "legend", "opacity"],
+        },
       },
     },
     {
@@ -56,6 +82,10 @@ export default {
       layout: { x: 0, y: 0, w: "3/3/2", h: 12 },
       widget: {
         name: "EodashItemCatalog",
+        properties: {
+          useMosaic: false,
+          layoutTarget: "expert",
+        },
       },
     },
   ],

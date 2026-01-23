@@ -88,6 +88,7 @@ import {
   eodashCompareCollections,
   layerControlFormValue,
   layerControlFormValueCompare,
+  timesliderUpdateRef,
 } from "@/utils/states";
 import {
   useHandleMapMoveEnd,
@@ -99,6 +100,20 @@ import mustache from "mustache";
 import EodashMapBtns from "^/EodashMap/EodashMapBtns.vue";
 
 const props = defineProps({
+  initialLayers: {
+    type: Array,
+    /** @type {import("vue").PropType<import("@eox/map").EoxLayer[]>} */
+    default: () => [
+      {
+        type: "Tile",
+        source: { type: "OSM" },
+        properties: {
+          id: "osm",
+          title: "Background",
+        },
+      },
+    ],
+  },
   enableCompare: {
     type: Boolean,
     default: false,
@@ -142,6 +157,7 @@ const props = defineProps({
      * searchParams?: object;
      * enableZoom?: boolean;
      * enableGlobe?: boolean;
+     * enableMosaic?: boolean;
      * enableCompareIndicators?: boolean | {
      *   compareTemplate?:string;
      *   fallbackTemplate?:string;
@@ -157,6 +173,7 @@ const props = defineProps({
       enableSearch: true,
       enableZoom: true,
       enableGlobe: true,
+      enableMosaic: true,
       searchParams: {},
     }),
   },
@@ -200,6 +217,7 @@ const btnsProps = computed(() => ({
   enableSearch: props.btns.enableSearch ?? true,
   enableZoom: props.btns.enableZoom ?? true,
   enableGlobe: props.btns.enableGlobe ?? true,
+  enableMosaic: props.btns.enableMosaic ?? true,
   searchParams: props.btns.searchParams,
 }));
 
@@ -253,16 +271,9 @@ const controls = computed(() => {
 const initialCenter = toRaw(props.center);
 const initialZoom = toRaw(mapPosition.value?.[2] ?? props.zoom);
 /** @type {import("vue").Ref<Record<string,any>[]>} */
-const eoxMapLayers = ref([
-  {
-    type: "Tile",
-    source: { type: "OSM" },
-    properties: {
-      id: "osm",
-      title: "Background",
-    },
-  },
-]);
+const eoxMapLayers = ref(
+  /** @type {Record<string,any>[]} */ (props.initialLayers),
+);
 
 /** @type {import("vue").Ref<Record<string,any>[]>} */
 const eoxMapCompareLayers = ref([
@@ -293,10 +304,16 @@ const showCompare = computed(() =>
 useHandleMapMoveEnd(eoxMap, mapPosition);
 
 onMounted(() => {
-  const { selectedCompareStac, selectedStac, selectedItem } =
-    storeToRefs(useSTAcStore());
+  const {
+    selectedCompareStac,
+    selectedStac,
+    selectedItem,
+    selectedCompareItem,
+  } = storeToRefs(useSTAcStore());
   // assign map Element state to eox map
   mapEl.value = eoxMap.value;
+  // tmp hack
+  timesliderUpdateRef.value += 1;
 
   if (props.enableCompare) {
     mapCompareEl.value = compareMap.value;
@@ -311,6 +328,7 @@ onMounted(() => {
       eoxMapCompareLayers,
       eoxMap,
       false,
+      selectedCompareItem,
     );
 
     useUpdateTooltipProperties(eodashCollections, compareTooltipProperties);

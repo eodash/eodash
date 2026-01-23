@@ -12,9 +12,12 @@ const baseConfig = {
   },
   stacEndpoint: {
     endpoint:
-      "https://esa-eodashboards.github.io/eodashboard-catalog/trilateral/catalog.json",
-      // "https://api.explorer.eopf.copernicus.eu/stac",
-    // api: true,
+      // "https://esa-eodashboards.github.io/eodashboard-catalog/trilateral/catalog.json",
+      // "https://esa-eodashboards.github.io/RACE-catalog/RACE/catalog.json",
+      // "https://gtif-cerulean.github.io/cerulean-catalog/cerulean/catalog.json",
+      "https://api.explorer.eopf.copernicus.eu/stac",
+    api: true,
+    mosaicEndpoint: "dummy",
   },
   brand: {
     noLayout: true,

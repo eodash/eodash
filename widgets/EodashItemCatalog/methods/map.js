@@ -1,17 +1,19 @@
 import { useOnLayersUpdate } from "@/composables";
-import { mapEl } from "@/store/states";
 import { onMounted, onUnmounted } from "vue";
+import { createOnSelectHandler } from "./handlers";
 
 /**
  *
  * @param {import("@/types").GeoJsonFeature[]} features
+ * @param {import("vue").Ref<import("@eox/map").EOxMap | null>} mapElement
  */
-export function renderItemsFeatures(features) {
+export function renderItemsFeatures(features, mapElement) {
+  const currentMap = mapElement.value;
   let analysisLayers =
     /** @type {import("@eox/map/src/layers").EOxLayerTypeGroup} */ (
-      mapEl.value?.layers?.find((l) => l.properties?.id === "AnalysisGroup")
+      currentMap?.layers?.find((l) => l.properties?.id === "AnalysisGroup")
     );
-  if (!mapEl.value || !features) {
+  if (!currentMap || !features) {
     return;
   }
   if (!analysisLayers) {
@@ -23,9 +25,9 @@ export function renderItemsFeatures(features) {
       },
       layers: [],
     };
-    mapEl.value.layers = [...mapEl.value.layers, analysisLayers];
+    currentMap.layers = [...currentMap.layers, analysisLayers];
   }
-
+  /** @type {import("@eox/map/src/layers").EOxLayerType<"Vector","Vector">} */
   const stacItemsLayer = {
     type: "Vector",
     properties: {
@@ -34,12 +36,14 @@ export function renderItemsFeatures(features) {
     },
     source: {
       type: "Vector",
+      //@ts-expect-error todo
       url:
         "data:application/geo+json," +
         encodeURIComponent(
           JSON.stringify({ type: "FeatureCollection", features }),
         ),
       format: "GeoJSON",
+      projection: "EPSG:3857",
     },
     style: {
       "fill-color": "transparent",
@@ -57,27 +61,37 @@ export function renderItemsFeatures(features) {
           },
         },
       },
+      {
+        type: "select",
+        options: {
+          id: "stac-items",
+          condition: "click",
+          style: {
+            "stroke-color": "white",
+            "stroke-width": 3,
+          },
+        },
+      },
     ],
   };
   const exists = analysisLayers.layers.some(
     (l) => l.properties?.id === "stac-items",
   );
   if (exists) {
-    //@ts-expect-error todo
-    mapEl.value.addOrUpdateLayer(stacItemsLayer);
+    currentMap.addOrUpdateLayer(stacItemsLayer);
     return;
   } else {
-    //@ts-expect-error todo
-    analysisLayers.layers.push(stacItemsLayer);
-    mapEl.value.layers = [...mapEl.value.layers];
+    analysisLayers.layers.unshift(stacItemsLayer);
+    currentMap.layers = [...currentMap.layers];
   }
 }
 
 /**
  * @param {import("vue").Ref<any>} itemFilter
  * @param {boolean} bboxFilter
+ * @param {import("vue").Ref<import("@eox/map").EOxMap | null>} mapElement
  */
-export const useSearchOnMapMove = (itemFilter, bboxFilter) => {
+export const useSearchOnMapMove = (itemFilter, bboxFilter, mapElement) => {
   if (!bboxFilter) {
     return;
   }
@@ -86,45 +100,53 @@ export const useSearchOnMapMove = (itemFilter, bboxFilter) => {
   const handler = () => {
     clearTimeout(timeout);
     timeout = setTimeout(() => {
+      if (mapElement.value?.projection == "globe") {
+        return;
+      }
       itemFilter.value?.search();
-    }, 800); // 800ms debounce
+    }, 500);
   };
   onMounted(() => {
-    mapEl.value?.map.on("moveend", handler);
+    mapElement.value?.map.on("moveend", handler);
   });
   onUnmounted(() => {
-    mapEl.value?.map.un("moveend", handler);
+    mapElement.value?.map.un("moveend", handler);
   });
 };
 /**
  *
  * @param {import("vue").Ref<import("@/types").GeoJsonFeature[]>} currentItems
+ * @param {import("vue").Ref<import("@eox/map").EOxMap | null>} mapElement
  */
-export const useRenderItemsFeatures = (currentItems) => {
+export const useRenderItemsFeatures = (currentItems, mapElement) => {
   onMounted(() => {
-    renderItemsFeatures(currentItems.value);
+    renderItemsFeatures(currentItems.value, mapElement);
   });
 
   useOnLayersUpdate(() => {
     // consider cases where this is not needed
-    renderItemsFeatures(currentItems.value);
+    renderItemsFeatures(currentItems.value, mapElement);
   });
 };
 /**
  *
  * @param {import("vue").Ref<any>} itemfilterEl
+ * @param {import("vue").Ref<import("@eox/map").EOxMap | null>} mapElement
  */
-export function useHighlightOnFeatureHover(itemfilterEl) {
+export function useHighlightOnFeatureHover(itemfilterEl, mapElement) {
   /**
    *
    * @param {CustomEvent} evt
    */
   const handler = (evt) => {
+    if (evt.detail.originalEvent.type !== "pointermove") {
+      return;
+    }
     const itemId = evt.detail?.feature?.getId();
     if (!itemId) {
       return;
     }
-    const item = itemfilterEl.value.items?.find(
+    const item = itemfilterEl.value.results?.find(
       //@ts-expect-error todo
       (r) => r.id === itemId,
     );
@@ -134,10 +156,56 @@ export function useHighlightOnFeatureHover(itemfilterEl) {
   };
   onMounted(() => {
     //@ts-expect-error todo
-    mapEl.value?.addEventListener("select", handler);
+    mapElement.value?.addEventListener("select", handler);
   });
   onUnmounted(() => {
     //@ts-expect-error todo
-    mapEl.value?.removeEventListener("select", handler);
+    mapElement.value?.removeEventListener("select", handler);
+  });
+}
+
+/**
+ *
+ * @param {import("vue").Ref<any>} itemfilterEl
+ * @param {ReturnType< typeof import("@/store/stac").useSTAcStore>} store
+ * @param {import("vue").Ref<import("@eox/map").EOxMap | null>} mapElement
+ * @param {boolean} enableCompare
+ */
+export function useRenderOnFeatureClick(
+  itemfilterEl,
+  store,
+  mapElement,
+  enableCompare,
+) {
+  const onSelectItem = createOnSelectHandler(store, enableCompare, mapElement);
+  /**
+   *
+   * @param {CustomEvent} evt
+   */
+  const handler = (evt) => {
+    if (evt.detail.originalEvent.type !== "click") {
+      return;
+    }
+    const itemId = evt.detail?.feature?.getId();
+    if (!itemId) {
+      return;
+    }
+    const item = itemfilterEl.value.results?.find(
+      //@ts-expect-error todo
+      (r) => r?.id === itemId,
+    );
+
+    if (item) {
+      onSelectItem(new CustomEvent("select", { detail: item }));
+    }
+  };
+
+  onMounted(() => {
+    //@ts-expect-error todo
+    mapElement.value?.addEventListener("select", handler);
+  });
+  onUnmounted(() => {
+    //@ts-expect-error todo
+    mapElement.value?.removeEventListener("select", handler);
   });
 }

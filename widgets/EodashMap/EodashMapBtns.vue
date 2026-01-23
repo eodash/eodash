@@ -5,30 +5,38 @@
       class="primary small circle small-elevate"
       @click="onMapZoomIn"
     >
-      <i class="small"
-        ><svg viewBox="0 0 24 24"><path :d="mdiPlus" /></svg>
+      <i class="small">
+        <svg viewBox="0 0 24 24"><path :d="mdiPlus"></path></svg>
       </i>
       <div class="tooltip left">Zoom in</div>
     </button>
-
     <button
       v-if="enableZoom && !isGlobe"
       class="primary small circle small-elevate"
       @click="onMapZoomOut"
     >
-      <i class="small"
-        ><svg viewBox="0 0 24 24"><path :d="mdiMinus" /></svg>
+      <i class="small">
+        <svg viewBox="0 0 24 24"><path :d="mdiMinus"></path></svg>
       </i>
       <div class="tooltip left">Zoom out</div>
     </button>
-
+    <button
+      v-if="showMosaicButton"
+      class="primary small circle small-elevate"
+      @click="showMosaicLayer"
+    >
+      <i class="small">
+        <svg viewBox="0 0 24 24"><path :d="mdiMap"></path></svg>
+      </i>
+      <div class="tooltip left">Back to Mosaic</div>
+    </button>
     <button
       v-if="exportMap"
       class="primary small circle small-elevate"
       @click="showMapState = !showMapState"
     >
-      <i class="small"
-        ><svg viewBox="0 0 24 24"><path :d="mdiMapPlus" /></svg>
+      <i class="small">
+        <svg viewBox="0 0 24 24"><path :d="mdiMapPlus"></path></svg>
       </i>
       <div class="tooltip left">Extract storytelling configuration</div>
     </button>
@@ -39,8 +47,8 @@
       class="primary small circle small-elevate"
       @click="changeMapProjection(availableMapProjection)"
     >
-      <i class="small"
-        ><svg viewBox="0 0 24 24"><path :d="mdiEarthBox" /></svg>
+      <i class="small">
+        <svg viewBox="0 0 24 24"><path :d="mdiEarthBox"></path></svg>
       </i>
       <div class="tooltip left">Change map projection</div>
     </button>
@@ -49,8 +57,8 @@
       class="primary small circle small-elevate"
       @click="onCompareClick(compareIndicators)"
     >
-      <i class="small"
-        ><svg viewBox="0 0 24 24"><path :d="compareIcon" /></svg>
+      <i class="small">
+        <svg viewBox="0 0 24 24"><path :d="compareIcon"></path></svg>
       </i>
       <div class="tooltip left">Compare mode</div>
     </button>
@@ -59,9 +67,9 @@
       class="primary small circle small-elevate"
       @click="loadPOiIndicator()"
     >
-      <i class="small"
-        ><svg viewBox="0 0 24 24">
-          <path :d="mdiStarFourPointsCircleOutline" />
+      <i class="small">
+        <svg viewBox="0 0 24 24">
+          <path :d="mdiStarFourPointsCircleOutline"></path>
         </svg>
       </i>
       <div class="tooltip left">Back to POIs</div>
@@ -104,7 +112,7 @@
       <EodashItemFilter
         v-bind="itemFilterConfig"
         :enableCompare="true"
-        @select="onSelectCompareIndicator"
+        @select="onSelectCompareIndicator(compareIndicators)"
       />
     </PopUp>
   </div>
@@ -120,7 +128,9 @@ import {
   mapEl,
   poi,
 } from "@/store/states";
+import { mosaicState } from "@/utils/states";
 import {
+  mdiMap,
   mdiCompare,
   mdiCompareRemove,
   mdiEarthBox,
@@ -131,11 +141,12 @@ import {
   mdiEarth,
 } from "@mdi/js";
 import ExportState from "^/ExportState.vue";
-import { computed, ref } from "vue";
+import { computed, inject, ref } from "vue";
 import PopUp from "^/PopUp.vue";
 import EodashItemFilter from "^/EodashItemFilter.vue";
 import { useDisplay } from "vuetify";
 import { loadPOiIndicator } from "^/EodashProcess/methods/handling";
+import { renderLatestMosaic } from "@/eodashSTAC/mosaic";
 import {
   onCompareClick,
   onSelectCompareIndicator,
@@ -145,6 +156,12 @@ import {
   showCompareIndicators,
 } from "./methods/btns";
 import "@eox/geosearch";
+import { eodashKey } from "@/utils/keys";
+
+const showMosaicLayer = async () => {
+  renderLatestMosaic();
+  mosaicState.showButton = false;
+};
 
 const {
   compareIndicators,
@@ -155,6 +172,7 @@ const {
   enableZoom,
   searchParams,
   enableGlobe,
+  enableMosaic,
 } = defineProps({
   exportMap: {
     type: Boolean,
@@ -193,11 +211,33 @@ const {
     type: Boolean,
     default: true,
   },
+  enableMosaic: {
+    type: Boolean,
+    default: true,
+  },
 });
 
 const { smAndDown } = useDisplay();
 const popupWidth = computed(() => (smAndDown.value ? "80%" : "70%"));
 const popupHeight = computed(() => (smAndDown.value ? "90%" : "70%"));
+
+const eodash = /** @type {import("@/types").Eodash} */ (inject(eodashKey));
+const showMosaicButton = computed(() => {
+  const currentTemplate =
+    "template" in eodash
+      ? eodash?.template
+      : eodash?.templates[activeTemplate.value];
+  const mosaicPropIsEnabled = currentTemplate?.widgets.some((w) => {
+    if ("defineWidget" in w) {
+      const sw = w.defineWidget(null);
+      //@ts-expect-error todo
+      return sw?.widget?.properties?.useMosaic;
+    }
+    //@ts-expect-error todo
+    return w?.widget?.properties && w?.widget?.properties?.useMosaic;
+  });
+  return mosaicState.showButton && enableMosaic && mosaicPropIsEnabled;
+});
 
 const showMapState = ref(false);
 const isInCompareMode = computed(

@@ -1,10 +1,11 @@
 <template>
-  <span>
-    <v-row class="title align-center justify-space-between">
+  <div ref="root" class="d-flex flex-column item-catalog-container">
+    <v-row class="title align-center justify-space-between flex-shrink-0">
       <h4>Catalog Items</h4>
       <EodashLayoutSwitcher :target="layoutTarget" :icon="layoutIcon" />
     </v-row>
     <eox-itemfilter
+      class="itemfilter-scroll"
       ref="itemfilter"
       titleProperty="id"
       .imageProperty="imageProperty"
@@ -20,11 +21,11 @@
       <h4 slot="filterstitle" style="margin: 14px 8px">{{ filtersTitle }}</h4>
       <h4 slot="resultstitle" style="margin: 14px 8px">{{ resultsTitle }}</h4>
     </eox-itemfilter>
-  </span>
+  </div>
 </template>
 
 <script setup>
-import { onUnmounted, ref, useTemplateRef } from "vue";
+import { onMounted, onUnmounted, ref, useTemplateRef } from "vue";
 import { useSTAcStore } from "@/store/stac";
 import {
   createExternalFilter,
@@ -35,16 +36,19 @@ import {
   useSearchOnMapMove,
   useRenderItemsFeatures,
   useHighlightOnFeatureHover,
+  useRenderOnFeatureClick,
 } from "./methods/map";
 import {
   createOnFilterHandler,
   createOnSelectHandler,
-  onMouseEnterResult,
-  onMouseLeaveResult,
+  createOnMouseEnterResult,
+  createOnMouseLeaveResult,
 } from "./methods/handlers";
 import axios from "@/plugins/axios";
 import { mdiViewDashboard } from "@mdi/js";
 import EodashLayoutSwitcher from "^/EodashLayoutSwitcher.vue";
+import { indicator, mapCompareEl, mapEl } from "@/store/states";
+import { useInitMosaic } from "@/eodashSTAC/mosaic";
 
 if (!customElements.get("eox-itemfilter")) {
   await import("@eox/itemfilter");
@@ -95,20 +99,59 @@ const props = defineProps({
       },
     ],
   },
+  useMosaic: {
+    type: Boolean,
+    default: false,
+  },
+  enableCompare: {
+    type: Boolean,
+    default: false,
+  },
 });
 
-// Store and template refs
-const store = useSTAcStore();
+// Template refs
+const root = useTemplateRef("root");
 const itemfilterEl = useTemplateRef("itemfilter");
 
+/** @type {HTMLElement | null} */
+// let parentPanel = null;
+
+// Override parent panel's overflow to allow internal scrolling
+onMounted(async () => {
+  // parentPanel = root.value?.parentElement ?? null;
+  // if (parentPanel) {
+  //   parentPanel.style.overflow = "hidden";
+  //   parentPanel.style.display = "flex";
+  //   parentPanel.style.flexDirection = "column";
+  // }
+});
+
+onUnmounted(() => {
+  // Restore parent panel's original overflow
+  // if (parentPanel) {
+  //   parentPanel.style.overflow = "";
+  //   parentPanel.style.display = "";
+  //   parentPanel.style.flexDirection = "";
+  // }
+  store.selectedItem = null;
+});
+
+const store = useSTAcStore();
+
+// Mosaic Logic
+if (props.useMosaic && store.mosaicEndpoint) {
+  useInitMosaic(store.mosaicEndpoint, { collection: indicator.value }, store);
+}
 // Reactive state
 /** @type {import("vue").Ref<import("@/types").GeoJsonFeature[]>} */
 const currentItems = ref([]);
 
 // Initial data fetch
-await axios
-  .get(store.stacEndpoint + "/search?limit=100")
-  .then((res) => (currentItems.value = res.data.features));
+if (store.stacEndpoint) {
+  await axios
+    .get(store.stacEndpoint + "/search?limit=100")
+    .then((res) => (currentItems.value = res.data.features));
+}
 
 const items = currentItems.value;
 
@@ -119,43 +162,75 @@ const subTitleProperty = createSubtitleProperty(props.filters);
 const externalFilterHandler = createExternalFilter(
   props.filters,
   props.bboxFilter,
+  currentItems,
 );
 
 // Event handlers
 /**
  * @param {CustomEvent} evt
  */
-const onFilter = createOnFilterHandler(currentItems);
+const onFilter = createOnFilterHandler(
+  currentItems,
+  props.enableCompare ? mapCompareEl : mapEl,
+);
 
 /**
  * @param {CustomEvent} evt
  */
-const onSelectItem = createOnSelectHandler(store);
+const onSelectItem = createOnSelectHandler(
+  store,
+  props.enableCompare,
+  props.enableCompare ? mapCompareEl : mapEl,
+);
 
 // composables
 
 // Render items features on the map
-useRenderItemsFeatures(currentItems);
+useRenderItemsFeatures(
+  currentItems,
+  props.enableCompare ? mapCompareEl : mapEl,
+);
 // Search on map move logic
-useSearchOnMapMove(itemfilterEl, props.bboxFilter);
-
-useHighlightOnFeatureHover(itemfilterEl);
-
-onUnmounted(() => {
-  store.selectedItem = null;
-});
+useSearchOnMapMove(
+  itemfilterEl,
+  props.bboxFilter,
+  props.enableCompare ? mapCompareEl : mapEl,
+);
+// Render on feature click
+useRenderOnFeatureClick(
+  itemfilterEl,
+  store,
+  props.enableCompare ? mapCompareEl : mapEl,
+  props.enableCompare,
+);
+// highlight on feature hover
+useHighlightOnFeatureHover(
+  itemfilterEl,
+  props.enableCompare ? mapCompareEl : mapEl,
+);
+const onMouseEnterResult = createOnMouseEnterResult(
+  props.enableCompare ? mapCompareEl : mapEl,
+);
+const onMouseLeaveResult = createOnMouseLeaveResult(
+  props.enableCompare ? mapCompareEl : mapEl,
+);
 </script>
 <style scoped lang="scss">
-eox-itemfilter {
-  flex-basis: 20%;
-  height: 100%;
-  overflow: hidden !important;
-  padding: 1rem;
-  --eox-itemfilter-results-color: var(--v-theme-surface) !important;
+.item-catalog-container {
+  overflow: hidden;
 }
+
+.itemfilter-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  padding: 0.5rem;
+  --eox-itemfilter-results-color: var(--v-theme-primary) !important;
+}
+
 .title {
-  // padding: 1em;
   padding: 1em;
   margin: 0.2em;
+  flex-shrink: 0;
 }
 </style>

@@ -30,6 +30,8 @@ import log from "loglevel";
 import { dataThemesBrands } from "@/utils/states";
 import { useEventBus } from "@vueuse/core";
 import { eoxLayersKey } from "@/utils/keys";
+import { activeTemplate } from "@/store/states";
+import { useEodash } from "@/composables";
 
 export class EodashCollection {
   #collectionUrl = "";
@@ -180,7 +182,13 @@ export class EodashCollection {
     // less control.
 
     const { layerDatetime, timeControlValues } = extractLayerTimeValues(
-      await this.getItems(),
+      await this.getItems(
+        true,
+        false,
+        item.properties?.datetime ??
+          item.properties.start_datetime ??
+          itemDatetime,
+      ),
       item.properties?.datetime ??
         item.properties.start_datetime ??
         itemDatetime,
@@ -210,11 +218,23 @@ export class EodashCollection {
         }),
       };
 
+      // tmp hack
+      const eodash = useEodash();
+      //@ts-expect-error todo
+      const currentTemplate = eodash?.templates?.[activeTemplate.value];
+      const layerControlTools = currentTemplate?.widgets?.find(
+        //@ts-expect-error todo
+        (w) => w.widget?.name === "EodashLayerControl",
+      )?.widget?.properties?.tools;
+      const hasDatetime = layerControlTools
+        ? layerControlTools.includes("datetime")
+        : true;
+
       const links = await createLayersFromLinks(
         this.#collectionStac?.id ?? "",
         title,
         item,
-        layerDatetime,
+        hasDatetime ? layerDatetime : undefined,
         extraProperties,
         this.#collectionStac,
       );
@@ -227,7 +247,7 @@ export class EodashCollection {
             item,
             {
               ...extraProperties,
-              ...(layerDatetime && { layerDatetime }),
+              ...(layerDatetime && hasDatetime && { layerDatetime }),
             },
           ))) ||
           []),
@@ -236,7 +256,7 @@ export class EodashCollection {
           title || this.#collectionStac?.title || item.id,
           dataAssets,
           item,
-          layerDatetime,
+          hasDatetime ? layerDatetime : undefined,
           extraProperties,
         )),
         // We add the links after the assets so they are layered underneath assets
@@ -286,22 +306,31 @@ export class EodashCollection {
    * Returns all item links sorted by datetime ascendingly
    * @param {boolean} [fields=false] if true, fetch items from API with only properties
    * @param {boolean} [first] - if true, returns the first page of items only (for API collections)
+   * @param {string | Date} [centerDatetime] - Date to center the search around if items exceed maxNumber
    * @returns {Promise<import("stac-ts").StacLink[] | import("stac-ts").StacItem[] | undefined>}
    */
-  async getItems(fields = false, first = false) {
+  async getItems(fields = false, first = false, centerDatetime = undefined) {
     const items = this.#collectionStac?.links.filter((i) => i.rel === "item");
-
-    if (this.isAPI && !items?.length) {
+    if (this.isAPI && !items?.length && !first) {
       const itemUrl = this.#collectionUrl + "/items";
       if (fields) {
         return await fetchApiItems(
           itemUrl,
-          `fields=properties,-assets,-geometry,-links,-bbox`,
+          `fields=properties.datetime,-assets,-geometry,-links,-bbox`,
           100,
           first,
+          4000,
+          centerDatetime,
         );
       }
-      return await fetchApiItems(itemUrl, undefined, 100, first);
+      return await fetchApiItems(
+        itemUrl,
+        undefined,
+        100,
+        first,
+        4000,
+        centerDatetime,
+      );
     }
 
     const datetimeProperty = getDatetimeProperty(this.#collectionStac?.links);
@@ -348,21 +377,33 @@ export class EodashCollection {
    *  @return {Promise<import("stac-ts").StacItem | import("stac-ts").StacLink | undefined>} item
    **/
   async getItem(date) {
+    let items = await this.getItems(false, true);
     if (!date) {
-      const items = await this.getItems(false, true);
-      // in case no datetime property is found, return the last item
+      // in case no date was provided, return the last item
       return items && items.at(-1);
     }
 
-    const items = await this.getItems();
+    if (this.isAPI) {
+      const urlArr = this.#collectionUrl.split("/").slice(0, -2);
+      const searchURL = urlArr.join("/") + "/search";
+      const targetItem = await axios
+        .get(searchURL, {
+          params: {
+            collections: this.#collectionStac?.id,
+            datetime: `../${date.toISOString()}`,
+            limit: 1,
+            sortby: "-datetime",
+          },
+        })
+        .then((resp) => resp.data?.features?.[0]);
+      return targetItem;
+    }
     const datetimeProperty = getDatetimeProperty(items);
     if (!datetimeProperty) {
       // in case no datetime property is found, return the last item
-      const items = await this.getItems(false, true);
-      // in case no datetime property is found, return the last item
       return items && items.at(-1);
     }
-    return (await this.getItems())?.sort((a, b) => {
+    return items?.sort((a, b) => {
       const distanceA = Math.abs(
         new Date(
           /** @type {number} */ (
@@ -410,7 +451,7 @@ export class EodashCollection {
   async updateLayerJson(datetime, layer, map) {
     await this.fetchCollection();
     const datetimeProperty = getDatetimeProperty(
-      await this.getItems(true, true),
+      await this.getItems(false, true),
     );
     if (!datetimeProperty) {
       console.warn("[eodash] no datetime property found in collection");
