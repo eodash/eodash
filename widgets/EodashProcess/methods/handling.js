@@ -18,7 +18,6 @@ import {
   compareChartSpec,
 } from "@/store/states";
 import axios from "@/plugins/axios";
-import { toRef } from "vue";
 import { processCharts, processLayers, processSTAC } from "./outputs";
 import { handleLayersCustomEndpoints } from "./custom-endpoints/layers";
 import { handleChartCustomEndpoints } from "./custom-endpoints/chart";
