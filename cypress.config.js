@@ -65,4 +65,14 @@ export default defineConfig({
     screenshotsFolder: "./tests/cypress/screenshots",
     downloadsFolder: "./tests/cypress/screenshots",
   },
+
+  e2e: {
+    setupNodeEvents(on, config) {
+      // implement node event listeners here
+    },
+    specPattern: 'tests/cypress/e2e/**/*.cy.{js,jsx,ts,tsx}',
+    fixturesFolder: "./tests/cypress/fixtures",
+    screenshotsFolder: "./tests/cypress/screenshots",
+    downloadsFolder: "./tests/cypress/screenshots",
+  },
 });

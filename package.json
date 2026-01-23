@@ -55,6 +55,7 @@
     "preview": "npx eodash preview",
     "lint": "eslint . --fix",
     "cypress": "cypress open --component ",
+    "e2e": "npm start & wait-on http://localhost:5173 & cypress open",
     "vitest": "vitest --isolate --ui",
     "test": "npm run test:client && npm run test:cli",
     "test:cli": "vitest run tests/cli --isolate",
