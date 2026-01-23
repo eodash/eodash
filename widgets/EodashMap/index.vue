@@ -88,6 +88,7 @@ import {
   eodashCompareCollections,
   layerControlFormValue,
   layerControlFormValueCompare,
+  timesliderUpdateRef,
 } from "@/utils/states";
 import {
   useHandleMapMoveEnd,
@@ -311,8 +312,8 @@ onMounted(() => {
   } = storeToRefs(useSTAcStore());
   // assign map Element state to eox map
   mapEl.value = eoxMap.value;
-  //@ts-expect-error todo
-  mapEl.value.mapUpdateId = Date.now();
+  // tmp hack
+  timesliderUpdateRef.value += 1;
 
   if (props.enableCompare) {
     mapCompareEl.value = compareMap.value;

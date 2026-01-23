@@ -1,7 +1,7 @@
 <template>
   <eox-timecontrol
     v-if="hasMultipleItems"
-    :key="mapEl?.mapUpdateId"
+    :key="timesliderUpdateRef"
     ref="eoxTimecontrol"
     .for="mapEl"
     @select="onSelect"
@@ -11,12 +11,8 @@
     .initDate="datetime"
   >
     <div class="d-flex g-10 align-center">
-      <eox-timecontrol-date
-        :key="mapEl?.mapUpdateId"
-        class="flex-grow-1"
-      ></eox-timecontrol-date>
+      <eox-timecontrol-date class="flex-grow-1"></eox-timecontrol-date>
       <eox-timecontrol-picker
-        :key="mapEl?.mapUpdateId"
         .range="false"
         .showDots="true"
         .showItems="true"
@@ -24,7 +20,6 @@
       ></eox-timecontrol-picker>
 
       <eox-itemfilter
-        :key="mapEl?.mapUpdateId"
         @filter="onFilter"
         v-if="filters.length"
         .inlineMode="true"
@@ -32,28 +27,26 @@
         .filters="unref(filters)"
       ></eox-itemfilter>
       <eox-timecontrol-timelapse
-        :key="mapEl?.mapUpdateId"
         v-if="animate"
         @export="onExport"
       ></eox-timecontrol-timelapse>
     </div>
 
-    <eox-timecontrol-timeline
-      :key="mapEl?.mapUpdateId"
-      class="mt-2"
-    ></eox-timecontrol-timeline>
+    <eox-timecontrol-timeline class="mt-2"></eox-timecontrol-timeline>
   </eox-timecontrol>
 </template>
 <script setup>
 import { initMosaic, useInitMosaic } from "@/eodashSTAC/mosaic";
 import { useSTAcStore } from "@/store/stac";
 import { datetime, indicator, mapEl } from "@/store/states";
-import { eodashCollections } from "@/utils/states";
+import { eodashCollections, timesliderUpdateRef } from "@/utils/states";
 import "@eox/timecontrol";
 import "@eox/itemfilter";
 import { storeToRefs } from "pinia";
-import { computed, unref } from "vue";
+import { computed, customRef, ref, unref, watch } from "vue";
 import { createLayersConfig } from "./EodashMap/methods/create-layers-config";
+import axios from "@/plugins/axios";
+import { useOnLayersUpdate } from "@/composables";
 
 const props = defineProps({
   filters: {
@@ -71,6 +64,7 @@ const props = defineProps({
   mosaicIndicators: {
     /** @type {import("vue").PropType<string[]>} */
     type: Array,
+    default: () => ["sentinel-2-l2a"],
   },
 });
 
@@ -89,26 +83,46 @@ const isMosaicEnabled = computed(() => {
   return props.mosaicIndicators.includes(indicator.value);
 });
 
-const hasMultipleItems = computed(() => {
-  if (!mapEl.value) {
-    return false;
-  }
-  return (
-    isMosaicEnabled.value ||
-    eodashCollections.some((ec) => {
-      const itemLinks = ec.collectionStac?.links.filter(
-        (l) => l.rel === "item",
-      );
-      const itemsLink = ec.collectionStac?.links.some((l) => l.rel === "items");
-      return (itemLinks && itemLinks.length > 1) || itemsLink;
-    })
-  );
-});
+const hasMultipleItems = ref(false);
+
+watch(
+  indicator,
+  async () => {
+    //tmp hack
+    await new Promise((r) => setTimeout(r, 400));
+    if (isMosaicEnabled.value) {
+      hasMultipleItems.value = true;
+      timesliderUpdateRef.value += 1;
+      return;
+    }
+    //@ts-expect-error todo
+    const analysisLayers = mapEl.value?.layers?.find(
+      (layer) => layer.properties.id === "AnalysisGroup",
+    );
+    //@ts-expect-error todo
+    if (!analysisLayers || !analysisLayers?.layers.length) {
+      hasMultipleItems.value = false;
+      return;
+    }
+    //@ts-expect-error todo
+    for (const layer of analysisLayers.layers) {
+      if (layer?.properties?.timeControlValues?.length) {
+        hasMultipleItems.value = true;
+        return;
+      }
+    }
+    hasMultipleItems.value = false;
+    timesliderUpdateRef.value += 1;
+  },
+  { immediate: true },
+);
+
 if (store.mosaicEndpoint && props.useMosaic) {
   useInitMosaic(store.mosaicEndpoint, undefined, store, props.mosaicIndicators);
 }
 /** @type {[number, number]} */
 let latestRange = [0, 0];
+let currentIndicator = "";
 /**
  *
  * @param {CustomEvent} e
@@ -118,6 +132,14 @@ const onSelect = async (e) => {
   const [from, to] = date;
   if (from == latestRange[0] && to == latestRange[1]) {
     return;
+  }
+  if (currentIndicator !== indicator.value) {
+    // tmp hack
+    setTimeout(() => {
+      console.log("[eodash] Triggering timeslider update");
+      timesliderUpdateRef.value += 1;
+    }, 400);
+    currentIndicator = indicator.value;
   }
   latestRange = [from, to];
 

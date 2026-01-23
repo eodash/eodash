@@ -389,7 +389,7 @@ export class EodashCollection {
       const targetItem = await axios
         .get(searchURL, {
           params: {
-            collections: [this.#collectionStac?.id],
+            collections: this.#collectionStac?.id,
             datetime: `../${date.toISOString()}`,
             limit: 1,
             sortby: "-datetime",

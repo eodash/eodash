@@ -5,6 +5,7 @@ import { indicator, mapEl } from "@/store/states";
 import { getLayers } from "@/store/actions";
 import { onMounted, onUnmounted } from "vue";
 import { useOnLayersUpdate } from "@/composables";
+import timeControlValues from "@/utils/timeControlValues.json";
 // import { extractLayerConfig } from "./helpers";
 
 /**
@@ -210,8 +211,6 @@ export async function renderMosaic(
     return;
   }
   // tmp hack to preserve time control values
-  const timeControlValues =
-    analysisGroup?.layers?.[0]?.properties?.timeControlValues;
   if (timeControlValues) {
     mosaicLayers[0].properties.timeControlValues = timeControlValues;
     mosaicLayers[0].properties.timeControlProperty = "TIME";

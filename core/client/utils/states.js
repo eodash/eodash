@@ -167,3 +167,5 @@ export const itemsCache = new Map();
  * @type {Map<string, {items: import("stac-ts").StacItem[], minTime: number, maxTime: number}>}
  */
 export const splitItemsCache = new Map();
+
+export const timesliderUpdateRef = ref(0);
