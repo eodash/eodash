@@ -310,9 +310,12 @@ function jumpDate(reverse) {
 // fixes calendar dispalcement on lib mode
 const transform = ref("");
 onMounted(() => {
+  // keeping the reactive translate just in case,
+  // but seems like static css would work as well
+  // because the visual is same both in lib and in app mode
   transform.value = document.querySelector("eo-dash")
-    ? "translate3d(50px,-80px,0)"
-    : "translate3d(0px,-80px,0)";
+    ? "translate3d(30px,-50px,0)"
+    : "translate3d(30px,-50px,0)";
 });
 
 useTransparentPanel(rootEl);

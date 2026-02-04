@@ -564,7 +564,7 @@ export const applyProcessLayersToMap = (mapElement, processLayers) => {
 };
 /**
  * Updates the jsonform schema to target the compare map
- * @param {import("json-schema").JSONSchema7 | null | undefined} jsonformSchema
+ * @param {Record<string,any> | null | undefined} jsonformSchema
  */
 export function updateJsonformSchemaTarget(jsonformSchema) {
   if (!jsonformSchema) {
@@ -574,7 +574,5 @@ export function updateJsonformSchemaTarget(jsonformSchema) {
     "eox-map#main",
     "eox-map#compare",
   );
-  return /** @type {import("json-schema").JSONSchema7} */ (
-    JSON.parse(stringified)
-  );
+  return JSON.parse(stringified);
 }

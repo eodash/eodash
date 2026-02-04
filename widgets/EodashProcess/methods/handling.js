@@ -75,16 +75,18 @@ export async function initProcess({
   await jsonformEl.value?.editor.destroy();
   if (updatedJsonform) {
     // make sure correct target layer id is used in jsonform
-    if (updatedJsonform.properties?.feature?.options?.drawtools?.layerId) {
-      await updateJsonformIdentifier({
-        jsonformSchema,
-        newLayers: await getLayers(),
-      });
-    }
+    let newJsonForm = null;
+    newJsonForm = await updateJsonformIdentifier({
+      jsonformSchema: updatedJsonform,
+      newLayers: getLayers(),
+    });
     if (enableCompare) {
-      updatedJsonform = updateJsonformSchemaTarget(updatedJsonform);
+      newJsonForm = updateJsonformSchemaTarget(newJsonForm);
     }
-    jsonformSchema.value = updatedJsonform;
+    // trigger jsonform update in next tick
+    jsonformSchema.value = null;
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    jsonformSchema.value = newJsonForm;
   }
 }
 
@@ -94,11 +96,12 @@ export async function initProcess({
  * @export
  * @async
  * @param {Object} params
- * @param {import("vue").Ref<Record<string,any> | null>} params.jsonformSchema params.jsonformSchema
+ * @param {Record<string,any> | null} params.jsonformSchema params.jsonformSchema
  * @param {Record<string, any>[] | undefined} params.newLayers params.newLayers
+ * @returns {Promise<Record<string,any> | null | undefined>} updated jsonform schema
  */
 export async function updateJsonformIdentifier({ jsonformSchema, newLayers }) {
-  const form = jsonformSchema.value;
+  const form = jsonformSchema;
   if (!form) {
     return;
   }
@@ -130,9 +133,8 @@ export async function updateJsonformIdentifier({ jsonformSchema, newLayers }) {
         return;
       }
       for (const layer of layersArray) {
-        if (layer.layers) {
-          // @ts-expect-error TODO payload coming from time update events is not an object with layers property
-          traverseLayers(layer);
+        if (layer.type === "Group" && Array.isArray(layer.layers)) {
+          traverseLayers(layer.layers);
         } else {
           if (layer.properties?.id?.startsWith(layerId)) {
             matchedLayerId = layer.properties.id;
@@ -144,16 +146,15 @@ export async function updateJsonformIdentifier({ jsonformSchema, newLayers }) {
     traverseLayers(layers);
     if (matchedLayerId) {
       form.properties.feature.options.drawtools.layerId = matchedLayerId;
-      // trigger jsonform update in next tick
-      jsonformSchema.value = null;
-      await new Promise((resolve) => setTimeout(resolve, 0));
-      jsonformSchema.value = form;
+      return form;
     } else {
-      throw new Error(
+      console.warn(
         `Could not find matching layer for processing form with id: ${layerId}`,
       );
+      return null;
     }
   }
+  return form;
 }
 
 /**
@@ -223,7 +224,7 @@ export async function handleProcesses({
     }
 
     //@ts-expect-error we assume that the spec data is of type InlineData
-    if (tempChartSpec.data?.values?.length) {
+    if (Object.keys(tempChartSpec?.data?.values ?? {}).length) {
       //@ts-expect-error we assume that the spec data is of type InlineData
       processResults.value.push(tempChartSpec?.data.values);
     }

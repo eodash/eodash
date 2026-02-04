@@ -12,7 +12,7 @@
         </svg>
       </button>
       <eox-chart
-        class="pt-0"
+        class="pa-2"
         v-if="usedChartData && usedChartSpec"
         .spec="toRaw(usedChartSpec)"
         :key="chartRenderKey"
@@ -131,8 +131,8 @@ function toggleLayout() {
 
 .chart-toggle {
   position: absolute;
-  top: 38px;
-  right: 12px;
+  top: 18px;
+  right: 46px;
   z-index: 2;
   cursor: pointer;
 }

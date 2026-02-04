@@ -445,7 +445,7 @@ export const createLayersFromLinks = async (
       }
     }
 
-    if (wmtsLink.title === "wmts capabilities") {
+    if (wmtsLink.href.includes("marine.copernicus")) {
       log.debug(
         "Warning: WMTS Layer from capabilities added, function needs to be updated",
         linkId,

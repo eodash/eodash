@@ -13,7 +13,7 @@ const baseConfig = {
   stacEndpoint: {
     endpoint:
       "https://esa-eodashboards.github.io/eodashboard-catalog/trilateral/catalog.json",
-      // "https://api.explorer.eopf.copernicus.eu/stac",
+    // "https://api.explorer.eopf.copernicus.eu/stac",
     // api: true,
   },
   brand: {
