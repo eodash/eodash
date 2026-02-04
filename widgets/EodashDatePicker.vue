@@ -312,7 +312,7 @@ const transform = ref("");
 onMounted(() => {
   transform.value = document.querySelector("eo-dash")
     ? "translate3d(50px,-80px,0)"
-    : "translate3d(0px,-80px,0)";
+    : "translate3d(30px,-50px,0)";
 });
 
 useTransparentPanel(rootEl);
@@ -358,6 +358,7 @@ useTransparentPanel(rootEl);
 .vc-popover-content-wrapper {
   transform: v-bind("transform") !important;
 }
+
 
 .vc-date-picker-content,
 .datePicker {
