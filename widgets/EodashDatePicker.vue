@@ -362,7 +362,6 @@ useTransparentPanel(rootEl);
   transform: v-bind("transform") !important;
 }
 
-
 .vc-date-picker-content,
 .datePicker {
   backdrop-filter: blur(10px) !important;

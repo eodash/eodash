@@ -28,6 +28,7 @@
       <v-btn
         v-if="processResults.length && isProcessed && !isAsync"
         color="primary"
+        style="margin-right: 8px"
         :append-icon="[mdiDownloadCircleOutline]"
         @click="downloadResults"
         size="small"
