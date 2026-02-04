@@ -1,6 +1,13 @@
 # Changelog
 
 
+## [5.5.1](https://github.com/eodash/eodash/compare/eodash-v5.5.0...eodash-v5.5.1) (2026-02-04)
+
+
+### Bug Fixes
+
+* Fixes mainly chart and process related regressions  ([#315](https://github.com/eodash/eodash/issues/315)) ([#312](https://github.com/eodash/eodash/issues/312)) ([70c6871](https://github.com/eodash/eodash/commit/70c6871930ac0e2d08113e923a860ae41d7de67d))
+
 ## [5.5.0](https://github.com/eodash/eodash/compare/eodash-v5.4.0...eodash-v5.5.0) (2026-01-15)
 
 
