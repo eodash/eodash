@@ -1,6 +1,13 @@
 # Changelog
 
 
+## [5.5.2](https://github.com/eodash/eodash/compare/eodash-v5.5.1...eodash-v5.5.2) (2026-02-05)
+
+
+### Bug Fixes
+
+* update eox-timecontrol to 2.1.1 ([#319](https://github.com/eodash/eodash/issues/319)) ([844d5ea](https://github.com/eodash/eodash/commit/844d5ea1e190eed84a4918b53f8e579c58b2abbb))
+
 ## [5.5.1](https://github.com/eodash/eodash/compare/eodash-v5.5.0...eodash-v5.5.1) (2026-02-04)
 
 
