@@ -156,7 +156,7 @@ export default {
               widget: {
                 name: "EodashDatePicker",
                 properties: {
-                  hintText: `<b>Hint:</b> closest available date is displayed<br />
+                  hintText: `<b>Hint:</b> closest available date is displayed<br/>
                                 on map (see Analysis Layers)`,
                   toggleCalendar: true,
                 },
