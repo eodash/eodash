@@ -74,7 +74,7 @@
     "@eox/layout": "^1.0.0",
     "@eox/map": "^2.0.2",
     "@eox/stacinfo": "^1.0.2",
-    "@eox/timecontrol": "^2.1.0",
+    "@eox/timecontrol": "^2.1.1",
     "@eox/timeslider": "https://pkg.pr.new/EOX-A/EOxElements/@eox/timeslider@9873028",
     "@eox/ui": "^0.5.1",
     "@mdi/js": "^7.4.47",
