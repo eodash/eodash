@@ -366,37 +366,28 @@ export async function creatAsyncProcessLayerDefinitions(
         break;
       }
       case "application/vnd.flatgeobuf": {
-        // TODO after more flatgeobuf urls are possible in EOxMap https://github.com/EOX-A/EOxElements/issues/1789
-        // we should change this handler to only create one layer instead of many
-        resultItem.urls.forEach((url, i) => {
-          layers.push({
-            type: "Vector",
-            source: {
-              type: "FlatGeoBuf",
-              url,
-            },
-            properties: {
-              id:
-                endpointLink.id +
-                "_process_" +
-                resultItem.id +
-                postfixId +
-                `_${i}`,
-              title:
-                "Results " +
-                (selectedStac?.id ?? "") +
-                " " +
-                (resultItem.id ?? ""),
-              layerControlToolsExpand: true,
-              ...(layerConfig && {
-                layerConfig: {
-                  ...layerConfig,
-                  style,
-                },
-              }),
-              ...extraProperties,
-            },
-          });
+        layers.push({
+          type: "Vector",
+          source: {
+            type: "FlatGeoBuf",
+            url: resultItem.urls,
+          },
+          properties: {
+            id: endpointLink.id + "_process_" + resultItem.id + postfixId,
+            title:
+              "Results " +
+              (selectedStac?.id ?? "") +
+              " " +
+              (resultItem.id ?? ""),
+            layerControlToolsExpand: true,
+            ...(layerConfig && {
+              layerConfig: {
+                ...layerConfig,
+                style,
+              },
+            }),
+            ...extraProperties,
+          },
         });
         break;
       }

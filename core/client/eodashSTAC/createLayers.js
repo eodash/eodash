@@ -210,10 +210,10 @@ export async function createLayersFromAssets(
       const projection = getProjectionCode(assetProjection) || "EPSG:4326";
       // in case we merge them, we pass urls, else just single url
       const urlsObject = {
-        url: fgbSource,
-        // TODO uncomment this once fgb merging supported on source
-        // url: stacObject?.["eodash:merge_assets"] === false ? fgbSource : undefined,
-        // urls: stacObject?.["eodash:merge_assets"] !== false ? fgbSources : undefined,
+        url:
+          stacObject?.["eodash:merge_assets"] === false
+            ? fgbSource
+            : fgbSources,
       };
       const layer = {
         type: "Vector",
@@ -242,9 +242,7 @@ export async function createLayersFromAssets(
       addTooltipInteraction(layer, style);
       jsonArray.push(layer);
       // if we merged assets (default yes), then we can break from this loop
-      // TODO uncomment this once fgb merging supported on source
-      // if (stacObject?.["eodash:merge_assets"] !== false)
-      //   break
+      if (stacObject?.["eodash:merge_assets"] !== false) break;
     }
   }
 
