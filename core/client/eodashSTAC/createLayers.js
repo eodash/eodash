@@ -699,7 +699,7 @@ export const createLayersFromLinks = async (
         title: mapboxStyleDocumentLink.title || title || item.id,
         roles: mapboxStyleDocumentLink.roles,
         layerDatetime,
-        mapboxStyle: mapboxStyleDocumentLink.href,
+        mapboxStyle: href,
         projection: projectionCode,
         attributions: mapboxStyleDocumentLink.attribution,
         applyOptions,

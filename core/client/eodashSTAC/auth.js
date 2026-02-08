@@ -12,8 +12,8 @@ export function handleAuthenticationOfLink(item, linkOrAsset, optionsObject) {
     if (authRef in authSchemes) {
       switch (authSchemes[authRef].type) {
         case "apiKey": {
-          //@ts-expect-error TODO
           return handleApiKeyBasedAuth(
+            //@ts-expect-error TODO
             authSchemes[authRef],
             linkOrAsset.href,
             optionsObject,
@@ -52,7 +52,7 @@ function handleApiKeyBasedAuth(schemeDef, href, optionsObject) {
       const envValue = process.env[envVar];
       if (envValue) {
         if (optionsObject) {
-          optionsObject[apiKey] = envValue;
+          optionsObject = { ...optionsObject, apiKey: envValue };
         } else {
           url = setQueryParam(href, apiKey, envValue);
         }
