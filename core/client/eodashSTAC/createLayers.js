@@ -282,7 +282,7 @@ export async function createLayersFromAssets(
         },
         properties: {
           id: assetLayerId,
-          title,
+          title: assets[assetName]?.title || title,
           layerConfig,
           layerDatetime,
         },
