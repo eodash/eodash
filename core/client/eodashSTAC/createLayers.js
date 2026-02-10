@@ -614,7 +614,7 @@ export const createLayersFromLinks = async (
       const { url } = handleAuthenticationOfLink(
         /** @type { import("@/types").StacAuthItem} */ (item),
         /** @type { import("@/types").StacAuthLink} */ (vectorTileLink),
-        {},
+        undefined,
       );
       href = url;
     }
@@ -689,7 +689,7 @@ export const createLayersFromLinks = async (
         ),
         applyOptions,
       );
-      applyOptions = optionsObject;
+      applyOptions = /** @type { object } */ (optionsObject);
       href = url;
     }
     const json = {
