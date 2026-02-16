@@ -79,6 +79,7 @@ import {
   compareIndicator,
   poi,
   isGlobe,
+  tooltipAdapter,
 } from "@/store/states";
 import { storeToRefs } from "pinia";
 import { useSTAcStore } from "@/store/stac";
@@ -293,9 +294,10 @@ const animationOptions = {
 };
 
 /** @type {import("vue").Ref<import("@eox/map").EOxMap | null>} */
-const eoxMap = ref(null);
+const eoxMap = useTemplateRef("eoxMap");
 /** @type {import("vue").Ref<import("@eox/map").EOxMap | null>} */
-const compareMap = ref(null);
+const compareMap = useTemplateRef("compareMap");
+
 const { selectedCompareStac } = storeToRefs(useSTAcStore());
 const showCompare = computed(() =>
   props.enableCompare && !!selectedCompareStac.value ? "" : "first",
@@ -312,6 +314,7 @@ onMounted(() => {
   } = storeToRefs(useSTAcStore());
   // assign map Element state to eox map
   mapEl.value = eoxMap.value;
+
   // tmp hack
   timesliderUpdateRef.value += 1;
 
@@ -349,11 +352,17 @@ onMounted(() => {
 useUpdateTooltipProperties(eodashCollections, tooltipProperties);
 
 const mainTooltipStyles = computed(() => ({
-  visibility: tooltipProperties.value.length ? "visible" : "hidden",
+  visibility:
+    tooltipProperties.value.length || !!tooltipAdapter.value
+      ? "visible"
+      : "hidden",
 }));
 
 const compareTooltipStyles = computed(() => ({
-  visibility: compareTooltipProperties.value.length ? "visible" : "hidden",
+  visibility:
+    compareTooltipProperties.value.length || !!tooltipAdapter.value
+      ? "visible"
+      : "hidden",
 }));
 /**
  * @param {"main" | "compare"} map
@@ -368,6 +377,9 @@ const tooltipPropertyTransform = (map) => {
    * @returns {{key:string; value?:string} | undefined}
    */
   return (param) => {
+    if (tooltipAdapter.value) {
+      return tooltipAdapter.value(param, map);
+    }
     /** @type {typeof tooltipProps.value} */
     const updatedProperties = JSON.parse(
       mustache.render(JSON.stringify(tooltipProps.value), {

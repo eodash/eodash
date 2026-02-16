@@ -78,3 +78,9 @@ export const compareChartSpec = ref(null);
  * Global loading state
  */
 export const loading = ref(false);
+
+/**
+ * Adapter allows external widgets to hook into tooltip property transformation
+ * @type {import("vue").Ref<((param: {key: string, value: any}, map?: string) => {key: string, value: any} | undefined) | null>}
+ */
+export const tooltipAdapter = shallowRef(null);

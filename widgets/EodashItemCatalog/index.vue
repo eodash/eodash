@@ -60,6 +60,11 @@ const props = defineProps({
     type: String,
     default: "Explore Catalog",
   },
+  hoverProperties: {
+    /** @type {import("vue").PropType<string[]>} */
+    type: Array,
+    default: () => ["datetime", "eo:cloud_cover"],
+  },
   layoutTarget: {
     type: String,
     default: "lite",
@@ -207,6 +212,7 @@ useRenderOnFeatureClick(
 useHighlightOnFeatureHover(
   itemfilterEl,
   props.enableCompare ? mapCompareEl : mapEl,
+  props.hoverProperties,
 );
 const onMouseEnterResult = createOnMouseEnterResult(
   props.enableCompare ? mapCompareEl : mapEl,

@@ -1,6 +1,7 @@
 import { useOnLayersUpdate } from "@/composables";
 import { onMounted, onUnmounted } from "vue";
 import { createOnSelectHandler } from "./handlers";
+import { tooltipAdapter } from "@/store/states";
 
 /**
  *
@@ -53,8 +54,9 @@ export function renderItemsFeatures(features, mapElement) {
       {
         type: "select",
         options: {
-          id: "stac-items",
+          id: "stac-item-hover",
           condition: "pointermove",
+          tooltip: true,
           style: {
             "stroke-color": "white",
             "stroke-width": 3,
@@ -66,6 +68,7 @@ export function renderItemsFeatures(features, mapElement) {
         options: {
           id: "stac-items",
           condition: "click",
+          tooltip: false,
           style: {
             "stroke-color": "white",
             "stroke-width": 3,
@@ -132,8 +135,13 @@ export const useRenderItemsFeatures = (currentItems, mapElement) => {
  *
  * @param {import("vue").Ref<any>} itemfilterEl
  * @param {import("vue").Ref<import("@eox/map").EOxMap | null>} mapElement
+ * @param {string[]} [hoverFeatures]
  */
-export function useHighlightOnFeatureHover(itemfilterEl, mapElement) {
+export function useHighlightOnFeatureHover(
+  itemfilterEl,
+  mapElement,
+  hoverFeatures,
+) {
   /**
    *
    * @param {CustomEvent} evt
@@ -157,10 +165,18 @@ export function useHighlightOnFeatureHover(itemfilterEl, mapElement) {
   onMounted(() => {
     //@ts-expect-error todo
     mapElement.value?.addEventListener("select", handler);
+
+    tooltipAdapter.value = ({ key, value }) => {
+      if (hoverFeatures && hoverFeatures.includes(key)) {
+        return { key, value };
+      }
+      return undefined;
+    };
   });
   onUnmounted(() => {
     //@ts-expect-error todo
     mapElement.value?.removeEventListener("select", handler);
+    tooltipAdapter.value = null;
   });
 }
 
