@@ -312,8 +312,13 @@ onMounted(() => {
     selectedItem,
     selectedCompareItem,
   } = storeToRefs(useSTAcStore());
+  if (!eoxMap.value) {
+    console.error("EOxMap reference is not available on mounted.");
+    return;
+  }
   // assign map Element state to eox map
   mapEl.value = eoxMap.value;
+  eoxMap.value.reducedGlobeLOD = true;
 
   // tmp hack
   timesliderUpdateRef.value += 1;
