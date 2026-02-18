@@ -162,13 +162,47 @@ export function useHighlightOnFeatureHover(
       itemfilterEl.value.selectedResult = item;
     }
   };
+  /**
+   * @param {*} val
+   */
+  const formatValue = (val) => {
+    if (typeof val === "number") {
+      if (val % 1 !== 0) {
+        return val.toFixed(2);
+      }
+      return val;
+    }
+
+    if (typeof val === "string") {
+      // Attempt to parse as date if string looks like ISO date
+      if (val.length > 9 && /\d{4}-\d{2}-\d{2}/.test(val)) {
+        const timestamp = Date.parse(val);
+        if (!isNaN(timestamp)) {
+          return new Date(timestamp).toUTCString();
+        }
+      }
+    }
+    return val;
+  };
+  /**
+   * @param {string} key
+   */
+  const formatKey = (key) => {
+    let formattedKey = key;
+    if (key.includes(":")) {
+      formattedKey = key.split(":")[1];
+    }
+    return formattedKey
+      .replace(/_/g, " ")
+      .replace(/\b\w/g, (c) => c.toUpperCase());
+  };
   onMounted(() => {
     //@ts-expect-error todo
     mapElement.value?.addEventListener("select", handler);
 
     tooltipAdapter.value = ({ key, value }) => {
       if (hoverFeatures && hoverFeatures.includes(key)) {
-        return { key, value };
+        return { key: formatKey(key), value: formatValue(value) };
       }
       return undefined;
     };
