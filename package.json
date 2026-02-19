@@ -77,7 +77,7 @@
     "@eox/layercontrol": "^1.4.0",
     "@eox/layout": "^1.0.0",
     "@eox/map": "https://pkg.pr.new/EOX-A/EOxElements/@eox/map@44d5863",
-    "@eox/stacinfo": "^1.0.2",
+    "@eox/stacinfo": "https://pkg.pr.new/EOX-A/EOxElements/@eox/stacinfo@464f74a",
     "@eox/timecontrol": "^2.1.1",
     "@eox/ui": "^0.6.0",
     "@mdi/js": "^7.4.47",
