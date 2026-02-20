@@ -35,6 +35,12 @@ export const useSTAcStore = defineStore("stac", () => {
   const isApi = ref(false);
 
   /**
+   * List of supported endpoints for upscaling
+   * @type {import("vue").Ref<string[]>}
+   */
+  const supportedUpscalingEndpoints = ref([]);
+
+  /**
    * Links of the root STAC catalog
    *
    * @type {import("vue").Ref<import("stac-ts").StacLink[] | null>}
@@ -92,6 +98,8 @@ export const useSTAcStore = defineStore("stac", () => {
     isApi.value = endpoint.api ?? false;
     rasterEndpoint.value = endpoint.rasterEndpoint ?? null;
     mosaicEndpoint.value = endpoint.mosaicEndpoint ?? null;
+    supportedUpscalingEndpoints.value =
+      endpoint.supportedUpscalingEndpoints ?? [];
   }
 
   /**
@@ -276,5 +284,6 @@ export const useSTAcStore = defineStore("stac", () => {
     selectedCompareStac,
     selectedItem,
     selectedCompareItem,
+    supportedUpscalingEndpoints,
   };
 });

@@ -203,7 +203,9 @@ export class EodashCollection {
 
     const isSupported =
       item.links.some((link) =>
-        ["wms", "xyz", "wmts", "vector-tile"].includes(link.rel),
+        ["wms", "xyz", "wmts", "vector-tile", "mapbox-style-document"].includes(
+          link.rel,
+        ),
       ) || Object.keys(dataAssets).length;
 
     if (isSupported) {

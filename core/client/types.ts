@@ -340,6 +340,7 @@ export type StacEndpoint =
       rasterEndpoint?: string;
       vectorEndpoint?: string;
       mosaicEndpoint?: string;
+      supportedUpscalingEndpoints?: string[];
     };
 
 /** @group Eodash */
