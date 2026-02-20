@@ -13,7 +13,7 @@
     <div class="d-flex g-10 align-center">
       <eox-timecontrol-date class="flex-grow-1"></eox-timecontrol-date>
       <eox-timecontrol-picker
-        .range="false"
+        .range="datepickerRange"
         .showDots="true"
         .showItems="true"
         .popup="true"
@@ -50,6 +50,10 @@ const props = defineProps({
   filters: {
     type: Array,
     default: () => [],
+  },
+  datepickerRange: {
+    type: Boolean,
+    default: true,
   },
   animate: {
     type: Boolean,

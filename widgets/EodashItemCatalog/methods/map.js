@@ -9,7 +9,7 @@ import { tooltipAdapter } from "@/store/states";
  * @param {import("vue").Ref<import("@eox/map").EOxMap | null>} mapElement
  * @param {string[] | undefined} hoverProperties
  */
-export function renderItemsFeatures(features, mapElement,hoverProperties) {
+export function renderItemsFeatures(features, mapElement, hoverProperties) {
   const currentMap = mapElement.value;
   let analysisLayers =
     /** @type {import("@eox/map/src/layers").EOxLayerTypeGroup} */ (
@@ -123,14 +123,18 @@ export const useSearchOnMapMove = (itemFilter, bboxFilter, mapElement) => {
  * @param {import("vue").Ref<import("@eox/map").EOxMap | null>} mapElement
  * @param {string[] | undefined} hoverProperties
  */
-export const useRenderItemsFeatures = (currentItems, mapElement,hoverProperties) => {
+export const useRenderItemsFeatures = (
+  currentItems,
+  mapElement,
+  hoverProperties,
+) => {
   onMounted(() => {
-    renderItemsFeatures(currentItems.value, mapElement,hoverProperties);
+    renderItemsFeatures(currentItems.value, mapElement, hoverProperties);
   });
 
   useOnLayersUpdate(() => {
     // consider cases where this is not needed
-    renderItemsFeatures(currentItems.value, mapElement,hoverProperties);
+    renderItemsFeatures(currentItems.value, mapElement, hoverProperties);
   });
 };
 /**
@@ -144,7 +148,6 @@ export function useHighlightOnFeatureHover(
   mapElement,
   hoverProperties,
 ) {
-
   /**
    *
    * @param {CustomEvent} evt
