@@ -194,6 +194,7 @@ const onSelectItem = createOnSelectHandler(
 useRenderItemsFeatures(
   currentItems,
   props.enableCompare ? mapCompareEl : mapEl,
+  props.hoverProperties,
 );
 // Search on map move logic
 useSearchOnMapMove(

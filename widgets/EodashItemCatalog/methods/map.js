@@ -7,8 +7,9 @@ import { tooltipAdapter } from "@/store/states";
  *
  * @param {import("@/types").GeoJsonFeature[]} features
  * @param {import("vue").Ref<import("@eox/map").EOxMap | null>} mapElement
+ * @param {string[] | undefined} hoverProperties
  */
-export function renderItemsFeatures(features, mapElement) {
+export function renderItemsFeatures(features, mapElement,hoverProperties) {
   const currentMap = mapElement.value;
   let analysisLayers =
     /** @type {import("@eox/map/src/layers").EOxLayerTypeGroup} */ (
@@ -56,7 +57,7 @@ export function renderItemsFeatures(features, mapElement) {
         options: {
           id: "stac-item-hover",
           condition: "pointermove",
-          tooltip: true,
+          tooltip: hoverProperties?.length,
           style: {
             "stroke-color": "white",
             "stroke-width": 3,
@@ -120,28 +121,30 @@ export const useSearchOnMapMove = (itemFilter, bboxFilter, mapElement) => {
  *
  * @param {import("vue").Ref<import("@/types").GeoJsonFeature[]>} currentItems
  * @param {import("vue").Ref<import("@eox/map").EOxMap | null>} mapElement
+ * @param {string[] | undefined} hoverProperties
  */
-export const useRenderItemsFeatures = (currentItems, mapElement) => {
+export const useRenderItemsFeatures = (currentItems, mapElement,hoverProperties) => {
   onMounted(() => {
-    renderItemsFeatures(currentItems.value, mapElement);
+    renderItemsFeatures(currentItems.value, mapElement,hoverProperties);
   });
 
   useOnLayersUpdate(() => {
     // consider cases where this is not needed
-    renderItemsFeatures(currentItems.value, mapElement);
+    renderItemsFeatures(currentItems.value, mapElement,hoverProperties);
   });
 };
 /**
- *
+ * Highlights hovered feature on map and optinally shows tooltip with properties
  * @param {import("vue").Ref<any>} itemfilterEl
  * @param {import("vue").Ref<import("@eox/map").EOxMap | null>} mapElement
- * @param {string[]} [hoverFeatures]
+ * @param {string[]} [hoverProperties]
  */
 export function useHighlightOnFeatureHover(
   itemfilterEl,
   mapElement,
-  hoverFeatures,
+  hoverProperties,
 ) {
+
   /**
    *
    * @param {CustomEvent} evt
@@ -167,10 +170,7 @@ export function useHighlightOnFeatureHover(
    */
   const formatValue = (val) => {
     if (typeof val === "number") {
-      if (val % 1 !== 0) {
-        return val.toFixed(2);
-      }
-      return val;
+      return val.toFixed(0);
     }
 
     if (typeof val === "string") {
@@ -201,7 +201,7 @@ export function useHighlightOnFeatureHover(
     mapElement.value?.addEventListener("select", handler);
 
     tooltipAdapter.value = ({ key, value }) => {
-      if (hoverFeatures && hoverFeatures.includes(key)) {
+      if (hoverProperties && hoverProperties.includes(key)) {
         return { key: formatKey(key), value: formatValue(value) };
       }
       return undefined;
