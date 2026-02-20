@@ -207,6 +207,13 @@ export interface TWidgetsContainer {
     typeof import("^/WidgetsContainer.vue").default
   >["$props"];
 }
+export interface TEodashLayoutSwitcher {
+  name: "EodashLayoutSwitcher";
+  properties?: InstanceType<
+    typeof import("^/EodashLayoutSwitcher.vue").default
+  >["$props"];
+}
+
 /**
  * Internal Vue Components inside the
  * [widgets](https://github.com/eodash/eodash/tree/main/widgets) folder.
@@ -228,6 +235,7 @@ export type ComponentWidget =
   | TExportState
   | TPopUp
   | TWidgetsContainer
+  | TEodashLayoutSwitcher
   | TEodashTimeSlider;
 /**
  * Widget type: `internal` API. Internal widgets are Vue components provided by
