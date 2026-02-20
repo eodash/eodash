@@ -33,12 +33,20 @@ export const createOnSelectHandler = (store, enableCompare, mapElement) => {
       return;
     }
     if (enableCompare) {
+      if (item.id === store.selectedCompareItem?.id) {
+        store.selectedCompareItem = null;
+        return;
+      }
       if (store.selectedCompareStac?.id === item.collection) {
         store.selectedCompareItem = item;
       } else {
         await store.loadSelectedCompareSTAC(item.collection, false, item);
       }
     } else {
+      if (item.id === store.selectedItem?.id) {
+        store.selectedItem = null;
+        return;
+      }
       if (store.selectedStac?.id === item.collection) {
         store.selectedItem = item;
       } else {
