@@ -11,13 +11,17 @@
       ref="eoxLayercontrol"
       @layerConfig:change="onLayerConfigChange"
     >
-      <slot name="layerstitle">
-        <div>
-          <p v-if="title" class="mt-2 mb-2">
-            <strong>{{ title }}</strong>
-          </p>
-        </div>
-      </slot>
+      <span
+        slot="layerstitle"
+        class="d-flex justify-space-between ma-2 pa-2 flex-shrink-0"
+      >
+        <h4 v-if="title">{{ title }}</h4>
+        <EodashLayoutSwitcher
+          v-if="enableLayoutSwitcher"
+          :target="layoutTarget"
+          :icon="layoutIcon"
+        />
+      </span>
     </eox-layercontrol>
   </span>
 </template>
@@ -36,6 +40,8 @@ import {
 import { storeToRefs } from "pinia";
 import { useSTAcStore } from "@/store/stac";
 import { bandsEditorInterface } from "@/utils/bands-editor";
+import EodashLayoutSwitcher from "^/EodashLayoutSwitcher.vue";
+import { mdiViewDashboard } from "@mdi/js";
 
 if (!customElements.get("eox-layercontrol")) {
   await import("@eox/layercontrol");
@@ -62,12 +68,23 @@ const props = defineProps({
   cssVars: {
     type: Object,
   },
+  layoutIcon: {
+    type: String,
+    default: mdiViewDashboard,
+  },
+  layoutTarget: {
+    type: String,
+  },
 });
 
 const config = {
   tools: props.tools,
   style: props.cssVars,
 };
+
+const enableLayoutSwitcher = computed(
+  () => !!props.layoutTarget && !!props.layoutIcon,
+);
 
 const { selectedCompareStac, selectedStac } = storeToRefs(useSTAcStore());
 const showControls = computed(() => {

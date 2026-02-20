@@ -5,12 +5,17 @@ import { mosaicState } from "@/utils/states";
 /**
  * @param {import("vue").Ref<import("@/types").GeoJsonFeature[]>} currentItems
  * @param {import("vue").Ref<import("@eox/map").EOxMap | null>} mapElement
+ * @param {string[] | undefined} hoverProperties
  */
-export const createOnFilterHandler = (currentItems, mapElement) => {
+export const createOnFilterHandler = (
+  currentItems,
+  mapElement,
+  hoverProperties,
+) => {
   /** @param {CustomEvent} evt */
   return (evt) => {
     currentItems.value = evt.detail.results;
-    renderItemsFeatures(currentItems.value, mapElement);
+    renderItemsFeatures(currentItems.value, mapElement, hoverProperties);
   };
 };
 /**

@@ -79,7 +79,7 @@ export function renderItemsFeatures(features, mapElement, hoverProperties) {
     ],
   };
   const exists = analysisLayers.layers.some(
-    (l) => l.properties?.id === "stac-items",
+    (l) => l.properties?.id === stacItemsLayer.properties?.id,
   );
   if (exists) {
     currentMap.addOrUpdateLayer(stacItemsLayer);

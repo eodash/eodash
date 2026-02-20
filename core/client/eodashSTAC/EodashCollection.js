@@ -320,7 +320,7 @@ export class EodashCollection {
           `fields=properties.datetime,-assets,-geometry,-links,-bbox`,
           100,
           first,
-          4000,
+          1000,
           centerDatetime,
         );
       }
@@ -329,7 +329,7 @@ export class EodashCollection {
         undefined,
         100,
         first,
-        4000,
+        1000,
         centerDatetime,
       );
     }
@@ -379,7 +379,7 @@ export class EodashCollection {
    **/
   async getItem(date) {
     let items = await this.getItems(false, true);
-    if (!date) {
+    if (!(date instanceof Date) || isNaN(date.getTime())) {
       // in case no date was provided, return the last item
       return items && items.at(-1);
     }
