@@ -331,6 +331,7 @@ export type StacEndpoint =
       api?: boolean;
       rasterEndpoint?: string;
       vectorEndpoint?: string;
+      supportedUpscalingEndpoints?: string[];
     };
 
 /** @group Eodash */

@@ -15,6 +15,7 @@ import {
 } from "./helpers";
 import { handleAuthenticationOfLink } from "./auth";
 import log from "loglevel";
+import { useSTAcStore } from "@/store/stac";
 
 /**
  * @param {string} collectionId
@@ -376,6 +377,11 @@ export const createLayersFromLinks = async (
         },
       },
     };
+    // @ts-expect-error missing type definition, can be accessed like this
+    if (wmsLink.roles?.includes("baselayer") || wmsLink.roles?.includes("overlay")) {
+      // @ts-expect-error no type for eox-map
+      json.preload = Infinity;
+    }
     if ("wms:version" in wmsLink) {
       // @ts-expect-error no type for eox-map
       json.source.params["VERSION"] = wmsLink["wms:version"];
@@ -557,6 +563,16 @@ export const createLayersFromLinks = async (
       xyzUrl = `${base}?${params.toString()}`;
     }
 
+    const { supportedUpscalingEndpoints } = useSTAcStore();
+    const isUpscalingSupported = supportedUpscalingEndpoints.some(
+      (/** @type {string} */ endpoint) => xyzUrl.includes(endpoint),
+    );
+
+    // Add sharding for s2maps automatically
+    if (xyzUrl.includes("s2maps-tiles.eu")) {
+      xyzUrl = xyzUrl.replace("s2maps-tiles.eu", "{a-e}.s2maps-tiles.eu");
+    }
+
     log.debug("XYZ Layer added", linkId);
     let json = {
       type: "Tile",
@@ -569,11 +585,22 @@ export const createLayersFromLinks = async (
       },
       source: {
         type: "XYZ",
-        url: xyzUrl,
+        url: isUpscalingSupported ? xyzUrl.replace("{y}", "{y}@2x") : xyzUrl,
         projection: projectionCode,
         attributions: xyzLink.attribution,
       },
     };
+    if (isUpscalingSupported) {
+      // @ts-expect-error tileGrid is added here and supported in eox-map layer definition
+      json.source.tileGrid = {
+        "tileSize" : [512, 512]
+      };
+    }
+    // @ts-expect-error missing type definition, can be accessed like this
+    if (xyzLink.roles?.includes("baselayer") || xyzLink.roles?.includes("overlay")) {
+      // @ts-expect-error no type for eox-map
+      json.preload = Infinity;
+    }
 
     extractRoles(json.properties, xyzLink);
     if (extraProperties !== null) {
