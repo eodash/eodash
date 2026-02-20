@@ -81,7 +81,7 @@ export const createFilterProperties = (filtersConfig) => {
           type: "range",
           expanded: true,
           filterKeys: [filter.min || 0, filter.max || 100],
-          state: {
+          state: filter.state ?? {
             min: filter.min ?? 0,
             max: filter.max ?? 100,
           },
