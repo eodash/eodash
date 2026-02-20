@@ -282,7 +282,7 @@ export async function createLayersFromAssets(
         },
         properties: {
           id: assetLayerId,
-          title,
+          title: assets[assetName]?.title || title,
           layerConfig,
           layerDatetime,
         },
@@ -325,7 +325,8 @@ export const createLayersFromLinks = async (
   const xyzArray = item.links.filter((l) => l.rel === "xyz") ?? [];
   const vectorTileArray =
     item.links.filter((l) => l.rel === "vector-tile") ?? [];
-
+  const mapboxStyleDocumentArray =
+    item.links.filter((l) => l.rel === "mapbox-style-document") ?? [];
   // Taking projection code from main map view, as main view defines
   // projection for comparison map
   const viewProjectionCode = mapEl?.value?.projection || "EPSG:3857";
@@ -610,10 +611,12 @@ export const createLayersFromLinks = async (
 
     let href = vectorTileLink.href;
     if ("auth:schemes" in item && "auth:refs" in vectorTileLink) {
-      href = handleAuthenticationOfLink(
+      const { url } = handleAuthenticationOfLink(
         /** @type { import("@/types").StacAuthItem} */ (item),
         /** @type { import("@/types").StacAuthLink} */ (vectorTileLink),
+        undefined,
       );
+      href = url;
     }
     const json = {
       type: "VectorTile",
@@ -655,6 +658,65 @@ export const createLayersFromLinks = async (
     }
     jsonArray.push(json);
   }
+
+  for (const mapboxStyleDocumentLink of mapboxStyleDocumentArray ?? []) {
+    const mapboxStyleDocumentLinkProjection =
+      /** @type {number | string | {name: string, def: string} | undefined} */
+      (
+        mapboxStyleDocumentLink?.["proj:epsg"] ||
+          mapboxStyleDocumentLink?.["eodash:proj4_def"]
+      );
+
+    await registerProjection(mapboxStyleDocumentLinkProjection);
+    const projectionCode = getProjectionCode(
+      mapboxStyleDocumentLinkProjection || "EPSG:3857",
+    );
+    const linkId = createLayerID(
+      collectionId,
+      item.id,
+      mapboxStyleDocumentLink,
+      viewProjectionCode,
+    );
+    log.debug("Mapbox Style Document Layer added", linkId);
+
+    let href = mapboxStyleDocumentLink.href;
+    let applyOptions = mapboxStyleDocumentLink?.applyOptions || {};
+    if ("auth:schemes" in item && "auth:refs" in mapboxStyleDocumentLink) {
+      const { url, optionsObject } = handleAuthenticationOfLink(
+        /** @type { import("@/types").StacAuthItem} */ (item),
+        /** @type { import("@/types").StacAuthLink} */ (
+          mapboxStyleDocumentLink
+        ),
+        applyOptions,
+      );
+      applyOptions = /** @type { object } */ (optionsObject);
+      href = url;
+    }
+    const json = {
+      type: "MapboxStyle",
+      properties: {
+        id: linkId,
+        title: mapboxStyleDocumentLink.title || title || item.id,
+        roles: mapboxStyleDocumentLink.roles,
+        layerDatetime,
+        mapboxStyle: href,
+        projection: projectionCode,
+        attributions: mapboxStyleDocumentLink.attribution,
+        applyOptions,
+      },
+      interactions: [],
+    };
+    extractRoles(json.properties, mapboxStyleDocumentLink);
+    if (extraProperties !== null) {
+      json.properties = {
+        ...json.properties,
+        ...extraProperties,
+        ...extractEoxLegendLink(mapboxStyleDocumentLink),
+      };
+    }
+    jsonArray.push(json);
+  }
+
   return jsonArray;
 };
 /**
