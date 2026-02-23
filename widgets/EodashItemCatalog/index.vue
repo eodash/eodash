@@ -1,8 +1,49 @@
 <template>
-  <div ref="root" class="d-flex flex-column item-catalog-container">
+  <div class="d-flex flex-column">
     <v-row class="title align-center justify-space-between flex-shrink-0">
       <h4>Catalog Items</h4>
-      <EodashLayoutSwitcher :target="layoutTarget" :icon="layoutIcon" />
+      <div class="d-flex align-center">
+        <v-menu v-if="sortBy?.length" v-model="sortMenu" offset-y>
+          <template v-slot:activator="{ props: menuProps }">
+            <v-tooltip location="bottom">
+              <template #activator="{ props: tooltipProps }">
+                <v-btn
+                  v-bind="{ ...menuProps, ...tooltipProps }"
+                  icon
+                  size="small"
+                  color="primary"
+                  class="mr-2"
+                  aria-label="Sort"
+                  variant="text"
+                >
+                  <v-icon>mdi-sort</v-icon>
+                </v-btn>
+              </template>
+              <span>Sort items</span>
+            </v-tooltip>
+          </template>
+          <v-list density="compact">
+            <v-list-item
+              v-for="option in props.sortBy"
+              :key="option.property"
+              @click="selectSort(option)"
+              :active="selectedSort.property === option.property"
+            >
+              <v-list-item-title>
+                {{ option.label }}
+                <v-icon
+                  v-if="selectedSort.property === option.property"
+                  size="x-small"
+                  class="ml-1"
+                >
+                  {{ sortOrder === "+" ? "mdi-arrow-up" : "mdi-arrow-down" }}
+                </v-icon>
+              </v-list-item-title>
+            </v-list-item>
+          </v-list>
+        </v-menu>
+        <EodashLayoutSwitcher v-if="layoutTarget && layoutIcon" :target="layoutTarget" :icon="layoutIcon" />
+      </div>
     </v-row>
     <eox-itemfilter
       class="itemfilter-scroll"
@@ -25,7 +66,8 @@
 </template>
 
 <script setup>
-import { onMounted, onUnmounted, ref, useTemplateRef } from "vue";
+import { onUnmounted, ref, useTemplateRef } from "vue";
+
 import { useSTAcStore } from "@/store/stac";
 import {
   createExternalFilter,
@@ -64,6 +106,14 @@ const props = defineProps({
     /** @type {import("vue").PropType<string[]>} */
     type: Array,
     default: () => ["datetime", "eo:cloud_cover"],
+  },
+  sortBy: {
+    /** @type {import("vue").PropType<{ property: string, label: string }[]>} */
+    type: Array,
+    default: () => [
+      { property: "datetime", label: "Date" },
+      { property: "eo:cloud_cover", label: "Cloud Cover" },
+    ],
   },
   layoutTarget: {
     type: String,
@@ -118,30 +168,37 @@ const props = defineProps({
   },
 });
 
-// Template refs
-const root = useTemplateRef("root");
 const itemfilterEl = useTemplateRef("itemfilter");
 
-/** @type {HTMLElement | null} */
-// let parentPanel = null;
+// Sorting states
+const sortMenu = ref(false);
+const sortOrder = ref("-");
+const selectedSort = ref(props.sortBy?.[0] ?? "");
+const sortByParam = ref("+datetime");
 
-// Override parent panel's overflow to allow internal scrolling
-onMounted(async () => {
-  // parentPanel = root.value?.parentElement ?? null;
-  // if (parentPanel) {
-  //   parentPanel.style.overflow = "hidden";
-  //   parentPanel.style.display = "flex";
-  //   parentPanel.style.flexDirection = "column";
-  // }
-});
+function updateSortByParam() {
+  sortByParam.value = `${sortOrder.value}${selectedSort.value.property}`;
+}
+/**
+ * Handle sort option selection
+ * @param {{ property: string, label: string }} option
+ */
+function selectSort(option) {
+  if (selectedSort.value.property === option.property) {
+    // Flip order if same property
+    sortOrder.value = sortOrder.value === "-" ? "+" : "-";
+  } else {
+    selectedSort.value = option;
+    sortOrder.value = "+"; // default to ascending when changing property
+  }
+  updateSortByParam();
+  sortMenu.value = false;
+  if (itemfilterEl.value) {
+    itemfilterEl.value.search();
+  }
+}
 
 onUnmounted(() => {
-  // Restore parent panel's original overflow
-  // if (parentPanel) {
-  //   parentPanel.style.overflow = "";
-  //   parentPanel.style.display = "";
-  //   parentPanel.style.flexDirection = "";
-  // }
   store.selectedItem = null;
 });
 
@@ -172,6 +229,7 @@ const externalFilterHandler = createExternalFilter(
   props.filters,
   props.bboxFilter,
   currentItems,
+  sortByParam,
 );
 
 // Event handlers
@@ -226,12 +284,9 @@ const onMouseEnterResult = createOnMouseEnterResult(
 const onMouseLeaveResult = createOnMouseLeaveResult(
   props.enableCompare ? mapCompareEl : mapEl,
 );
-</script>
-<style scoped lang="scss">
-.item-catalog-container {
-  overflow: hidden;
-}
 
+</script>
+<style scoped>
 .itemfilter-scroll {
   flex: 1;
   min-height: 0;

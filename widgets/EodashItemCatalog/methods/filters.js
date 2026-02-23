@@ -165,9 +165,10 @@ export const buildStacFilters = (filters, propsFilters) => {
  * @param {Record<string,any>} filters
  * @param {Array<any>} propsFilters
  * @param {boolean} bboxFilter
+ * @param {string} [sortBy]
  * @returns {string}
  */
-export const buildSearchUrl = (filters, propsFilters, bboxFilter) => {
+export const buildSearchUrl = (filters, propsFilters, bboxFilter, sortBy) => {
   const store = useSTAcStore();
   const params = new URLSearchParams();
 
@@ -189,6 +190,9 @@ export const buildSearchUrl = (filters, propsFilters, bboxFilter) => {
   if (stacFilter) {
     params.append("filter", stacFilter);
   }
+  if (sortBy) {
+    params.append("sortby", sortBy);
+  }
 
   params.append("limit", "100");
 
@@ -200,11 +204,13 @@ export const buildSearchUrl = (filters, propsFilters, bboxFilter) => {
  * @param {import("../types").FiltersConfig} propsFilters
  * @param {boolean} bboxFilter
  * @param {import("vue").Ref<import("@/types").GeoJsonFeature[]>} currentItems
+ * @param {import("vue").Ref<string>} sortBy
  */
 export const createExternalFilter = (
   propsFilters,
   bboxFilter,
   currentItems,
+  sortBy,
 ) => {
   let controller = new AbortController();
   /**
@@ -212,7 +218,7 @@ export const createExternalFilter = (
    * @param {Record<string,any>} filters
    */
   return (_items, filters) => ({
-    url: buildSearchUrl(filters, propsFilters, bboxFilter),
+    url: buildSearchUrl(filters, propsFilters, bboxFilter, sortBy.value),
     /** @param {string} url */
     fetchFn: async (url) => {
       controller.abort();
