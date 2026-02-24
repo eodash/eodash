@@ -101,9 +101,9 @@ import mustache from "mustache";
 import EodashMapBtns from "^/EodashMap/EodashMapBtns.vue";
 
 const props = defineProps({
-  initialLayers: {
-    type: Array,
+  baseLayers: {
     /** @type {import("vue").PropType<import("@eox/map").EoxLayer[]>} */
+    type: Array,
     default: () => [
       {
         type: "Tile",
@@ -273,20 +273,12 @@ const initialCenter = toRaw(props.center);
 const initialZoom = toRaw(mapPosition.value?.[2] ?? props.zoom);
 /** @type {import("vue").Ref<Record<string,any>[]>} */
 const eoxMapLayers = ref(
-  /** @type {Record<string,any>[]} */ (props.initialLayers),
+  /** @type {Record<string,any>[]} */ (props.baseLayers),
 );
 
-/** @type {import("vue").Ref<Record<string,any>[]>} */
-const eoxMapCompareLayers = ref([
-  {
-    type: "Tile",
-    source: { type: "OSM" },
-    properties: {
-      id: "osm",
-      title: "Background",
-    },
-  },
-]);
+const eoxMapCompareLayers = ref(
+  /** @type {Record<string,any>[]} */ (props.baseLayers),
+);
 
 const animationOptions = {
   duration: 1200,
@@ -337,6 +329,7 @@ onMounted(() => {
       eoxMap,
       false,
       selectedCompareItem,
+      props.baseLayers,
     );
 
     useUpdateTooltipProperties(eodashCollections, compareTooltipProperties);
@@ -351,6 +344,7 @@ onMounted(() => {
     compareMap,
     props.zoomToExtent,
     selectedItem,
+    props.baseLayers,
   );
 });
 

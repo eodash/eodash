@@ -62,6 +62,7 @@ export const useHandleMapMoveEnd = (mapElement, mapPosition) => {
  * @param {import("vue").Ref<import("@eox/map").EOxMap| null>} partnerMap
  * @param {boolean} zoomToExtent
  * @param {import("vue").Ref<import("stac-ts").StacItem | import("stac-ts").StacLink | null>} [selectedItem]
+ * @param {Record<string, any>[]} [defaultBaseLayers]
  */
 export const useInitMap = (
   mapElement,
@@ -72,6 +73,7 @@ export const useInitMap = (
   partnerMap,
   zoomToExtent,
   selectedItem,
+  defaultBaseLayers,
 ) => {
   log.debug(
     "InitMap",
@@ -140,6 +142,7 @@ export const useInitMap = (
             updatedStac,
             eodashCols,
             updatedItem ?? updatedTime,
+            defaultBaseLayers,
           );
 
           log.debug(
@@ -190,6 +193,7 @@ export const useInitMap = (
           updatedStac,
           eodashCols,
           updatedItem ?? updatedTime,
+          defaultBaseLayers,
         );
 
         if (zoomToExtent) {

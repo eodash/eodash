@@ -23,7 +23,7 @@ export default {
     widget: {
       name: "EodashMap",
       properties: {
-        initialLayers: [
+        baseLayers: [
           {
             type: "Group",
             properties: {
@@ -39,6 +39,7 @@ export default {
                 },
                 source: {
                   type: "XYZ",
+                  //@ts-expect-error todo
                   url: "https://s2maps-tiles.eu/wmts/1.0.0/terrain-light_3857/default/g/{z}/{y}/{x}.jpeg",
                 },
               },

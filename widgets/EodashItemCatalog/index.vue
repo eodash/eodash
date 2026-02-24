@@ -22,7 +22,7 @@
               <span>Sort items</span>
             </v-tooltip>
           </template>
-          <v-list density="compact">
+          <v-list density="compact" color="primary">
             <v-list-item
               v-for="option in props.sortBy"
               :key="option.property"
@@ -42,7 +42,11 @@
             </v-list-item>
           </v-list>
         </v-menu>
-        <EodashLayoutSwitcher v-if="layoutTarget && layoutIcon" :target="layoutTarget" :icon="layoutIcon" />
+        <EodashLayoutSwitcher
+          v-if="layoutTarget && layoutIcon"
+          :target="layoutTarget"
+          :icon="layoutIcon"
+        />
       </div>
     </v-row>
     <eox-itemfilter
@@ -149,6 +153,7 @@ const props = defineProps({
         title: "Cloud Cover (%)",
         min: 0,
         max: 100,
+        step: 1,
         state: {
           min: 0,
           max: 30,
@@ -284,7 +289,6 @@ const onMouseEnterResult = createOnMouseEnterResult(
 const onMouseLeaveResult = createOnMouseLeaveResult(
   props.enableCompare ? mapCompareEl : mapEl,
 );
-
 </script>
 <style scoped>
 .itemfilter-scroll {

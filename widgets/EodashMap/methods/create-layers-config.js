@@ -10,6 +10,7 @@ import log from "loglevel";
  * } selectedIndicator
  * @param {EodashCollection[]} eodashCols
  * @param {string | import("stac-ts").StacItem | null} [timeOrItem] - time as a string, or a stac item
+ * @param {Record<string, any>[]} [defaultBaseLayers] - default base layers to use if no baselayers are provided by the indicator
  * @returns {Promise<Record<string, any>[]>}
  */
 
@@ -17,6 +18,19 @@ export const createLayersConfig = async (
   selectedIndicator,
   eodashCols,
   timeOrItem,
+  defaultBaseLayers = [
+    {
+      type: "Tile",
+      properties: {
+        id: "osm",
+        title: "Background",
+        layerControlExclusive: true,
+      },
+      source: {
+        type: "OSM",
+      },
+    },
+  ],
 ) => {
   log.debug(
     "Creating layers config",
@@ -146,17 +160,7 @@ export const createLayersConfig = async (
     });
   } else {
     // Default to some baselayer
-    baseLayers.layers.push({
-      type: "Tile",
-      properties: {
-        id: "osm",
-        title: "Background",
-        layerControlExclusive: true,
-      },
-      source: {
-        type: "OSM",
-      },
-    });
+    baseLayers.layers.push(...defaultBaseLayers);
   }
 
   if (baseLayers.layers.length) {
