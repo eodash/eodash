@@ -146,3 +146,26 @@ export const dataThemesBrands = {
     color: "#8d845cff",
   },
 };
+
+export const mosaicState = reactive({
+  showButton: false,
+  /** @type {{ time: string | object | null, collection: string | null }} */
+  filters: {
+    time: null,
+    collection: null,
+  },
+  /** @type {string | object | null | undefined} */
+  query: null,
+  /** @type {Record<string, any> | null | undefined} */
+  latestLayer: null,
+});
+
+/** @type {Map<string, import("stac-ts").StacItem[]>} */
+export const itemsCache = new Map();
+/**
+ * Split items cache stores items with their time range metadata
+ * @type {Map<string, {items: import("stac-ts").StacItem[], minTime: number, maxTime: number}>}
+ */
+export const splitItemsCache = new Map();
+
+export const timesliderUpdateRef = ref(0);

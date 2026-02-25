@@ -377,8 +377,12 @@ export const createLayersFromLinks = async (
         },
       },
     };
-    // @ts-expect-error missing type definition, can be accessed like this
-    if (wmsLink.roles?.includes("baselayer") || wmsLink.roles?.includes("overlay")) {
+    if (
+      // @ts-expect-error missing type definition, can be accessed like this
+      wmsLink.roles?.includes("baselayer") ||
+      // @ts-expect-error missing type definition, can be accessed like this
+      wmsLink.roles?.includes("overlay")
+    ) {
       // @ts-expect-error no type for eox-map
       json.preload = Infinity;
     }
@@ -548,7 +552,6 @@ export const createLayersFromLinks = async (
       viewProjectionCode,
     );
     let xyzUrl = xyzLink.href;
-
     // TODO, this does not yet work between layer time changes because we do not get
     // updated variables from OL layer due to usage of tileurlfunction
 
@@ -562,7 +565,6 @@ export const createLayersFromLinks = async (
       }
       xyzUrl = `${base}?${params.toString()}`;
     }
-
     const { supportedUpscalingEndpoints } = useSTAcStore();
     const isUpscalingSupported = supportedUpscalingEndpoints.some(
       (/** @type {string} */ endpoint) => xyzUrl.includes(endpoint),
@@ -593,11 +595,15 @@ export const createLayersFromLinks = async (
     if (isUpscalingSupported) {
       // @ts-expect-error tileGrid is added here and supported in eox-map layer definition
       json.source.tileGrid = {
-        "tileSize" : [512, 512]
+        tileSize: [512, 512],
       };
     }
-    // @ts-expect-error missing type definition, can be accessed like this
-    if (xyzLink.roles?.includes("baselayer") || xyzLink.roles?.includes("overlay")) {
+    if (
+      // @ts-expect-error missing type definition, can be accessed like this
+      xyzLink.roles?.includes("baselayer") ||
+      // @ts-expect-error missing type definition, can be accessed like this
+      xyzLink.roles?.includes("overlay")
+    ) {
       // @ts-expect-error no type for eox-map
       json.preload = Infinity;
     }
@@ -716,7 +722,7 @@ export const createLayersFromLinks = async (
         ),
         applyOptions,
       );
-      applyOptions = /** @type { object } */ (optionsObject);
+      applyOptions = /** @type {object} */ (optionsObject);
       href = url;
     }
     const json = {

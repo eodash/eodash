@@ -1,6 +1,7 @@
 import { sanitizeBbox } from "@/eodashSTAC/helpers";
 import { indicator, mapEl } from "@/store/states";
 import { useSTAcStore } from "@/store/stac";
+import axios from "@/plugins/axios";
 
 /**
  *
@@ -80,7 +81,7 @@ export const createFilterProperties = (filtersConfig) => {
           type: "range",
           expanded: true,
           filterKeys: [filter.min || 0, filter.max || 100],
-          state: {
+          state: filter.state ?? {
             min: filter.min ?? 0,
             max: filter.max ?? 100,
           },
@@ -144,13 +145,11 @@ export const buildStacFilters = (filters, propsFilters) => {
       filterConfig.type === "multiselect" &&
       filterValue.stringifiedState
     ) {
-      // Handle multiselect filters
       const selectedValues = filterValue.stringifiedState;
       if (selectedValues.length > 0) {
         stacFilters.push(`${filterConfig.property} IN (${selectedValues})`);
       }
     } else if (filterConfig.type === "select" && filterValue.stringifiedState) {
-      // Handle single select filters
       const selectedValue = filterValue.stringifiedState;
       if (selectedValue) {
         stacFilters.push(`${filterConfig.property}='${selectedValue}'`);
@@ -166,13 +165,13 @@ export const buildStacFilters = (filters, propsFilters) => {
  * @param {Record<string,any>} filters
  * @param {Array<any>} propsFilters
  * @param {boolean} bboxFilter
+ * @param {string} [sortBy]
  * @returns {string}
  */
-export const buildSearchUrl = (filters, propsFilters, bboxFilter) => {
+export const buildSearchUrl = (filters, propsFilters, bboxFilter, sortBy) => {
   const store = useSTAcStore();
   const params = new URLSearchParams();
 
-  // Add collections
   if (filters.collection?.stringifiedState) {
     params.append(
       "collections",
@@ -187,13 +186,14 @@ export const buildSearchUrl = (filters, propsFilters, bboxFilter) => {
     );
   }
 
-  // Add dynamic filters
   const stacFilter = buildStacFilters(filters, propsFilters);
   if (stacFilter) {
     params.append("filter", stacFilter);
   }
+  if (sortBy) {
+    params.append("sortby", sortBy);
+  }
 
-  // Add limit
   params.append("limit", "100");
 
   return `${store.stacEndpoint}/search?${params.toString()}`;
@@ -203,14 +203,38 @@ export const buildSearchUrl = (filters, propsFilters, bboxFilter) => {
  *
  * @param {import("../types").FiltersConfig} propsFilters
  * @param {boolean} bboxFilter
+ * @param {import("vue").Ref<import("@/types").GeoJsonFeature[]>} currentItems
+ * @param {import("vue").Ref<string>} sortBy
  */
-export const createExternalFilter = (propsFilters, bboxFilter) => {
+export const createExternalFilter = (
+  propsFilters,
+  bboxFilter,
+  currentItems,
+  sortBy,
+) => {
+  let controller = new AbortController();
   /**
    * @param {Array<any>} _items
    * @param {Record<string,any>} filters
    */
   return (_items, filters) => ({
-    url: buildSearchUrl(filters, propsFilters, bboxFilter),
-    key: "features",
+    url: buildSearchUrl(filters, propsFilters, bboxFilter, sortBy.value),
+    /** @param {string} url */
+    fetchFn: async (url) => {
+      controller.abort();
+      controller = new AbortController();
+      const signal = controller.signal;
+      return await axios
+        .get(url, { signal })
+        .then((res) => res.data.features)
+        .catch((e) => {
+          // return previous items if aborted
+          if (e.name === "AbortError" || e.name === "CanceledError") {
+            return currentItems.value;
+          }
+          console.error(e);
+          return [];
+        });
+    },
   });
 };

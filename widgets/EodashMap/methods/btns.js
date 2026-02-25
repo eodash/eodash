@@ -11,7 +11,48 @@ export const switchGlobe = () => {
     return;
   }
   if (!isGlobe.value) {
-    mapEl.value.layers = addCorsAnonym([...getLayers()]);
+    // mapEl.value.layers = addCorsAnonym([...getLayers()])
+    // tmp hack;
+    const layers = addCorsAnonym([...getLayers()]);
+    layers.forEach((layer, idx) => {
+      if (layer.type === "Vector") {
+        layers.splice(idx, 1);
+        return;
+      }
+      if (layer.type === "Group") {
+        const vectors = layer.layers.filter((l) => l.type === "Vector");
+        const xyzLayers = layer.layers.filter(
+          (l) =>
+            l.type === "Tile" &&
+            l.source?.type === "XYZ" &&
+            //@ts-expect-error todo
+            l.source?.url?.includes("sentinel-2"),
+        );
+        if (!vectors.length) {
+          return;
+        }
+
+        vectors.forEach((vectorLayer) => {
+          layer.layers.splice(layer.layers.indexOf(vectorLayer), 1);
+        });
+        if (!xyzLayers.length) {
+          return;
+        }
+        xyzLayers.forEach((xyzLayer) => {
+          //@ts-expect-error todo
+          const params = new URLSearchParams(xyzLayer.source.url.split("?")[1]);
+          params.set(
+            "color_formula",
+            "gamma rgb 1.3, sigmoidal rgb 8 0.1, saturation 1.2",
+          );
+          //@ts-expect-error todo
+          xyzLayer.source.url =
+            //@ts-expect-error todo
+            xyzLayer.source.url.split("?")[0] + "?" + params.toString();
+        });
+      }
+    });
+    mapEl.value.layers = layers;
   }
   mapEl.value.projection = isGlobe.value ? "EPSG:3857" : "globe";
   if (isGlobe.value) {
@@ -21,10 +62,14 @@ export const switchGlobe = () => {
 };
 
 function hideAllPanels() {
-  const allPanels = document.querySelectorAll(
-    "eox-layout-item:not([class='bg-panel'])",
-  );
-  allPanels.forEach((panel) => {
+  const eodashComponent = document.querySelector("eo-dash");
+  const allPanels = eodashComponent
+    ? eodashComponent.shadowRoot?.querySelectorAll(
+        "eox-layout-item:not([class='bg-panel'])",
+      )
+    : document.querySelectorAll("eox-layout-item:not([class='bg-panel'])");
+
+  allPanels?.forEach((panel) => {
     if (!panel || !(panel instanceof HTMLElement)) {
       return;
     }
@@ -32,10 +77,13 @@ function hideAllPanels() {
   });
 }
 function showAllPanels() {
-  const allPanels = document.querySelectorAll(
-    "eox-layout-item:not([class='bg-panel'])",
-  );
-  allPanels.forEach((panel) => {
+  const eodashComponent = document.querySelector("eo-dash");
+  const allPanels = eodashComponent
+    ? eodashComponent.shadowRoot?.querySelectorAll(
+        "eox-layout-item:not([class='bg-panel'])",
+      )
+    : document.querySelectorAll("eox-layout-item:not([class='bg-panel'])");
+  allPanels?.forEach((panel) => {
     if (!panel || !(panel instanceof HTMLElement)) {
       return;
     }
