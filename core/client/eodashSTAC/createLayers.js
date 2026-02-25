@@ -269,7 +269,7 @@ export async function createLayersFromAssets(
       const sources =
         stacObject?.["eodash:merge_assets"] !== false
           ? geoTIFFSources
-          : geotiffSource;
+          : [geotiffSource];
       const layer = {
         type: "WebGLTile",
         source: {
