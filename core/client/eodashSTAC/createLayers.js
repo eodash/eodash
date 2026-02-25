@@ -1,5 +1,5 @@
 import { registerProjection } from "@/store/actions";
-import { indicator, mapEl } from "@/store/states";
+import { mapEl } from "@/store/states";
 import axios from "@/plugins/axios";
 
 import {
@@ -552,16 +552,6 @@ export const createLayersFromLinks = async (
       viewProjectionCode,
     );
     let xyzUrl = xyzLink.href;
-    // tmp hack
-    if (
-      indicator.value === "sentinel-2-l2a" &&
-      xyzUrl.includes("color_formula")
-    ) {
-      const params = new URLSearchParams(xyzUrl.split("?")[1]);
-      params.delete("color_formula");
-      xyzUrl = `${xyzUrl.split("?")[0]}?${params.toString()}`;
-    }
-
     // TODO, this does not yet work between layer time changes because we do not get
     // updated variables from OL layer due to usage of tileurlfunction
 
@@ -575,7 +565,6 @@ export const createLayersFromLinks = async (
       }
       xyzUrl = `${base}?${params.toString()}`;
     }
-
     const { supportedUpscalingEndpoints } = useSTAcStore();
     const isUpscalingSupported = supportedUpscalingEndpoints.some(
       (/** @type {string} */ endpoint) => xyzUrl.includes(endpoint),
@@ -733,7 +722,7 @@ export const createLayersFromLinks = async (
         ),
         applyOptions,
       );
-      applyOptions = /** @type { object } */ (optionsObject);
+      applyOptions = /** @type {object} */ (optionsObject);
       href = url;
     }
     const json = {
