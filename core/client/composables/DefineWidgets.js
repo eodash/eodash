@@ -88,7 +88,9 @@ export const useDefineWidgets = (widgetConfigs) => {
               config
             )?.defineWidget(updatedStac, updatedCompareStac);
           if (definedConfig) {
-            definedConfig = reactive(definedConfig);
+            definedConfig = /** @type {import("@/types").StaticWidget} */ (
+              reactive(definedConfig)
+            );
           }
           definedWidget.value =
             definedConfig && definedWidget.value.id === definedConfig.id

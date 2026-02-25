@@ -7,7 +7,6 @@ import { inject, reactive } from "vue";
  *
  * @async
  * @param {string | undefined| (()=> Promise<import("@/types").Eodash>) | Function} runtimeConfig
- * @returns {Promise<import("@/types").Eodash | null | undefined>}
  * @see {@linkplain '@/eodash.js'}
  */
 export const useEodashRuntime = async (
