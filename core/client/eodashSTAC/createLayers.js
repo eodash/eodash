@@ -15,6 +15,7 @@ import {
 } from "./helpers";
 import { handleAuthenticationOfLink } from "./auth";
 import log from "loglevel";
+import { useSTAcStore } from "@/store/stac";
 
 /**
  * @param {string} collectionId
@@ -280,7 +281,7 @@ export async function createLayersFromAssets(
         },
         properties: {
           id: assetLayerId,
-          title,
+          title: assets[assetName]?.title || title,
           layerConfig,
           layerDatetime,
         },
@@ -323,7 +324,8 @@ export const createLayersFromLinks = async (
   const xyzArray = item.links.filter((l) => l.rel === "xyz") ?? [];
   const vectorTileArray =
     item.links.filter((l) => l.rel === "vector-tile") ?? [];
-
+  const mapboxStyleDocumentArray =
+    item.links.filter((l) => l.rel === "mapbox-style-document") ?? [];
   // Taking projection code from main map view, as main view defines
   // projection for comparison map
   const viewProjectionCode = mapEl?.value?.projection || "EPSG:3857";
@@ -373,6 +375,11 @@ export const createLayersFromLinks = async (
         },
       },
     };
+    // @ts-expect-error missing type definition, can be accessed like this
+    if (wmsLink.roles?.includes("baselayer") || wmsLink.roles?.includes("overlay")) {
+      // @ts-expect-error no type for eox-map
+      json.preload = Infinity;
+    }
     if ("wms:version" in wmsLink) {
       // @ts-expect-error no type for eox-map
       json.source.params["VERSION"] = wmsLink["wms:version"];
@@ -554,6 +561,16 @@ export const createLayersFromLinks = async (
       xyzUrl = `${base}?${params.toString()}`;
     }
 
+    const { supportedUpscalingEndpoints } = useSTAcStore();
+    const isUpscalingSupported = supportedUpscalingEndpoints.some(
+      (/** @type {string} */ endpoint) => xyzUrl.includes(endpoint),
+    );
+
+    // Add sharding for s2maps automatically
+    if (xyzUrl.includes("s2maps-tiles.eu")) {
+      xyzUrl = xyzUrl.replace("s2maps-tiles.eu", "{a-e}.s2maps-tiles.eu");
+    }
+
     log.debug("XYZ Layer added", linkId);
     let json = {
       type: "Tile",
@@ -566,11 +583,22 @@ export const createLayersFromLinks = async (
       },
       source: {
         type: "XYZ",
-        url: xyzUrl,
+        url: isUpscalingSupported ? xyzUrl.replace("{y}", "{y}@2x") : xyzUrl,
         projection: projectionCode,
         attributions: xyzLink.attribution,
       },
     };
+    if (isUpscalingSupported) {
+      // @ts-expect-error tileGrid is added here and supported in eox-map layer definition
+      json.source.tileGrid = {
+        "tileSize" : [512, 512]
+      };
+    }
+    // @ts-expect-error missing type definition, can be accessed like this
+    if (xyzLink.roles?.includes("baselayer") || xyzLink.roles?.includes("overlay")) {
+      // @ts-expect-error no type for eox-map
+      json.preload = Infinity;
+    }
 
     extractRoles(json.properties, xyzLink);
     if (extraProperties !== null) {
@@ -608,10 +636,12 @@ export const createLayersFromLinks = async (
 
     let href = vectorTileLink.href;
     if ("auth:schemes" in item && "auth:refs" in vectorTileLink) {
-      href = handleAuthenticationOfLink(
+      const { url } = handleAuthenticationOfLink(
         /** @type { import("@/types").StacAuthItem} */ (item),
         /** @type { import("@/types").StacAuthLink} */ (vectorTileLink),
+        undefined,
       );
+      href = url;
     }
     const json = {
       type: "VectorTile",
@@ -653,6 +683,65 @@ export const createLayersFromLinks = async (
     }
     jsonArray.push(json);
   }
+
+  for (const mapboxStyleDocumentLink of mapboxStyleDocumentArray ?? []) {
+    const mapboxStyleDocumentLinkProjection =
+      /** @type {number | string | {name: string, def: string} | undefined} */
+      (
+        mapboxStyleDocumentLink?.["proj:epsg"] ||
+          mapboxStyleDocumentLink?.["eodash:proj4_def"]
+      );
+
+    await registerProjection(mapboxStyleDocumentLinkProjection);
+    const projectionCode = getProjectionCode(
+      mapboxStyleDocumentLinkProjection || "EPSG:3857",
+    );
+    const linkId = createLayerID(
+      collectionId,
+      item.id,
+      mapboxStyleDocumentLink,
+      viewProjectionCode,
+    );
+    log.debug("Mapbox Style Document Layer added", linkId);
+
+    let href = mapboxStyleDocumentLink.href;
+    let applyOptions = mapboxStyleDocumentLink?.applyOptions || {};
+    if ("auth:schemes" in item && "auth:refs" in mapboxStyleDocumentLink) {
+      const { url, optionsObject } = handleAuthenticationOfLink(
+        /** @type { import("@/types").StacAuthItem} */ (item),
+        /** @type { import("@/types").StacAuthLink} */ (
+          mapboxStyleDocumentLink
+        ),
+        applyOptions,
+      );
+      applyOptions = /** @type { object } */ (optionsObject);
+      href = url;
+    }
+    const json = {
+      type: "MapboxStyle",
+      properties: {
+        id: linkId,
+        title: mapboxStyleDocumentLink.title || title || item.id,
+        roles: mapboxStyleDocumentLink.roles,
+        layerDatetime,
+        mapboxStyle: href,
+        projection: projectionCode,
+        attributions: mapboxStyleDocumentLink.attribution,
+        applyOptions,
+      },
+      interactions: [],
+    };
+    extractRoles(json.properties, mapboxStyleDocumentLink);
+    if (extraProperties !== null) {
+      json.properties = {
+        ...json.properties,
+        ...extraProperties,
+        ...extractEoxLegendLink(mapboxStyleDocumentLink),
+      };
+    }
+    jsonArray.push(json);
+  }
+
   return jsonArray;
 };
 /**
