@@ -18,6 +18,23 @@ import log from "loglevel";
 import { useSTAcStore } from "@/store/stac";
 
 /**
+ * Build a WMTS GetCapabilities URL from a base endpoint URL.
+ * If the URL already points to a capabilities document, return as-is.
+ *
+ * @param {string} href
+ * @returns {string}
+ */
+function buildCapabilitiesUrl(href) {
+  if (href.includes("GetCapabilities") || href.endsWith(".xml")) {
+    return href;
+  }
+  const url = new URL(href);
+  url.searchParams.set("service", "WMTS");
+  url.searchParams.set("request", "GetCapabilities");
+  return url.toString();
+}
+
+/**
  * @param {string} collectionId
  * @param {string} title
  * @param {Record<string,import("stac-ts").StacAsset>} assets
@@ -482,10 +499,8 @@ export const createLayersFromLinks = async (
         },
       };
     } else {
-      log.debug(
-        "Warning: WMTS Layer from capabilities added, function needs to be updated",
-        linkId,
-      );
+      log.debug("WMTS Layer from capabilities added", linkId);
+
       json = {
         type: "Tile",
         properties: {
@@ -494,15 +509,13 @@ export const createLayersFromLinks = async (
           layerDatetime,
         },
         source: {
-          type: "WMTS",
-          url: wmtsLink.href,
+          type: "WMTSCapabilities",
+          url: buildCapabilitiesUrl(wmtsLink.href),
           layer: wmtsLink["wmts:layer"],
           style: extractedStyle,
-          matrixSet: wmtsLink.matrixSet || "EPSG:3857",
-          projection: projectionCode,
-          tileGrid: {
-            tileSize: [512, 512],
-          },
+          ...(wmtsLink["wmts:matrixSet"] && {
+            matrixSet: wmtsLink["wmts:matrixSet"],
+          }),
           attributions: wmtsLink.attribution,
           dimensions: dimensionsWithoutStyle,
         },
