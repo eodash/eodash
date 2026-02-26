@@ -377,8 +377,12 @@ export const createLayersFromLinks = async (
         },
       },
     };
-    // @ts-expect-error missing type definition, can be accessed like this
-    if (wmsLink.roles?.includes("baselayer") || wmsLink.roles?.includes("overlay")) {
+    if (
+      // @ts-expect-error missing type definition, can be accessed like this
+      wmsLink.roles?.includes("baselayer") ||
+      // @ts-expect-error missing type definition, can be accessed like this
+      wmsLink.roles?.includes("overlay")
+    ) {
       // @ts-expect-error no type for eox-map
       json.preload = Infinity;
     }
@@ -593,11 +597,15 @@ export const createLayersFromLinks = async (
     if (isUpscalingSupported) {
       // @ts-expect-error tileGrid is added here and supported in eox-map layer definition
       json.source.tileGrid = {
-        "tileSize" : [512, 512]
+        tileSize: [512, 512],
       };
     }
-    // @ts-expect-error missing type definition, can be accessed like this
-    if (xyzLink.roles?.includes("baselayer") || xyzLink.roles?.includes("overlay")) {
+    if (
+      // @ts-expect-error missing type definition, can be accessed like this
+      xyzLink.roles?.includes("baselayer") ||
+      // @ts-expect-error missing type definition, can be accessed like this
+      xyzLink.roles?.includes("overlay")
+    ) {
       // @ts-expect-error no type for eox-map
       json.preload = Infinity;
     }

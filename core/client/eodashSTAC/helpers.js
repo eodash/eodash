@@ -392,39 +392,35 @@ export const findLayer = (layers, layer) => {
 };
 
 /**
- * Removes a list of layers (and nested ones) from a layer/group structure,
- * and inserts new layers in place of the first removed one.
+ * Removes one or more layers (by id) from a layer/group structure and inserts
+ * new layers in place of the first removed one.
+ * Returns a new array reference at every level that changed (immutable).
  *
- * @param {import("@eox/map").EoxLayer[]} layers - Array of layers or groups.
- * @param {import("@eox/map").EoxLayer[]} toRemove - Array of layers to remove (by id).
- * @param {Record<string, any>[]} toInsert - Array of layers to insert instead.
- * @returns {Record<string, any>[]} New array with replacements applied.
+ * @param {import("@eox/map").EoxLayer[]} layers - Current layer array.
+ * @param {string | string[]} toRemove - Id(s) of layers to remove.
+ * @param {import("@eox/map").EoxLayer[]} toInsert - Layers to insert in place of the first removed one.
+ * @returns {import("@eox/map").EoxLayer[]}
  */
-export const replaceLayersInStructure = (layers, toRemove, toInsert) => {
-  const result = [];
+export const replaceLayer = (layers, toRemove, toInsert) => {
+  const removeIds = new Set(Array.isArray(toRemove) ? toRemove : [toRemove]);
   let inserted = false;
+  const result = [];
 
   for (const layer of layers) {
     if (layer.type === "Group" && Array.isArray(layer.layers)) {
-      // Recurse into group layers
-      const newGroupLayers = replaceLayersInStructure(
-        layer.layers,
-        toRemove,
-        toInsert,
+      const newGroupLayers = replaceLayer(layer.layers, toRemove, toInsert);
+      // Only create a new object reference if children changed
+      result.push(
+        newGroupLayers !== layer.layers
+          ? { ...layer, layers: newGroupLayers }
+          : layer,
       );
-      result.push({ ...layer, layers: newGroupLayers });
       continue;
     }
 
-    // Match by reference or id
     const id = layer?.properties?.id;
-    const isToRemove = toRemove.some((rem) => {
-      const remId = rem?.properties?.id;
-      return remId === id;
-    });
 
-    if (isToRemove) {
-      // On first removed occurrence, insert the new layers
+    if (id && removeIds.has(id)) {
       if (!inserted) {
         result.push(...toInsert);
         inserted = true;
@@ -433,43 +429,14 @@ export const replaceLayersInStructure = (layers, toRemove, toInsert) => {
       continue;
     }
 
-    result.unshift(layer);
+    result.push(layer);
   }
 
-  return result;
-};
-
-/**
- * Removes the layer with the id provided and injects an array of layers in its position
- * @param {import("@eox/map").EoxLayer[]} currentLayers
- * @param {string} oldLayer - id of the layer to be replaced
- *  @param {import("@eox/map").EoxLayer[]} newLayers - array of layers to replace the old layer
- * @returns {import("@eox/map").EoxLayer[]}
- */
-export const replaceLayer = (currentLayers, oldLayer, newLayers) => {
-  const oldLayerIdx = currentLayers.findIndex(
-    (l) => l.properties?.id === oldLayer,
-  );
-
-  if (oldLayerIdx !== -1) {
-    log.debug(
-      "Replacing layer",
-      oldLayer,
-      "with",
-      newLayers.map((l) => l.properties?.id),
-    );
-    currentLayers.splice(oldLayerIdx, 1, ...newLayers);
-  }
-
-  for (const l of currentLayers) {
-    if (l.type === "Group") {
-      const updatedGroupLyrs = replaceLayer(l.layers, oldLayer, newLayers);
-      if (updatedGroupLyrs?.length) {
-        l.layers = updatedGroupLyrs;
-      }
-    }
-  }
-  return currentLayers;
+  // If nothing changed, return the original reference to avoid unnecessary re-renders
+  return result.length === layers.length &&
+    result.every((l, i) => l === layers[i])
+    ? layers
+    : result;
 };
 
 /**
