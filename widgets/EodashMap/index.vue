@@ -313,7 +313,11 @@ onMounted(() => {
       false,
     );
 
-    useUpdateTooltipProperties(eodashCollections, compareTooltipProperties);
+    useUpdateTooltipProperties(
+      eodashCollections,
+      compareTooltipProperties,
+      true,
+    );
   }
 
   useInitMap(
