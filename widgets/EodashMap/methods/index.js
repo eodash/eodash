@@ -238,15 +238,24 @@ export const useInitMap = (
  *
  * @param {import("@/eodashSTAC/EodashCollection").EodashCollection[]} eodashCols
  * @param {import("vue").Ref<Exclude<import("@/types").EodashStyleJson["tooltip"],undefined>>} tooltipProperties
+ * @param {boolean} enableCompare
  */
 
-export const useUpdateTooltipProperties = (eodashCols, tooltipProperties) => {
+export const useUpdateTooltipProperties = (
+  eodashCols,
+  tooltipProperties,
+  enableCompare = false,
+) => {
+  /**
+   * Listen to events related to the main or compare map based on the enableCompare flag
+   * @param {string} evt */
+  const listenTo = (evt) =>
+    enableCompare ? evt.includes("compare") : !evt.includes("compare");
   useOnLayersUpdate(async (evt, _payload) => {
-    if (evt.includes("compare")) {
-      // TODO: support compare map tooltips
-      // Do not update tooltip properties on compare map
+    if (!listenTo(evt)) {
       return;
     }
+
     const tooltips = [];
     for (const ec of eodashCols) {
       tooltips.push(...(await ec.getToolTipProperties()));
