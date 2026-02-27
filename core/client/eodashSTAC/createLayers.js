@@ -455,7 +455,7 @@ export const createLayersFromLinks = async (
     const dimensions = /** @type { {style:any} & Record<string,any> } */ (
       wmtsLink["wmts:dimensions"] || {}
     );
-    let { style, ...dimensionsWithoutStyle } = { ...dimensions };
+    let { style, matrixSet, ...dimensionsWithoutStyle } = { ...dimensions };
     let extractedStyle = /** @type { string } */ (style || "default");
 
     // TODO, this does not yet work between layer time changes because we do not get
@@ -513,9 +513,7 @@ export const createLayersFromLinks = async (
           url: buildCapabilitiesUrl(wmtsLink.href),
           layer: wmtsLink["wmts:layer"],
           style: extractedStyle,
-          ...(wmtsLink["wmts:matrixSet"] && {
-            matrixSet: wmtsLink["wmts:matrixSet"],
-          }),
+          ...(matrixSet ? { matrixSet } : {}),
           attributions: wmtsLink.attribution,
           dimensions: dimensionsWithoutStyle,
         },
