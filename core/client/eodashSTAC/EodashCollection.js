@@ -11,9 +11,9 @@ import {
   getDatetimeProperty,
   isSTACItem,
   findLayersByLayerPrefix,
-  replaceLayersInStructure,
   extractLayerLegend,
   extractLayerTimeValues,
+  replaceLayer,
 } from "./helpers";
 import {
   getLayers,
@@ -455,9 +455,10 @@ export class EodashCollection {
     if (!toBeReplacedLayers) {
       return;
     }
-    const updatedLayers = replaceLayersInStructure(
+    const updatedLayers = replaceLayer(
       currentLayers,
-      toBeReplacedLayers,
+      /** @type {string[]} */ (toBeReplacedLayers.map((l) => l.properties?.id)),
+      //@ts-expect-error createLayersJson is not typed correctly
       newLayers,
     );
 
