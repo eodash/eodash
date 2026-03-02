@@ -1,7 +1,6 @@
 <template>
   <eox-timecontrol
     v-if="hasMultipleItems"
-    :key="timesliderUpdateRef"
     ref="eoxTimecontrol"
     .for="mapEl"
     @select="onSelect"
@@ -36,12 +35,13 @@
   </eox-timecontrol>
 </template>
 <script setup>
+import "@eox/timecontrol";
+import "@eox/itemfilter";
+
 import { initMosaic, useInitMosaic } from "@/eodashSTAC/mosaic";
 import { useSTAcStore } from "@/store/stac";
 import { datetime, indicator, mapEl } from "@/store/states";
-import { eodashCollections, timesliderUpdateRef } from "@/utils/states";
-import "@eox/timecontrol";
-import "@eox/itemfilter";
+import { eodashCollections } from "@/utils/states";
 import { storeToRefs } from "pinia";
 import { computed, ref, unref, watch } from "vue";
 import { createLayersConfig } from "./EodashMap/methods/create-layers-config";
@@ -94,7 +94,6 @@ watch(
     await new Promise((r) => setTimeout(r, 400));
     if (isMosaicEnabled.value) {
       hasMultipleItems.value = true;
-      timesliderUpdateRef.value += 1;
       return;
     }
     const analysisLayers = mapEl.value?.layers?.find(
@@ -113,7 +112,6 @@ watch(
       }
     }
     hasMultipleItems.value = false;
-    timesliderUpdateRef.value += 1;
   },
   { immediate: true },
 );
@@ -138,7 +136,6 @@ const onSelect = async (e) => {
     // tmp hack
     setTimeout(() => {
       console.log("[eodash] Triggering timeslider update");
-      timesliderUpdateRef.value += 1;
     }, 400);
     currentIndicator = indicator.value;
   }
