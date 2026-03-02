@@ -1,9 +1,9 @@
 import axios from "@/plugins/axios";
 import { Item } from "stac-js";
 import { mosaicState } from "@/utils/states";
-import { indicator, mapEl } from "@/store/states";
+import { indicator, mapEl, mapPosition } from "@/store/states";
 import { getLayers } from "@/store/actions";
-import { onMounted, onUnmounted } from "vue";
+import { nextTick, onMounted, onUnmounted, watch } from "vue";
 import { useOnLayersUpdate } from "@/composables";
 import timeControlValues from "@/utils/timeControlValues.json";
 // import { extractLayerConfig } from "./helpers";
@@ -216,7 +216,6 @@ export async function renderMosaic(
     mosaicLayers[0].properties.timeControlProperty = "TIME";
   }
   analysisGroup.layers = mosaicLayers;
-  mosaicState.showButton = false;
 
   if (mapEl.value) {
     // Reassign to trigger map re-render after in-place layer mutation
@@ -303,6 +302,26 @@ export function renderLatestMosaic() {
 }
 /**
  *
+ * @param {number} zoomLevel
+ * @param {number} [threshold=mosaicState.visibilityThreshold]
+ */
+function toggleMosaicVisibility(
+  zoomLevel,
+  threshold = mosaicState.visibilityThreshold,
+) {
+  if (!mosaicState.latestLayer) {
+    return;
+  }
+  /** @type {string} */
+  const layerId = mosaicState.latestLayer.properties.id;
+  const layer = mapEl.value?.getLayerById(layerId);
+  if (!layer) {
+    return;
+  }
+  layer.setVisible(zoomLevel >= threshold);
+}
+/**
+ *
  * @param {string} mosaicEndpoint
  * @param {{collection?:string, timeRange?:[string, string], cloudCover?: number}} filters
  * @param {ReturnType<typeof import("@/store/stac").useSTAcStore>} store
@@ -322,8 +341,11 @@ export async function initMosaic(
     },
     //@ts-expect-error todo
     rasterForm,
-  );
-  mosaicState.showButton = false;
+  ).then(async () => {
+    await nextTick(() => {
+      toggleMosaicVisibility(mapPosition.value[2] ?? 0);
+    });
+  });
 }
 
 /**
@@ -339,6 +361,16 @@ export function useInitMosaic(
   store,
   indicators,
 ) {
+  const stopWatcher = watch(mapPosition, (updatedPos, oldPos) => {
+    const [_oldX, _oldY, oldZ] = oldPos;
+    const [_x, _y, z] = updatedPos;
+    if (!z || z === oldZ) {
+      return;
+    }
+
+    toggleMosaicVisibility(z);
+  });
+
   onMounted(async () => {
     if (!indicators?.includes(store.selectedStac?.id ?? "")) {
       return;
@@ -360,6 +392,7 @@ export function useInitMosaic(
     );
   });
   onUnmounted(() => {
-    mosaicState.showButton = false;
+    mosaicState.latestLayer = null;
+    stopWatcher();
   });
 }

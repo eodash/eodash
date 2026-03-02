@@ -53,7 +53,6 @@ export const createOnSelectHandler = (store, enableCompare, mapElement) => {
         await store.loadSelectedSTAC(item.collection, false, item);
       }
     }
-    mosaicState.showButton = true;
 
     mapElement.value?.selectInteractions["stac-items"]?.highlightById(
       [item.id],

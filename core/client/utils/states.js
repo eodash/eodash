@@ -148,7 +148,6 @@ export const dataThemesBrands = {
 };
 
 export const mosaicState = reactive({
-  showButton: false,
   /** @type {{ time: string | object | null, collection: string | null }} */
   filters: {
     time: null,
@@ -158,6 +157,8 @@ export const mosaicState = reactive({
   query: null,
   /** @type {Record<string, any> | null | undefined} */
   latestLayer: null,
+  /** @type {number} */
+  visibilityThreshold: 8,
 });
 
 /** @type {Map<string, import("stac-ts").StacItem[]>} */
