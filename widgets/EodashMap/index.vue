@@ -328,7 +328,11 @@ onMounted(() => {
       props.baseLayers,
     );
 
-    useUpdateTooltipProperties(eodashCollections, compareTooltipProperties);
+    useUpdateTooltipProperties(
+      eodashCollections,
+      compareTooltipProperties,
+      true,
+    );
   }
 
   useInitMap(
