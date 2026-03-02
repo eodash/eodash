@@ -93,8 +93,7 @@ import {
 import axios from "@/plugins/axios";
 import { mdiViewDashboard } from "@mdi/js";
 import EodashLayoutSwitcher from "^/EodashLayoutSwitcher.vue";
-import { indicator, mapCompareEl, mapEl } from "@/store/states";
-import { useInitMosaic } from "@/eodashSTAC/mosaic";
+import { mapCompareEl, mapEl } from "@/store/states";
 
 if (!customElements.get("eox-itemfilter")) {
   await import("@eox/itemfilter");
@@ -163,10 +162,6 @@ const props = defineProps({
       },
     ],
   },
-  useMosaic: {
-    type: Boolean,
-    default: false,
-  },
   enableCompare: {
     type: Boolean,
     default: false,
@@ -209,10 +204,6 @@ onUnmounted(() => {
 
 const store = useSTAcStore();
 
-// Mosaic Logic
-if (props.useMosaic && store.mosaicEndpoint) {
-  useInitMosaic(store.mosaicEndpoint, { collection: indicator.value }, store);
-}
 // Reactive state
 /** @type {import("vue").Ref<import("@/types").GeoJsonFeature[]>} */
 const currentItems = ref([]);
