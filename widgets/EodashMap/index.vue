@@ -309,7 +309,6 @@ onMounted(() => {
   }
   // assign map Element state to eox map
   mapEl.value = eoxMap.value;
-  eoxMap.value.reducedGlobeLOD = true;
 
   if (props.enableCompare) {
     mapCompareEl.value = compareMap.value;

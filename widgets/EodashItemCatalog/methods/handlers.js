@@ -1,6 +1,5 @@
 import { inAndOut } from "ol/easing";
 import { renderItemsFeatures } from "./map";
-import { mosaicState } from "@/utils/states";
 
 /**
  * @param {import("vue").Ref<import("@/types").GeoJsonFeature[]>} currentItems
