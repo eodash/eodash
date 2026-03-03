@@ -210,18 +210,20 @@ const isInCompareMode = computed(
 const compareIcon = computed(() =>
   isInCompareMode.value ? mdiCompareRemove : mdiCompare,
 );
-const itemFilterConfig = {
-  enableHighlighting: false,
-  resultType: "cards",
-  style: "--select-filter-max-items: 8",
-  "filters-title": "Select an indicator to compare",
-  subTitleProperty: "subtitle",
-  imageProperty: "thumbnail",
-  aggregateResults: "collection_group",
-  "results-title": "",
-  ...(typeof compareIndicators === "object" &&
-    compareIndicators.itemFilterConfig),
-};
+const itemFilterConfig = computed(() => {
+  return {
+    enableHighlighting: false,
+    resultType: "cards",
+    style: "--select-filter-max-items: 8",
+    "filters-title": "Select an indicator to compare",
+    subTitleProperty: "subtitle",
+    imageProperty: "thumbnail",
+    aggregateResults: "collection_group",
+    "results-title": "",
+    ...(typeof compareIndicators === "object" &&
+      compareIndicators.itemFilterConfig),
+  };
+});
 
 /** @type {import("vue").Ref<HTMLDivElement|null>} */
 const rootRef = ref(null);
