@@ -277,7 +277,6 @@ eox-geosearch {
 
 .mosaic-hint {
   position: fixed;
-  top: 16px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 10;
