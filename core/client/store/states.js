@@ -46,8 +46,30 @@ export const poi = ref("");
  */
 export const comparePoi = ref("");
 
-/** @type {import("vue").Ref<import("@eox/chart").EOxChart | null>} */
-export const chartEl = shallowRef(null);
+/** Whether the map is in globe mode */
+export const isGlobe = ref(false);
 
-/** @type {import("vue").Ref<import("@eox/chart").EOxChart | null>} */
-export const compareChartEl = shallowRef(null);
+/** Whether the charts are in fullscreen mode
+ * @type {import("vue").Ref<boolean>}
+ */
+export const areChartsSeparateLayout = ref(false);
+
+/** Holds main chart data
+ *  @type {import("vue").Ref<Record<string,any>|null>}
+ */
+export const chartData = ref(null);
+
+/** Holds compare chart data
+ *  @type {import("vue").Ref<Record<string,any>|null>}
+ */
+export const compareChartData = ref(null);
+
+/** Holds main chart spec
+ * @type {import("vue").Ref<import("vega-embed").VisualizationSpec | null>}
+ */
+export const chartSpec = ref(null);
+
+/** Holds compare chart spec
+ * @type {import("vue").Ref<import("vega-embed").VisualizationSpec | null>}
+ */
+export const compareChartSpec = ref(null);

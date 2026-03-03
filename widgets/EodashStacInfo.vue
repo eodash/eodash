@@ -6,9 +6,7 @@
       .body="body"
       .featured="featured"
       .footer="footer"
-      .styleOverride="styleOverride"
       .header="header"
-      .subheader="subheader"
       .tags="tags"
       style="--color-primary-lighter: none"
     >
@@ -20,54 +18,78 @@
 import "@eox/stacinfo";
 import { currentUrl } from "@/store/states";
 
-const {
-  allowHtml,
-  featured,
-  footer,
-  header,
-  body,
-  styleOverride,
-  subheader,
-  tags,
-} = defineProps({
+const { allowHtml, featured, footer, header, body, tags } = defineProps({
   allowHtml: {
     type: Boolean,
     default: true,
   },
 
-  styleOverride: {
-    type: String,
-    default: "",
-  },
   header: {
-    /** @type {import("vue").PropType<string[]>}  */
+    /** 
+     * @type {import("vue").PropType<
+     *   (string | { 
+     *     key: string, 
+     *     filter?: (item: any) => boolean 
+     *   })[]
+     * >} 
+    */
     type: Array,
     default: () => ["title"],
   },
   tags: {
-    /** @type {import("vue").PropType<string[]>}  */
+    /** 
+     * @type {import("vue").PropType<
+     *   (string | { 
+     *     key: string, 
+     *     filter?: (item: any) => boolean 
+     *   })[]
+     * >} 
+    */
     type: Array,
     default: () => ["themes"],
   },
-  subheader: {
-    /** @type {import("vue").PropType<string[]>}  */
-    type: Array,
-    default: () => [],
-  },
   body: {
-    /** @type {import("vue").PropType<string[]>}  */
+    /** 
+     * @type {import("vue").PropType<
+     *   (string | { 
+     *     key: string, 
+     *     filter?: (item: any) => boolean 
+     *   })[]
+     * >} 
+    */
     type: Array,
-    default: () => ["satellite", "sensor", "agency", "extent"],
+    default: () => [
+      "satellite",
+      "sensor",
+      "insituSources",
+      "otherSources",
+      "agency",
+      "extent",
+    ],
   },
   featured: {
-    /** @type {import("vue").PropType<string[]>}  */
+    /** 
+     * @type {import("vue").PropType<
+     *   (string | { 
+     *     key: string, 
+     *     filter?: (item: any) => boolean 
+     *   })[]
+     * >} 
+    */
     type: Array,
     default: () => ["description", "providers", "assets", "links"],
   },
   footer: {
-    /** @type {import("vue").PropType<string[]>}  */
+    /** 
+     * @type {import("vue").PropType<
+     *   (string | { 
+     *     key: string, 
+     *     filter?: (item: any) => boolean 
+     *   })[]
+     * >} 
+    */
     type: Array,
-    default: () => ["sci:citation"],
+    default: () => ["sci:citation", "sci:doi", "sci:publication"],
   },
 });
 </script>

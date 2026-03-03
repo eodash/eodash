@@ -1,4 +1,4 @@
-import { includesProcess } from "@/store/actions";
+import { includesProcess, shouldShowChartWidget } from "@/store/actions";
 
 /** @type {import("@/types").Template} */
 export default {
@@ -119,17 +119,44 @@ export default {
         },
     },
     {
+      defineWidget: () =>
+        shouldShowChartWidget() && {
+          id: "ProcessResultChart",
+          type: "internal",
+          title: "Chart",
+          layout: { x: 0, y: 0, w: 6, h: 8 },
+          widget: {
+            name: "EodashChart",
+          },
+        },
+    },
+    {
+      defineWidget: () =>
+        shouldShowChartWidget(true) && {
+          id: "ProcessResultChartCompare",
+          type: "internal",
+          title: "Compare Chart",
+          layout: { x: 6, y: 0, w: 6, h: 8 },
+          widget: {
+            name: "EodashChart",
+            properties: {
+              enableCompare: true,
+            },
+          },
+        },
+    },
+    {
       defineWidget: (selectedSTAC) => {
         return selectedSTAC
           ? {
               id: "expert-Datepicker",
               type: "internal",
-              layout: { x: 4, y: 7, w: 4, h: 5 },
+              layout: { x: 4, y: 3, w: 4, h: 9 },
               title: "Date",
               widget: {
                 name: "EodashDatePicker",
                 properties: {
-                  hintText: `<b>Hint:</b> closest available date is displayed <br />
+                  hintText: `<b>Hint:</b> closest available date is displayed<br/>
                                 on map (see Analysis Layers)`,
                   toggleCalendar: true,
                 },

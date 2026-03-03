@@ -8,6 +8,7 @@ import { isFirstLoad } from "@/utils/states";
 import { useEmitLayersUpdate, useOnLayersUpdate } from "@/composables";
 import { mapPosition } from "@/store/states";
 import { sanitizeBbox } from "@/eodashSTAC/helpers";
+import { transformExtent } from "@eox/map";
 /**
  * Holder for previous compare map view as it is overwritten by sync
  * @type { import("ol").View | null} mapElement
@@ -201,7 +202,7 @@ export const useInitMap = (
             const b = updatedStac.extent?.spatial.bbox[0];
             const sanitizedExtent = sanitizeBbox([...b]);
 
-            const reprojExtent = mapElement.value?.transformExtent(
+            const reprojExtent = transformExtent(
               sanitizedExtent,
               "EPSG:4326",
               mapElement.value?.map?.getView().getProjection(),
@@ -237,15 +238,24 @@ export const useInitMap = (
  *
  * @param {import("@/eodashSTAC/EodashCollection").EodashCollection[]} eodashCols
  * @param {import("vue").Ref<Exclude<import("@/types").EodashStyleJson["tooltip"],undefined>>} tooltipProperties
+ * @param {boolean} enableCompare
  */
 
-export const useUpdateTooltipProperties = (eodashCols, tooltipProperties) => {
+export const useUpdateTooltipProperties = (
+  eodashCols,
+  tooltipProperties,
+  enableCompare = false,
+) => {
+  /**
+   * Listen to events related to the main or compare map based on the enableCompare flag
+   * @param {string} evt */
+  const listenTo = (evt) =>
+    enableCompare ? evt.includes("compare") : !evt.includes("compare");
   useOnLayersUpdate(async (evt, _payload) => {
-    if (evt.includes("compare")) {
-      // TODO: support compare map tooltips
-      // Do not update tooltip properties on compare map
+    if (!listenTo(evt)) {
       return;
     }
+
     const tooltips = [];
     for (const ec of eodashCols) {
       tooltips.push(...(await ec.getToolTipProperties()));

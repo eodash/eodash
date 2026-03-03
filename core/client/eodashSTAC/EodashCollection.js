@@ -11,9 +11,9 @@ import {
   getDatetimeProperty,
   isSTACItem,
   findLayersByLayerPrefix,
-  replaceLayersInStructure,
   extractLayerLegend,
   extractLayerTimeValues,
+  replaceLayer,
 } from "./helpers";
 import {
   getLayers,
@@ -131,7 +131,7 @@ export class EodashCollection {
     const item = new Item(this.selectedItem);
     this.selectedItem = item;
     const title = this.#collectionStac?.title || this.#collectionStac?.id || "";
-    layersJson.unshift(
+    layersJson.push(
       ...(await this.buildJsonArray(item, title, isObservationPoint)),
     );
     return layersJson;
@@ -195,7 +195,9 @@ export class EodashCollection {
 
     const isSupported =
       item.links.some((link) =>
-        ["wms", "xyz", "wmts", "vector-tile"].includes(link.rel),
+        ["wms", "xyz", "wmts", "vector-tile", "mapbox-style-document"].includes(
+          link.rel,
+        ),
       ) || Object.keys(dataAssets).length;
 
     if (isSupported) {
@@ -220,6 +222,15 @@ export class EodashCollection {
       );
 
       jsonArray.push(
+        ...links,
+        ...(await createLayersFromAssets(
+          this.#collectionStac?.id ?? "",
+          title || this.#collectionStac?.title || item.id,
+          dataAssets,
+          item,
+          layerDatetime,
+          extraProperties,
+        )),
         ...((this.rasterEndpoint &&
           (await createLayerFromRender(
             this.rasterEndpoint,
@@ -231,16 +242,6 @@ export class EodashCollection {
             },
           ))) ||
           []),
-        ...(await createLayersFromAssets(
-          this.#collectionStac?.id ?? "",
-          title || this.#collectionStac?.title || item.id,
-          dataAssets,
-          item,
-          layerDatetime,
-          extraProperties,
-        )),
-        // We add the links after the assets so they are layered underneath assets
-        ...links,
       );
     } else {
       // get the correct style which is not attached to a link
@@ -454,9 +455,10 @@ export class EodashCollection {
     if (!toBeReplacedLayers) {
       return;
     }
-    const updatedLayers = replaceLayersInStructure(
+    const updatedLayers = replaceLayer(
       currentLayers,
-      toBeReplacedLayers,
+      /** @type {string[]} */ (toBeReplacedLayers.map((l) => l.properties?.id)),
+      //@ts-expect-error createLayersJson is not typed correctly
       newLayers,
     );
 

@@ -12,6 +12,10 @@ import {
   datetime,
   indicator,
   poi,
+  chartData,
+  chartSpec,
+  compareChartData,
+  compareChartSpec,
 } from "@/store/states";
 import axios from "@/plugins/axios";
 import { processCharts, processLayers, processSTAC } from "./outputs";
@@ -30,7 +34,6 @@ import { getLayers } from "@/store/actions";
  * @param {import("vue").Ref<import("stac-ts").StacCollection | null>} params.selectedStac
  * @param {import("vue").Ref<import("@eox/jsonform").EOxJSONForm | null>} params.jsonformEl
  * @param {import("vue").Ref<Record<string,any> | null>} params.jsonformSchema
- * @param {import("vue").Ref<import("@eox/chart").EOxChart["spec"] | null>} params.chartSpec
  * @param {import("vue").Ref<any[]>} params.processResults
  * @param {import("vue").Ref<boolean>} params.isProcessed
  * @param {import("vue").Ref<boolean>} params.loading
@@ -41,7 +44,6 @@ export async function initProcess({
   selectedStac,
   jsonformEl,
   jsonformSchema,
-  chartSpec,
   isProcessed,
   processResults,
   loading,
@@ -64,25 +66,27 @@ export async function initProcess({
   resetProcess({
     loading,
     isProcessed,
-    chartSpec,
     jsonformSchema,
     isPolling,
     processResults,
+    enableCompare,
   });
 
   await jsonformEl.value?.editor.destroy();
   if (updatedJsonform) {
     // make sure correct target layer id is used in jsonform
-    if (updatedJsonform.properties?.feature?.options?.drawtools?.layerId) {
-      await updateJsonformIdentifier({
-        jsonformSchema,
-        newLayers: await getLayers(),
-      });
-    }
+    let newJsonForm = null;
+    newJsonForm = await updateJsonformIdentifier({
+      jsonformSchema: updatedJsonform,
+      newLayers: getLayers(),
+    });
     if (enableCompare) {
-      updatedJsonform = updateJsonformSchemaTarget(updatedJsonform);
+      newJsonForm = updateJsonformSchemaTarget(newJsonForm);
     }
-    jsonformSchema.value = updatedJsonform;
+    // trigger jsonform update in next tick
+    jsonformSchema.value = null;
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    jsonformSchema.value = newJsonForm;
   }
 }
 
@@ -92,11 +96,12 @@ export async function initProcess({
  * @export
  * @async
  * @param {Object} params
- * @param {import("vue").Ref<Record<string,any> | null>} params.jsonformSchema params.jsonformSchema
+ * @param {Record<string,any> | null} params.jsonformSchema params.jsonformSchema
  * @param {Record<string, any>[] | undefined} params.newLayers params.newLayers
+ * @returns {Promise<Record<string,any> | null | undefined>} updated jsonform schema
  */
 export async function updateJsonformIdentifier({ jsonformSchema, newLayers }) {
-  const form = jsonformSchema.value;
+  const form = jsonformSchema;
   if (!form) {
     return;
   }
@@ -128,9 +133,8 @@ export async function updateJsonformIdentifier({ jsonformSchema, newLayers }) {
         return;
       }
       for (const layer of layersArray) {
-        if (layer.layers) {
-          // @ts-expect-error TODO payload coming from time update events is not an object with layers property
-          traverseLayers(layer);
+        if (layer.type === "Group" && Array.isArray(layer.layers)) {
+          traverseLayers(layer.layers);
         } else {
           if (layer.properties?.id?.startsWith(layerId)) {
             matchedLayerId = layer.properties.id;
@@ -142,16 +146,15 @@ export async function updateJsonformIdentifier({ jsonformSchema, newLayers }) {
     traverseLayers(layers);
     if (matchedLayerId) {
       form.properties.feature.options.drawtools.layerId = matchedLayerId;
-      // trigger jsonform update in next tick
-      jsonformSchema.value = null;
-      await new Promise((resolve) => setTimeout(resolve, 0));
-      jsonformSchema.value = form;
+      return form;
     } else {
-      throw new Error(
+      console.warn(
         `Could not find matching layer for processing form with id: ${layerId}`,
       );
+      return null;
     }
   }
+  return form;
 }
 
 /**
@@ -161,8 +164,6 @@ export async function updateJsonformIdentifier({ jsonformSchema, newLayers }) {
  * @param {import("vue").Ref<import("stac-ts").StacCollection | null>} params.selectedStac
  * @param {import("vue").Ref<import("@eox/jsonform").EOxJSONForm | null>} params.jsonformEl
  * @param {import("vue").Ref<Record<string,any>|null>} params.jsonformSchema
- * @param {import("vue").Ref<import("@eox/chart").EOxChart["spec"] | null>} params.chartSpec
- * @param {import("vue").Ref<Record<string, any> | null>} params.chartData
  * @param {import("vue").Ref<boolean>} params.isPolling
  * @param {import("vue").Ref<any[]>} params.processResults
  * @param {import("@eox/map").EOxMap | null} params.mapElement
@@ -173,8 +174,6 @@ export async function handleProcesses({
   selectedStac,
   jsonformEl,
   jsonformSchema,
-  chartSpec,
-  chartData,
   isPolling,
   processResults,
   mapElement,
@@ -183,6 +182,7 @@ export async function handleProcesses({
   if (!jsonformEl.value || !jsonformSchema.value || !selectedStac.value) {
     return;
   }
+  const enableCompare = mapElement?.id === "compare";
 
   log.debug("Processing...");
   loading.value = true;
@@ -204,12 +204,14 @@ export async function handleProcesses({
       selectedStac.value?.["eodash:vegadefinition"]
     );
     const layerId = selectedStac.value?.id ?? "";
-
-    [chartSpec.value, chartData.value] = await processCharts({
+    const usedChartSpec = enableCompare ? compareChartSpec : chartSpec;
+    const usedChartData = enableCompare ? compareChartData : chartData;
+    let tempChartSpec = null;
+    [tempChartSpec, usedChartData.value] = await processCharts({
       links: serviceLinks,
       jsonformValue: { ...(jsonformValue ?? {}) },
       jsonformSchema: jsonformSchema.value,
-      enableCompare: mapElement?.id === "compare",
+      enableCompare,
       selectedStac: selectedStac.value,
       specUrl,
       isPolling,
@@ -217,19 +219,19 @@ export async function handleProcesses({
       customEndpointsHandler: handleChartCustomEndpoints,
     });
 
-    if (Object.keys(chartData.value ?? {}).length) {
-      processResults.value.push(chartData.value);
+    if (Object.keys(usedChartData.value ?? {}).length) {
+      processResults.value.push(usedChartData.value);
     }
 
     //@ts-expect-error we assume that the spec data is of type InlineData
-    if (chartSpec.value?.data?.values?.length) {
+    if (Object.keys(tempChartSpec?.data?.values ?? {}).length) {
       //@ts-expect-error we assume that the spec data is of type InlineData
-      processResults.value.push(chartSpec.value?.data.values);
+      processResults.value.push(tempChartSpec?.data.values);
     }
-
-    if (chartSpec.value && !("background" in chartSpec.value)) {
-      chartSpec.value["background"] = "transparent";
+    if (tempChartSpec && !("background" in tempChartSpec)) {
+      tempChartSpec["background"] = "transparent";
     }
+    usedChartSpec.value = tempChartSpec;
 
     await processSTAC(
       serviceLinks,
@@ -280,23 +282,24 @@ export async function handleProcesses({
  * @param {Object} params
  * @param {import("vue").Ref<boolean>} params.loading
  * @param {import("vue").Ref<boolean>} params.isProcessed
- * @param {import("vue").Ref<import("@eox/chart").EOxChart["spec"] | null>} params.chartSpec
  * @param {import("vue").Ref<boolean>} params.isPolling
  * @param {import("vue").Ref<any[]>} params.processResults
  * @param {import("vue").Ref<Record<string,any>|null>} params.jsonformSchema
+ * @param {boolean} params.enableCompare
  */
 export function resetProcess({
   loading,
   isProcessed,
-  chartSpec,
   jsonformSchema,
   processResults,
   isPolling,
+  enableCompare,
 }) {
   loading.value = false;
   isProcessed.value = false;
   isPolling.value = false;
-  chartSpec.value = null;
+  const usedChartSpec = enableCompare ? compareChartSpec : chartSpec;
+  usedChartSpec.value = null;
   processResults.value = [];
   jsonformSchema.value = null;
 }
@@ -315,8 +318,7 @@ export const onChartClick = (evt) => {
   const chartSpec = evt.target?.spec;
   if (
     !chartSpec ||
-    !evt.detail?.item?.datum ||
-    !evt.detail?.item?.datum.datum
+    (!evt.detail?.item?.datum && !evt.detail?.item?.datum.datum)
   ) {
     return;
   }

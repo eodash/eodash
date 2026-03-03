@@ -15,6 +15,24 @@ import {
 } from "./helpers";
 import { handleAuthenticationOfLink } from "./auth";
 import log from "loglevel";
+import { useSTAcStore } from "@/store/stac";
+
+/**
+ * Build a WMTS GetCapabilities URL from a base endpoint URL.
+ * If the URL already points to a capabilities document, return as-is.
+ *
+ * @param {string} href
+ * @returns {string}
+ */
+function buildCapabilitiesUrl(href) {
+  if (href.includes("GetCapabilities") || href.endsWith(".xml")) {
+    return href;
+  }
+  const url = new URL(href);
+  url.searchParams.set("service", "WMTS");
+  url.searchParams.set("request", "GetCapabilities");
+  return url.toString();
+}
 
 /**
  * @param {string} collectionId
@@ -210,10 +228,10 @@ export async function createLayersFromAssets(
       const projection = getProjectionCode(assetProjection) || "EPSG:4326";
       // in case we merge them, we pass urls, else just single url
       const urlsObject = {
-        url: fgbSource,
-        // TODO uncomment this once fgb merging supported on source
-        // url: stacObject?.["eodash:merge_assets"] === false ? fgbSource : undefined,
-        // urls: stacObject?.["eodash:merge_assets"] !== false ? fgbSources : undefined,
+        url:
+          stacObject?.["eodash:merge_assets"] === false
+            ? fgbSource
+            : fgbSources,
       };
       const layer = {
         type: "Vector",
@@ -242,9 +260,7 @@ export async function createLayersFromAssets(
       addTooltipInteraction(layer, style);
       jsonArray.push(layer);
       // if we merged assets (default yes), then we can break from this loop
-      // TODO uncomment this once fgb merging supported on source
-      // if (stacObject?.["eodash:merge_assets"] !== false)
-      //   break
+      if (stacObject?.["eodash:merge_assets"] !== false) break;
     }
   }
 
@@ -271,7 +287,7 @@ export async function createLayersFromAssets(
       const sources =
         stacObject?.["eodash:merge_assets"] !== false
           ? geoTIFFSources
-          : geotiffSource;
+          : [geotiffSource];
       const layer = {
         type: "WebGLTile",
         source: {
@@ -282,7 +298,7 @@ export async function createLayersFromAssets(
         },
         properties: {
           id: assetLayerId,
-          title,
+          title: assets[assetName]?.title || title,
           layerConfig,
           layerDatetime,
         },
@@ -325,7 +341,8 @@ export const createLayersFromLinks = async (
   const xyzArray = item.links.filter((l) => l.rel === "xyz") ?? [];
   const vectorTileArray =
     item.links.filter((l) => l.rel === "vector-tile") ?? [];
-
+  const mapboxStyleDocumentArray =
+    item.links.filter((l) => l.rel === "mapbox-style-document") ?? [];
   // Taking projection code from main map view, as main view defines
   // projection for comparison map
   const viewProjectionCode = mapEl?.value?.projection || "EPSG:3857";
@@ -375,6 +392,15 @@ export const createLayersFromLinks = async (
         },
       },
     };
+    if (
+      // @ts-expect-error missing type definition, can be accessed like this
+      wmsLink.roles?.includes("baselayer") ||
+      // @ts-expect-error missing type definition, can be accessed like this
+      wmsLink.roles?.includes("overlay")
+    ) {
+      // @ts-expect-error no type for eox-map
+      json.preload = Infinity;
+    }
     if ("wms:version" in wmsLink) {
       // @ts-expect-error no type for eox-map
       json.source.params["VERSION"] = wmsLink["wms:version"];
@@ -431,7 +457,7 @@ export const createLayersFromLinks = async (
     const dimensions = /** @type { {style:any} & Record<string,any> } */ (
       wmtsLink["wmts:dimensions"] || {}
     );
-    let { style, ...dimensionsWithoutStyle } = { ...dimensions };
+    let { style, matrixSet, ...dimensionsWithoutStyle } = { ...dimensions };
     let extractedStyle = /** @type { string } */ (style || "default");
 
     // TODO, this does not yet work between layer time changes because we do not get
@@ -445,7 +471,7 @@ export const createLayersFromLinks = async (
       }
     }
 
-    if (wmtsLink.title === "wmts capabilities") {
+    if (wmtsLink.href.includes("marine.copernicus")) {
       log.debug(
         "Warning: WMTS Layer from capabilities added, function needs to be updated",
         linkId,
@@ -475,10 +501,8 @@ export const createLayersFromLinks = async (
         },
       };
     } else {
-      log.debug(
-        "Warning: WMTS Layer from capabilities added, function needs to be updated",
-        linkId,
-      );
+      log.debug("WMTS Layer from capabilities added", linkId);
+
       json = {
         type: "Tile",
         properties: {
@@ -487,15 +511,11 @@ export const createLayersFromLinks = async (
           layerDatetime,
         },
         source: {
-          type: "WMTS",
-          url: wmtsLink.href,
+          type: "WMTSCapabilities",
+          url: buildCapabilitiesUrl(wmtsLink.href),
           layer: wmtsLink["wmts:layer"],
           style: extractedStyle,
-          matrixSet: wmtsLink.matrixSet || "EPSG:3857",
-          projection: projectionCode,
-          tileGrid: {
-            tileSize: [512, 512],
-          },
+          ...(matrixSet ? { matrixSet } : {}),
           attributions: wmtsLink.attribution,
           dimensions: dimensionsWithoutStyle,
         },
@@ -556,6 +576,16 @@ export const createLayersFromLinks = async (
       xyzUrl = `${base}?${params.toString()}`;
     }
 
+    const { supportedUpscalingEndpoints } = useSTAcStore();
+    const isUpscalingSupported = supportedUpscalingEndpoints.some(
+      (/** @type {string} */ endpoint) => xyzUrl.includes(endpoint),
+    );
+
+    // Add sharding for s2maps automatically
+    if (xyzUrl.includes("s2maps-tiles.eu")) {
+      xyzUrl = xyzUrl.replace("s2maps-tiles.eu", "{a-e}.s2maps-tiles.eu");
+    }
+
     log.debug("XYZ Layer added", linkId);
     let json = {
       type: "Tile",
@@ -568,11 +598,26 @@ export const createLayersFromLinks = async (
       },
       source: {
         type: "XYZ",
-        url: xyzUrl,
+        url: isUpscalingSupported ? xyzUrl.replace("{y}", "{y}@2x") : xyzUrl,
         projection: projectionCode,
         attributions: xyzLink.attribution,
       },
     };
+    if (isUpscalingSupported) {
+      // @ts-expect-error tileGrid is added here and supported in eox-map layer definition
+      json.source.tileGrid = {
+        tileSize: [512, 512],
+      };
+    }
+    if (
+      // @ts-expect-error missing type definition, can be accessed like this
+      xyzLink.roles?.includes("baselayer") ||
+      // @ts-expect-error missing type definition, can be accessed like this
+      xyzLink.roles?.includes("overlay")
+    ) {
+      // @ts-expect-error no type for eox-map
+      json.preload = Infinity;
+    }
 
     extractRoles(json.properties, xyzLink);
     if (extraProperties !== null) {
@@ -610,10 +655,12 @@ export const createLayersFromLinks = async (
 
     let href = vectorTileLink.href;
     if ("auth:schemes" in item && "auth:refs" in vectorTileLink) {
-      href = handleAuthenticationOfLink(
+      const { url } = handleAuthenticationOfLink(
         /** @type { import("@/types").StacAuthItem} */ (item),
         /** @type { import("@/types").StacAuthLink} */ (vectorTileLink),
+        undefined,
       );
+      href = url;
     }
     const json = {
       type: "VectorTile",
@@ -655,6 +702,65 @@ export const createLayersFromLinks = async (
     }
     jsonArray.push(json);
   }
+
+  for (const mapboxStyleDocumentLink of mapboxStyleDocumentArray ?? []) {
+    const mapboxStyleDocumentLinkProjection =
+      /** @type {number | string | {name: string, def: string} | undefined} */
+      (
+        mapboxStyleDocumentLink?.["proj:epsg"] ||
+          mapboxStyleDocumentLink?.["eodash:proj4_def"]
+      );
+
+    await registerProjection(mapboxStyleDocumentLinkProjection);
+    const projectionCode = getProjectionCode(
+      mapboxStyleDocumentLinkProjection || "EPSG:3857",
+    );
+    const linkId = createLayerID(
+      collectionId,
+      item.id,
+      mapboxStyleDocumentLink,
+      viewProjectionCode,
+    );
+    log.debug("Mapbox Style Document Layer added", linkId);
+
+    let href = mapboxStyleDocumentLink.href;
+    let applyOptions = mapboxStyleDocumentLink?.applyOptions || {};
+    if ("auth:schemes" in item && "auth:refs" in mapboxStyleDocumentLink) {
+      const { url, optionsObject } = handleAuthenticationOfLink(
+        /** @type { import("@/types").StacAuthItem} */ (item),
+        /** @type { import("@/types").StacAuthLink} */ (
+          mapboxStyleDocumentLink
+        ),
+        applyOptions,
+      );
+      applyOptions = /** @type { object } */ (optionsObject);
+      href = url;
+    }
+    const json = {
+      type: "MapboxStyle",
+      properties: {
+        id: linkId,
+        title: mapboxStyleDocumentLink.title || title || item.id,
+        roles: mapboxStyleDocumentLink.roles,
+        layerDatetime,
+        mapboxStyle: href,
+        projection: projectionCode,
+        attributions: mapboxStyleDocumentLink.attribution,
+        applyOptions,
+      },
+      interactions: [],
+    };
+    extractRoles(json.properties, mapboxStyleDocumentLink);
+    if (extraProperties !== null) {
+      json.properties = {
+        ...json.properties,
+        ...extraProperties,
+        ...extractEoxLegendLink(mapboxStyleDocumentLink),
+      };
+    }
+    jsonArray.push(json);
+  }
+
   return jsonArray;
 };
 /**

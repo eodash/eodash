@@ -1,7 +1,11 @@
 import { defineAsyncComponent, reactive, shallowRef, watch } from "vue";
 import { useSTAcStore } from "@/store/stac";
 import { storeToRefs } from "pinia";
-
+import {
+  areChartsSeparateLayout,
+  chartSpec,
+  compareChartSpec,
+} from "@/store/states";
 /**
  * @typedef {{
  *   component: import("vue").Component | null;
@@ -71,7 +75,13 @@ export const useDefineWidgets = (widgetConfigs) => {
     if ("defineWidget" in (config ?? {})) {
       const { selectedStac, selectedCompareStac } = storeToRefs(useSTAcStore());
       watch(
-        [selectedStac, selectedCompareStac],
+        [
+          selectedStac,
+          selectedCompareStac,
+          areChartsSeparateLayout,
+          chartSpec,
+          compareChartSpec,
+        ],
         ([updatedStac, updatedCompareStac]) => {
           let definedConfig =
             /** @type {import("@/types").FunctionalWidget} */ (

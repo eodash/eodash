@@ -34,7 +34,7 @@ import {
 import {
   useSearchOnMapMove,
   useRenderItemsFeatures,
-  useRenderOnFeatureHover,
+  useHighlightOnFeatureHover,
 } from "./methods/map";
 import {
   createOnFilterHandler,
@@ -139,7 +139,7 @@ useRenderItemsFeatures(currentItems);
 // Search on map move logic
 useSearchOnMapMove(itemfilterEl, props.bboxFilter);
 
-useRenderOnFeatureHover(itemfilterEl);
+useHighlightOnFeatureHover(itemfilterEl);
 
 onUnmounted(() => {
   store.selectedItem = null;

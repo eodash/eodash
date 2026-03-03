@@ -25,8 +25,8 @@
               >{{
                 new Date(item.job_start_datetime).toISOString().slice(0, 16)
               }}
-              <v-icon>mdi-open-in-new</v-icon></a
-            >
+              <v-icon :icon="[mdiOpenInNew]" />
+            </a>
           </td>
           <td>{{ item.status }}</td>
           <td style="padding: 0px">
@@ -73,7 +73,6 @@
   </div>
 </template>
 <script setup>
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import {
   mdiUploadBox,
   mdiDownloadBox,

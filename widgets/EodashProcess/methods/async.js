@@ -115,7 +115,7 @@ export async function updateJobsStatus(jobs, indicator) {
       new Date(a.job_start_datetime).getTime()
     );
   });
-  jobs.value = jobResults;
+  jobs.value.splice(0, jobs.value.length, ...jobResults);
 }
 
 /**

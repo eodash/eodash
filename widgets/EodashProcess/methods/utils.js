@@ -366,37 +366,28 @@ export async function creatAsyncProcessLayerDefinitions(
         break;
       }
       case "application/vnd.flatgeobuf": {
-        // TODO after more flatgeobuf urls are possible in EOxMap https://github.com/EOX-A/EOxElements/issues/1789
-        // we should change this handler to only create one layer instead of many
-        resultItem.urls.forEach((url, i) => {
-          layers.push({
-            type: "Vector",
-            source: {
-              type: "FlatGeoBuf",
-              url,
-            },
-            properties: {
-              id:
-                endpointLink.id +
-                "_process_" +
-                resultItem.id +
-                postfixId +
-                `_${i}`,
-              title:
-                "Results " +
-                (selectedStac?.id ?? "") +
-                " " +
-                (resultItem.id ?? ""),
-              layerControlToolsExpand: true,
-              ...(layerConfig && {
-                layerConfig: {
-                  ...layerConfig,
-                  style,
-                },
-              }),
-              ...extraProperties,
-            },
-          });
+        layers.push({
+          type: "Vector",
+          source: {
+            type: "FlatGeoBuf",
+            url: resultItem.urls,
+          },
+          properties: {
+            id: endpointLink.id + "_process_" + resultItem.id + postfixId,
+            title:
+              "Results " +
+              (selectedStac?.id ?? "") +
+              " " +
+              (resultItem.id ?? ""),
+            layerControlToolsExpand: true,
+            ...(layerConfig && {
+              layerConfig: {
+                ...layerConfig,
+                style,
+              },
+            }),
+            ...extraProperties,
+          },
         });
         break;
       }
@@ -543,7 +534,7 @@ export const applyProcessLayersToMap = (mapElement, processLayers) => {
       (l) => l.properties?.id === layer.properties?.id,
     );
     if (!exists) {
-      analysisGroup.layers.unshift(layer);
+      analysisGroup.layers.push(layer);
     } else {
       analysisGroup.layers = replaceLayer(
         analysisGroup.layers,
@@ -564,7 +555,7 @@ export const applyProcessLayersToMap = (mapElement, processLayers) => {
 };
 /**
  * Updates the jsonform schema to target the compare map
- * @param {import("json-schema").JSONSchema7 | null | undefined} jsonformSchema
+ * @param {Record<string,any> | null | undefined} jsonformSchema
  */
 export function updateJsonformSchemaTarget(jsonformSchema) {
   if (!jsonformSchema) {
@@ -574,7 +565,5 @@ export function updateJsonformSchemaTarget(jsonformSchema) {
     "eox-map#main",
     "eox-map#compare",
   );
-  return /** @type {import("json-schema").JSONSchema7} */ (
-    JSON.parse(stringified)
-  );
+  return JSON.parse(stringified);
 }
