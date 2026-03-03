@@ -271,6 +271,7 @@ const showMosaicHint = computed(() => {
 /* Container constraints removal */
 eox-geosearch {
   position: relative !important;
+  width: 40px;
   overflow: visible !important;
   z-index: 10;
 }
