@@ -254,6 +254,7 @@ const opencageUrl = `https://api.opencagedata.com/geocode/v1/json?key=${opencage
 /* Container constraints removal */
 eox-geosearch {
   position: relative !important;
+  width: 40px;
   overflow: visible !important;
   z-index: 10;
 }
