@@ -1,6 +1,6 @@
 {
   "name": "@eodash/eodash",
-  "version": "5.5.2",
+  "version": "5.6.0",
   "type": "module",
   "types": "./dist/types/core/client/types.d.ts",
   "files": [
@@ -78,7 +78,7 @@
     "@eox/layout": "^1.0.0",
     "@eox/map": "^2.2.0",
     "@eox/stacinfo": "^1.1.0",
-    "@eox/timecontrol": "^2.1.1",
+    "@eox/timecontrol": "^2.1.2",
     "@eox/ui": "^0.6.0",
     "@mdi/js": "^7.4.47",
     "@vitejs/plugin-vue": "^6.0.4",

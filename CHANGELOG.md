@@ -1,6 +1,22 @@
 # Changelog
 
 
+## [5.6.0](https://github.com/eodash/eodash/compare/eodash-v5.5.2...eodash-v5.6.0) (2026-03-04)
+
+
+### Features
+
+* add support for mapbox style document rendering ([#324](https://github.com/eodash/eodash/issues/324)) ([4a51ab6](https://github.com/eodash/eodash/commit/4a51ab601a50bb1218bbda4a6f4602610cc9a03c))
+* add support for merging flatgeobufs in case merge_assets is true ([#323](https://github.com/eodash/eodash/issues/323)) ([031986f](https://github.com/eodash/eodash/commit/031986f27a2d644618ce5ad116ac74645caf0f00))
+* automatic sharding of s2-maps endpoint; upscaling based tilesize increase ([#326](https://github.com/eodash/eodash/issues/326)) ([cb84baa](https://github.com/eodash/eodash/commit/cb84baa891c992052e47f9e5aa689764310014ad))
+
+
+### Bug Fixes
+
+* Order of updated layers  ([#335](https://github.com/eodash/eodash/issues/335)) ([7c55e46](https://github.com/eodash/eodash/commit/7c55e46fae5a4dadb81c3f7fb687d796c124a5f1))
+* Support compare map tooltip ([#333](https://github.com/eodash/eodash/issues/333)) ([7073ec0](https://github.com/eodash/eodash/commit/7073ec01d4043281be0acd39e7cdfe2bd0f8b00a))
+* use WMTSCapabilities source for non-marine WMTS layers ([#334](https://github.com/eodash/eodash/issues/334)) ([719e427](https://github.com/eodash/eodash/commit/719e427a27c84eec14e61241f38c0b1744761d8c))
+
 ## [5.5.2](https://github.com/eodash/eodash/compare/eodash-v5.5.1...eodash-v5.5.2) (2026-02-05)
 
 
