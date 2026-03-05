@@ -253,62 +253,81 @@ export const getProjectionCode = (projection) => {
 
 /**
  * Extracts layercontrol LayerDatetime property from STAC Links
- * @param {import("stac-ts").StacLink[] | import("stac-ts").StacItem[] | undefined} [items]
+ * @param {import("stac-ts").StacLink[] | import("stac-ts").StacItem[] | import("@/types").AggregationCollection | undefined} [items]
  * @param {string|null} [currentStep]
  **/
 export const extractLayerTimeValues = (items, currentStep) => {
-  if (!currentStep || !items?.length) {
+  if (!currentStep || !items || (Array.isArray(items) && !items.length)) {
     return { layerDatetime: undefined, timeControlValues: undefined };
   }
 
-  // check if items has a datetime value
-  const dateProperty = getDatetimeProperty(items);
-
-  if (!dateProperty) {
-    return { layerDatetime: undefined, timeControlValues: undefined };
-  }
-  /** @type {{date:string;itemId:string}[]} */
+  /** @type {{date:string;itemId?:string}[]} */
   const timeValues = [];
-  try {
-    /**
-     *  @param {typeof timeValues} vals
-     *  @param {import("stac-ts").StacLink} link
-     */
-    const reduceLinks = (vals, link) => {
-      if (link[dateProperty] && link.rel === "item") {
-        vals.push({
-          itemId: /** @type {string} */ (link.id),
-          date: new Date(
-            /** @type {string} */ (link[dateProperty]),
-          ).toISOString(),
-        });
-      }
-      return vals;
-    };
 
-    /**
-     *
-     * @param {typeof timeValues} vals
-     * @param {import("stac-ts").StacItem} item
-     */
-    const reduceItems = (vals, item) => {
-      const date = item.properties?.[dateProperty];
-      if (date) {
-        vals.push({
-          itemId: /** @type {string} */ (item.id),
-          date: new Date(/** @type {string} */ (date)).toISOString(),
-          ...item.properties,
+  if (!Array.isArray(items) && items.type === "AggregationCollection") {
+    const datetimeAgg = items.aggregations?.find(
+      (a) => a.key?.startsWith("datetime_") || a.interval,
+    );
+    if (datetimeAgg?.buckets) {
+      for (const bucket of datetimeAgg.buckets) {
+        timeValues.push({
+          date: new Date(bucket.key).toISOString(),
         });
       }
-      return vals;
-    };
+    }
     currentStep = new Date(currentStep).toISOString();
-    //@ts-expect-error TODO
-    items.reduce(isSTACItem(items[0]) ? reduceItems : reduceLinks, timeValues);
-  } catch (e) {
-    console.warn("[eodash] not supported datetime format was provided", e);
-    return { layerDatetime: undefined, timeControlValues: undefined };
+  } else if (Array.isArray(items)) {
+    // check if items has a datetime value
+    const dateProperty = getDatetimeProperty(items);
+
+    if (!dateProperty) {
+      return { layerDatetime: undefined, timeControlValues: undefined };
+    }
+    try {
+      /**
+       *  @param {typeof timeValues} vals
+       *  @param {import("stac-ts").StacLink} link
+       */
+      const reduceLinks = (vals, link) => {
+        if (link[dateProperty] && link.rel === "item") {
+          vals.push({
+            itemId: /** @type {string} */ (link.id),
+            date: new Date(
+              /** @type {string} */ (link[dateProperty]),
+            ).toISOString(),
+          });
+        }
+        return vals;
+      };
+
+      /**
+       *
+       * @param {typeof timeValues} vals
+       * @param {import("stac-ts").StacItem} item
+       */
+      const reduceItems = (vals, item) => {
+        const date = item.properties?.[dateProperty];
+        if (date) {
+          vals.push({
+            itemId: /** @type {string} */ (item.id),
+            date: new Date(/** @type {string} */ (date)).toISOString(),
+            ...item.properties,
+          });
+        }
+        return vals;
+      };
+      currentStep = new Date(currentStep).toISOString();
+      items.reduce(
+        //@ts-expect-error TODO
+        isSTACItem(items[0]) ? reduceItems : reduceLinks,
+        timeValues,
+      );
+    } catch (e) {
+      console.warn("[eodash] not supported datetime format was provided", e);
+      return { layerDatetime: undefined, timeControlValues: undefined };
+    }
   }
+
   // not enough timeValues
   if (timeValues.length <= 1) {
     return { layerDatetime: undefined, timeControlValues: undefined };

@@ -526,6 +526,19 @@ export interface StacItemsAPIResponse {
   type: "FeatureCollection";
   features: import("stac-ts").StacItem[];
 }
+
+export interface AggregationCollection {
+  type: "AggregationCollection";
+  aggregations?: Array<{
+    key?: string;
+    interval?: string;
+    buckets?: Array<{
+      key: string;
+      value: number;
+    }>;
+  }>;
+}
+
 /** @ignore */
 export interface Render {
   /** REQUIRED. Array of asset keys referencing the assets that are used to make the rendering */

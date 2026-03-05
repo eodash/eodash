@@ -181,14 +181,33 @@ export class EodashCollection {
     // will try to extract anything it supports but for which we have
     // less control.
 
-    const { layerDatetime, timeControlValues } = extractLayerTimeValues(
-      await this.getItems(
+    const preAggregationLink = this.#collectionStac?.links.find(
+      (l) =>
+        l.rel === "pre-aggregation" && l["aggregation:interval"] === "daily",
+    );
+
+    let itemsForTimeValues;
+    if (preAggregationLink) {
+      try {
+        const url = toAbsolute(preAggregationLink.href, this.#collectionUrl);
+        itemsForTimeValues = await axios.get(url).then((resp) => resp.data);
+      } catch (e) {
+        console.warn("Failed to fetch pre-aggregation", e);
+      }
+    }
+
+    if (!itemsForTimeValues) {
+      itemsForTimeValues = await this.getItems(
         true,
         false,
         item.properties?.datetime ??
           item.properties.start_datetime ??
           itemDatetime,
-      ),
+      );
+    }
+
+    const { layerDatetime, timeControlValues } = extractLayerTimeValues(
+      itemsForTimeValues,
       item.properties?.datetime ??
         item.properties.start_datetime ??
         itemDatetime,
@@ -305,7 +324,7 @@ export class EodashCollection {
 
   /**
    * Returns all item links sorted by datetime ascendingly
-   * @param {boolean} [fields=false] if true, fetch items from API with only properties
+   * @param {boolean} [fields=false] if true, fetch items from API with only properties.datetime to optimize performance
    * @param {boolean} [first] - if true, returns the first page of items only (for API collections)
    * @param {string | Date} [centerDatetime] - Date to center the search around if items exceed maxNumber
    * @returns {Promise<import("stac-ts").StacLink[] | import("stac-ts").StacItem[] | undefined>}
