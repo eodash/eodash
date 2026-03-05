@@ -90,7 +90,6 @@ import {
   createOnMouseEnterResult,
   createOnMouseLeaveResult,
 } from "./methods/handlers";
-import axios from "@/plugins/axios";
 import { mdiViewDashboard } from "@mdi/js";
 import EodashLayoutSwitcher from "^/EodashLayoutSwitcher.vue";
 import { mapCompareEl, mapEl } from "@/store/states";
@@ -207,13 +206,6 @@ const store = useSTAcStore();
 // Reactive state
 /** @type {import("vue").Ref<import("@/types").GeoJsonFeature[]>} */
 const currentItems = ref([]);
-
-// Initial data fetch
-if (store.stacEndpoint) {
-  await axios
-    .get(store.stacEndpoint + "/search?limit=100")
-    .then((res) => (currentItems.value = res.data.features));
-}
 
 const items = currentItems.value;
 

@@ -38,38 +38,38 @@ const { level, allowHtml, featured, footer, header, body, tags } = defineProps({
   },
 
   header: {
-    /** 
+    /**
      * @type {import("vue").PropType<
-     *   (string | { 
-     *     key: string, 
-     *     filter?: (item: any) => boolean 
+     *   (string | {
+     *     key: string,
+     *     filter?: (item: any) => boolean
      *   })[]
-     * >} 
-    */
+     * >}
+     */
     type: Array,
     default: () => ["title"],
   },
   tags: {
-    /** 
+    /**
      * @type {import("vue").PropType<
-     *   (string | { 
-     *     key: string, 
-     *     filter?: (item: any) => boolean 
+     *   (string | {
+     *     key: string,
+     *     filter?: (item: any) => boolean
      *   })[]
-     * >} 
-    */
+     * >}
+     */
     type: Array,
     default: () => ["themes"],
   },
   body: {
-    /** 
+    /**
      * @type {import("vue").PropType<
-     *   (string | { 
-     *     key: string, 
-     *     filter?: (item: any) => boolean 
+     *   (string | {
+     *     key: string,
+     *     filter?: (item: any) => boolean
      *   })[]
-     * >} 
-    */
+     * >}
+     */
     type: Array,
     default: () => [
       "satellite",
@@ -81,26 +81,26 @@ const { level, allowHtml, featured, footer, header, body, tags } = defineProps({
     ],
   },
   featured: {
-    /** 
+    /**
      * @type {import("vue").PropType<
-     *   (string | { 
-     *     key: string, 
-     *     filter?: (item: any) => boolean 
+     *   (string | {
+     *     key: string,
+     *     filter?: (item: any) => boolean
      *   })[]
-     * >} 
-    */
+     * >}
+     */
     type: Array,
     default: () => ["description", "providers", "assets", "links"],
   },
   footer: {
-    /** 
+    /**
      * @type {import("vue").PropType<
-     *   (string | { 
-     *     key: string, 
-     *     filter?: (item: any) => boolean 
+     *   (string | {
+     *     key: string,
+     *     filter?: (item: any) => boolean
      *   })[]
-     * >} 
-    */
+     * >}
+     */
     type: Array,
     default: () => ["sci:citation", "sci:doi", "sci:publication"],
   },
