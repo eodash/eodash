@@ -173,10 +173,12 @@ const itemfilterEl = useTemplateRef("itemfilter");
 const sortMenu = ref(false);
 const sortOrder = ref("-");
 const selectedSort = ref(props.sortBy?.[0] ?? "");
-const sortByParam = ref("+datetime");
+const sortByParam = ref("-datetime");
 
 function updateSortByParam() {
-  sortByParam.value = `${sortOrder.value}${selectedSort.value.property}`;
+  sortByParam.value = `${sortOrder.value === "+" ? "" : "-"}${
+    selectedSort.value.property
+  }`;
 }
 /**
  * Handle sort option selection
@@ -188,7 +190,8 @@ function selectSort(option) {
     sortOrder.value = sortOrder.value === "-" ? "+" : "-";
   } else {
     selectedSort.value = option;
-    sortOrder.value = "+"; // default to ascending when changing property
+    // default to descending when changing property
+    sortOrder.value = "-";
   }
   updateSortByParam();
   sortMenu.value = false;
