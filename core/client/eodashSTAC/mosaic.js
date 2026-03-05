@@ -1,12 +1,13 @@
 import axios from "@/plugins/axios";
 import { Item } from "stac-js";
 import { mosaicState } from "@/utils/states";
-import { indicator, mapEl, mapPosition } from "@/store/states";
+import { datetime, indicator, mapEl, mapPosition } from "@/store/states";
 import { getLayers } from "@/store/actions";
 import { nextTick, onMounted, onUnmounted, watch } from "vue";
 import { useOnLayersUpdate } from "@/composables";
-import timeControlValues from "@/utils/timeControlValues.json";
-// import { extractLayerConfig } from "./helpers";
+import { extractLayerTimeValues } from "./helpers";
+import { toAbsolute } from "stac-js/src/http.js";
+import { useSTAcStore } from "@/store/stac";
 
 /**
  * Fetches the STAC definition for the mosaic. TODO: reuse registered queries
@@ -210,11 +211,42 @@ export async function renderMosaic(
   if (!mosaicLayers.length) {
     return;
   }
-  // tmp hack to preserve time control values
-  if (timeControlValues) {
-    mosaicLayers[0].properties.timeControlValues = timeControlValues;
-    mosaicLayers[0].properties.timeControlProperty = "TIME";
+  // tmp:  should be streamlined with other properties when the stac implementation is available.
+  const stacStore = useSTAcStore();
+  const selectedStac = stacStore.selectedStac;
+
+  if (selectedStac) {
+    const preAggregationLink = selectedStac.links?.find(
+      (l) =>
+        l.rel === "pre-aggregation" && l["aggregation:interval"] === "daily",
+    );
+
+    let itemsForTimeValues;
+    if (preAggregationLink) {
+      try {
+        const selfLink = selectedStac.links?.find(
+          (l) => l.rel === "self",
+        )?.href;
+        const baseUrl = selfLink || mosaicEndpoint;
+        const url = toAbsolute(preAggregationLink.href, baseUrl);
+        itemsForTimeValues = await axios.get(url).then((resp) => resp.data);
+      } catch (e) {
+        console.warn("Failed to fetch pre-aggregation for mosaic", e);
+      }
+    }
+
+    if (itemsForTimeValues) {
+      const { timeControlValues } = extractLayerTimeValues(
+        itemsForTimeValues,
+        datetime.value,
+      );
+      if (timeControlValues) {
+        mosaicLayers[0].properties.timeControlValues = timeControlValues;
+        mosaicLayers[0].properties.timeControlProperty = "TIME";
+      }
+    }
   }
+
   analysisGroup.layers = mosaicLayers;
 
   if (mapEl.value) {
