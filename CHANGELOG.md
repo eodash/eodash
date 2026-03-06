@@ -1,6 +1,13 @@
 # Changelog
 
 
+## [5.6.1](https://github.com/eodash/eodash/compare/eodash-v5.6.0...eodash-v5.6.1) (2026-03-06)
+
+
+### Bug Fixes
+
+* layer id matching done properly ([#340](https://github.com/eodash/eodash/issues/340)) ([b45ee4f](https://github.com/eodash/eodash/commit/b45ee4f31f8aad3cb708fb339eeaeae63a964cb5))
+
 ## [5.6.0](https://github.com/eodash/eodash/compare/eodash-v5.5.2...eodash-v5.6.0) (2026-03-04)
 
 
