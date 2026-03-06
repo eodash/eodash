@@ -93,6 +93,7 @@ import {
 import { mdiViewDashboard } from "@mdi/js";
 import EodashLayoutSwitcher from "^/EodashLayoutSwitcher.vue";
 import { mapCompareEl, mapEl } from "@/store/states";
+import axios from "@/plugins/axios";
 
 if (!customElements.get("eox-itemfilter")) {
   await import("@eox/itemfilter");
@@ -211,6 +212,13 @@ const store = useSTAcStore();
 const currentItems = ref([]);
 
 const items = currentItems.value;
+
+// Initial data fetch
+if (store.stacEndpoint) {
+  await axios
+    .get(store.stacEndpoint + "/search?limit=100")
+    .then((res) => (currentItems.value = res.data.features));
+}
 
 const filterProperties = createFilterProperties(props.filters);
 
