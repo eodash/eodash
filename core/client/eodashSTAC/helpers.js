@@ -361,7 +361,7 @@ export const findLayersByLayerPrefix = (layers, referenceLayer) => {
       matches.push(...findLayersByLayerPrefix(layer.layers, referenceLayer));
     } else {
       const id = layer?.properties?.id;
-      if (typeof id === "string" && id.split(";")[0] === prefix) {
+      if (typeof id === "string" && id.split(";:;")[0] === prefix) {
         matches.push(layer);
       }
     }
