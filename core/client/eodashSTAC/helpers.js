@@ -349,11 +349,11 @@ export const extractLayerTimeValues = (items, currentStep) => {
 export const findLayersByLayerPrefix = (layers, referenceLayer) => {
   const refId = referenceLayer?.properties?.id;
 
-  if (typeof refId !== "string" || !refId.includes(";")) {
-    throw new Error("Reference layer ID must contain a ';' separator.");
+  if (typeof refId !== "string" || !refId.includes(";:;")) {
+    throw new Error("Reference layer ID must contain a ';:;' separator.");
   }
 
-  const prefix = refId.split(";")[0];
+  const prefix = refId.split(";:;")[0];
   const matches = [];
 
   for (const layer of layers) {
@@ -361,7 +361,7 @@ export const findLayersByLayerPrefix = (layers, referenceLayer) => {
       matches.push(...findLayersByLayerPrefix(layer.layers, referenceLayer));
     } else {
       const id = layer?.properties?.id;
-      if (typeof id === "string" && id.startsWith(prefix)) {
+      if (typeof id === "string" && id.split(";:;")[0] === prefix) {
         matches.push(layer);
       }
     }
