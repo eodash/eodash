@@ -1,22 +1,25 @@
 import { createLayersConfig } from "^/EodashMap/methods/create-layers-config";
 import { eodashCollections } from "@/utils/states";
 import axios from "@/plugins/axios";
-import { datetime, mapEl } from "@/store/states";
+import { mapEl } from "@/store/states";
+import { sanitizeBbox } from "@/eodashSTAC/helpers";
 
 /**
  * @param {string} stacEndpoint
- * @param {Record<string, { date: string; id: string; originalDate: string ; [key:string]: any}[]>} selectedRangeItems
+ * @param {[string, string]} selectedRange
+ * @param {import("../types").TimelineExportEventDetail["selectedRangeItems"]} selectedRangeItems
  * @param {import("vue").Ref<import("stac-ts").StacCollection|null>} selectedStac
  */
 export async function createAnimationsLayers(
   stacEndpoint,
+  selectedRange,
   selectedRangeItems,
   selectedStac,
 ) {
   if (eodashCollections[0].isAPI) {
     return await createAPILayers(
       stacEndpoint,
-      { min: datetime.value, max: datetime.value },
+      { min: selectedRange[0], max: selectedRange[1] },
       mapEl.value?.lonLatExtent,
       selectedStac,
     );
@@ -48,6 +51,7 @@ export async function createAnimationsLayers(
  * @param {{min: string, max: string}} date
  * @param {number[] | undefined} bbox
  * @param {import("vue").Ref<import("stac-ts").StacCollection|null>} selectedStac
+ * @return {Promise<Array<{ layers: Record<string, any>[]; date: string }>>}
  */
 async function createAPILayers(
   stacEndpoint,
@@ -59,11 +63,25 @@ async function createAPILayers(
     return [];
   }
   const url = new URL(stacEndpoint + "/search");
-  url.searchParams.set("datetime", `${date.min}/${date.max}`);
-  url.searchParams.set("bbox", bbox.join(","));
+  url.searchParams.set(
+    "datetime",
+    `${new Date(date.min).toISOString()}/${new Date(date.max).toISOString()}`,
+  );
+  url.searchParams.set("bbox", sanitizeBbox(bbox).join(","));
   /** @type {import("stac-ts").StacItem[]} */
-  const items = await axios.get(url.href).then((res) => res.data.features);
-  await Promise.all(
+  const items = await axios
+    .get(url.href)
+    .then((res) => res.data.features)
+    .catch((err) => {
+      console.error("[eodash] Error fetching items for animation:", err);
+      return [];
+    });
+  if (!items || !items.length) {
+    console.warn("[eodash] No items found for animation.");
+    return [];
+  }
+
+  return await Promise.all(
     items.map(async (item) => {
       /** @type {Array<{ layers: Record<string, any>[]; date: string }>} */
       const mapLayersArr = [];
@@ -79,6 +97,7 @@ async function createAPILayers(
         });
         return mapLayersArr;
       });
+      return mapLayersArr;
     }),
   ).then((results) => results.flat());
 }

@@ -2,15 +2,15 @@ export interface TimelineSelectionEventDetail {
   date: [string, string];
   instances: {
     // this is inaccurate, the type should include all possible sources and layers,
-    layer: import("ol/layer/Layer").default[];
-    source: import("ol/source/Source").default[];
+    layer: import("ol/layer/Layer").default;
+    source: import("ol/source/Source").default;
   };
   filters: Record<string, any>;
   selectedItems: {
     [layerId: string]: SelectedItem[];
   };
 }
-interface SelectedItem {
+export interface SelectedItem {
   className: string;
   date: string;
   group: string;
@@ -23,4 +23,25 @@ interface SelectedItem {
   start: string;
   type: string;
   utc: string;
+}
+
+export interface TimelineExportEventDetail {
+  eoxMapConfig: {
+    layers: Record<string, any>[];
+    zoom: number;
+    center: [number, number];
+  };
+  filters: Record<string, any>;
+  instances: {
+    layer: import("ol/layer/Layer").default;
+    source: import("ol/source/Source").default;
+  };
+  selectedRangeItems: {
+    [layerId: string]: SelectedItem[];
+  };
+  generate: (args: {
+    mapLayers: Array<{ layers: Record<string, any>[]; date: string }>;
+    center?: [number, number];
+    zoom?: number;
+  }) => Promise<void>;
 }
