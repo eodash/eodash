@@ -38,9 +38,9 @@ import "@eox/timecontrol";
 import "@eox/itemfilter";
 
 import { computed, onMounted, unref, useTemplateRef } from "vue";
-import { createLayersConfig } from "./EodashMap/methods/create-layers-config";
 import { storeToRefs } from "pinia";
 import { useSTAcStore } from "@/store/stac";
+import { createAnimationsLayers } from "./methods";
 
 const { animate } = defineProps({
   filters: {
@@ -61,16 +61,31 @@ const hasMultipleItems = computed(() => {
     return (itemLinks && itemLinks.length > 1) || itemsLink;
   });
 });
+
 /**
- *
- * @param {CustomEvent} e
+ * apply the date
+ * @param {CustomEvent<import("./types").TimelineSelectionEventDetail>} e
  */
 const onSelect = (e) => {
-  const { date } = e.detail;
-  const [from, _to] = date;
-  datetime.value = from.toISOString();
+  const { selectedItems, date } = e.detail;
+ const allItems = Object.keys(selectedItems ?? {}).flatMap((id) => selectedItems[id]);
+  if (!allItems.length) {
+    return;
+  }
+  const [from,_to] = date;
+  const fromDate = new Date(from).getTime();
+
+  const closestItem = allItems.reduce((prev, curr) => {
+    const prevDiff = Math.abs(new Date(prev.originalDate).getTime() - fromDate);
+    const currDiff = Math.abs(new Date(curr.originalDate).getTime() - fromDate);
+    return currDiff < prevDiff ? curr : prev;
+  });
+
+  if (closestItem) {
+    datetime.value = closestItem.originalDate;
+  }
 };
-const { selectedStac } = storeToRefs(useSTAcStore());
+const { selectedStac, stacEndpoint } = storeToRefs(useSTAcStore());
 /**
  *
  * @param {CustomEvent<{
@@ -84,27 +99,20 @@ const { selectedStac } = storeToRefs(useSTAcStore());
  */
 const onExport = async (evt) => {
   const { generate, selectedRangeItems } = evt.detail;
+  if (!stacEndpoint.value) {
+    return;
+  }
+  console.log("Exporting animation with items:", selectedRangeItems);
 
-  const mapLayers = await Promise.all(
-    Object.values(selectedRangeItems).flatMap(async (itemSet) => {
-      /** @type {Array<{ layers: Record<string, any>[]; date: string }>} */
-      const mapLayersArr = [];
-      for (const dateItem of itemSet) {
-        await createLayersConfig(
-          selectedStac.value,
-          eodashCollections,
-          dateItem.originalDate,
-        ).then((layers) => {
-          layers = anonimizeLayersCORS(layers);
-          mapLayersArr.push({
-            layers,
-            date: dateItem.originalDate,
-          });
-        });
-      }
-      return mapLayersArr;
-    }),
-  ).then((results) => results.flat());
+  const mapLayers = await createAnimationsLayers(
+    stacEndpoint.value,
+    selectedRangeItems,
+    selectedStac,
+  );
+  if (!mapLayers?.length) {
+    console.warn("[eodash] No map layers generated for the animation.");
+    return;
+  }
 
   generate({
     mapLayers,
@@ -119,23 +127,6 @@ onMounted(() => {
     layoutItem.style.overflow = "visible";
   }
 });
-/**
- *
- * @param {Record<string, any>[]} layers
- * @returns {Record<string, any>[]}
- */
-function anonimizeLayersCORS(layers) {
-  return layers.map((layer) => {
-    if (layer.type === "Group") {
-      layer.layers = anonimizeLayersCORS(layer.layers);
-      return layer;
-    }
-    if (layer.source) {
-      layer.source.crossOrigin = "anonymous";
-    }
-    return layer;
-  });
-}
 </script>
 <style scoped>
 eox-itemfilter {
