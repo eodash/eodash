@@ -1,9 +1,9 @@
 import { initProcess, updateJsonformIdentifier } from "./handling";
+import { updateJsonformSchemaTarget } from "./utils";
 import { useEventBus } from "@vueuse/core";
-import { nextTick, onMounted, watch } from "vue";
+import { nextTick, onMounted, watch, toRaw } from "vue";
 import { eoxLayersKey } from "@/utils/keys";
 import { useOnLayersUpdate } from "@/composables";
-
 /**
  * Composable resposible of timing the Initialization of the process
  *
@@ -59,9 +59,8 @@ export const useInitProcess = ({
       });
     }
   });
-
-  const evtKey =
-    mapElement?.id === "compare" ? "compareLayers:updated" : "layers:updated";
+  const enableCompare = mapElement?.id === "compare";
+  const evtKey = enableCompare ? "compareLayers:updated" : "layers:updated";
   useOnLayersUpdate(async (evt, _payload) => {
     if (
       evt == "layertime:updated" ||
@@ -69,11 +68,29 @@ export const useInitProcess = ({
       evt == "time:updated" ||
       evt == "compareTime:updated"
     ) {
-      await updateJsonformIdentifier({
+      let newJsonForm = null;
+      const originalJsonForm = JSON.stringify(toRaw(jsonformSchema.value));
+      newJsonForm = await updateJsonformIdentifier({
         jsonformSchema: jsonformSchema.value,
         // @ts-expect-error TODO payload coming from time update events is not an object with layers property
         newLayers: _payload,
       });
+      // we need to purge the jsonform on time change in cases when the feature selection layer was time-based, so that it attaches to a correct new layer
+      const didJsonFormChange =
+        originalJsonForm !== JSON.stringify(toRaw(newJsonForm));
+      if (didJsonFormChange) {
+        await jsonformEl.value?.editor.destroy();
+        if (
+          enableCompare &&
+          (evt === "compareLayertime:updated" || evt === "compareTime:updated")
+        ) {
+          newJsonForm = updateJsonformSchemaTarget(newJsonForm);
+        }
+        // trigger jsonform update in next tick
+        jsonformSchema.value = null;
+        await new Promise((resolve) => setTimeout(resolve, 0));
+        jsonformSchema.value = newJsonForm;
+      }
     }
     if (evt !== evtKey) {
       return;
