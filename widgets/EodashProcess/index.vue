@@ -2,9 +2,15 @@
   <div ref="container" class="py-1">
     <ProcessList :map-element="mapElement" :enable-compare="enableCompare" />
     <eox-jsonform
-      v-if="jsonformSchema"
+      v-if="jsonformSchema && !enableCompare"
       :key="jsonformKey"
       ref="jsonformEl"
+      .schema="jsonformSchema"
+    ></eox-jsonform>
+    <eox-jsonform
+      v-if="jsonformSchema && enableCompare"
+      :key="jsonformKey"
+      ref="jsonformElCompare"
       .schema="jsonformSchema"
     ></eox-jsonform>
     <EodashChart
@@ -82,9 +88,13 @@ const isProcessed = ref(false);
 /** @type {import("vue").Ref<Record<string,any>|null>} */
 const jsonformSchema = ref(null);
 
-const jsonformEl =
+const jsonformElMain =
   /** @type {Readonly<import("vue").ShallowRef<import("@eox/jsonform").EOxJSONForm | null>>} */ (
     useTemplateRef("jsonformEl")
+  );
+const jsonformElCompare =
+  /** @type {Readonly<import("vue").ShallowRef<import("@eox/jsonform").EOxJSONForm | null>>} */ (
+    useTemplateRef("jsonformElCompare")
   );
 
 const isAsync = computed(
@@ -109,6 +119,7 @@ const currentSelectedStac = enableCompare ? selectedCompareStac : selectedStac;
 const mapElement = enableCompare ? mapCompareEl : mapEl;
 const currentIndicator = enableCompare ? compareIndicator : indicator;
 const currentJobs = enableCompare ? compareJobs : jobs;
+const jsonformEl = enableCompare ? jsonformElCompare : jsonformElMain;
 
 const jsonformKey = computed(
   () => currentIndicator.value + mapElement.value?.id,

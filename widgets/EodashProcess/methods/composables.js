@@ -69,6 +69,7 @@ export const useInitProcess = ({
       evt == "compareTime:updated"
     ) {
       let newJsonForm = null;
+      // for checking if changed in updateJsonformIdentifier later
       const originalJsonForm = JSON.stringify(toRaw(jsonformSchema.value));
       newJsonForm = await updateJsonformIdentifier({
         jsonformSchema: jsonformSchema.value,
