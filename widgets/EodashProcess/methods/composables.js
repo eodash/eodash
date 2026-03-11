@@ -80,17 +80,20 @@ export const useInitProcess = ({
       const didJsonFormChange =
         originalJsonForm !== JSON.stringify(toRaw(newJsonForm));
       if (didJsonFormChange) {
-        await jsonformEl.value?.editor.destroy();
-        if (
-          enableCompare &&
-          (evt === "compareLayertime:updated" || evt === "compareTime:updated")
-        ) {
-          newJsonForm = updateJsonformSchemaTarget(newJsonForm);
+        const shouldMainJsonFormUpdate =
+          ["layertime:updated", "time:updated"].includes(evt) && !enableCompare;
+        const shouldCompareJsonFormUpdate =
+          ["compareLayertime:updated", "compareTime:updated"].includes(evt) &&
+          enableCompare;
+        if (shouldMainJsonFormUpdate || shouldCompareJsonFormUpdate) {
+          await jsonformEl.value?.editor.destroy();
+          if (shouldCompareJsonFormUpdate) {
+            newJsonForm = updateJsonformSchemaTarget(newJsonForm);
+          }
+          jsonformSchema.value = null;
+          await new Promise((resolve) => setTimeout(resolve, 0));
+          jsonformSchema.value = newJsonForm;
         }
-        // trigger jsonform update in next tick
-        jsonformSchema.value = null;
-        await new Promise((resolve) => setTimeout(resolve, 0));
-        jsonformSchema.value = newJsonForm;
       }
     }
     if (evt !== evtKey) {
