@@ -7,7 +7,6 @@ import mustache from "mustache";
  * @returns {string[]}
  */
 export function getMultiQueryMatches(jsonformValue, jsonformSchema) {
-  //@ts-expect-error type jsonform Schema
   const multiQuery = jsonformSchema?.options?.multiQuery;
   return Object.keys(jsonformValue ?? {}).filter((key) => {
     return Array.isArray(multiQuery)
@@ -58,14 +57,15 @@ export function getPostMultiQueryValues(
  * Extracts individual GeoJSON Feature objects from a value that may be
  * a FeatureCollection, a single Feature, or an array of Features.
  * Filters for valid Features with geometry and deduplicates.
- * @param {Record<string, any> | any[] | undefined} value
+ * @param {any} value
  * @returns {Record<string, any>[]}
  */
 export function getGeoJsonMultiQueryValues(value) {
   if (value?.type === "FeatureCollection") {
     return dedupeMultiQueryValues(
       (value.features ?? []).filter(
-        (feature) => feature?.type === "Feature" && feature.geometry,
+        (/** @type {any} */ feature) =>
+          feature?.type === "Feature" && feature.geometry,
       ),
     );
   }
@@ -74,7 +74,10 @@ export function getGeoJsonMultiQueryValues(value) {
   }
   if (Array.isArray(value)) {
     return dedupeMultiQueryValues(
-      value.filter((feature) => feature?.type === "Feature" && feature.geometry),
+      value.filter(
+        (/** @type {any} */ feature) =>
+          feature?.type === "Feature" && feature.geometry,
+      ),
     );
   }
   return [];

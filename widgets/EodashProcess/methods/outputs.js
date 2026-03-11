@@ -184,6 +184,7 @@ async function injectVegaInlineData(
   if (!spec.data) {
     return;
   }
+  // @ts-expect-error JSONSchema7 is structurally compatible with Record<string, any>
   const multiQueryMatches = getMultiQueryMatches(jsonformValue, jsonformSchema);
   if (link.method == "GET") {
     if (multiQueryMatches.length > 0 && jsonformValue) {
@@ -228,6 +229,7 @@ async function injectVegaInlineData(
         return resp.data;
       });
     if (
+      // @ts-expect-error jsonform options extension not in JSONSchema7
       jsonformSchema?.options?.multiQuery &&
       multiQueryMatches.length === 0
     ) {
@@ -242,7 +244,7 @@ async function injectVegaInlineData(
           match,
           jsonformValue,
           rawJsonformValue,
-          jsonformSchema,
+          /** @type {Record<string, any>} */ (jsonformSchema),
         );
         if (!queryValues.length) {
           continue;
