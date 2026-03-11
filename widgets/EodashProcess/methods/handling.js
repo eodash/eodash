@@ -192,6 +192,11 @@ export async function handleProcesses({
     );
 
     const bboxProperty = getBboxProperty(jsonformSchema.value);
+    // Preserve raw form value before extractGeometries mutates it.
+    // Needed so POST multiQuery can iterate original GeoJSON Feature objects.
+    const rawJsonformValue = structuredClone(
+      /** @type {Record<string, any>} */ (jsonformEl.value?.value ?? {}),
+    );
     const jsonformValue = /** @type {Record<string,any>} */ (
       jsonformEl.value?.value
     );
@@ -210,6 +215,7 @@ export async function handleProcesses({
     [tempChartSpec, usedChartData.value] = await processCharts({
       links: serviceLinks,
       jsonformValue: { ...(jsonformValue ?? {}) },
+      rawJsonformValue,
       jsonformSchema: jsonformSchema.value,
       enableCompare,
       selectedStac: selectedStac.value,
