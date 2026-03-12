@@ -72,7 +72,6 @@ export async function initProcess({
     enableCompare,
   });
 
-  await jsonformEl.value?.editor.destroy();
   if (updatedJsonform) {
     // make sure correct target layer id is used in jsonform
     let newJsonForm = null;
@@ -83,9 +82,6 @@ export async function initProcess({
     if (enableCompare) {
       newJsonForm = updateJsonformSchemaTarget(newJsonForm);
     }
-    // trigger jsonform update in next tick
-    jsonformSchema.value = null;
-    await new Promise((resolve) => setTimeout(resolve, 0));
     jsonformSchema.value = newJsonForm;
   }
 }

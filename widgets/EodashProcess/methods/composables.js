@@ -86,12 +86,9 @@ export const useInitProcess = ({
           ["compareLayertime:updated", "compareTime:updated"].includes(evt) &&
           enableCompare;
         if (shouldMainJsonFormUpdate || shouldCompareJsonFormUpdate) {
-          await jsonformEl.value?.editor.destroy();
           if (shouldCompareJsonFormUpdate) {
             newJsonForm = updateJsonformSchemaTarget(newJsonForm);
           }
-          jsonformSchema.value = null;
-          await new Promise((resolve) => setTimeout(resolve, 0));
           jsonformSchema.value = newJsonForm;
         }
       }

@@ -122,7 +122,10 @@ const currentJobs = enableCompare ? compareJobs : jobs;
 const jsonformEl = enableCompare ? jsonformElCompare : jsonformElMain;
 
 const jsonformKey = computed(
-  () => currentIndicator.value + mapElement.value?.id,
+  () =>
+    currentIndicator.value +
+    mapElement.value?.id +
+    JSON.stringify(jsonformSchema.value),
 );
 
 useInitProcess({
