@@ -4,12 +4,21 @@ import axios from "@/plugins/axios";
 import { createTiffLayerDefinition, separateEndpointLinks } from "./utils";
 import { useSTAcStore } from "@/store/stac";
 import { isFirstLoad } from "@/utils/states";
+import {
+  getMultiQueryMatches,
+  getPostMultiQueryValues,
+  getScalarMultiQueryValues,
+  createMultiQueryContext,
+  aggregateInlineResponses,
+  renderJsonBodyTemplate,
+} from "./template-helpers";
 
 ////// --- CHARTS --- //////
 /**
  * @param {object} options
  * @param {import("stac-ts").StacLink[] | undefined} options.links
  * @param {Record<string,any> | undefined} options.jsonformValue
+ * @param {Record<string,any> | undefined} [options.rawJsonformValue]
  * @param {string} options.specUrl
  * @param {(input:import("^/EodashProcess/types").CustomEnpointInput)=>Promise<Record<string,any>[] | undefined | null>} [options.customEndpointsHandler]
  * @param {import("vue").Ref<boolean>} options.isPolling
@@ -22,6 +31,7 @@ import { isFirstLoad } from "@/utils/states";
 export async function processCharts({
   links,
   jsonformValue,
+  rawJsonformValue,
   specUrl,
   customEndpointsHandler,
   jsonformSchema,
@@ -51,6 +61,7 @@ export async function processCharts({
     (await customEndpointsHandler({
       jsonformSchema,
       jsonformValue,
+      rawJsonformValue,
       links: endpointLinks,
       selectedStac,
       isPolling,
@@ -114,6 +125,7 @@ export async function processCharts({
           await injectVegaInlineData(spec, {
             url: link.href,
             jsonformValue: jsonformValue,
+            rawJsonformValue,
             link: link,
             flatstyleUrl: /** @type string */ (link["eox:flatstyle"]),
             jsonformSchema,
@@ -153,46 +165,46 @@ export async function processCharts({
  * @param {object} injectables
  * @param {string} injectables.url
  * @param {Record<string,any>} [injectables.jsonformValue]
+ * @param {Record<string,any>} [injectables.rawJsonformValue]
  * @param {import("stac-ts").StacLink} injectables.link
  * @param {url} [injectables.flatstyleUrl]
  * @param {import("json-schema").JSONSchema7} [injectables.jsonformSchema]
  */
 async function injectVegaInlineData(
   spec,
-  { url, jsonformValue, link, flatstyleUrl, jsonformSchema },
+  {
+    url,
+    jsonformValue,
+    rawJsonformValue,
+    link,
+    flatstyleUrl,
+    jsonformSchema,
+  },
 ) {
   if (!spec.data) {
     return;
   }
+  // @ts-expect-error JSONSchema7 is structurally compatible with Record<string, any>
+  const multiQueryMatches = getMultiQueryMatches(jsonformValue, jsonformSchema);
   if (link.method == "GET") {
-    // we see if any of the multiQuery values match an array in the jsonformValue
-    // and if so, we can do multiple requests and merge all data together.
-    //@ts-expect-error type jsonform Schema
-    const multiQuery = jsonformSchema?.options?.multiQuery;
-    const matches = Object.keys(jsonformValue ?? {}).filter((key) => {
-      return Array.isArray(multiQuery)
-        ? multiQuery.includes(key)
-        : multiQuery === key;
-    });
-    if (matches.length > 0 && jsonformValue) {
+    if (multiQueryMatches.length > 0 && jsonformValue) {
       const dataValues = [];
-      for (const match of matches) {
-        if (Array.isArray(jsonformValue[match])) {
-          for (const value of jsonformValue[match]) {
-            const dataUrl = await renderDataUrl(
-              url,
-              { ...jsonformValue, [match]: value },
-              flatstyleUrl,
-            );
-            dataValues.push(await axios.get(dataUrl).then((resp) => resp.data));
-          }
-        } else {
-          const dataUrl = await renderDataUrl(url, jsonformValue, flatstyleUrl);
+      for (const match of multiQueryMatches) {
+        const queryValues = getScalarMultiQueryValues(match, jsonformValue);
+        if (!queryValues.length) {
+          continue;
+        }
+        for (const value of queryValues) {
+          const dataUrl = await renderDataUrl(
+            url,
+            { ...jsonformValue, [match]: value },
+            flatstyleUrl,
+          );
           dataValues.push(await axios.get(dataUrl).then((resp) => resp.data));
         }
       }
       /** @type {import("vega-lite/build/src/data").InlineData} */
-      (spec.data).values = dataValues.flat();
+      (spec.data).values = aggregateInlineResponses(dataValues);
       return spec;
     }
     // if no array matches, we can just do a single request
@@ -216,11 +228,49 @@ async function injectVegaInlineData(
       .then((resp) => {
         return resp.data;
       });
-    const body = JSON.parse(
-      mustache.render(bodyTemplate, {
-        ...(jsonformValue ?? {}),
-      }),
-    );
+    if (
+      // @ts-expect-error jsonform options extension not in JSONSchema7
+      jsonformSchema?.options?.multiQuery &&
+      multiQueryMatches.length === 0
+    ) {
+      /** @type {import("vega-lite/build/src/data").InlineData} */
+      (spec.data).values = [];
+      return spec;
+    }
+    if (multiQueryMatches.length > 0 && jsonformValue) {
+      const responses = [];
+      for (const match of multiQueryMatches) {
+        const queryValues = getPostMultiQueryValues(
+          match,
+          jsonformValue,
+          rawJsonformValue,
+          /** @type {Record<string, any>} */ (jsonformSchema),
+        );
+        if (!queryValues.length) {
+          continue;
+        }
+        // Sequential POSTs (not parallel) to avoid rate-limiting on endpoints
+      // like TiTiler-PgSTAC. For small selection counts this is fine; if
+      // parallelism is needed later, switch to Promise.all.
+      for (const [index, value] of queryValues.entries()) {
+          const requestContext = createMultiQueryContext(
+            jsonformValue,
+            match,
+            value,
+            index,
+          );
+          const body = renderJsonBodyTemplate(bodyTemplate, requestContext);
+          responses.push(await axios.post(url, body).then((resp) => resp.data));
+        }
+      }
+      /** @type {import("vega-lite/build/src/data").InlineData} */
+      (spec.data).values = aggregateInlineResponses(responses);
+      return spec;
+    }
+
+    const body = renderJsonBodyTemplate(bodyTemplate, {
+      ...(jsonformValue ?? {}),
+    });
     /** @type {import("vega-lite/build/src/data").InlineData} */
     (spec.data).values = await axios.post(url, body).then((resp) => {
       return resp.data;
@@ -228,6 +278,8 @@ async function injectVegaInlineData(
   }
   return spec;
 }
+
+// MultiQuery helpers and template rendering are in ./template-helpers.js
 
 /**
  * @param {import("vega-lite").TopLevelSpec} spec

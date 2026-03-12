@@ -343,6 +343,17 @@ Where the referenced template is a plain text Mustache JSON template, for exampl
 ```json
 {"metric": "{{metric}}", "bbox": "{{bbox}}", "geom": "{{aoi}}"}
 ```
+
+When the template is valid JSON, exact placeholder values such as `"{{feature}}"`,
+`"{{feature.geometry}}"`, or `"{{feature.properties}}"` are inserted with their
+original JSON type instead of being coerced to strings. This is useful for POST
+requests that send GeoJSON features or FeatureCollections.
+
+POST chart links also support `jsonform.options.multiQuery` the same way GET
+links do. For GeoJSON selections, eodash iterates the selected features from the
+raw form value, renders one POST body per selected feature, and aggregates the
+responses into `spec.data.values`.
+
 CSV example:
 
 ```json
