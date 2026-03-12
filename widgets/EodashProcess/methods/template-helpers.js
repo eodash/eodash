@@ -229,14 +229,16 @@ export function resolveTemplatePath(context, path) {
 }
 
 /**
- * Deep-clones objects via structuredClone to prevent template rendering
- * from mutating the original context values. Primitives pass through.
+ * Deep-clones objects via JSON round-trip to prevent template rendering
+ * from mutating the original context values. This also strips non-JSON-
+ * serializable properties (e.g. OL Feature methods from drawtools),
+ * producing clean plain objects. Primitives pass through.
  * @param {any} value
  * @returns {any}
  */
 export function cloneTemplateValue(value) {
   if (value && typeof value === "object") {
-    return structuredClone(value);
+    return JSON.parse(JSON.stringify(value));
   }
   return value;
 }
