@@ -1,5 +1,4 @@
 import { initProcess, updateJsonformIdentifier } from "./handling";
-import { updateJsonformSchemaTarget } from "./utils";
 import { useEventBus } from "@vueuse/core";
 import { nextTick, onMounted, watch, toRaw } from "vue";
 import { eoxLayersKey } from "@/utils/keys";
@@ -11,7 +10,6 @@ import { useOnLayersUpdate } from "@/composables";
  * @async
  * @param {Object} params
  * @param {import("vue").Ref<import("stac-ts").StacCollection | null>} params.selectedStac
- * @param {import("vue").Ref<import("@eox/jsonform").EOxJSONForm | null>} params.jsonformEl
  * @param {import("vue").Ref<Record<string,any> | null>} params.jsonformSchema
  * @param {import("vue").Ref<any[]>} params.processResults
  * @param {import("vue").Ref<boolean>} params.isProcessed
@@ -21,7 +19,6 @@ import { useOnLayersUpdate } from "@/composables";
  */
 export const useInitProcess = ({
   selectedStac,
-  jsonformEl,
   jsonformSchema,
   isProcessed,
   processResults,
@@ -37,7 +34,6 @@ export const useInitProcess = ({
       await initProcess({
         enableCompare: mapElement?.id === "compare",
         selectedStac,
-        jsonformEl,
         jsonformSchema,
         isProcessed,
         processResults,
@@ -49,7 +45,6 @@ export const useInitProcess = ({
         await initProcess({
           enableCompare: mapElement?.id === "compare",
           selectedStac,
-          jsonformEl,
           jsonformSchema,
           isProcessed,
           loading,
@@ -68,38 +63,28 @@ export const useInitProcess = ({
       evt == "time:updated" ||
       evt == "compareTime:updated"
     ) {
-      let newJsonForm = null;
-      // for checking if changed in updateJsonformIdentifier later
-      const originalJsonForm = JSON.stringify(toRaw(jsonformSchema.value));
-      newJsonForm = await updateJsonformIdentifier({
-        jsonformSchema: jsonformSchema.value,
-        // @ts-expect-error TODO payload coming from time update events is not an object with layers property
-        newLayers: _payload,
-      });
-      // we need to purge the jsonform on time change in cases when the feature selection layer was time-based, so that it attaches to a correct new layer
-      const didJsonFormChange =
-        originalJsonForm !== JSON.stringify(toRaw(newJsonForm));
-      if (didJsonFormChange) {
-        const shouldMainJsonFormUpdate =
-          ["layertime:updated", "time:updated"].includes(evt) && !enableCompare;
-        const shouldCompareJsonFormUpdate =
-          ["compareLayertime:updated", "compareTime:updated"].includes(evt) &&
-          enableCompare;
-        if (shouldMainJsonFormUpdate || shouldCompareJsonFormUpdate) {
-          if (shouldCompareJsonFormUpdate) {
-            newJsonForm = updateJsonformSchemaTarget(newJsonForm);
-          }
-          jsonformSchema.value = newJsonForm;
-        }
+      const shouldMainJsonFormUpdate =
+        ["layertime:updated", "time:updated"].includes(evt) && !enableCompare;
+      const shouldCompareJsonFormUpdate =
+        ["compareLayertime:updated", "compareTime:updated"].includes(evt) &&
+        enableCompare;
+      // we need to update jsonform on time change in cases when the feature selection layer was time-based, so that it attaches to a correct new layer
+      if (shouldMainJsonFormUpdate || shouldCompareJsonFormUpdate) {
+        const newJsonForm = await updateJsonformIdentifier({
+          jsonformSchema: jsonformSchema.value,
+          // @ts-expect-error TODO payload coming from time update events is not an object with layers property
+          newLayers: _payload,
+          enableCompare,
+        });
+        jsonformSchema.value = newJsonForm;
       }
     }
     if (evt !== evtKey) {
       return;
     }
     await initProcess({
-      enableCompare: mapElement?.id === "compare",
+      enableCompare,
       selectedStac,
-      jsonformEl,
       jsonformSchema,
       isProcessed,
       processResults,

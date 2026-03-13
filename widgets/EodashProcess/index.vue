@@ -2,15 +2,9 @@
   <div ref="container" class="py-1">
     <ProcessList :map-element="mapElement" :enable-compare="enableCompare" />
     <eox-jsonform
-      v-if="jsonformSchema && !enableCompare"
+      v-if="jsonformSchema"
       :key="jsonformKey"
       ref="jsonformEl"
-      .schema="jsonformSchema"
-    ></eox-jsonform>
-    <eox-jsonform
-      v-if="jsonformSchema && enableCompare"
-      :key="jsonformKey"
-      ref="jsonformElCompare"
       .schema="jsonformSchema"
     ></eox-jsonform>
     <EodashChart
@@ -66,7 +60,7 @@ import {
   compareChartSpec,
   areChartsSeparateLayout,
 } from "@/store/states";
-import { download, getDrawToolsProperty } from "./methods/utils";
+import { download, getDrawToolsProperties } from "./methods/utils";
 import { compareJobs, jobs } from "./states";
 import { mdiCogPlayOutline, mdiDownloadCircleOutline } from "@mdi/js";
 
@@ -88,13 +82,9 @@ const isProcessed = ref(false);
 /** @type {import("vue").Ref<Record<string,any>|null>} */
 const jsonformSchema = ref(null);
 
-const jsonformElMain =
+const jsonformEl =
   /** @type {Readonly<import("vue").ShallowRef<import("@eox/jsonform").EOxJSONForm | null>>} */ (
     useTemplateRef("jsonformEl")
-  );
-const jsonformElCompare =
-  /** @type {Readonly<import("vue").ShallowRef<import("@eox/jsonform").EOxJSONForm | null>>} */ (
-    useTemplateRef("jsonformElCompare")
   );
 
 const isAsync = computed(
@@ -119,7 +109,6 @@ const currentSelectedStac = enableCompare ? selectedCompareStac : selectedStac;
 const mapElement = enableCompare ? mapCompareEl : mapEl;
 const currentIndicator = enableCompare ? compareIndicator : indicator;
 const currentJobs = enableCompare ? compareJobs : jobs;
-const jsonformEl = enableCompare ? jsonformElCompare : jsonformElMain;
 
 const jsonformKey = computed(
   () =>
@@ -131,7 +120,6 @@ const jsonformKey = computed(
 useInitProcess({
   selectedStac: currentSelectedStac,
   mapElement: mapElement.value,
-  jsonformEl,
   jsonformSchema,
   isProcessed,
   processResults,
@@ -158,15 +146,17 @@ const downloadResults = () => {
 };
 
 const startProcess = async () => {
-  const drawToolsProperty = getDrawToolsProperty(jsonformSchema.value);
-  const propertyIsEmpty =
-    drawToolsProperty &&
-    //@ts-expect-error jsonfrom.value is not typed
-    Array.isArray(jsonformEl.value?.value[drawToolsProperty]) &&
-    //@ts-expect-error jsonfrom.value is not typed
-    !jsonformEl.value?.value[drawToolsProperty].length;
+  const drawToolsProperties = getDrawToolsProperties(jsonformSchema.value);
 
-  if (propertyIsEmpty) {
+  const anyDrawtoolPropertyEmpty = drawToolsProperties.some(
+    (drawToolsProperty) =>
+      //@ts-expect-error jsonfrom.value is not typed
+      Array.isArray(jsonformEl.value?.value[drawToolsProperty]) &&
+      //@ts-expect-error jsonfrom.value is not typed
+      !jsonformEl.value?.value[drawToolsProperty].length,
+  );
+
+  if (anyDrawtoolPropertyEmpty) {
     isProcessed.value = false;
     const usedChartSpec = enableCompare ? compareChartSpec : chartSpec;
     usedChartSpec.value = null;
