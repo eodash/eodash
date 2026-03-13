@@ -69,21 +69,14 @@ export const useInitProcess = ({
         ["compareLayertime:updated", "compareTime:updated"].includes(evt) &&
         enableCompare;
       // we need to update jsonform on time change in cases when the feature selection layer was time-based, so that it attaches to a correct new layer
-      if (shouldMainJsonFormUpdate) {
-        await updateJsonformIdentifier({
+      if (shouldMainJsonFormUpdate || shouldCompareJsonFormUpdate) {
+        const newJsonForm = await updateJsonformIdentifier({
           jsonformSchema: jsonformSchema.value,
           // @ts-expect-error TODO payload coming from time update events is not an object with layers property
           newLayers: _payload,
           enableCompare,
         });
-      }
-      if (shouldCompareJsonFormUpdate) {
-        await updateJsonformIdentifier({
-          jsonformSchema: jsonformSchema.value,
-          // @ts-expect-error TODO payload coming from time update events is not an object with layers property
-          newLayers: _payload,
-          enableCompare,
-        });
+        jsonformSchema.value = newJsonForm;
       }
     }
     if (evt !== evtKey) {

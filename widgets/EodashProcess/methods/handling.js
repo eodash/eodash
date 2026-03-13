@@ -22,7 +22,7 @@ import { handleLayersCustomEndpoints } from "./custom-endpoints/layers";
 import { handleChartCustomEndpoints } from "./custom-endpoints/chart";
 import { useSTAcStore } from "@/store/stac";
 import { useGetSubCodeId } from "@/composables";
-import { getLayers } from "@/store/actions";
+import { getLayers, getCompareLayers } from "@/store/actions";
 
 /**
  * Fetch and set the jsonform schema to initialize the process
@@ -50,10 +50,10 @@ export async function initProcess({
   const isPoiAlive = enableCompare ? !!comparePoi.value : !!poi.value;
   let updatedJsonform = null;
   if (selectedStac.value?.["eodash:jsonform"]) {
-    updatedJsonform = await axios
+    updatedJsonform = await fetch(
       //@ts-expect-error eodash extention
-      .get(selectedStac.value["eodash:jsonform"])
-      .then((resp) => resp.data);
+      selectedStac.value["eodash:jsonform"],
+    ).then((resp) => resp.json());
   }
 
   if (!updatedJsonform && isPoiAlive) {
@@ -73,9 +73,12 @@ export async function initProcess({
     // make sure correct target layer id is used in jsonform
     const newJsonForm = await updateJsonformIdentifier({
       jsonformSchema: updatedJsonform,
-      newLayers: getLayers(),
+      newLayers: enableCompare ? getCompareLayers() : getLayers(),
       enableCompare,
     });
+    // trigger jsonform update in next tick
+    jsonformSchema.value = null;
+    await new Promise((resolve) => setTimeout(resolve, 0));
     jsonformSchema.value = newJsonForm;
   }
 }
@@ -89,7 +92,7 @@ export async function initProcess({
  * @param {Record<string,any> | null} params.jsonformSchema params.jsonformSchema
  * @param {Record<string, any>[] | undefined} params.newLayers params.newLayers
  * @param { boolean } params.enableCompare params.enableCompare
- * @returns {Promise<Record<string,any> | null | undefined>} updated jsonform schema 
+ * @returns {Promise<Record<string,any> | null>} updated jsonform schema
  */
 export async function updateJsonformIdentifier({
   jsonformSchema,
@@ -98,7 +101,7 @@ export async function updateJsonformIdentifier({
 }) {
   const form = jsonformSchema;
   if (!form) {
-    return;
+    return null;
   }
   const drawToolsProperties = getDrawToolsProperties(form);
   drawToolsProperties.forEach((drawToolsProperty) => {
@@ -107,7 +110,8 @@ export async function updateJsonformIdentifier({
       form?.properties[drawToolsProperty]?.options?.drawtools?.for &&
       enableCompare
     ) {
-      form.properties.feature.options.drawtools.for = "eox-map#compare";
+      form.properties[drawToolsProperty].options.drawtools.for =
+        "eox-map#compare";
     }
     if (
       drawToolsProperty &&
@@ -148,13 +152,12 @@ export async function updateJsonformIdentifier({
       };
       traverseLayers(layers);
       if (matchedLayerId) {
-        form.properties.feature.options.drawtools.layerId = matchedLayerId;
-        return form;
+        form.properties[drawToolsProperty].options.drawtools.layerId =
+          matchedLayerId;
       } else {
         console.warn(
           `Could not find matching layer for processing form with id: ${layerId}`,
         );
-        return;
       }
     }
   });
