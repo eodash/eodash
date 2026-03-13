@@ -3,8 +3,7 @@ import {
   applyProcessLayersToMap,
   extractGeometries,
   getBboxProperty,
-  getDrawToolsProperty,
-  updateJsonformSchemaTarget,
+  getDrawToolsProperties,
 } from "./utils";
 import {
   compareIndicator,
@@ -32,7 +31,6 @@ import { getLayers } from "@/store/actions";
  * @async
  * @param {Object} params
  * @param {import("vue").Ref<import("stac-ts").StacCollection | null>} params.selectedStac
- * @param {import("vue").Ref<import("@eox/jsonform").EOxJSONForm | null>} params.jsonformEl
  * @param {import("vue").Ref<Record<string,any> | null>} params.jsonformSchema
  * @param {import("vue").Ref<any[]>} params.processResults
  * @param {import("vue").Ref<boolean>} params.isProcessed
@@ -42,7 +40,6 @@ import { getLayers } from "@/store/actions";
  */
 export async function initProcess({
   selectedStac,
-  jsonformEl,
   jsonformSchema,
   isProcessed,
   processResults,
@@ -74,14 +71,11 @@ export async function initProcess({
 
   if (updatedJsonform) {
     // make sure correct target layer id is used in jsonform
-    let newJsonForm = null;
-    newJsonForm = await updateJsonformIdentifier({
+    const newJsonForm = await updateJsonformIdentifier({
       jsonformSchema: updatedJsonform,
       newLayers: getLayers(),
+      enableCompare,
     });
-    if (enableCompare) {
-      newJsonForm = updateJsonformSchemaTarget(newJsonForm);
-    }
     jsonformSchema.value = newJsonForm;
   }
 }
@@ -94,62 +88,76 @@ export async function initProcess({
  * @param {Object} params
  * @param {Record<string,any> | null} params.jsonformSchema params.jsonformSchema
  * @param {Record<string, any>[] | undefined} params.newLayers params.newLayers
- * @returns {Promise<Record<string,any> | null | undefined>} updated jsonform schema
+ * @param { boolean } params.enableCompare params.enableCompare
+ * @returns {Promise<Record<string,any> | null | undefined>} updated jsonform schema 
  */
-export async function updateJsonformIdentifier({ jsonformSchema, newLayers }) {
+export async function updateJsonformIdentifier({
+  jsonformSchema,
+  newLayers,
+  enableCompare,
+}) {
   const form = jsonformSchema;
   if (!form) {
     return;
   }
-  const drawToolsProperty = getDrawToolsProperty(form);
-  if (
-    drawToolsProperty &&
-    newLayers &&
-    form?.properties[drawToolsProperty]?.options?.drawtools?.layerId
-  ) {
-    // get partial or full id and try to match with correct eoxmap layer
-    // check if newLayers is an array or an object with layers property
-    let layers = newLayers;
-    // @ts-expect-error TODO payload coming from time update sometimes is not an object with layers property
-    if (newLayers.layers && Array.isArray(newLayers.layers)) {
-      // @ts-expect-error TODO payload coming from time update sometimes is not an object with layers property
-      layers = newLayers.layers;
+  const drawToolsProperties = getDrawToolsProperties(form);
+  drawToolsProperties.forEach((drawToolsProperty) => {
+    if (
+      drawToolsProperty &&
+      form?.properties[drawToolsProperty]?.options?.drawtools?.for &&
+      enableCompare
+    ) {
+      form.properties.feature.options.drawtools.for = "eox-map#compare";
     }
-
-    const layerId =
-      form.properties[drawToolsProperty].options.drawtools.layerId.split(
-        ";:;",
-      )[0];
-    let matchedLayerId = null;
-    // layers are not flat can be grouped, we need to recursively search
-    const traverseLayers = (
-      /** @type {Record<string, any>[] | undefined} */ layersArray,
-    ) => {
-      if (!layersArray) {
-        return;
+    if (
+      drawToolsProperty &&
+      newLayers &&
+      form?.properties[drawToolsProperty]?.options?.drawtools?.layerId
+    ) {
+      // get partial or full id and try to match with correct eoxmap layer
+      // check if newLayers is an array or an object with layers property
+      let layers = newLayers;
+      // @ts-expect-error TODO payload coming from time update sometimes is not an object with layers property
+      if (newLayers.layers && Array.isArray(newLayers.layers)) {
+        // @ts-expect-error TODO payload coming from time update sometimes is not an object with layers property
+        layers = newLayers.layers;
       }
-      for (const layer of layersArray) {
-        if (layer.type === "Group" && Array.isArray(layer.layers)) {
-          traverseLayers(layer.layers);
-        } else {
-          if (layer.properties?.id?.startsWith(layerId)) {
-            matchedLayerId = layer.properties.id;
-            break;
+
+      const layerId =
+        form.properties[drawToolsProperty].options.drawtools.layerId.split(
+          ";:;",
+        )[0];
+      let matchedLayerId = null;
+      // layers are not flat can be grouped, we need to recursively search
+      const traverseLayers = (
+        /** @type {Record<string, any>[] | undefined} */ layersArray,
+      ) => {
+        if (!layersArray) {
+          return;
+        }
+        for (const layer of layersArray) {
+          if (layer.type === "Group" && Array.isArray(layer.layers)) {
+            traverseLayers(layer.layers);
+          } else {
+            if (layer.properties?.id?.startsWith(layerId)) {
+              matchedLayerId = layer.properties.id;
+              break;
+            }
           }
         }
+      };
+      traverseLayers(layers);
+      if (matchedLayerId) {
+        form.properties.feature.options.drawtools.layerId = matchedLayerId;
+        return form;
+      } else {
+        console.warn(
+          `Could not find matching layer for processing form with id: ${layerId}`,
+        );
+        return;
       }
-    };
-    traverseLayers(layers);
-    if (matchedLayerId) {
-      form.properties.feature.options.drawtools.layerId = matchedLayerId;
-      return form;
-    } else {
-      console.warn(
-        `Could not find matching layer for processing form with id: ${layerId}`,
-      );
-      return null;
     }
-  }
+  });
   return form;
 }
 
