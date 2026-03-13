@@ -93,7 +93,9 @@ export function dedupeMultiQueryValues(values) {
   const deduped = [];
   for (const value of values ?? []) {
     const key =
-      value && typeof value === "object" ? JSON.stringify(value) : String(value);
+      value && typeof value === "object"
+        ? JSON.stringify(value)
+        : String(value);
     if (seen.has(key)) {
       continue;
     }

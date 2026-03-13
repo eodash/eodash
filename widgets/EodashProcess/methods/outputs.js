@@ -172,14 +172,7 @@ export async function processCharts({
  */
 async function injectVegaInlineData(
   spec,
-  {
-    url,
-    jsonformValue,
-    rawJsonformValue,
-    link,
-    flatstyleUrl,
-    jsonformSchema,
-  },
+  { url, jsonformValue, rawJsonformValue, link, flatstyleUrl, jsonformSchema },
 ) {
   if (!spec.data) {
     return;
@@ -250,9 +243,9 @@ async function injectVegaInlineData(
           continue;
         }
         // Sequential POSTs (not parallel) to avoid rate-limiting on endpoints
-      // like TiTiler-PgSTAC. For small selection counts this is fine; if
-      // parallelism is needed later, switch to Promise.all.
-      for (const [index, value] of queryValues.entries()) {
+        // like TiTiler-PgSTAC. For small selection counts this is fine; if
+        // parallelism is needed later, switch to Promise.all.
+        for (const [index, value] of queryValues.entries()) {
           const requestContext = createMultiQueryContext(
             jsonformValue,
             match,

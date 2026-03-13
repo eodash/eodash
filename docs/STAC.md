@@ -344,8 +344,7 @@ Where the referenced template is a plain text Mustache JSON template, for exampl
 {"metric": "{{metric}}", "bbox": "{{bbox}}", "geom": "{{aoi}}"}
 ```
 
-When the template is valid JSON, exact placeholder values such as `"{{feature}}"`,
-`"{{feature.geometry}}"`, or `"{{feature.properties}}"` are inserted with their
+When the template is valid JSON, exact placeholder values such as <span v-pre>`"{{feature}}"`, `"{{feature.geometry}}"`, or `"{{feature.properties}}"`</span> are inserted with their
 original JSON type instead of being coerced to strings. This is useful for POST
 requests that send GeoJSON features or FeatureCollections.
 
