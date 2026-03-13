@@ -1,6 +1,6 @@
 import { initProcess, updateJsonformIdentifier } from "./handling";
 import { useEventBus } from "@vueuse/core";
-import { nextTick, onMounted, watch, toRaw } from "vue";
+import { nextTick, onMounted, watch } from "vue";
 import { eoxLayersKey } from "@/utils/keys";
 import { useOnLayersUpdate } from "@/composables";
 /**
