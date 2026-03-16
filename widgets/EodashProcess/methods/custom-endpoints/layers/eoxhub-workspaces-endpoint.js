@@ -1,11 +1,18 @@
 import axios from "@/plugins/axios";
-import { compareIndicator, indicator } from "@/store/states";
+import {
+  compareIndicator,
+  indicator,
+  chartSpec,
+  compareChartSpec,
+  activeProcessDatetime,
+} from "@/store/states";
 import mustache from "mustache";
 import {
   pollProcessStatus,
   updateJobsStatus,
 } from "^/EodashProcess/methods/async";
 import {
+  buildChartSpecWithData,
   creatAsyncProcessLayerDefinitions,
   extractAsyncResults,
 } from "../../utils";
@@ -72,6 +79,32 @@ export async function handleEOxHubEndpoint({
           return [];
         });
       await updateJobsStatus(jobs, currentIndicator.value);
+
+      // After polling, check if any result has inline JSON stats and update chart
+      const statsResult = processResults.find(
+        (r) => r.type === "application/json" && r.data?.length,
+      );
+      if (statsResult) {
+        const usedChartSpec = enableCompare ? compareChartSpec : chartSpec;
+        const specUrl = selectedStac?.["eodash:vegadefinition"];
+        const builtSpec = await buildChartSpecWithData(
+          specUrl,
+          statsResult.data,
+          usedChartSpec.value,
+        );
+        if (builtSpec) {
+          usedChartSpec.value = builtSpec;
+        }
+      }
+
+      // Set initial highlight to the first datetime so the red line
+      // appears as soon as the chart loads (not only after first click).
+      const datetimeResult = processResults.find(
+        (r) => r.datetimes?.length > 0,
+      );
+      if (datetimeResult && !activeProcessDatetime.value) {
+        activeProcessDatetime.value = datetimeResult.datetimes[0];
+      }
 
       layers.push(
         ...(await creatAsyncProcessLayerDefinitions(

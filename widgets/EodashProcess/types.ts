@@ -36,6 +36,9 @@ export type EOxHubProcessResults =
       [K in string as K extends "urls" ? never : K]: {
         urls: string[];
         mimetype: string;
+        datetimes?: string[];
+        visible?: boolean;
+        data?: any[];
       };
     };
 
@@ -43,4 +46,7 @@ export type AsyncProcessResults = {
   type: string;
   urls: string[];
   id: string;
+  datetimes?: string[];
+  visible?: boolean;
+  data?: any[];
 }[];

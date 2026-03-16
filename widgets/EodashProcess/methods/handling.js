@@ -1,10 +1,14 @@
 import log from "loglevel";
 import {
   applyProcessLayersToMap,
+  EOXHUB_WORKSPACES_ENDPOINT,
   extractGeometries,
+  findClosestDatetimeIndex,
+  findTemporalField,
   getBboxProperty,
   getDrawToolsProperty,
   updateJsonformSchemaTarget,
+  updateProcessLayerStyleVars,
 } from "./utils";
 import {
   compareIndicator,
@@ -16,6 +20,9 @@ import {
   chartSpec,
   compareChartData,
   compareChartSpec,
+  activeProcessDatetime,
+  mapEl,
+  mapCompareEl,
 } from "@/store/states";
 import axios from "@/plugins/axios";
 import { processCharts, processLayers, processSTAC } from "./outputs";
@@ -23,7 +30,7 @@ import { handleLayersCustomEndpoints } from "./custom-endpoints/layers";
 import { handleChartCustomEndpoints } from "./custom-endpoints/chart";
 import { useSTAcStore } from "@/store/stac";
 import { useGetSubCodeId } from "@/composables";
-import { getLayers } from "@/store/actions";
+import { getCompareLayers, getLayers } from "@/store/actions";
 
 /**
  * Fetch and set the jsonform schema to initialize the process
@@ -206,6 +213,17 @@ export async function handleProcesses({
     const layerId = selectedStac.value?.id ?? "";
     const usedChartSpec = enableCompare ? compareChartSpec : chartSpec;
     const usedChartData = enableCompare ? compareChartData : chartData;
+
+    // Detect async eoxhub_workspaces endpoints before running processCharts.
+    // For these indicators the chart data only exists after the async process
+    // completes, so we must NOT render the chart from the pre-fetched Vega spec
+    // (which still points to the "latest" cached URL from a previous run).
+    const hasEoxhubEndpoints =
+      serviceLinks?.some(
+        (l) =>
+          l.rel === "service" && l.endpoint === EOXHUB_WORKSPACES_ENDPOINT,
+      ) ?? false;
+
     let tempChartSpec = null;
     [tempChartSpec, usedChartData.value] = await processCharts({
       links: serviceLinks,
@@ -231,7 +249,14 @@ export async function handleProcesses({
     if (tempChartSpec && !("background" in tempChartSpec)) {
       tempChartSpec["background"] = "transparent";
     }
-    usedChartSpec.value = tempChartSpec;
+    // Only immediately publish the chart spec for non-eoxhub indicators.
+    // For eoxhub indicators, the chart will be rendered (with correct data)
+    // by the eoxhub endpoint handler after async polling completes.
+    if (!hasEoxhubEndpoints) {
+      usedChartSpec.value = tempChartSpec;
+    } else {
+      usedChartSpec.value = null;
+    }
 
     await processSTAC(
       serviceLinks,
@@ -300,6 +325,7 @@ export function resetProcess({
   isPolling.value = false;
   const usedChartSpec = enableCompare ? compareChartSpec : chartSpec;
   usedChartSpec.value = null;
+  activeProcessDatetime.value = null;
   processResults.value = [];
   jsonformSchema.value = null;
 }
@@ -313,38 +339,73 @@ export function resetProcess({
  * @param {Record<string,{type?:string;field?:string;}>} [evt.target.spec.encoding] - The encoding specification of the chart.
  * @param {object} evt.detail - The detail of the event, containing information about the clicked item.
  * @param {import("vega").Item} evt.detail.item - The Vega item that was clicked.
+ * @param {boolean} [enableCompare=false] - Whether the click comes from the compare chart.
  */
-export const onChartClick = (evt) => {
-  const chartSpec = evt.target?.spec;
+export const onChartClick = (evt, enableCompare = false) => {
+  const evtChartSpec = evt.target?.spec;
   if (
-    !chartSpec ||
-    (!evt.detail?.item?.datum && !evt.detail?.item?.datum.datum)
+    !evtChartSpec ||
+    (!evt.detail?.item?.datum && !evt.detail?.item?.datum?.datum)
   ) {
     return;
   }
-  const encodingKey = Object.keys(chartSpec.encoding ?? {}).find(
-    (key) => chartSpec.encoding?.[key].type === "temporal",
-  );
-  if (!encodingKey) {
-    return;
-  }
-  const temporalKey = chartSpec.encoding?.[encodingKey].field;
+
+  const temporalKey = findTemporalField(evtChartSpec);
   if (!temporalKey) {
     return;
   }
 
   try {
     const vegaItem = evt.detail.item;
-    let datestring = "";
-    // It seems sometimes we have datum inside datum and sometimes not
-    if (vegaItem.datum && vegaItem.datum.datum) {
-      // If datum is nested, we use the nested datum
-      datestring = vegaItem.datum.datum[temporalKey];
-    } else {
-      // Otherwise, we use the top-level datum
-      datestring = vegaItem.datum[temporalKey];
+    const datum = vegaItem.datum?.datum ?? vegaItem.datum;
+    const datestring = datum?.[temporalKey];
+    if (!datestring) {
+      return; // Clicked a mark without the expected temporal field (e.g. highlight rule)
     }
     const temporalValue = new Date(datestring);
+    if (Number.isNaN(temporalValue.getTime())) {
+      return;
+    }
+
+    // Check if there are process GeoTIFF layers with datetimes metadata.
+    // If so, update time_step style variable instead of datetime.value
+    // to avoid STAC reload which would wipe the AnalysisGroup.
+    const currentLayers = enableCompare ? getCompareLayers() : getLayers();
+    const analysisGroup = currentLayers?.find((l) =>
+      l.properties?.id?.includes("AnalysisGroup"),
+    );
+    if (analysisGroup?.layers) {
+      const processGeoTiffLayers = analysisGroup.layers.filter(
+        (l) =>
+          l.type === "WebGLTile" &&
+          l.source?.type === "GeoTIFF" &&
+          l.properties?.id?.includes("_process") &&
+          l.properties?.datetimes?.length > 0,
+      );
+      if (processGeoTiffLayers.length > 0) {
+        const datetimes = processGeoTiffLayers[0].properties.datetimes;
+        const bestIdx = findClosestDatetimeIndex(datetimes, temporalValue);
+        const timeStep = bestIdx + 1;
+
+        // Update ALL sibling process layers (not just those with datetimes)
+        // so that layers like methane results also update their time_step.
+        const mapElement = enableCompare ? mapCompareEl.value : mapEl.value;
+        if (mapElement?.map) {
+          updateProcessLayerStyleVars(
+            mapElement.map,
+            (id) => id.includes("_process"),
+            { time_step: timeStep },
+          );
+        }
+
+        // Track the active datetime for the chart highlight line
+        activeProcessDatetime.value = datetimes[bestIdx] ?? null;
+
+        return; // Don't set datetime.value — AnalysisGroup is preserved
+      }
+    }
+
+    // Fallback: set datetime.value for standard STAC indicators
     datetime.value = temporalValue.toISOString();
   } catch (error) {
     console.warn(
