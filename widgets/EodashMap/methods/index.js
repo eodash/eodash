@@ -6,6 +6,7 @@ import { useSTAcStore } from "@/store/stac";
 import { storeToRefs } from "pinia";
 import { isFirstLoad } from "@/utils/states";
 import { useEmitLayersUpdate, useOnLayersUpdate } from "@/composables";
+export { useEmitLayersUpdate, useOnLayersUpdate };
 import { mapPosition } from "@/store/states";
 import { sanitizeBbox } from "@/eodashSTAC/helpers";
 import { transformExtent } from "@eox/map";
@@ -61,6 +62,7 @@ export const useHandleMapMoveEnd = (mapElement, mapPosition) => {
  * @param {import("vue").Ref<import("@eox/map").EOxMap| null>} partnerMap
  * @param {boolean} zoomToExtent
  * @param {import("vue").Ref<import("stac-ts").StacItem | import("stac-ts").StacLink | null>} [selectedItem]
+ * @param {Record<string, any>[]} [defaultBaseLayers]
  */
 export const useInitMap = (
   mapElement,
@@ -71,6 +73,7 @@ export const useInitMap = (
   partnerMap,
   zoomToExtent,
   selectedItem,
+  defaultBaseLayers,
 ) => {
   log.debug(
     "InitMap",
@@ -139,7 +142,9 @@ export const useInitMap = (
             updatedStac,
             eodashCols,
             updatedItem ?? updatedTime,
+            defaultBaseLayers,
           );
+
           log.debug(
             "Assigned layers after changing time only",
             JSON.parse(JSON.stringify(layersCollection)),
@@ -162,6 +167,11 @@ export const useInitMap = (
         if (interval && interval.length > 0 && interval[0].length > 1) {
           // @ts-expect-error this is the defined STAC structure
           endInterval = new Date(interval[0][1]);
+          // If end interval is in the future, set to now,
+          // for item fetching based on search endpoint
+          if (endInterval.getTime() > Date.now()) {
+            endInterval = new Date();
+          }
           log.debug(
             "Indicator load: found stac extent, setting time to latest value",
             endInterval,
@@ -183,6 +193,7 @@ export const useInitMap = (
           updatedStac,
           eodashCols,
           updatedItem ?? updatedTime,
+          defaultBaseLayers,
         );
 
         if (zoomToExtent) {
