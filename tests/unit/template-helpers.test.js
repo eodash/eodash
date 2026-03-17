@@ -25,7 +25,17 @@ describe("renderJsonBodyTemplate", () => {
   });
 
   it("preserves object values for exact placeholders", () => {
-    const geom = { type: "Polygon", coordinates: [[[0, 0], [1, 0], [1, 1], [0, 0]]] };
+    const geom = {
+      type: "Polygon",
+      coordinates: [
+        [
+          [0, 0],
+          [1, 0],
+          [1, 1],
+          [0, 0],
+        ],
+      ],
+    };
     const template = JSON.stringify({ geometry: "{{geometry}}" });
     const result = renderJsonBodyTemplate(template, { geometry: geom });
     expect(result.geometry).toEqual(geom);
@@ -56,12 +66,20 @@ describe("renderJsonBodyTemplate", () => {
       outer: { inner: "{{val}}" },
       list: ["{{a}}", "{{b}}"],
     });
-    const result = renderJsonBodyTemplate(template, { val: "x", a: "1", b: "2" });
+    const result = renderJsonBodyTemplate(template, {
+      val: "x",
+      a: "1",
+      b: "2",
+    });
     expect(result).toEqual({ outer: { inner: "x" }, list: ["1", "2"] });
   });
 
   it("passes through numbers and booleans unchanged", () => {
-    const template = JSON.stringify({ count: 42, active: true, label: "{{label}}" });
+    const template = JSON.stringify({
+      count: 42,
+      active: true,
+      label: "{{label}}",
+    });
     const result = renderJsonBodyTemplate(template, { label: "test" });
     expect(result).toEqual({ count: 42, active: true, label: "test" });
   });
@@ -129,7 +147,9 @@ describe("resolveTemplatePath", () => {
 
   it("resolves mixed dot and bracket notation", () => {
     const ctx = { features: [{ properties: { name: "test" } }] };
-    expect(resolveTemplatePath(ctx, "features[0].properties.name")).toBe("test");
+    expect(resolveTemplatePath(ctx, "features[0].properties.name")).toBe(
+      "test",
+    );
   });
 
   it("returns undefined for missing paths", () => {
