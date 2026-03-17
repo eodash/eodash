@@ -1,0 +1,1 @@
+import{_ as i,o as a,c as t,ag as e}from"./chunks/framework.DKxocgDc.js";const E=JSON.parse('{"title":"STAC","description":"","frontmatter":{},"headers":[],"relativePath":"STAC.md","filePath":"STAC.md"}'),n={name:"STAC.md"};function l(h,s,p,o,k,r){return a(),t("div",null,[...s[0]||(s[0]=[e("",112)])])}const c=i(n,[["render",l]]);export{E as __pageData,c as default};
