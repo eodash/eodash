@@ -2,7 +2,8 @@ import { createLayersConfig } from "^/EodashMap/methods/create-layers-config";
 import { eodashCollections } from "@/utils/states";
 import axios from "@/plugins/axios";
 import { mapEl } from "@/store/states";
-import { sanitizeBbox } from "@/eodashSTAC/helpers";
+import { removeLayers, sanitizeBbox } from "@/eodashSTAC/helpers";
+import { getLayers } from "@/store/actions";
 
 /**
  * @param {string} stacEndpoint
@@ -24,6 +25,9 @@ export async function createAnimationsLayers(
       selectedStac,
     );
   }
+  const { collections: hiddenCollections, layers: hiddenLayers } =
+    getHiddenLayers([...getLayers()]);
+
   return await Promise.all(
     Object.values(selectedRangeItems).flatMap(async (itemSet) => {
       /** @type {Array<{ layers: Record<string, any>[]; date: string }>} */
@@ -31,9 +35,16 @@ export async function createAnimationsLayers(
       for (const dateItem of itemSet) {
         await createLayersConfig(
           selectedStac.value,
-          eodashCollections,
+          eodashCollections.filter(
+            (collection) =>
+              !hiddenCollections.includes(collection.collectionStac?.id ?? ""),
+          ),
           dateItem.originalDate,
         ).then((layers) => {
+          //@ts-expect-error createLayersConfig is not typed strictly
+          layers = removeLayers(layers, hiddenLayers);
+          //@ts-expect-error createLayersConfig is not typed strictly
+          layers = restoreLayersVisibility(layers);
           layers = anonimizeLayersCORS(layers);
           mapLayersArr.push({
             layers,
@@ -80,16 +91,24 @@ async function createAPILayers(
     console.warn("[eodash] No items found for animation.");
     return [];
   }
-
+  const { collections: hiddenCollections, layers: hiddenLayers } =
+    getHiddenLayers([...getLayers()]);
   return await Promise.all(
     items.map(async (item) => {
       /** @type {Array<{ layers: Record<string, any>[]; date: string }>} */
       const mapLayersArr = [];
       await createLayersConfig(
         selectedStac.value,
-        eodashCollections,
+        eodashCollections.filter(
+          (collection) =>
+            !hiddenCollections.includes(collection.collectionStac?.id ?? ""),
+        ),
         item,
       ).then((layers) => {
+        //@ts-expect-error createLayersConfig is not typed strictly
+        layers = removeLayers(layers, hiddenLayers);
+        //@ts-expect-error createLayersConfig is not typed strictly
+        layers = restoreLayersVisibility(layers);
         layers = anonimizeLayersCORS(layers);
         mapLayersArr.push({
           layers,
@@ -117,4 +136,85 @@ export function anonimizeLayersCORS(layers) {
     }
     return layer;
   });
+}
+/**
+ * returns the list of layers that has visibility hidden
+ * @param {import("@eox/map").EoxLayer[]} layers
+ * @returns {{ collections: string[]; layers: string[] }}
+ */
+export function getHiddenLayers(layers) {
+  /** @type {{ collections: string[]; layers: string[] }} */
+  const result = { collections: [], layers: [] };
+
+  for (const layer of layers) {
+    // check inner layers if it's a group layer first
+    if (layer.type === "Group" && Array.isArray(layer.layers)) {
+      const childResult = getHiddenLayers(layer.layers);
+      for (const col of childResult.collections) {
+        if (!result.collections.includes(col)) {
+          result.collections.push(col);
+        }
+      }
+      for (const lyr of childResult.layers) {
+        if (!result.layers.includes(lyr)) {
+          result.layers.push(lyr);
+        }
+      }
+    }
+
+    if (!layer.properties?.id) {
+      continue;
+    }
+
+    const olLayer = mapEl.value?.getLayerById(layer.properties?.id);
+    if (!olLayer) {
+      continue;
+    }
+
+    if (olLayer.getVisible() === false) {
+      const refId = layer.properties.id;
+      if (refId) {
+        if (refId.includes(";:;")) {
+          // Check if this looks like a typical eodash collection ID with separator
+          const parts = refId.split(";:;");
+          if (parts.length > 2) {
+            const prefix = parts[0];
+            if (!result.collections.includes(prefix)) {
+              result.collections.push(prefix);
+            }
+          } else {
+            // It has a separator but might just be a base layer like `layerId;:;EPSG`
+            if (!result.layers.includes(refId)) {
+              result.layers.push(refId);
+            }
+          }
+        } else {
+          if (!result.layers.includes(refId)) {
+            result.layers.push(refId);
+          }
+        }
+      }
+    }
+  }
+
+  return result;
+}
+
+/**
+ * Iterates through a list of layers and updates layer.properties.visible to true
+ * if it is set to false
+ * @param {import("@eox/map").EoxLayer[]} layers
+ * @returns {import("@eox/map").EoxLayer[]}
+ */
+export function restoreLayersVisibility(layers) {
+  for (const layer of layers) {
+    if (layer.properties && layer.properties.visible === false) {
+      layer.properties.visible = true;
+    }
+
+    if (layer.type === "Group" && Array.isArray(layer.layers)) {
+      restoreLayersVisibility(layer.layers);
+    }
+  }
+  return layers;
 }
