@@ -677,13 +677,17 @@ export async function buildChartSpecWithData(
   };
 }
 
-/** @param {*} jsonformSchema */
-export const getDrawToolsProperty = (jsonformSchema) => {
+/** @param {*} jsonformSchema
+ * @returns { string[] }
+ */
+export const getDrawToolsProperties = (jsonformSchema) => {
+  const properties = [];
   for (const property in jsonformSchema.properties) {
     if (jsonformSchema.properties[property]?.options?.drawtools) {
-      return property;
+      properties.push(property);
     }
   }
+  return properties;
 };
 
 /**
@@ -730,17 +734,3 @@ export const applyProcessLayersToMap = (mapElement, processLayers) => {
     mapElement.layers = layers;
   }
 };
-/**
- * Updates the jsonform schema to target the compare map
- * @param {Record<string,any> | null | undefined} jsonformSchema
- */
-export function updateJsonformSchemaTarget(jsonformSchema) {
-  if (!jsonformSchema) {
-    return jsonformSchema;
-  }
-  const stringified = JSON.stringify(jsonformSchema).replaceAll(
-    "eox-map#main",
-    "eox-map#compare",
-  );
-  return JSON.parse(stringified);
-}
