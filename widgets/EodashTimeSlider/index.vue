@@ -23,7 +23,7 @@
         v-if="filters.length"
         .inlineMode="true"
         :showResults="false"
-        .filters="unref(filters)"
+        .filterProperties="filters"
       ></eox-itemfilter>
       <eox-timecontrol-timelapse @export="onExport"></eox-timecontrol-timelapse>
     </div>
@@ -40,10 +40,11 @@ import "@eox/itemfilter";
 import { computed, onMounted, ref, unref, useTemplateRef } from "vue";
 import { storeToRefs } from "pinia";
 import { useSTAcStore } from "@/store/stac";
-import { createAnimationsLayers } from "./methods";
+import { createAnimationLayers } from "./methods";
 
 const { animate } = defineProps({
   filters: {
+    /** @type {import("vue").PropType<import("@eox/itemfilter").EOxItemFilter["filterProperties"]>} */
     type: Array,
     default: () => [],
   },
@@ -111,16 +112,18 @@ const { selectedStac, stacEndpoint } = storeToRefs(useSTAcStore());
  * @param {CustomEvent<import("./types").TimelineExportEventDetail>} evt
  */
 const onExport = async (evt) => {
-  const { generate, selectedRangeItems } = evt.detail;
+  const { generate, selectedRangeItems, filters } = evt.detail;
+
   if (!stacEndpoint.value) {
     return;
   }
 
-  const mapLayers = await createAnimationsLayers(
+  const mapLayers = await createAnimationLayers(
     stacEndpoint.value,
     selectedRange.value,
     selectedRangeItems,
     selectedStac,
+    filters,
   );
 
   if (!mapLayers?.length) {

@@ -10,12 +10,14 @@ import { getLayers } from "@/store/actions";
  * @param {[string, string]} selectedRange
  * @param {import("../types").TimelineExportEventDetail["selectedRangeItems"]} selectedRangeItems
  * @param {import("vue").Ref<import("stac-ts").StacCollection|null>} selectedStac
+ * @param {Record<string, import("../types").Filter>} filters
  */
-export async function createAnimationsLayers(
+export async function createAnimationLayers(
   stacEndpoint,
   selectedRange,
   selectedRangeItems,
   selectedStac,
+  filters,
 ) {
   if (eodashCollections[0].isAPI) {
     return await createAPILayers(
@@ -23,6 +25,7 @@ export async function createAnimationsLayers(
       { min: selectedRange[0], max: selectedRange[1] },
       mapEl.value?.lonLatExtent,
       selectedStac,
+      filters,
     );
   }
   const { collections: hiddenCollections, layers: hiddenLayers } =
@@ -62,6 +65,7 @@ export async function createAnimationsLayers(
  * @param {{min: string, max: string}} date
  * @param {number[] | undefined} bbox
  * @param {import("vue").Ref<import("stac-ts").StacCollection|null>} selectedStac
+ * @param {Record<string, import("../types").Filter>} filters
  * @return {Promise<Array<{ layers: Record<string, any>[]; date: string }>>}
  */
 async function createAPILayers(
@@ -69,16 +73,25 @@ async function createAPILayers(
   date = { min: "", max: "" },
   bbox,
   selectedStac,
+  filters,
 ) {
   if (!bbox) {
     return [];
   }
   const url = new URL(stacEndpoint + "/search");
+  url.searchParams.set("limit", "100");
+  url.searchParams.set("collections", selectedStac.value?.id ?? "");
   url.searchParams.set(
     "datetime",
     `${new Date(date.min).toISOString()}/${new Date(date.max).toISOString()}`,
   );
   url.searchParams.set("bbox", sanitizeBbox(bbox).join(","));
+
+  const stacFilter = buildStacFilters(filters);
+  if (stacFilter) {
+    url.searchParams.set("filter", stacFilter);
+  }
+
   /** @type {import("stac-ts").StacItem[]} */
   const items = await axios
     .get(url.href)
@@ -217,4 +230,50 @@ export function restoreLayersVisibility(layers) {
     }
   }
   return layers;
+}
+
+/**
+ * Build STAC API filter string from TimeSlider filters
+ * @param {Record<string, import("../types").Filter>} filters
+ * @returns {string}
+ */
+export function buildStacFilters(filters) {
+  if (!filters) return "";
+
+  /** @type {string[]} */
+  const stacFilters = [];
+
+  Object.values(filters).forEach((filter) => {
+    if (!filter || !filter.key) return;
+
+    // strip 'properties.' from key if present
+    const propName = filter.key.startsWith("properties.")
+      ? filter.key.replace("properties.", "")
+      : filter.key;
+
+    if (filter.type === "range" && filter.state) {
+      if (
+        filter.state.min !== undefined &&
+        filter.state.min > (filter.min ?? -Infinity)
+      ) {
+        stacFilters.push(`${propName}>=${filter.state.min}`);
+      }
+      if (
+        filter.state.max !== undefined &&
+        filter.state.max < (filter.max ?? Infinity)
+      ) {
+        stacFilters.push(`${propName}<=${filter.state.max}`);
+      }
+    } else if (filter.type === "multiselect" && filter.stringifiedState) {
+      if (filter.stringifiedState.length > 0) {
+        stacFilters.push(`${propName} IN (${filter.stringifiedState})`);
+      }
+    } else if (filter.type === "select" && filter.stringifiedState) {
+      if (filter.stringifiedState) {
+        stacFilters.push(`${propName}='${filter.stringifiedState}'`);
+      }
+    }
+  });
+
+  return stacFilters.join(" AND ");
 }
