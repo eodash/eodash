@@ -392,6 +392,39 @@ export const findLayer = (layers, layer) => {
 };
 
 /**
+ * Removes JSON layers by ID from the layer tree
+ *  @param {import("@eox/map").EoxLayer[]} layers
+ *  @param {string[]} layerIds
+ *  @returns {import("@eox/map").EoxLayer[]}
+ **/
+export const removeLayers = (layers, layerIds) => {
+  const result = [];
+  for (const layer of layers) {
+    // if the layer is hidden, do not include it without checking if it's a group
+    if (layer.properties?.id && layerIds.includes(layer.properties.id)) {
+      continue;
+    }
+    if (layer.type === "Group" && Array.isArray(layer.layers)) {
+      const newGroupLayers = removeLayers(layer.layers, layerIds);
+      // if the group is not hidden, add it with the updated layers (if any were removed)
+      result.push(
+        newGroupLayers !== layer.layers
+          ? { ...layer, layers: newGroupLayers }
+          : layer,
+      );
+      continue;
+    }
+
+    result.push(layer);
+  }
+
+  return result.length === layers.length &&
+    result.every((l, i) => l === layers[i])
+    ? layers
+    : result;
+};
+
+/**
  * Removes one or more layers (by id) from a layer/group structure and inserts
  * new layers in place of the first removed one.
  * Returns a new array reference at every level that changed (immutable).
