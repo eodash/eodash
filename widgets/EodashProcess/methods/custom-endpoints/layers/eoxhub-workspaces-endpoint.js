@@ -14,6 +14,7 @@ import {
 import {
   buildChartSpecWithData,
   creatAsyncProcessLayerDefinitions,
+  EOXHUB_WORKSPACES_ENDPOINT,
   extractAsyncResults,
 } from "../../utils";
 
@@ -34,7 +35,7 @@ export async function handleEOxHubEndpoint({
     return;
   }
   const eoxhubLinks = links.filter(
-    (link) => link.rel === "service" && link.endpoint === "eoxhub_workspaces",
+    (link) => link.rel === "service" && link.endpoint === EOXHUB_WORKSPACES_ENDPOINT,
   );
   const layers = [];
   for (const link of eoxhubLinks) {

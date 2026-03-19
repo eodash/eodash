@@ -7,7 +7,6 @@ import {
   findTemporalField,
   getBboxProperty,
   getDrawToolsProperties,
-  updateJsonformSchemaTarget,
   updateProcessLayerStyleVars,
 } from "./utils";
 import {
