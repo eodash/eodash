@@ -313,13 +313,16 @@ export async function creatAsyncProcessLayerDefinitions(
     // Check if collection has eox:colorlegend definition, if yes overwrite legend description
     let extraProperties = extractLayerLegend(selectedStac);
 
+    /** @type {any} */
+    const cfg = layerConfig;
+
     switch (resultItem.type) {
       case "image/tiff": {
         // If datetimes are provided, dynamically override the time_step jsonform
         // to show datetime labels and set correct maximum
         if (
           resultItem.datetimes?.length &&
-          layerConfig?.schema?.properties?.time_step
+          cfg?.schema?.properties?.time_step
         ) {
           const n = resultItem.datetimes.length;
           const enumValues = Array.from({ length: n }, (_, i) => i + 1);
@@ -329,28 +332,28 @@ export async function creatAsyncProcessLayerDefinitions(
               return d.toISOString().slice(0, 16).replace("T", " ");
             } catch {
               return (
-                dt || `Step ${enumValues[resultItem.datetimes.indexOf(dt)]}`
+                dt || `Step ${enumValues[resultItem.datetimes?.indexOf(dt) ?? 0]}`
               );
             }
           });
-          layerConfig.schema.properties.time_step = {
-            ...layerConfig.schema.properties.time_step,
+          cfg.schema.properties.time_step = {
+            ...cfg.schema.properties.time_step,
             maximum: n,
             minimum: 1,
             default: 1,
             ...(n <= MAX_DISCRETE_TIMESTEPS && {
               enum: enumValues,
               options: {
-                ...(layerConfig.schema.properties.time_step.options || {}),
+                ...(cfg.schema.properties.time_step.options || {}),
                 enum_titles: enumTitles,
               },
             }),
           };
           if (
             n <= MAX_DISCRETE_TIMESTEPS &&
-            layerConfig.schema.properties.time_step.format === "range"
+            cfg.schema.properties.time_step.format === "range"
           ) {
-            delete layerConfig.schema.properties.time_step.format;
+            delete cfg.schema.properties.time_step.format;
           }
         }
 
@@ -540,20 +543,20 @@ export function extractAsyncResults(resultItem) {
     if (key === "id") {
       continue;
     }
+    /** @type {any} */
+    const entry = /** @type {any} */ (resultItem)[key];
     extracted.push({
       // used as a key to identify the corresponding style
       id: key,
-      //@ts-expect-error TODO
-      urls: /** @type {string[]} */ (resultItem[key].urls),
-      //@ts-expect-error TODO
-      type: /** @type {string} */ (resultItem[key].mimetype),
-      ...(resultItem[key]?.datetimes && {
-        datetimes: resultItem[key].datetimes,
+      urls: /** @type {string[]} */ (entry.urls),
+      type: /** @type {string} */ (entry.mimetype),
+      ...(entry?.datetimes && {
+        datetimes: entry.datetimes,
       }),
-      ...(resultItem[key]?.visible !== undefined && {
-        visible: resultItem[key].visible,
+      ...(entry?.visible !== undefined && {
+        visible: entry.visible,
       }),
-      ...(resultItem[key]?.data && { data: resultItem[key].data }),
+      ...(entry?.data && { data: entry.data }),
     });
   }
   return extracted;

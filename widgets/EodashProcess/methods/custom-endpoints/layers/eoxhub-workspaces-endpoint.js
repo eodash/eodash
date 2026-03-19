@@ -87,10 +87,10 @@ export async function handleEOxHubEndpoint({
       );
       if (statsResult) {
         const usedChartSpec = enableCompare ? compareChartSpec : chartSpec;
-        const specUrl = selectedStac?.["eodash:vegadefinition"];
+        const specUrl = /** @type {string | undefined} */ (selectedStac?.["eodash:vegadefinition"]);
         const builtSpec = await buildChartSpecWithData(
           specUrl,
-          statsResult.data,
+          statsResult.data ?? [],
           usedChartSpec.value,
         );
         if (builtSpec) {
@@ -101,10 +101,10 @@ export async function handleEOxHubEndpoint({
       // Set initial highlight to the first datetime so the red line
       // appears as soon as the chart loads (not only after first click).
       const datetimeResult = processResults.find(
-        (r) => r.datetimes?.length > 0,
+        (r) => (r.datetimes?.length ?? 0) > 0,
       );
       if (datetimeResult && !activeProcessDatetime.value) {
-        activeProcessDatetime.value = datetimeResult.datetimes[0];
+        activeProcessDatetime.value = datetimeResult.datetimes?.[0] ?? null;
       }
 
       layers.push(

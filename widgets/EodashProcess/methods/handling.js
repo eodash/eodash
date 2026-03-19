@@ -387,12 +387,12 @@ export const onChartClick = (evt, enableCompare = false) => {
     // If so, update time_step style variable instead of datetime.value
     // to avoid STAC reload which would wipe the AnalysisGroup.
     const currentLayers = enableCompare ? getCompareLayers() : getLayers();
-    const analysisGroup = currentLayers?.find((l) =>
+    const analysisGroup = currentLayers?.find((/** @type {any} */ l) =>
       l.properties?.id?.includes("AnalysisGroup"),
     );
-    if (analysisGroup?.layers) {
-      const processGeoTiffLayers = analysisGroup.layers.filter(
-        (l) =>
+    if (/** @type {any} */ (analysisGroup)?.layers) {
+      const processGeoTiffLayers = /** @type {any[]} */ (/** @type {any} */ (analysisGroup).layers).filter(
+        (/** @type {any} */ l) =>
           l.type === "WebGLTile" &&
           l.source?.type === "GeoTIFF" &&
           l.properties?.id?.includes("_process") &&

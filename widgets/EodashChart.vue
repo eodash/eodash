@@ -87,7 +87,7 @@ const usedChartSpec = computed(() => {
 
   // If spec is already layered, append/replace the highlight layer
   if (Array.isArray(spec.layer)) {
-    const nonHighlight = spec.layer.filter((l) => l._highlight !== true);
+    const nonHighlight = spec.layer.filter((/** @type {any} */ l) => l._highlight !== true);
     return { ...spec, layer: [...nonHighlight, highlightLayer] };
   }
 
