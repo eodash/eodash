@@ -1,12 +1,20 @@
 import axios from "@/plugins/axios";
-import { compareIndicator, indicator } from "@/store/states";
+import {
+  compareIndicator,
+  indicator,
+  chartSpec,
+  compareChartSpec,
+  activeProcessDatetime,
+} from "@/store/states";
 import mustache from "mustache";
 import {
   pollProcessStatus,
   updateJobsStatus,
 } from "^/EodashProcess/methods/async";
 import {
+  buildChartSpecWithData,
   creatAsyncProcessLayerDefinitions,
+  EOXHUB_WORKSPACES_ENDPOINT,
   extractAsyncResults,
 } from "../../utils";
 
@@ -27,7 +35,7 @@ export async function handleEOxHubEndpoint({
     return;
   }
   const eoxhubLinks = links.filter(
-    (link) => link.rel === "service" && link.endpoint === "eoxhub_workspaces",
+    (link) => link.rel === "service" && link.endpoint === EOXHUB_WORKSPACES_ENDPOINT,
   );
   const layers = [];
   for (const link of eoxhubLinks) {
@@ -72,6 +80,32 @@ export async function handleEOxHubEndpoint({
           return [];
         });
       await updateJobsStatus(jobs, currentIndicator.value);
+
+      // After polling, check if any result has inline JSON stats and update chart
+      const statsResult = processResults.find(
+        (r) => r.type === "application/json" && r.data?.length,
+      );
+      if (statsResult) {
+        const usedChartSpec = enableCompare ? compareChartSpec : chartSpec;
+        const specUrl = /** @type {string | undefined} */ (selectedStac?.["eodash:vegadefinition"]);
+        const builtSpec = await buildChartSpecWithData(
+          specUrl,
+          statsResult.data ?? [],
+          usedChartSpec.value,
+        );
+        if (builtSpec) {
+          usedChartSpec.value = builtSpec;
+        }
+      }
+
+      // Set initial highlight to the first datetime so the red line
+      // appears as soon as the chart loads (not only after first click).
+      const datetimeResult = processResults.find(
+        (r) => (r.datetimes?.length ?? 0) > 0,
+      );
+      if (datetimeResult && !activeProcessDatetime.value) {
+        activeProcessDatetime.value = datetimeResult.datetimes?.[0] ?? null;
+      }
 
       layers.push(
         ...(await creatAsyncProcessLayerDefinitions(

@@ -25,7 +25,8 @@
 import "color-legend-element";
 import "@eox/timecontrol";
 import { computed, ref } from "vue";
-import { mapEl, mapCompareEl } from "@/store/states";
+import { mapEl, mapCompareEl, activeProcessDatetime } from "@/store/states";
+import { updateProcessLayerStyleVars } from "./EodashProcess/methods/utils";
 import { getColFromLayer } from "@/eodashSTAC/helpers";
 import {
   eodashCollections,
@@ -140,6 +141,34 @@ const onLayerConfigChange = (evt) => {
     layerControlFormValueCompare.value = evt.detail.jsonformValue;
   } else {
     layerControlFormValue.value = evt.detail.jsonformValue;
+  }
+
+  // Sync time_step across all sibling process layers in the AnalysisGroup
+  // so co-rendered results (e.g. enhancement + reference) stay in sync.
+  const changedLayer = evt.detail.layer;
+  const newTimeStep = evt.detail.jsonformValue?.time_step;
+  if (newTimeStep == null || !changedLayer) return;
+
+  const layerId = changedLayer.get?.("id") ?? "";
+  if (!layerId.includes("_process")) return;
+
+  const numericTimeStep = Number(newTimeStep);
+
+  const map = /** @type {HTMLElement & Record<string,any>} */ (mapElement.value)
+    ?.map;
+  if (!map) return;
+
+  updateProcessLayerStyleVars(
+    map,
+    (id) => id !== layerId && id.includes("_process"),
+    { time_step: numericTimeStep },
+  );
+
+  // Update activeProcessDatetime for the chart highlight line.
+  // The changed layer's datetimes array maps time_step index → datetime string.
+  const datetimes = changedLayer.get?.("datetimes");
+  if (Array.isArray(datetimes) && datetimes[numericTimeStep - 1]) {
+    activeProcessDatetime.value = datetimes[numericTimeStep - 1];
   }
 };
 </script>

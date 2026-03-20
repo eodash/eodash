@@ -9,6 +9,12 @@ import axios from "@/plugins/axios";
 import { getCompareLayers, getLayers } from "@/store/actions";
 import { isMulti } from "@eox/jsonform/src/custom-inputs/spatial/utils";
 
+/** Max number of timesteps to show as discrete enum buttons vs. range slider */
+const MAX_DISCRETE_TIMESTEPS = 10;
+
+/** Endpoint identifier for EOxHub workspace-based process links */
+export const EOXHUB_WORKSPACES_ENDPOINT = "eoxhub_workspaces";
+
 /**
  * @param {Record<string,any> |null} [jsonformSchema]
  **/
@@ -307,10 +313,53 @@ export async function creatAsyncProcessLayerDefinitions(
     // Check if collection has eox:colorlegend definition, if yes overwrite legend description
     let extraProperties = extractLayerLegend(selectedStac);
 
+    /** @type {any} */
+    const cfg = layerConfig;
+
     switch (resultItem.type) {
       case "image/tiff": {
+        // If datetimes are provided, dynamically override the time_step jsonform
+        // to show datetime labels and set correct maximum
+        if (
+          resultItem.datetimes?.length &&
+          cfg?.schema?.properties?.time_step
+        ) {
+          const n = resultItem.datetimes.length;
+          const enumValues = Array.from({ length: n }, (_, i) => i + 1);
+          const enumTitles = resultItem.datetimes.map((dt) => {
+            try {
+              const d = new Date(dt);
+              return d.toISOString().slice(0, 16).replace("T", " ");
+            } catch {
+              return (
+                dt || `Step ${enumValues[resultItem.datetimes?.indexOf(dt) ?? 0]}`
+              );
+            }
+          });
+          cfg.schema.properties.time_step = {
+            ...cfg.schema.properties.time_step,
+            maximum: n,
+            minimum: 1,
+            default: 1,
+            ...(n <= MAX_DISCRETE_TIMESTEPS && {
+              enum: enumValues,
+              options: {
+                ...(cfg.schema.properties.time_step.options || {}),
+                enum_titles: enumTitles,
+              },
+            }),
+          };
+          if (
+            n <= MAX_DISCRETE_TIMESTEPS &&
+            cfg.schema.properties.time_step.format === "range"
+          ) {
+            delete cfg.schema.properties.time_step.format;
+          }
+        }
+
         layers.push({
           type: "WebGLTile",
+          ...(resultItem.visible === false && { visible: false }),
           properties: {
             id: endpointLink.id + "_process" + resultItem.id + postfixId,
             title:
@@ -321,6 +370,7 @@ export async function creatAsyncProcessLayerDefinitions(
             layerControlToolsExpand: true,
             ...(layerConfig && { layerConfig }),
             ...extraProperties,
+            ...(resultItem.datetimes && { datetimes: resultItem.datetimes }),
           },
           source: {
             type: "GeoTIFF",
@@ -334,6 +384,11 @@ export async function creatAsyncProcessLayerDefinitions(
           },
           ...(style && { style }),
         });
+        break;
+      }
+      case "application/json": {
+        // JSON results update the chart spec (handled in eoxhub-workspaces-endpoint.js).
+        // No map layer is created for this type.
         break;
       }
       case "application/geo+json": {
@@ -488,16 +543,141 @@ export function extractAsyncResults(resultItem) {
     if (key === "id") {
       continue;
     }
+    /** @type {any} */
+    const entry = /** @type {any} */ (resultItem)[key];
     extracted.push({
       // used as a key to identify the corresponding style
       id: key,
-      //@ts-expect-error TODO
-      urls: /** @type {string[]} */ (resultItem[key].urls),
-      //@ts-expect-error TODO
-      type: /** @type {string} */ (resultItem[key].mimetype),
+      urls: /** @type {string[]} */ (entry.urls),
+      type: /** @type {string} */ (entry.mimetype),
+      ...(entry?.datetimes && {
+        datetimes: entry.datetimes,
+      }),
+      ...(entry?.visible !== undefined && {
+        visible: entry.visible,
+      }),
+      ...(entry?.data && { data: entry.data }),
     });
   }
   return extracted;
+}
+
+/**
+ * Walk the OL layer tree and update style variables on layers matching `filterFn`.
+ * Uses `setStyle()` instead of `updateStyleVariables()` for WebGLTile layers
+ * because `updateStyleVariables()` doesn't properly invalidate cached tiles
+ * when the `band` expression uses a variable (e.g. `["band", ["var", "time_step"]]`).
+ *
+ * @param {import("ol/Map").default} map - OpenLayers map instance
+ * @param {(layerId: string) => boolean} filterFn - Predicate receiving the layer id
+ * @param {Record<string, any>} styleVars - Style variables to set (e.g. `{ time_step: 3 }`)
+ */
+export function updateProcessLayerStyleVars(map, filterFn, styleVars) {
+  /** @param {*} layerGroup */
+  const walk = (layerGroup) => {
+    if (!layerGroup?.getLayers) return;
+    for (const olLayer of layerGroup.getLayers().getArray()) {
+      const id = olLayer.get("id") ?? "";
+      if (filterFn(id) && typeof olLayer.updateStyleVariables === "function") {
+        const style =
+          (typeof olLayer.getStyle === "function"
+            ? olLayer.getStyle()
+            : null) ?? olLayer.style_;
+        if (style?.variables) {
+          Object.assign(style.variables, styleVars);
+          if (typeof olLayer.setStyle === "function") {
+            olLayer.setStyle(style);
+          }
+        } else {
+          olLayer.updateStyleVariables(styleVars);
+          olLayer.changed();
+        }
+      }
+      if (typeof olLayer.getLayers === "function") {
+        walk(olLayer);
+      }
+    }
+  };
+  walk(map);
+}
+
+/**
+ * Find the temporal field name from a Vega-Lite encoding object.
+ * Checks top-level encoding first, then falls back to the first
+ * layer's encoding (layered specs may keep encoding at layer level).
+ *
+ * Note: only searches top-level and first-level layers; deeply nested
+ * layer-within-layer specs are not traversed.
+ *
+ * @param {Record<string, any>} spec - Vega-Lite specification
+ * @returns {string | null} The temporal field name, or null if not found
+ */
+export function findTemporalField(spec) {
+  /** @param {Record<string, any> | undefined} enc */
+  const fromEncoding = (enc) => {
+    if (!enc) return null;
+    const key = Object.keys(enc).find((k) => enc[k]?.type === "temporal");
+    return key ? enc[key]?.field : null;
+  };
+  const field = fromEncoding(spec?.encoding);
+  if (field) return field;
+  if (Array.isArray(spec?.layer)) {
+    for (const layer of spec.layer) {
+      const f = fromEncoding(layer.encoding);
+      if (f) return f;
+    }
+  }
+  return null;
+}
+
+/**
+ * Find the index of the closest datetime in an array to a target Date.
+ *
+ * @param {string[]} datetimes - Array of ISO datetime strings
+ * @param {Date} targetDate - The target date to match against
+ * @returns {number} Index of the closest datetime (0-based)
+ */
+export function findClosestDatetimeIndex(datetimes, targetDate) {
+  const targetMs = targetDate.getTime();
+  let bestIdx = 0;
+  let bestDiff = Infinity;
+  for (let i = 0; i < datetimes.length; i++) {
+    const diff = Math.abs(new Date(datetimes[i]).getTime() - targetMs);
+    if (diff < bestDiff) {
+      bestDiff = diff;
+      bestIdx = i;
+    }
+  }
+  return bestIdx;
+}
+
+/**
+ * Build a Vega-Lite spec with inline data, optionally fetching a template spec.
+ *
+ * @param {string | undefined} specUrl - URL to fetch a Vega-Lite spec template
+ * @param {any[]} data - Inline data values to inject
+ * @param {Record<string, any> | null} [fallbackSpec=null] - Spec to use if fetch fails
+ * @returns {Promise<Record<string, any> | null>} The spec with data injected, or null
+ */
+export async function buildChartSpecWithData(
+  specUrl,
+  data,
+  fallbackSpec = null,
+) {
+  let spec = fallbackSpec;
+  if (specUrl) {
+    try {
+      spec = await axios.get(specUrl).then((r) => r.data);
+    } catch (e) {
+      console.warn("[eodash] Could not fetch Vega spec template:", e);
+    }
+  }
+  if (!spec) return null;
+  return {
+    ...spec,
+    ...(!("background" in spec) && { background: "transparent" }),
+    data: { values: data },
+  };
 }
 
 /** @param {*} jsonformSchema
