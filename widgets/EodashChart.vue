@@ -17,7 +17,7 @@
         .spec="toRaw(usedChartSpec)"
         :key="chartRenderKey"
         .dataValues="toRaw(usedChartData)"
-        @click:item="onChartClick"
+        @click:item="handleChartItemClick"
         :style="chartStyles"
         .opt="vegaEmbedOptions"
       />
@@ -41,6 +41,7 @@ import {
   chartSpec,
   compareChartSpec,
   areChartsSeparateLayout,
+  activeProcessDatetime,
 } from "@/store/states";
 import { getOverlayParent } from "@/utils";
 import { mdiArrowCollapse, mdiArrowExpand } from "@mdi/js";
@@ -63,7 +64,50 @@ const usedChartData = computed(() => {
 });
 
 const usedChartSpec = computed(() => {
-  return enableCompare ? compareChartSpec.value : chartSpec.value;
+  const baseSpec = enableCompare ? compareChartSpec.value : chartSpec.value;
+  if (!baseSpec || !activeProcessDatetime.value) return baseSpec;
+
+  // Clone to avoid mutating the store (structuredClone fails on Vue proxies)
+  const spec = JSON.parse(JSON.stringify(toRaw(baseSpec)));
+  const activeDt = activeProcessDatetime.value;
+
+  // Custom _highlight flag to identify this layer for replacement on updates.
+  // Vega-Lite ignores unknown top-level layer properties.
+  const highlightLayer = {
+    _highlight: true,
+    mark: {
+      type: "rule",
+      color: "red",
+      strokeDash: [4, 4],
+      strokeWidth: 2,
+    },
+    data: { values: [{ _hl: activeDt }] },
+    encoding: { x: { field: "_hl", type: "temporal" } },
+  };
+
+  // If spec is already layered, append/replace the highlight layer
+  if (Array.isArray(spec.layer)) {
+    const nonHighlight = spec.layer.filter((/** @type {any} */ l) => l._highlight !== true);
+    return { ...spec, layer: [...nonHighlight, highlightLayer] };
+  }
+
+  // Convert single-view to layered: encoding stays in FIRST layer
+  // (not at top level) to avoid Vega-Lite inheriting y-encoding
+  // into the rule layer which would silently suppress the rule mark.
+  const { mark, encoding, transform, selection, params, ...restSpec } = spec;
+  return {
+    ...restSpec,
+    layer: [
+      {
+        mark,
+        encoding,
+        ...(transform && { transform }),
+        ...(selection && { selection }),
+        ...(params && { params }),
+      },
+      highlightLayer,
+    ],
+  };
 });
 
 const chartRenderKey = ref(0);
@@ -122,6 +166,11 @@ const toggleIcon = computed(() =>
 
 function toggleLayout() {
   areChartsSeparateLayout.value = !areChartsSeparateLayout.value;
+}
+
+/** @param {CustomEvent} evt */
+function handleChartItemClick(evt) {
+  onChartClick(/** @type {any} */ (evt), enableCompare);
 }
 </script>
 <style scoped>
