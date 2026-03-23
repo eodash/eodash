@@ -5,6 +5,7 @@ export interface CustomEnpointInput {
   links: StacLink[];
   jsonformSchema: Record<string, any>;
   jsonformValue: Record<string, any>;
+  rawJsonformValue?: Record<string, any>;
   selectedStac: StacCollection;
   isPolling?: Ref<boolean>;
   enableCompare?: boolean;
