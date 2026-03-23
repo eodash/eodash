@@ -37,7 +37,7 @@ export async function handleVedaEndpoint({
     vedaLink,
   );
   // TODO: convert jsonform bbox type to geojson in the schema to avoid the conversion here
-  return await Promise.all(
+  const results = await Promise.all(
     configs.map(({ endpoint, datetime }) => {
       const url = new URL(vedaEndpoint);
       const key = vedaLink.endpoint === "veda_stac" ? "ids" : "url";
@@ -56,14 +56,17 @@ export async function handleVedaEndpoint({
           fetchedSats.date = datetime;
           return fetchedSats;
         })
-        .catch((resp) =>
+        .catch((resp) => {
           console.error(
             "[eodash] Error while fetching data from veda endpoint:",
             resp,
-          ),
-        );
+          );
+          return null;
+        });
     }),
   );
+  // Filter out the nulls (failed requests) before returning
+  return results.filter((result) => result !== null);
 }
 
 /**
