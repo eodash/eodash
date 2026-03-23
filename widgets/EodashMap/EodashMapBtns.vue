@@ -5,30 +5,28 @@
       class="primary small circle small-elevate"
       @click="onMapZoomIn"
     >
-      <i class="small"
-        ><svg viewBox="0 0 24 24"><path :d="mdiPlus" /></svg>
+      <i class="small">
+        <svg viewBox="0 0 24 24"><path :d="mdiPlus"></path></svg>
       </i>
       <div class="tooltip left">Zoom in</div>
     </button>
-
     <button
       v-if="enableZoom && !isGlobe"
       class="primary small circle small-elevate"
       @click="onMapZoomOut"
     >
-      <i class="small"
-        ><svg viewBox="0 0 24 24"><path :d="mdiMinus" /></svg>
+      <i class="small">
+        <svg viewBox="0 0 24 24"><path :d="mdiMinus"></path></svg>
       </i>
       <div class="tooltip left">Zoom out</div>
     </button>
-
     <button
       v-if="exportMap"
       class="primary small circle small-elevate"
       @click="showMapState = !showMapState"
     >
-      <i class="small"
-        ><svg viewBox="0 0 24 24"><path :d="mdiMapPlus" /></svg>
+      <i class="small">
+        <svg viewBox="0 0 24 24"><path :d="mdiMapPlus"></path></svg>
       </i>
       <div class="tooltip left">Extract storytelling configuration</div>
     </button>
@@ -39,8 +37,8 @@
       class="primary small circle small-elevate"
       @click="changeMapProjection(availableMapProjection)"
     >
-      <i class="small"
-        ><svg viewBox="0 0 24 24"><path :d="mdiEarthBox" /></svg>
+      <i class="small">
+        <svg viewBox="0 0 24 24"><path :d="mdiEarthBox"></path></svg>
       </i>
       <div class="tooltip left">Change map projection</div>
     </button>
@@ -49,8 +47,8 @@
       class="primary small circle small-elevate"
       @click="onCompareClick(compareIndicators)"
     >
-      <i class="small"
-        ><svg viewBox="0 0 24 24"><path :d="compareIcon" /></svg>
+      <i class="small">
+        <svg viewBox="0 0 24 24"><path :d="compareIcon"></path></svg>
       </i>
       <div class="tooltip left">Compare mode</div>
     </button>
@@ -59,9 +57,9 @@
       class="primary small circle small-elevate"
       @click="loadPOiIndicator()"
     >
-      <i class="small"
-        ><svg viewBox="0 0 24 24">
-          <path :d="mdiStarFourPointsCircleOutline" />
+      <i class="small">
+        <svg viewBox="0 0 24 24">
+          <path :d="mdiStarFourPointsCircleOutline"></path>
         </svg>
       </i>
       <div class="tooltip left">Back to POIs</div>
@@ -104,9 +102,20 @@
       <EodashItemFilter
         v-bind="itemFilterConfig"
         :enableCompare="true"
-        @select="onSelectCompareIndicator"
+        @select="onSelectCompareIndicator(compareIndicators)"
       />
     </PopUp>
+    <v-alert
+      v-if="showMosaicHint"
+      class="mosaic-hint pa-2"
+      color="secondary"
+      type="info"
+      variant="elevated"
+      density="compact"
+      elevation="4"
+    >
+      Zoom in to view the mosaic layer
+    </v-alert>
   </div>
 </template>
 <script setup>
@@ -118,8 +127,10 @@ import {
   comparePoi,
   isGlobe,
   mapEl,
+  mapPosition,
   poi,
 } from "@/store/states";
+import { mosaicState } from "@/utils/states";
 import {
   mdiCompare,
   mdiCompareRemove,
@@ -232,6 +243,12 @@ useTransparentPanel(rootRef);
 
 const opencageApiKey = process.env.EODASH_OPENCAGE || "NO_KEY_FOUND";
 const opencageUrl = `https://api.opencagedata.com/geocode/v1/json?key=${opencageApiKey}`;
+
+const showMosaicHint = computed(() => {
+  if (!mosaicState.latestLayer) return false;
+  const zoom = mapPosition.value?.[2] ?? 4;
+  return zoom < mosaicState.visibilityThreshold;
+});
 </script>
 
 <style scoped>
@@ -257,5 +274,14 @@ eox-geosearch {
   width: 40px;
   overflow: visible !important;
   z-index: 10;
+}
+
+.mosaic-hint {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  opacity: 0.8;
+  border-radius: 8px;
 }
 </style>

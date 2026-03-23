@@ -561,7 +561,6 @@ export const createLayersFromLinks = async (
       viewProjectionCode,
     );
     let xyzUrl = xyzLink.href;
-
     // TODO, this does not yet work between layer time changes because we do not get
     // updated variables from OL layer due to usage of tileurlfunction
 
@@ -575,7 +574,6 @@ export const createLayersFromLinks = async (
       }
       xyzUrl = `${base}?${params.toString()}`;
     }
-
     const { supportedUpscalingEndpoints } = useSTAcStore();
     const isUpscalingSupported = supportedUpscalingEndpoints.some(
       (/** @type {string} */ endpoint) => xyzUrl.includes(endpoint),
@@ -733,7 +731,7 @@ export const createLayersFromLinks = async (
         ),
         applyOptions,
       );
-      applyOptions = /** @type { object } */ (optionsObject);
+      applyOptions = /** @type {object} */ (optionsObject);
       href = url;
     }
     const json = {

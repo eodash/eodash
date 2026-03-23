@@ -207,6 +207,13 @@ export interface TWidgetsContainer {
     typeof import("^/WidgetsContainer.vue").default
   >["$props"];
 }
+export interface TEodashLayoutSwitcher {
+  name: "EodashLayoutSwitcher";
+  properties?: InstanceType<
+    typeof import("^/EodashLayoutSwitcher.vue").default
+  >["$props"];
+}
+
 /**
  * Internal Vue Components inside the
  * [widgets](https://github.com/eodash/eodash/tree/main/widgets) folder.
@@ -228,6 +235,7 @@ export type ComponentWidget =
   | TExportState
   | TPopUp
   | TWidgetsContainer
+  | TEodashLayoutSwitcher
   | TEodashTimeSlider;
 /**
  * Widget type: `internal` API. Internal widgets are Vue components provided by
@@ -331,6 +339,7 @@ export type StacEndpoint =
       api?: boolean;
       rasterEndpoint?: string;
       vectorEndpoint?: string;
+      mosaicEndpoint?: string;
       supportedUpscalingEndpoints?: string[];
     };
 
@@ -517,6 +526,19 @@ export interface StacItemsAPIResponse {
   type: "FeatureCollection";
   features: import("stac-ts").StacItem[];
 }
+
+export interface AggregationCollection {
+  type: "AggregationCollection";
+  aggregations?: Array<{
+    key?: string;
+    interval?: string;
+    buckets?: Array<{
+      key: string;
+      value: number;
+    }>;
+  }>;
+}
+
 /** @ignore */
 export interface Render {
   /** REQUIRED. Array of asset keys referencing the assets that are used to make the rendering */

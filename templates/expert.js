@@ -24,6 +24,29 @@ export default {
     widget: {
       name: "EodashMap",
       properties: {
+        baseLayers: [
+          {
+            type: "Group",
+            properties: {
+              id: "BaseLayersGroup",
+              title: "Base Layers",
+            },
+            layers: [
+              {
+                type: "Tile",
+                properties: {
+                  id: "terrain-light;:;EPSG:3857",
+                  title: "Terrain Light",
+                },
+                source: {
+                  type: "XYZ",
+                  //@ts-expect-error todo
+                  url: "https://s2maps-tiles.eu/wmts/1.0.0/terrain-light_3857/default/g/{z}/{y}/{x}.jpeg",
+                },
+              },
+            ],
+          },
+        ],
         enableCompare: true,
         zoomToExtent: true,
         btns: {
@@ -98,20 +121,54 @@ export default {
           : null;
       },
     },
+    // {
+    //   defineWidget: (selectedSTAC) => {
+    //     return selectedSTAC
+    //       ? {
+    //           id: "expert-datepicker",
+    //           type: "internal",
+    //           layout: { x: 4, y: 7, w: 4, h: 5 },
+    //           title: "Date",
+    //           widget: {
+    //             name: "EodashDatePicker",
+    //             properties: {
+    //               hintText: `<b>Hint:</b> closest available date is displayed <br />
+    //                         on map (see Analysis Layers)`,
+    //               toggleCalendar: true,
+    //             },
+    //           },
+    //         }
+    //       : null;
+    //   },
+    // },
     {
       defineWidget: (selectedSTAC) => {
         return selectedSTAC
           ? {
-              id: "expert-datepicker",
+              id: "expert-datetime",
               type: "internal",
-              layout: { x: 4, y: 3, w: 4, h: 9 },
-              title: "Date",
+              layout: { x: 1, y: 8, w: 8, h: 3 },
+              title: "Time Slider",
               widget: {
-                name: "EodashDatePicker",
+                name: "EodashTimeSlider",
                 properties: {
-                  hintText: `<b>Hint:</b> closest available date is displayed <br />
-                            on map (see Analysis Layers)`,
-                  toggleCalendar: true,
+                  useMosaic: true,
+                  mosaicIndicators: ["sentinel-2-l2a"],
+                  filters: [
+                    {
+                      key: "eo:cloud_cover",
+                      title: "Cloud Coverage %",
+                      type: "range",
+                      expanded: true,
+                      min: 0,
+                      max: 100,
+                      step: 1,
+                      state: {
+                        min: 0,
+                        max: 100,
+                      },
+                    },
+                  ],
                 },
               },
             }
@@ -124,7 +181,7 @@ export default {
           id: "Processes",
           type: "internal",
           title: "Processes",
-          layout: { x: "9/9/10", y: 6, w: "3/3/2", h: 5 },
+          layout: { x: "9/9/10", y: 5, w: "3/3/2", h: 5 },
           widget: {
             name: "EodashProcess",
           },
