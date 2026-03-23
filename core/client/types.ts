@@ -113,7 +113,7 @@ export interface TEodashDatePicker {
 export interface TEodashTimeSlider {
   name: "EodashTimeSlider";
   properties?: InstanceType<
-    typeof import("^/EodashTimeSlider.vue").default
+    typeof import("^/EodashTimeSlider/index.vue").default
   >["$props"];
 }
 
