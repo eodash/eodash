@@ -524,7 +524,11 @@ export class EodashCollection {
 
     // Emit event to update potential widget dependencies such as process layer ids
     const layersEvents = useEventBus(eoxLayersKey);
-    layersEvents.emit("layertime:updated", newLayers);
+    if (map === "second") {
+      layersEvents.emit("compareLayertime:updated", newLayers);
+    } else {
+      layersEvents.emit("layertime:updated", newLayers);
+    }
 
     return updatedLayers;
   }

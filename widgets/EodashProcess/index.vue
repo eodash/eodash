@@ -60,7 +60,7 @@ import {
   compareChartSpec,
   areChartsSeparateLayout,
 } from "@/store/states";
-import { download, getDrawToolsProperty } from "./methods/utils";
+import { download, getDrawToolsProperties } from "./methods/utils";
 import { compareJobs, jobs } from "./states";
 import { mdiCogPlayOutline, mdiDownloadCircleOutline } from "@mdi/js";
 
@@ -111,13 +111,15 @@ const currentIndicator = enableCompare ? compareIndicator : indicator;
 const currentJobs = enableCompare ? compareJobs : jobs;
 
 const jsonformKey = computed(
-  () => currentIndicator.value + mapElement.value?.id,
+  () =>
+    currentIndicator.value +
+    mapElement.value?.id +
+    JSON.stringify(jsonformSchema.value),
 );
 
 useInitProcess({
   selectedStac: currentSelectedStac,
   mapElement: mapElement.value,
-  jsonformEl,
   jsonformSchema,
   isProcessed,
   processResults,
@@ -144,15 +146,17 @@ const downloadResults = () => {
 };
 
 const startProcess = async () => {
-  const drawToolsProperty = getDrawToolsProperty(jsonformSchema.value);
-  const propertyIsEmpty =
-    drawToolsProperty &&
-    //@ts-expect-error jsonfrom.value is not typed
-    Array.isArray(jsonformEl.value?.value[drawToolsProperty]) &&
-    //@ts-expect-error jsonfrom.value is not typed
-    !jsonformEl.value?.value[drawToolsProperty].length;
+  const drawToolsProperties = getDrawToolsProperties(jsonformSchema.value);
 
-  if (propertyIsEmpty) {
+  const anyDrawtoolPropertyEmpty = drawToolsProperties.some(
+    (drawToolsProperty) =>
+      //@ts-expect-error jsonfrom.value is not typed
+      Array.isArray(jsonformEl.value?.value[drawToolsProperty]) &&
+      //@ts-expect-error jsonfrom.value is not typed
+      !jsonformEl.value?.value[drawToolsProperty].length,
+  );
+
+  if (anyDrawtoolPropertyEmpty) {
     isProcessed.value = false;
     const usedChartSpec = enableCompare ? compareChartSpec : chartSpec;
     usedChartSpec.value = null;

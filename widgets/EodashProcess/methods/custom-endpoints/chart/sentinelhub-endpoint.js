@@ -58,7 +58,7 @@ export async function handleSentinelHubProcess({
   );
 
   // fetch data from sentinel hub
-  return await Promise.all(
+  const results = await Promise.all(
     timePairs.map(([to, from]) => {
       return fetchSentinelHubData({
         url: endpoint,
@@ -67,14 +67,18 @@ export async function handleSentinelHubProcess({
         from,
         to,
         exampleLink: evalScriptLink,
-      }).catch((err) =>
+      }).catch((err) => {
         console.error(
           "[eodash] Error while fetching data from sentinel hub endpoint:",
           err,
-        ),
-      );
+        );
+        return [];
+      });
     }),
-  ).then((data) => data.flat().map((data) => data.outputs.data));
+  )
+    .then((data) => data.filter((result) => result.length > 0))
+    .then((data) => data.flat().map((data) => data.outputs.data));
+  return results;
 }
 
 /**
