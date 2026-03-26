@@ -1,156 +1,76 @@
 import axios from "@/plugins/axios";
 import { Item } from "stac-js";
 import { mosaicState } from "@/utils/states";
-import { datetime, indicator, mapEl, mapPosition } from "@/store/states";
+import { datetime, mapEl, mapPosition } from "@/store/states";
 import { getLayers } from "@/store/actions";
 import { nextTick, onMounted, onUnmounted, watch } from "vue";
 import { useOnLayersUpdate } from "@/composables";
 import { extractLayerTimeValues } from "./helpers";
 import { toAbsolute } from "stac-js/src/http.js";
 import { useSTAcStore } from "@/store/stac";
+import log from "loglevel";
 
 /**
  * Fetches the STAC definition for the mosaic. TODO: reuse registered queries
  * @param {string} mosaicEndpoint - The URL of the mosaic endpoint.
- * @param {string | object | null} [cqlQuery] - Optional CQL query to filter the mosaic.
+ * @param {{ "filter-lang": "cql2-json", filter: object, sortby: object[] } | null} [body] - The cql2-json POST body.
  * @returns {Promise<import("stac-ts").StacItem | null>}
  */
-export async function registerMosaic(mosaicEndpoint, cqlQuery) {
-  // tmp hack
-  if (indicator.value === "sentinel-2-l2a") {
-    //@ts-expect-error todo
-    return {
-      links: [
-        {
-          rel: "XYZ",
-          href: "https://api.explorer.eopf.copernicus.eu/openeo/services/xyz/456c1e23-47f2-4567-98cf-dcde378a05f7/tiles/{z}/{x}/{y}",
-        },
-      ],
-    };
-  } else {
-    return null;
-  }
-  /* eslint-disable */
+export async function registerMosaic(mosaicEndpoint, body) {
   if (!mosaicEndpoint) {
     return null;
   }
-
-  const url = mosaicEndpoint;
-  const body = cqlQuery
-    ? {
-        "filter-lang": "cql2-json",
-        filter: cqlQuery,
-        sortby: [{ field: "datetime", direction: "desc" }],
-      }
-    : null;
   if (!body) {
     console.trace("[eodash] No query provided for mosaic registration");
     return null;
   }
-
-  console.log("[eodash] Registering mosaic with query:", body);
+  log.debug(
+    "[eodash] Registering mosaic endpoint",
+    mosaicEndpoint,
+    "with body",
+    body,
+  );
   return await axios
-    .post(url, body)
+    .post(mosaicEndpoint, body)
     .then((response) => response.data)
     .catch((error) => {
       console.error("[eodash] Failed to register mosaic:", error);
       return null;
     });
 }
-/* eslint-enable */
 
 /**
  * Creates a layer configuration for the mosaic.
  * @param {string} mosaicEndpoint - The URL of the mosaic endpoint.
- * @param {string | object | null} [cqlQuery] - Optional CQL query.
- * @param {[string, string]} [timeRange] - Optional time range.
- * @param {number} [cloudCover] - Optional cloud cover percentage.
- * @param {string} [rasterForm] - Optional rasterform to use for the mosaic.
+ * @param {{ "filter-lang": "cql2-json", filter: object, sortby: object[] } | null} [body] - The cql2-json POST body.
  * @returns {Promise<Record<string, any>[]>}
  */
-export async function createMosaicLayer(
-  mosaicEndpoint,
-  cqlQuery,
-  timeRange,
-  cloudCover,
-  /* eslint-disable-next-line @typescript-eslint/no-unused-vars */
-  rasterForm,
-) {
-  const mosaicStac = await registerMosaic(mosaicEndpoint, cqlQuery);
-  if (!mosaicStac || indicator.value !== "sentinel-2-l2a") {
+export async function createMosaicLayers(mosaicEndpoint, body) {
+  const mosaicStac = await registerMosaic(mosaicEndpoint, body);
+  if (!mosaicStac) {
     return [];
   }
 
   // treat the mosaic STAC as an item
   const item = new Item(mosaicStac);
-  // tmp hack
-  // const tileJSONLink = item.links.find((l) => l.rel === "tilejson");
-  const XYZLink = item.links.find((l) => l.rel === "XYZ");
-  if (!XYZLink) {
+  const tileJSONLink = item.links.find((l) => l.rel === "tilejson");
+  if (!tileJSONLink) {
     return [];
   }
-  let url = XYZLink.href;
-  // if (!tileJSONLink) {
-  //   return [];
-  // }
-  // // todo: fetch the assets properly
-  // const url =
-  //   tileJSONLink.href +
-  //   "?" +
-  //   "tile_scale=2&assets=B04&assets=B03&assets=B02&color_formula=Gamma%20RGB%203.2%20Saturation%200.8%20Sigmoidal%20RGB%2025%200.35&nodata=0&minzoom=9&collection=sentinel-2-l2a&format=png";
-  // // todo: use createLayersFromLinks
-  // mosaicState.latestLayer = {
-  //   type: "Tile",
-  //   properties: {
-  //     id: "Mosaic" + Date.now(),
-  //     title: "Mosaic Layer",
-  //   },
-  //   source: {
-  //     type: "TileJSON",
-  //     url,
-  //   },
-  // };
 
-  // let rasterFormObj = null
-  // let layerConfig = null
-  // if(rasterForm){
-  //   rasterFormObj = await axios.get(rasterForm).then((response) => response.data)
-  //   layerConfig = extractLayerConfig(indicator.value,undefined,rasterFormObj).layerConfig
-  // }
-  const params = new URLSearchParams();
-  if (timeRange) {
-    params.set(
-      "time",
-      '["' +
-        timeRange[0].split("T")[0] +
-        '","' +
-        timeRange[1].split("T")[0] +
-        '"]',
-    );
-  } else {
-    params.delete("time");
-  }
-  if (cloudCover && ![0, 100].includes(cloudCover)) {
-    params.set("cloud_cover", cloudCover.toString());
-  } else {
-    params.delete("cloud_cover");
-  }
-
-  if (url.includes("?")) {
-    url = url + "&" + params.toString();
-  } else {
-    url = url + "?" + params.toString();
-  }
+  // TODO: build rendering params dynamically from timeRange, cloudCover, and rasterForm
+  const tileParams =
+    "?tile_scale=2&assets=B04&assets=B03&assets=B02&color_formula=Gamma%20RGB%203.2%20Saturation%200.8%20Sigmoidal%20RGB%2025%200.35&nodata=0&minzoom=9&collection=sentinel-2-l2a&format=png";
+  const url = tileJSONLink.href + tileParams;
 
   mosaicState.latestLayer = {
     type: "Tile",
     properties: {
-      id: `sentinel2-l2a-;:;item;:;mosaic;:;${Date.now()}`,
-      title: "Sentinel-2 L2A Mosaic",
-      // ...(layerConfig && {layerConfig}),
+      id: `mosaic;:;${Date.now()}`,
+      title: "Mosaic Layer",
     },
     source: {
-      type: "XYZ",
+      type: "TileJSON",
       url,
     },
   };
@@ -183,67 +103,61 @@ function ensureAnalysisGroup(layersCollection) {
 }
 
 /**
+ * Fetches time control values from the collection's pre-aggregation link, if present.
+ * @param {import("stac-ts").StacCollection} selectedStac
+ * @param {string} fallbackBaseUrl
+ * @returns {Promise<{ timeControlValues: any, timeControlProperty: string } | null>}
+ */
+async function fetchPreAggregationTimeValues(selectedStac, fallbackBaseUrl) {
+  const preAggregationLink = selectedStac.links?.find(
+    (l) => l.rel === "pre-aggregation" && l["aggregation:interval"] === "daily",
+  );
+  if (!preAggregationLink) return null;
+
+  try {
+    const selfLink = selectedStac.links?.find((l) => l.rel === "self")?.href;
+    const url = toAbsolute(
+      preAggregationLink.href,
+      selfLink || fallbackBaseUrl,
+    );
+    const items = await axios.get(url).then((resp) => resp.data);
+    const { timeControlValues } = extractLayerTimeValues(items, datetime.value);
+    return timeControlValues
+      ? { timeControlValues, timeControlProperty: "TIME" }
+      : null;
+  } catch (e) {
+    console.warn("[eodash] Failed to fetch pre-aggregation for mosaic", e);
+    return null;
+  }
+}
+
+/**
  * Modifies the layers collection to display the mosaic layer.
  * Removes existing layers in the AnalysisGroup and adds the mosaic layer.
  * @param {string} mosaicEndpoint - The URL of the mosaic endpoint.
- * @param {string | object | null} [cqlQuery] - Optional CQL query.
- * @param {[string, string]} [timeRange] - Optional time range.
- * @param {number} [cloudCover] - Optional cloud cover percentage.
- * @param {string} [rasterForm] - Optional rasterform to use for the mosaic.
+ * @param {{ "filter-lang": "cql2-json", filter: object, sortby: object[] } | null} [body] - The cql2-json POST body.
  */
-export async function renderMosaic(
-  mosaicEndpoint,
-  cqlQuery,
-  timeRange,
-  cloudCover,
-  rasterForm,
-) {
+export async function renderMosaic(mosaicEndpoint, body) {
   const mapLayers = getLayers();
   const { analysisGroup, layers } = ensureAnalysisGroup(mapLayers);
-  const mosaicLayers = await createMosaicLayer(
-    mosaicEndpoint,
-    cqlQuery,
-    timeRange,
-    cloudCover,
-    rasterForm,
-  );
+  const mosaicLayers = await createMosaicLayers(mosaicEndpoint, body);
 
   if (!mosaicLayers.length) {
     return;
   }
-  // tmp:  should be streamlined with other properties when the stac implementation is available.
-  const stacStore = useSTAcStore();
-  const selectedStac = stacStore.selectedStac;
 
+  const selectedStac = useSTAcStore().selectedStac;
   if (selectedStac) {
-    const preAggregationLink = selectedStac.links?.find(
-      (l) =>
-        l.rel === "pre-aggregation" && l["aggregation:interval"] === "daily",
+    // TODO: covercases that do not include pre-aggregation links
+    const timeValues = await fetchPreAggregationTimeValues(
+      selectedStac,
+      mosaicEndpoint,
     );
-
-    let itemsForTimeValues;
-    if (preAggregationLink) {
-      try {
-        const selfLink = selectedStac.links?.find(
-          (l) => l.rel === "self",
-        )?.href;
-        const baseUrl = selfLink || mosaicEndpoint;
-        const url = toAbsolute(preAggregationLink.href, baseUrl);
-        itemsForTimeValues = await axios.get(url).then((resp) => resp.data);
-      } catch (e) {
-        console.warn("Failed to fetch pre-aggregation for mosaic", e);
-      }
-    }
-
-    if (itemsForTimeValues) {
-      const { timeControlValues } = extractLayerTimeValues(
-        itemsForTimeValues,
-        datetime.value,
-      );
-      if (timeControlValues) {
-        mosaicLayers[0].properties.timeControlValues = timeControlValues;
-        mosaicLayers[0].properties.timeControlProperty = "TIME";
-      }
+    if (timeValues) {
+      mosaicLayers[0].properties.timeControlValues =
+        timeValues.timeControlValues;
+      mosaicLayers[0].properties.timeControlProperty =
+        timeValues.timeControlProperty;
     }
   }
 
@@ -256,62 +170,65 @@ export async function renderMosaic(
     ]);
   }
 
-  console.log("[eodash] Mosaic layer rendered.", mosaicLayers[0].source.url);
+  log.debug("[eodash] Mosaic layer rendered.", mosaicLayers[0].source.url);
 }
 
 /**
  * Updates the mosaic layer based on the current filters in mosaicState.
- * @param {string} mosaicEndpoint - The URL of the mosaic endpoint.
- * @param {{ timeRange?: [string, string]; collection?: string; cloudCover?: number }} queries - Optional CQL queries.
- * @param {string} [rasterForm] - Optional rasterform to use for the mosaic.
+ * @param {string | undefined | null} mosaicEndpoint - The URL of the mosaic endpoint.
+ * @param {{ timeRange?: [string, string]; collection?: string; cloudCover?: { min: number, max: number } }} queries - Optional CQL queries.
  */
 export async function updateMosaicLayer(
   mosaicEndpoint,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   { timeRange, collection, cloudCover } = {},
-  rasterForm,
 ) {
-  /** @type {(string|object)[]} */
-  // const filters = [];
-  // if (timeRange && Array.isArray(timeRange) && timeRange.length === 2) {
-  //   const timeFilter = {
-  //     op: "between",
-  //     args: [
-  //       { property: "datetime" },
-  //       { timestamp: timeRange[0] },
-  //       { timestamp: timeRange[1] },
-  //     ],
-  //   };
-  //   filters.push(timeFilter);
-  //   mosaicState.filters.time = timeFilter;
-  // }
+  if (!mosaicEndpoint) {
+    return;
+  }
+  /** @type {object[]} */
+  const filters = [];
+  if (timeRange && Array.isArray(timeRange) && timeRange.length === 2) {
+    const timeFilter = {
+      op: "between",
+      args: [
+        { property: "datetime" },
+        { timestamp: new Date(timeRange[0]).toISOString() },
+        { timestamp: new Date(timeRange[1]).toISOString() },
+      ],
+    };
+    filters.push(timeFilter);
+  }
 
-  // if (collection) {
-  //   mosaicState.filters.collection = collection;
-  //   filters.push({
-  //     op: "=",
-  //     args: [{ property: "collection" }, collection],
-  //   });
-  // }
+  if (collection) {
+    filters.push({
+      op: "=",
+      args: [{ property: "collection" }, collection],
+    });
+  }
 
-  // let cqlQuery = null;
-  // if (filters.length === 1) {
-  //   cqlQuery = filters[0];
-  // } else if (filters.length > 1) {
-  //   cqlQuery = {
-  //     op: "and",
-  //     args: filters,
-  //   };
-  // }
+  if (
+    cloudCover !== undefined &&
+    (cloudCover.min > 0 || cloudCover.max < 100)
+  ) {
+    filters.push({
+      op: "between",
+      args: [{ property: "eo:cloud_cover" }, cloudCover.min, cloudCover.max],
+    });
+  }
 
-  // mosaicState.query = cqlQuery;
-  await renderMosaic(
-    mosaicEndpoint,
-    undefined,
-    timeRange,
-    cloudCover,
-    rasterForm,
-  );
+  let body = null;
+  if (filters.length > 0) {
+    const filter =
+      filters.length === 1 ? filters[0] : { op: "and", args: filters };
+    body = {
+      "filter-lang": /** @type {const} */ ("cql2-json"),
+      filter,
+      sortby: [{ field: "datetime", direction: "desc" }],
+    };
+  }
+
+  mosaicState.query = body;
+  await renderMosaic(mosaicEndpoint, body);
 }
 /**
  * Renders the latest mosaic layer stored in mosaicState.
@@ -355,25 +272,17 @@ function toggleMosaicVisibility(
 /**
  *
  * @param {string} mosaicEndpoint
- * @param {{collection?:string, timeRange?:[string, string], cloudCover?: number}} filters
- * @param {ReturnType<typeof import("@/store/stac").useSTAcStore>} store
+ * @param {{collection?:string, timeRange?:[string, string], cloudCover?: { min: number, max: number }}} [filters]
  */
 export async function initMosaic(
   mosaicEndpoint,
   { timeRange, collection, cloudCover } = {},
-  store,
 ) {
-  const rasterForm = store.selectedStac?.["eodash:rasterform"];
-  await updateMosaicLayer(
-    mosaicEndpoint,
-    {
-      ...(collection && { collection }),
-      ...(timeRange && { timeRange }),
-      ...(cloudCover && { cloudCover }),
-    },
-    //@ts-expect-error todo
-    rasterForm,
-  ).then(async () => {
+  await updateMosaicLayer(mosaicEndpoint, {
+    ...(collection && { collection }),
+    ...(timeRange && { timeRange }),
+    ...(cloudCover !== undefined && { cloudCover }),
+  }).then(async () => {
     await nextTick(() => {
       toggleMosaicVisibility(mapPosition.value[2] ?? 0);
     });
@@ -382,7 +291,7 @@ export async function initMosaic(
 
 /**
  *
- * @param {string} mosaicEndpoint
+ * @param {string | undefined | null} mosaicEndpoint
  * @param {{collection?:string, timeRange?:[string, string]}} filters
  * @param {ReturnType<typeof import("@/store/stac").useSTAcStore>} store
  * @param {string[]} [indicators]
@@ -393,35 +302,39 @@ export function useInitMosaic(
   store,
   indicators,
 ) {
+  if (!mosaicEndpoint) {
+    return;
+  }
+
+  function shouldInitiate() {
+    if (!store.selectedStac?.id) return false;
+    if (indicators?.length && !indicators.includes(store.selectedStac.id))
+      return false;
+    return true;
+  }
+
   const stopWatcher = watch(mapPosition, (updatedPos, oldPos) => {
     const [_oldX, _oldY, oldZ] = oldPos;
     const [_x, _y, z] = updatedPos;
     if (!z || z === oldZ) {
       return;
     }
-
     toggleMosaicVisibility(z);
   });
 
   onMounted(async () => {
-    if (!indicators?.includes(store.selectedStac?.id ?? "")) {
-      return;
-    }
-    initMosaic(
-      mosaicEndpoint,
-      { collection: store.selectedStac?.id, timeRange },
-      store,
-    );
+    if (!shouldInitiate()) return;
+    initMosaic(mosaicEndpoint, {
+      collection: store.selectedStac?.id,
+      timeRange,
+    });
   });
   useOnLayersUpdate(() => {
-    if (!indicators?.includes(store.selectedStac?.id ?? "")) {
-      return;
-    }
-    initMosaic(
-      mosaicEndpoint,
-      { collection: store.selectedStac?.id, timeRange },
-      store,
-    );
+    if (!shouldInitiate()) return;
+    initMosaic(mosaicEndpoint, {
+      collection: store.selectedStac?.id,
+      timeRange,
+    });
   });
   onUnmounted(() => {
     mosaicState.latestLayer = null;

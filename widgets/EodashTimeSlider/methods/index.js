@@ -4,6 +4,7 @@ import axios from "@/plugins/axios";
 import { mapEl } from "@/store/states";
 import { removeLayers, sanitizeBbox } from "@/eodashSTAC/helpers";
 import { getLayers } from "@/store/actions";
+import { updateMosaicLayer } from "@/eodashSTAC/mosaic";
 
 /**
  * @param {string} stacEndpoint
@@ -276,4 +277,40 @@ export function buildStacFilters(filters) {
   });
 
   return stacFilters.join(" AND ");
+}
+/// mosaic update helpers
+
+/**
+ * Extracts the cloud cover range from a filters record.
+ * @param {Record<string, import("../types").Filter>} filtersRecord
+ * @returns {import("../types").CloudCoverRange | undefined}
+ */
+export function extractCloudCover(filtersRecord) {
+  const state = filtersRecord?.["eo:cloud_cover"]?.state;
+  return state ? { min: state.min ?? 0, max: state.max ?? 100 } : undefined;
+}
+
+/** @type {ReturnType<typeof setTimeout> | null} */
+let mosaicUpdateTimer = null;
+
+/**
+ * Schedules an update to the mosaic layer with a debounce.
+ * @param {string | undefined | null} mosaicEndpoint
+ * @param {string} collection
+ * @param {[string, string]} timeRange
+ * @param {import("../types").CloudCoverRange | undefined} cloudCover
+ * @param {number} [delay=300]
+ */
+export function scheduleMosaicUpdate(
+  mosaicEndpoint,
+  collection,
+  timeRange,
+  cloudCover,
+  delay = 300,
+) {
+  if (mosaicUpdateTimer !== null) clearTimeout(mosaicUpdateTimer);
+  mosaicUpdateTimer = setTimeout(() => {
+    mosaicUpdateTimer = null;
+    updateMosaicLayer(mosaicEndpoint, { timeRange, collection, cloudCover });
+  }, delay);
 }

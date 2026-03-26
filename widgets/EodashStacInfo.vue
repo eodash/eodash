@@ -134,7 +134,6 @@ function getItemUrl(item) {
     type: "application/json",
   });
   const itemURL = URL.createObjectURL(itemBlob);
-  console.log("Created item URL:", itemURL);
   // Revoke the object URL after a short delay to free up memory
   setTimeout(() => {
     URL.revokeObjectURL(itemURL);
