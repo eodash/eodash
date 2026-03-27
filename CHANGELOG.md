@@ -1,6 +1,18 @@
 # Changelog
 
 
+## [5.6.2](https://github.com/eodash/eodash/compare/eodash-v5.6.1...eodash-v5.6.2) (2026-03-27)
+
+
+### Features
+
+* Timeline animations  ([#283](https://github.com/eodash/eodash/issues/283)) ([9927593](https://github.com/eodash/eodash/commit/9927593bd2646f3a4a2d2dba1244f9d59548eec3))
+
+
+### Bug Fixes
+
+* handling errors of eoapi/sh statistics apis permitting loading of charts of partial response set - non-failing requests ([#353](https://github.com/eodash/eodash/issues/353)) ([69a4459](https://github.com/eodash/eodash/commit/69a4459e07b39add3cac8cca5b8ee34eacc4781b))
+
 ## [5.6.1](https://github.com/eodash/eodash/compare/eodash-v5.6.0...eodash-v5.6.1) (2026-03-17)
 
 
