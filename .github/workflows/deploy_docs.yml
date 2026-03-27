@@ -12,11 +12,11 @@ jobs:
       pages: write
       pull-requests: write
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3
       - run: |
           npm install
           npm run docs:build -- --base /${{ github.event.repository.name }}/
-      - uses: JamesIves/github-pages-deploy-action@v4
+      - uses: JamesIves/github-pages-deploy-action@d92aa235d04922e8f08b40ce78cc5442fcfbfa2f # v4
         with:
           folder: ./docs/.vitepress/dist/
           branch: gh-pages

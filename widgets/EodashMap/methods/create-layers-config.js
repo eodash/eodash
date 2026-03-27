@@ -10,6 +10,7 @@ import log from "loglevel";
  * } selectedIndicator
  * @param {EodashCollection[]} eodashCols
  * @param {string | import("stac-ts").StacItem | null} [timeOrItem] - time as a string, or a stac item
+ * @returns {Promise<Record<string, any>[]>}
  */
 
 export const createLayersConfig = async (
@@ -68,6 +69,7 @@ export const createLayersConfig = async (
         if (targetLayer) {
           if (Array.isArray(vl.roles) && vl.roles.includes("disable")) {
             targetLayer.properties.visible = false;
+            targetLayer.properties.layerControlExpand = false;
           } else if (Array.isArray(vl.roles) && vl.roles.includes("hidden")) {
             targetLayer.properties.layerControlHide = true;
           }

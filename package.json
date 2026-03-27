@@ -1,6 +1,6 @@
 {
   "name": "@eodash/eodash",
-  "version": "5.6.0",
+  "version": "5.6.1",
   "type": "module",
   "types": "./dist/types/core/client/types.d.ts",
   "files": [
@@ -79,7 +79,6 @@
     "@eox/map": "^2.2.0",
     "@eox/stacinfo": "^1.1.0",
     "@eox/timecontrol": "^2.1.2",
-    "@eox/timeslider": "https://pkg.pr.new/EOX-A/EOxElements/@eox/timeslider@9873028",
     "@eox/ui": "^0.6.0",
     "@mdi/js": "^7.4.47",
     "@vitejs/plugin-vue": "^6.0.4",
