@@ -310,7 +310,7 @@ onMounted(() => {
   // assign map Element state to eox map
   mapEl.value = eoxMap.value;
   // enable terrain
-  mapEl.value.terrain = true;
+  mapEl.value.globeConfig.terrain = true;
 
   if (props.enableCompare) {
     mapCompareEl.value = compareMap.value;

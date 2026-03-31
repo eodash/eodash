@@ -11,8 +11,8 @@ export const switchGlobe = () => {
     return;
   }
   if (!isGlobe.value) {
-    // mapEl.value.layers = addCorsAnonym([...getLayers()])
-    // tmp hack;
+    // tmp: we remove the vector layers from the globe until
+    // we have better support for them
     const layers = addCorsAnonym([...getLayers()]);
     layers.forEach((layer, idx) => {
       if (layer.type === "Vector") {
@@ -39,13 +39,16 @@ export const switchGlobe = () => {
   isGlobe.value = !isGlobe.value;
 };
 
-function hideAllPanels() {
+function getRoot() {
   const eodashComponent = document.querySelector("eo-dash");
-  const allPanels = eodashComponent
-    ? eodashComponent.shadowRoot?.querySelectorAll(
-        "eox-layout-item:not([class='bg-panel'])",
-      )
-    : document.querySelectorAll("eox-layout-item:not([class='bg-panel'])");
+  return eodashComponent ? eodashComponent.shadowRoot : document;
+}
+
+function hideAllPanels() {
+  const root = getRoot();
+  const allPanels = root?.querySelectorAll(
+    "eox-layout-item:not([class='bg-panel'])",
+  );
 
   allPanels?.forEach((panel) => {
     if (!panel || !(panel instanceof HTMLElement)) {
@@ -53,20 +56,29 @@ function hideAllPanels() {
     }
     panel.style.display = "none";
   });
+
+  const mapButtons = root?.querySelector(".map-buttons");
+  if (mapButtons instanceof HTMLElement) {
+    mapButtons.style.padding = "1rem";
+  }
 }
+
 function showAllPanels() {
-  const eodashComponent = document.querySelector("eo-dash");
-  const allPanels = eodashComponent
-    ? eodashComponent.shadowRoot?.querySelectorAll(
-        "eox-layout-item:not([class='bg-panel'])",
-      )
-    : document.querySelectorAll("eox-layout-item:not([class='bg-panel'])");
+  const root = getRoot();
+  const allPanels = root?.querySelectorAll(
+    "eox-layout-item:not([class='bg-panel'])",
+  );
   allPanels?.forEach((panel) => {
     if (!panel || !(panel instanceof HTMLElement)) {
       return;
     }
     panel.style.display = "";
   });
+
+  const mapButtons = root?.querySelector(".map-buttons");
+  if (mapButtons instanceof HTMLElement) {
+    mapButtons.style.padding = "";
+  }
 }
 /**
  *

@@ -268,14 +268,6 @@ const showMosaicHint = computed(() => {
   pointer-events: auto !important;
 }
 
-/* Container constraints removal */
-eox-geosearch {
-  position: relative !important;
-  width: 40px;
-  overflow: visible !important;
-  z-index: 10;
-}
-
 .mosaic-hint {
   position: fixed;
   left: 50%;
