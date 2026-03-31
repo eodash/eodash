@@ -89,6 +89,7 @@ export const createLayersConfig = async (
         if (targetLayer) {
           if (Array.isArray(vl.roles) && vl.roles.includes("disable")) {
             targetLayer.properties.visible = false;
+            targetLayer.properties.layerControlExpand = false;
           } else if (Array.isArray(vl.roles) && vl.roles.includes("hidden")) {
             targetLayer.properties.layerControlHide = true;
           }

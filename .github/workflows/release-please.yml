@@ -13,14 +13,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Release Please! 🤖
-        uses: googleapis/release-please-action@v4
+        uses: googleapis/release-please-action@16a9c90856f42705d54a6fda1823352bdc62cf38 # v4
         id: release
       - name: Checkout 🛎
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           fetch-depth: 0 # Fetch all history and tags
       - name: Setup node env 🏗
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 24
           check-latest: true
@@ -36,7 +36,7 @@ jobs:
           npx pkg-pr-new publish --comment=update
         if: ${{ !steps.release.outputs.release_created }}
       - name: Login to ghcr 🔧
-        uses: docker/login-action@v3
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
