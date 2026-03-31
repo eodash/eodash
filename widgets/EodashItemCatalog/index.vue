@@ -57,6 +57,7 @@
       .subTitleProperty="subTitleProperty"
       .filterProperties="filterProperties"
       .items="items"
+      .styleOverride="itemfilterStyleOverride"
       @select="onSelectItem"
       @filter="onFilter"
       @mouseenter:result="onMouseEnterResult"
@@ -70,7 +71,8 @@
 </template>
 
 <script setup>
-import { onUnmounted, ref, useTemplateRef } from "vue";
+import { onUnmounted, ref, useTemplateRef, watch } from "vue";
+import { storeToRefs } from "pinia";
 
 import { useSTAcStore } from "@/store/stac";
 import {
@@ -201,11 +203,16 @@ function selectSort(option) {
   }
 }
 
+const store = useSTAcStore();
+const { selectedItem, selectedCompareItem } = storeToRefs(store);
+
 onUnmounted(() => {
   store.selectedItem = null;
 });
 
-const store = useSTAcStore();
+const activeSelectedItem = /** @type {import("vue").Ref<import("stac-ts").StacItem | null>} */(props.enableCompare
+  ? selectedCompareItem
+  : selectedItem);
 
 // Reactive state
 /** @type {import("vue").Ref<import("@/types").GeoJsonFeature[]>} */
@@ -229,7 +236,14 @@ const externalFilterHandler = createExternalFilter(
   props.bboxFilter,
   currentItems,
   sortByParam,
+  activeSelectedItem,
 );
+
+watch(activeSelectedItem, (item) => {
+  if (itemfilterEl.value) {
+    itemfilterEl.value.selectedResult = item ?? null;
+  }
+});
 
 // Event handlers
 /**
@@ -239,6 +253,8 @@ const onFilter = createOnFilterHandler(
   currentItems,
   props.enableCompare ? mapCompareEl : mapEl,
   props.hoverProperties,
+  itemfilterEl,
+  activeSelectedItem,
 );
 
 /**
@@ -283,6 +299,16 @@ const onMouseEnterResult = createOnMouseEnterResult(
 const onMouseLeaveResult = createOnMouseLeaveResult(
   props.enableCompare ? mapCompareEl : mapEl,
 );
+
+const itemfilterStyleOverride = `
+  li.highlighted {
+    background-color: rgb(var(--v-theme-primary)) !important;
+    color: rgb(var(--v-theme-on-primary)) !important;
+  }
+  li.highlighted .subtitle {
+    opacity: 0.85;
+  }
+`;
 </script>
 <style scoped>
 .itemfilter-scroll {

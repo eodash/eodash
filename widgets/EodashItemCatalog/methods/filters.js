@@ -205,12 +205,14 @@ export const buildSearchUrl = (filters, propsFilters, bboxFilter, sortBy) => {
  * @param {boolean} bboxFilter
  * @param {import("vue").Ref<import("@/types").GeoJsonFeature[]>} currentItems
  * @param {import("vue").Ref<string>} sortBy
+ * @param {import("vue").Ref<import("stac-ts").StacItem | null>} [selectedItemRef]
  */
 export const createExternalFilter = (
   propsFilters,
   bboxFilter,
   currentItems,
   sortBy,
+  selectedItemRef,
 ) => {
   let controller = new AbortController();
   /**
@@ -226,7 +228,15 @@ export const createExternalFilter = (
       const signal = controller.signal;
       return await axios
         .get(url, { signal })
-        .then((res) => res.data.features)
+        .then((res) => {
+          /** @type {import("@/types").GeoJsonFeature[]} */
+          const results = res.data.features;
+          const selected = selectedItemRef?.value;
+          if (selected && !results.some((r) => r.id === selected.id)) {
+            return [selected, ...results];
+          }
+          return results;
+        })
         .catch((e) => {
           // return previous items if aborted
           if (e.name === "AbortError" || e.name === "CanceledError") {

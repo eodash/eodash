@@ -5,16 +5,27 @@ import { renderItemsFeatures } from "./map";
  * @param {import("vue").Ref<import("@/types").GeoJsonFeature[]>} currentItems
  * @param {import("vue").Ref<import("@eox/map").EOxMap | null>} mapElement
  * @param {string[] | undefined} hoverProperties
+ * @param {import("vue").Ref<any>} [itemfilterEl]
+ * @param {import("vue").Ref<import("stac-ts").StacItem | null>} [selectedItemRef]
  */
 export const createOnFilterHandler = (
   currentItems,
   mapElement,
   hoverProperties,
+  itemfilterEl,
+  selectedItemRef,
 ) => {
   /** @param {CustomEvent} evt */
   return (evt) => {
     currentItems.value = evt.detail.results;
     renderItemsFeatures(currentItems.value, mapElement, hoverProperties);
+    const selected = selectedItemRef?.value;
+    if (!selected || !itemfilterEl?.value) return;
+    // const results = /** @type {any[]} */ (itemfilterEl.value.results ?? []);
+    // // if (!results.some((r) => r.id === selected.id)) {
+    // //   itemfilterEl.value.results = [selected, ...results];
+    // // }
+    itemfilterEl.value.selectedResult = selected;
   };
 };
 /**
