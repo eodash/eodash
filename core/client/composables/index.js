@@ -335,7 +335,7 @@ export const useGetTemplates = () => {
  *
  * @param {import("@vueuse/core").EventBusListener<
  * import("@/types").LayersEventBusKeys,
- * {layers:Record<string,any>[]| undefined}
+ * Record<string,any>[] | undefined
  * >} listener
  */
 export const useOnLayersUpdate = (listener) => {
