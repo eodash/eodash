@@ -80,6 +80,28 @@
         {{ isGlobe ? "switch to 2D" : "switch to 3D" }}
       </div>
     </button>
+    <button
+      v-if="enableFeedback && eodash?.brand?.feedback"
+      class="primary small circle small-elevate"
+      @click="showFeedback = !showFeedback"
+    >
+      <i class="small"
+        ><svg viewBox="0 0 24 24">
+          <path :d="mdiMessageQuestion" />
+        </svg>
+      </i>
+      <div class="tooltip left">Provide Feedback</div>
+    </button>
+    <div
+      v-if="showFeedback && enableFeedback && eodash?.brand?.feedback"
+      class="feedback-container small-elevate"
+    >
+      <eox-feedback
+        :endpoint="eodash?.brand?.feedback?.endpoint"
+        .schema="eodash?.brand?.feedback?.schema"
+        @close="showFeedback = false"
+      ></eox-feedback>
+    </div>
     <eox-geosearch
       v-if="mapEl && !isGlobe && enableSearch"
       :for="mapEl"
@@ -110,7 +132,7 @@
   </div>
 </template>
 <script setup>
-import { useTransparentPanel } from "@/composables";
+import { useTransparentPanel, useEodash } from "@/composables";
 import { changeMapProjection } from "@/store/actions";
 import {
   activeTemplate,
@@ -129,6 +151,7 @@ import {
   mdiPlus,
   mdiStarFourPointsCircleOutline,
   mdiEarth,
+  mdiMessageQuestion,
 } from "@mdi/js";
 import ExportState from "^/ExportState.vue";
 import { computed, ref } from "vue";
@@ -145,6 +168,9 @@ import {
   showCompareIndicators,
 } from "./methods/btns";
 import "@eox/geosearch";
+import "@eox/feedback";
+
+const eodash = useEodash();
 
 const {
   compareIndicators,
@@ -155,6 +181,7 @@ const {
   enableZoom,
   searchParams,
   enableGlobe,
+  enableFeedback,
 } = defineProps({
   exportMap: {
     type: Boolean,
@@ -193,6 +220,10 @@ const {
     type: Boolean,
     default: true,
   },
+  enableFeedback: {
+    type: Boolean,
+    default: true,
+  },
 });
 
 const { smAndDown } = useDisplay();
@@ -200,6 +231,7 @@ const popupWidth = computed(() => (smAndDown.value ? "80%" : "70%"));
 const popupHeight = computed(() => (smAndDown.value ? "90%" : "70%"));
 
 const showMapState = ref(false);
+const showFeedback = ref(false);
 const isInCompareMode = computed(
   () =>
     activeTemplate.value ===
@@ -246,6 +278,16 @@ const opencageUrl = `https://api.opencagedata.com/geocode/v1/json?key=${opencage
   margin-bottom: 5px;
   background-color: var(--primary);
 }
+
+.feedback-container {
+  position: absolute;
+  right: 70px;
+  pointer-events: auto;
+  z-index: 20;
+  border-radius: 8px;
+  min-width: 300px;
+}
+
 /* Make sure buttons have pointer event */
 .geosearch-detached {
   pointer-events: auto !important;

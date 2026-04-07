@@ -61,6 +61,7 @@
         :enableZoom="(indicator || compareIndicator || poi) ? btnsProps.enableZoom : false
         "
         :enableGlobe="(indicator || compareIndicator || poi) ? btnsProps.enableGlobe : false"
+        :enableFeedback="btnsProps.enableFeedback"
         :searchParams="btnsProps.searchParams"
       />
     </div>
@@ -142,6 +143,7 @@ const props = defineProps({
      * searchParams?: object;
      * enableZoom?: boolean;
      * enableGlobe?: boolean;
+     * enableFeedback?: boolean;
      * enableCompareIndicators?: boolean | {
      *   compareTemplate?:string;
      *   fallbackTemplate?:string;
@@ -157,6 +159,7 @@ const props = defineProps({
       enableSearch: true,
       enableZoom: true,
       enableGlobe: true,
+      enableFeedback: true,
       searchParams: {},
     }),
   },
@@ -200,6 +203,7 @@ const btnsProps = computed(() => ({
   enableSearch: props.btns.enableSearch ?? true,
   enableZoom: props.btns.enableZoom ?? true,
   enableGlobe: props.btns.enableGlobe ?? true,
+  enableFeedback: props.btns.enableFeedback ?? true,
   searchParams: props.btns.searchParams,
 }));
 
