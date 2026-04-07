@@ -159,6 +159,9 @@ import PopUp from "^/PopUp.vue";
 import EodashItemFilter from "^/EodashItemFilter.vue";
 import { useDisplay } from "vuetify";
 import { loadPOiIndicator } from "^/EodashProcess/methods/handling";
+if (!customElements.get("eox-feedback")) {
+  import "@eox/feedback";
+}
 import {
   onCompareClick,
   onSelectCompareIndicator,
@@ -168,7 +171,6 @@ import {
   showCompareIndicators,
 } from "./methods/btns";
 import "@eox/geosearch";
-import "@eox/feedback";
 
 const eodash = useEodash();
 
