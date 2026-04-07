@@ -61,7 +61,7 @@
         :enableZoom="(indicator || compareIndicator || poi) ? btnsProps.enableZoom : false
         "
         :enableGlobe="(indicator || compareIndicator || poi) ? btnsProps.enableGlobe : false"
-        :enableFeedback="btnsProps.enableFeedback"
+        :enableFeedback="(indicator || compareIndicator || poi) ? btnsProps.enableFeedback : false"
         :searchParams="btnsProps.searchParams"
       />
     </div>
