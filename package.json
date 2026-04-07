@@ -71,7 +71,7 @@
   "dependencies": {
     "@eox/chart": "^1.1.0",
     "@eox/drawtools": "1.1.5",
-    "@eox/feedback": "^1.1.1",
+    "@eox/feedback": "https://pkg.pr.new/EOX-A/EOxElements/@eox/feedback@989a816",
     "@eox/geosearch": "^1.1.0",
     "@eox/itemfilter": "^1.14.0",
     "@eox/jsonform": "^1.9.0",
