@@ -69,7 +69,7 @@
 <script setup>
 import "@eox/map";
 import "@eox/map/src/plugins/advancedLayersAndSources";
-import { computed, onMounted, ref, toRaw, useTemplateRef } from "vue";
+import { nextTick, computed, onMounted, ref, toRaw, useTemplateRef } from "vue";
 import {
   datetime,
   mapEl,
@@ -276,10 +276,10 @@ const eoxMapCompareLayers = ref([
   },
 ]);
 
-const animationOptions = {
-  duration: 1200,
+const animationOptions = ref({
+  duration: 0, // Initially set to 0 for an instant "jump"
   easing: inAndOut,
-};
+});
 
 /** @type {import("vue").Ref<import("@eox/map").EOxMap | null>} */
 const eoxMap = ref(null);
@@ -330,6 +330,10 @@ onMounted(() => {
     props.zoomToExtent,
     selectedItem,
   );
+  // After the initial mount and "jump", set the animation duration for subsequent flyTo calls
+  nextTick(() => {
+    animationOptions.value.duration = 1200;
+  });
 });
 
 useUpdateTooltipProperties(eodashCollections, tooltipProperties);
