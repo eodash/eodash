@@ -39,7 +39,6 @@ export type EOxHubProcessResults =
         mimetype: string;
         datetimes?: string[];
         visible?: boolean;
-        data?: any[];
       };
     };
 

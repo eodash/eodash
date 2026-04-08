@@ -25,18 +25,19 @@
 import "color-legend-element";
 import "@eox/timecontrol";
 import { computed, ref } from "vue";
-import { mapEl, mapCompareEl, activeProcessDatetime } from "@/store/states";
-import { updateProcessLayerStyleVars } from "./EodashProcess/methods/utils";
+import { storeToRefs } from "pinia";
 import { getColFromLayer } from "@/eodashSTAC/helpers";
+import { mapEl, mapCompareEl } from "@/store/states";
+import { useSTAcStore } from "@/store/stac";
 import {
   eodashCollections,
   eodashCompareCollections,
   layerControlFormValue,
   layerControlFormValueCompare,
 } from "@/utils/states";
-import { storeToRefs } from "pinia";
-import { useSTAcStore } from "@/store/stac";
 import { bandsEditorInterface } from "@/utils/bands-editor";
+import { activeProcessDatetime } from "./EodashProcess/states";
+import { syncSiblingProcessLayers } from "./EodashProcess/methods/utils";
 
 if (!customElements.get("eox-layercontrol")) {
   await import("@eox/layercontrol");
@@ -143,8 +144,6 @@ const onLayerConfigChange = (evt) => {
     layerControlFormValue.value = evt.detail.jsonformValue;
   }
 
-  // Sync time_step across all sibling process layers in the AnalysisGroup
-  // so co-rendered results (e.g. enhancement + reference) stay in sync.
   const changedLayer = evt.detail.layer;
   const newTimeStep = evt.detail.jsonformValue?.time_step;
   if (newTimeStep == null || !changedLayer) return;
@@ -158,18 +157,16 @@ const onLayerConfigChange = (evt) => {
     ?.map;
   if (!map) return;
 
-  updateProcessLayerStyleVars(
-    map,
-    (id) => id !== layerId && id.includes("_process"),
-    { time_step: numericTimeStep },
-  );
-
-  // Update activeProcessDatetime for the chart highlight line.
-  // The changed layer's datetimes array maps time_step index → datetime string.
   const datetimes = changedLayer.get?.("datetimes");
-  if (Array.isArray(datetimes) && datetimes[numericTimeStep - 1]) {
-    activeProcessDatetime.value = datetimes[numericTimeStep - 1];
+  const selectedDate = Array.isArray(datetimes)
+    ? datetimes[numericTimeStep - 1]
+    : null;
+
+  if (selectedDate) {
+    activeProcessDatetime.value = selectedDate;
   }
+
+  syncSiblingProcessLayers(map, layerId, selectedDate, numericTimeStep);
 };
 </script>
 <style scoped>

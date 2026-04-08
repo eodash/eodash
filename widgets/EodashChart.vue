@@ -34,17 +34,17 @@ import {
   onMounted,
   onBeforeUnmount,
 } from "vue";
-import { onChartClick } from "./EodashProcess/methods/handling";
+import { mdiArrowCollapse, mdiArrowExpand } from "@mdi/js";
 import {
   chartData,
   compareChartData,
   chartSpec,
   compareChartSpec,
   areChartsSeparateLayout,
-  activeProcessDatetime,
 } from "@/store/states";
 import { getOverlayParent } from "@/utils";
-import { mdiArrowCollapse, mdiArrowExpand } from "@mdi/js";
+import { activeProcessDatetime } from "./EodashProcess/states";
+import { onChartClick } from "./EodashProcess/methods/handling";
 
 const { enableCompare, vegaEmbedOptions } = defineProps({
   enableCompare: {

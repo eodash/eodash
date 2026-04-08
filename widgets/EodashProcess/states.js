@@ -11,3 +11,13 @@ export const jobs = ref([]);
  * @type {import("vue").Ref<import("./types").AsyncJob[]>}
  */
 export const compareJobs = ref([]);
+
+/**
+ * Active process datetime (ISO string) for the chart highlight line.
+ *
+ * Cannot use the global `datetime` ref because setting it triggers a STAC
+ * reload that wipes the AnalysisGroup (destroying process layers).
+ *
+ * @type {import("vue").Ref<string | null>}
+ */
+export const activeProcessDatetime = ref(null);

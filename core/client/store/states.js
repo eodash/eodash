@@ -73,8 +73,3 @@ export const chartSpec = ref(null);
  * @type {import("vue").Ref<import("vega-embed").VisualizationSpec | null>}
  */
 export const compareChartSpec = ref(null);
-
-/** Active process datetime (ISO string) for chart highlight line
- * @type {import("vue").Ref<string | null>}
- */
-export const activeProcessDatetime = ref(null);

@@ -1,12 +1,12 @@
 import log from "loglevel";
 import {
   applyProcessLayersToMap,
-  EOXHUB_WORKSPACES_ENDPOINT,
   extractGeometries,
   findClosestDatetimeIndex,
   findTemporalField,
   getBboxProperty,
   getDrawToolsProperties,
+  syncSiblingProcessLayers,
   updateProcessLayerStyleVars,
 } from "./utils";
 import {
@@ -19,10 +19,10 @@ import {
   chartSpec,
   compareChartData,
   compareChartSpec,
-  activeProcessDatetime,
   mapEl,
   mapCompareEl,
 } from "@/store/states";
+import { activeProcessDatetime } from "../states";
 import { processCharts, processLayers, processSTAC } from "./outputs";
 import { handleLayersCustomEndpoints } from "./custom-endpoints/layers";
 import { handleChartCustomEndpoints } from "./custom-endpoints/chart";
@@ -229,16 +229,6 @@ export async function handleProcesses({
     const usedChartSpec = enableCompare ? compareChartSpec : chartSpec;
     const usedChartData = enableCompare ? compareChartData : chartData;
 
-    // Detect async eoxhub_workspaces endpoints before running processCharts.
-    // For these indicators the chart data only exists after the async process
-    // completes, so we must NOT render the chart from the pre-fetched Vega spec
-    // (which still points to the "latest" cached URL from a previous run).
-    const hasEoxhubEndpoints =
-      serviceLinks?.some(
-        (l) =>
-          l.rel === "service" && l.endpoint === EOXHUB_WORKSPACES_ENDPOINT,
-      ) ?? false;
-
     let tempChartSpec = null;
     [tempChartSpec, usedChartData.value] = await processCharts({
       links: serviceLinks,
@@ -265,14 +255,7 @@ export async function handleProcesses({
     if (tempChartSpec && !("background" in tempChartSpec)) {
       tempChartSpec["background"] = "transparent";
     }
-    // Only immediately publish the chart spec for non-eoxhub indicators.
-    // For eoxhub indicators, the chart will be rendered (with correct data)
-    // by the eoxhub endpoint handler after async polling completes.
-    if (!hasEoxhubEndpoints) {
-      usedChartSpec.value = tempChartSpec;
-    } else {
-      usedChartSpec.value = null;
-    }
+    usedChartSpec.value = tempChartSpec;
 
     await processSTAC(
       serviceLinks,
@@ -399,23 +382,33 @@ export const onChartClick = (evt, enableCompare = false) => {
           l.properties?.datetimes?.length > 0,
       );
       if (processGeoTiffLayers.length > 0) {
-        const datetimes = processGeoTiffLayers[0].properties.datetimes;
-        const bestIdx = findClosestDatetimeIndex(datetimes, temporalValue);
-        const timeStep = bestIdx + 1;
+        // Use the layer with the most datetimes as the reference
+        // (methane_timeseries has all dates; visible layer may have fewer).
+        const refLayer = processGeoTiffLayers.reduce((a, b) =>
+          (a.properties.datetimes?.length ?? 0) >= (b.properties.datetimes?.length ?? 0) ? a : b,
+        );
+        const refDatetimes = refLayer.properties.datetimes;
+        const bestIdx = findClosestDatetimeIndex(refDatetimes, temporalValue);
+        const selectedDate = refDatetimes[bestIdx];
 
-        // Update ALL sibling process layers (not just those with datetimes)
-        // so that layers like methane results also update their time_step.
         const mapElement = enableCompare ? mapCompareEl.value : mapEl.value;
         if (mapElement?.map) {
           updateProcessLayerStyleVars(
             mapElement.map,
-            (id) => id.includes("_process"),
-            { time_step: timeStep },
+            (id) => id === refLayer.properties.id,
+            { time_step: bestIdx + 1 },
+          );
+          syncSiblingProcessLayers(
+            mapElement.map,
+            refLayer.properties.id,
+            selectedDate,
+            bestIdx + 1,
           );
         }
 
-        // Track the active datetime for the chart highlight line
-        activeProcessDatetime.value = datetimes[bestIdx] ?? null;
+        // Use the clicked chart datum's temporal value for the highlight line
+        // so it aligns exactly with the box plot position on the x-axis.
+        activeProcessDatetime.value = datestring;
 
         return; // Don't set datetime.value — AnalysisGroup is preserved
       }

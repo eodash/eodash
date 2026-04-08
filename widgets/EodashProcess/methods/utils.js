@@ -318,43 +318,8 @@ export async function creatAsyncProcessLayerDefinitions(
 
     switch (resultItem.type) {
       case "image/tiff": {
-        // If datetimes are provided, dynamically override the time_step jsonform
-        // to show datetime labels and set correct maximum
-        if (
-          resultItem.datetimes?.length &&
-          cfg?.schema?.properties?.time_step
-        ) {
-          const n = resultItem.datetimes.length;
-          const enumValues = Array.from({ length: n }, (_, i) => i + 1);
-          const enumTitles = resultItem.datetimes.map((dt) => {
-            try {
-              const d = new Date(dt);
-              return d.toISOString().slice(0, 16).replace("T", " ");
-            } catch {
-              return (
-                dt || `Step ${enumValues[resultItem.datetimes?.indexOf(dt) ?? 0]}`
-              );
-            }
-          });
-          cfg.schema.properties.time_step = {
-            ...cfg.schema.properties.time_step,
-            maximum: n,
-            minimum: 1,
-            default: 1,
-            ...(n <= MAX_DISCRETE_TIMESTEPS && {
-              enum: enumValues,
-              options: {
-                ...(cfg.schema.properties.time_step.options || {}),
-                enum_titles: enumTitles,
-              },
-            }),
-          };
-          if (
-            n <= MAX_DISCRETE_TIMESTEPS &&
-            cfg.schema.properties.time_step.format === "range"
-          ) {
-            delete cfg.schema.properties.time_step.format;
-          }
+        if (resultItem.datetimes?.length) {
+          patchTimeStepSchema(cfg, resultItem.datetimes);
         }
 
         layers.push({
@@ -556,7 +521,6 @@ export function extractAsyncResults(resultItem) {
       ...(entry?.visible !== undefined && {
         visible: entry.visible,
       }),
-      ...(entry?.data && { data: entry.data }),
     });
   }
   return extracted;
@@ -564,9 +528,14 @@ export function extractAsyncResults(resultItem) {
 
 /**
  * Walk the OL layer tree and update style variables on layers matching `filterFn`.
- * Uses `setStyle()` instead of `updateStyleVariables()` for WebGLTile layers
- * because `updateStyleVariables()` doesn't properly invalidate cached tiles
- * when the `band` expression uses a variable (e.g. `["band", ["var", "time_step"]]`).
+ *
+ * NOTE: Uses direct OL access and `setStyle()` instead of eox-map JSON layer
+ * reassignment because:
+ * 1. OL 10.x `updateStyleVariables()` does NOT invalidate cached GPU tiles when
+ *    the `band` expression references a style variable (`["band", ["var", "time_step"]]`).
+ *    `setStyle()` forces shader recompilation and tile cache clear.
+ * 2. Reassigning `mapElement.layers` would recreate layers from scratch, losing
+ *    source state and triggering unnecessary network requests.
  *
  * @param {import("ol/Map").default} map - OpenLayers map instance
  * @param {(layerId: string) => boolean} filterFn - Predicate receiving the layer id
@@ -599,6 +568,51 @@ export function updateProcessLayerStyleVars(map, filterFn, styleVars) {
     }
   };
   walk(map);
+}
+
+/**
+ * Override the `time_step` jsonform property with datetime-derived labels and
+ * bounds so the layer control shows meaningful step names instead of raw indices.
+ *
+ * Mutates `cfg.schema.properties.time_step` in place. Converts range sliders to
+ * discrete buttons when the number of steps is small enough.
+ *
+ * @param {Record<string, any>} cfg - The layerConfig object containing `schema.properties.time_step`
+ * @param {string[]} datetimes - Array of ISO datetime strings from the process result
+ */
+export function patchTimeStepSchema(cfg, datetimes) {
+  if (!cfg?.schema?.properties?.time_step || !datetimes?.length) return;
+
+  const n = datetimes.length;
+  const enumValues = Array.from({ length: n }, (_, i) => i + 1);
+  const enumTitles = datetimes.map((dt, i) => {
+    try {
+      const d = new Date(dt);
+      return d.toISOString().slice(0, 16).replace("T", " ");
+    } catch {
+      return dt || `Step ${enumValues[i]}`;
+    }
+  });
+
+  cfg.schema.properties.time_step = {
+    ...cfg.schema.properties.time_step,
+    maximum: n,
+    minimum: 1,
+    default: 1,
+    ...(n <= MAX_DISCRETE_TIMESTEPS && {
+      enum: enumValues,
+      options: {
+        ...(cfg.schema.properties.time_step.options || {}),
+        enum_titles: enumTitles,
+      },
+    }),
+  };
+  if (
+    n <= MAX_DISCRETE_TIMESTEPS &&
+    cfg.schema.properties.time_step.format === "range"
+  ) {
+    delete cfg.schema.properties.time_step.format;
+  }
 }
 
 /**
@@ -649,6 +663,114 @@ export function findClosestDatetimeIndex(datetimes, targetDate) {
     }
   }
   return bestIdx;
+}
+
+/**
+ * Compare two ISO datetime strings by date portion (YYYY-MM-DD).
+ *
+ * @param {string} dt1 - ISO datetime string
+ * @param {string} dt2 - ISO datetime string
+ * @returns {boolean}
+ */
+export const isSameDate = (dt1, dt2) => dt1.slice(0, 10) === dt2.slice(0, 10);
+
+/**
+ * Auto-hide a process layer (no matching date) or restore it if it was
+ * previously auto-hidden.  Tracks the `_autoHidden` flag on the OL layer
+ * so that layers the **user** manually turned off are never forced back on.
+ *
+ * When restoring (`visible=true`): if `_autoHidden` is flagged but the layer
+ * is already visible (user re-enabled it in the panel), the flag is stale —
+ * clear it and do nothing.
+ *
+ * NOTE: Uses direct OL `setVisible()` rather than eox-map JSON layer
+ * reassignment to avoid recreating the layer (and its WebGL sources) just to
+ * toggle visibility.
+ *
+ * @param {import("ol/Map").default} map - OpenLayers map instance
+ * @param {(layerId: string) => boolean} filterFn - Predicate receiving the layer id
+ * @param {boolean} visible - `false` = auto-hide; `true` = restore only if auto-hidden
+ */
+export function setProcessLayerVisible(map, filterFn, visible) {
+  /** @param {*} layerGroup */
+  const walk = (layerGroup) => {
+    if (!layerGroup?.getLayers) return;
+    for (const olLayer of layerGroup.getLayers().getArray()) {
+      const id = olLayer.get("id") ?? "";
+      if (filterFn(id) && typeof olLayer.setVisible === "function") {
+        if (!visible) {
+          // Only mark _autoHidden when we actually hide a visible layer;
+          // otherwise a later restore would override the user's manual toggle.
+          if (olLayer.getVisible()) {
+            olLayer.set("_autoHidden", true, /* silent */ true);
+            olLayer.setVisible(false);
+          }
+        } else if (olLayer.get("_autoHidden")) {
+          olLayer.set("_autoHidden", false, /* silent */ true);
+          if (!olLayer.getVisible()) {
+            olLayer.setVisible(true);
+          }
+        }
+      }
+      if (typeof olLayer.getLayers === "function") {
+        walk(olLayer);
+      }
+    }
+  };
+  walk(map);
+}
+
+/**
+ * Synchronise sibling process layers when a time_step changes on one layer.
+ *
+ * For each sibling (OL layer whose id contains `_process` but differs from
+ * `changedLayerId`): if the sibling has a `datetimes` property, find the
+ * exact-date match for `selectedDate` and update its `time_step` style var.
+ * If no matching date exists, auto-hide the sibling.  If the sibling has no
+ * datetimes, broadcast `fallbackTimeStep` as-is.
+ *
+ * @param {import("ol/Map").default} map - OpenLayers map instance
+ * @param {string} changedLayerId - The layer id that was explicitly changed
+ * @param {string | null} selectedDate - ISO datetime string of the selected date
+ * @param {number} fallbackTimeStep - Numeric time_step to broadcast to layers without datetimes
+ */
+export function syncSiblingProcessLayers(
+  map,
+  changedLayerId,
+  selectedDate,
+  fallbackTimeStep,
+) {
+  /** @param {*} layerGroup */
+  const walk = (layerGroup) => {
+    if (!layerGroup?.getLayers) return;
+    for (const olLayer of layerGroup.getLayers().getArray()) {
+      const sibId = olLayer.get("id") ?? "";
+      if (sibId !== changedLayerId && sibId.includes("_process")) {
+        const sibDates = olLayer.get("datetimes");
+        if (Array.isArray(sibDates) && sibDates.length > 0 && selectedDate) {
+          const matchIdx = sibDates.findIndex(
+            (/** @type {string} */ d) => isSameDate(d, selectedDate),
+          );
+          if (matchIdx >= 0) {
+            setProcessLayerVisible(map, (id) => id === sibId, true);
+            updateProcessLayerStyleVars(map, (id) => id === sibId, {
+              time_step: matchIdx + 1,
+            });
+          } else {
+            setProcessLayerVisible(map, (id) => id === sibId, false);
+          }
+        } else {
+          updateProcessLayerStyleVars(map, (id) => id === sibId, {
+            time_step: fallbackTimeStep,
+          });
+        }
+      }
+      if (typeof olLayer.getLayers === "function") {
+        walk(olLayer);
+      }
+    }
+  };
+  walk(map);
 }
 
 /**

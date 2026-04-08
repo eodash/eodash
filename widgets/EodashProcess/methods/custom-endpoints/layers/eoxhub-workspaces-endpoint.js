@@ -4,8 +4,8 @@ import {
   indicator,
   chartSpec,
   compareChartSpec,
-  activeProcessDatetime,
 } from "@/store/states";
+import { activeProcessDatetime } from "../../../states";
 import mustache from "mustache";
 import {
   pollProcessStatus,
@@ -16,6 +16,7 @@ import {
   creatAsyncProcessLayerDefinitions,
   EOXHUB_WORKSPACES_ENDPOINT,
   extractAsyncResults,
+  findTemporalField,
 } from "../../utils";
 
 /**
@@ -37,6 +38,14 @@ export async function handleEOxHubEndpoint({
   const eoxhubLinks = links.filter(
     (link) => link.rel === "service" && link.endpoint === EOXHUB_WORKSPACES_ENDPOINT,
   );
+  if (!eoxhubLinks.length) return;
+
+  // Prevent the stale chart spec (from a previous run's cached Vega URL)
+  // from rendering while the async process is in progress.
+  // The correct spec with live data will be set after polling completes below.
+  const usedChartSpec = enableCompare ? compareChartSpec : chartSpec;
+  usedChartSpec.value = null;
+
   const layers = [];
   for (const link of eoxhubLinks) {
     // TODO: prove of concept, needs to be reworked for sure
@@ -81,30 +90,49 @@ export async function handleEOxHubEndpoint({
         });
       await updateJobsStatus(jobs, currentIndicator.value);
 
-      // After polling, check if any result has inline JSON stats and update chart
+      // After polling, fetch JSON stats from URL and update chart
       const statsResult = processResults.find(
-        (r) => r.type === "application/json" && r.data?.length,
+        (r) => r.type === "application/json" && r.urls?.length,
       );
       if (statsResult) {
-        const usedChartSpec = enableCompare ? compareChartSpec : chartSpec;
-        const specUrl = /** @type {string | undefined} */ (selectedStac?.["eodash:vegadefinition"]);
-        const builtSpec = await buildChartSpecWithData(
-          specUrl,
-          statsResult.data ?? [],
-          usedChartSpec.value,
-        );
-        if (builtSpec) {
-          usedChartSpec.value = builtSpec;
+        try {
+          const statsResp = await axios.get(statsResult.urls[0]);
+          const statsJson = statsResp.data;
+          const chartData = statsJson?.data?.values ?? statsJson?.values ?? (Array.isArray(statsJson) ? statsJson : []);
+          if (chartData.length) {
+            const specUrl = /** @type {string | undefined} */ (selectedStac?.["eodash:vegadefinition"]);
+            const builtSpec = await buildChartSpecWithData(
+              specUrl,
+              chartData,
+              usedChartSpec.value,
+            );
+            if (builtSpec) {
+              usedChartSpec.value = builtSpec;
+            }
+          }
+        } catch (e) {
+          console.warn("[eodash] Could not fetch stats from URL:", e);
         }
       }
 
-      // Set initial highlight to the first datetime so the red line
-      // appears as soon as the chart loads (not only after first click).
-      const datetimeResult = processResults.find(
-        (r) => (r.datetimes?.length ?? 0) > 0,
-      );
-      if (datetimeResult && !activeProcessDatetime.value) {
-        activeProcessDatetime.value = datetimeResult.datetimes?.[0] ?? null;
+      // Set initial highlight to the first chart data datetime so the red
+      // line aligns exactly with the first box plot on the x-axis.
+      // Fall back to the layer datetimes if chart data is unavailable.
+      if (!activeProcessDatetime.value) {
+        const usedSpec = usedChartSpec.value;
+        const temporalKey = usedSpec ? findTemporalField(usedSpec) : null;
+        const specData = /** @type {any} */ (usedSpec?.data)?.values;
+        const firstChartDt = temporalKey && Array.isArray(specData) && specData.length
+          ? specData[0][temporalKey]
+          : null;
+        if (firstChartDt) {
+          activeProcessDatetime.value = firstChartDt;
+        } else {
+          const datetimeResult = processResults.find(
+            (r) => (r.datetimes?.length ?? 0) > 0,
+          );
+          activeProcessDatetime.value = datetimeResult?.datetimes?.[0] ?? null;
+        }
       }
 
       layers.push(
