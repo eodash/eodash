@@ -408,7 +408,7 @@ onMounted(() => {
   border-radius: 4px;
   border: none;
   padding: 0px 3px;
-  max-height: 24px;
+  max-height: 18px;
 }
 
 @media (max-width: 959px) {
@@ -450,7 +450,7 @@ onMounted(() => {
 }
 
 .map-buttons-container {
-  position: fixed;
+  position: absolute;
   left: 0;
   width: 100%;
   height: 100%;
