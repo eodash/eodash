@@ -1,5 +1,5 @@
 import { defineStore } from "pinia";
-import { ref } from "vue";
+import { computed, ref } from "vue";
 import axios from "@/plugins/axios";
 import {
   useAbsoluteUrl,
@@ -31,7 +31,12 @@ export const useSTAcStore = defineStore("stac", () => {
    * Mosaic endpoint URL
    * @type {import("vue").Ref<string | null>}
    */
-  const mosaicEndpoint = ref(null);
+  const mosaicEndpoint = computed(() => {
+    if (!rasterEndpoint.value || !selectedStac.value?.id) return null;
+    const collectionId = selectedStac.value.id;
+    return `${rasterEndpoint.value}/collections/${collectionId}/WebMercatorQuad/tilejson.json`;
+  });
+
   const isApi = ref(false);
 
   /**
@@ -97,7 +102,6 @@ export const useSTAcStore = defineStore("stac", () => {
     stacEndpoint.value = endpoint.endpoint;
     isApi.value = endpoint.api ?? false;
     rasterEndpoint.value = endpoint.rasterEndpoint ?? null;
-    mosaicEndpoint.value = endpoint.mosaicEndpoint ?? null;
     supportedUpscalingEndpoints.value =
       endpoint.supportedUpscalingEndpoints ?? [];
   }
@@ -272,6 +276,7 @@ export const useSTAcStore = defineStore("stac", () => {
 
   return {
     stacEndpoint,
+    rasterEndpoint,
     isApi,
     stac,
     mosaicEndpoint,

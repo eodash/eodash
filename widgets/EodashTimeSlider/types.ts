@@ -46,11 +46,6 @@ export interface TimelineExportEventDetail {
   }) => Promise<void>;
 }
 
-export interface CloudCoverRange {
-  min: number;
-  max: number;
-}
-
 export interface ItemFilterEventDetail {
   result: Record<string, any>;
   filters: Record<string, Filter>;

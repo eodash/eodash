@@ -33,7 +33,7 @@
   </eox-timecontrol>
 </template>
 <script setup>
-import { datetime, indicator, mapEl } from "@/store/states";
+import { datetime, mapEl } from "@/store/states";
 import { eodashCollections } from "@/utils/states";
 import "@eox/timecontrol";
 import "@eox/itemfilter";
@@ -41,11 +41,7 @@ import "@eox/itemfilter";
 import { computed, onMounted, ref, unref, useTemplateRef } from "vue";
 import { storeToRefs } from "pinia";
 import { useSTAcStore } from "@/store/stac";
-import {
-  createAnimationLayers,
-  extractCloudCover,
-  scheduleMosaicUpdate,
-} from "./methods";
+import { createAnimationLayers, scheduleMosaicUpdate } from "./methods";
 import { useInitMosaic } from "@/eodashSTAC/mosaic";
 
 const { animate, useMosaic, mosaicIndicators } = defineProps({
@@ -92,11 +88,11 @@ const hasMultipleItems = computed(() => {
 });
 
 const store = useSTAcStore();
-const { selectedStac, stacEndpoint, mosaicEndpoint } = storeToRefs(store);
+const { selectedStac, stacEndpoint } = storeToRefs(store);
 
-const isMosaicEnabled = computed(() => useMosaic && !!mosaicEndpoint.value);
+const isMosaicEnabled = computed(() => useMosaic && !!store.mosaicEndpoint);
 
-useInitMosaic(mosaicEndpoint.value, {}, store, mosaicIndicators);
+useInitMosaic(useMosaic ? store.mosaicEndpoint : null, {}, mosaicIndicators);
 
 /**
  * Handles the selection event from the time control component.
@@ -113,12 +109,7 @@ const onSelect = (e) => {
   // if mosaic is enabled, we don't need to find the closest item,
   // we just update the mosaic layer with the new time range and filters
   if (isMosaicEnabled.value) {
-    scheduleMosaicUpdate(
-      mosaicEndpoint.value,
-      indicator.value,
-      date,
-      extractCloudCover(currentFilters.value),
-    );
+    scheduleMosaicUpdate(store.mosaicEndpoint, date, currentFilters.value);
     return;
   }
 
@@ -152,12 +143,7 @@ const onFilter = (e) => {
   if (!isMosaicEnabled.value) return;
   const { filters } = e.detail;
   currentFilters.value = filters;
-  scheduleMosaicUpdate(
-    mosaicEndpoint.value,
-    indicator.value,
-    selectedRange.value,
-    extractCloudCover(filters),
-  );
+  scheduleMosaicUpdate(store.mosaicEndpoint, selectedRange.value, filters);
 };
 
 /**

@@ -210,9 +210,10 @@ onUnmounted(() => {
   store.selectedItem = null;
 });
 
-const activeSelectedItem = /** @type {import("vue").Ref<import("stac-ts").StacItem | null>} */(props.enableCompare
-  ? selectedCompareItem
-  : selectedItem);
+const activeSelectedItem =
+  /** @type {import("vue").Ref<import("stac-ts").StacItem | null>} */ (
+    props.enableCompare ? selectedCompareItem : selectedItem
+  );
 
 // Reactive state
 /** @type {import("vue").Ref<import("@/types").GeoJsonFeature[]>} */
