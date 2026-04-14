@@ -71,6 +71,8 @@ export const loadFont = async (fontConfig, isWebComponent) => {
            eox-jsonform,
            eox-timecontrol,
            eox-itemfilter,
+           eox-geosearch,
+           eox-feedback,
            eox-chart,
            eox-stacinfo{
             --eox-body-font-family: ${bodyFamily};
@@ -108,6 +110,8 @@ export const loadFont = async (fontConfig, isWebComponent) => {
            eox-jsonform,
            eox-timecontrol,
            eox-itemfilter,
+           eox-feedback,
+           eox-geosearch,
            eox-chart,
            eox-stacinfo {
           --eox-header-font-family: ${headerFamily};
