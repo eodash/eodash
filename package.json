@@ -77,7 +77,7 @@
     "@eox/jsonform": "^1.10.0",
     "@eox/layercontrol": "^1.4.2",
     "@eox/layout": "^1.0.0",
-    "@eox/map": "^2.2.0",
+    "@eox/map": "^2.3.0",
     "@eox/stacinfo": "^1.1.0",
     "@eox/timecontrol": "^2.1.2",
     "@eox/ui": "^0.6.0",
