@@ -390,6 +390,13 @@ export type Eodash = {
     theme?: import("vuetify").ThemeDefinition & {
       collectionsPalette?: string[];
     };
+    /** eox-feedback configuration */
+    feedback?: {
+      /** eox-feedback endpoint */
+      endpoint: string;
+      /** eox-feedback jsonform schema */
+      schema?: any;
+    };
     /** Text applied to the footer. */
     footerText?: string;
   };
