@@ -90,7 +90,7 @@ import {
 import {
   useSearchOnMapMove,
   useRenderItemsFeatures,
-  useHighlightOnFeatureHover,
+  useHoverTooltip,
   useRenderOnFeatureClick,
   renderItemsFeatures,
 } from "./methods/map";
@@ -355,11 +355,7 @@ useInitMosaic(
 );
 
 // highlight on feature hover
-useHighlightOnFeatureHover(
-  itemfilterEl,
-  props.enableCompare ? mapCompareEl : mapEl,
-  props.hoverProperties,
-);
+useHoverTooltip(props.hoverProperties);
 const onMouseEnterResult = createOnMouseEnterResult(
   props.enableCompare ? mapCompareEl : mapEl,
 );
