@@ -92,7 +92,11 @@ const { selectedStac, stacEndpoint } = storeToRefs(store);
 
 const isMosaicEnabled = computed(() => useMosaic && !!store.mosaicEndpoint);
 
-useInitMosaic(useMosaic ? store.mosaicEndpoint : null, {}, mosaicIndicators);
+useInitMosaic(
+  useMosaic ? store.mosaicEndpoint : null,
+  selectedRange,
+  mosaicIndicators,
+);
 
 /**
  * Handles the selection event from the time control component.
@@ -109,7 +113,11 @@ const onSelect = (e) => {
   // if mosaic is enabled, we don't need to find the closest item,
   // we just update the mosaic layer with the new time range and filters
   if (isMosaicEnabled.value) {
-    scheduleMosaicUpdate(store.mosaicEndpoint, date, currentFilters.value);
+    scheduleMosaicUpdate(
+      store.mosaicEndpoint,
+      selectedRange.value,
+      currentFilters.value,
+    );
     return;
   }
 

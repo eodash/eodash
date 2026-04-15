@@ -152,6 +152,8 @@ export const mosaicState = reactive({
   query: null,
   /** @type {Record<string, any> | null | undefined} */
   latestLayer: null,
+  /** @type {(() => boolean) | null} */
+  shouldRender: null,
   /** @type {number} */
   visibilityThreshold: 8,
 });

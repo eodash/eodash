@@ -229,8 +229,13 @@ const isMosaicEnabled = computed(
   () => props.useMosaic && !!store.mosaicEndpoint,
 );
 
+mosaicState.shouldRender = props.useMosaic
+  ? () => !activeSelectedItem.value
+  : null;
+
 onUnmounted(() => {
   store.selectedItem = null;
+  mosaicState.shouldRender = null;
 });
 
 const activeSelectedItem =
@@ -345,7 +350,7 @@ useRenderOnFeatureClick(
 // initialize mosaic and keep in sync with map state
 useInitMosaic(
   props.useMosaic ? store.mosaicEndpoint : null,
-  { shouldRender: () => !activeSelectedItem.value },
+  undefined,
   props.mosaicIndicators,
 );
 

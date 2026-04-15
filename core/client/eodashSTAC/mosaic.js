@@ -190,13 +190,10 @@ export function renderLatestMosaic() {
 
 /**
  * @param {string} mosaicEndpoint - The TileJSON URL for the mosaic.
- * @param {{ timeRange?: [string, string], filters?: import("@/types").ItemFilterFilters }} [options]
+ * @param {[string, string] | undefined} timeRange
  */
-export async function initMosaic(mosaicEndpoint, { timeRange, filters } = {}) {
-  await updateMosaicLayer(mosaicEndpoint, {
-    ...(timeRange && { timeRange }),
-    ...(filters && { filters }),
-  }).then(async () => {
+export async function initMosaic(mosaicEndpoint, timeRange) {
+  await updateMosaicLayer(mosaicEndpoint, { timeRange }).then(async () => {
     await nextTick(() => {
       toggleMosaicVisibility(mapPosition.value[2] ?? 0);
     });
@@ -207,20 +204,16 @@ export async function initMosaic(mosaicEndpoint, { timeRange, filters } = {}) {
  * Vue composable that initializes the mosaic layer and keeps it in sync with
  * map zoom and layer updates.
  * @param {string | null | undefined} mosaicEndpoint - Pass null/undefined to disable.
- * @param {{ timeRange?: [string, string], shouldRender?: () => boolean }} [options]
+ * @param {import("vue").Ref<[string, string]> | undefined} timeRange
  * @param {string[]} [indicators] - If provided, mosaic only activates for these collection IDs.
  */
-export function useInitMosaic(
-  mosaicEndpoint,
-  { timeRange, shouldRender } = {},
-  indicators,
-) {
+export function useInitMosaic(mosaicEndpoint, timeRange, indicators) {
   if (!mosaicEndpoint) return;
 
   const store = useSTAcStore();
 
   function shouldInitiate() {
-    if (shouldRender && !shouldRender()) return false;
+    if (mosaicState.shouldRender && !mosaicState.shouldRender()) return false;
     if (!store.selectedStac?.id) return false;
     if (indicators?.length && !indicators.includes(store.selectedStac.id))
       return false;
@@ -236,12 +229,12 @@ export function useInitMosaic(
 
   onMounted(async () => {
     if (!shouldInitiate()) return;
-    initMosaic(mosaicEndpoint, { timeRange });
+    initMosaic(mosaicEndpoint, timeRange?.value);
   });
 
   useOnLayersUpdate(() => {
     if (!shouldInitiate()) return;
-    initMosaic(mosaicEndpoint, { timeRange });
+    initMosaic(mosaicEndpoint, timeRange?.value);
   });
 
   onUnmounted(() => {

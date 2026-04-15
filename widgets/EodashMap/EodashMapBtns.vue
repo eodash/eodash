@@ -182,7 +182,7 @@ import "@eox/geosearch";
 
 if (!customElements.get("eox-feedback")) {
   //@ts-expect-error will be fixed in https://github.com/EOX-A/EOxElements/pull/2238
-  await import ("@eox/feedback");
+  await import("@eox/feedback");
 }
 const eodash = useEodash();
 
@@ -281,6 +281,7 @@ const opencageUrl = `https://api.opencagedata.com/geocode/v1/json?key=${opencage
 
 const showMosaicHint = computed(() => {
   if (!mosaicState.latestLayer) return false;
+  if (mosaicState.shouldRender && !mosaicState.shouldRender()) return false;
   const zoom = mapPosition.value?.[2] ?? 4;
   return zoom < mosaicState.visibilityThreshold;
 });
