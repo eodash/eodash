@@ -538,6 +538,64 @@ export interface AggregationCollection {
   }>;
 }
 
+/** Itemfilter filter kind emitted in filter events. */
+export type ItemFilterFilterType =
+  | "range"
+  | "multiselect"
+  | "select"
+  | "text"
+  | "spatial";
+
+export interface ItemFilterBase {
+  key: string;
+  title?: string;
+  expanded?: boolean;
+  dirty?: boolean;
+  stringifiedState?: string;
+}
+
+export interface ItemFilterRange extends ItemFilterBase {
+  type: "range";
+  min?: number;
+  max?: number;
+  step?: number;
+  state?: {
+    min?: number;
+    max?: number;
+  };
+}
+
+export interface ItemFilterSelect extends ItemFilterBase {
+  type: "select";
+  state?: Record<string, string | number | boolean | null | undefined>;
+}
+
+export interface ItemFilterMultiSelect extends ItemFilterBase {
+  type: "multiselect";
+  state?: Record<string, string | number | boolean | null | undefined>;
+}
+
+export interface ItemFilterText extends ItemFilterBase {
+  type: "text";
+  state?: Record<string, string | number | boolean | null | undefined>;
+}
+
+export interface ItemFilterSpatial extends ItemFilterBase {
+  type: "spatial";
+  state?: Record<string, string | number | boolean | null | undefined>;
+}
+
+/** Normalized filter object emitted by `eox-itemfilter` in filter events. */
+export type ItemFilterFilter =
+  | ItemFilterRange
+  | ItemFilterSelect
+  | ItemFilterMultiSelect
+  | ItemFilterText
+  | ItemFilterSpatial;
+
+/** Itemfilter filter map keyed by filter key. */
+export type ItemFilterFilters = Record<string, ItemFilterFilter>;
+
 /** @ignore */
 export interface Render {
   /** REQUIRED. Array of asset keys referencing the assets that are used to make the rendering */

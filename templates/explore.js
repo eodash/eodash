@@ -81,7 +81,7 @@ export default {
       widget: {
         name: "EodashItemCatalog",
         properties: {
-          useMosaic: false,
+          useMosaic: true,
           layoutTarget: "expert",
         },
       },

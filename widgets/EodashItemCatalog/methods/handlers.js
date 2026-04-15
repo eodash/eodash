@@ -1,31 +1,66 @@
 import { inAndOut } from "ol/easing";
 import { renderItemsFeatures } from "./map";
+import { scheduleMosaicUpdate } from "@/eodashSTAC/mosaic";
 
 /**
- * @param {import("vue").Ref<import("@/types").GeoJsonFeature[]>} currentItems
- * @param {import("vue").Ref<import("@eox/map").EOxMap | null>} mapElement
- * @param {string[] | undefined} hoverProperties
- * @param {import("vue").Ref<any>} [itemfilterEl]
- * @param {import("vue").Ref<import("stac-ts").StacItem | null>} [selectedItemRef]
+ * Build a compact signature from filter key + stringified state.
+ * @param {import("@/types").ItemFilterFilters | undefined} filters
+ * @returns {string}
  */
-export const createOnFilterHandler = (
+const getFiltersSignature = (filters) => {
+  if (!filters) return "";
+  return Object.keys(filters)
+    .sort()
+    .map((key) => `${key}:${filters[key]?.stringifiedState ?? ""}`)
+    .join("|");
+};
+
+/**
+ * @param {{
+ *  currentItems: import("vue").Ref<import("@/types").GeoJsonFeature[]>,
+ *  mapElement: import("vue").Ref<import("@eox/map").EOxMap | null>,
+ *  hoverProperties: string[] | undefined,
+ *  itemfilterEl?: import("vue").Ref<any>,
+ *  selectedItemRef?: import("vue").Ref<import("stac-ts").StacItem | null>,
+ *  mosaicOptions?: {
+ *    isMosaicEnabled: import("vue").ComputedRef<boolean>,
+ *    getMosaicEndpoint: () => string | null | undefined
+ *  } | null
+ * }} params
+ */
+export const createOnFilterHandler = ({
   currentItems,
   mapElement,
   hoverProperties,
   itemfilterEl,
   selectedItemRef,
-) => {
+  mosaicOptions = null,
+}) => {
+  let lastScheduledFiltersKey = "";
+
   /** @param {CustomEvent} evt */
   return (evt) => {
     currentItems.value = evt.detail.results;
     renderItemsFeatures(currentItems.value, mapElement, hoverProperties);
+
     const selected = selectedItemRef?.value;
-    if (!selected || !itemfilterEl?.value) return;
-    // const results = /** @type {any[]} */ (itemfilterEl.value.results ?? []);
-    // // if (!results.some((r) => r.id === selected.id)) {
-    // //   itemfilterEl.value.results = [selected, ...results];
-    // // }
-    itemfilterEl.value.selectedResult = selected;
+    if (selected && itemfilterEl?.value) {
+      itemfilterEl.value.selectedResult = selected;
+    }
+
+    if (mosaicOptions?.isMosaicEnabled.value && !selected) {
+      const nextFiltersKey = getFiltersSignature(evt.detail.filters);
+      if (nextFiltersKey === lastScheduledFiltersKey) {
+        return;
+      }
+
+      lastScheduledFiltersKey = nextFiltersKey;
+      scheduleMosaicUpdate(
+        mosaicOptions.getMosaicEndpoint(),
+        undefined,
+        evt.detail.filters,
+      );
+    }
   };
 };
 /**

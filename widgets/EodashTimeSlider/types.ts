@@ -1,3 +1,5 @@
+import type { ItemFilterFilters } from "@/types";
+
 export interface TimelineSelectionEventDetail {
   date: [string, string];
   instances: {
@@ -5,7 +7,7 @@ export interface TimelineSelectionEventDetail {
     layer: import("ol/layer/Layer").default;
     source: import("ol/source/Source").default;
   };
-  filters: Record<string, Filter>;
+  filters: ItemFilterFilters;
   selectedItems: {
     [layerId: string]: SelectedItem[];
   };
@@ -31,7 +33,7 @@ export interface TimelineExportEventDetail {
     zoom: number;
     center: [number, number];
   };
-  filters: Record<string, Filter>;
+  filters: ItemFilterFilters;
   instances: {
     layer: import("ol/layer/Layer").default;
     source: import("ol/source/Source").default;
@@ -48,22 +50,5 @@ export interface TimelineExportEventDetail {
 
 export interface ItemFilterEventDetail {
   result: Record<string, any>;
-  filters: Record<string, Filter>;
-}
-
-export interface Filter {
-  key: string;
-  title: string;
-  type: "range" | "multiselect" | "select";
-  expanded: boolean;
-  min: number;
-  max: number;
-  step: number;
-  // this state is mainly for range filters, select and multiselect to be added.
-  state: {
-    min: number;
-    max: number;
-  };
-  dirty: boolean;
-  stringifiedState: string;
+  filters: ItemFilterFilters;
 }

@@ -76,7 +76,7 @@ const selectedRange = /** @type {import("vue").Ref<[string, string]>} */ (
 );
 const initDate = [startDate.toISOString().split("T")[0]];
 
-/** @type {import("vue").Ref<Record<string, import("./types").Filter>>} */
+/** @type {import("vue").Ref<import("@/types").ItemFilterFilters>} */
 const currentFilters = ref({});
 
 const hasMultipleItems = computed(() => {

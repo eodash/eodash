@@ -4,14 +4,14 @@ import axios from "@/plugins/axios";
 import { mapEl } from "@/store/states";
 import { removeLayers, sanitizeBbox } from "@/eodashSTAC/helpers";
 import { getLayers } from "@/store/actions";
-import { updateMosaicLayer } from "@/eodashSTAC/mosaic";
+import { buildStacFilters } from "./index";
 
 /**
  * @param {string} stacEndpoint
  * @param {[string, string]} selectedRange
  * @param {import("../types").TimelineExportEventDetail["selectedRangeItems"]} selectedRangeItems
  * @param {import("vue").Ref<import("stac-ts").StacCollection|null>} selectedStac
- * @param {Record<string, import("../types").Filter>} filters
+ * @param {import("@/types").ItemFilterFilters} filters
  */
 export async function createAnimationLayers(
   stacEndpoint,
@@ -66,7 +66,7 @@ export async function createAnimationLayers(
  * @param {{min: string, max: string}} date
  * @param {number[] | undefined} bbox
  * @param {import("vue").Ref<import("stac-ts").StacCollection|null>} selectedStac
- * @param {Record<string, import("../types").Filter>} filters
+ * @param {import("@/types").ItemFilterFilters} filters
  * @return {Promise<Array<{ layers: Record<string, any>[]; date: string }>>}
  */
 async function createAPILayers(
@@ -233,72 +233,5 @@ export function restoreLayersVisibility(layers) {
   return layers;
 }
 
-/**
- * Build STAC API filter string from TimeSlider filters
- * @param {Record<string, import("../types").Filter>} filters
- * @returns {string}
- */
-export function buildStacFilters(filters) {
-  if (!filters) return "";
-
-  /** @type {string[]} */
-  const stacFilters = [];
-
-  Object.values(filters).forEach((filter) => {
-    if (!filter || !filter.key) return;
-
-    // strip 'properties.' from key if present
-    const propName = filter.key.startsWith("properties.")
-      ? filter.key.replace("properties.", "")
-      : filter.key;
-
-    if (filter.type === "range" && filter.state) {
-      if (
-        filter.state.min !== undefined &&
-        filter.state.min > (filter.min ?? -Infinity)
-      ) {
-        stacFilters.push(`${propName}>=${filter.state.min}`);
-      }
-      if (
-        filter.state.max !== undefined &&
-        filter.state.max < (filter.max ?? Infinity)
-      ) {
-        stacFilters.push(`${propName}<=${filter.state.max}`);
-      }
-    } else if (filter.type === "multiselect" && filter.stringifiedState) {
-      if (filter.stringifiedState.length > 0) {
-        stacFilters.push(`${propName} IN (${filter.stringifiedState})`);
-      }
-    } else if (filter.type === "select" && filter.stringifiedState) {
-      if (filter.stringifiedState) {
-        stacFilters.push(`${propName}='${filter.stringifiedState}'`);
-      }
-    }
-  });
-
-  return stacFilters.join(" AND ");
-}
-/// mosaic update helpers
-
-/** @type {ReturnType<typeof setTimeout> | null} */
-let mosaicUpdateTimer = null;
-
-/**
- * Schedules an update to the mosaic layer with a debounce.
- * @param {string | undefined | null} mosaicEndpoint
- * @param {[string, string]} timeRange
- * @param {Record<string, import("../types").Filter>} [filters]
- * @param {number} [delay=300]
- */
-export function scheduleMosaicUpdate(
-  mosaicEndpoint,
-  timeRange,
-  filters,
-  delay = 300,
-) {
-  if (mosaicUpdateTimer !== null) clearTimeout(mosaicUpdateTimer);
-  mosaicUpdateTimer = setTimeout(() => {
-    mosaicUpdateTimer = null;
-    updateMosaicLayer(mosaicEndpoint, { timeRange, filters });
-  }, delay);
-}
+export { buildCqlFilter as buildStacFilters } from "@/eodashSTAC/cql";
+export { scheduleMosaicUpdate } from "@/eodashSTAC/mosaic";
