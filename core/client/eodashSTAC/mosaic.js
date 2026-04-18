@@ -122,9 +122,9 @@ export async function createMosaicLayer(
     params.set(
       "time",
       '["' +
-        timeRange[0].split("T")[0] +
+        new Date(timeRange[0]).toISOString().split("T")[0] +
         '","' +
-        timeRange[1].split("T")[0] +
+        new Date(timeRange[1]).toISOString().split("T")[0] +
         '"]',
     );
   } else {
