@@ -3,8 +3,7 @@ import {
   applyProcessLayersToMap,
   extractGeometries,
   getBboxProperty,
-  getDrawToolsProperty,
-  updateJsonformSchemaTarget,
+  getDrawToolsProperties,
 } from "./utils";
 import {
   compareIndicator,
@@ -17,13 +16,12 @@ import {
   compareChartData,
   compareChartSpec,
 } from "@/store/states";
-import axios from "@/plugins/axios";
 import { processCharts, processLayers, processSTAC } from "./outputs";
 import { handleLayersCustomEndpoints } from "./custom-endpoints/layers";
 import { handleChartCustomEndpoints } from "./custom-endpoints/chart";
 import { useSTAcStore } from "@/store/stac";
 import { useGetSubCodeId } from "@/composables";
-import { getLayers } from "@/store/actions";
+import { getLayers, getCompareLayers } from "@/store/actions";
 
 /**
  * Fetch and set the jsonform schema to initialize the process
@@ -32,7 +30,6 @@ import { getLayers } from "@/store/actions";
  * @async
  * @param {Object} params
  * @param {import("vue").Ref<import("stac-ts").StacCollection | null>} params.selectedStac
- * @param {import("vue").Ref<import("@eox/jsonform").EOxJSONForm | null>} params.jsonformEl
  * @param {import("vue").Ref<Record<string,any> | null>} params.jsonformSchema
  * @param {import("vue").Ref<any[]>} params.processResults
  * @param {import("vue").Ref<boolean>} params.isProcessed
@@ -42,7 +39,6 @@ import { getLayers } from "@/store/actions";
  */
 export async function initProcess({
   selectedStac,
-  jsonformEl,
   jsonformSchema,
   isProcessed,
   processResults,
@@ -53,10 +49,10 @@ export async function initProcess({
   const isPoiAlive = enableCompare ? !!comparePoi.value : !!poi.value;
   let updatedJsonform = null;
   if (selectedStac.value?.["eodash:jsonform"]) {
-    updatedJsonform = await axios
+    updatedJsonform = await fetch(
       //@ts-expect-error eodash extention
-      .get(selectedStac.value["eodash:jsonform"])
-      .then((resp) => resp.data);
+      selectedStac.value["eodash:jsonform"],
+    ).then((resp) => resp.json());
   }
 
   if (!updatedJsonform && isPoiAlive) {
@@ -72,17 +68,13 @@ export async function initProcess({
     enableCompare,
   });
 
-  await jsonformEl.value?.editor.destroy();
   if (updatedJsonform) {
     // make sure correct target layer id is used in jsonform
-    let newJsonForm = null;
-    newJsonForm = await updateJsonformIdentifier({
+    const newJsonForm = await updateJsonformIdentifier({
       jsonformSchema: updatedJsonform,
-      newLayers: getLayers(),
+      newLayers: enableCompare ? getCompareLayers() : getLayers(),
+      enableCompare,
     });
-    if (enableCompare) {
-      newJsonForm = updateJsonformSchemaTarget(newJsonForm);
-    }
     // trigger jsonform update in next tick
     jsonformSchema.value = null;
     await new Promise((resolve) => setTimeout(resolve, 0));
@@ -98,62 +90,76 @@ export async function initProcess({
  * @param {Object} params
  * @param {Record<string,any> | null} params.jsonformSchema params.jsonformSchema
  * @param {Record<string, any>[] | undefined} params.newLayers params.newLayers
- * @returns {Promise<Record<string,any> | null | undefined>} updated jsonform schema
+ * @param { boolean } params.enableCompare params.enableCompare
+ * @returns {Promise<Record<string,any> | null>} updated jsonform schema
  */
-export async function updateJsonformIdentifier({ jsonformSchema, newLayers }) {
+export async function updateJsonformIdentifier({
+  jsonformSchema,
+  newLayers,
+  enableCompare,
+}) {
   const form = jsonformSchema;
   if (!form) {
-    return;
+    return null;
   }
-  const drawToolsProperty = getDrawToolsProperty(form);
-  if (
-    drawToolsProperty &&
-    newLayers &&
-    form?.properties[drawToolsProperty]?.options?.drawtools?.layerId
-  ) {
-    // get partial or full id and try to match with correct eoxmap layer
-    // check if newLayers is an array or an object with layers property
-    let layers = newLayers;
-    // @ts-expect-error TODO payload coming from time update sometimes is not an object with layers property
-    if (newLayers.layers && Array.isArray(newLayers.layers)) {
-      // @ts-expect-error TODO payload coming from time update sometimes is not an object with layers property
-      layers = newLayers.layers;
+  const drawToolsProperties = getDrawToolsProperties(form);
+  drawToolsProperties.forEach((drawToolsProperty) => {
+    if (
+      drawToolsProperty &&
+      form?.properties[drawToolsProperty]?.options?.drawtools?.for &&
+      enableCompare
+    ) {
+      form.properties[drawToolsProperty].options.drawtools.for =
+        "eox-map#compare";
     }
-
-    const layerId =
-      form.properties[drawToolsProperty].options.drawtools.layerId.split(
-        ";:;",
-      )[0];
-    let matchedLayerId = null;
-    // layers are not flat can be grouped, we need to recursively search
-    const traverseLayers = (
-      /** @type {Record<string, any>[] | undefined} */ layersArray,
-    ) => {
-      if (!layersArray) {
-        return;
+    if (
+      drawToolsProperty &&
+      newLayers &&
+      form?.properties[drawToolsProperty]?.options?.drawtools?.layerId
+    ) {
+      // get partial or full id and try to match with correct eoxmap layer
+      // check if newLayers is an array or an object with layers property
+      let layers = newLayers;
+      // @ts-expect-error TODO payload coming from time update sometimes is not an object with layers property
+      if (newLayers.layers && Array.isArray(newLayers.layers)) {
+        // @ts-expect-error TODO payload coming from time update sometimes is not an object with layers property
+        layers = newLayers.layers;
       }
-      for (const layer of layersArray) {
-        if (layer.type === "Group" && Array.isArray(layer.layers)) {
-          traverseLayers(layer.layers);
-        } else {
-          if (layer.properties?.id?.startsWith(layerId)) {
-            matchedLayerId = layer.properties.id;
-            break;
+
+      const layerId =
+        form.properties[drawToolsProperty].options.drawtools.layerId.split(
+          ";:;",
+        )[0];
+      let matchedLayerId = null;
+      // layers are not flat can be grouped, we need to recursively search
+      const traverseLayers = (
+        /** @type {Record<string, any>[] | undefined} */ layersArray,
+      ) => {
+        if (!layersArray) {
+          return;
+        }
+        for (const layer of layersArray) {
+          if (layer.type === "Group" && Array.isArray(layer.layers)) {
+            traverseLayers(layer.layers);
+          } else {
+            if (layer.properties?.id?.startsWith(layerId)) {
+              matchedLayerId = layer.properties.id;
+              break;
+            }
           }
         }
+      };
+      traverseLayers(layers);
+      if (matchedLayerId) {
+        form.properties[drawToolsProperty].options.drawtools.layerId =
+          matchedLayerId;
+      } else {
+        console.warn(
+          `Could not find matching layer for processing form with id: ${layerId}`,
+        );
       }
-    };
-    traverseLayers(layers);
-    if (matchedLayerId) {
-      form.properties.feature.options.drawtools.layerId = matchedLayerId;
-      return form;
-    } else {
-      console.warn(
-        `Could not find matching layer for processing form with id: ${layerId}`,
-      );
-      return null;
     }
-  }
+  });
   return form;
 }
 
@@ -192,6 +198,15 @@ export async function handleProcesses({
     );
 
     const bboxProperty = getBboxProperty(jsonformSchema.value);
+    // Preserve raw form value before extractGeometries mutates it.
+    // Needed so POST multiQuery can iterate original GeoJSON Feature objects.
+    // Uses JSON round-trip instead of structuredClone to handle OL Feature
+    // objects from drawtools (which contain non-cloneable methods).
+    const rawJsonformValue = JSON.parse(
+      JSON.stringify(
+        /** @type {Record<string, any>} */ (jsonformEl.value?.value ?? {}),
+      ),
+    );
     const jsonformValue = /** @type {Record<string,any>} */ (
       jsonformEl.value?.value
     );
@@ -210,6 +225,7 @@ export async function handleProcesses({
     [tempChartSpec, usedChartData.value] = await processCharts({
       links: serviceLinks,
       jsonformValue: { ...(jsonformValue ?? {}) },
+      rawJsonformValue,
       jsonformSchema: jsonformSchema.value,
       enableCompare,
       selectedStac: selectedStac.value,

@@ -372,11 +372,11 @@ export const findLayersByLayerPrefix = (layers, referenceLayer) => {
   }
   const refId = referenceLayer?.properties?.id;
 
-  if (typeof refId !== "string" || !refId.includes(";")) {
-    throw new Error("Reference layer ID must contain a ';' separator.");
+  if (typeof refId !== "string" || !refId.includes(";:;")) {
+    throw new Error("Reference layer ID must contain a ';:;' separator.");
   }
 
-  const prefix = refId.split(";")[0];
+  const prefix = refId.split(";:;")[0];
   const matches = [];
 
   for (const layer of layers) {
@@ -384,7 +384,7 @@ export const findLayersByLayerPrefix = (layers, referenceLayer) => {
       matches.push(...findLayersByLayerPrefix(layer.layers, referenceLayer));
     } else {
       const id = layer?.properties?.id;
-      if (typeof id === "string" && id.startsWith(prefix)) {
+      if (typeof id === "string" && id.split(";:;")[0] === prefix) {
         matches.push(layer);
       }
     }
@@ -412,6 +412,39 @@ export const findLayer = (layers, layer) => {
       return lyr;
     }
   }
+};
+
+/**
+ * Removes JSON layers by ID from the layer tree
+ *  @param {import("@eox/map").EoxLayer[]} layers
+ *  @param {string[]} layerIds
+ *  @returns {import("@eox/map").EoxLayer[]}
+ **/
+export const removeLayers = (layers, layerIds) => {
+  const result = [];
+  for (const layer of layers) {
+    // if the layer is hidden, do not include it without checking if it's a group
+    if (layer.properties?.id && layerIds.includes(layer.properties.id)) {
+      continue;
+    }
+    if (layer.type === "Group" && Array.isArray(layer.layers)) {
+      const newGroupLayers = removeLayers(layer.layers, layerIds);
+      // if the group is not hidden, add it with the updated layers (if any were removed)
+      result.push(
+        newGroupLayers !== layer.layers
+          ? { ...layer, layers: newGroupLayers }
+          : layer,
+      );
+      continue;
+    }
+
+    result.push(layer);
+  }
+
+  return result.length === layers.length &&
+    result.every((l, i) => l === layers[i])
+    ? layers
+    : result;
 };
 
 /**

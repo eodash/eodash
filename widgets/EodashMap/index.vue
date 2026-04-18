@@ -61,6 +61,7 @@
         :enableZoom="(indicator || compareIndicator || poi) ? btnsProps.enableZoom : false
         "
         :enableGlobe="(indicator || compareIndicator || poi) ? btnsProps.enableGlobe : false"
+        :enableFeedback="(indicator || compareIndicator || poi) ? btnsProps.enableFeedback : false"
         :searchParams="btnsProps.searchParams"
       />
     </div>
@@ -69,7 +70,7 @@
 <script setup>
 import "@eox/map";
 import "@eox/map/src/plugins/advancedLayersAndSources";
-import { computed, onMounted, ref, toRaw, useTemplateRef } from "vue";
+import { nextTick, computed, onMounted, ref, toRaw, useTemplateRef } from "vue";
 import {
   datetime,
   mapEl,
@@ -158,6 +159,7 @@ const props = defineProps({
      * enableZoom?: boolean;
      * enableGlobe?: boolean;
      * enableMosaic?: boolean;
+     * enableFeedback?: boolean;
      * enableCompareIndicators?: boolean | {
      *   compareTemplate?:string;
      *   fallbackTemplate?:string;
@@ -174,6 +176,7 @@ const props = defineProps({
       enableZoom: true,
       enableGlobe: true,
       enableMosaic: true,
+      enableFeedback: true,
       searchParams: {},
     }),
   },
@@ -218,6 +221,7 @@ const btnsProps = computed(() => ({
   enableZoom: props.btns.enableZoom ?? true,
   enableGlobe: props.btns.enableGlobe ?? true,
   enableMosaic: props.btns.enableMosaic ?? true,
+  enableFeedback: props.btns.enableFeedback ?? true,
   searchParams: props.btns.searchParams,
 }));
 
@@ -279,10 +283,10 @@ const eoxMapCompareLayers = ref(
   /** @type {Record<string,any>[]} */ (props.baseLayers),
 );
 
-const animationOptions = {
-  duration: 1200,
+const animationOptions = ref({
+  duration: 0, // Initially set to 0 for an instant "jump"
   easing: inAndOut,
-};
+});
 
 /** @type {import("vue").Ref<import("@eox/map").EOxMap | null>} */
 const eoxMap = useTemplateRef("eoxMap");
@@ -347,6 +351,10 @@ onMounted(() => {
     selectedItem,
     props.baseLayers,
   );
+  // After the initial mount and "jump", set the animation duration for subsequent flyTo calls
+  nextTick(() => {
+    animationOptions.value.duration = 1200;
+  });
 });
 
 useUpdateTooltipProperties(eodashCollections, tooltipProperties);
