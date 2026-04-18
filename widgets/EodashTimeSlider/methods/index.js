@@ -309,7 +309,11 @@ export function scheduleMosaicUpdate(
   if (mosaicUpdateTimer !== null) clearTimeout(mosaicUpdateTimer);
   mosaicUpdateTimer = setTimeout(() => {
     mosaicUpdateTimer = null;
-    //@ts-expect-error todo
-    updateMosaicLayer(mosaicEndpoint, { timeRange, collection, cloudCover });
+
+    updateMosaicLayer(
+      //@ts-expect-error todo
+      mosaicEndpoint,
+      { timeRange, collection, cloudCover: cloudCover?.min },
+    );
   }, delay);
 }
