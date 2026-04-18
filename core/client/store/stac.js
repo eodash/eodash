@@ -36,7 +36,7 @@ export const useSTAcStore = defineStore("stac", () => {
 
   /**
    * List of supported endpoints for upscaling
-   * @type {import("vue").Ref<string[]>}
+   * @type {import("vue").Ref<Array<string | { url: string; titilerVersion?: 1 | 2 }>>}
    */
   const supportedUpscalingEndpoints = ref([]);
 
