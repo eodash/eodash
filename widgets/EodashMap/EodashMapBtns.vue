@@ -171,7 +171,7 @@ import "@eox/geosearch";
 
 if (!customElements.get("eox-feedback")) {
   //@ts-expect-error will be fixed in https://github.com/EOX-A/EOxElements/pull/2238
-  await import ("@eox/feedback");
+  await import("@eox/feedback");
 }
 const eodash = useEodash();
 
