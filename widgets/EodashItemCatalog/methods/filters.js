@@ -49,9 +49,10 @@ export const createSubtitleProperty = (filtersConfig) => {
  *   state?: Record<string, boolean>,
  *   placeholder?: string,
  * }>} filtersConfig
+ * @param {boolean} datetimeFilter
  */
 // Transform simple filter configs into eox-itemfilter format
-export const createFilterProperties = (filtersConfig) => {
+export const createFilterProperties = (filtersConfig, datetimeFilter) => {
   const store = useSTAcStore();
   const baseFilters = [
     {
@@ -63,6 +64,12 @@ export const createFilterProperties = (filtersConfig) => {
       filterKeys: store.stac?.map((col) => col.id) || [],
       ...(indicator.value && { state: { [indicator.value]: true } }),
     },
+    (datetimeFilter && {
+      key: "datetime",
+      title: "Date",
+      type: "range",
+      format: "date",
+    }),
   ];
 
   const dynamicFilters = filtersConfig
@@ -112,12 +119,13 @@ export const createFilterProperties = (filtersConfig) => {
 
 /**
  * Build search URL with proper STAC API parameters
- * @param {Record<string,any>} filters
+ * @param {import("@/types").ItemFilterFilters} filters
  * @param {boolean} bboxFilter
+ * @param {boolean} datetimeFilter
  * @param {string} [sortBy]
  * @returns {string}
  */
-export const buildSearchUrl = (filters, bboxFilter, sortBy) => {
+export const buildSearchUrl = (filters, bboxFilter, datetimeFilter,   sortBy) => {
   const store = useSTAcStore();
   const params = new URLSearchParams();
 
@@ -133,6 +141,13 @@ export const buildSearchUrl = (filters, bboxFilter, sortBy) => {
       "bbox",
       sanitizeBbox([...mapEl.value.lonLatExtent]).join(","),
     );
+  }
+
+  if (datetimeFilter) {
+    const datetime = formatDatetimeParam(/** @type {import("@/types").ItemFilterRange} */ (filters.datetime));
+    if (datetime) {
+      params.append("datetime", datetime);
+    }
   }
 
   const cqlFilter = buildCqlFilter(filters);
@@ -152,6 +167,7 @@ export const buildSearchUrl = (filters, bboxFilter, sortBy) => {
  *
  * @param {import("../types").FiltersConfig} propsFilters
  * @param {boolean} bboxFilter
+ * @param {boolean} datetimeFilter
  * @param {import("vue").Ref<import("@/types").GeoJsonFeature[]>} currentItems
  * @param {import("vue").Ref<string>} sortBy
  * @param {import("vue").Ref<import("stac-ts").StacItem | null>} [selectedItemRef]
@@ -159,6 +175,7 @@ export const buildSearchUrl = (filters, bboxFilter, sortBy) => {
 export const createExternalFilter = (
   propsFilters,
   bboxFilter,
+  datetimeFilter,
   currentItems,
   sortBy,
   selectedItemRef,
@@ -169,7 +186,7 @@ export const createExternalFilter = (
    * @param {Record<string,any>} filters
    */
   return (_items, filters) => ({
-    url: buildSearchUrl(filters, bboxFilter, sortBy.value),
+    url: buildSearchUrl(filters, bboxFilter,datetimeFilter, sortBy.value),
     /** @param {string} url */
     fetchFn: async (url) => {
       controller.abort();
@@ -197,3 +214,23 @@ export const createExternalFilter = (
     },
   });
 };
+/**
+ *
+ * @param {import("@/types").ItemFilterRange} datetimeFilter
+ */
+function formatDatetimeParam(datetimeFilter){
+  if (!datetimeFilter) {
+    return null;
+  }
+  const min = datetimeFilter?.min ? new Date(datetimeFilter.min) : null;
+  const max = datetimeFilter?.max ? new Date(datetimeFilter.max) : null;
+  const start = datetimeFilter.state?.min ? new Date(datetimeFilter.state.min) : null;
+  const end = datetimeFilter.state?.max ? new Date(datetimeFilter.state.max) : null;
+  const includeStart = start && (!min || start > min);
+  const includeEnd = end && (!max || end < max);
+  if (!includeStart && !includeEnd) {
+    return null;
+  }
+  return `${includeStart ? start.toISOString() : ".."}/${includeEnd ? end.toISOString() : ".."}`;
+
+}

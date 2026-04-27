@@ -156,6 +156,10 @@ export const mosaicState = reactive({
   shouldRender: null,
   /** @type {number} */
   visibilityThreshold: 8,
+  /** @type {boolean} */
+  isItemView: false,
+  /** @type {(() => void) | null} */
+  onReturnToOverview: null,
 });
 
 /** @type {Map<string, import("stac-ts").StacItem[]>} */

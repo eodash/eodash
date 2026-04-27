@@ -146,6 +146,10 @@ const props = defineProps({
     type: String,
     default: "Items:",
   },
+  datetimeFilter: {
+    type: Boolean,
+    default: false,
+  },
   bboxFilter: {
     type: Boolean,
     default: true,
@@ -185,7 +189,7 @@ const props = defineProps({
   mosaicIndicators: {
     /** @type {import("vue").PropType<string[]>} */
     type: Array,
-    default: () => [],
+    required: false,
   },
 });
 
@@ -233,9 +237,17 @@ mosaicState.shouldRender = props.useMosaic
   ? () => !activeSelectedItem.value
   : null;
 
+if (props.useMosaic) {
+  mosaicState.onReturnToOverview = () => {
+    activeSelectedItem.value = null;
+  };
+}
+
 onUnmounted(() => {
   store.selectedItem = null;
   mosaicState.shouldRender = null;
+  mosaicState.isItemView = false;
+  mosaicState.onReturnToOverview = null;
 });
 
 const activeSelectedItem =
@@ -256,13 +268,14 @@ if (store.stacEndpoint) {
     .then((res) => (currentItems.value = res.data.features));
 }
 
-const filterProperties = createFilterProperties(props.filters);
+const filterProperties = createFilterProperties(props.filters, props.datetimeFilter);
 
 const subTitleProperty = createSubtitleProperty(props.filters);
 
 const externalFilterHandler = createExternalFilter(
   props.filters,
   props.bboxFilter,
+  props.datetimeFilter,
   currentItems,
   sortByParam,
   activeSelectedItem,
@@ -271,6 +284,10 @@ const externalFilterHandler = createExternalFilter(
 watch(activeSelectedItem, (item) => {
   if (itemfilterEl.value) {
     itemfilterEl.value.selectedResult = item ?? null;
+  }
+
+  if (isMosaicEnabled.value) {
+    mosaicState.isItemView = !!item;
   }
 
   // restore mosaic when item is deselected

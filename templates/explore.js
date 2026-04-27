@@ -82,6 +82,7 @@ export default {
         name: "EodashItemCatalog",
         properties: {
           useMosaic: true,
+          // mosaicIndicators: ["sentinel-2-l2a"],
           layoutTarget: "expert",
         },
       },

@@ -215,7 +215,7 @@ export function useInitMosaic(mosaicEndpoint, timeRange, indicators) {
   function shouldInitiate() {
     if (mosaicState.shouldRender && !mosaicState.shouldRender()) return false;
     if (!store.selectedStac?.id) return false;
-    if (indicators?.length && !indicators.includes(store.selectedStac.id))
+    if (indicators !== undefined && !indicators.includes(store.selectedStac.id))
       return false;
     return true;
   }
