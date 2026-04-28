@@ -51,7 +51,7 @@ export const useInitProcess = ({
       // we need to update jsonform on time change in cases
       // when the feature selection layer was time-based,
       // so that it attaches to a correct new layer
-      const newJsonForm = updateJsonformIdentifier({
+      const newJsonForm = await updateJsonformIdentifier({
         jsonformSchema: jsonformSchema.value,
         newLayers: enableCompare ? getCompareLayers() : getLayers(),
         enableCompare,
