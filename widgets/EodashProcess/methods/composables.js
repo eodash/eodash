@@ -1,5 +1,5 @@
 import { initProcess, updateJsonformIdentifier } from "./handling";
-import { nextTick, onMounted, watch } from "vue";
+import { nextTick, onMounted, onUnmounted, watch } from "vue";
 import { useOnLayersUpdate } from "@/composables";
 import { getCompareLayers, getLayers } from "@/store/actions";
 /**
@@ -53,7 +53,7 @@ export const useInitProcess = ({
       // so that it attaches to a correct new layer
       const newJsonForm = updateJsonformIdentifier({
         jsonformSchema: jsonformSchema.value,
-        newLayers: enableCompare ? getCompareLayers() : getLayers() ,
+        newLayers: enableCompare ? getCompareLayers() : getLayers(),
         enableCompare,
         mapElement: mapElement.value,
       });
@@ -94,38 +94,39 @@ export function useAutoExec(
   startProcess,
 ) {
   /**
-   * @param {CustomEvent} _e
+   * @param {any} _e
    **/
   const onJsonFormChange = async (_e) => {
     await startProcess();
-  };
-
-  const addEventListener = async () => {
-    await nextTick(() => {
-      //@ts-expect-error TODO
-      jsonformEl.value?.addEventListener("change", onJsonFormChange);
-    });
-  };
-  const removeEventListener = () => {
-    //@ts-expect-error TODO
-    jsonformEl.value?.removeEventListener("change", onJsonFormChange);
   };
 
   watch(jsonformSchema, (updatedSchema) => {
     autoExec.value = updatedSchema?.options?.["execute"] || false;
   });
 
-  onMounted(() => {
-    watch(
-      autoExec,
-      async (exec) => {
-        if (exec) {
-          await addEventListener();
-        } else {
-          removeEventListener();
-        }
-      },
-      { immediate: true },
-    );
+  // Re-attach listener whenever the element or autoExec changes
+  const stop = watch(
+    [autoExec, jsonformEl],
+    async ([exec, el], [_prevExec, prevEl]) => {
+      // Cleanup if previous element existed
+      if (prevEl) {
+        prevEl.removeEventListener("change", onJsonFormChange);
+      }
+      // Add if enabled and we have an element
+      if (exec && el) {
+        // remove listener before adding to avoid duplicates in case of element change
+        el.removeEventListener("change", onJsonFormChange);
+        await nextTick();
+        el.addEventListener("change", onJsonFormChange);
+      }
+    },
+    { immediate: true },
+  );
+
+  onUnmounted(() => {
+    if (jsonformEl.value) {
+      jsonformEl.value.removeEventListener("change", onJsonFormChange);
+    }
+    stop();
   });
 }

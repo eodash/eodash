@@ -78,7 +78,6 @@ export async function initProcess({
       enableCompare,
       mapElement,
     });
-    console.log("Updated jsonform after init:", newJsonForm);
     jsonformSchema.value = newJsonForm;
   }
 }
@@ -113,9 +112,9 @@ function findLayerIdByPrefix(layers, prefix) {
  * @param {Record<string, any>[] | undefined} params.newLayers
  * @param {boolean} params.enableCompare
  * @param {import("@eox/map").EOxMap | null | undefined} params.mapElement
- * @returns {Record<string,any> | null} updated schema, or null if a layerId could not be resolved
+ * @returns {Promise<Record<string,any> | null>} updated schema, or null if a layerId could not be resolved
  */
-export function updateJsonformIdentifier({
+export async function updateJsonformIdentifier({
   jsonformSchema,
   newLayers,
   enableCompare,

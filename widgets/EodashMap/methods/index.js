@@ -145,7 +145,6 @@ export const useInitMap = (
             JSON.parse(JSON.stringify(layersCollection)),
           );
           mapLayers.value = layersCollection;
-          console.log("Emitting layers update for time change",layersCollection[1].layers[0]?.interactions);
           useEmitLayersUpdate(
             mapElement.value?.id === "compare"
               ? "compareTime:updated"
@@ -217,7 +216,6 @@ export const useInitMap = (
           JSON.parse(JSON.stringify(layersCollection)),
         );
         mapLayers.value = layersCollection;
-        console.log("Emitting layers update for indicator change",layersCollection[1].layers[0]?.interactions);
         // Emit event to update layers
         await useEmitLayersUpdate(
           mapElement.value?.id === "compare"
