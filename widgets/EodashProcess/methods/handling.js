@@ -72,7 +72,7 @@ export async function initProcess({
 
   if (updatedJsonform) {
     // make sure correct target layer id is used in jsonform
-    const newJsonForm = updateJsonformIdentifier({
+    const newJsonForm = await updateJsonformIdentifier({
       jsonformSchema: updatedJsonform,
       newLayers: enableCompare ? getCompareLayers() : getLayers(),
       enableCompare,
