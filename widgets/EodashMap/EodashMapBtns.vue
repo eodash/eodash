@@ -138,7 +138,10 @@
     >
       <template v-if="showItemViewHint">
         Viewing individual item —
-        <a class="mosaic-hint-link" @click.prevent="mosaicState.onReturnToOverview?.()">
+        <a
+          class="mosaic-hint-link"
+          @click.prevent="mosaicState.onReturnToOverview?.()"
+        >
           Back to overview
         </a>
       </template>

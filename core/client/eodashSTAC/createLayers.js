@@ -12,6 +12,7 @@ import {
   extractEoxLegendLink,
   addTooltipInteraction,
   fetchStyle,
+  generateGeoZarrStyle,
 } from "./helpers";
 import { handleAuthenticationOfLink } from "./auth";
 import log from "loglevel";
@@ -60,6 +61,8 @@ export async function createLayersFromAssets(
 
   const fgbIdx = [];
   const fgbSources = [];
+  const zarrAssetIds = [];
+  const zarrIdx = [];
   const assetIds = [];
 
   for (const [idx, assetId] of Object.keys(assets).entries()) {
@@ -71,6 +74,12 @@ export async function createLayersFromAssets(
     } else if (assets[assetId]?.type === "application/vnd.flatgeobuf") {
       fgbSources.push(assets[assetId].href);
       fgbIdx.push(idx);
+    } else if (
+      assets[assetId]?.type ==
+      "application/vnd.zarr; version=3; profile=multiscales"
+    ) {
+      zarrAssetIds.push(assetId);
+      zarrIdx.push(idx);
     } else if (assets[assetId]?.type === "image/tiff") {
       geoTIFFIdx.push(idx);
       geoTIFFSources.push({
@@ -311,6 +320,62 @@ export async function createLayersFromAssets(
       addTooltipInteraction(layer, style);
       jsonArray.push(layer);
       if (stacObject?.["eodash:merge_assets"] !== false) break;
+    }
+  }
+
+  if (zarrAssetIds.length) {
+    for (const [i, assetName] of zarrAssetIds.entries()) {
+      const availableBands =
+        /** @type {{name:String, [key: string]: any}[]} */ (
+          assets[assetName]["bands"] ?? []
+        ).map((band) => band.name);
+
+      const defaultBands = ["b04", "b03", "b02"];
+
+      const fetchedStyle = await fetchStyle(stacObject, undefined, assetName);
+      let { layerConfig, style } = extractLayerConfig(
+        collectionId,
+        fetchedStyle,
+      );
+
+      if (!layerConfig && !style) {
+        const generated = generateGeoZarrStyle(
+          availableBands,
+          defaultBands,
+        );
+        ({ layerConfig, style } = extractLayerConfig(collectionId, generated));
+      }
+
+      let assetLayerId = createAssetID(collectionId, stacObject.id, zarrIdx[i]);
+      if (
+        assets[assetName]?.roles?.includes("overlay") ||
+        assets[assetName]?.roles?.includes("baselayer")
+      ) {
+        assetLayerId = assetName;
+      }
+
+      log.debug("Creating WebGLTile layer from GeoZarr", assetLayerId);
+
+      const layer = {
+        type: "WebGLTile",
+        properties: {
+          id: assetLayerId,
+          title: assets[assetName]?.title || title,
+          layerConfig,
+          layerDatetime,
+        },
+        source: {
+          type: "GeoZarr",
+          url: assets[assetName].href,
+          bands: defaultBands,
+        },
+        ...(style ? { style } : {}),
+      };
+      if (extraProperties) {
+        layer.properties = { ...layer.properties, ...extraProperties };
+      }
+      extractRoles(layer.properties, assets[assetName]);
+      jsonArray.push(layer);
     }
   }
 

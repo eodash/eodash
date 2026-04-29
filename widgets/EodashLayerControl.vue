@@ -37,6 +37,7 @@ import {
   layerControlFormValue,
   layerControlFormValueCompare,
 } from "@/utils/states";
+import { updateGeoZarrBands } from "@/eodashSTAC/helpers";
 import { storeToRefs } from "pinia";
 import { useSTAcStore } from "@/store/stac";
 import { bandsEditorInterface } from "@/utils/bands-editor";
@@ -153,6 +154,8 @@ const debouncedHandleDateTime = (evt) => {
  * @param {Event & {detail:{layer:import("ol/layer").Layer;jsonformValue:Record<string,any>}}} evt
  */
 const onLayerConfigChange = (evt) => {
+  updateGeoZarrBands(evt.detail.layer, evt.detail.jsonformValue);
+
   if (props.map === "second") {
     layerControlFormValueCompare.value = evt.detail.jsonformValue;
   } else {
