@@ -1100,100 +1100,102 @@ export function generateGeoZarrStyle(availableBands, defaultBands) {
       ],
     ],
     jsonform: {
-      properties:{},
-      oneOf: [{
-      type: "object",
-      title: "Band Configuration",
-      properties: {
-        bands: {
-          title: "Band Combination",
-          type: "array",
-          format: "bands",
-          default: defaultBands,
-          items: {
-            type: "string",
-            enum: availableBands,
-            //@ts-expect-error custom jsonform option
-            options: {
-              enum_titles: availableBands.map((b) => b.toUpperCase()),
-              colors,
-            },
-          },
-        },
-        gamma: {
-          type: "number",
-          title: "Gamma Correction",
-          minimum: 0,
-          maximum: 5,
-          step: 0.1,
-          default: 1.5,
-          format: "range",
-        },
-        rescaleRed: {
-          title: "Red Channel",
+      properties: {},
+      oneOf: [
+        {
           type: "object",
+          title: "Band Configuration",
           properties: {
-            minRed: {
-              type: "number",
-              minimum: 0,
-              maximum: 1,
-              format: "range",
-              default: 0,
+            bands: {
+              title: "Band Combination",
+              type: "array",
+              format: "bands",
+              default: defaultBands,
+              items: {
+                type: "string",
+                enum: availableBands,
+                //@ts-expect-error custom jsonform option
+                options: {
+                  enum_titles: availableBands.map((b) => b.toUpperCase()),
+                  colors,
+                },
+              },
             },
-            maxRed: {
+            gamma: {
               type: "number",
+              title: "Gamma Correction",
               minimum: 0,
-              maximum: 1,
+              maximum: 5,
+              step: 0.1,
+              default: 1.5,
               format: "range",
-              default: 0.5,
+            },
+            rescaleRed: {
+              title: "Red Channel",
+              type: "object",
+              properties: {
+                minRed: {
+                  type: "number",
+                  minimum: 0,
+                  maximum: 1,
+                  format: "range",
+                  default: 0,
+                },
+                maxRed: {
+                  type: "number",
+                  minimum: 0,
+                  maximum: 1,
+                  format: "range",
+                  default: 0.5,
+                },
+              },
+              format: "minmax",
+            },
+            rescaleGreen: {
+              title: "Green Channel",
+              type: "object",
+              properties: {
+                minGreen: {
+                  type: "number",
+                  minimum: 0,
+                  maximum: 1,
+                  format: "range",
+                  default: 0,
+                },
+                maxGreen: {
+                  type: "number",
+                  minimum: 0,
+                  maximum: 1,
+                  format: "range",
+                  default: 0.5,
+                },
+              },
+              format: "minmax",
+            },
+            rescaleBlue: {
+              title: "Blue Channel",
+              type: "object",
+              properties: {
+                minBlue: {
+                  type: "number",
+                  minimum: 0,
+                  maximum: 1,
+                  format: "range",
+                  default: 0,
+                },
+                maxBlue: {
+                  type: "number",
+                  minimum: 0,
+                  maximum: 1,
+                  format: "range",
+                  default: 0.5,
+                },
+              },
+              format: "minmax",
             },
           },
-          format: "minmax",
         },
-        rescaleGreen: {
-          title: "Green Channel",
-          type: "object",
-          properties: {
-            minGreen: {
-              type: "number",
-              minimum: 0,
-              maximum: 1,
-              format: "range",
-              default: 0,
-            },
-            maxGreen: {
-              type: "number",
-              minimum: 0,
-              maximum: 1,
-              format: "range",
-              default: 0.5,
-            },
-          },
-          format: "minmax",
-        },
-        rescaleBlue: {
-          title: "Blue Channel",
-          type: "object",
-          properties: {
-            minBlue: {
-              type: "number",
-              minimum: 0,
-              maximum: 1,
-              format: "range",
-              default: 0,
-            },
-            maxBlue: {
-              type: "number",
-              minimum: 0,
-              maximum: 1,
-              format: "range",
-              default: 0.5,
-            },
-          },
-          format: "minmax",
-        },
-      }
-    }],
+      ],
     },
   });
 }
@@ -1230,7 +1232,9 @@ export function updateGeoZarrBands(olLayer, jsonformValue) {
     return false;
   }
   jsonLayer.source.bands = updatedBands;
-  olLayer.setSource(new window.eoxMapAdvancedOlSources.GeoZarr(jsonLayer.source));
-  console.log("GeoZarr bands updated, source rebuilt", updatedBands ,jsonLayer);
+  olLayer.setSource(
+    new window.eoxMapAdvancedOlSources.GeoZarr(jsonLayer.source),
+  );
+  console.log("GeoZarr bands updated, source rebuilt", updatedBands, jsonLayer);
   return true;
 }

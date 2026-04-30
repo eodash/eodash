@@ -235,7 +235,9 @@ export class EodashCollection {
           timeControlValues,
           timeControlProperty: "TIME",
         }),
-        ...(!!this.#collectionStac?.["eodash:layerExclusive"] && { layerControlExclusive: true })
+        ...(!!this.#collectionStac?.["eodash:layerExclusive"] && {
+          layerControlExclusive: true,
+        }),
       };
 
       const links = await createLayersFromLinks(

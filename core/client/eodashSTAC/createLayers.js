@@ -330,19 +330,20 @@ export async function createLayersFromAssets(
           assets[assetName]["bands"] ?? []
         ).map((band) => band.name);
 
-      const defaultBands = ["b04", "b03", "b02"];
-
       const fetchedStyle = await fetchStyle(stacObject, undefined, assetName);
       let { layerConfig, style } = extractLayerConfig(
         collectionId,
         fetchedStyle,
       );
 
+      const defaultBands = layerConfig?.schema.bands.default ?? [
+        "B04",
+        "B03",
+        "B02",
+      ];
+
       if (!layerConfig && !style) {
-        const generated = generateGeoZarrStyle(
-          availableBands,
-          defaultBands,
-        );
+        const generated = generateGeoZarrStyle(availableBands, defaultBands);
         ({ layerConfig, style } = extractLayerConfig(collectionId, generated));
       }
 
