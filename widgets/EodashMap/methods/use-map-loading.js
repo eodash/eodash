@@ -1,15 +1,5 @@
-import { onMounted, onUnmounted, nextTick } from "vue";
+import { onUnmounted, watch } from "vue";
 import { loading } from "@/store/states";
-
-const START_EVENTS = ["tileloadstart", "imageloadstart", "featuresloadstart"];
-const END_EVENTS = [
-  "tileloadend",
-  "tileloaderror",
-  "imageloadend",
-  "imageloaderror",
-  "featuresloadend",
-  "featuresloaderror",
-];
 
 /**
  * Tracks map loading state at the source level via `loading.activeLoads`,
@@ -17,27 +7,46 @@ const END_EVENTS = [
  * whenever eox-map fires `layerschanged`, using `getFlatLayersArray`.
  *
  * @param {import("vue").Ref<import("@eox/map").EOxMap | null>} mapElement
+ * @param {import("vue").Ref<import("@eox/map").EOxMap | null>} compareMapElement
  */
-export const useMapLoading = (mapElement) => {
-  const startHandler = ()=>{
+export const useMapLoading = (mapElement, compareMapElement) => {
+  const startHandler = () => {
     loading.activeLoads++;
-    console.log("map load start",loading.value);
-  }
-  const endHandler = ()=>{
+  };
+  const endHandler = () => {
     loading.activeLoads--;
-    console.log("map load end",loading.value);
-  }
+  };
 
-  onMounted(async() => {
-    await nextTick();
-    console.log("attaching map load listeners",mapElement.value?.id);
-    mapElement.value?.map.addEventListener("loadstart",startHandler)
-    mapElement.value?.map.addEventListener("loadend",endHandler)
+  /** @param {import("@eox/map").EOxMap | null} newMapEl */
+  const watcherHandler = (newMapEl) => {
+    if (!newMapEl) return;
+
+    const hasStartListener = newMapEl.map
+      .getListeners("loadstart")
+      ?.some((listner) => listner === startHandler);
+    const hasEndListener = newMapEl.map
+      .getListeners("loadend")
+      ?.some((listner) => listner === endHandler);
+
+    if (!hasStartListener) {
+      newMapEl.map.addEventListener("loadstart", startHandler);
+    }
+    if (!hasEndListener) {
+      newMapEl.map.addEventListener("loadend", endHandler);
+    }
+  };
+  const stopMainWatcher = watch(mapElement, watcherHandler, {
+    immediate: true,
+  });
+  const stopCompareWatcher = watch(compareMapElement, watcherHandler, {
+    immediate: true,
   });
 
   onUnmounted(() => {
     mapElement.value?.map.removeEventListener("loadstart", startHandler);
     mapElement.value?.map.removeEventListener("loadend", endHandler);
+    stopMainWatcher();
+    stopCompareWatcher();
     loading.activeLoads = 0;
   });
 };
