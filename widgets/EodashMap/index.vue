@@ -94,6 +94,7 @@ import {
 import {
   useHandleMapMoveEnd,
   useInitMap,
+  useMapLoading,
   useUpdateTooltipProperties,
 } from "^/EodashMap/methods";
 import { inAndOut } from "ol/easing.js";
@@ -236,22 +237,13 @@ const cursorCoordsRef = useTemplateRef("cursor-coords");
 const tooltipProperties = ref([]);
 /** @type {import("vue").Ref<Exclude<import("@/types").EodashStyleJson["tooltip"], undefined>>} */
 const compareTooltipProperties = ref([]);
-/** @type {import("vue").ComputedRef<{
-  Attribution: { collapsible: boolean };
-  ScaleLine?: { target: HTMLElement };
-  MousePosition?: { projection: string; coordinateFormat: (c: [number, number]) => string; target: HTMLElement };
-}>} */
+
 const controls = computed(() => {
-  /** @type {{
-    Attribution: { collapsible: boolean };
-    ScaleLine?: { target: HTMLElement };
-    MousePosition?: { projection: string; coordinateFormat: (c: [number, number]) => string; target: HTMLElement };
-  }} */
-  const controlsObj = {
+  const controlsObj = /** @type {import("@eox/map").ControlDictionary} */ ({
     Attribution: {
       collapsible: true,
-    },
-  };
+    }
+  });
 
   if (props.enableScaleLine && scaleLineRef.value) {
     controlsObj.ScaleLine = {
@@ -262,8 +254,8 @@ const controls = computed(() => {
   if (props.enableCursorCoordinates && cursorCoordsRef.value) {
     controlsObj.MousePosition = {
       projection: "EPSG:4326",
-      coordinateFormat: (/** @type {[number, number]} */ c) => {
-        return `${c[1].toFixed(3)} °N, ${c[0].toFixed(3)} °E`;
+      coordinateFormat: (c) => {
+        return `${c?.[1].toFixed(3)} °N, ${c?.[0].toFixed(3)} °E`;
       },
       target: cursorCoordsRef.value,
     };
@@ -356,6 +348,9 @@ onMounted(() => {
     animationOptions.value.duration = 1200;
   });
 });
+
+// sync map loading with the global loading state
+useMapLoading(eoxMap);
 
 useUpdateTooltipProperties(eodashCollections, tooltipProperties);
 

@@ -128,7 +128,7 @@
       />
     </PopUp>
     <v-alert
-      v-if="showZoomHint || showItemViewHint"
+      v-if="showZoomHint"
       class="mosaic-hint pa-2"
       color="secondary"
       type="info"
@@ -289,6 +289,7 @@ const opencageApiKey = process.env.EODASH_OPENCAGE || "NO_KEY_FOUND";
 const opencageUrl = `https://api.opencagedata.com/geocode/v1/json?key=${opencageApiKey}`;
 
 const showZoomHint = computed(() => {
+  if (showItemViewHint.value) return true;
   if (!mosaicState.latestLayer) return false;
   if (mosaicState.isItemView) return false;
   if (mosaicState.shouldRender && !mosaicState.shouldRender()) return false;
