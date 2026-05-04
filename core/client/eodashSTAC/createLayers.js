@@ -335,13 +335,11 @@ export async function createLayersFromAssets(
         collectionId,
         fetchedStyle,
       );
-
-      const defaultBands = layerConfig?.schema.bands.default ?? [
-        "B04",
-        "B03",
-        "B02",
+      const defaultBands = layerConfig?.schema?.bands?.default ?? [
+        "b04",
+        "b03",
+        "b02",
       ];
-
       if (!layerConfig && !style) {
         const generated = generateGeoZarrStyle(availableBands, defaultBands);
         ({ layerConfig, style } = extractLayerConfig(collectionId, generated));
