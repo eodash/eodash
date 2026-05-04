@@ -268,7 +268,10 @@ if (store.stacEndpoint) {
     .then((res) => (currentItems.value = res.data.features));
 }
 
-const filterProperties = createFilterProperties(props.filters, props.datetimeFilter);
+const filterProperties = createFilterProperties(
+  props.filters,
+  props.datetimeFilter,
+);
 
 const subTitleProperty = createSubtitleProperty(props.filters);
 
