@@ -106,16 +106,27 @@ export async function updateJobsStatus(jobs, indicator) {
     jobsUrls.map((url) =>
       axios
         .get(url, { params: { t: Date.now() } })
-        .then((response) => response.data),
+        .then((response) => response.data)
+        .catch((error) => {
+          if (axios.isAxiosError(error)) {
+            console.warn(
+              `Job URL not accessible: ${url}. Maybe was deleted from the processing endpoint or endpoint is unavailable. Skipping...`,
+            );
+            return null;
+          }
+          throw error;
+        }),
     ),
   );
-  jobResults.sort((a, b) => {
-    return (
-      new Date(b.job_start_datetime).getTime() -
-      new Date(a.job_start_datetime).getTime()
-    );
-  });
-  jobs.value.splice(0, jobs.value.length, ...jobResults);
+  const validResults = jobResults
+    .filter((job) => job !== null)
+    .sort((a, b) => {
+      return (
+        new Date(b.job_start_datetime).getTime() -
+        new Date(a.job_start_datetime).getTime()
+      );
+    });
+  jobs.value.splice(0, jobs.value.length, ...validResults);
 }
 
 /**
