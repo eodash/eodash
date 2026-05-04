@@ -242,7 +242,7 @@ const controls = computed(() => {
   const controlsObj = /** @type {import("@eox/map").ControlDictionary} */ ({
     Attribution: {
       collapsible: true,
-    }
+    },
   });
 
   if (props.enableScaleLine && scaleLineRef.value) {
@@ -350,7 +350,7 @@ onMounted(() => {
 });
 
 // sync map loading with the global loading state
-useMapLoading(eoxMap);
+useMapLoading(eoxMap, compareMap);
 
 useUpdateTooltipProperties(eodashCollections, tooltipProperties);
 

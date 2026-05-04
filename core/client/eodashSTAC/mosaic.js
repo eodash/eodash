@@ -309,6 +309,7 @@ async function createMosaicLayers(mosaicEndpoint, params) {
       properties: {
         id: `mosaic;:;${Date.now()}`,
         title: "Mosaic Layer",
+        visible: false,
       },
       source: {
         type: "XYZ",

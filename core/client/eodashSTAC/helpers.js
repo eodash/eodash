@@ -3,8 +3,6 @@ import axios from "@/plugins/axios";
 import log from "loglevel";
 import { getStyleVariablesState } from "./triggers.js";
 import { itemsCache, splitItemsCache } from "@/utils/states.js";
-import { getLayers } from "@/store/actions.js";
-import { mapEl } from "@/store/states.js";
 
 /**
  *  @param {import("stac-ts").StacLink[]} [links]
@@ -1231,7 +1229,7 @@ export function updateGeoZarrBands(olLayer, jsonformValue) {
     });
     return false;
   }
-  jsonLayer.source.bands = updatedBands;
+  jsonLayer.source.bands = [...updatedBands];
   olLayer.setSource(
     new window.eoxMapAdvancedOlSources.GeoZarr(jsonLayer.source),
   );
