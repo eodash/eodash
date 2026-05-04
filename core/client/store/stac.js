@@ -102,7 +102,6 @@ export const useSTAcStore = defineStore("stac", () => {
     stacEndpoint.value = endpoint.endpoint;
     isApi.value = endpoint.api ?? false;
     rasterEndpoint.value = endpoint.rasterEndpoint ?? null;
-    mosaicEndpoint.value = endpoint.mosaicEndpoint ?? null;
     supportedUpscalingEndpoints.value =
       endpoint.supportedUpscalingEndpoints ?? [];
   }

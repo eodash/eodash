@@ -344,13 +344,4 @@ const showItemViewHint = computed(
   text-decoration: underline;
   pointer-events: auto;
 }
-
-.mosaic-hint {
-  position: fixed;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 10;
-  opacity: 0.8;
-  border-radius: 8px;
-}
 </style>
