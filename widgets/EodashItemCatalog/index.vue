@@ -57,6 +57,7 @@
       .subTitleProperty="subTitleProperty"
       .filterProperties="filterProperties"
       .items="items"
+      .styleOverride="itemfilterStyleOverride"
       @select="onSelectItem"
       @filter="onFilter"
       @mouseenter:result="onMouseEnterResult"
@@ -70,7 +71,15 @@
 </template>
 
 <script setup>
-import { onUnmounted, ref, useTemplateRef } from "vue";
+import {
+  computed,
+  nextTick,
+  onUnmounted,
+  ref,
+  useTemplateRef,
+  watch,
+} from "vue";
+import { storeToRefs } from "pinia";
 
 import { useSTAcStore } from "@/store/stac";
 import {
@@ -81,8 +90,9 @@ import {
 import {
   useSearchOnMapMove,
   useRenderItemsFeatures,
-  useHighlightOnFeatureHover,
+  useHoverTooltip,
   useRenderOnFeatureClick,
+  renderItemsFeatures,
 } from "./methods/map";
 import {
   createOnFilterHandler,
@@ -92,8 +102,10 @@ import {
 } from "./methods/handlers";
 import { mdiViewDashboard } from "@mdi/js";
 import EodashLayoutSwitcher from "^/EodashLayoutSwitcher.vue";
-import { mapCompareEl, mapEl } from "@/store/states";
+import { mapCompareEl, mapEl, mapPosition } from "@/store/states";
+import { mosaicState } from "@/utils/states";
 import axios from "@/plugins/axios";
+import { useInitMosaic, renderLatestMosaic } from "@/eodashSTAC/mosaic";
 
 if (!customElements.get("eox-itemfilter")) {
   await import("@eox/itemfilter");
@@ -134,6 +146,10 @@ const props = defineProps({
     type: String,
     default: "Items:",
   },
+  datetimeFilter: {
+    type: Boolean,
+    default: false,
+  },
   bboxFilter: {
     type: Boolean,
     default: true,
@@ -165,6 +181,15 @@ const props = defineProps({
   enableCompare: {
     type: Boolean,
     default: false,
+  },
+  useMosaic: {
+    type: Boolean,
+    default: false,
+  },
+  mosaicIndicators: {
+    /** @type {import("vue").PropType<string[]>} */
+    type: Array,
+    required: false,
   },
 });
 
@@ -201,11 +226,34 @@ function selectSort(option) {
   }
 }
 
+const store = useSTAcStore();
+const { selectedItem, selectedCompareItem } = storeToRefs(store);
+
+const isMosaicEnabled = computed(
+  () => props.useMosaic && !!store.mosaicEndpoint,
+);
+
+mosaicState.shouldRender = props.useMosaic
+  ? () => !activeSelectedItem.value
+  : null;
+
+if (props.useMosaic) {
+  mosaicState.onReturnToOverview = () => {
+    activeSelectedItem.value = null;
+  };
+}
+
 onUnmounted(() => {
   store.selectedItem = null;
+  mosaicState.shouldRender = null;
+  mosaicState.isItemView = false;
+  mosaicState.onReturnToOverview = null;
 });
 
-const store = useSTAcStore();
+const activeSelectedItem =
+  /** @type {import("vue").Ref<import("stac-ts").StacItem | null>} */ (
+    props.enableCompare ? selectedCompareItem : selectedItem
+  );
 
 // Reactive state
 /** @type {import("vue").Ref<import("@/types").GeoJsonFeature[]>} */
@@ -220,26 +268,71 @@ if (store.stacEndpoint) {
     .then((res) => (currentItems.value = res.data.features));
 }
 
-const filterProperties = createFilterProperties(props.filters);
+const filterProperties = createFilterProperties(props.filters, props.datetimeFilter);
 
 const subTitleProperty = createSubtitleProperty(props.filters);
 
 const externalFilterHandler = createExternalFilter(
   props.filters,
   props.bboxFilter,
+  props.datetimeFilter,
   currentItems,
   sortByParam,
+  activeSelectedItem,
+);
+
+watch(activeSelectedItem, (item) => {
+  if (itemfilterEl.value) {
+    itemfilterEl.value.selectedResult = item ?? null;
+  }
+
+  if (isMosaicEnabled.value) {
+    mosaicState.isItemView = !!item;
+  }
+
+  // restore mosaic when item is deselected
+  if (!isMosaicEnabled.value || item) return;
+  if (mosaicState.latestLayer) {
+    renderLatestMosaic();
+    renderItemsFeatures(
+      currentItems.value,
+      props.enableCompare ? mapCompareEl : mapEl,
+      props.hoverProperties,
+    );
+    nextTick(() => {
+      const z = mapPosition.value[2] ?? 0;
+      const layer = mapEl.value?.getLayerById(
+        /** @type {string} */ (mosaicState.latestLayer?.properties?.id),
+      );
+      layer?.setVisible(z >= mosaicState.visibilityThreshold);
+    });
+  }
+});
+
+// re-add items features after mosaic layer is rendered
+watch(
+  () => mosaicState.latestLayer,
+  (layer) => {
+    if (!isMosaicEnabled.value || !layer) return;
+    renderItemsFeatures(
+      currentItems.value,
+      props.enableCompare ? mapCompareEl : mapEl,
+      props.hoverProperties,
+    );
+  },
 );
 
 // Event handlers
-/**
- * @param {CustomEvent} evt
- */
-const onFilter = createOnFilterHandler(
+const onFilter = createOnFilterHandler({
   currentItems,
-  props.enableCompare ? mapCompareEl : mapEl,
-  props.hoverProperties,
-);
+  mapElement: props.enableCompare ? mapCompareEl : mapEl,
+  hoverProperties: props.hoverProperties,
+  itemfilterEl,
+  selectedItemRef: activeSelectedItem,
+  mosaicOptions: isMosaicEnabled.value
+    ? { isMosaicEnabled, getMosaicEndpoint: () => store.mosaicEndpoint }
+    : null,
+});
 
 /**
  * @param {CustomEvent} evt
@@ -271,18 +364,58 @@ useRenderOnFeatureClick(
   props.enableCompare ? mapCompareEl : mapEl,
   props.enableCompare,
 );
-// highlight on feature hover
-useHighlightOnFeatureHover(
-  itemfilterEl,
-  props.enableCompare ? mapCompareEl : mapEl,
-  props.hoverProperties,
+// initialize mosaic and keep in sync with map state
+useInitMosaic(
+  props.useMosaic ? store.mosaicEndpoint : null,
+  undefined,
+  props.mosaicIndicators,
 );
+
+// highlight on feature hover
+useHoverTooltip(props.hoverProperties);
 const onMouseEnterResult = createOnMouseEnterResult(
   props.enableCompare ? mapCompareEl : mapEl,
 );
 const onMouseLeaveResult = createOnMouseLeaveResult(
   props.enableCompare ? mapCompareEl : mapEl,
 );
+
+const itemfilterStyleOverride = `
+  li.highlighted {
+    background-color: rgb(var(--v-theme-primary)) !important;
+    color: rgb(var(--v-theme-on-primary)) !important;
+  }
+  li.highlighted .subtitle {
+    opacity: 0.85;
+  }
+  .title-container.truncate,
+  .title.truncate,
+  .subtitle.truncate {
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: unset !important;
+  }
+  .title {
+    display: block;
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+  nav.responsive i.small {
+    width: 72px !important;
+    height: 72px !important;
+    min-width: 72px;
+    min-height: 72px;
+    flex: 0 0 72px;
+  }
+  nav.responsive i.small .image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 8px;
+    padding:4px;
+  }
+`;
 </script>
 <style scoped>
 .itemfilter-scroll {

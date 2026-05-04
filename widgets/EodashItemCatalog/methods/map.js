@@ -138,36 +138,10 @@ export const useRenderItemsFeatures = (
   });
 };
 /**
- * Highlights hovered feature on map and optinally shows tooltip with properties
- * @param {import("vue").Ref<any>} itemfilterEl
- * @param {import("vue").Ref<import("@eox/map").EOxMap | null>} mapElement
+ * Registers a tooltip adapter that displays item properties when hovering over map features.
  * @param {string[]} [hoverProperties]
  */
-export function useHighlightOnFeatureHover(
-  itemfilterEl,
-  mapElement,
-  hoverProperties,
-) {
-  /**
-   *
-   * @param {CustomEvent} evt
-   */
-  const handler = (evt) => {
-    if (evt.detail.originalEvent.type !== "pointermove") {
-      return;
-    }
-    const itemId = evt.detail?.feature?.getId();
-    if (!itemId) {
-      return;
-    }
-    const item = itemfilterEl.value.results?.find(
-      //@ts-expect-error todo
-      (r) => r.id === itemId,
-    );
-    if (item) {
-      itemfilterEl.value.selectedResult = item;
-    }
-  };
+export function useHoverTooltip(hoverProperties) {
   /**
    * @param {*} val
    */
@@ -200,9 +174,6 @@ export function useHighlightOnFeatureHover(
       .replace(/\b\w/g, (c) => c.toUpperCase());
   };
   onMounted(() => {
-    //@ts-expect-error todo
-    mapElement.value?.addEventListener("select", handler);
-
     tooltipAdapter.value = ({ key, value }) => {
       if (hoverProperties && hoverProperties.includes(key)) {
         return { key: formatKey(key), value: formatValue(value) };
@@ -211,8 +182,6 @@ export function useHighlightOnFeatureHover(
     };
   });
   onUnmounted(() => {
-    //@ts-expect-error todo
-    mapElement.value?.removeEventListener("select", handler);
     tooltipAdapter.value = null;
   });
 }

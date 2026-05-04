@@ -33,7 +33,7 @@
   </eox-timecontrol>
 </template>
 <script setup>
-import { datetime, indicator, mapEl } from "@/store/states";
+import { datetime, mapEl } from "@/store/states";
 import { eodashCollections } from "@/utils/states";
 import "@eox/timecontrol";
 import "@eox/itemfilter";
@@ -41,11 +41,7 @@ import "@eox/itemfilter";
 import { computed, onMounted, ref, unref, useTemplateRef } from "vue";
 import { storeToRefs } from "pinia";
 import { useSTAcStore } from "@/store/stac";
-import {
-  createAnimationLayers,
-  extractCloudCover,
-  scheduleMosaicUpdate,
-} from "./methods";
+import { createAnimationLayers, scheduleMosaicUpdate } from "./methods";
 import { useInitMosaic } from "@/eodashSTAC/mosaic";
 
 const { animate, useMosaic, mosaicIndicators } = defineProps({
@@ -80,7 +76,7 @@ const selectedRange = /** @type {import("vue").Ref<[string, string]>} */ (
 );
 const initDate = [startDate.toISOString().split("T")[0]];
 
-/** @type {import("vue").Ref<Record<string, import("./types").Filter>>} */
+/** @type {import("vue").Ref<import("@/types").ItemFilterFilters>} */
 const currentFilters = ref({});
 
 const hasMultipleItems = computed(() => {
@@ -92,11 +88,15 @@ const hasMultipleItems = computed(() => {
 });
 
 const store = useSTAcStore();
-const { selectedStac, stacEndpoint, mosaicEndpoint } = storeToRefs(store);
+const { selectedStac, stacEndpoint } = storeToRefs(store);
 
-const isMosaicEnabled = computed(() => useMosaic && !!mosaicEndpoint.value);
-//@ts-expect-error todo
-useInitMosaic(mosaicEndpoint.value, {}, store, mosaicIndicators);
+const isMosaicEnabled = computed(() => useMosaic && !!store.mosaicEndpoint);
+
+useInitMosaic(
+  useMosaic ? store.mosaicEndpoint : null,
+  selectedRange,
+  mosaicIndicators,
+);
 
 /**
  * Handles the selection event from the time control component.
@@ -114,10 +114,9 @@ const onSelect = (e) => {
   // we just update the mosaic layer with the new time range and filters
   if (isMosaicEnabled.value) {
     scheduleMosaicUpdate(
-      mosaicEndpoint.value,
-      indicator.value,
-      date,
-      extractCloudCover(currentFilters.value),
+      store.mosaicEndpoint,
+      selectedRange.value,
+      currentFilters.value,
     );
     return;
   }
@@ -152,12 +151,7 @@ const onFilter = (e) => {
   if (!isMosaicEnabled.value) return;
   const { filters } = e.detail;
   currentFilters.value = filters;
-  scheduleMosaicUpdate(
-    mosaicEndpoint.value,
-    indicator.value,
-    selectedRange.value,
-    extractCloudCover(filters),
-  );
+  scheduleMosaicUpdate(store.mosaicEndpoint, selectedRange.value, filters);
 };
 
 /**

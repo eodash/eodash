@@ -10,7 +10,7 @@ import log from "loglevel";
  * } selectedIndicator
  * @param {EodashCollection[]} eodashCols
  * @param {string | import("stac-ts").StacItem | null} [timeOrItem] - time as a string, or a stac item
- * @param {Record<string, any>[]} [defaultBaseLayers] - default base layers to use if no baselayers are provided by the indicator
+ * @param {Record<string, any>[]} [defaultBaseLayers] - Optional default baselayers to use if the indicator does not provide any
  * @returns {Promise<Record<string, any>[]>}
  */
 

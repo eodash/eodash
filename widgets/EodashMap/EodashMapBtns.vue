@@ -128,7 +128,7 @@
       />
     </PopUp>
     <v-alert
-      v-if="showMosaicHint"
+      v-if="showZoomHint || showItemViewHint"
       class="mosaic-hint pa-2"
       color="secondary"
       type="info"
@@ -136,7 +136,13 @@
       density="compact"
       elevation="4"
     >
-      Zoom in to view the mosaic layer
+      <template v-if="showItemViewHint">
+        Viewing individual item —
+        <a class="mosaic-hint-link" @click.prevent="mosaicState.onReturnToOverview?.()">
+          Back to overview
+        </a>
+      </template>
+      <template v-else>Zoom in to explore the data</template>
     </v-alert>
   </div>
 </template>
@@ -279,11 +285,17 @@ useTransparentPanel(rootRef);
 const opencageApiKey = process.env.EODASH_OPENCAGE || "NO_KEY_FOUND";
 const opencageUrl = `https://api.opencagedata.com/geocode/v1/json?key=${opencageApiKey}`;
 
-const showMosaicHint = computed(() => {
+const showZoomHint = computed(() => {
   if (!mosaicState.latestLayer) return false;
+  if (mosaicState.isItemView) return false;
+  if (mosaicState.shouldRender && !mosaicState.shouldRender()) return false;
   const zoom = mapPosition.value?.[2] ?? 4;
   return zoom < mosaicState.visibilityThreshold;
 });
+
+const showItemViewHint = computed(
+  () => mosaicState.isItemView && !!mosaicState.latestLayer,
+);
 </script>
 
 <style scoped>
@@ -313,12 +325,21 @@ const showMosaicHint = computed(() => {
   pointer-events: auto !important;
 }
 
-/* Container constraints removal */
-eox-geosearch {
-  position: relative !important;
-  width: 40px;
-  overflow: visible !important;
+.mosaic-hint {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
   z-index: 10;
+  opacity: 0.8;
+  border-radius: 8px;
+  pointer-events: auto;
+}
+
+.mosaic-hint-link {
+  color: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+  pointer-events: auto;
 }
 
 .mosaic-hint {
