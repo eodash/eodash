@@ -237,7 +237,7 @@ export class EodashCollection {
         }),
         ...(!!this.#collectionStac?.["eodash:layerExclusive"] && {
           layerControlExclusive: true,
-          layerControlExpand: false
+          layerControlExpand: false,
         }),
       };
 
