@@ -237,6 +237,7 @@ export class EodashCollection {
         }),
         ...(!!this.#collectionStac?.["eodash:layerExclusive"] && {
           layerControlExclusive: true,
+          layerControlExpand: false
         }),
       };
 
@@ -337,7 +338,7 @@ export class EodashCollection {
         undefined,
         100,
         first,
-        1000,
+        100,
         centerDatetime,
       );
     }

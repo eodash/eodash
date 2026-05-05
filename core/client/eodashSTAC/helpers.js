@@ -1033,11 +1033,11 @@ const ZARR_BAND_COLORS = [
   "#C00040",
   "#A00060",
   "#CC0088",
-  "#FF3366",
   "#CC33CC",
   "#9900FF",
   "#FF9900",
   "#8B4513",
+  "#FF3366",
 ];
 
 /**
@@ -1210,29 +1210,22 @@ export function generateGeoZarrStyle(availableBands, defaultBands) {
  * @returns {boolean} true if the source was rebuilt
  */
 export function updateGeoZarrBands(olLayer, jsonformValue) {
-  console.log("Updating GeoZarr bands with jsonform value", jsonformValue);
   /** @type {import("@eox/map/src/layers").EOxLayerType<"WebGLTile","GeoZarr">} */
   const jsonLayer = olLayer.get("_jsonDefinition");
   const updatedBands = jsonformValue.bands;
   const isGeoZarr =
     jsonLayer?.type === "WebGLTile" && jsonLayer?.source?.type === "GeoZarr";
   if (!jsonLayer || !jsonLayer.source || !isGeoZarr || !updatedBands) {
-    console.log("Invalid GeoZarr layer or bands", { isGeoZarr, updatedBands });
     return false;
   }
 
   const oldBands = jsonLayer.source?.bands;
   if (JSON.stringify(updatedBands) === JSON.stringify(oldBands)) {
-    console.log("Bands unchanged, no update needed", {
-      updatedBands,
-      oldBands,
-    });
     return false;
   }
   jsonLayer.source.bands = [...updatedBands];
   olLayer.setSource(
     new window.eoxMapAdvancedOlSources.GeoZarr(jsonLayer.source),
   );
-  console.log("GeoZarr bands updated, source rebuilt", updatedBands, jsonLayer);
   return true;
 }

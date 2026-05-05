@@ -67,8 +67,10 @@ export const createLayersConfig = async (
 
     // Add expand to all analysis layers
     layers.forEach((dl) => {
-      dl.properties.layerControlExpand = true;
-      dl.properties.layerControlToolsExpand = true;
+      if (!dl.properties?.layerControlExclusive) {
+        dl.properties.layerControlExpand = true;
+        dl.properties.layerControlToolsExpand = true;
+      }
     });
     dataLayers.layers.push(...layers);
   }
