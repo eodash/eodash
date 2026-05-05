@@ -17,8 +17,8 @@ const baseConfig = {
       "https://api.explorer.eopf.copernicus.eu/stac",
     api: true,
     supportedUpscalingEndpoints: [
-      "openveda.cloud",
-      "api.explorer.eopf.copernicus.eu",
+      { url: "openveda.cloud", titilerVersion: 1 },
+      { url: "api.explorer.eopf.copernicus.eu", titilerVersion: 2 },
     ],
     rasterEndpoint: "https://api.explorer.eopf.copernicus.eu/rstaging",
   },
