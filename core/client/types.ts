@@ -207,6 +207,13 @@ export interface TWidgetsContainer {
     typeof import("^/WidgetsContainer.vue").default
   >["$props"];
 }
+export interface TEodashLayoutSwitcher {
+  name: "EodashLayoutSwitcher";
+  properties?: InstanceType<
+    typeof import("^/EodashLayoutSwitcher.vue").default
+  >["$props"];
+}
+
 /**
  * Internal Vue Components inside the
  * [widgets](https://github.com/eodash/eodash/tree/main/widgets) folder.
@@ -228,6 +235,7 @@ export type ComponentWidget =
   | TExportState
   | TPopUp
   | TWidgetsContainer
+  | TEodashLayoutSwitcher
   | TEodashTimeSlider;
 /**
  * Widget type: `internal` API. Internal widgets are Vue components provided by
@@ -331,7 +339,9 @@ export type StacEndpoint =
       api?: boolean;
       rasterEndpoint?: string;
       vectorEndpoint?: string;
-      supportedUpscalingEndpoints?: string[];
+      supportedUpscalingEndpoints?: Array<
+        string | { url: string; titilerVersion?: 1 | 2 }
+      >;
     };
 
 /** @group Eodash */
@@ -524,6 +534,77 @@ export interface StacItemsAPIResponse {
   type: "FeatureCollection";
   features: import("stac-ts").StacItem[];
 }
+
+export interface AggregationCollection {
+  type: "AggregationCollection";
+  aggregations?: Array<{
+    key?: string;
+    interval?: string;
+    buckets?: Array<{
+      key: string;
+      value: number;
+    }>;
+  }>;
+}
+
+/** Itemfilter filter kind emitted in filter events. */
+export type ItemFilterFilterType =
+  | "range"
+  | "multiselect"
+  | "select"
+  | "text"
+  | "spatial";
+
+export interface ItemFilterBase {
+  key: string;
+  title?: string;
+  expanded?: boolean;
+  dirty?: boolean;
+  stringifiedState?: string;
+}
+
+export interface ItemFilterRange extends ItemFilterBase {
+  type: "range";
+  min?: number;
+  max?: number;
+  step?: number;
+  state?: {
+    min?: number;
+    max?: number;
+  };
+}
+
+export interface ItemFilterSelect extends ItemFilterBase {
+  type: "select";
+  state?: Record<string, string | number | boolean | null | undefined>;
+}
+
+export interface ItemFilterMultiSelect extends ItemFilterBase {
+  type: "multiselect";
+  state?: Record<string, string | number | boolean | null | undefined>;
+}
+
+export interface ItemFilterText extends ItemFilterBase {
+  type: "text";
+  state?: Record<string, string | number | boolean | null | undefined>;
+}
+
+export interface ItemFilterSpatial extends ItemFilterBase {
+  type: "spatial";
+  state?: Record<string, string | number | boolean | null | undefined>;
+}
+
+/** Normalized filter object emitted by `eox-itemfilter` in filter events. */
+export type ItemFilterFilter =
+  | ItemFilterRange
+  | ItemFilterSelect
+  | ItemFilterMultiSelect
+  | ItemFilterText
+  | ItemFilterSpatial;
+
+/** Itemfilter filter map keyed by filter key. */
+export type ItemFilterFilters = Record<string, ItemFilterFilter>;
+
 /** @ignore */
 export interface Render {
   /** REQUIRED. Array of asset keys referencing the assets that are used to make the rendering */

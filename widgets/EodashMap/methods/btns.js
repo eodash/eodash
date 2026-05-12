@@ -11,7 +11,26 @@ export const switchGlobe = () => {
     return;
   }
   if (!isGlobe.value) {
-    mapEl.value.layers = addCorsAnonym([...getLayers()]);
+    // tmp: we remove the vector layers from the globe until
+    // we have better support for them
+    const layers = addCorsAnonym([...getLayers()]);
+    layers.forEach((layer, idx) => {
+      if (layer.type === "Vector") {
+        layers.splice(idx, 1);
+        return;
+      }
+      if (layer.type === "Group") {
+        const vectors = layer.layers.filter((l) => l.type === "Vector");
+        if (!vectors.length) {
+          return;
+        }
+
+        vectors.forEach((vectorLayer) => {
+          layer.layers.splice(layer.layers.indexOf(vectorLayer), 1);
+        });
+      }
+    });
+    mapEl.value.layers = layers;
   }
   mapEl.value.projection = isGlobe.value ? "EPSG:3857" : "globe";
   if (isGlobe.value) {
@@ -20,27 +39,46 @@ export const switchGlobe = () => {
   isGlobe.value = !isGlobe.value;
 };
 
+function getRoot() {
+  const eodashComponent = document.querySelector("eo-dash");
+  return eodashComponent ? eodashComponent.shadowRoot : document;
+}
+
 function hideAllPanels() {
-  const allPanels = document.querySelectorAll(
+  const root = getRoot();
+  const allPanels = root?.querySelectorAll(
     "eox-layout-item:not([class='bg-panel'])",
   );
-  allPanels.forEach((panel) => {
+
+  allPanels?.forEach((panel) => {
     if (!panel || !(panel instanceof HTMLElement)) {
       return;
     }
     panel.style.display = "none";
   });
+
+  const mapButtons = root?.querySelector(".map-buttons");
+  if (mapButtons instanceof HTMLElement) {
+    mapButtons.style.padding = "1rem";
+  }
 }
+
 function showAllPanels() {
-  const allPanels = document.querySelectorAll(
+  const root = getRoot();
+  const allPanels = root?.querySelectorAll(
     "eox-layout-item:not([class='bg-panel'])",
   );
-  allPanels.forEach((panel) => {
+  allPanels?.forEach((panel) => {
     if (!panel || !(panel instanceof HTMLElement)) {
       return;
     }
     panel.style.display = "";
   });
+
+  const mapButtons = root?.querySelector(".map-buttons");
+  if (mapButtons instanceof HTMLElement) {
+    mapButtons.style.padding = "";
+  }
 }
 /**
  *

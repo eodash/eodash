@@ -12,6 +12,7 @@ import {
   extractEoxLegendLink,
   addTooltipInteraction,
   fetchStyle,
+  applyTitilerUpscaling,
 } from "./helpers";
 import { handleAuthenticationOfLink } from "./auth";
 import log from "loglevel";
@@ -561,7 +562,6 @@ export const createLayersFromLinks = async (
       viewProjectionCode,
     );
     let xyzUrl = xyzLink.href;
-
     // TODO, this does not yet work between layer time changes because we do not get
     // updated variables from OL layer due to usage of tileurlfunction
 
@@ -575,11 +575,14 @@ export const createLayersFromLinks = async (
       }
       xyzUrl = `${base}?${params.toString()}`;
     }
-
     const { supportedUpscalingEndpoints } = useSTAcStore();
-    const isUpscalingSupported = supportedUpscalingEndpoints.some(
-      (/** @type {string} */ endpoint) => xyzUrl.includes(endpoint),
+    const upscaling = applyTitilerUpscaling(
+      xyzUrl,
+      supportedUpscalingEndpoints,
     );
+    if (upscaling) {
+      xyzUrl = upscaling.url;
+    }
 
     // Add sharding for s2maps automatically
     if (xyzUrl.includes("s2maps-tiles.eu")) {
@@ -598,15 +601,15 @@ export const createLayersFromLinks = async (
       },
       source: {
         type: "XYZ",
-        url: isUpscalingSupported ? xyzUrl.replace("{y}", "{y}@2x") : xyzUrl,
+        url: xyzUrl,
         projection: projectionCode,
         attributions: xyzLink.attribution,
       },
     };
-    if (isUpscalingSupported) {
+    if (upscaling) {
       // @ts-expect-error tileGrid is added here and supported in eox-map layer definition
       json.source.tileGrid = {
-        tileSize: [512, 512],
+        tileSize: upscaling.tileSize,
       };
     }
     if (
@@ -733,7 +736,7 @@ export const createLayersFromLinks = async (
         ),
         applyOptions,
       );
-      applyOptions = /** @type { object } */ (optionsObject);
+      applyOptions = /** @type {object} */ (optionsObject);
       href = url;
     }
     const json = {

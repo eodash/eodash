@@ -24,6 +24,7 @@
         .inlineMode="true"
         :showResults="false"
         .filterProperties="filters"
+        @filter="onFilter"
       ></eox-itemfilter>
       <eox-timecontrol-timelapse @export="onExport"></eox-timecontrol-timelapse>
     </div>
@@ -40,9 +41,10 @@ import "@eox/itemfilter";
 import { computed, onMounted, ref, unref, useTemplateRef } from "vue";
 import { storeToRefs } from "pinia";
 import { useSTAcStore } from "@/store/stac";
-import { createAnimationLayers } from "./methods";
+import { createAnimationLayers, scheduleMosaicUpdate } from "./methods";
+import { useInitMosaic } from "@/eodashSTAC/mosaic";
 
-const { animate } = defineProps({
+const { animate, useMosaic, mosaicIndicators } = defineProps({
   filters: {
     /** @type {import("vue").PropType<import("@eox/itemfilter").EOxItemFilter["filterProperties"]>} */
     type: Array,
@@ -51,6 +53,15 @@ const { animate } = defineProps({
   animate: {
     type: Boolean,
     default: true,
+  },
+  useMosaic: {
+    type: Boolean,
+    default: false,
+  },
+  mosaicIndicators: {
+    /** @type {import("vue").PropType<string[]>} */
+    type: Array,
+    default: () => [],
   },
 });
 
@@ -65,6 +76,9 @@ const selectedRange = /** @type {import("vue").Ref<[string, string]>} */ (
 );
 const initDate = [startDate.toISOString().split("T")[0]];
 
+/** @type {import("vue").Ref<import("@/types").ItemFilterFilters>} */
+const currentFilters = ref({});
+
 const hasMultipleItems = computed(() => {
   return eodashCollections.some((ec) => {
     const itemLinks = ec.collectionStac?.links.filter((l) => l.rel === "item");
@@ -72,6 +86,17 @@ const hasMultipleItems = computed(() => {
     return (itemLinks && itemLinks.length > 1) || itemsLink;
   });
 });
+
+const store = useSTAcStore();
+const { selectedStac, stacEndpoint } = storeToRefs(store);
+
+const isMosaicEnabled = computed(() => useMosaic && !!store.mosaicEndpoint);
+
+useInitMosaic(
+  useMosaic ? store.mosaicEndpoint : null,
+  selectedRange,
+  mosaicIndicators,
+);
 
 /**
  * Handles the selection event from the time control component.
@@ -84,6 +109,17 @@ const onSelect = (e) => {
   const { selectedItems, date } = e.detail;
   // Update the selected range with the new dates
   selectedRange.value = date;
+
+  // if mosaic is enabled, we don't need to find the closest item,
+  // we just update the mosaic layer with the new time range and filters
+  if (isMosaicEnabled.value) {
+    scheduleMosaicUpdate(
+      store.mosaicEndpoint,
+      selectedRange.value,
+      currentFilters.value,
+    );
+    return;
+  }
 
   const allItems = Object.keys(selectedItems ?? {}).flatMap(
     (id) => selectedItems[id],
@@ -105,7 +141,18 @@ const onSelect = (e) => {
   }
 };
 
-const { selectedStac, stacEndpoint } = storeToRefs(useSTAcStore());
+/**
+ * Handles filter changes from eox-itemfilter (e.g. cloud cover slider).
+ * Updates the mosaic layer with the new filter state.
+ *
+ * @param {CustomEvent<import("./types").ItemFilterEventDetail>} e
+ */
+const onFilter = (e) => {
+  if (!isMosaicEnabled.value) return;
+  const { filters } = e.detail;
+  currentFilters.value = filters;
+  scheduleMosaicUpdate(store.mosaicEndpoint, selectedRange.value, filters);
+};
 
 /**
  *

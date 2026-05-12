@@ -12,13 +12,15 @@ const baseConfig = {
   },
   stacEndpoint: {
     endpoint:
-      "https://esa-eodashboards.github.io/eodashboard-catalog/trilateral/catalog.json",
-    // "https://api.explorer.eopf.copernicus.eu/stac",
-    // api: true,
+      // "https://esa-eodashboards.github.io/eodashboard-catalog/trilateral/catalog.json",
+      // "https://GTIF-Austria.github.io/public-catalog/pr-preview/pr-119/GTIF-Austria/catalog.json",
+      "https://api.explorer.eopf.copernicus.eu/stac",
+    api: true,
     supportedUpscalingEndpoints: [
-      "openveda.cloud",
-      "api.explorer.eopf.copernicus.eu",
+      { url: "openveda.cloud", titilerVersion: 1 },
+      { url: "api.explorer.eopf.copernicus.eu", titilerVersion: 2 },
     ],
+    rasterEndpoint: "https://api.explorer.eopf.copernicus.eu/rstaging",
   },
   brand: {
     noLayout: true,
