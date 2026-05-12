@@ -1,6 +1,21 @@
 # Changelog
 
 
+## [5.7.0](https://github.com/eodash/eodash/compare/eodash-v5.6.1...eodash-v5.7.0) (2026-05-12)
+
+
+### Features
+
+* integrate eox-feedback as a button ([#375](https://github.com/eodash/eodash/issues/375)) ([a9ae221](https://github.com/eodash/eodash/commit/a9ae22186fb7b4fc8498fa9b0899e79e5d56c193))
+* Timeline animations  ([#283](https://github.com/eodash/eodash/issues/283)) ([9927593](https://github.com/eodash/eodash/commit/9927593bd2646f3a4a2d2dba1244f9d59548eec3))
+
+
+### Bug Fixes
+
+* catch errors when saved process run url not available ([#390](https://github.com/eodash/eodash/issues/390)) ([05eb9f0](https://github.com/eodash/eodash/commit/05eb9f047742a8aeb0ade766e2f496fe2a6a20d0))
+* handling errors of eoapi/sh statistics apis permitting loading of charts of partial response set - non-failing requests ([#353](https://github.com/eodash/eodash/issues/353)) ([69a4459](https://github.com/eodash/eodash/commit/69a4459e07b39add3cac8cca5b8ee34eacc4781b))
+* mouse coordinates format E/W/N/S ([#397](https://github.com/eodash/eodash/issues/397)) ([9ad7d7c](https://github.com/eodash/eodash/commit/9ad7d7c39ad7af74e6206dbe97f009934be59541))
+
 ## [5.6.1](https://github.com/eodash/eodash/compare/eodash-v5.6.0...eodash-v5.6.1) (2026-03-17)
 
 
