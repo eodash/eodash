@@ -335,7 +335,7 @@ export const useGetTemplates = () => {
  *
  * @param {import("@vueuse/core").EventBusListener<
  * import("@/types").LayersEventBusKeys,
- * {layers:Record<string,any>[]| undefined}
+ * Record<string,any>[] | undefined
  * >} listener
  */
 export const useOnLayersUpdate = (listener) => {
@@ -362,7 +362,9 @@ export const useEmitLayersUpdate = async (event, mapEl, layers) => {
   const emit = async () =>
     mapEl?.updateComplete.then(async () => {
       await nextTick(() => {
+        setTimeout(() => {
         layersEvents.emit(event, layers);
+        },800);
       });
     });
 

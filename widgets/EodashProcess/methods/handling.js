@@ -35,6 +35,7 @@ import { getLayers, getCompareLayers } from "@/store/actions";
  * @param {import("vue").Ref<boolean>} params.isProcessed
  * @param {import("vue").Ref<boolean>} params.loading
  * @param {import("vue").Ref<boolean>} params.isPolling
+ * @param {import("@eox/map").EOxMap | null} params.mapElement
  * @param {boolean} params.enableCompare
  */
 export async function initProcess({
@@ -45,6 +46,7 @@ export async function initProcess({
   loading,
   isPolling,
   enableCompare,
+  mapElement,
 }) {
   const isPoiAlive = enableCompare ? !!comparePoi.value : !!poi.value;
   let updatedJsonform = null;
@@ -74,92 +76,88 @@ export async function initProcess({
       jsonformSchema: updatedJsonform,
       newLayers: enableCompare ? getCompareLayers() : getLayers(),
       enableCompare,
+      mapElement,
     });
-    // trigger jsonform update in next tick
-    jsonformSchema.value = null;
-    await new Promise((resolve) => setTimeout(resolve, 0));
     jsonformSchema.value = newJsonForm;
   }
 }
 
 /**
- * Update the jsonform schema to have the correct layer id from the map
+ * Recursively search grouped layer tree for a layer whose id starts with the given prefix
+ *
+ * @param {Record<string, any>[]} layers
+ * @param {string} prefix
+ * @returns {string | null}
+ */
+function findLayerIdByPrefix(layers, prefix) {
+  for (const layer of layers) {
+    if (layer.type === "Group" && Array.isArray(layer.layers)) {
+      const found = findLayerIdByPrefix(layer.layers, prefix);
+      if (found) return found;
+    } else if (layer.properties?.id?.startsWith(prefix)) {
+      return layer.properties.id;
+    }
+  }
+  return null;
+}
+
+/**
+ * Update the jsonform schema to have the correct layer id from the map.
+ * Returns null if any required layerId cannot be resolved (layer not yet in map).
+ * Callers should treat null as "retry when layers:updated fires".
  *
  * @export
- * @async
  * @param {Object} params
- * @param {Record<string,any> | null} params.jsonformSchema params.jsonformSchema
- * @param {Record<string, any>[] | undefined} params.newLayers params.newLayers
- * @param { boolean } params.enableCompare params.enableCompare
- * @returns {Promise<Record<string,any> | null>} updated jsonform schema
+ * @param {Record<string,any> | null} params.jsonformSchema
+ * @param {Record<string, any>[] | undefined} params.newLayers
+ * @param {boolean} params.enableCompare
+ * @param {import("@eox/map").EOxMap | null | undefined} params.mapElement
+ * @returns {Promise<Record<string,any> | null>} updated schema, or null if a layerId could not be resolved
  */
 export async function updateJsonformIdentifier({
   jsonformSchema,
   newLayers,
   enableCompare,
+  mapElement,
 }) {
-  const form = jsonformSchema;
-  if (!form) {
-    return null;
-  }
-  const drawToolsProperties = getDrawToolsProperties(form);
-  drawToolsProperties.forEach((drawToolsProperty) => {
-    if (
-      drawToolsProperty &&
-      form?.properties[drawToolsProperty]?.options?.drawtools?.for &&
-      enableCompare
-    ) {
-      form.properties[drawToolsProperty].options.drawtools.for =
-        "eox-map#compare";
-    }
-    if (
-      drawToolsProperty &&
-      newLayers &&
-      form?.properties[drawToolsProperty]?.options?.drawtools?.layerId
-    ) {
-      // get partial or full id and try to match with correct eoxmap layer
-      // check if newLayers is an array or an object with layers property
-      let layers = newLayers;
-      // @ts-expect-error TODO payload coming from time update sometimes is not an object with layers property
-      if (newLayers.layers && Array.isArray(newLayers.layers)) {
-        // @ts-expect-error TODO payload coming from time update sometimes is not an object with layers property
-        layers = newLayers.layers;
-      }
+  if (!jsonformSchema || !newLayers) return null;
 
-      const layerId =
-        form.properties[drawToolsProperty].options.drawtools.layerId.split(
-          ";:;",
-        )[0];
-      let matchedLayerId = null;
-      // layers are not flat can be grouped, we need to recursively search
-      const traverseLayers = (
-        /** @type {Record<string, any>[] | undefined} */ layersArray,
-      ) => {
-        if (!layersArray) {
-          return;
-        }
-        for (const layer of layersArray) {
-          if (layer.type === "Group" && Array.isArray(layer.layers)) {
-            traverseLayers(layer.layers);
-          } else {
-            if (layer.properties?.id?.startsWith(layerId)) {
-              matchedLayerId = layer.properties.id;
-              break;
-            }
-          }
-        }
-      };
-      traverseLayers(layers);
-      if (matchedLayerId) {
-        form.properties[drawToolsProperty].options.drawtools.layerId =
-          matchedLayerId;
-      } else {
-        console.warn(
-          `Could not find matching layer for processing form with id: ${layerId}`,
-        );
-      }
+  const form = JSON.parse(JSON.stringify(jsonformSchema));
+  const drawToolsProperties = getDrawToolsProperties(form);
+
+  for (const drawToolsProperty of drawToolsProperties) {
+    if (!drawToolsProperty) continue;
+
+    const drawtoolsOptions =
+      form?.properties[drawToolsProperty]?.options?.drawtools;
+    if (!drawtoolsOptions) continue;
+
+    if (drawtoolsOptions.for && enableCompare) {
+      drawtoolsOptions.for = "eox-map#compare";
     }
-  });
+
+    if (drawtoolsOptions.layerId) {
+      const existingLayer = mapElement?.getLayerById(drawtoolsOptions.layerId);
+      console.log(
+        "Checking existing layer for id:",
+        drawtoolsOptions.layerId,
+        existingLayer?.get("id"),
+      );
+      if (existingLayer) {
+        continue; // layer exists, no need to update
+      }
+      const prefix = drawtoolsOptions.layerId.split(";:;")[0];
+      const resolvedId = findLayerIdByPrefix(newLayers, prefix);
+      if (!resolvedId) {
+        console.warn(
+          `Could not find matching layer for processing form with id: ${prefix}`,
+        );
+        return null;
+      }
+      drawtoolsOptions.layerId = resolvedId;
+    }
+  }
+
   return form;
 }
 

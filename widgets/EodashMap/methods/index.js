@@ -145,7 +145,6 @@ export const useInitMap = (
             JSON.parse(JSON.stringify(layersCollection)),
           );
           mapLayers.value = layersCollection;
-
           useEmitLayersUpdate(
             mapElement.value?.id === "compare"
               ? "compareTime:updated"

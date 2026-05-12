@@ -1,8 +1,7 @@
 import { initProcess, updateJsonformIdentifier } from "./handling";
-import { useEventBus } from "@vueuse/core";
-import { nextTick, onMounted, watch } from "vue";
-import { eoxLayersKey } from "@/utils/keys";
+import { nextTick, onMounted, onUnmounted, watch } from "vue";
 import { useOnLayersUpdate } from "@/composables";
+import { getCompareLayers, getLayers } from "@/store/actions";
 /**
  * Composable resposible of timing the Initialization of the process
  *
@@ -15,7 +14,7 @@ import { useOnLayersUpdate } from "@/composables";
  * @param {import("vue").Ref<boolean>} params.isProcessed
  * @param {import("vue").Ref<boolean>} params.loading
  * @param {import("vue").Ref<boolean>} params.isPolling
- * @param {import("@eox/map").EOxMap | null} params.mapElement
+ * @param {import("vue").Ref<import("@eox/map").EOxMap | null>} params.mapElement
  */
 export const useInitProcess = ({
   selectedStac,
@@ -26,60 +25,45 @@ export const useInitProcess = ({
   isPolling,
   mapElement,
 }) => {
-  const layersEvents = useEventBus(eoxLayersKey);
-
   onMounted(async () => {
-    // wait for the layers to be rendered
-    if ((mapElement?.layers.length ?? 0) > 1) {
-      await initProcess({
-        enableCompare: mapElement?.id === "compare",
-        selectedStac,
-        jsonformSchema,
-        isProcessed,
-        processResults,
-        loading,
-        isPolling,
-      });
-    } else {
-      layersEvents.once(async () => {
-        await initProcess({
-          enableCompare: mapElement?.id === "compare",
-          selectedStac,
-          jsonformSchema,
-          isProcessed,
-          loading,
-          processResults,
-          isPolling,
-        });
-      });
-    }
+    await initProcess({
+      enableCompare: mapElement.value?.id === "compare",
+      selectedStac,
+      jsonformSchema,
+      isProcessed,
+      processResults,
+      loading,
+      isPolling,
+      mapElement: mapElement.value,
+    });
   });
-  const enableCompare = mapElement?.id === "compare";
-  const evtKey = enableCompare ? "compareLayers:updated" : "layers:updated";
+
   useOnLayersUpdate(async (evt, _payload) => {
-    if (
-      evt == "layertime:updated" ||
-      evt == "compareLayertime:updated" ||
-      evt == "time:updated" ||
-      evt == "compareTime:updated"
-    ) {
-      const shouldMainJsonFormUpdate =
-        ["layertime:updated", "time:updated"].includes(evt) && !enableCompare;
-      const shouldCompareJsonFormUpdate =
-        ["compareLayertime:updated", "compareTime:updated"].includes(evt) &&
-        enableCompare;
-      // we need to update jsonform on time change in cases when the feature selection layer was time-based, so that it attaches to a correct new layer
-      if (shouldMainJsonFormUpdate || shouldCompareJsonFormUpdate) {
-        const newJsonForm = await updateJsonformIdentifier({
-          jsonformSchema: jsonformSchema.value,
-          // @ts-expect-error TODO payload coming from time update events is not an object with layers property
-          newLayers: _payload,
-          enableCompare,
-        });
+    const enableCompare = mapElement.value?.id === "compare";
+    const layerUpdatedKey = enableCompare
+      ? "compareLayers:updated"
+      : "layers:updated";
+    const timeUpdatedKeys = enableCompare
+      ? ["compareLayertime:updated", "compareTime:updated"]
+      : ["layertime:updated", "time:updated"];
+
+    if (timeUpdatedKeys.some((key) => key === evt)) {
+      // we need to update jsonform on time change in cases
+      // when the feature selection layer was time-based,
+      // so that it attaches to a correct new layer
+      const newJsonForm = await updateJsonformIdentifier({
+        jsonformSchema: jsonformSchema.value,
+        newLayers: enableCompare ? getCompareLayers() : getLayers(),
+        enableCompare,
+        mapElement: mapElement.value,
+      });
+
+      if (newJsonForm) {
         jsonformSchema.value = newJsonForm;
       }
     }
-    if (evt !== evtKey) {
+
+    if (evt !== layerUpdatedKey) {
       return;
     }
     await initProcess({
@@ -90,6 +74,7 @@ export const useInitProcess = ({
       processResults,
       loading,
       isPolling,
+      mapElement: mapElement.value,
     });
   });
 };
@@ -109,38 +94,39 @@ export function useAutoExec(
   startProcess,
 ) {
   /**
-   * @param {CustomEvent} _e
+   * @param {any} _e
    **/
   const onJsonFormChange = async (_e) => {
     await startProcess();
-  };
-
-  const addEventListener = async () => {
-    await nextTick(() => {
-      //@ts-expect-error TODO
-      jsonformEl.value?.addEventListener("change", onJsonFormChange);
-    });
-  };
-  const removeEventListener = () => {
-    //@ts-expect-error TODO
-    jsonformEl.value?.removeEventListener("change", onJsonFormChange);
   };
 
   watch(jsonformSchema, (updatedSchema) => {
     autoExec.value = updatedSchema?.options?.["execute"] || false;
   });
 
-  onMounted(() => {
-    watch(
-      autoExec,
-      async (exec) => {
-        if (exec) {
-          await addEventListener();
-        } else {
-          removeEventListener();
-        }
-      },
-      { immediate: true },
-    );
+  // Re-attach listener whenever the element or autoExec changes
+  const stop = watch(
+    [autoExec, jsonformEl],
+    async ([exec, el], [_prevExec, prevEl]) => {
+      // Cleanup if previous element existed
+      if (prevEl) {
+        prevEl.removeEventListener("change", onJsonFormChange);
+      }
+      // Add if enabled and we have an element
+      if (exec && el) {
+        // remove listener before adding to avoid duplicates in case of element change
+        el.removeEventListener("change", onJsonFormChange);
+        await nextTick();
+        el.addEventListener("change", onJsonFormChange);
+      }
+    },
+    { immediate: true },
+  );
+
+  onUnmounted(() => {
+    if (jsonformEl.value) {
+      jsonformEl.value.removeEventListener("change", onJsonFormChange);
+    }
+    stop();
   });
 }
