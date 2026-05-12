@@ -9,6 +9,12 @@ import axios from "@/plugins/axios";
 import { getCompareLayers, getLayers } from "@/store/actions";
 import { isMulti } from "@eox/jsonform/src/custom-inputs/spatial/utils";
 
+/** Max number of timesteps to show as discrete enum buttons vs. range slider */
+const MAX_DISCRETE_TIMESTEPS = 10;
+
+/** Endpoint identifier for EOxHub workspace-based process links */
+export const EOXHUB_WORKSPACES_ENDPOINT = "eoxhub_workspaces";
+
 /**
  * @param {Record<string,any> |null} [jsonformSchema]
  **/
@@ -307,10 +313,18 @@ export async function creatAsyncProcessLayerDefinitions(
     // Check if collection has eox:colorlegend definition, if yes overwrite legend description
     let extraProperties = extractLayerLegend(selectedStac);
 
+    /** @type {any} */
+    const cfg = layerConfig;
+
     switch (resultItem.type) {
       case "image/tiff": {
+        if (resultItem.datetimes?.length) {
+          patchTimeStepSchema(cfg, resultItem.datetimes);
+        }
+
         layers.push({
           type: "WebGLTile",
+          ...(resultItem.visible === false && { visible: false }),
           properties: {
             id: endpointLink.id + "_process" + resultItem.id + postfixId,
             title:
@@ -321,6 +335,7 @@ export async function creatAsyncProcessLayerDefinitions(
             layerControlToolsExpand: true,
             ...(layerConfig && { layerConfig }),
             ...extraProperties,
+            ...(resultItem.datetimes && { datetimes: resultItem.datetimes }),
           },
           source: {
             type: "GeoTIFF",
@@ -334,6 +349,11 @@ export async function creatAsyncProcessLayerDefinitions(
           },
           ...(style && { style }),
         });
+        break;
+      }
+      case "application/json": {
+        // JSON results update the chart spec (handled in eoxhub-workspaces-endpoint.js).
+        // No map layer is created for this type.
         break;
       }
       case "application/geo+json": {
@@ -488,16 +508,298 @@ export function extractAsyncResults(resultItem) {
     if (key === "id") {
       continue;
     }
+    /** @type {any} */
+    const entry = /** @type {any} */ (resultItem)[key];
     extracted.push({
       // used as a key to identify the corresponding style
       id: key,
-      //@ts-expect-error TODO
-      urls: /** @type {string[]} */ (resultItem[key].urls),
-      //@ts-expect-error TODO
-      type: /** @type {string} */ (resultItem[key].mimetype),
+      urls: /** @type {string[]} */ (entry.urls),
+      type: /** @type {string} */ (entry.mimetype),
+      ...(entry?.datetimes && {
+        datetimes: entry.datetimes,
+      }),
+      ...(entry?.visible !== undefined && {
+        visible: entry.visible,
+      }),
     });
   }
   return extracted;
+}
+
+/**
+ * Walk the OL layer tree and update style variables on layers matching `filterFn`.
+ *
+ * NOTE: Uses direct OL access and `setStyle()` instead of eox-map JSON layer
+ * reassignment because:
+ * 1. OL 10.x `updateStyleVariables()` does NOT invalidate cached GPU tiles when
+ *    the `band` expression references a style variable (`["band", ["var", "time_step"]]`).
+ *    `setStyle()` forces shader recompilation and tile cache clear.
+ * 2. Reassigning `mapElement.layers` would recreate layers from scratch, losing
+ *    source state and triggering unnecessary network requests.
+ *
+ * @param {import("ol/Map").default} map - OpenLayers map instance
+ * @param {(layerId: string) => boolean} filterFn - Predicate receiving the layer id
+ * @param {Record<string, any>} styleVars - Style variables to set (e.g. `{ time_step: 3 }`)
+ */
+export function updateProcessLayerStyleVars(map, filterFn, styleVars) {
+  /** @param {*} layerGroup */
+  const walk = (layerGroup) => {
+    if (!layerGroup?.getLayers) return;
+    for (const olLayer of layerGroup.getLayers().getArray()) {
+      const id = olLayer.get("id") ?? "";
+      if (filterFn(id) && typeof olLayer.updateStyleVariables === "function") {
+        const style =
+          (typeof olLayer.getStyle === "function"
+            ? olLayer.getStyle()
+            : null) ?? olLayer.style_;
+        if (style?.variables) {
+          Object.assign(style.variables, styleVars);
+          if (typeof olLayer.setStyle === "function") {
+            olLayer.setStyle(style);
+          }
+        } else {
+          olLayer.updateStyleVariables(styleVars);
+          olLayer.changed();
+        }
+      }
+      if (typeof olLayer.getLayers === "function") {
+        walk(olLayer);
+      }
+    }
+  };
+  walk(map);
+}
+
+/**
+ * Override the `time_step` jsonform property with datetime-derived labels and
+ * bounds so the layer control shows meaningful step names instead of raw indices.
+ *
+ * Mutates `cfg.schema.properties.time_step` in place. Converts range sliders to
+ * discrete buttons when the number of steps is small enough.
+ *
+ * @param {Record<string, any>} cfg - The layerConfig object containing `schema.properties.time_step`
+ * @param {string[]} datetimes - Array of ISO datetime strings from the process result
+ */
+export function patchTimeStepSchema(cfg, datetimes) {
+  if (!cfg?.schema?.properties?.time_step || !datetimes?.length) return;
+
+  const n = datetimes.length;
+  const enumValues = Array.from({ length: n }, (_, i) => i + 1);
+  const enumTitles = datetimes.map((dt, i) => {
+    try {
+      const d = new Date(dt);
+      return d.toISOString().slice(0, 16).replace("T", " ");
+    } catch {
+      return dt || `Step ${enumValues[i]}`;
+    }
+  });
+
+  cfg.schema.properties.time_step = {
+    ...cfg.schema.properties.time_step,
+    maximum: n,
+    minimum: 1,
+    default: 1,
+    ...(n <= MAX_DISCRETE_TIMESTEPS && {
+      enum: enumValues,
+      options: {
+        ...(cfg.schema.properties.time_step.options || {}),
+        enum_titles: enumTitles,
+      },
+    }),
+  };
+  if (
+    n <= MAX_DISCRETE_TIMESTEPS &&
+    cfg.schema.properties.time_step.format === "range"
+  ) {
+    delete cfg.schema.properties.time_step.format;
+  }
+}
+
+/**
+ * Find the temporal field name from a Vega-Lite encoding object.
+ * Checks top-level encoding first, then falls back to the first
+ * layer's encoding (layered specs may keep encoding at layer level).
+ *
+ * Note: only searches top-level and first-level layers; deeply nested
+ * layer-within-layer specs are not traversed.
+ *
+ * @param {Record<string, any>} spec - Vega-Lite specification
+ * @returns {string | null} The temporal field name, or null if not found
+ */
+export function findTemporalField(spec) {
+  /** @param {Record<string, any> | undefined} enc */
+  const fromEncoding = (enc) => {
+    if (!enc) return null;
+    const key = Object.keys(enc).find((k) => enc[k]?.type === "temporal");
+    return key ? enc[key]?.field : null;
+  };
+  const field = fromEncoding(spec?.encoding);
+  if (field) return field;
+  if (Array.isArray(spec?.layer)) {
+    for (const layer of spec.layer) {
+      const f = fromEncoding(layer.encoding);
+      if (f) return f;
+    }
+  }
+  return null;
+}
+
+/**
+ * Find the index of the closest datetime in an array to a target Date.
+ *
+ * @param {string[]} datetimes - Array of ISO datetime strings
+ * @param {Date} targetDate - The target date to match against
+ * @returns {number} Index of the closest datetime (0-based)
+ */
+export function findClosestDatetimeIndex(datetimes, targetDate) {
+  const targetMs = targetDate.getTime();
+  let bestIdx = 0;
+  let bestDiff = Infinity;
+  for (let i = 0; i < datetimes.length; i++) {
+    const diff = Math.abs(new Date(datetimes[i]).getTime() - targetMs);
+    if (diff < bestDiff) {
+      bestDiff = diff;
+      bestIdx = i;
+    }
+  }
+  return bestIdx;
+}
+
+/**
+ * Compare two ISO datetime strings by date portion (YYYY-MM-DD).
+ *
+ * @param {string} dt1 - ISO datetime string
+ * @param {string} dt2 - ISO datetime string
+ * @returns {boolean}
+ */
+export const isSameDate = (dt1, dt2) => dt1.slice(0, 10) === dt2.slice(0, 10);
+
+/**
+ * Auto-hide a process layer (no matching date) or restore it if it was
+ * previously auto-hidden.  Tracks the `_autoHidden` flag on the OL layer
+ * so that layers the **user** manually turned off are never forced back on.
+ *
+ * When restoring (`visible=true`): if `_autoHidden` is flagged but the layer
+ * is already visible (user re-enabled it in the panel), the flag is stale —
+ * clear it and do nothing.
+ *
+ * NOTE: Uses direct OL `setVisible()` rather than eox-map JSON layer
+ * reassignment to avoid recreating the layer (and its WebGL sources) just to
+ * toggle visibility.
+ *
+ * @param {import("ol/Map").default} map - OpenLayers map instance
+ * @param {(layerId: string) => boolean} filterFn - Predicate receiving the layer id
+ * @param {boolean} visible - `false` = auto-hide; `true` = restore only if auto-hidden
+ */
+export function setProcessLayerVisible(map, filterFn, visible) {
+  /** @param {*} layerGroup */
+  const walk = (layerGroup) => {
+    if (!layerGroup?.getLayers) return;
+    for (const olLayer of layerGroup.getLayers().getArray()) {
+      const id = olLayer.get("id") ?? "";
+      if (filterFn(id) && typeof olLayer.setVisible === "function") {
+        if (!visible) {
+          // Only mark _autoHidden when we actually hide a visible layer;
+          // otherwise a later restore would override the user's manual toggle.
+          if (olLayer.getVisible()) {
+            olLayer.set("_autoHidden", true, /* silent */ true);
+            olLayer.setVisible(false);
+          }
+        } else if (olLayer.get("_autoHidden")) {
+          olLayer.set("_autoHidden", false, /* silent */ true);
+          if (!olLayer.getVisible()) {
+            olLayer.setVisible(true);
+          }
+        }
+      }
+      if (typeof olLayer.getLayers === "function") {
+        walk(olLayer);
+      }
+    }
+  };
+  walk(map);
+}
+
+/**
+ * Synchronise sibling process layers when a time_step changes on one layer.
+ *
+ * For each sibling (OL layer whose id contains `_process` but differs from
+ * `changedLayerId`): if the sibling has a `datetimes` property, find the
+ * exact-date match for `selectedDate` and update its `time_step` style var.
+ * If no matching date exists, auto-hide the sibling.  If the sibling has no
+ * datetimes, broadcast `fallbackTimeStep` as-is.
+ *
+ * @param {import("ol/Map").default} map - OpenLayers map instance
+ * @param {string} changedLayerId - The layer id that was explicitly changed
+ * @param {string | null} selectedDate - ISO datetime string of the selected date
+ * @param {number} fallbackTimeStep - Numeric time_step to broadcast to layers without datetimes
+ */
+export function syncSiblingProcessLayers(
+  map,
+  changedLayerId,
+  selectedDate,
+  fallbackTimeStep,
+) {
+  /** @param {*} layerGroup */
+  const walk = (layerGroup) => {
+    if (!layerGroup?.getLayers) return;
+    for (const olLayer of layerGroup.getLayers().getArray()) {
+      const sibId = olLayer.get("id") ?? "";
+      if (sibId !== changedLayerId && sibId.includes("_process")) {
+        const sibDates = olLayer.get("datetimes");
+        if (Array.isArray(sibDates) && sibDates.length > 0 && selectedDate) {
+          const matchIdx = sibDates.findIndex(
+            (/** @type {string} */ d) => isSameDate(d, selectedDate),
+          );
+          if (matchIdx >= 0) {
+            setProcessLayerVisible(map, (id) => id === sibId, true);
+            updateProcessLayerStyleVars(map, (id) => id === sibId, {
+              time_step: matchIdx + 1,
+            });
+          } else {
+            setProcessLayerVisible(map, (id) => id === sibId, false);
+          }
+        } else {
+          updateProcessLayerStyleVars(map, (id) => id === sibId, {
+            time_step: fallbackTimeStep,
+          });
+        }
+      }
+      if (typeof olLayer.getLayers === "function") {
+        walk(olLayer);
+      }
+    }
+  };
+  walk(map);
+}
+
+/**
+ * Build a Vega-Lite spec with inline data, optionally fetching a template spec.
+ *
+ * @param {string | undefined} specUrl - URL to fetch a Vega-Lite spec template
+ * @param {any[]} data - Inline data values to inject
+ * @param {Record<string, any> | null} [fallbackSpec=null] - Spec to use if fetch fails
+ * @returns {Promise<Record<string, any> | null>} The spec with data injected, or null
+ */
+export async function buildChartSpecWithData(
+  specUrl,
+  data,
+  fallbackSpec = null,
+) {
+  let spec = fallbackSpec;
+  if (specUrl) {
+    try {
+      spec = await axios.get(specUrl).then((r) => r.data);
+    } catch (e) {
+      console.warn("[eodash] Could not fetch Vega spec template:", e);
+    }
+  }
+  if (!spec) return null;
+  return {
+    ...spec,
+    ...(!("background" in spec) && { background: "transparent" }),
+    data: { values: data },
+  };
 }
 
 /** @param {*} jsonformSchema

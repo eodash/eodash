@@ -25,17 +25,19 @@
 import "color-legend-element";
 import "@eox/timecontrol";
 import { computed, ref } from "vue";
-import { mapEl, mapCompareEl } from "@/store/states";
+import { storeToRefs } from "pinia";
 import { getColFromLayer } from "@/eodashSTAC/helpers";
+import { mapEl, mapCompareEl } from "@/store/states";
+import { useSTAcStore } from "@/store/stac";
 import {
   eodashCollections,
   eodashCompareCollections,
   layerControlFormValue,
   layerControlFormValueCompare,
 } from "@/utils/states";
-import { storeToRefs } from "pinia";
-import { useSTAcStore } from "@/store/stac";
 import { bandsEditorInterface } from "@/utils/bands-editor";
+import { activeProcessDatetime } from "./EodashProcess/states";
+import { syncSiblingProcessLayers } from "./EodashProcess/methods/utils";
 
 if (!customElements.get("eox-layercontrol")) {
   await import("@eox/layercontrol");
@@ -141,6 +143,30 @@ const onLayerConfigChange = (evt) => {
   } else {
     layerControlFormValue.value = evt.detail.jsonformValue;
   }
+
+  const changedLayer = evt.detail.layer;
+  const newTimeStep = evt.detail.jsonformValue?.time_step;
+  if (newTimeStep == null || !changedLayer) return;
+
+  const layerId = changedLayer.get?.("id") ?? "";
+  if (!layerId.includes("_process")) return;
+
+  const numericTimeStep = Number(newTimeStep);
+
+  const map = /** @type {HTMLElement & Record<string,any>} */ (mapElement.value)
+    ?.map;
+  if (!map) return;
+
+  const datetimes = changedLayer.get?.("datetimes");
+  const selectedDate = Array.isArray(datetimes)
+    ? datetimes[numericTimeStep - 1]
+    : null;
+
+  if (selectedDate) {
+    activeProcessDatetime.value = selectedDate;
+  }
+
+  syncSiblingProcessLayers(map, layerId, selectedDate, numericTimeStep);
 };
 </script>
 <style scoped>

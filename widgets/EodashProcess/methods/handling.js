@@ -2,8 +2,12 @@ import log from "loglevel";
 import {
   applyProcessLayersToMap,
   extractGeometries,
+  findClosestDatetimeIndex,
+  findTemporalField,
   getBboxProperty,
   getDrawToolsProperties,
+  syncSiblingProcessLayers,
+  updateProcessLayerStyleVars,
 } from "./utils";
 import {
   compareIndicator,
@@ -15,7 +19,10 @@ import {
   chartSpec,
   compareChartData,
   compareChartSpec,
+  mapEl,
+  mapCompareEl,
 } from "@/store/states";
+import { activeProcessDatetime } from "../states";
 import { processCharts, processLayers, processSTAC } from "./outputs";
 import { handleLayersCustomEndpoints } from "./custom-endpoints/layers";
 import { handleChartCustomEndpoints } from "./custom-endpoints/chart";
@@ -221,6 +228,7 @@ export async function handleProcesses({
     const layerId = selectedStac.value?.id ?? "";
     const usedChartSpec = enableCompare ? compareChartSpec : chartSpec;
     const usedChartData = enableCompare ? compareChartData : chartData;
+
     let tempChartSpec = null;
     [tempChartSpec, usedChartData.value] = await processCharts({
       links: serviceLinks,
@@ -316,6 +324,7 @@ export function resetProcess({
   isPolling.value = false;
   const usedChartSpec = enableCompare ? compareChartSpec : chartSpec;
   usedChartSpec.value = null;
+  activeProcessDatetime.value = null;
   processResults.value = [];
   jsonformSchema.value = null;
 }
@@ -329,38 +338,83 @@ export function resetProcess({
  * @param {Record<string,{type?:string;field?:string;}>} [evt.target.spec.encoding] - The encoding specification of the chart.
  * @param {object} evt.detail - The detail of the event, containing information about the clicked item.
  * @param {import("vega").Item} evt.detail.item - The Vega item that was clicked.
+ * @param {boolean} [enableCompare=false] - Whether the click comes from the compare chart.
  */
-export const onChartClick = (evt) => {
-  const chartSpec = evt.target?.spec;
+export const onChartClick = (evt, enableCompare = false) => {
+  const evtChartSpec = evt.target?.spec;
   if (
-    !chartSpec ||
-    (!evt.detail?.item?.datum && !evt.detail?.item?.datum.datum)
+    !evtChartSpec ||
+    (!evt.detail?.item?.datum && !evt.detail?.item?.datum?.datum)
   ) {
     return;
   }
-  const encodingKey = Object.keys(chartSpec.encoding ?? {}).find(
-    (key) => chartSpec.encoding?.[key].type === "temporal",
-  );
-  if (!encodingKey) {
-    return;
-  }
-  const temporalKey = chartSpec.encoding?.[encodingKey].field;
+
+  const temporalKey = findTemporalField(evtChartSpec);
   if (!temporalKey) {
     return;
   }
 
   try {
     const vegaItem = evt.detail.item;
-    let datestring = "";
-    // It seems sometimes we have datum inside datum and sometimes not
-    if (vegaItem.datum && vegaItem.datum.datum) {
-      // If datum is nested, we use the nested datum
-      datestring = vegaItem.datum.datum[temporalKey];
-    } else {
-      // Otherwise, we use the top-level datum
-      datestring = vegaItem.datum[temporalKey];
+    const datum = vegaItem.datum?.datum ?? vegaItem.datum;
+    const datestring = datum?.[temporalKey];
+    if (!datestring) {
+      return; // Clicked a mark without the expected temporal field (e.g. highlight rule)
     }
     const temporalValue = new Date(datestring);
+    if (Number.isNaN(temporalValue.getTime())) {
+      return;
+    }
+
+    // Check if there are process GeoTIFF layers with datetimes metadata.
+    // If so, update time_step style variable instead of datetime.value
+    // to avoid STAC reload which would wipe the AnalysisGroup.
+    const currentLayers = enableCompare ? getCompareLayers() : getLayers();
+    const analysisGroup = currentLayers?.find((/** @type {any} */ l) =>
+      l.properties?.id?.includes("AnalysisGroup"),
+    );
+    if (/** @type {any} */ (analysisGroup)?.layers) {
+      const processGeoTiffLayers = /** @type {any[]} */ (/** @type {any} */ (analysisGroup).layers).filter(
+        (/** @type {any} */ l) =>
+          l.type === "WebGLTile" &&
+          l.source?.type === "GeoTIFF" &&
+          l.properties?.id?.includes("_process") &&
+          l.properties?.datetimes?.length > 0,
+      );
+      if (processGeoTiffLayers.length > 0) {
+        // Use the layer with the most datetimes as the reference
+        // (methane_timeseries has all dates; visible layer may have fewer).
+        const refLayer = processGeoTiffLayers.reduce((a, b) =>
+          (a.properties.datetimes?.length ?? 0) >= (b.properties.datetimes?.length ?? 0) ? a : b,
+        );
+        const refDatetimes = refLayer.properties.datetimes;
+        const bestIdx = findClosestDatetimeIndex(refDatetimes, temporalValue);
+        const selectedDate = refDatetimes[bestIdx];
+
+        const mapElement = enableCompare ? mapCompareEl.value : mapEl.value;
+        if (mapElement?.map) {
+          updateProcessLayerStyleVars(
+            mapElement.map,
+            (id) => id === refLayer.properties.id,
+            { time_step: bestIdx + 1 },
+          );
+          syncSiblingProcessLayers(
+            mapElement.map,
+            refLayer.properties.id,
+            selectedDate,
+            bestIdx + 1,
+          );
+        }
+
+        // Use the clicked chart datum's temporal value for the highlight line
+        // so it aligns exactly with the box plot position on the x-axis.
+        activeProcessDatetime.value = datestring;
+
+        return; // Don't set datetime.value — AnalysisGroup is preserved
+      }
+    }
+
+    // Fallback: set datetime.value for standard STAC indicators
     datetime.value = temporalValue.toISOString();
   } catch (error) {
     console.warn(
