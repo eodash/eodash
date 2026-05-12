@@ -102,6 +102,26 @@ function findLayerIdByPrefix(layers, prefix) {
 }
 
 /**
+ * Wait until a layer's features are loaded for the drawtools to attach correctly
+ * Resolves immediately if already loaded.
+ *
+ * @param {import("@eox/map").AnyLayerWithSource | null | undefined} layer
+ * @returns {Promise<void>}
+ */
+function waitForLayerRender(layer) {
+  return new Promise((resolve) => {
+    if (!layer || layer.get("type") !== "Vector" || !("getSource" in layer))
+      return resolve();
+    const source = /** @type {import("ol/source/Vector").default} */ (
+      layer.getSource()
+    );
+    if (!source || source.getFeatures().length > 0) return resolve();
+    source.once("featuresloadend", () => resolve());
+    source.once("featuresloaderror", () => resolve());
+  });
+}
+
+/**
  * Update the jsonform schema to have the correct layer id from the map.
  * Returns null if any required layerId cannot be resolved (layer not yet in map).
  * Callers should treat null as "retry when layers:updated fires".
@@ -124,6 +144,8 @@ export async function updateJsonformIdentifier({
 
   const form = JSON.parse(JSON.stringify(jsonformSchema));
   const drawToolsProperties = getDrawToolsProperties(form);
+  /** @type {Promise<void>[]} */
+  const renderPromises = [];
 
   for (const drawToolsProperty of drawToolsProperties) {
     if (!drawToolsProperty) continue;
@@ -137,26 +159,24 @@ export async function updateJsonformIdentifier({
     }
 
     if (drawtoolsOptions.layerId) {
-      const existingLayer = mapElement?.getLayerById(drawtoolsOptions.layerId);
-      console.log(
-        "Checking existing layer for id:",
-        drawtoolsOptions.layerId,
-        existingLayer?.get("id"),
-      );
-      if (existingLayer) {
-        continue; // layer exists, no need to update
+      let layer = mapElement?.getLayerById(drawtoolsOptions.layerId);
+      if (!layer) {
+        const prefix = drawtoolsOptions.layerId.split(";:;")[0];
+        const resolvedId = findLayerIdByPrefix(newLayers, prefix);
+        if (!resolvedId) {
+          console.warn(
+            `Could not find matching layer for processing form with id: ${prefix}`,
+          );
+          return null;
+        }
+        drawtoolsOptions.layerId = resolvedId;
+        layer = mapElement?.getLayerById(resolvedId);
       }
-      const prefix = drawtoolsOptions.layerId.split(";:;")[0];
-      const resolvedId = findLayerIdByPrefix(newLayers, prefix);
-      if (!resolvedId) {
-        console.warn(
-          `Could not find matching layer for processing form with id: ${prefix}`,
-        );
-        return null;
-      }
-      drawtoolsOptions.layerId = resolvedId;
+      renderPromises.push(waitForLayerRender(layer));
     }
   }
+
+  await Promise.all(renderPromises);
 
   return form;
 }
