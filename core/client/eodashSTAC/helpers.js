@@ -351,6 +351,7 @@ export const extractLayerTimeValues = (items, currentStep) => {
     play: false,
     displayFormat: "DD.MM.YYYY HH:mm",
     animateOnClickInterval: false,
+    showUTC: true,
   };
 
   return {
