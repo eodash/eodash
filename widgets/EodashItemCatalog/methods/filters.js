@@ -64,12 +64,15 @@ export const createFilterProperties = (filtersConfig, datetimeFilter) => {
       filterKeys: store.stac?.map((col) => col.id) || [],
       ...(indicator.value && { state: { [indicator.value]: true } }),
     },
-    datetimeFilter && {
-      key: "datetime",
-      title: "Date",
-      type: "range",
-      format: "date",
-    },
+    ...((datetimeFilter && [
+      {
+        key: "datetime",
+        title: "Date",
+        type: "range",
+        format: "date",
+      },
+    ]) ||
+      []),
   ];
 
   const dynamicFilters = filtersConfig

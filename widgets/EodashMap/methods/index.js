@@ -6,10 +6,11 @@ import { useSTAcStore } from "@/store/stac";
 import { storeToRefs } from "pinia";
 import { isFirstLoad } from "@/utils/states";
 import { useEmitLayersUpdate, useOnLayersUpdate } from "@/composables";
-export { useEmitLayersUpdate, useOnLayersUpdate };
 import { mapPosition } from "@/store/states";
 import { sanitizeBbox } from "@/eodashSTAC/helpers";
 import { transformExtent } from "@eox/map";
+
+export { useMapLoading } from "./use-map-loading";
 /**
  * Holder for previous compare map view as it is overwritten by sync
  * @type { import("ol").View | null} mapElement
@@ -86,6 +87,11 @@ export const useInitMap = (
   const watching = selectedItem
     ? [selectedIndicator, datetime, selectedItem]
     : [selectedIndicator, datetime];
+
+  // Tracks datetime values set internally to skip the resulting watcher re-fire
+  /** @type {string | null} */
+  let internalDatetime = null;
+
   const stopIndicatorWatcher = watch(
     watching,
     async (updated, previous) => {
@@ -99,6 +105,24 @@ export const useInitMap = (
         );
 
       if (updatedStac) {
+        const sameStac = updatedStac?.id === previousStac?.id;
+        const sameItem = updatedItem?.id === previousItem?.id;
+        const sameTime = updatedTime === previousTime;
+
+        const isSelfDatetimeRefire =
+          internalDatetime !== null &&
+          updatedTime === internalDatetime &&
+          sameStac &&
+          sameItem;
+        if (isSelfDatetimeRefire) {
+          internalDatetime = null;
+          return;
+        }
+
+        // Deselect: overview render is handled by the catalog widget's watcher.
+        const isDeselect = previousItem && !updatedItem && sameStac && sameTime;
+        if (isDeselect) return;
+
         log.debug(
           "Selected Indicator watch triggered",
           updatedStac,
@@ -177,22 +201,28 @@ export const useInitMap = (
             endInterval,
           );
         }
+        let resolvedTime = updatedItem ?? updatedTime;
+
         if (
           !updatedItem &&
           endInterval !== null &&
           endInterval.toISOString() !== datetime.value &&
           !isFirstLoad.value
         ) {
-          datetime.value = endInterval.toISOString();
+          resolvedTime = endInterval.toISOString();
+          internalDatetime = resolvedTime;
+          datetime.value = resolvedTime;
         } else if (isFirstLoad.value && !datetime.value && endInterval) {
-          datetime.value = endInterval.toISOString();
+          resolvedTime = endInterval.toISOString();
+          internalDatetime = resolvedTime;
+          datetime.value = resolvedTime;
         }
 
         /** @type {Record<string,any>[]} */
         layersCollection = await createLayersConfig(
           updatedStac,
           eodashCols,
-          updatedItem ?? updatedTime,
+          resolvedTime,
           defaultBaseLayers,
         );
 

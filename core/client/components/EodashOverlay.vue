@@ -2,7 +2,7 @@
   <div class="eodash-overlay">
     <div class="progress-bar-wrapper">
       <v-progress-linear
-        :active="loading"
+        :active="loading.value"
         color="secondary"
         indeterminate
         absolute

@@ -1024,6 +1024,212 @@ export function extractEoxLegendLink(link) {
   return extraProperties;
 }
 
+// Spectral palette matching the standard S2 band order used in the bands-editor example schema
+const ZARR_BAND_COLORS = [
+  "#66CCFF",
+  "#0070FF",
+  "#00C800",
+  "#FF0000",
+  "#C00040",
+  "#A00060",
+  "#CC0088",
+  "#CC33CC",
+  "#9900FF",
+  "#FF9900",
+  "#8B4513",
+  "#FF3366",
+];
+
+/**
+ * Generates a default WebGL flat style for a GeoZarr layer.
+ * The source is loaded with only `defaultBands` (3 bands in R/G/B order), so
+ * `['band', 1/2/3]` always maps to the correct channel without variable indirection.
+ * Band selection via the form triggers a source rebuild (not a style variable update).
+ * Gamma and rescale are true style variables handled by `updateStyleVariables`.
+ *
+ * @param {string[]} availableBands - All selectable band names from `zarr:bands`
+ * @param {string[]} defaultBands - Initially loaded bands (first 3 of availableBands)
+ * @returns {import("@/types").EodashStyleJson}
+ */
+export function generateGeoZarrStyle(availableBands, defaultBands) {
+  const colors = availableBands.map(
+    (_, i) => ZARR_BAND_COLORS[i % ZARR_BAND_COLORS.length],
+  );
+
+  return /** @type {import("@/types").EodashStyleJson} */ ({
+    variables: {
+      gamma: 1.5,
+      minRed: 0,
+      maxRed: 0.5,
+      minGreen: 0,
+      maxGreen: 0.5,
+      minBlue: 0,
+      maxBlue: 0.5,
+    },
+    gamma: ["var", "gamma"],
+    color: [
+      "color",
+      [
+        "interpolate",
+        ["linear"],
+        ["band", 1],
+        ["var", "minRed"],
+        0,
+        ["var", "maxRed"],
+        255,
+      ],
+      [
+        "interpolate",
+        ["linear"],
+        ["band", 2],
+        ["var", "minGreen"],
+        0,
+        ["var", "maxGreen"],
+        255,
+      ],
+      [
+        "interpolate",
+        ["linear"],
+        ["band", 3],
+        ["var", "minBlue"],
+        0,
+        ["var", "maxBlue"],
+        255,
+      ],
+    ],
+    jsonform: {
+      properties: {},
+      oneOf: [
+        {
+          type: "object",
+          title: "Band Configuration",
+          properties: {
+            bands: {
+              title: "Band Combination",
+              type: "array",
+              format: "bands",
+              default: defaultBands,
+              items: {
+                type: "string",
+                enum: availableBands,
+                //@ts-expect-error custom jsonform option
+                options: {
+                  enum_titles: availableBands.map((b) => b.toUpperCase()),
+                  colors,
+                },
+              },
+            },
+            gamma: {
+              type: "number",
+              title: "Gamma Correction",
+              minimum: 0,
+              maximum: 5,
+              step: 0.1,
+              default: 1.5,
+              format: "range",
+            },
+            rescaleRed: {
+              title: "Red Channel",
+              type: "object",
+              properties: {
+                minRed: {
+                  type: "number",
+                  minimum: 0,
+                  maximum: 1,
+                  format: "range",
+                  default: 0,
+                },
+                maxRed: {
+                  type: "number",
+                  minimum: 0,
+                  maximum: 1,
+                  format: "range",
+                  default: 0.5,
+                },
+              },
+              format: "minmax",
+            },
+            rescaleGreen: {
+              title: "Green Channel",
+              type: "object",
+              properties: {
+                minGreen: {
+                  type: "number",
+                  minimum: 0,
+                  maximum: 1,
+                  format: "range",
+                  default: 0,
+                },
+                maxGreen: {
+                  type: "number",
+                  minimum: 0,
+                  maximum: 1,
+                  format: "range",
+                  default: 0.5,
+                },
+              },
+              format: "minmax",
+            },
+            rescaleBlue: {
+              title: "Blue Channel",
+              type: "object",
+              properties: {
+                minBlue: {
+                  type: "number",
+                  minimum: 0,
+                  maximum: 1,
+                  format: "range",
+                  default: 0,
+                },
+                maxBlue: {
+                  type: "number",
+                  minimum: 0,
+                  maximum: 1,
+                  format: "range",
+                  default: 0.5,
+                },
+              },
+              format: "minmax",
+            },
+          },
+        },
+      ],
+    },
+  });
+}
+
+/**
+ * Checks whether a GeoZarr layer's bands changed in the jsonform output and,
+ * if so, rebuilds the source with the new 3 selected bands.
+ * Gamma and rescale are handled automatically by `applyUpdatedStyles` via
+ * `updateStyleVariables` — this function only manages source reconstruction.
+ * Uses the existing source constructor to avoid import-version mismatches.
+ *
+ * @param {import("ol/layer/Layer").default} olLayer - Layer from layerConfig:change event
+ * @param {Record<string, any>} jsonformValue - Current jsonform output
+ * @returns {boolean} true if the source was rebuilt
+ */
+export function updateGeoZarrBands(olLayer, jsonformValue) {
+  /** @type {import("@eox/map/src/layers").EOxLayerType<"WebGLTile","GeoZarr">} */
+  const jsonLayer = olLayer.get("_jsonDefinition");
+  const updatedBands = jsonformValue.bands;
+  const isGeoZarr =
+    jsonLayer?.type === "WebGLTile" && jsonLayer?.source?.type === "GeoZarr";
+  if (!jsonLayer || !jsonLayer.source || !isGeoZarr || !updatedBands) {
+    return false;
+  }
+
+  const oldBands = jsonLayer.source?.bands;
+  if (JSON.stringify(updatedBands) === JSON.stringify(oldBands)) {
+    return false;
+  }
+  jsonLayer.source.bands = [...updatedBands];
+  olLayer.setSource(
+    new window.eoxMapAdvancedOlSources.GeoZarr(jsonLayer.source),
+  );
+  return true;
+}
+
 /**
  * Applies titiler upscaling to an XYZ tile URL based on the matched endpoint config.
  * - titiler v1: appends `@2x` to the `{y}` tile coordinate

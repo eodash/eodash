@@ -6,6 +6,7 @@
     .for="mapEl"
     @select="onSelect"
     titleKey="title"
+    class="pa-4"
     .externalMapRendering="true"
     .animate="animate"
     .initDate="initDate"
@@ -21,6 +22,7 @@
 
       <eox-itemfilter
         v-if="filters.length"
+        class="mx-4"
         .inlineMode="true"
         :showResults="false"
         .filterProperties="filters"

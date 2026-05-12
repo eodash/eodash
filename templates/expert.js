@@ -153,7 +153,6 @@ export default {
                 name: "EodashTimeSlider",
                 properties: {
                   useMosaic: true,
-                  mosaicIndicators: ["sentinel-2-l2a"],
                   filters: [
                     {
                       key: "eo:cloud_cover",

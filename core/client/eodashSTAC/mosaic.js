@@ -1,6 +1,6 @@
 import axios from "@/plugins/axios";
 import { mosaicState } from "@/utils/states";
-import { datetime, mapEl, mapPosition } from "@/store/states";
+import { datetime, indicator, mapEl, mapPosition } from "@/store/states";
 import { getLayers } from "@/store/actions";
 import { nextTick, onMounted, onUnmounted, watch } from "vue";
 import { useOnLayersUpdate } from "@/composables";
@@ -232,7 +232,8 @@ export function useInitMosaic(mosaicEndpoint, timeRange, indicators) {
     initMosaic(mosaicEndpoint, timeRange?.value);
   });
 
-  useOnLayersUpdate(() => {
+  useOnLayersUpdate((evt) => {
+    if (evt !== "layers:updated") return;
     if (!shouldInitiate()) return;
     initMosaic(mosaicEndpoint, timeRange?.value);
   });
@@ -307,8 +308,9 @@ async function createMosaicLayers(mosaicEndpoint, params) {
     {
       type: "Tile",
       properties: {
-        id: `mosaic;:;${Date.now()}`,
+        id: `mosaic;:;${indicator.value}`,
         title: "Mosaic Layer",
+        visible: false,
       },
       source: {
         type: "XYZ",
