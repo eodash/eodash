@@ -61,6 +61,7 @@
         :enableZoom="(indicator || compareIndicator || poi) ? btnsProps.enableZoom : false
         "
         :enableGlobe="(indicator || compareIndicator || poi) ? btnsProps.enableGlobe : false"
+        :enableFeedback="(indicator || compareIndicator || poi) ? btnsProps.enableFeedback : false"
         :searchParams="btnsProps.searchParams"
       />
     </div>
@@ -142,6 +143,7 @@ const props = defineProps({
      * searchParams?: object;
      * enableZoom?: boolean;
      * enableGlobe?: boolean;
+     * enableFeedback?: boolean;
      * enableCompareIndicators?: boolean | {
      *   compareTemplate?:string;
      *   fallbackTemplate?:string;
@@ -157,6 +159,7 @@ const props = defineProps({
       enableSearch: true,
       enableZoom: true,
       enableGlobe: true,
+      enableFeedback: true,
       searchParams: {},
     }),
   },
@@ -200,6 +203,7 @@ const btnsProps = computed(() => ({
   enableSearch: props.btns.enableSearch ?? true,
   enableZoom: props.btns.enableZoom ?? true,
   enableGlobe: props.btns.enableGlobe ?? true,
+  enableFeedback: props.btns.enableFeedback ?? true,
   searchParams: props.btns.searchParams,
 }));
 
@@ -241,7 +245,11 @@ const controls = computed(() => {
     controlsObj.MousePosition = {
       projection: "EPSG:4326",
       coordinateFormat: (/** @type {[number, number]} */ c) => {
-        return `${c[1].toFixed(3)} °N, ${c[0].toFixed(3)} °E`;
+        const lat = c[1];
+        const lng = c[0];
+        const latStr = `${Math.abs(lat).toFixed(3)}°${lat >= 0 ? 'N' : 'S'}`;
+        const lngStr = `${Math.abs(lng).toFixed(3)}°${lng >= 0 ? 'E' : 'W'}`;
+        return `${latStr}, ${lngStr}`;
       },
       target: cursorCoordsRef.value,
     };
