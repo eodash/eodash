@@ -61,6 +61,27 @@ export async function initProcess({
     jsonformSchema.value = null;
     return;
   }
+
+  if (!updatedJsonform) {
+    resetProcess({
+      loading,
+      isProcessed,
+      jsonformSchema,
+      isPolling,
+      processResults,
+      enableCompare,
+    });
+    return;
+  }
+
+  const newJsonForm = await updateJsonformIdentifier({
+    jsonformSchema: updatedJsonform,
+    newLayers: enableCompare ? getCompareLayers() : getLayers(),
+    enableCompare,
+    mapElement,
+  });
+  if (!newJsonForm) return;
+
   resetProcess({
     loading,
     isProcessed,
@@ -69,17 +90,7 @@ export async function initProcess({
     processResults,
     enableCompare,
   });
-
-  if (updatedJsonform) {
-    // make sure correct target layer id is used in jsonform
-    const newJsonForm = await updateJsonformIdentifier({
-      jsonformSchema: updatedJsonform,
-      newLayers: enableCompare ? getCompareLayers() : getLayers(),
-      enableCompare,
-      mapElement,
-    });
-    jsonformSchema.value = newJsonForm;
-  }
+  jsonformSchema.value = newJsonForm;
 }
 
 /**
