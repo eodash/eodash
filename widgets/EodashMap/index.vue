@@ -245,7 +245,11 @@ const controls = computed(() => {
     controlsObj.MousePosition = {
       projection: "EPSG:4326",
       coordinateFormat: (/** @type {[number, number]} */ c) => {
-        return `${c[1].toFixed(3)} °N, ${c[0].toFixed(3)} °E`;
+        const lat = c[1];
+        const lng = c[0];
+        const latStr = `${Math.abs(lat).toFixed(3)}°${lat >= 0 ? 'N' : 'S'}`;
+        const lngStr = `${Math.abs(lng).toFixed(3)}°${lng >= 0 ? 'E' : 'W'}`;
+        return `${latStr}, ${lngStr}`;
       },
       target: cursorCoordsRef.value,
     };
