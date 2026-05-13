@@ -125,6 +125,7 @@ export const createFilterProperties = (filtersConfig, datetimeFilter) => {
  * @param {import("@/types").ItemFilterFilters} filters
  * @param {boolean} bboxFilter
  * @param {boolean} datetimeFilter
+ * @param {Number} searchLimit
  * @param {string} [sortBy]
  * @param {string} [stacEndpoint]
  * @returns {string}
@@ -133,6 +134,7 @@ export const buildSearchUrl = (
   filters,
   bboxFilter,
   datetimeFilter,
+  searchLimit,
   sortBy,
   stacEndpoint,
 ) => {
@@ -171,7 +173,7 @@ export const buildSearchUrl = (
     params.append("sortby", sortBy);
   }
 
-  params.append("limit", "100");
+  params.append("limit", searchLimit.toString());
 
   return `${endpoint}/search?${params.toString()}`;
 };
@@ -183,6 +185,7 @@ export const buildSearchUrl = (
  * @param {boolean} datetimeFilter
  * @param {import("vue").Ref<import("@/types").GeoJsonFeature[]>} currentItems
  * @param {import("vue").Ref<string>} sortBy
+ * @param {Number} searchLimit
  * @param {import("vue").Ref<import("stac-ts").StacItem | null>} [selectedItemRef]
  * @param {import("vue").Ref<string> | string} [stacEndpoint]
  */
@@ -192,6 +195,7 @@ export const createExternalFilter = (
   datetimeFilter,
   currentItems,
   sortBy,
+  searchLimit,
   selectedItemRef,
   stacEndpoint,
 ) => {
@@ -205,6 +209,7 @@ export const createExternalFilter = (
       filters,
       bboxFilter,
       datetimeFilter,
+      searchLimit,
       sortBy.value,
       typeof stacEndpoint === "object" ? stacEndpoint?.value : stacEndpoint,
     ),

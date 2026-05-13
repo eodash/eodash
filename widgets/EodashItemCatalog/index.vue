@@ -195,6 +195,10 @@ const props = defineProps({
     type: String,
     default: null,
   },
+  searchLimit: {
+    type: Number,
+    default: 100,
+  }
 });
 
 const itemfilterEl = useTemplateRef("itemfilter");
@@ -271,7 +275,7 @@ const items = currentItems.value;
 
 if (catalogEndpoint.value) {
   await axios
-    .get(catalogEndpoint.value + "/search?limit=100")
+    .get(catalogEndpoint.value + `/search?limit=${props.searchLimit}`)
     .then((res) => (currentItems.value = res.data.features));
 }
 
@@ -288,6 +292,7 @@ const externalFilterHandler = createExternalFilter(
   props.datetimeFilter,
   currentItems,
   sortByParam,
+  props.searchLimit,
   activeSelectedItem,
   catalogEndpoint,
 );
