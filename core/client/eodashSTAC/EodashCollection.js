@@ -15,11 +15,7 @@ import {
   extractLayerTimeValues,
   replaceLayer,
 } from "./helpers";
-import {
-  getLayers,
-  getCompareLayers,
-  registerProjection,
-} from "@/store/actions";
+import { getLayers, registerProjection } from "@/store/actions";
 import {
   createLayerFromRender,
   createLayersFromAssets,
@@ -28,8 +24,6 @@ import {
 import axios from "@/plugins/axios";
 import log from "loglevel";
 import { dataThemesBrands } from "@/utils/states";
-import { useEventBus } from "@vueuse/core";
-import { eoxLayersKey } from "@/utils/keys";
 
 export class EodashCollection {
   #collectionUrl = "";
@@ -403,12 +397,11 @@ export class EodashCollection {
   }
 
   /**
-   *
    * @param {string} datetime
    * @param {string} layer
-   * @param {string} map
+   * @param {import("@eox/map").EoxLayer[]} currentLayers
    */
-  async updateLayerJson(datetime, layer, map) {
+  async updateLayerJson(datetime, layer, currentLayers) {
     await this.fetchCollection();
     const datetimeProperty = getDatetimeProperty(
       await this.getItems(true, true),
@@ -443,11 +436,6 @@ export class EodashCollection {
       newLayers = await this.createLayersJson(specifiedLink);
     }
 
-    let currentLayers = getLayers();
-    if (map === "second") {
-      currentLayers = getCompareLayers();
-    }
-
     const oldLayer = findLayer(currentLayers, layer);
 
     const toBeReplacedLayers = findLayersByLayerPrefix(currentLayers, oldLayer);
@@ -461,14 +449,6 @@ export class EodashCollection {
       //@ts-expect-error createLayersJson is not typed correctly
       newLayers,
     );
-
-    // Emit event to update potential widget dependencies such as process layer ids
-    const layersEvents = useEventBus(eoxLayersKey);
-    if (map === "second") {
-      layersEvents.emit("compareLayertime:updated", newLayers);
-    } else {
-      layersEvents.emit("layertime:updated", newLayers);
-    }
 
     return updatedLayers;
   }

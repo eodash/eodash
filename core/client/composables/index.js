@@ -335,7 +335,7 @@ export const useGetTemplates = () => {
  *
  * @param {import("@vueuse/core").EventBusListener<
  * import("@/types").LayersEventBusKeys,
- * {layers:Record<string,any>[]| undefined}
+ * Record<string,any>[] | undefined
  * >} listener
  */
 export const useOnLayersUpdate = (listener) => {
@@ -350,7 +350,7 @@ export const useOnLayersUpdate = (listener) => {
 /**
  * @param {import("@/types").LayersEventBusKeys} event
  * @param {import("@eox/map").EOxMap | null} mapEl
- * @param {Record<string,any>[]} layers
+ * @param {Record<string,any>[]} layers - the full layers array of the map in the new state
  */
 export const useEmitLayersUpdate = async (event, mapEl, layers) => {
   if (!mapEl) {
