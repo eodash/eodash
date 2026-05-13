@@ -77,7 +77,7 @@
     "@eox/jsonform": "^1.10.0",
     "@eox/layercontrol": "^1.4.2",
     "@eox/layout": "^1.0.0",
-    "@eox/map": "^2.3.0",
+    "@eox/map": "https://pkg.pr.new/EOX-A/EOxElements/@eox/map@26ab573",
     "@eox/stacinfo": "^1.1.0",
     "@eox/timecontrol": "^2.2.0",
     "@eox/ui": "^1.1.0",

@@ -178,7 +178,9 @@ export async function createLayersFromAssets(
           type: "Vector",
           url: geoJSONURL,
           format: { type: "GeoJSON", dataProjection: projection },
-          attributions: assets[assetName].attribution,
+          ...(assets[assetName].attribution
+            ? { attributions: assets[assetName].attribution }
+            : {}),
         },
         properties: {
           id: assetLayerId,
@@ -239,7 +241,9 @@ export async function createLayersFromAssets(
           ...urlsObject,
           type: "FlatGeoBuf",
           projection,
-          attributions: assets[assetName].attribution,
+          ...(assets[assetName].attribution
+            ? { attributions: assets[assetName].attribution }
+            : {}),
         },
         properties: {
           id: assetLayerId,

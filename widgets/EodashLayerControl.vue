@@ -24,7 +24,7 @@
 <script setup>
 import "color-legend-element";
 import "@eox/timecontrol";
-import { computed, ref } from "vue";
+import { computed, ref, watch } from "vue";
 import { mapEl, mapCompareEl } from "@/store/states";
 import { getColFromLayer } from "@/eodashSTAC/helpers";
 import {
@@ -36,6 +36,7 @@ import {
 import { storeToRefs } from "pinia";
 import { useSTAcStore } from "@/store/stac";
 import { bandsEditorInterface } from "@/utils/bands-editor";
+import { useEmitLayersUpdate } from "@/composables";
 
 if (!customElements.get("eox-layercontrol")) {
   await import("@eox/layercontrol");
@@ -70,6 +71,7 @@ const config = {
 };
 
 const { selectedCompareStac, selectedStac } = storeToRefs(useSTAcStore());
+
 const showControls = computed(() => {
   if (props.map === "second") {
     return mapCompareEl.value !== null && selectedCompareStac.value !== null;
@@ -84,9 +86,20 @@ const mapElement = props.map === "second" ? mapCompareEl : mapEl;
 /** @type { import("vue").Ref<HTMLElement & Record<string,any> | null>} */
 const eoxLayercontrol = ref(null);
 
+// eox-timecontrol re-fires datetime:updated after layer reassignment;
+// dedupe by (collectionId, datetime)
+const processedDatetimes = new Map();
+watch([selectedStac, selectedCompareStac], () => processedDatetimes.clear());
+
 /** @param {CustomEvent<{layer:import('ol/layer').Layer; datetime:string;}>} evt */
 const handleDatetimeUpdate = async (evt) => {
   const { layer, datetime } = evt.detail;
+  const collectionId = layer.get("id")?.split(";:;")[0] ?? layer.get("id");
+  if (processedDatetimes.get(collectionId) === datetime) return;
+  // First event per collection is eox-timecontrol's mount echo.
+  const isFirstEvent = !processedDatetimes.has(collectionId);
+  processedDatetimes.set(collectionId, datetime);
+  if (isFirstEvent) return;
 
   const ec = await getColFromLayer(eodashCols, layer);
 
@@ -97,9 +110,10 @@ const handleDatetimeUpdate = async (evt) => {
     updatedLayers = await ec.updateLayerJson(
       datetime,
       layer.get("id"),
-      props.map,
+      mapElement.value?.layers ?? [],
     );
   }
+  if (!updatedLayers?.length) return;
   /** @type {Record<String,any>[] | undefined} */
   const dataLayers = updatedLayers?.find(
     (l) => l?.properties?.id === "AnalysisGroup",
@@ -111,9 +125,14 @@ const handleDatetimeUpdate = async (evt) => {
       dl.properties.layerControlExpand = true;
       dl.properties.layerControlToolsExpand = true;
     });
-    // assign layers to the map
     /** @type {HTMLElement & Record<string,any>} */
     (mapElement.value).layers = updatedLayers;
+    // Emit after layer assignment so listeners resolve against the new layer.
+    await useEmitLayersUpdate(
+      props.map === "second" ? "compareLayertime:updated" : "layertime:updated",
+      mapElement.value,
+      updatedLayers,
+    );
   }
 };
 

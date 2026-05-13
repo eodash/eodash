@@ -247,8 +247,8 @@ const controls = computed(() => {
       coordinateFormat: (/** @type {[number, number]} */ c) => {
         const lat = c[1];
         const lng = c[0];
-        const latStr = `${Math.abs(lat).toFixed(3)}°${lat >= 0 ? 'N' : 'S'}`;
-        const lngStr = `${Math.abs(lng).toFixed(3)}°${lng >= 0 ? 'E' : 'W'}`;
+        const latStr = `${Math.abs(lat).toFixed(3)}°${lat >= 0 ? "N" : "S"}`;
+        const lngStr = `${Math.abs(lng).toFixed(3)}°${lng >= 0 ? "E" : "W"}`;
         return `${latStr}, ${lngStr}`;
       },
       target: cursorCoordsRef.value,
