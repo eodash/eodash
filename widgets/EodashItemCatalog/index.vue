@@ -191,6 +191,10 @@ const props = defineProps({
     type: Array,
     required: false,
   },
+  stacEndpoint: {
+    type: String,
+    default: null,
+  },
 });
 
 const itemfilterEl = useTemplateRef("itemfilter");
@@ -229,6 +233,8 @@ function selectSort(option) {
 const store = useSTAcStore();
 const { selectedItem, selectedCompareItem } = storeToRefs(store);
 
+const catalogEndpoint = computed(() => props.stacEndpoint || store.stacEndpoint);
+
 const isMosaicEnabled = computed(
   () => props.useMosaic && !!store.mosaicEndpoint,
 );
@@ -262,9 +268,10 @@ const currentItems = ref([]);
 const items = currentItems.value;
 
 // Initial data fetch
-if (store.stacEndpoint) {
+
+if (catalogEndpoint.value) {
   await axios
-    .get(store.stacEndpoint + "/search?limit=100")
+    .get(catalogEndpoint.value + "/search?limit=100")
     .then((res) => (currentItems.value = res.data.features));
 }
 
@@ -282,6 +289,7 @@ const externalFilterHandler = createExternalFilter(
   currentItems,
   sortByParam,
   activeSelectedItem,
+  catalogEndpoint,
 );
 
 watch(activeSelectedItem, (item) => {

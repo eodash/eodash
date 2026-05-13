@@ -61,7 +61,7 @@ export const createFilterProperties = (filtersConfig, datetimeFilter) => {
       type: "multiselect",
       placeholder: "Select collections",
       inline: false,
-      filterKeys: store.stac?.map((col) => col.id) || [],
+      filterKeys: store.stac?.filter((col) => col.id).map((col) => col.id) || [],
       ...(indicator.value && { state: { [indicator.value]: true } }),
     },
     ...((datetimeFilter && [
@@ -126,10 +126,18 @@ export const createFilterProperties = (filtersConfig, datetimeFilter) => {
  * @param {boolean} bboxFilter
  * @param {boolean} datetimeFilter
  * @param {string} [sortBy]
+ * @param {string} [stacEndpoint]
  * @returns {string}
  */
-export const buildSearchUrl = (filters, bboxFilter, datetimeFilter, sortBy) => {
+export const buildSearchUrl = (
+  filters,
+  bboxFilter,
+  datetimeFilter,
+  sortBy,
+  stacEndpoint,
+) => {
   const store = useSTAcStore();
+  const endpoint = stacEndpoint || store.stacEndpoint;
   const params = new URLSearchParams();
 
   if (filters.collection?.stringifiedState) {
@@ -165,7 +173,7 @@ export const buildSearchUrl = (filters, bboxFilter, datetimeFilter, sortBy) => {
 
   params.append("limit", "100");
 
-  return `${store.stacEndpoint}/search?${params.toString()}`;
+  return `${endpoint}/search?${params.toString()}`;
 };
 
 /**
@@ -176,6 +184,7 @@ export const buildSearchUrl = (filters, bboxFilter, datetimeFilter, sortBy) => {
  * @param {import("vue").Ref<import("@/types").GeoJsonFeature[]>} currentItems
  * @param {import("vue").Ref<string>} sortBy
  * @param {import("vue").Ref<import("stac-ts").StacItem | null>} [selectedItemRef]
+ * @param {import("vue").Ref<string> | string} [stacEndpoint]
  */
 export const createExternalFilter = (
   propsFilters,
@@ -184,6 +193,7 @@ export const createExternalFilter = (
   currentItems,
   sortBy,
   selectedItemRef,
+  stacEndpoint,
 ) => {
   let controller = new AbortController();
   /**
@@ -191,7 +201,13 @@ export const createExternalFilter = (
    * @param {Record<string,any>} filters
    */
   return (_items, filters) => ({
-    url: buildSearchUrl(filters, bboxFilter, datetimeFilter, sortBy.value),
+    url: buildSearchUrl(
+      filters,
+      bboxFilter,
+      datetimeFilter,
+      sortBy.value,
+      typeof stacEndpoint === "object" ? stacEndpoint?.value : stacEndpoint,
+    ),
     /** @param {string} url */
     fetchFn: async (url) => {
       controller.abort();
