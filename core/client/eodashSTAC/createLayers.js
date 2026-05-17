@@ -148,6 +148,111 @@ export async function createLayersFromAssets(
     }
   }
 
+  if (geoTIFFSources.length) {
+    for (const [i, geotiffSource] of geoTIFFSources.entries()) {
+      const assetName = assetIds[geoTIFFIdx[i]];
+      const styles = await fetchStyle(stacObject, undefined, assetName);
+      // get the correct style which is not attached to a link
+      let { layerConfig, style } = extractLayerConfig(collectionId, styles);
+      let assetLayerId = createAssetID(
+        collectionId,
+        stacObject.id,
+        geoTIFFIdx[i],
+      );
+      if (
+        assets[assetName]?.roles?.includes("overlay") ||
+        assets[assetName]?.roles?.includes("baselayer")
+      ) {
+        // to prevent them being removed by date change on main dataset
+        assetLayerId = assetName;
+      }
+      log.debug("Creating WebGLTile layer from GeoTIFF", assetLayerId);
+      log.debug("Configured Sources", geoTIFFSources);
+      const sources =
+        stacObject?.["eodash:merge_assets"] !== false
+          ? geoTIFFSources
+          : [geotiffSource];
+      const layer = {
+        type: "WebGLTile",
+        source: {
+          type: "GeoTIFF",
+          normalize: !style,
+          interpolate: false,
+          sources,
+        },
+        properties: {
+          id: assetLayerId,
+          title: assets[assetName]?.title || title,
+          layerConfig,
+          layerDatetime,
+        },
+        style,
+      };
+      if (extraProperties) {
+        layer.properties = { ...layer.properties, ...extraProperties };
+      }
+      extractRoles(layer.properties, assets[assetName]);
+      addTooltipInteraction(layer, style);
+      jsonArray.push(layer);
+      if (stacObject?.["eodash:merge_assets"] !== false) break;
+    }
+  }
+
+  if (zarrAssetIds.length) {
+    for (const [i, assetName] of zarrAssetIds.entries()) {
+      const availableBands =
+        /** @type {{name:String, [key: string]: any}[]} */ (
+          assets[assetName]["bands"] ?? []
+        ).map((band) => band.name);
+
+      const fetchedStyle = await fetchStyle(stacObject, undefined, assetName);
+      let { layerConfig, style } = extractLayerConfig(
+        collectionId,
+        fetchedStyle,
+      );
+      const defaultBands = layerConfig?.schema?.bands?.default ?? [
+        "b04",
+        "b03",
+        "b02",
+      ];
+      if (!layerConfig && !style) {
+        const generated = generateGeoZarrStyle(availableBands, defaultBands);
+        ({ layerConfig, style } = extractLayerConfig(collectionId, generated));
+      }
+
+      let assetLayerId = createAssetID(collectionId, stacObject.id, zarrIdx[i]);
+      if (
+        assets[assetName]?.roles?.includes("overlay") ||
+        assets[assetName]?.roles?.includes("baselayer")
+      ) {
+        assetLayerId = assetName;
+      }
+
+      log.debug("Creating WebGLTile layer from GeoZarr", assetLayerId);
+
+      const layer = {
+        type: "WebGLTile",
+        properties: {
+          id: assetLayerId,
+          title: assets[assetName]?.title || title,
+          layerConfig,
+          layerDatetime,
+        },
+        source: {
+          type: "GeoZarr",
+          url: assets[assetName].href,
+          bands: defaultBands,
+        },
+        ...(style ? { style } : {}),
+      };
+      if (extraProperties) {
+        layer.properties = { ...layer.properties, ...extraProperties };
+      }
+      extractRoles(layer.properties, assets[assetName]);
+      jsonArray.push(layer);
+    }
+  }
+
   if (geoJsonSources.length) {
     for (const [i, geoJsonSource] of geoJsonSources.entries()) {
       // fetch styles and separate them by their mapping between links and assets
@@ -271,111 +376,6 @@ export async function createLayersFromAssets(
       jsonArray.push(layer);
       // if we merged assets (default yes), then we can break from this loop
       if (stacObject?.["eodash:merge_assets"] !== false) break;
-    }
-  }
-
-  if (geoTIFFSources.length) {
-    for (const [i, geotiffSource] of geoTIFFSources.entries()) {
-      const assetName = assetIds[geoTIFFIdx[i]];
-      const styles = await fetchStyle(stacObject, undefined, assetName);
-      // get the correct style which is not attached to a link
-      let { layerConfig, style } = extractLayerConfig(collectionId, styles);
-      let assetLayerId = createAssetID(
-        collectionId,
-        stacObject.id,
-        geoTIFFIdx[i],
-      );
-      if (
-        assets[assetName]?.roles?.includes("overlay") ||
-        assets[assetName]?.roles?.includes("baselayer")
-      ) {
-        // to prevent them being removed by date change on main dataset
-        assetLayerId = assetName;
-      }
-      log.debug("Creating WebGLTile layer from GeoTIFF", assetLayerId);
-      log.debug("Configured Sources", geoTIFFSources);
-      const sources =
-        stacObject?.["eodash:merge_assets"] !== false
-          ? geoTIFFSources
-          : [geotiffSource];
-      const layer = {
-        type: "WebGLTile",
-        source: {
-          type: "GeoTIFF",
-          normalize: !style,
-          interpolate: false,
-          sources,
-        },
-        properties: {
-          id: assetLayerId,
-          title: assets[assetName]?.title || title,
-          layerConfig,
-          layerDatetime,
-        },
-        style,
-      };
-      if (extraProperties) {
-        layer.properties = { ...layer.properties, ...extraProperties };
-      }
-      extractRoles(layer.properties, assets[assetName]);
-      addTooltipInteraction(layer, style);
-      jsonArray.push(layer);
-      if (stacObject?.["eodash:merge_assets"] !== false) break;
-    }
-  }
-
-  if (zarrAssetIds.length) {
-    for (const [i, assetName] of zarrAssetIds.entries()) {
-      const availableBands =
-        /** @type {{name:String, [key: string]: any}[]} */ (
-          assets[assetName]["bands"] ?? []
-        ).map((band) => band.name);
-
-      const fetchedStyle = await fetchStyle(stacObject, undefined, assetName);
-      let { layerConfig, style } = extractLayerConfig(
-        collectionId,
-        fetchedStyle,
-      );
-      const defaultBands = layerConfig?.schema?.bands?.default ?? [
-        "b04",
-        "b03",
-        "b02",
-      ];
-      if (!layerConfig && !style) {
-        const generated = generateGeoZarrStyle(availableBands, defaultBands);
-        ({ layerConfig, style } = extractLayerConfig(collectionId, generated));
-      }
-
-      let assetLayerId = createAssetID(collectionId, stacObject.id, zarrIdx[i]);
-      if (
-        assets[assetName]?.roles?.includes("overlay") ||
-        assets[assetName]?.roles?.includes("baselayer")
-      ) {
-        assetLayerId = assetName;
-      }
-
-      log.debug("Creating WebGLTile layer from GeoZarr", assetLayerId);
-
-      const layer = {
-        type: "WebGLTile",
-        properties: {
-          id: assetLayerId,
-          title: assets[assetName]?.title || title,
-          layerConfig,
-          layerDatetime,
-        },
-        source: {
-          type: "GeoZarr",
-          url: assets[assetName].href,
-          bands: defaultBands,
-        },
-        ...(style ? { style } : {}),
-      };
-      if (extraProperties) {
-        layer.properties = { ...layer.properties, ...extraProperties };
-      }
-      extractRoles(layer.properties, assets[assetName]);
-      jsonArray.push(layer);
     }
   }
 
