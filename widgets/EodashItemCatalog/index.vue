@@ -1,7 +1,9 @@
 <template>
   <div class="d-flex flex-column">
-    <v-row class="title align-center justify-space-between flex-shrink-0"
-    v-if="showTitleBlock">
+    <v-row
+      class="title align-center justify-space-between flex-shrink-0"
+      v-if="showTitleBlock"
+    >
       <h4>Catalog Items</h4>
       <div class="d-flex align-center">
         <v-menu v-if="sortBy?.length" v-model="sortMenu" offset-y>
