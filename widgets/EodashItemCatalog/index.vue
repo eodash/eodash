@@ -1,6 +1,7 @@
 <template>
   <div class="d-flex flex-column">
-    <v-row class="title align-center justify-space-between flex-shrink-0">
+    <v-row class="title align-center justify-space-between flex-shrink-0"
+    v-if="showTitleBlock">
       <h4>Catalog Items</h4>
       <div class="d-flex align-center">
         <v-menu v-if="sortBy?.length" v-model="sortMenu" offset-y>
@@ -157,6 +158,10 @@ const props = defineProps({
   imageProperty: {
     type: String,
     default: "assets.thumbnail.href",
+  },
+  showTitleBlock: {
+    type: Boolean,
+    default: true,
   },
   filters: {
     /** @type {import("vue").PropType<import("./types").FiltersConfig>} */
