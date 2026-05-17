@@ -61,7 +61,8 @@ export const createFilterProperties = (filtersConfig, datetimeFilter) => {
       type: "multiselect",
       placeholder: "Select collections",
       inline: false,
-      filterKeys: store.stac?.filter((col) => col.id).map((col) => col.id) || [],
+      filterKeys:
+        store.stac?.filter((col) => col.id).map((col) => col.id) || [],
       ...(indicator.value && { state: { [indicator.value]: true } }),
     },
     ...((datetimeFilter && [

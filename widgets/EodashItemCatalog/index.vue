@@ -198,7 +198,15 @@ const props = defineProps({
   searchLimit: {
     type: Number,
     default: 100,
-  }
+  },
+  stacItemsStyle: {
+    type: Object,
+    required: false,
+  },
+  stacItemsInteractionStyle: {
+    type: Object,
+    required: false,
+  },
 });
 
 const itemfilterEl = useTemplateRef("itemfilter");
@@ -237,7 +245,9 @@ function selectSort(option) {
 const store = useSTAcStore();
 const { selectedItem, selectedCompareItem } = storeToRefs(store);
 
-const catalogEndpoint = computed(() => props.stacEndpoint || store.stacEndpoint);
+const catalogEndpoint = computed(
+  () => props.stacEndpoint || store.stacEndpoint,
+);
 
 const isMosaicEnabled = computed(
   () => props.useMosaic && !!store.mosaicEndpoint,
@@ -314,6 +324,8 @@ watch(activeSelectedItem, (item) => {
       currentItems.value,
       props.enableCompare ? mapCompareEl : mapEl,
       props.hoverProperties,
+      props.stacItemsStyle,
+      props.stacItemsInteractionStyle,
     );
     nextTick(() => {
       const z = mapPosition.value[2] ?? 0;
@@ -334,6 +346,8 @@ watch(
       currentItems.value,
       props.enableCompare ? mapCompareEl : mapEl,
       props.hoverProperties,
+      props.stacItemsStyle,
+      props.stacItemsInteractionStyle,
     );
   },
 );
@@ -343,6 +357,8 @@ const onFilter = createOnFilterHandler({
   currentItems,
   mapElement: props.enableCompare ? mapCompareEl : mapEl,
   hoverProperties: props.hoverProperties,
+  stacItemsStyle: props.stacItemsStyle,
+  stacItemsInteractionStyle: props.stacItemsInteractionStyle,
   itemfilterEl,
   selectedItemRef: activeSelectedItem,
   mosaicOptions: isMosaicEnabled.value
@@ -366,6 +382,8 @@ useRenderItemsFeatures(
   currentItems,
   props.enableCompare ? mapCompareEl : mapEl,
   props.hoverProperties,
+  props.stacItemsStyle,
+  props.stacItemsInteractionStyle,
 );
 // Search on map move logic
 useSearchOnMapMove(
