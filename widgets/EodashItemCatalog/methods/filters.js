@@ -128,7 +128,7 @@ export const createFilterProperties = (filtersConfig, datetimeFilter) => {
  * @param {boolean} datetimeFilter
  * @param {Number} searchLimit
  * @param {string} [sortBy]
- * @param {string} [stacEndpoint]
+ * @param {string | null} [stacEndpoint]
  * @returns {string}
  */
 export const buildSearchUrl = (
@@ -188,7 +188,7 @@ export const buildSearchUrl = (
  * @param {import("vue").Ref<string>} sortBy
  * @param {Number} searchLimit
  * @param {import("vue").Ref<import("stac-ts").StacItem | null>} [selectedItemRef]
- * @param {import("vue").Ref<string> | string} [stacEndpoint]
+ * @param {import("vue").Ref<string | null> | string | null} [stacEndpoint]
  */
 export const createExternalFilter = (
   propsFilters,
