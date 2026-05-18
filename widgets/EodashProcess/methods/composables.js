@@ -38,7 +38,7 @@ export const useInitProcess = ({
     });
   });
 
-  useOnLayersUpdate(async (evt, _payload) => {
+  useOnLayersUpdate(async (evt) => {
     const enableCompare = mapElement.value?.id === "compare";
     const layerUpdatedKey = enableCompare
       ? "compareLayers:updated"
@@ -47,7 +47,7 @@ export const useInitProcess = ({
       ? ["compareLayertime:updated", "compareTime:updated"]
       : ["layertime:updated", "time:updated"];
 
-    if (timeUpdatedKeys.some((key) => key === evt)) {
+    if (timeUpdatedKeys.includes(evt)) {
       // we need to update jsonform on time change in cases
       // when the feature selection layer was time-based,
       // so that it attaches to a correct new layer

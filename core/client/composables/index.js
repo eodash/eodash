@@ -331,7 +331,8 @@ export const useGetTemplates = () => {
 };
 
 /**
- * Listens to the `layers:updated` and `time:updated` events and calls
+ * Subscribes to layers/time update events on the shared bus, with automatic
+ * cleanup on component unmount.
  *
  * @param {import("@vueuse/core").EventBusListener<
  * import("@/types").LayersEventBusKeys,
@@ -348,9 +349,12 @@ export const useOnLayersUpdate = (listener) => {
   });
 };
 /**
+ * Emits a layers-update event on the shared bus once the map has applied its
+ * pending updates. Always pass the full layers array, not a partial subset.
+ *
  * @param {import("@/types").LayersEventBusKeys} event
  * @param {import("@eox/map").EOxMap | null} mapEl
- * @param {Record<string,any>[]} layers - the full layers array of the map in the new state
+ * @param {Record<string,any>[]} layers
  */
 export const useEmitLayersUpdate = async (event, mapEl, layers) => {
   if (!mapEl) {

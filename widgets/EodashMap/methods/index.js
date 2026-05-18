@@ -269,7 +269,7 @@ export const useUpdateTooltipProperties = (
    * @param {string} evt */
   const listenTo = (evt) =>
     enableCompare ? evt.includes("compare") : !evt.includes("compare");
-  useOnLayersUpdate(async (evt, _payload) => {
+  useOnLayersUpdate(async (evt) => {
     if (!listenTo(evt)) {
       return;
     }

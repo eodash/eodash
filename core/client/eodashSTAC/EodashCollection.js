@@ -398,10 +398,10 @@ export class EodashCollection {
 
   /**
    * @param {string} datetime
-   * @param {string} layer
+   * @param {string} layerId
    * @param {import("@eox/map").EoxLayer[]} currentLayers
    */
-  async updateLayerJson(datetime, layer, currentLayers) {
+  async updateLayerJson(datetime, layerId, currentLayers) {
     await this.fetchCollection();
     const datetimeProperty = getDatetimeProperty(
       await this.getItems(true, true),
@@ -436,7 +436,7 @@ export class EodashCollection {
       newLayers = await this.createLayersJson(specifiedLink);
     }
 
-    const oldLayer = findLayer(currentLayers, layer);
+    const oldLayer = findLayer(currentLayers, layerId);
 
     const toBeReplacedLayers = findLayersByLayerPrefix(currentLayers, oldLayer);
 

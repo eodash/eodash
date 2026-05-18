@@ -120,7 +120,7 @@ function findLayerIdByPrefix(layers, prefix) {
  * @returns {Promise<void>}
  */
 function waitForLayerRender(layer) {
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     if (!layer || layer.get("type") !== "Vector" || !("getSource" in layer))
       return resolve();
     const source = /** @type {import("ol/source/Vector").default} */ (
@@ -128,7 +128,9 @@ function waitForLayerRender(layer) {
     );
     if (!source || source.getFeatures().length > 0) return resolve();
     source.once("featuresloadend", () => resolve());
-    source.once("featuresloaderror", () => resolve());
+    source.once("featuresloaderror", () =>
+      reject(new Error(`Layer ${layer.get("id")} failed to load features`)),
+    );
   });
 }
 
@@ -187,7 +189,9 @@ export async function updateJsonformIdentifier({
     }
   }
 
-  await Promise.all(renderPromises);
+  await Promise.all(renderPromises).catch((err) => {
+    console.warn("[eodash] layer load failed before jsonform attach:", err);
+  });
 
   return form;
 }
