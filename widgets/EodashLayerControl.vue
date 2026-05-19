@@ -28,7 +28,7 @@
 <script setup>
 import "color-legend-element";
 import "@eox/timecontrol";
-import { computed, ref } from "vue";
+import { computed, ref, watch } from "vue";
 import { mapEl, mapCompareEl } from "@/store/states";
 import { getColFromLayer } from "@/eodashSTAC/helpers";
 import {
@@ -88,6 +88,12 @@ const enableLayoutSwitcher = computed(
 );
 
 const { selectedCompareStac, selectedStac } = storeToRefs(useSTAcStore());
+
+// Guards (collectionId → datetime) re-processing — eox-timecontrol reconnects
+// after layer reassignment and re-fires datetime:updated.
+const processedDatetimes = new Map();
+watch([selectedStac, selectedCompareStac], () => processedDatetimes.clear());
+
 const showControls = computed(() => {
   if (props.map === "second") {
     return mapCompareEl.value !== null && selectedCompareStac.value !== null;
@@ -105,6 +111,10 @@ const eoxLayercontrol = ref(null);
 /** @param {CustomEvent<{layer:import('ol/layer').Layer; datetime:string;}>} evt */
 const handleDatetimeUpdate = async (evt) => {
   const { layer, datetime } = evt.detail;
+  // layer.id changes to include the new datetime after updateLayerJson.
+  const collectionId = layer.get("id")?.split(";:;")[0] ?? layer.get("id");
+  if (processedDatetimes.get(collectionId) === datetime) return;
+  processedDatetimes.set(collectionId, datetime);
 
   const ec = await getColFromLayer(eodashCols, layer);
 
@@ -124,18 +134,15 @@ const handleDatetimeUpdate = async (evt) => {
   )?.layers;
 
   if (dataLayers?.length) {
-    // Add expand to all analysis layers
     dataLayers?.forEach((dl) => {
       dl.properties.layerControlExpand = true;
       dl.properties.layerControlToolsExpand = true;
     });
-    // assign layers to the map
     /** @type {HTMLElement & Record<string,any>} */
     (mapElement.value).layers = updatedLayers;
   }
 };
 
-// -----  debounce logic
 /** @type {NodeJS.Timeout | undefined} */
 let timeout;
 
@@ -148,7 +155,6 @@ const debouncedHandleDateTime = (evt) => {
     handleDatetimeUpdate(evt);
   }, 500);
 };
-// ------
 /**
  *
  * @param {Event & {detail:{layer:import("ol/layer").Layer;jsonformValue:Record<string,any>}}} evt
