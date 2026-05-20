@@ -1042,6 +1042,38 @@ const ZARR_BAND_COLORS = [
 ];
 
 /**
+ * Locate the first sub-schema whose `format` matches by walking `properties`
+ * and the `oneOf` / `allOf` / `anyOf` combinators. Returns the schema path
+ * (array of keys/indices) from the root schema to the matched node, or
+ * undefined if not found. Empty array means the input schema itself matched.
+ *
+ * @param {Record<string, any> | null | undefined} schema
+ * @param {string} [format="bands"]
+ * @returns {(string | number)[] | undefined}
+ */
+export function getBandsProperty(schema, format = "bands") {
+  if (!schema || typeof schema !== "object") return undefined;
+  if (schema.format === format) return [];
+
+  if (schema.properties) {
+    for (const key of Object.keys(schema.properties)) {
+      const sub = getBandsProperty(schema.properties[key], format);
+      if (sub) return ["properties", key, ...sub];
+    }
+  }
+
+  for (const combinator of ["oneOf", "allOf", "anyOf"]) {
+    if (!Array.isArray(schema[combinator])) continue;
+    for (let i = 0; i < schema[combinator].length; i++) {
+      const sub = getBandsProperty(schema[combinator][i], format);
+      if (sub) return [combinator, i, ...sub];
+    }
+  }
+
+  return undefined;
+}
+
+/**
  * Generates a default WebGL flat style for a GeoZarr layer.
  * The source is loaded with only `defaultBands` (3 bands in R/G/B order), so
  * `['band', 1/2/3]` always maps to the correct channel without variable indirection.
@@ -1099,102 +1131,97 @@ export function generateGeoZarrStyle(availableBands, defaultBands) {
       ],
     ],
     jsonform: {
-      properties: {},
-      oneOf: [
-        {
-          type: "object",
-          title: "Band Configuration",
-          properties: {
-            bands: {
-              title: "Band Combination",
-              type: "array",
-              format: "bands",
-              default: defaultBands,
-              items: {
-                type: "string",
-                enum: availableBands,
-                //@ts-expect-error custom jsonform option
-                options: {
-                  enum_titles: availableBands.map((b) => b.toUpperCase()),
-                  colors,
-                },
-              },
-            },
-            gamma: {
-              type: "number",
-              title: "Gamma Correction",
-              minimum: 0,
-              maximum: 5,
-              step: 0.1,
-              default: 1.5,
-              format: "range",
-            },
-            rescaleRed: {
-              title: "Red Channel",
-              type: "object",
-              properties: {
-                minRed: {
-                  type: "number",
-                  minimum: 0,
-                  maximum: 1,
-                  format: "range",
-                  default: 0,
-                },
-                maxRed: {
-                  type: "number",
-                  minimum: 0,
-                  maximum: 1,
-                  format: "range",
-                  default: 0.5,
-                },
-              },
-              format: "minmax",
-            },
-            rescaleGreen: {
-              title: "Green Channel",
-              type: "object",
-              properties: {
-                minGreen: {
-                  type: "number",
-                  minimum: 0,
-                  maximum: 1,
-                  format: "range",
-                  default: 0,
-                },
-                maxGreen: {
-                  type: "number",
-                  minimum: 0,
-                  maximum: 1,
-                  format: "range",
-                  default: 0.5,
-                },
-              },
-              format: "minmax",
-            },
-            rescaleBlue: {
-              title: "Blue Channel",
-              type: "object",
-              properties: {
-                minBlue: {
-                  type: "number",
-                  minimum: 0,
-                  maximum: 1,
-                  format: "range",
-                  default: 0,
-                },
-                maxBlue: {
-                  type: "number",
-                  minimum: 0,
-                  maximum: 1,
-                  format: "range",
-                  default: 0.5,
-                },
-              },
-              format: "minmax",
+      type: "object",
+      title: "Band Configuration",
+      required: ["bands"],
+      properties: {
+        bands: {
+          title: "Band Combination",
+          type: "array",
+          format: "bands",
+          default: defaultBands,
+          items: {
+            type: "string",
+            enum: availableBands,
+            options: {
+              enum_titles: availableBands.map((b) => b.toUpperCase()),
+              colors,
             },
           },
         },
-      ],
+        gamma: {
+          type: "number",
+          title: "Gamma Correction",
+          minimum: 0,
+          maximum: 5,
+          step: 0.1,
+          default: 1.5,
+          format: "range",
+        },
+        rescaleRed: {
+          title: "Red Channel",
+          type: "object",
+          properties: {
+            minRed: {
+              type: "number",
+              minimum: 0,
+              maximum: 1,
+              format: "range",
+              default: 0,
+            },
+            maxRed: {
+              type: "number",
+              minimum: 0,
+              maximum: 1,
+              format: "range",
+              default: 0.5,
+            },
+          },
+          format: "minmax",
+        },
+        rescaleGreen: {
+          title: "Green Channel",
+          type: "object",
+          properties: {
+            minGreen: {
+              type: "number",
+              minimum: 0,
+              maximum: 1,
+              format: "range",
+              default: 0,
+            },
+            maxGreen: {
+              type: "number",
+              minimum: 0,
+              maximum: 1,
+              format: "range",
+              default: 0.5,
+            },
+          },
+          format: "minmax",
+        },
+        rescaleBlue: {
+          title: "Blue Channel",
+          type: "object",
+          properties: {
+            minBlue: {
+              type: "number",
+              minimum: 0,
+              maximum: 1,
+              format: "range",
+              default: 0,
+            },
+            maxBlue: {
+              type: "number",
+              minimum: 0,
+              maximum: 1,
+              format: "range",
+              default: 0.5,
+            },
+          },
+          format: "minmax",
+        },
+      },
     },
   });
 }
