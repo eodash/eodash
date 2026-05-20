@@ -87,6 +87,9 @@ export const useInitMap = (
   const watching = selectedItem
     ? [selectedIndicator, datetime, selectedItem]
     : [selectedIndicator, datetime];
+  // Tags datetime values we set ourselves so the watcher skips its own echo.
+  /** @type {string | null} */
+  let internalDatetime = null;
 
   const stopIndicatorWatcher = watch(
     watching,
@@ -101,13 +104,27 @@ export const useInitMap = (
         );
 
       if (updatedStac) {
-        // Item deselect: overview render is owned by the catalog widget.
+        const isSameStac = updatedStac?.id === previousStac?.id;
+        const isSameItem = updatedItem?.id === previousItem?.id;
+
+        // Item deselect: overview render is owned by the item catalog widget.
         const isItemDeselect =
           previousItem &&
           !updatedItem &&
-          updatedStac?.id === previousStac?.id &&
+          isSameStac &&
           updatedTime === previousTime;
         if (isItemDeselect) return;
+
+        // Re-fire from our own datetime.value write, skip and clear
+        const isOwnDatetimeUpdate =
+          internalDatetime !== null &&
+          updatedTime === internalDatetime &&
+          isSameStac &&
+          isSameItem;
+        if (isOwnDatetimeUpdate) {
+          internalDatetime = null;
+          return;
+        }
 
         log.debug(
           "Selected Indicator watch triggered",
@@ -160,7 +177,6 @@ export const useInitMap = (
             JSON.parse(JSON.stringify(layersCollection)),
           );
           mapLayers.value = layersCollection;
-
           useEmitLayersUpdate(
             mapElement.value?.id === "compare"
               ? "compareTime:updated"
@@ -187,22 +203,27 @@ export const useInitMap = (
             endInterval,
           );
         }
+        let resolvedTime = updatedItem ?? updatedTime;
         if (
           !updatedItem &&
           endInterval !== null &&
           endInterval.toISOString() !== datetime.value &&
           !isFirstLoad.value
         ) {
-          datetime.value = endInterval.toISOString();
+          resolvedTime = endInterval.toISOString();
+          internalDatetime = resolvedTime;
+          datetime.value = resolvedTime;
         } else if (isFirstLoad.value && !datetime.value && endInterval) {
-          datetime.value = endInterval.toISOString();
+          resolvedTime = endInterval.toISOString();
+          internalDatetime = resolvedTime;
+          datetime.value = resolvedTime;
         }
 
         /** @type {Record<string,any>[]} */
         layersCollection = await createLayersConfig(
           updatedStac,
           eodashCols,
-          updatedItem ?? updatedTime,
+          updatedItem ?? resolvedTime,
           defaultBaseLayers,
         );
 
@@ -272,7 +293,7 @@ export const useUpdateTooltipProperties = (
    * @param {string} evt */
   const listenTo = (evt) =>
     enableCompare ? evt.includes("compare") : !evt.includes("compare");
-  useOnLayersUpdate(async (evt, _payload) => {
+  useOnLayersUpdate(async (evt) => {
     if (!listenTo(evt)) {
       return;
     }
