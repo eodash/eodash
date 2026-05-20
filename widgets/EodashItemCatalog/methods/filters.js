@@ -45,6 +45,7 @@ export const createSubtitleProperty = (filtersConfig) => {
  *   title?: string,
  *   min?: number,
  *   max?: number,
+ *   step?: number,
  *   filterKeys?: string[],
  *   state?: Record<string, boolean>,
  *   placeholder?: string,
@@ -86,6 +87,9 @@ export const createFilterProperties = (filtersConfig, datetimeFilter) => {
           title: filter.title || filter.property,
           type: "range",
           expanded: true,
+          min: filter.min,
+          max: filter.max,
+          step: filter.step,
           filterKeys: [filter.min || 0, filter.max || 100],
           state: filter.state ?? {
             min: filter.min ?? 0,
