@@ -86,6 +86,10 @@ export const useInitMap = (
   const watching = selectedItem
     ? [selectedIndicator, datetime, selectedItem]
     : [selectedIndicator, datetime];
+  // Tags datetime values we set ourselves so the watcher skips its own echo.
+  /** @type {string | null} */
+  let internalDatetime = null;
+
   const stopIndicatorWatcher = watch(
     watching,
     async (updated, previous) => {
@@ -99,6 +103,16 @@ export const useInitMap = (
         );
 
       if (updatedStac) {
+        if (
+          internalDatetime !== null &&
+          updatedTime === internalDatetime &&
+          updatedStac?.id === previousStac?.id &&
+          updatedItem?.id === previousItem?.id
+        ) {
+          internalDatetime = null;
+          return;
+        }
+
         log.debug(
           "Selected Indicator watch triggered",
           updatedStac,
@@ -150,7 +164,6 @@ export const useInitMap = (
             JSON.parse(JSON.stringify(layersCollection)),
           );
           mapLayers.value = layersCollection;
-
           useEmitLayersUpdate(
             mapElement.value?.id === "compare"
               ? "compareTime:updated"
@@ -177,22 +190,27 @@ export const useInitMap = (
             endInterval,
           );
         }
+        let resolvedTime = updatedItem ?? updatedTime;
         if (
           !updatedItem &&
           endInterval !== null &&
           endInterval.toISOString() !== datetime.value &&
           !isFirstLoad.value
         ) {
-          datetime.value = endInterval.toISOString();
+          resolvedTime = endInterval.toISOString();
+          internalDatetime = resolvedTime;
+          datetime.value = resolvedTime;
         } else if (isFirstLoad.value && !datetime.value && endInterval) {
-          datetime.value = endInterval.toISOString();
+          resolvedTime = endInterval.toISOString();
+          internalDatetime = resolvedTime;
+          datetime.value = resolvedTime;
         }
 
         /** @type {Record<string,any>[]} */
         layersCollection = await createLayersConfig(
           updatedStac,
           eodashCols,
-          updatedItem ?? updatedTime,
+          updatedItem ?? resolvedTime,
           defaultBaseLayers,
         );
 
@@ -262,7 +280,7 @@ export const useUpdateTooltipProperties = (
    * @param {string} evt */
   const listenTo = (evt) =>
     enableCompare ? evt.includes("compare") : !evt.includes("compare");
-  useOnLayersUpdate(async (evt, _payload) => {
+  useOnLayersUpdate(async (evt) => {
     if (!listenTo(evt)) {
       return;
     }
