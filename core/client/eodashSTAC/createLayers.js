@@ -69,10 +69,10 @@ export async function createLayersFromAssets(
   for (const [idx, assetId] of Object.keys(assets).entries()) {
     assetIds.push(assetId);
 
-    if (assets[assetId]?.type === "application/geo+json") {
+    if (assets[assetId]?.type?.includes("application/geo+json")) {
       geoJsonSources.push(assets[assetId].href);
       geoJsonIdx.push(idx);
-    } else if (assets[assetId]?.type === "application/vnd.flatgeobuf") {
+    } else if (assets[assetId]?.type?.includes("application/vnd.flatgeobuf")) {
       fgbSources.push(assets[assetId].href);
       fgbIdx.push(idx);
     } else if (
@@ -81,13 +81,13 @@ export async function createLayersFromAssets(
     ) {
       zarrAssetIds.push(assetId);
       zarrIdx.push(idx);
-    } else if (assets[assetId]?.type === "image/tiff") {
+    } else if (assets[assetId]?.type?.includes("image/tiff")) {
       geoTIFFIdx.push(idx);
       geoTIFFSources.push({
         url: assets[assetId].href,
         attributions: assets[assetId].attribution,
       });
-    } else if (assets[assetId]?.type === "application/geodb+json") {
+    } else if (assets[assetId]?.type?.includes("application/geodb+json")) {
       const responseData = await (await fetch(assets[assetId].href)).json();
       geoJsonIdx.push(idx);
       if (
