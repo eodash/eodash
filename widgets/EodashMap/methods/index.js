@@ -88,10 +88,6 @@ export const useInitMap = (
     ? [selectedIndicator, datetime, selectedItem]
     : [selectedIndicator, datetime];
 
-  // Tracks datetime values set internally to skip the resulting watcher re-fire
-  /** @type {string | null} */
-  let internalDatetime = null;
-
   const stopIndicatorWatcher = watch(
     watching,
     async (updated, previous) => {
@@ -105,23 +101,13 @@ export const useInitMap = (
         );
 
       if (updatedStac) {
-        const sameStac = updatedStac?.id === previousStac?.id;
-        const sameItem = updatedItem?.id === previousItem?.id;
-        const sameTime = updatedTime === previousTime;
-
-        const isSelfDatetimeRefire =
-          internalDatetime !== null &&
-          updatedTime === internalDatetime &&
-          sameStac &&
-          sameItem;
-        if (isSelfDatetimeRefire) {
-          internalDatetime = null;
-          return;
-        }
-
-        // Deselect: overview render is handled by the catalog widget's watcher.
-        const isDeselect = previousItem && !updatedItem && sameStac && sameTime;
-        if (isDeselect) return;
+        // Item deselect: overview render is owned by the catalog widget.
+        const isItemDeselect =
+          previousItem &&
+          !updatedItem &&
+          updatedStac?.id === previousStac?.id &&
+          updatedTime === previousTime;
+        if (isItemDeselect) return;
 
         log.debug(
           "Selected Indicator watch triggered",
@@ -201,28 +187,22 @@ export const useInitMap = (
             endInterval,
           );
         }
-        let resolvedTime = updatedItem ?? updatedTime;
-
         if (
           !updatedItem &&
           endInterval !== null &&
           endInterval.toISOString() !== datetime.value &&
           !isFirstLoad.value
         ) {
-          resolvedTime = endInterval.toISOString();
-          internalDatetime = resolvedTime;
-          datetime.value = resolvedTime;
+          datetime.value = endInterval.toISOString();
         } else if (isFirstLoad.value && !datetime.value && endInterval) {
-          resolvedTime = endInterval.toISOString();
-          internalDatetime = resolvedTime;
-          datetime.value = resolvedTime;
+          datetime.value = endInterval.toISOString();
         }
 
         /** @type {Record<string,any>[]} */
         layersCollection = await createLayersConfig(
           updatedStac,
           eodashCols,
-          resolvedTime,
+          updatedItem ?? updatedTime,
           defaultBaseLayers,
         );
 
