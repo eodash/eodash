@@ -75,7 +75,9 @@ export async function createLayersFromAssets(
       geoTIFFIdx.push(idx);
       geoTIFFSources.push({
         url: assets[assetId].href,
-        attributions: assets[assetId].attribution,
+        ...(assets[assetId].attribution
+          ? { attributions: assets[assetId].attribution }
+          : {}),
       });
     } else if (assets[assetId]?.type === "application/geodb+json") {
       const responseData = await (await fetch(assets[assetId].href)).json();
@@ -178,7 +180,9 @@ export async function createLayersFromAssets(
           type: "Vector",
           url: geoJSONURL,
           format: { type: "GeoJSON", dataProjection: projection },
-          attributions: assets[assetName].attribution,
+          ...(assets[assetName].attribution
+            ? { attributions: assets[assetName].attribution }
+            : {}),
         },
         properties: {
           id: assetLayerId,
@@ -239,7 +243,9 @@ export async function createLayersFromAssets(
           ...urlsObject,
           type: "FlatGeoBuf",
           projection,
-          attributions: assets[assetName].attribution,
+          ...(assets[assetName].attribution
+            ? { attributions: assets[assetName].attribution }
+            : {}),
         },
         properties: {
           id: assetLayerId,
@@ -385,7 +391,7 @@ export const createLayersFromLinks = async (
         tileGrid: {
           tileSize,
         },
-        attributions: wmsLink.attribution,
+        ...(wmsLink.attribution ? { attributions: wmsLink.attribution } : {}),
         params: {
           LAYERS: wmsLink["wms:layers"],
           TILED: true,
@@ -496,7 +502,9 @@ export const createLayersFromLinks = async (
           tileGrid: {
             tileSize: [128, 128],
           },
-          attributions: wmtsLink.attribution,
+          ...(wmtsLink.attribution
+            ? { attributions: wmtsLink.attribution }
+            : {}),
           dimensions: dimensionsWithoutStyle,
         },
       };
@@ -516,7 +524,9 @@ export const createLayersFromLinks = async (
           layer: wmtsLink["wmts:layer"],
           style: extractedStyle,
           ...(matrixSet ? { matrixSet } : {}),
-          attributions: wmtsLink.attribution,
+          ...(wmtsLink.attribution
+            ? { attributions: wmtsLink.attribution }
+            : {}),
           dimensions: dimensionsWithoutStyle,
         },
       };
@@ -600,7 +610,7 @@ export const createLayersFromLinks = async (
         type: "XYZ",
         url: isUpscalingSupported ? xyzUrl.replace("{y}", "{y}@2x") : xyzUrl,
         projection: projectionCode,
-        attributions: xyzLink.attribution,
+        ...(xyzLink.attribution ? { attributions: xyzLink.attribution } : {}),
       },
     };
     if (isUpscalingSupported) {
@@ -686,7 +696,9 @@ export const createLayersFromLinks = async (
         },
         url: href,
         projection: projectionCode,
-        attributions: vectorTileLink.attribution,
+        ...(vectorTileLink.attribution
+          ? { attributions: vectorTileLink.attribution }
+          : {}),
       },
       interactions: [],
       ...(!style?.variables && { style }),
@@ -745,7 +757,9 @@ export const createLayersFromLinks = async (
         layerDatetime,
         mapboxStyle: href,
         projection: projectionCode,
-        attributions: mapboxStyleDocumentLink.attribution,
+        ...(mapboxStyleDocumentLink.attribution
+          ? { attributions: mapboxStyleDocumentLink.attribution }
+          : {}),
         applyOptions,
       },
       interactions: [],
