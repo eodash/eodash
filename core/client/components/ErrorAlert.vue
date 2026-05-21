@@ -61,7 +61,7 @@ const eodash = inject(eodashKey);
 
 const title = computed(() => {
   if (errorState.value.critical) {
-    return eodash?.brand?.errorMessage ?? "Unable to load dashboard";
+    return eodash?.brand?.errorMessage ?? "Unable to load catalog endpoint";
   }
   return errorState.value.severity === "warning" ? "Notice" : "Something went wrong";
 });
