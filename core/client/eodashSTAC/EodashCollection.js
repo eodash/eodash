@@ -22,7 +22,6 @@ import {
   createLayersFromAssets,
   createLayersFromLinks,
 } from "./createLayers";
-import axios from "@/plugins/axios";
 import log from "loglevel";
 import { dataThemesBrands } from "@/utils/states";
 

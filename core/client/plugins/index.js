@@ -95,6 +95,9 @@ export function registerPlugins(app) {
   };
 
   // Catch uncaught errors
+  // TODO: For now i think overkill to inform of any potential
+  // escaped error, but maybe we want to handle this somehow
+  /*
   window.addEventListener("error", (event) => {
     const error = event.error;
     const msg = error instanceof Error
@@ -102,7 +105,6 @@ export function registerPlugins(app) {
       : `${event.message} at ${event.filename}:${event.lineno}:${event.colno}`;
     updateErrorState(msg, true);
   });
-
   // Catch unhandled promise rejections
   window.addEventListener("unhandledrejection", (event) => {
     const reason = event.reason;
@@ -110,6 +112,7 @@ export function registerPlugins(app) {
     updateErrorState(message, true);
     originalError("Unhandled Rejection:", reason);
   });
+  */
 
   app
     .use(vuetify)
