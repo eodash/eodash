@@ -1,6 +1,7 @@
 import { compareIndicator, indicator } from "@/store/states";
 // we don't want to use the caching axios instance here
 import axios from "axios";
+import { fetchJson } from "@/utils";
 import {
   applyProcessLayersToMap,
   creatAsyncProcessLayerDefinitions,
@@ -44,8 +45,10 @@ export async function pollProcessStatus({
     try {
       // Fetch the process JSON report
       const cacheBuster = new Date().getTime(); // Add a timestamp for cache busting
-      const response = await axios.get(`${processUrl}?t=${cacheBuster}`);
-      const processReport = response.data;
+      const processReport = await fetchJson(
+        `${processUrl}?t=${cacheBuster}`,
+        "process report",
+      );
 
       // Check if the status is "successful"
       if (processReport.status === "successful") {
@@ -58,9 +61,9 @@ export async function pollProcessStatus({
         }
 
         // Fetch the result item
-        const resultResponse = await axios.get(resultsUrl);
-        console.log("Result file fetched successfully:", resultResponse.data);
-        return resultResponse.data; // Return the json result list
+        const resultData = await fetchJson(resultsUrl, "process result item");
+        console.log("Result file fetched successfully:", resultData);
+        return resultData; // Return the json result list
       }
       if (processReport.status === "failed") {
         isPolling.value = false;

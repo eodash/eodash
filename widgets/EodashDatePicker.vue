@@ -252,32 +252,31 @@ async function fetchCollectionsAttributes(eodashCollections) {
   }
 
   return await Promise.all(
-    eodashCollections.map((ec, idx) => {
-      return ec.fetchCollection().then(async () => {
-        const dates = await ec.getDates();
-        if (!dates || !dates.length) {
-          log.debug(
-            `Collection ${ec.collectionStac?.id} has no dates, skipping datepicker attribute`,
-          );
-          return undefined;
-        }
+    eodashCollections.map(async (ec, idx) => {
+      await ec.fetchCollection();
+      const dates = await ec.getDates();
+      if (!dates || !dates.length) {
+        log.debug(
+          `Collection ${ec.collectionStac?.id} has no dates, skipping datepicker attribute`,
+        );
+        return undefined;
+      }
 
-        return {
-          key: "id-" + idx.toString() + Math.random().toString(16).slice(2),
-          dot: {
-            style: {
-              backgroundColor: ec.color,
-            },
+      return {
+        key: "id-" + idx.toString() + Math.random().toString(16).slice(2),
+        dot: {
+          style: {
+            backgroundColor: ec.color,
           },
-          dates,
-          content: {
-            style: {
-              color: "#000000",
-              "font-weight": "bold",
-            },
+        },
+        dates,
+        content: {
+          style: {
+            color: "#000000",
+            "font-weight": "bold",
           },
-        };
-      });
+        },
+      };
     }),
   );
 }

@@ -1,5 +1,6 @@
 import { toAbsolute } from "stac-js/src/http.js";
 import axios from "@/plugins/axios";
+import { fetchJson } from "@/utils";
 import log from "loglevel";
 import { getStyleVariablesState } from "./triggers.js";
 
@@ -205,7 +206,7 @@ export const fetchStyle = async (
   }
   if (styleLink) {
     /** @type {import("@/types").EodashStyleJson} */
-    const styleJson = await axios.get(styleLink.href).then((resp) => resp.data);
+    const styleJson = await fetchJson(styleLink.href, "style definition");
 
     log.debug("fetched styles JSON", JSON.parse(JSON.stringify(styleJson)));
     return { ...styleJson };
@@ -222,7 +223,7 @@ export const fetchAllStyles = async (stacObject) => {
     link.rel.includes("style"),
   );
   const fetchPromises = styleLinks.map(async (link) => {
-    const styleJson = await axios.get(link.href).then((resp) => resp.data);
+    const styleJson = await fetchJson(link.href, "style definition");
     log.debug("fetched styles JSON", JSON.parse(JSON.stringify(styleJson)));
     return styleJson;
   });

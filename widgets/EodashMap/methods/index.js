@@ -86,145 +86,149 @@ export const useInitMap = (
   const stopIndicatorWatcher = watch(
     watching,
     async (updated, previous) => {
-      const [updatedStac, updatedTime, updatedItem] =
-        /** @type {[import("stac-ts").StacCollection, string, import("stac-ts").StacItem | null]} */ (
-          selectedItem ? updated : [updated[0], updated[1], null]
-        );
-      const [previousStac, previousTime, previousItem] =
-        /** @type {[import("stac-ts").StacCollection, string, import("stac-ts").StacItem]} */ (
-          selectedItem ? previous : [previous[0], previous[1], null]
-        );
+      try {
+        const [updatedStac, updatedTime, updatedItem] =
+          /** @type {[import("stac-ts").StacCollection, string, import("stac-ts").StacItem | null]} */ (
+            selectedItem ? updated : [updated[0], updated[1], null]
+          );
+        const [previousStac, previousTime, previousItem] =
+          /** @type {[import("stac-ts").StacCollection, string, import("stac-ts").StacItem]} */ (
+            selectedItem ? previous : [previous[0], previous[1], null]
+          );
 
-      if (updatedStac) {
-        log.debug(
-          "Selected Indicator watch triggered",
-          updatedStac,
-          updatedTime,
-        );
+        if (updatedStac) {
+          log.debug(
+            "Selected Indicator watch triggered",
+            updatedStac,
+            updatedTime,
+          );
 
-        if (mapElement?.value?.id === "main") {
-          // Making sure main map gets the viewer that seems to be
-          // removed when the second map is no longer rendered
-          if (viewHolder !== null) {
-            // Set view to previous compare view
-            mapElement?.value?.map.setView(viewHolder);
-            viewHolder = null;
+          if (mapElement?.value?.id === "main") {
+            // Making sure main map gets the viewer that seems to be
+            // removed when the second map is no longer rendered
+            if (viewHolder !== null) {
+              // Set view to previous compare view
+              mapElement?.value?.map.setView(viewHolder);
+              viewHolder = null;
+            }
           }
-        }
-        let layersCollection = [];
+          let layersCollection = [];
 
-        const onlyTimeChanged =
-          updatedStac?.id === previousStac?.id &&
-          (updatedTime !== previousTime ||
-            (updatedItem && updatedItem?.id !== previousItem?.id));
+          const onlyTimeChanged =
+            updatedStac?.id === previousStac?.id &&
+            (updatedTime !== previousTime ||
+              (updatedItem && updatedItem?.id !== previousItem?.id));
 
-        const { selectedCompareStac } = storeToRefs(useSTAcStore());
-        if (mapElement?.value?.id === "main") {
-          // Main map being initialized
-          // Set projection based on indicator level information for both maps
-          await setMapProjFromCol(updatedStac);
-        } else {
-          // Compare map being initialized
-          if (selectedCompareStac.value !== null) {
-            // save view of compare map
-            viewHolder = mapElement?.value?.map.getView() ?? null;
-            /** @type {any} */
-            (mapElement.value).sync = partnerMap.value;
+          const { selectedCompareStac } = storeToRefs(useSTAcStore());
+          if (mapElement?.value?.id === "main") {
+            // Main map being initialized
+            // Set projection based on indicator level information for both maps
+            await setMapProjFromCol(updatedStac);
+          } else {
+            // Compare map being initialized
+            if (selectedCompareStac.value !== null) {
+              // save view of compare map
+              viewHolder = mapElement?.value?.map.getView() ?? null;
+              /** @type {any} */
+              (mapElement.value).sync = partnerMap.value;
+            }
           }
-        }
 
-        // We re-create the configuration if time changed
-        if (onlyTimeChanged) {
+          // We re-create the configuration if time changed
+          if (onlyTimeChanged) {
+            layersCollection = await createLayersConfig(
+              updatedStac,
+              eodashCols,
+              updatedItem ?? updatedTime,
+            );
+            log.debug(
+              "Assigned layers after changing time only",
+              JSON.parse(JSON.stringify(layersCollection)),
+            );
+            mapLayers.value = layersCollection;
+
+            useEmitLayersUpdate(
+              mapElement.value?.id === "compare"
+                ? "compareTime:updated"
+                : "time:updated",
+              mapElement.value,
+              layersCollection,
+            );
+            return;
+          }
+
+          // We try to set the current time selection to latest extent date
+          let endInterval = null;
+          const interval = updatedStac?.extent?.temporal?.interval;
+          if (interval && interval.length > 0 && interval[0].length > 1) {
+            // @ts-expect-error this is the defined STAC structure
+            endInterval = new Date(interval[0][1]);
+            log.debug(
+              "Indicator load: found stac extent, setting time to latest value",
+              endInterval,
+            );
+          }
+          if (
+            !updatedItem &&
+            endInterval !== null &&
+            endInterval.toISOString() !== datetime.value &&
+            !isFirstLoad.value
+          ) {
+            datetime.value = endInterval.toISOString();
+          } else if (isFirstLoad.value && !datetime.value && endInterval) {
+            datetime.value = endInterval.toISOString();
+          }
+
+          /** @type {Record<string,any>[]} */
           layersCollection = await createLayersConfig(
             updatedStac,
             eodashCols,
             updatedItem ?? updatedTime,
           );
+
+          if (zoomToExtent) {
+            // Try to move map view to extent only when main
+            // indicator and map changes
+            if (
+              !updatedItem &&
+              mapElement?.value?.id === "main" &&
+              updatedStac.extent?.spatial.bbox &&
+              !(
+                isFirstLoad.value &&
+                mapPosition.value?.[0] &&
+                mapPosition.value?.[1]
+              )
+            ) {
+              // Sanitize extent,
+              const b = updatedStac.extent?.spatial.bbox[0];
+              const sanitizedExtent = sanitizeBbox([...b]);
+
+              const reprojExtent = transformExtent(
+                sanitizedExtent,
+                "EPSG:4326",
+                mapElement.value?.map?.getView().getProjection(),
+              );
+              /** @type {import("@eox/map").EOxMap} */
+              (mapElement.value).zoomExtent = reprojExtent;
+            }
+          }
+
           log.debug(
-            "Assigned layers after changing time only",
+            "Assigned layers",
             JSON.parse(JSON.stringify(layersCollection)),
           );
           mapLayers.value = layersCollection;
-
-          useEmitLayersUpdate(
+          // Emit event to update layers
+          await useEmitLayersUpdate(
             mapElement.value?.id === "compare"
-              ? "compareTime:updated"
-              : "time:updated",
+              ? "compareLayers:updated"
+              : "layers:updated",
             mapElement.value,
-            layersCollection,
-          );
-          return;
-        }
-
-        // We try to set the current time selection to latest extent date
-        let endInterval = null;
-        const interval = updatedStac?.extent?.temporal?.interval;
-        if (interval && interval.length > 0 && interval[0].length > 1) {
-          // @ts-expect-error this is the defined STAC structure
-          endInterval = new Date(interval[0][1]);
-          log.debug(
-            "Indicator load: found stac extent, setting time to latest value",
-            endInterval,
+            mapLayers.value,
           );
         }
-        if (
-          !updatedItem &&
-          endInterval !== null &&
-          endInterval.toISOString() !== datetime.value &&
-          !isFirstLoad.value
-        ) {
-          datetime.value = endInterval.toISOString();
-        } else if (isFirstLoad.value && !datetime.value && endInterval) {
-          datetime.value = endInterval.toISOString();
-        }
-
-        /** @type {Record<string,any>[]} */
-        layersCollection = await createLayersConfig(
-          updatedStac,
-          eodashCols,
-          updatedItem ?? updatedTime,
-        );
-
-        if (zoomToExtent) {
-          // Try to move map view to extent only when main
-          // indicator and map changes
-          if (
-            !updatedItem &&
-            mapElement?.value?.id === "main" &&
-            updatedStac.extent?.spatial.bbox &&
-            !(
-              isFirstLoad.value &&
-              mapPosition.value?.[0] &&
-              mapPosition.value?.[1]
-            )
-          ) {
-            // Sanitize extent,
-            const b = updatedStac.extent?.spatial.bbox[0];
-            const sanitizedExtent = sanitizeBbox([...b]);
-
-            const reprojExtent = transformExtent(
-              sanitizedExtent,
-              "EPSG:4326",
-              mapElement.value?.map?.getView().getProjection(),
-            );
-            /** @type {import("@eox/map").EOxMap} */
-            (mapElement.value).zoomExtent = reprojExtent;
-          }
-        }
-
-        log.debug(
-          "Assigned layers",
-          JSON.parse(JSON.stringify(layersCollection)),
-        );
-        mapLayers.value = layersCollection;
-        // Emit event to update layers
-        await useEmitLayersUpdate(
-          mapElement.value?.id === "compare"
-            ? "compareLayers:updated"
-            : "layers:updated",
-          mapElement.value,
-          mapLayers.value,
-        );
+      } catch (error) {
+        console.error("Error in map initialization watcher:", error);
       }
     },
     { immediate: true },
