@@ -119,7 +119,7 @@ const jsonformKey = computed(
 
 useInitProcess({
   selectedStac: currentSelectedStac,
-  mapElement: mapElement.value,
+  mapElement,
   jsonformSchema,
   isProcessed,
   processResults,
