@@ -380,9 +380,6 @@ const tooltipPropertyTransform = (map) => {
    * @returns {{key:string; value?:string} | undefined}
    */
   return (param) => {
-    if (tooltipAdapter.value) {
-      return tooltipAdapter.value(param, map);
-    }
     /** @type {typeof tooltipProps.value} */
     const updatedProperties = JSON.parse(
       mustache.render(JSON.stringify(tooltipProps.value), {
@@ -394,6 +391,9 @@ const tooltipPropertyTransform = (map) => {
       (prop) => prop.id === param.key,
     );
     if (!tooltipProp) {
+      if (tooltipAdapter.value) {
+        return tooltipAdapter.value(param, map);
+      }
       return undefined;
     }
     if (typeof param.value === "object") {
@@ -405,7 +405,6 @@ const tooltipPropertyTransform = (map) => {
         : 4;
       param.value = Number(param.value).toFixed(decimals).toString();
     }
-
     return {
       key: tooltipProp.title || tooltipProp.id,
       value: param.value + " " + (tooltipProp.appendix || ""),
