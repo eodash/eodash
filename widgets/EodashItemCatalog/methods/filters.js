@@ -49,12 +49,16 @@ export const createSubtitleProperty = (filtersConfig) => {
  *   filterKeys?: string[],
  *   state?: Record<string, boolean>,
  *   placeholder?: string,
+ *   format?: string,
  * }>} filtersConfig
  * @param {boolean} datetimeFilter
  */
 // Transform simple filter configs into eox-itemfilter format
 export const createFilterProperties = (filtersConfig, datetimeFilter) => {
   const store = useSTAcStore();
+  const customDatetimeConfig = filtersConfig.find(
+    (f) => f.property === "datetime",
+  );
   const baseFilters = [
     {
       key: "collection",
@@ -66,18 +70,21 @@ export const createFilterProperties = (filtersConfig, datetimeFilter) => {
         store.stac?.filter((col) => col.id).map((col) => col.id) || [],
       ...(indicator.value && { state: { [indicator.value]: true } }),
     },
-    ...((datetimeFilter && [
-      {
-        key: "datetime",
-        title: "Date",
-        type: "range",
-        format: "date",
-      },
-    ]) ||
-      []),
+    ...(datetimeFilter || customDatetimeConfig
+      ? [
+          {
+            key: "datetime",
+            title: "Date",
+            type: "range",
+            format: "date",
+            ...(customDatetimeConfig || {}),
+          },
+        ]
+      : []),
   ];
 
   const dynamicFilters = filtersConfig
+    .filter((f) => f.property !== "datetime")
     .map((filter) => {
       const propertyKey = `properties.${filter.property}`;
 
@@ -90,6 +97,7 @@ export const createFilterProperties = (filtersConfig, datetimeFilter) => {
           min: filter.min,
           max: filter.max,
           step: filter.step,
+          format: filter.format,
           filterKeys: [filter.min || 0, filter.max || 100],
           state: filter.state ?? {
             min: filter.min ?? 0,
@@ -204,6 +212,10 @@ export const createExternalFilter = (
   selectedItemRef,
   stacEndpoint,
 ) => {
+  const hasCustomDatetime = propsFilters.some(
+    (f) => f.property === "datetime",
+  );
+  const effectiveDatetimeFilter = datetimeFilter || hasCustomDatetime;
   let controller = new AbortController();
   /**
    * @param {Array<any>} _items
@@ -213,7 +225,7 @@ export const createExternalFilter = (
     url: buildSearchUrl(
       filters,
       bboxFilter,
-      datetimeFilter,
+      effectiveDatetimeFilter,
       searchLimit,
       sortBy.value,
       typeof stacEndpoint === "object" ? stacEndpoint?.value : stacEndpoint,
