@@ -53,18 +53,6 @@
       <div class="tooltip left">Compare mode</div>
     </button>
     <button
-      v-if="backToPOIs && (poi || comparePoi)"
-      class="primary small circle small-elevate"
-      @click="loadPOiIndicator()"
-    >
-      <i class="small">
-        <svg viewBox="0 0 24 24">
-          <path :d="mdiStarFourPointsCircleOutline"></path>
-        </svg>
-      </i>
-      <div class="tooltip left">Back to POIs</div>
-    </button>
-    <button
       v-if="enableGlobe && !isInCompareMode"
       class="primary small circle small-elevate"
       @click="switchGlobe"
@@ -114,6 +102,18 @@
       tooltip="Search"
       tooltip-direction="left"
     ></eox-geosearch>
+    <button
+      v-if="backToPOIs && (poi || comparePoi)"
+      class="primary small circle small-elevate"
+      @click="loadPOiIndicator()"
+    >
+      <i class="small">
+        <svg viewBox="0 0 24 24">
+          <path :d="mdiStarFourPointsCircleOutline"></path>
+        </svg>
+      </i>
+      <div class="tooltip left">Back to POIs</div>
+    </button>
     <PopUp
       v-model="showCompareIndicators"
       :maxWidth="popupWidth"
