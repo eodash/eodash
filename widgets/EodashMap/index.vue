@@ -421,58 +421,6 @@ onMounted(() => {
 </script>
 
 <style scoped>
-#cursor-coordinates {
-  position: fixed;
-  left: 24px;
-  bottom: 54px; /* Tighter spacing: watermark at 6px + ~48px */
-  color: rgba(0, 0, 0, 0.9);
-  font-size: 10px;
-  font-family: var(--eox-body-font-family);
-  background: #fffe;
-  border-radius: 4px;
-  border: none;
-  padding: 0px 3px;
-  max-height: 24px;
-}
-
-@media (max-width: 959px) {
-  #cursor-coordinates {
-    display: none; /* Hidden in mobile mode */
-  }
-}
-
-#scale-line {
-  position: fixed;
-  left: 24px;
-  bottom: 28px; /* Tighter spacing: watermark at 6px + ~22px */
-  color: #fff;
-}
-
-@media (max-width: 959px) {
-  #scale-line {
-    bottom: 102px; /* Adjusted for mobile bottom nav - closer to coordinates */
-  }
-}
-
-:deep(.ol-scale-line) {
-  background: #fffe !important;
-  border-radius: 4px !important;
-  border: none !important;
-  padding: 0px 3px 3px 3px !important;
-  font-size: 10px !important;
-  font-family: var(--eox-body-font-family);
-  max-height: 20px;
-}
-:deep(.ol-scale-line-inner) {
-  display: flex;
-  justify-content: center;
-  border: 1px solid rgba(0, 0, 0, 0.5) !important;
-  border-top: none !important;
-  color: #333 !important;
-  font-weight: 500 !important;
-  transform: translateY(1px);
-}
-
 .map-buttons-container {
   position: fixed;
   left: 0;
