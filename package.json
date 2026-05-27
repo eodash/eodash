@@ -73,7 +73,7 @@
     "@eox/drawtools": "^1.6.0",
     "@eox/feedback": "^1.2.0",
     "@eox/geosearch": "^1.2.0",
-    "@eox/itemfilter": "^1.17.1",
+    "@eox/itemfilter": "^1.17.2",
     "@eox/jsonform": "^1.12.0",
     "@eox/layercontrol": "^1.7.0",
     "@eox/layout": "^1.0.0",
