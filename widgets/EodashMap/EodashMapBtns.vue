@@ -88,8 +88,9 @@
         @close="showFeedback = false"
       ></eox-feedback>
     </div>
+    <button v-if="mapEl && !isGlobe && enableSearch"
+      class="primary small circle small-elevate">
     <eox-geosearch
-      v-if="mapEl && !isGlobe && enableSearch"
       :for="mapEl"
       :endpoint="opencageUrl"
       :params="searchParams"
@@ -102,6 +103,7 @@
       tooltip="Search"
       tooltip-direction="left"
     ></eox-geosearch>
+    </button>
     <button
       v-if="backToPOIs && (poi || comparePoi)"
       class="primary small circle small-elevate"
