@@ -21,12 +21,14 @@ import "@eox/stacinfo";
 import { currentUrl } from "@/store/states";
 import { storeToRefs } from "pinia";
 import { useSTAcStore } from "@/store/stac";
-import { computed } from "vue";
+import { computed, onUnmounted, ref, watch } from "vue";
+import { isSTACItem } from "@/eodashSTAC/helpers";
 
 const { level, allowHtml, featured, footer, header, body, tags } = defineProps({
   level: {
-    type: String,
+    type: /** @type {import("vue").PropType<"item" | "collection">} */ (String),
     default: "collection",
+    validator: (/** @type {string} */ v) => ["collection", "item"].includes(v),
   },
   styleOverride: {
     type: String,
@@ -107,37 +109,49 @@ const { level, allowHtml, featured, footer, header, body, tags } = defineProps({
 });
 
 const { selectedItem } = storeToRefs(useSTAcStore());
-const stacInfoURL = computed(() => {
-  if (level === "item") {
-    if (!selectedItem.value) {
-      return null;
-    }
-    //@ts-expect-error todo
-    return getItemUrl(selectedItem.value);
-  }
-  return currentUrl.value;
-});
 
+/** @type {import("vue").Ref<string | null>} */
+const itemUrl = ref(null);
 /**
- *
- * @param {import("stac-ts").StacItem} item
+ * Active object URL (only set for the blob fallback)
+ * @type {string | null}
  */
-function getItemUrl(item) {
-  if (!item) {
-    return null;
+let activeItemUrl = null;
+
+const revokeItem = () => {
+  if (activeItemUrl) {
+    URL.revokeObjectURL(activeItemUrl);
+    activeItemUrl = null;
   }
-  const selfLink = item.links?.find((link) => link.rel === "self");
-  if (selfLink && selfLink.href) {
-    return selfLink.href;
-  }
-  const itemBlob = new Blob([JSON.stringify(item)], {
-    type: "application/json",
-  });
-  const itemURL = URL.createObjectURL(itemBlob);
-  // Revoke the object URL after a short delay to free up memory
-  setTimeout(() => {
-    URL.revokeObjectURL(itemURL);
-  }, 3000);
-  return itemURL;
-}
+};
+
+watch(
+  selectedItem,
+  (item) => {
+    if (level !== "item" || !item) return;
+    revokeItem();
+    if (!isSTACItem(item)) {
+      itemUrl.value = item.href;
+      return;
+    }
+    const selfHref = item?.links?.find((l) => l.rel === "self")?.href;
+    if (selfHref) {
+      itemUrl.value = selfHref;
+    } else if (item) {
+      const blob = new Blob([JSON.stringify(item)], {
+        type: "application/json",
+      });
+      activeItemUrl = URL.createObjectURL(blob);
+      itemUrl.value = activeItemUrl;
+    } else {
+      itemUrl.value = null;
+    }
+  },
+  { immediate: true },
+);
+onUnmounted(revokeItem);
+
+const stacInfoURL = computed(() =>
+  level === "item" ? itemUrl.value : currentUrl.value,
+);
 </script>
