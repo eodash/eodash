@@ -6,20 +6,33 @@ import { loading } from "@/store/states";
 const instance = Axios.create();
 export const axios = setupCache(instance, { cacheTakeover: false });
 
-axios.interceptors.request.use((config) => {
-  loading.activeLoads++;
-  return config;
-});
+function installLoadingInterceptors() {
+  const reqId = axios.interceptors.request.use((config) => {
+    loading.activeLoads++;
+    return config;
+  });
 
-axios.interceptors.response.use(
-  (response) => {
-    loading.activeLoads--;
-    return response;
-  },
-  (error) => {
-    loading.activeLoads--;
-    return Promise.reject(error);
-  },
-);
+  const resId = axios.interceptors.response.use(
+    (response) => {
+      loading.activeLoads = Math.max(0, loading.activeLoads - 1);
+      return response;
+    },
+    (error) => {
+      loading.activeLoads = Math.max(0, loading.activeLoads - 1);
+      return Promise.reject(error);
+    },
+  );
+
+  return () => {
+    axios.interceptors.request.eject(reqId);
+    axios.interceptors.response.eject(resId);
+  };
+}
+
+const dispose = installLoadingInterceptors();
+
+if (import.meta.hot) {
+  import.meta.hot.dispose(() => dispose());
+}
 
 export default axios;

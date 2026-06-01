@@ -365,6 +365,13 @@ export type Eodash = {
   /** Object containing potential special configuration options */
   options?: {
     useSubCode?: boolean;
+    /**
+     * TiTiler render presets, keyed by collection id then render name,
+     * following the STAC `renders` extension shape. Used to render a
+     * collection's raster data when the collection itself does not expose
+     * `renders`.
+     */
+    renders?: Record<string, Record<string, Render>>;
   };
   /** Root STAC catalog endpoint */
   stacEndpoint: StacEndpoint;

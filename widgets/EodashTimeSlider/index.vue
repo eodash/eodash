@@ -43,8 +43,12 @@ import "@eox/itemfilter";
 import { computed, onMounted, ref, unref, useTemplateRef } from "vue";
 import { storeToRefs } from "pinia";
 import { useSTAcStore } from "@/store/stac";
-import { createAnimationLayers, scheduleMosaicUpdate } from "./methods";
-import { useInitMosaic } from "@/eodashSTAC/mosaic";
+import { createAnimationLayers } from "./methods";
+import {
+  useInitMosaic,
+  useScheduleMosaicUpdate,
+  useMosaicState,
+} from "@/eodashSTAC/mosaic";
 
 const { animate, useMosaic, mosaicIndicators } = defineProps({
   filters: {
@@ -91,11 +95,14 @@ const hasMultipleItems = computed(() => {
 
 const store = useSTAcStore();
 const { selectedStac, stacEndpoint } = storeToRefs(store);
+const { mosaicEndpoint } = useMosaicState();
 
-const isMosaicEnabled = computed(() => useMosaic && !!store.mosaicEndpoint);
+const isMosaicEnabled = computed(() => useMosaic && !!mosaicEndpoint.value);
+
+const scheduleMosaicUpdate = useScheduleMosaicUpdate();
 
 useInitMosaic(
-  useMosaic ? store.mosaicEndpoint : null,
+  useMosaic ? mosaicEndpoint.value : null,
   selectedRange,
   mosaicIndicators,
 );
@@ -116,7 +123,7 @@ const onSelect = (e) => {
   // we just update the mosaic layer with the new time range and filters
   if (isMosaicEnabled.value) {
     scheduleMosaicUpdate(
-      store.mosaicEndpoint,
+      mosaicEndpoint.value,
       selectedRange.value,
       currentFilters.value,
     );
@@ -153,7 +160,7 @@ const onFilter = (e) => {
   if (!isMosaicEnabled.value) return;
   const { filters } = e.detail;
   currentFilters.value = filters;
-  scheduleMosaicUpdate(store.mosaicEndpoint, selectedRange.value, filters);
+  scheduleMosaicUpdate(mosaicEndpoint.value, selectedRange.value, filters);
 };
 
 /**

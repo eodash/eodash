@@ -18,19 +18,7 @@ export const createLayersConfig = async (
   selectedIndicator,
   eodashCols,
   timeOrItem,
-  defaultBaseLayers = [
-    {
-      type: "Tile",
-      properties: {
-        id: "osm",
-        title: "Background",
-        layerControlExclusive: true,
-      },
-      source: {
-        type: "OSM",
-      },
-    },
-  ],
+  defaultBaseLayers = [],
 ) => {
   log.debug(
     "Creating layers config",

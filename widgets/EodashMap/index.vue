@@ -112,6 +112,7 @@ const props = defineProps({
         properties: {
           id: "osm",
           title: "Background",
+          layerControlExclusive: true,
         },
       },
     ],
@@ -268,11 +269,15 @@ const initialCenter = toRaw(props.center);
 const initialZoom = toRaw(mapPosition.value?.[2] ?? props.zoom);
 /** @type {import("vue").Ref<Record<string,any>[]>} */
 const eoxMapLayers = ref(
-  /** @type {Record<string,any>[]} */ (props.baseLayers),
+  /** @type {Record<string,any>[]} */ (
+    structuredClone(toRaw(props.baseLayers))
+  ),
 );
 
 const eoxMapCompareLayers = ref(
-  /** @type {Record<string,any>[]} */ (props.baseLayers),
+  /** @type {Record<string,any>[]} */ (
+    structuredClone(toRaw(props.baseLayers))
+  ),
 );
 
 const animationOptions = ref({

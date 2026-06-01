@@ -4,7 +4,7 @@ import axios from "@/plugins/axios";
 import { mapEl } from "@/store/states";
 import { removeLayers, sanitizeBbox } from "@/eodashSTAC/helpers";
 import { getLayers } from "@/store/actions";
-import { buildStacFilters } from "./index";
+import { buildCqlFilter } from "@/eodashSTAC/cql";
 
 /**
  * @param {string} stacEndpoint
@@ -88,7 +88,7 @@ async function createAPILayers(
   );
   url.searchParams.set("bbox", sanitizeBbox(bbox).join(","));
 
-  const stacFilter = buildStacFilters(filters);
+  const stacFilter = buildCqlFilter(filters);
   if (stacFilter) {
     url.searchParams.set("filter", stacFilter);
   }
@@ -233,5 +233,4 @@ export function restoreLayersVisibility(layers) {
   return layers;
 }
 
-export { buildCqlFilter as buildStacFilters } from "@/eodashSTAC/cql";
-export { scheduleMosaicUpdate } from "@/eodashSTAC/mosaic";
+export { useScheduleMosaicUpdate } from "@/eodashSTAC/mosaic";

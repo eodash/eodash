@@ -252,99 +252,33 @@ export const getProjectionCode = (projection) => {
 };
 
 /**
- * Extracts layercontrol LayerDatetime property from STAC Links
- * @param {import("stac-ts").StacLink[] | import("stac-ts").StacItem[] | import("@/types").AggregationCollection | undefined} [items]
- * @param {string|null} [currentStep]
- **/
-export const extractLayerTimeValues = (items, currentStep) => {
-  if (!currentStep || !items || (Array.isArray(items) && !items.length)) {
+ * Builds layercontrol LayerDatetime + timeControlValues from a list of dates.
+ *
+ * @param {Date[] | undefined} dates
+ * @param {string | null} [currentStep] - target datetime; snapped to the closest available date
+ * @returns {{ layerDatetime: Record<string, any> | undefined, timeControlValues: { date: string }[] | undefined }}
+ */
+export const extractLayerTimeValues = (dates, currentStep) => {
+  if (!currentStep || !dates?.length || dates.length <= 1) {
     return { layerDatetime: undefined, timeControlValues: undefined };
   }
 
-  /** @type {{date:string;itemId?:string}[]} */
-  const timeValues = [];
+  const controlValues = dates.map((d) => d.toISOString()).sort();
+  const timeControlValues = controlValues.map((date) => ({ date }));
 
-  if (!Array.isArray(items) && items.type === "AggregationCollection") {
-    const datetimeAgg = items.aggregations?.find(
-      (a) => a.key?.startsWith("datetime_") || a.interval,
+  currentStep = new Date(currentStep).toISOString();
+  if (!controlValues.includes(currentStep)) {
+    const target = new Date(currentStep).getTime();
+    currentStep = controlValues.reduce((best, d) =>
+      Math.abs(new Date(d).getTime() - target) <
+      Math.abs(new Date(best).getTime() - target)
+        ? d
+        : best,
     );
-    if (datetimeAgg?.buckets) {
-      for (const bucket of datetimeAgg.buckets) {
-        timeValues.push({
-          date: new Date(bucket.key).toISOString(),
-        });
-      }
-    }
-    currentStep = new Date(currentStep).toISOString();
-  } else if (Array.isArray(items)) {
-    // check if items has a datetime value
-    const dateProperty = getDatetimeProperty(items);
-
-    if (!dateProperty) {
-      return { layerDatetime: undefined, timeControlValues: undefined };
-    }
-    try {
-      /**
-       *  @param {typeof timeValues} vals
-       *  @param {import("stac-ts").StacLink} link
-       */
-      const reduceLinks = (vals, link) => {
-        if (link[dateProperty] && link.rel === "item") {
-          vals.push({
-            itemId: /** @type {string} */ (link.id),
-            date: new Date(
-              /** @type {string} */ (link[dateProperty]),
-            ).toISOString(),
-          });
-        }
-        return vals;
-      };
-
-      /**
-       *
-       * @param {typeof timeValues} vals
-       * @param {import("stac-ts").StacItem} item
-       */
-      const reduceItems = (vals, item) => {
-        const date = item.properties?.[dateProperty];
-        if (date) {
-          vals.push({
-            itemId: /** @type {string} */ (item.id),
-            date: new Date(/** @type {string} */ (date)).toISOString(),
-            ...item.properties,
-          });
-        }
-        return vals;
-      };
-      currentStep = new Date(currentStep).toISOString();
-      items.reduce(
-        //@ts-expect-error TODO
-        isSTACItem(items[0]) ? reduceItems : reduceLinks,
-        timeValues,
-      );
-    } catch (e) {
-      console.warn("[eodash] not supported datetime format was provided", e);
-      return { layerDatetime: undefined, timeControlValues: undefined };
-    }
-  }
-
-  // not enough timeValues
-  if (timeValues.length <= 1) {
-    return { layerDatetime: undefined, timeControlValues: undefined };
-  }
-
-  // item datetime is not included in the item links datetime
-  if (!timeValues.some((val) => val.date === currentStep)) {
-    const currentStepTime = new Date(currentStep).getTime();
-    currentStep = timeValues.reduce((time, step) => {
-      const aDiff = Math.abs(new Date(time).getTime() - currentStepTime);
-      const bDiff = Math.abs(new Date(step.date).getTime() - currentStepTime);
-      return bDiff < aDiff ? step.date : time;
-    }, timeValues[0].date);
   }
 
   const layerDatetime = {
-    controlValues: timeValues.map((d) => d.date).sort(),
+    controlValues,
     currentStep,
     slider: true,
     navigation: true,
@@ -354,11 +288,37 @@ export const extractLayerTimeValues = (items, currentStep) => {
     showUTC: true,
   };
 
-  return {
-    layerDatetime,
-    timeControlValues: timeValues,
-  };
+  return { layerDatetime, timeControlValues };
 };
+
+/**
+ * Fetches the daily pre-aggregation data for a STAC collection if available.
+ * Returns the raw AggregationCollection,
+ * or null if no daily pre-aggregation link exists, or the fetch fails.
+ *
+ * @param {import("stac-ts").StacCollection | undefined} stacCollection
+ * @param {string} fallbackBaseUrl - base for relative href resolution when no `self` link is present
+ * @returns {Promise<any | null>}
+ */
+export async function fetchPreAggregations(stacCollection, fallbackBaseUrl) {
+  if (!stacCollection) return null;
+  const preAggregationLink = stacCollection.links?.find(
+    (l) => l.rel === "pre-aggregation" && l["aggregation:interval"] === "daily",
+  );
+  if (!preAggregationLink) return null;
+
+  try {
+    const selfLink = stacCollection.links?.find((l) => l.rel === "self")?.href;
+    const url = toAbsolute(
+      preAggregationLink.href,
+      selfLink || fallbackBaseUrl,
+    );
+    return await axios.get(url).then((resp) => resp.data);
+  } catch (e) {
+    console.warn("[eodash] Failed to fetch pre-aggregation", e);
+    return null;
+  }
+}
 
 /**
  * Recursively find all layers whose ID up to the first ; is same as given layer
@@ -1288,4 +1248,73 @@ export function applyTitilerUpscaling(url, upscalingEndpoints) {
   }
 
   return { url: url.replace("{y}", "{y}@2x"), tileSize: [512, 512] };
+}
+
+/**
+ * Picks the render presets for a collection, preferring the collection's own
+ * STAC `renders` extension and falling back to client-provided config
+ *
+ * @param {import("stac-ts").StacCollection | null | undefined} collection
+ * @param {Record<string, Record<string, import("@/types").Render>> | undefined} [configRenders]
+ * @returns {Record<string, import("@/types").Render> | undefined}
+ */
+export function resolveRenders(collection, configRenders) {
+  if (collection?.renders) {
+    return /** @type {Record<string, import("@/types").Render>} */ (
+      collection.renders
+    );
+  }
+  return collection?.id ? configRenders?.[collection.id] : undefined;
+}
+
+/**
+ * Serializes an object into a TiTiler query string. Arrays join with commas;
+ * nested arrays repeat the key (e.g. `rescale: [[0,1]]` -> `rescale=0,1`);
+ * objects are JSON-encoded. Shared by the render-extension and mosaic paths.
+ * @param {Record<string,any>} obj
+ * @returns {string}
+ */
+export function encodeURLObject(obj) {
+  let str = "";
+  for (const key in obj) {
+    const value = obj[key];
+    if (value === null || value === undefined || value === "") {
+      continue;
+    }
+
+    const valueType = Array.isArray(value) ? "array" : typeof value;
+
+    switch (valueType) {
+      case "array": {
+        // Check if any element in the array is itself an array (multi-dimensional)
+        const hasNestedArrays = value.some((/** @type {any} */ item) =>
+          Array.isArray(item),
+        );
+
+        if (hasNestedArrays) {
+          // For multi-dimensional arrays, repeat the key with different values
+          for (const val of value) {
+            if (Array.isArray(val)) {
+              str += `${key}=${val.join(",")}&`;
+            } else {
+              str += `${key}=${val}&`;
+            }
+          }
+        } else {
+          // For simple arrays, join with commas
+          str += `${key}=${value.join(",")}&`;
+        }
+        break;
+      }
+      case "object": {
+        str += `${key}=${encodeURI(JSON.stringify(value))}&`;
+        break;
+      }
+      default: {
+        str += `${key}=${encodeURIComponent(value)}&`;
+        break;
+      }
+    }
+  }
+  return str;
 }
