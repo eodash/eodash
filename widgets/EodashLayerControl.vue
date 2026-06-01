@@ -63,7 +63,10 @@ const props = defineProps({
     default: () => ["datetime", "info", "config", "legend", "opacity"],
   },
   title: {
-    type:  /** @type {import("vue").PropType<string | false>} */([String, Boolean]),
+    type: /** @type {import("vue").PropType<string | false>} */ ([
+      String,
+      Boolean,
+    ]),
     default: "Layers",
   },
   cssVars: {
