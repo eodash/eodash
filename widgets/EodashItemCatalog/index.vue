@@ -103,9 +103,13 @@ import {
 import { mdiViewDashboard } from "@mdi/js";
 import EodashLayoutSwitcher from "^/EodashLayoutSwitcher.vue";
 import { mapCompareEl, mapEl, mapPosition } from "@/store/states";
-import { mosaicState } from "@/utils/states";
 import axios from "@/plugins/axios";
-import { useInitMosaic, renderLatestMosaic } from "@/eodashSTAC/mosaic";
+import {
+  useInitMosaic,
+  renderLatestMosaic,
+  useScheduleMosaicUpdate,
+  useMosaicState,
+} from "@/eodashSTAC/mosaic";
 
 if (!customElements.get("eox-itemfilter")) {
   await import("@eox/itemfilter");
@@ -229,31 +233,36 @@ function selectSort(option) {
 const store = useSTAcStore();
 const { selectedItem, selectedCompareItem } = storeToRefs(store);
 
+const {
+  isItemView,
+  latestLayer,
+  visibilityThreshold,
+  returnToOverview,
+  mosaicEndpoint,
+} = useMosaicState();
+
 const isMosaicEnabled = computed(
-  () => props.useMosaic && !!store.mosaicEndpoint,
+  () => props.useMosaic && !!mosaicEndpoint.value,
 );
-
-mosaicState.shouldRender = props.useMosaic
-  ? () => !activeSelectedItem.value
-  : null;
-
-if (props.useMosaic) {
-  mosaicState.onReturnToOverview = () => {
-    activeSelectedItem.value = null;
-  };
-}
-
-onUnmounted(() => {
-  store.selectedItem = null;
-  mosaicState.shouldRender = null;
-  mosaicState.isItemView = false;
-  mosaicState.onReturnToOverview = null;
-});
 
 const activeSelectedItem =
   /** @type {import("vue").Ref<import("stac-ts").StacItem | null>} */ (
     props.enableCompare ? selectedCompareItem : selectedItem
   );
+
+if (props.useMosaic) {
+  const unsubscribeReturn = returnToOverview.on(() => {
+    activeSelectedItem.value = null;
+  });
+  onUnmounted(() => {
+    unsubscribeReturn();
+    isItemView.value = false;
+  });
+}
+
+onUnmounted(() => {
+  activeSelectedItem.value = null;
+});
 
 // Reactive state
 /** @type {import("vue").Ref<import("@/types").GeoJsonFeature[]>} */
@@ -290,12 +299,12 @@ watch(activeSelectedItem, (item) => {
   }
 
   if (isMosaicEnabled.value) {
-    mosaicState.isItemView = !!item;
+    isItemView.value = !!item;
   }
 
   // restore mosaic when item is deselected
   if (!isMosaicEnabled.value || item) return;
-  if (mosaicState.latestLayer) {
+  if (latestLayer.value) {
     renderLatestMosaic();
     renderItemsFeatures(
       currentItems.value,
@@ -305,16 +314,16 @@ watch(activeSelectedItem, (item) => {
     nextTick(() => {
       const z = mapPosition.value[2] ?? 0;
       const layer = mapEl.value?.getLayerById(
-        /** @type {string} */ (mosaicState.latestLayer?.properties?.id),
+        /** @type {string} */ (latestLayer.value?.properties?.id),
       );
-      layer?.setVisible(z >= mosaicState.visibilityThreshold);
+      layer?.setVisible(z >= visibilityThreshold.value);
     });
   }
 });
 
 // re-add items features after mosaic layer is rendered
 watch(
-  () => mosaicState.latestLayer,
+  () => latestLayer.value,
   (layer) => {
     if (!isMosaicEnabled.value || !layer) return;
     renderItemsFeatures(
@@ -325,6 +334,8 @@ watch(
   },
 );
 
+const scheduleMosaicUpdate = useScheduleMosaicUpdate();
+
 // Event handlers
 const onFilter = createOnFilterHandler({
   currentItems,
@@ -333,7 +344,11 @@ const onFilter = createOnFilterHandler({
   itemfilterEl,
   selectedItemRef: activeSelectedItem,
   mosaicOptions: isMosaicEnabled.value
-    ? { isMosaicEnabled, getMosaicEndpoint: () => store.mosaicEndpoint }
+    ? {
+        isMosaicEnabled,
+        getMosaicEndpoint: () => mosaicEndpoint.value,
+        scheduleMosaicUpdate,
+      }
     : null,
 });
 
@@ -369,7 +384,7 @@ useRenderOnFeatureClick(
 );
 // initialize mosaic and keep in sync with map state
 useInitMosaic(
-  props.useMosaic ? store.mosaicEndpoint : null,
+  props.useMosaic ? mosaicEndpoint.value : null,
   undefined,
   props.mosaicIndicators,
 );

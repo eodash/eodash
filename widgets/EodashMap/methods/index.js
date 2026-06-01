@@ -7,7 +7,7 @@ import { storeToRefs } from "pinia";
 import { isFirstLoad } from "@/utils/states";
 import { useEmitLayersUpdate, useOnLayersUpdate } from "@/composables";
 export { useEmitLayersUpdate, useOnLayersUpdate };
-import { mapPosition } from "@/store/states";
+import { isGlobe, mapPosition } from "@/store/states";
 import { sanitizeBbox } from "@/eodashSTAC/helpers";
 import { transformExtent } from "@eox/map";
 /**
@@ -40,6 +40,40 @@ export const useHandleMapMoveEnd = (mapElement, mapPosition) => {
     }
   };
 
+  const handleGlobeMoveEnd = () => {
+    const camera = mapElement.value?.globe?.planet?.camera;
+    const lonLat = camera?.getLonLat();
+    if (!lonLat) return;
+    const { lon, lat, height } = lonLat;
+    if (![lon, lat, height].some(Number.isNaN)) {
+      mapPosition.value = [lon, lat, height];
+    }
+  };
+
+  /** @type {{ events: { off: Function } } | null} */
+  let subscribedCamera = null;
+
+  const subscribeGlobe = (retries = 3) => {
+    if (!isGlobe.value) return; // toggled back out during retry
+    const camera = mapElement.value?.globe?.planet?.camera;
+    if (camera) {
+      if (subscribedCamera === camera) return;
+      camera.events.on("moveend", handleGlobeMoveEnd);
+      subscribedCamera = camera;
+      handleGlobeMoveEnd();
+      return;
+    }
+    if (retries > 0) setTimeout(() => subscribeGlobe(retries - 1), 50);
+  };
+  const unsubscribeGlobe = () => {
+    subscribedCamera?.events.off("moveend", handleGlobeMoveEnd);
+    subscribedCamera = null;
+  };
+
+  const stopGlobeWatch = watch(isGlobe, (globe) =>
+    globe ? subscribeGlobe() : unsubscribeGlobe(),
+  );
+
   onMounted(() => {
     /** @type {import('ol/Map').default} */
     (mapElement.value?.map)?.on("moveend", handleMoveEnd);
@@ -48,6 +82,8 @@ export const useHandleMapMoveEnd = (mapElement, mapPosition) => {
   onUnmounted(() => {
     /** @type {import('ol/Map').default} */
     (mapElement.value?.map)?.un("moveend", handleMoveEnd);
+    unsubscribeGlobe();
+    stopGlobeWatch();
   });
 };
 
@@ -112,6 +148,14 @@ export const useInitMap = (
           internalDatetime = null;
           return;
         }
+
+        // Item deselect: overview render is owned by the item catalog widget.
+        const isItemDeselect =
+          previousItem &&
+          !updatedItem &&
+          updatedStac?.id === previousStac?.id &&
+          updatedTime === previousTime;
+        if (isItemDeselect) return;
 
         log.debug(
           "Selected Indicator watch triggered",

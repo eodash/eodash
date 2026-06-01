@@ -1,6 +1,5 @@
 import { inAndOut } from "ol/easing";
 import { renderItemsFeatures } from "./map";
-import { scheduleMosaicUpdate } from "@/eodashSTAC/mosaic";
 
 /**
  * Build a compact signature from filter key + stringified state.
@@ -24,7 +23,8 @@ const getFiltersSignature = (filters) => {
  *  selectedItemRef?: import("vue").Ref<import("stac-ts").StacItem | null>,
  *  mosaicOptions?: {
  *    isMosaicEnabled: import("vue").ComputedRef<boolean>,
- *    getMosaicEndpoint: () => string | null | undefined
+ *    getMosaicEndpoint: () => string | null | undefined,
+ *    scheduleMosaicUpdate: (mosaicEndpoint: string | null | undefined, timeRange?: [string,string], filters?: import("@/types").ItemFilterFilters) => void,
  *  } | null
  * }} params
  */
@@ -55,7 +55,7 @@ export const createOnFilterHandler = ({
       }
 
       lastScheduledFiltersKey = nextFiltersKey;
-      scheduleMosaicUpdate(
+      mosaicOptions.scheduleMosaicUpdate(
         mosaicOptions.getMosaicEndpoint(),
         undefined,
         evt.detail.filters,

@@ -138,10 +138,7 @@
     >
       <template v-if="showItemViewHint">
         Viewing individual item —
-        <a
-          class="mosaic-hint-link"
-          @click.prevent="mosaicState.onReturnToOverview?.()"
-        >
+        <a class="mosaic-hint-link" @click.prevent="returnToOverview.emit()">
           Back to overview
         </a>
       </template>
@@ -161,7 +158,7 @@ import {
   mapPosition,
   poi,
 } from "@/store/states";
-import { mosaicState } from "@/utils/states";
+import { useMosaicState, normalizeGlobeZoom } from "@/eodashSTAC/mosaic";
 import {
   mdiCompare,
   mdiCompareRemove,
@@ -288,16 +285,18 @@ useTransparentPanel(rootRef);
 const opencageApiKey = process.env.EODASH_OPENCAGE || "NO_KEY_FOUND";
 const opencageUrl = `https://api.opencagedata.com/geocode/v1/json?key=${opencageApiKey}`;
 
+const { latestLayer, isItemView, visibilityThreshold, returnToOverview } =
+  useMosaicState();
+
 const showZoomHint = computed(() => {
-  if (!mosaicState.latestLayer) return false;
-  if (mosaicState.isItemView) return false;
-  if (mosaicState.shouldRender && !mosaicState.shouldRender()) return false;
-  const zoom = mapPosition.value?.[2] ?? 4;
-  return zoom < mosaicState.visibilityThreshold;
+  if (!latestLayer.value) return false;
+  if (isItemView.value) return false;
+  const rawZ = mapPosition.value?.[2] ?? 4;
+  return normalizeGlobeZoom(rawZ) < visibilityThreshold.value;
 });
 
 const showItemViewHint = computed(
-  () => mosaicState.isItemView && !!mosaicState.latestLayer,
+  () => isItemView.value && !!latestLayer.value,
 );
 </script>
 

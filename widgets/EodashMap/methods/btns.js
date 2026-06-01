@@ -13,23 +13,17 @@ export const switchGlobe = () => {
   if (!isGlobe.value) {
     // tmp: we remove the vector layers from the globe until
     // we have better support for them
-    const layers = addCorsAnonym([...getLayers()]);
-    layers.forEach((layer, idx) => {
-      if (layer.type === "Vector") {
-        layers.splice(idx, 1);
-        return;
-      }
-      if (layer.type === "Group") {
-        const vectors = layer.layers.filter((l) => l.type === "Vector");
-        if (!vectors.length) {
-          return;
+    const layers = addCorsAnonym([...getLayers()])
+      .filter((layer) => layer.type !== "Vector")
+      .map((layer) => {
+        if (layer.type === "Group") {
+          return {
+            ...layer,
+            layers: layer.layers.filter((l) => l.type !== "Vector"),
+          };
         }
-
-        vectors.forEach((vectorLayer) => {
-          layer.layers.splice(layer.layers.indexOf(vectorLayer), 1);
-        });
-      }
-    });
+        return layer;
+      });
     mapEl.value.layers = layers;
   }
   mapEl.value.projection = isGlobe.value ? "EPSG:3857" : "globe";

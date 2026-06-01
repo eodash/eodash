@@ -4,6 +4,7 @@ import {
   extractLayerConfig,
   extractRoles,
   fetchApiItems,
+  fetchPreAggregations,
   fetchStyle,
   fetchAllStyles,
   findLayer,
@@ -173,36 +174,13 @@ export class EodashCollection {
     // will try to extract anything it supports but for which we have
     // less control.
 
-    const preAggregationLink = this.#collectionStac?.links.find(
-      (l) =>
-        l.rel === "pre-aggregation" && l["aggregation:interval"] === "daily",
-    );
-
-    let itemsForTimeValues;
-    if (preAggregationLink) {
-      try {
-        const url = toAbsolute(preAggregationLink.href, this.#collectionUrl);
-        itemsForTimeValues = await axios.get(url).then((resp) => resp.data);
-      } catch (e) {
-        console.warn("Failed to fetch pre-aggregation", e);
-      }
-    }
-
-    if (!itemsForTimeValues) {
-      itemsForTimeValues = await this.getItems(
-        true,
-        false,
-        item.properties?.datetime ??
-          item.properties.start_datetime ??
-          itemDatetime,
-      );
-    }
-
-    const { layerDatetime, timeControlValues } = extractLayerTimeValues(
-      itemsForTimeValues,
+    const itemDate =
       item.properties?.datetime ??
-        item.properties.start_datetime ??
-        itemDatetime,
+      item.properties.start_datetime ??
+      itemDatetime;
+    const { layerDatetime, timeControlValues } = extractLayerTimeValues(
+      await this.getDates(itemDate),
+      itemDate,
     );
 
     const dataAssets = Object.keys(item?.assets ?? {}).reduce((data, ast) => {
@@ -349,9 +327,34 @@ export class EodashCollection {
     );
   }
 
-  async getDates() {
-    const items = await this.getItems(true, false);
+  /**
+   * Returns all available dates for the collection, sorted as the source
+   * provides. Tries the daily `pre-aggregation` link first (cheap, single
+   * request), falls back to fetching items via the API. Use anywhere the
+   * collection's date list is needed (date picker, mosaic time control,
+   * single-item time slider).
+   *
+   * NOTE: only the `daily` aggregation interval is consumed today. Other
+   * intervals (`monthly`, `hourly`) fall through to the API path.
+   *
+   * @param {string | Date} [centerDatetime]
+   * @returns {Promise<Date[]>}
+   */
+  async getDates(centerDatetime) {
+    await this.fetchCollection();
 
+    const aggregation = await fetchPreAggregations(
+      this.#collectionStac,
+      this.#collectionUrl,
+    );
+    const datetimeAgg = aggregation?.aggregations?.find(
+      (/** @type {any} */ a) => a.key?.startsWith("datetime_") || a.interval,
+    );
+    if (datetimeAgg?.buckets) {
+      return datetimeAgg.buckets.map((/** @type {any} */ b) => new Date(b.key));
+    }
+
+    const items = await this.getItems(true, false, centerDatetime);
     const datetimeProperty = getDatetimeProperty(items);
     if (!datetimeProperty || !items?.length) {
       return [];

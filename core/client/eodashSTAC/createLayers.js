@@ -13,6 +13,7 @@ import {
   addTooltipInteraction,
   fetchStyle,
   applyTitilerUpscaling,
+  encodeURLObject,
 } from "./helpers";
 import { handleAuthenticationOfLink } from "./auth";
 import log from "loglevel";
@@ -798,6 +799,17 @@ export const createLayerFromRender = async (
     return [];
   }
 
+  // Skip when an explicit xyz link already targets the collection on the same endpoint
+  const hasMatchingXyzLink = item.links?.some(
+    (link) =>
+      link.rel === "xyz" &&
+      link.href?.includes(rasterURL) &&
+      link.href?.includes(`/collections/${collection.id}/`),
+  );
+  if (hasMatchingXyzLink) {
+    return [];
+  }
+
   const rasterformURL = /** @type {string|undefined} */ (
     collection?.["eodash:rasterform"]
   );
@@ -876,52 +888,3 @@ export const createLayerFromRender = async (
 
   return layers;
 };
-/**
- *
- * @param {Record<string,any>} obj
- * @returns {string}
- */
-function encodeURLObject(obj) {
-  let str = "";
-  for (const key in obj) {
-    const value = obj[key];
-    if (value === null || value === undefined || value === "") {
-      continue;
-    }
-
-    const valueType = Array.isArray(value) ? "array" : typeof value;
-
-    switch (valueType) {
-      case "array": {
-        // Check if any element in the array is itself an array (multi-dimensional)
-        const hasNestedArrays = value.some((/** @type {any} */ item) =>
-          Array.isArray(item),
-        );
-
-        if (hasNestedArrays) {
-          // For multi-dimensional arrays, repeat the key with different values
-          for (const val of value) {
-            if (Array.isArray(val)) {
-              str += `${key}=${val.join(",")}&`;
-            } else {
-              str += `${key}=${val}&`;
-            }
-          }
-        } else {
-          // For simple arrays, join with commas
-          str += `${key}=${value.join(",")}&`;
-        }
-        break;
-      }
-      case "object": {
-        str += `${key}=${encodeURI(JSON.stringify(value))}&`;
-        break;
-      }
-      default: {
-        str += `${key}=${encodeURIComponent(value)}&`;
-        break;
-      }
-    }
-  }
-  return str;
-}
