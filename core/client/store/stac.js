@@ -160,8 +160,8 @@ export const useSTAcStore = defineStore("stac", () => {
     }
     //@ts-expect-error "this" type is not exported by pinia
     const patch = this?.$patch;
-    if (stacItem && patch) {
-      patch({ selectedItem: stacItem });
+    if (patch) {
+      patch({ selectedItem: stacItem ?? null });
     }
 
     await axios

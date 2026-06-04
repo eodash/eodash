@@ -212,9 +212,7 @@ export const createExternalFilter = (
   selectedItemRef,
   stacEndpoint,
 ) => {
-  const hasCustomDatetime = propsFilters.some(
-    (f) => f.property === "datetime",
-  );
+  const hasCustomDatetime = propsFilters.some((f) => f.property === "datetime");
   const effectiveDatetimeFilter = datetimeFilter || hasCustomDatetime;
   let controller = new AbortController();
   /**

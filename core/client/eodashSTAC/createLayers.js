@@ -71,10 +71,16 @@ export async function createLayersFromAssets(
   for (const [idx, assetId] of Object.keys(assets).entries()) {
     assetIds.push(assetId);
 
-    if (assets[assetId]?.type?.includes("application/geo+json") && assets[assetId]?.href?.includes("http")) {
+    if (
+      assets[assetId]?.type?.includes("application/geo+json") &&
+      assets[assetId]?.href?.includes("http")
+    ) {
       geoJsonSources.push(assets[assetId].href);
       geoJsonIdx.push(idx);
-    } else if (assets[assetId]?.type?.includes("application/vnd.flatgeobuf") && assets[assetId]?.href?.includes("http")) {
+    } else if (
+      assets[assetId]?.type?.includes("application/vnd.flatgeobuf") &&
+      assets[assetId]?.href?.includes("http")
+    ) {
       fgbSources.push(assets[assetId].href);
       fgbIdx.push(idx);
     } else if (
@@ -83,7 +89,10 @@ export async function createLayersFromAssets(
     ) {
       zarrAssetIds.push(assetId);
       zarrIdx.push(idx);
-    } else if (assets[assetId]?.type?.includes("image/tiff") && assets[assetId]?.href?.includes("http")) {
+    } else if (
+      assets[assetId]?.type?.includes("image/tiff") &&
+      assets[assetId]?.href?.includes("http")
+    ) {
       geoTIFFIdx.push(idx);
       geoTIFFSources.push({
         url: assets[assetId].href,
