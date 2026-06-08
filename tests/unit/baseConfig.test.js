@@ -74,7 +74,9 @@ describe("getBaseConfig - isolated output (no shared references)", () => {
 
 describe("getBaseConfig - stacEndpoint string override", () => {
   it("string stacEndpoint from user replaces the base object entirely", () => {
-    const result = getBaseConfig({ stacEndpoint: "https://my-api.example.com" });
+    const result = getBaseConfig({
+      stacEndpoint: "https://my-api.example.com",
+    });
     expect(result.stacEndpoint).toBe("https://my-api.example.com");
   });
 });

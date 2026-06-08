@@ -1,8 +1,13 @@
 import { defineConfig } from "vitepress";
 import typedocSidebar from "../api/typedoc-sidebar.json";
+import baseConfig from "@eox/pages-theme-eox/config";
 
+const brandConfig = await baseConfig("eodash");
+// brandConfig.themeConfig.logo = {
+// };
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
+  extends: brandConfig,
   title: "eodash",
   vite: {
     build: {
@@ -20,6 +25,14 @@ export default defineConfig({
   },
   description: "Earth Observation Ecosystem",
   themeConfig: {
+    logo: {
+      light: "https://eodash.org/logos/eodash-light.svg",
+      dark: "https://eodash.org/logos/eodash-dark.svg",
+    },
+    logoLink:{
+      link: "https://eodash.org",
+      target: "_blank",
+    },
     search: {
       provider: "local",
     },

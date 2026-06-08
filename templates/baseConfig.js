@@ -66,8 +66,6 @@ const baseConfig = {
   },
 };
 
-
-
 /**
  * Arrays are replacement semantics (user array wins, not concat).
  * mergeArrays:false ensures e.g. widgets/collectionsPalette/supportedUpscalingEndpoints
