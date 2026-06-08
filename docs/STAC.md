@@ -247,6 +247,37 @@ type EodashStyleJson = import("ol/style/flat").FlatStyleLike & {
 };
 ```
 
+### eodash Raster Form
+
+The `eodash:rasterform` property allows providing visualization controls for tiled layers (WMS, WMTS, XYZ) that do not use OpenLayers Flat Styles. 
+
+It can be defined at the **Collection**, **Item**, or **Link** level. When present on a link or asset, it creates a configuration form in the layer control. 
+
+- **For WMS**: Updating form values triggers a call to the source's `updateParams` method (e.g., updating `STYLES` or custom vendor parameters).
+- **For XYZ**: Updating form values triggers a refresh of the tile URL with the new parameters injected into the query string.
+
+The property can be either a **URL string** pointing to a JSON schema or a **direct JSON object**.
+
+```json
+{
+  "rel": "xyz",
+  "href": "https://tiles.example.com/{z}/{x}/{y}?rescale={{rescale}}",
+  "eodash:rasterform": {
+    "jsonform": {
+      "type": "object",
+      "properties": {
+        "rescale": {
+          "type": "array",
+          "items": { "type": "number" },
+          "title": "Rescale Range",
+          "default": [0, 1000]
+        }
+      }
+    }
+  }
+}
+```
+
 
 ## Processing
 
