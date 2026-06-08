@@ -36,6 +36,12 @@ export const useSTAcStore = defineStore("stac", () => {
   const supportedUpscalingEndpoints = ref([]);
 
   /**
+   * Registry of colormap ranges
+   * @type {import("vue").Ref<Record<string, string[]> | null>}
+   */
+  const colormapRegistry = ref(null);
+
+  /**
    * Links of the root STAC catalog
    *
    * @type {import("vue").Ref<import("stac-ts").StacLink[] | null>}
@@ -94,6 +100,26 @@ export const useSTAcStore = defineStore("stac", () => {
     rasterEndpoint.value = endpoint.rasterEndpoint ?? null;
     supportedUpscalingEndpoints.value =
       endpoint.supportedUpscalingEndpoints ?? [];
+    if (endpoint.colormapRegistry) {
+      loadColormapRegistry(endpoint.colormapRegistry);
+    }
+  }
+
+  /**
+   * Loads the colormap registry from a URL or object
+   * @param {string | Record<string, string[]>} registry
+   */
+  async function loadColormapRegistry(registry) {
+    if (typeof registry === "object") {
+      colormapRegistry.value = registry;
+      return;
+    }
+    try {
+      const resp = await axios.get(registry);
+      colormapRegistry.value = resp.data;
+    } catch (err) {
+      log.error("Error loading colormap registry", err);
+    }
   }
 
   /**
@@ -280,5 +306,7 @@ export const useSTAcStore = defineStore("stac", () => {
     selectedItem,
     selectedCompareItem,
     supportedUpscalingEndpoints,
+    colormapRegistry,
+    loadColormapRegistry,
   };
 });

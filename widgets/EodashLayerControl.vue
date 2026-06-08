@@ -5,6 +5,7 @@
       :key="mapElement"
       v-bind="config"
       :for="mapElement"
+      .colormapRegistry="colormapRegistry"
       .customEditorInterfaces="bandsEditorInterface"
       @datetime:updated="debouncedHandleDateTime"
       toolsAsList="true"
@@ -91,7 +92,8 @@ const enableLayoutSwitcher = computed(
   () => !!props.layoutTarget && !!props.layoutIcon,
 );
 
-const { selectedCompareStac, selectedStac } = storeToRefs(useSTAcStore());
+const { selectedCompareStac, selectedStac, colormapRegistry } =
+  storeToRefs(useSTAcStore());
 
 const showControls = computed(() => {
   if (props.map === "second") {
