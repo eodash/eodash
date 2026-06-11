@@ -48,6 +48,8 @@ export const useMosaicState = createSharedComposable(() => {
   const visibilityThreshold = ref(8);
   /** @type {import("vue").Ref<boolean>} */
   const isItemView = ref(false);
+  /** @type {import("vue").Ref<boolean>} - filtered mosaic has assets in the current view */
+  const hasDataInView = ref(true);
   const returnToOverview = useEventBus(mosaicReturnToOverviewKey);
 
   const store = useSTAcStore();
@@ -62,6 +64,7 @@ export const useMosaicState = createSharedComposable(() => {
     query,
     visibilityThreshold,
     isItemView,
+    hasDataInView,
     returnToOverview,
     mosaicEndpoint,
   };
@@ -148,7 +151,9 @@ export function renderLatestMosaic() {
 export async function initMosaic(mosaicEndpoint, timeRange) {
   await updateMosaicLayer(mosaicEndpoint, { timeRange });
   await nextTick();
-  toggleMosaicVisibility(mapPosition.value[2] ?? 0);
+  const zoom =
+    mapPosition.value[2] ?? mapEl.value?.map?.getView()?.getZoom() ?? 0;
+  toggleMosaicVisibility(zoom);
 }
 
 /**
@@ -162,7 +167,7 @@ export function useInitMosaic(mosaicEndpoint, timeRange, indicators) {
   if (!mosaicEndpoint) return;
 
   const store = useSTAcStore();
-  const { isItemView, latestLayer, query } = useMosaicState();
+  const { isItemView, latestLayer, query, hasDataInView } = useMosaicState();
 
   function shouldInitiate() {
     if (isItemView.value) return false;
@@ -173,11 +178,16 @@ export function useInitMosaic(mosaicEndpoint, timeRange, indicators) {
   }
 
   const stopWatcher = watch(mapPosition, (updatedPos, oldPos) => {
+    // Any pan or zoom changes the viewport bbox; re-check data presence.
+    scheduleMosaicDataCheck();
     const [_oldX, _oldY, oldZ] = oldPos;
     const [_x, _y, z] = updatedPos;
     if (!z || z === oldZ) return;
     toggleMosaicVisibility(z);
   });
+
+  // Re-check when filters/time change, and re-apply visibility once it lands.
+  const stopQueryWatch = watch(query, () => scheduleMosaicDataCheck());
 
   onMounted(async () => {
     if (!shouldInitiate()) return;
@@ -193,7 +203,9 @@ export function useInitMosaic(mosaicEndpoint, timeRange, indicators) {
   onUnmounted(() => {
     latestLayer.value = null;
     query.value = null;
+    hasDataInView.value = true;
     stopWatcher();
+    stopQueryWatch();
   });
 }
 
@@ -268,7 +280,6 @@ async function createMosaicLayers(mosaicEndpoint, params) {
       properties: {
         id: `${indicator.value};:;mosaic`,
         title: "Mosaic Layer",
-        visible: false,
       },
       source: {
         type: "XYZ",
@@ -305,10 +316,53 @@ export function normalizeGlobeZoom(rawZ) {
 }
 
 /**
+ * check whether the filtered dataset has any assets in the current 2D view
+ */
+export async function checkMosaicDataInView() {
+  const { hasDataInView, query, mosaicEndpoint, visibilityThreshold } =
+    useMosaicState();
+  const extent = mapEl.value?.lonLatExtent;
+  if (
+    !extent ||
+    isGlobe.value ||
+    !mosaicEndpoint.value ||
+    normalizeGlobeZoom(mapPosition.value[2] ?? 0) < visibilityThreshold.value
+  ) {
+    hasDataInView.value = true;
+    return;
+  }
+
+  if (extent.some(Number.isNaN)) return;
+
+  const base = mosaicEndpoint.value.replace(
+    "/WebMercatorQuad/tilejson.json",
+    "",
+  );
+  const [minx, miny, maxx, maxy] = extent;
+  const params = new URLSearchParams({ limit: "1", ...(query.value ?? {}) });
+  try {
+    const { data } = await axios.get(
+      `${base}/bbox/${minx},${miny},${maxx},${maxy}/assets?${params}`,
+    );
+    const count = Array.isArray(data)
+      ? data.length
+      : Object.keys(data ?? {}).length;
+    hasDataInView.value = count > 0;
+  } catch {
+    hasDataInView.value = true;
+  }
+}
+
+/** Shared debounced data-presence check; coalesces rapid pan/zoom/filter changes. */
+const scheduleMosaicDataCheck = useDebounceFn(checkMosaicDataInView, 300);
+
+/**
  * @param {number} zoomLevel
  * @param {number} [threshold] - defaults to the shared visibility threshold
  */
 function toggleMosaicVisibility(zoomLevel, threshold) {
+  //  Only globe needs manual toggling.
+  if (!isGlobe.value) return;
   const { latestLayer, visibilityThreshold } = useMosaicState();
   if (!latestLayer.value) return;
 
