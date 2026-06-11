@@ -1,7 +1,7 @@
 # Widgets
 
 The eodash client acts as a micro-frontend host. It exposes a store to share STAC data and state between widgets.
-Eodash offers a grid based layout system and widgets can be set on the dashboard using `layout` property. The placement of the widgets is backed by the [EOxElement](https://github.com/EOX-A/EOxElements) `@eox/layout`. Refer to the [API](/api/Configuration/type-aliases/Widget.html) to learn more.
+eodash offers a grid based layout system; widgets are placed on the dashboard through the `layout` property. The placement is backed by the [EOxElements](https://github.com/EOX-A/EOxElements) `@eox/layout` element. Refer to the [API](/api/Configuration/type-aliases/Widget.html) to learn more.
 
 ## Layout
 
@@ -67,11 +67,11 @@ Eodash provides Internal Widgets as extendable Vue Components that are maintaine
 
 ## Functional Widgets
 
-Functional widgets are a special form of widgets that are rendered using the [defineWidget](/api/Configuration/interfaces/FunctionalWidget#definewidget) function on STAC object selection, and provides the selected STAC object as a parameter before render. The render of the widget is triggered when the `id` of the returned config changes. It gives the ability to switch and hide widgets based on a specific state or indicator.
+Functional widgets are a special form of widget rendered through the [`defineWidget`](/api/Configuration/interfaces/FunctionalWidget.html#definewidget) function on STAC object selection. The function receives the selected STAC object (and the compare selection, when present) and returns a static widget config — including its `layout` — or a falsy value to render nothing. The widget re-renders only when the `id` of the returned config changes, which lets you switch or hide widgets based on the current state or indicator.
 
 ### Example based on the existence of a WMS relation
 
-in the following example a widget is configured based on if a wms relation is found in the selected STAC object links. A `eox-stacinfo` web component is rendered if no relation found. A `eox-map` web component is rendered whenever a relation is found, and rerendered if `wmsLink["wms:layers"][0]` value changes.
+In the following example a widget is configured based on whether a WMS relation is found in the selected STAC object links. An `eox-stacinfo` web component is rendered if no relation is found. An `eox-map` web component is rendered whenever a relation is found, and re-rendered when the `wmsLink["wms:layers"][0]` value changes.
 
 ```js
 import { store } from "@eodash/eodash"
@@ -83,7 +83,6 @@ export default createEodash({
         ...
         widgets:[
             {
-              layout: { x: 9, y: 0, w: 3, h: 12 },
               defineWidget: (selectedSTAC) => {
                 const wmsLink = selectedSTAC?.links.find((link) => link.rel == "wms") ?? false;
                 return wmsLink
@@ -91,6 +90,7 @@ export default createEodash({
                     id: `${wmsLink["wms:layers"][0]} Map`,
                     title: "Map",
                     type: "web-component",
+                    layout: { x: 9, y: 0, w: 3, h: 12 },
                     widget: {
                       link: "https://cdn.skypack.dev/@eox/map",
                       properties: {
@@ -119,6 +119,7 @@ export default createEodash({
                     id: "Information",
                     title: "Information",
                     type: "web-component",
+                    layout: { x: 9, y: 0, w: 3, h: 12 },
                     widget: {
                       link: () => import("@eox/stacinfo"),
                       tagName: "eox-stacinfo",

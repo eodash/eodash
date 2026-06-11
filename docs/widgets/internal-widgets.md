@@ -4,7 +4,7 @@ Eodash provides Internal Widgets as extendable Vue Components that are maintaine
 
 ## Using Eodash Provided Internal Widgets
 
-To use eodash provided internal widgets simply set the desired component's name to `widget.name` and props to `widget.properties` if needed. Find the provided components below:
+To use an eodash provided internal widget, set the component's name on `widget.name` and props on `widget.properties`. Find the provided components below:
 
 <script setup>
 import { data as internalWidgets } from "./internal-widgets.data.js";
@@ -81,7 +81,7 @@ The primary selection is held in the [store](/eodash-store) as `selectedStac` an
 
 You can define your own Vue components and import them into your instance. Eodash automatically looks for a `src/widgets` folder in your project. If found, it imports all Vue files defined inside that folder.
 
-Custom components can simply be referenced by their filename (the component name) in your dashboard configuration under `widget.name`.
+Custom components are referenced by their filename (the component name) in your dashboard configuration under `widget.name`.
 
 ### How Custom Widgets Work
 
@@ -90,7 +90,7 @@ Custom components can simply be referenced by their filename (the component name
 
 You can customize the folder where Eodash looks for custom widgets using the `--widgets` CLI option or the [widgets](/api/CLI/interfaces/EodashConfig.html#widgets) property in `eodash.config.js`.
 
-All of Eodash's core dependencies are accessible inside your Vue components without needing to reinstall them. These include:
+All of eodash's core dependencies are accessible inside your Vue components without needing to reinstall them. These include:
 
 <table>
     <tbody>
@@ -119,7 +119,7 @@ Below is an example of a custom Vue widget that lists items in the current STAC 
         :key="idx"
         @click="getSelected(idx)"
         :title="link.title"
-        :base-color="link.href === selectedSTAC?.href ? highlightColor : undefined"
+        :base-color="link.href === selectedStac?.href ? highlightColor : undefined"
       >
       </v-list-item>
     </v-list>
@@ -138,7 +138,7 @@ defineProps({
   }
 });
 
-const { stac, selectedSTAC } = storeToRefs(store.stac.useSTAcStore());
+const { stac, selectedStac } = storeToRefs(store.stac.useSTAcStore());
 const { loadSelectedSTAC } = store.stac.useSTAcStore();
 
 const getSelected = async (idx) => {

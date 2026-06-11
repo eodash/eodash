@@ -46,7 +46,7 @@ export default {
 
 ## Multiple templates
 
-Assign several templates to the `templates` map to offer more than one layout. The [`EodashLayoutSwitcher`](/widgets/internal-widgets) lets the reader move between them:
+Assign several templates to the `templates` map to offer more than one layout. The [`EodashLayoutSwitcher`](/widgets/internal-widgets/EodashLayoutSwitcher) lets the reader move between them:
 
 ```js
 import { lite, explore } from "@eodash/eodash/templates";

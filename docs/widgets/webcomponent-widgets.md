@@ -43,7 +43,7 @@ export default createEodash({
 ```
 
 ::: warning
-importing from a package identifier using an import function is only possible in "compiletime" eodash client configuration. see [here](/api/Configuration/interfaces/WebComponentProps.html#link)
+Importing by package name only works when a bundler resolves it — build-time configs, or runtime configs bundled into your app. If the browser loads your config file directly, import by URL instead. See [here](/api/Configuration/interfaces/WebComponentProps.html#link).
 :::
 
 ### Example of importing from a URL
@@ -83,7 +83,7 @@ export default createEodash({
 })
 ```
 
-## Deploying Web Components Within Eodash Instance
+## Deploying Web Components Within an eodash Instance
 
 You can define a web component in a file in your instance project and include it using an internal link.
 
@@ -133,11 +133,11 @@ export default createEodash({
 
 ## Registering Web Components in eodash
 
-Custom elements normally should be registered in the javascript file defining it. in that case, you should provide the file as a `link` and the `tagName` of your registered element, eodash will automatically import the `link` provided if the `tagName` isn't already defined as a Custom Element. In case the `link` provided doesn't register the element, eodash assumes that it exports a Custom Element Constructor. The exported constructor property from your provided link should be assigned to `constructorProp` and eodash will automatically register the given tagName to that constructor as a custom element.
+Custom elements are normally registered in the JavaScript file that defines them. In that case, provide the file as a `link` and the `tagName` of your registered element; eodash imports the `link` if the `tagName` isn't already defined as a custom element. If the `link` does not register the element, eodash assumes it exports a custom element constructor. Assign that exported constructor property to `constructorProp`, and eodash registers the given `tagName` to that constructor as a custom element.
 
 ## Exposed Hooks
 
-the configured web component is exposed on the hooks [onMounted](/api/Configuration/interfaces/WebComponentProps.html#onmounted) and [onUnmounted](/api/Configuration/interfaces/WebComponentProps.html#onunmounted). this is typically used for adding and removing Event Listeners, or assigning properties.
+The configured web component is exposed on the [onMounted](/api/Configuration/interfaces/WebComponentProps.html#onmounted) and [onUnmounted](/api/Configuration/interfaces/WebComponentProps.html#onunmounted) hooks. These are typically used for adding and removing event listeners, or assigning properties.
 
 ### Example
 
@@ -171,8 +171,4 @@ export default createEodash({
        ]
     }
 })
-```
-
-```
-
 ```

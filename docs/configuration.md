@@ -1,6 +1,6 @@
 # Configuration
 
-Eodash client is configured through a single object that defines where the data comes from, how the dashboard is branded, and which widgets are rendered. You can write a custom object from scratch, or start from one of the provided [templates](/templates) and adjust it.
+The eodash client is configured through a single object that defines where the data comes from, how the dashboard is branded, and which widgets are rendered. You can write a custom object from scratch, or start from one of the provided [templates](/templates) and adjust it.
 
 The complete API reference is described by the [`Eodash`](/api/Configuration/type-aliases/Eodash.html) type.
 
@@ -24,8 +24,12 @@ The link to the root [STAC](/STAC) catalog that eodash reads to build its layers
 }
 ```
 
-Alternatively, an object can be passed to configure a STAC API endpoint, a dedicated raster [TiTiler services](https://developmentseed.org/titiler/), or the origins allowed to upscale imagery. The full set of options is documented in the [`StacEndpoint`](/api/Configuration/type-aliases/Eodash.html) type.
+Alternatively, an object can be passed to configure a STAC API endpoint and dedicated raster [TiTiler services](https://developmentseed.org/titiler/). The fields are part of the [`Eodash`](/api/Configuration/type-aliases/Eodash.html#stacendpoint) type:
 
+- `endpoint` — URL of the root STAC catalog or API.
+- `api` — set to `true` when `endpoint` is a STAC API rather than a static catalog.
+- `rasterEndpoint` — base URL of a raster TiTiler service.
+- `supportedUpscalingEndpoints` — host substrings whose XYZ tiles may be upscaled.
 ```js
 {
   stacEndpoint: {
@@ -108,7 +112,7 @@ The [Widgets](/widgets/) guide covers the three kinds of widgets and how to conf
 
 ## Deployment
 
-A configuration takes effect once it reaches a browser. Eodash supports two deployment modes, and the same configuration object is used for both.
+A configuration takes effect once it reaches a browser. eodash supports two deployment modes, and the same configuration object is used for both.
 
 ### As a single-page application (SPA)
 

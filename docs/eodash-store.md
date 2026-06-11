@@ -72,5 +72,6 @@ The same store API is exported from several entry points; pick the one that matc
 | Configuration | Import |
 | --- | --- |
 | Build-time ([SPA](/configuration#as-a-single-page-application-spa)) | <code>import { store } from "@eodash/eodash"</code> |
+| Web component inside a bundled app | <code>import { store } from "@eodash/eodash/webcomponent"</code> |
 | Runtime (`config.js`) | <code>const store = window.eodashStore</code> |
 | Runtime ([web component](/configuration#integrating-the-web-component-custom-element) build) | <code>import { store } from "/.eodash/dist/eo-dash.js"</code> |

@@ -15,7 +15,8 @@ export interface WebComponentProps {
    *   ```
    *
    *   ::: warning
-   *   import maps are not available in runtime config
+   *   Importing by package name only works when a bundler resolves it (build-time configs,
+   *   or runtime configs bundled into your app). Otherwise import by URL.
    *   :::
    */
   link?: string | (() => Promise<unknown>);
@@ -162,14 +163,6 @@ export interface TEodashChart {
 }
 
 /** @group Widget Config */
-export interface TEodashMapBtns {
-  name: "EodashMapBtns";
-  properties?: InstanceType<
-    typeof import("^/EodashMapBtns.vue").default
-  >["$props"];
-}
-
-/** @group Widget Config */
 export interface TEodashTools {
   name: "EodashTools";
   properties?: InstanceType<
@@ -226,7 +219,6 @@ export type ComponentWidget =
   | TEodashStacInfo
   | TEodashProcess
   | TEodashChart
-  | TEodashMapBtns
   | TEodashTools
   | TEodashLayoutSwitcher
   | TEodashItemCatalog

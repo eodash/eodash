@@ -70,6 +70,7 @@ const { enableCompare, vegaEmbedOptions } = defineProps({
     default: false,
   },
   vegaEmbedOptions: {
+    /** @type {import("vue").PropType<import("vega-embed").EmbedOptions>} */
     type: Object,
     default() {
       return { actions: true };

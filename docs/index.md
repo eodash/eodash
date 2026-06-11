@@ -4,9 +4,9 @@
 
 - Node.js version 24 or higher.
 - Terminal for accessing eodash via its command line interface (CLI).
-- Your favorite IDE (e.g VSCode), along with the official Vue extension.
+- Your favorite IDE (e.g. VSCode), along with the official Vue extension.
 
-Eodash can be used on its own, or be installed into an existing project. In both cases, you can install it with:
+eodash can be used on its own, or be installed into an existing project. In both cases, you can install it with:
 
 ```bash
 npm install @eodash/eodash

@@ -1,15 +1,15 @@
 # STAC
 
-eodash leverages the SpatioTemporal Asset Catalog (STAC) specification to discover and display geospatial data. The implementation uses a two-tiered collection structure and a set of STAC extensions to handle various data types and services.
+eodash leverages the SpatioTemporal Asset Catalog (STAC) specification to discover and display geospatial data, through a two-tiered collection structure and a set of STAC extensions that handle various data types and services.
 
-::: tip Catalog Modeling Guide
-For eodash catalog generation checout [eodash_catalog](https://github.com/eodash/eodash_catalog) for schema structures, and detailed data modeling guides, please check out the [Wiki](https://github.com/eodash/eodash_catalog/wiki).
+::: tip Catalog Generation
+For eodash catalog generation checkout [eodash_catalog](https://github.com/eodash/eodash_catalog) for detailed guides, please check out the [Wiki](https://github.com/eodash/eodash_catalog/wiki).
 :::
 
 
 ## Two-Level Collections
 
-eodash uses a two-level STAC collection hierarchy to provide a user-friendly experience for data exploration. While eodash can connect to generic STAC endpoints and standard catalogs, it utilizes the Indicator schema to enable advanced dashboard features—such as visualizing multiple datasets together over time.
+eodash uses a two-level STAC collection hierarchy for data exploration. While eodash can connect to generic STAC endpoints and standard catalogs, the Indicator schema enables additional dashboard features such as visualizing multiple datasets together over time.
 
 ### 1. Indicators (Collection of Collections)
 
@@ -248,7 +248,12 @@ type EodashStyleJson = import("ol/style/flat").FlatStyleLike & {
   variables?: Record<string, string | number | boolean | null | undefined>;
   legend?: import("@eox/layercontrol/src/components/layer-config.js").EOxLayerControlLayerConfig["layerConfig"]["legend"];
   jsonform?: import("json-schema").JSONSchema7;
-  tooltip?: { id: string; title?: string; appendix?: string }[];
+  tooltip?: {
+    id: string;
+    title?: string;
+    appendix?: string;
+    decimals?: number;
+  }[];
 };
 ```
 
@@ -461,7 +466,7 @@ Loads another STAC Collection as the processing result.
 
 ## STAC Extensions
 
-eodash utilizes the following STAC community extensions to enhance its capabilities:
+eodash uses the following STAC community extensions:
 
 - **Projection Extension**: https://github.com/stac-extensions/projection
 - **Web Map Links Extension**: https://github.com/stac-extensions/web-map-links
