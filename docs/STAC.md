@@ -2,8 +2,8 @@
 
 eodash leverages the SpatioTemporal Asset Catalog (STAC) specification to discover and display geospatial data. The implementation uses a two-tiered collection structure and a set of STAC extensions to handle various data types and services.
 
-::: TIP Catalog Modeling Guide
-For real-world catalog examples, schema structures, and detailed data modeling guides, please check out the [eodash-catalog Wiki on GitHub](https://github.com/eodash/eodash-catalog/wiki).
+::: tip Catalog Modeling Guide
+For eodash catalog generation checout [eodash_catalog](https://github.com/eodash/eodash_catalog) for schema structures, and detailed data modeling guides, please check out the [Wiki](https://github.com/eodash/eodash_catalog/wiki).
 :::
 
 
