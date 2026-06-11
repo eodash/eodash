@@ -202,7 +202,7 @@ export default {
 };
 ```
 
-A served file is loaded directly by the browser without a build step, so it cannot use `import` statements or define new internal widgets. It can still reference any internal widget already compiled into the bundle, along with [web-component](/widgets/webcomponent-widgets) and iframe widgets.
+A served file is loaded directly by the browser. Because it is not processed by a bundler, it cannot use bare module specifiers (like `import { ref } from "vue"`) or define new internal widgets via `.vue` files. It can still reference any internal widget already compiled into the bundle, along with [web-component](/widgets/webcomponent-widgets) and iframe widgets.
 
 The `config` property also accepts a callback that returns a configuration. The callback can be async and runs inside the host application's module graph, so it can dynamically `import` a configuration module — which is itself processed by the host's bundler, restoring the ability to import files and folders:
 

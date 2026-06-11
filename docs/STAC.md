@@ -9,7 +9,7 @@ For eodash catalog generation checout [eodash_catalog](https://github.com/eodash
 
 ## Two-Level Collections
 
-eodash uses a two-level STAC collection hierarchy to provide a user-friendly experience for data exploration.
+eodash uses a two-level STAC collection hierarchy to provide a user-friendly experience for data exploration. While eodash can connect to generic STAC endpoints and standard catalogs, it utilizes the Indicator schema to enable advanced dashboard features—such as visualizing multiple datasets together over time.
 
 ### 1. Indicators (Collection of Collections)
 

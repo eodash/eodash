@@ -235,7 +235,7 @@ Checkout our [eodash-pages-template](https://github.com/eodash/eodash-pages-temp
 
 ## Command line interface:
 
-Eodash offers a CLI for a seamless development experience. Check out the [CLI guide](/cli) for more information.
+eodash includes a CLI for local development and building. Check out the [CLI guide](/cli) for more information.
 
 ```json
 {

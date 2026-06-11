@@ -107,7 +107,7 @@ All of Eodash's core dependencies are accessible inside your Vue components with
 
 ### Example: A Custom STAC Selector Widget
 
-Below is an example of a custom Vue widget that lists items in the current STAC catalog, highlights the selected item, and allows selecting an item via a prop-configured highlight color:
+Below is an example of a custom Vue widget that lists items in the current STAC catalog, highlights the selected item, and allows selecting an item via a prop-configured highlight color. Note that it utilizes Vuetify components (`<v-card>`, `<v-list>`) which are globally available in eodash:
 
 ```vue
 <!-- src/widgets/List.vue -->
