@@ -2,6 +2,11 @@
 
 eodash leverages the SpatioTemporal Asset Catalog (STAC) specification to discover and display geospatial data. The implementation uses a two-tiered collection structure and a set of STAC extensions to handle various data types and services.
 
+::: TIP Catalog Modeling Guide
+For real-world catalog examples, schema structures, and detailed data modeling guides, please check out the [eodash-catalog Wiki on GitHub](https://github.com/eodash/eodash-catalog/wiki).
+:::
+
+
 ## Two-Level Collections
 
 eodash uses a two-level STAC collection hierarchy to provide a user-friendly experience for data exploration.
@@ -371,7 +376,7 @@ Links with an `endpoint` property are handled by dedicated adapters for external
 **Available Endpoints:**
 
 ##### Sentinel Hub (`endpoint: "sentinelhub"`)
-For time-series chart generation using Sentinel Hub Aggregation API.
+For time-series chart generation using the Sentinel Hub Statistical API.
 
 **Requirements:**
 - Link: `rel: "service"`, `endpoint: "sentinelhub"`, `href: [SH API endpoint]`
@@ -396,9 +401,12 @@ For time-series chart generation using Sentinel Hub Aggregation API.
 }
 ```
 
-2) NASA VEDA statistics for charts
+##### NASA VEDA (`endpoint: "veda"`)
+For time-series chart generation from NASA VEDA statistics.
+
+**Requirements:**
 - Link: `rel: "service"`, `endpoint: "veda"`, `href`: VEDA statistics endpoint
-- eodash gathers COG endpoints and dates from the Indicator’s Collection or its children by reading `links` with `rel: "item"` where each link has `cog_href` and a bubbled `datetime` property on the link.
+- Inputs: eodash gathers COG endpoints and dates from the Indicator’s Collection or its children by reading `links` with `rel: "item"` where each link has `cog_href` and a bubbled `datetime` property on the link.
 
 Example child/Item links used to discover inputs:
 
@@ -435,20 +443,21 @@ For asynchronous processing workflows that generate map layers.
 }
 ```
 
-### STAC Collection Output
+##### STAC Collection (`endpoint: "STAC"`)
+Loads another STAC Collection as the processing result.
 
-To load another STAC Collection as a processing result:
+**Requirements:**
+- Link: `rel: "service"`, `endpoint: "STAC"`, `type: "application/json; profile=collection"`
+- The `href` uses form values via Mustache templating; eodash loads the returned Collection into the UI.
 
 ```json
 {
   "rel": "service",
-  "endpoint": "STAC", 
+  "endpoint": "STAC",
   "type": "application/json; profile=collection",
   "href": "https://stac.example.com/{{collection}}.json"
 }
 ```
-
-The `href` uses form values via Mustache templating. eodash loads the returned Collection into the UI.
 
 ## STAC Extensions
 

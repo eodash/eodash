@@ -2,9 +2,9 @@
 
 ## Prerequisites
 
-- Node.js version 18 or higher.
+- Node.js version 24 or higher.
 - Terminal for accessing eodash via its command line interface (CLI).
-- VSCode is recommended, along with the official Vue extension.
+- Your favorite IDE (e.g VSCode), along with the official Vue extension.
 
 Eodash can be used on its own, or be installed into an existing project. In both cases, you can install it with:
 
@@ -15,7 +15,7 @@ npm install @eodash/eodash
 ## Create your eodash instance
 
 1. Create your repository from eodash's [instance template](https://github.com/eodash/eodash-instance-template). Check Github's guide on how to [Create a repository from a template](https://docs.github.com/en/repositories/creating-and-managing-repositories/creating-a-repository-from-a-template#)
-2. Install dependecies:
+2. Install dependencies:
 
 ```bash
 npm install
@@ -29,13 +29,46 @@ npm run dev # or npx eodash dev
 
 4. Edit the entry point `src/main.js`.
 
+The quickest start is to build on the provided [templates](/templates) by eodash with `getBaseConfig`, which deep-merges your overrides onto a working base configuration:
+
 ```js
-import { createEodash } from "@eodash/eodash"
+import { getBaseConfig } from "@eodash/eodash/templates";
+
+export default getBaseConfig({
+  id: "my-instance",
+  brand: { name: "My Dashboard" },
+});
+```
+
+For full control, pass your own configuration using `createEodash`. 
+
+```js
+import { createEodash } from "@eodash/eodash";
 
 export default createEodash({
-    ...
-})
+  id: "my-instance",
+  stacEndpoint:
+    "https://esa-eodash.github.io/RACE-catalog/RACE/catalog.json",
+  brand: { name: "My Dashboard" },
+  template: {
+    background: {
+      id: Symbol(),
+      type: "internal",
+      widget: { name: "EodashMap" },
+    },
+    widgets: [
+      {
+        id: Symbol(),
+        title: "Item Filter",
+        type: "internal",
+        layout: { x: 0, y: 0, w: 3, h: 12 },
+        widget: { name: "EodashItemFilter" },
+      },
+    ],
+  },
+});
 ```
+See [Templates](/templates) for the built-in templates and [Configuration](/configuration) for all available options.
 
 5. Build eodash as a Single Page Application
 
@@ -57,7 +90,7 @@ npm run build -- --lib # or npx eodash build --lib
 npm install @eodash/eodash
 ```
 
-2. import `@eodash/eodash/webcomponent` and `@eodash/eodash/webcomponent.css` and use `eo-dash` tag.
+2. import `@eodash/eodash/webcomponent` and use the `eo-dash` tag.
 
 ```html
 <!-- index.html -->
@@ -70,10 +103,8 @@ npm install @eodash/eodash
   </head>
 
   <body>
-    // [!code focus]
-    <eo-dash></eo-dash>
-     // [!code focus]
-    <script type="module" src="index.js"></script> 
+    <eo-dash></eo-dash> <!-- [!code focus] -->
+    <script type="module" src="index.js"></script>
   </body>
 </html>
 ```
@@ -81,11 +112,10 @@ npm install @eodash/eodash
 ```js
 // index.js
 import "@eodash/eodash/webcomponent"
-import "@eodash/eodash/webcomponent.css"
 ...
 ```
 
-3. Create your [runtime configuration](/instantiation.html#runtime-configuration).
+3. Create your [runtime configuration](/configuration#integrating-the-web-component-custom-element).
 
 ```js
 // public/config.js
@@ -98,7 +128,8 @@ export default {
     noLayout: false,
     name: "My Dashboard",
     font: {
-      family: "Poppins",
+      family: "Open Sans",
+      link: "https://eox.at/fonts/opensans/opensans.css",
     },
     theme: {
       colors: {
@@ -189,12 +220,11 @@ export default {
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Document</title>
-    <link rel="stylesheet" href="@eodash/eodash/webcomponent.css" />
   </head>
 
   <body>
     <script type="module" src="@eodash/eodash/webcomponent"></script>
-    <eo-dash config="/config.js"></eo-dash> // [!code focus]
+    <eo-dash config="/config.js"></eo-dash> <!-- [!code focus] -->
   </body>
 </html>
 ```
@@ -221,4 +251,4 @@ Eodash offers a CLI for a seamless development experience. Check out the [CLI gu
 
 ## Community:
 
-Don’t hesitate to ask any questions on our [GitHub discussion](https://github.com/eodash/eodash/discussions) forum or contribute to our project by creating a pull request.
+Don't hesitate to ask any questions on our [GitHub discussion](https://github.com/eodash/eodash/discussions) forum or contribute to our project by creating a pull request.

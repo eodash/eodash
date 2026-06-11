@@ -46,22 +46,28 @@ if (!customElements.get("eox-jsonform")) {
 }
 
 const props = defineProps({
+  /** Which map instance this control is bound to. Use `"second"` in a compare-mode layout. */
   map: {
     /** @type {import("vue").PropType<"first" | "second">} */
     //@ts-expect-error todo
     type: String,
     default: "first",
   },
+  /** Tool tabs shown inside `eox-layercontrol`. Remove entries to hide individual tabs. */
   tools: {
-    type: Array,
+    type: /** @type {import("vue").PropType<string[]>} */ (Array),
     default: () => ["datetime", "info", "config", "legend", "opacity"],
   },
+  /** Heading rendered above the layer list. Set to `false` to hide it. */
   title: {
-    type: String || Boolean,
+    type: [String, Boolean],
     default: "Layers",
   },
+  /** CSS custom-property overrides forwarded to the underlying `eox-layercontrol` element via its `style` attribute. */
   cssVars: {
-    type: Object,
+    type: /** @type {import("vue").PropType<Record<string, string>>} */ (
+      Object
+    ),
   },
 });
 
