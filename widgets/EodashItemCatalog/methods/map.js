@@ -79,8 +79,8 @@ export function renderItemsFeatures(
           condition: "click",
           tooltip: false,
           style: stacItemsInteractionStyle || {
-            "stroke-color": "white",
-            "stroke-width": 3,
+            "stroke-color": "#003047",
+            "stroke-width": 3.2,
           },
         },
       },

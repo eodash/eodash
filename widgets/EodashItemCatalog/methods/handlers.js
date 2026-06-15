@@ -128,7 +128,7 @@ export const createOnMouseEnterResult = (mapElement) => {
    * @param {CustomEvent} evt
    */
   return (evt) => {
-    mapElement.value?.selectInteractions["stac-items"]?.highlightById([
+    mapElement.value?.selectInteractions["stac-item-hover"]?.highlightById([
       evt.detail.id,
     ]);
   };
@@ -139,6 +139,6 @@ export const createOnMouseEnterResult = (mapElement) => {
  */
 export const createOnMouseLeaveResult = (mapElement) => {
   return () => {
-    mapElement.value?.selectInteractions["stac-items"]?.highlightById([]);
+    mapElement.value?.selectInteractions["stac-item-hover"]?.highlightById([]);
   };
 };
