@@ -51,5 +51,5 @@ widget: {
 ## See also
 
 - [Internal widgets overview](/widgets/internal-widgets)
-- [EodashItemFilter](/widgets/internal-widgets/EodashItemFilter) — the filter panel opened inside the dialog.
-- [EodashLayoutSwitcher](/widgets/internal-widgets/EodashLayoutSwitcher) — the layout-toggle icon embedded in this widget.
+- [EodashItemFilter](/widgets/internal-widgets/EodashItemFilter) - the filter panel opened inside the dialog.
+- [EodashLayoutSwitcher](/widgets/internal-widgets/EodashLayoutSwitcher) - the layout-toggle icon embedded in this widget.

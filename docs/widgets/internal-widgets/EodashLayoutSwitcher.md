@@ -37,6 +37,6 @@ widget: {
 ## See also
 
 - [Internal widgets overview](/widgets/internal-widgets)
-- [EodashTools](/widgets/internal-widgets/EodashTools) — toolbar that embeds this widget.
-- [EodashItemCatalog](/widgets/internal-widgets/EodashItemCatalog) — catalog panel that embeds this widget in its title row.
-- [Templates](/templates) — how named templates and layout transitions are defined.
+- [EodashTools](/widgets/internal-widgets/EodashTools) - toolbar that embeds this widget.
+- [EodashItemCatalog](/widgets/internal-widgets/EodashItemCatalog) - catalog panel that embeds this widget in its title row.
+- [Templates](/templates) - how named templates and layout transitions are defined.

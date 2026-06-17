@@ -34,7 +34,7 @@ To pull in the widget's full property reference (types, defaults, descriptions),
 <!-- @widget-props -->
 ```
 
-It is replaced at build time with the generated props for the widget that matches the file name — so you do not write the property table by hand. The prop descriptions and defaults come from the JSDoc comments on the widget's `defineProps`, so document props in the component source.
+It is replaced at build time with the generated props for the widget that matches the file name - so you do not write the property table by hand. The prop descriptions and defaults come from the JSDoc comments on the widget's `defineProps`, so document props in the component source.
 
 A typical widget page:
 

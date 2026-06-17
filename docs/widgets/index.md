@@ -7,10 +7,10 @@ eodash offers a grid based layout system; widgets are placed on the dashboard th
 
 Every placed widget takes a `layout` object that positions and sizes it on a 12-column grid:
 
-- `x` — 0-indexed horizontal starting column (from `0` to `11`)
-- `y` — 0-indexed vertical starting row
-- `w` — width, in grid columns (from `1` to `12`)
-- `h` — height, in grid rows
+- `x` - 0-indexed horizontal starting column (from `0` to `11`)
+- `y` - 0-indexed vertical starting row
+- `w` - width, in grid columns (from `1` to `12`)
+- `h` - height, in grid rows
 
 Each of these fields can be specified as a number (e.g., `x: 0`). They can also be a `/`-separated string to use different sizes/positions per screen size in `mobile/tablet/desktop` order (with breakpoints at 960px and 1920px). A missing segment falls back to the previous one.
 
@@ -67,7 +67,7 @@ Eodash provides Internal Widgets as extendable Vue Components that are maintaine
 
 ## Functional Widgets
 
-Functional widgets are a special form of widget rendered through the [`defineWidget`](/api/Configuration/interfaces/FunctionalWidget.html#definewidget) function on STAC object selection. The function receives the selected STAC object (and the compare selection, when present) and returns a static widget config — including its `layout` — or a falsy value to render nothing. The widget re-renders only when the `id` of the returned config changes, which lets you switch or hide widgets based on the current state or indicator.
+Functional widgets are a special form of widget rendered through the [`defineWidget`](/api/Configuration/interfaces/FunctionalWidget.html#definewidget) function on STAC object selection. The function receives the selected STAC object (and the compare selection, when present) and returns a static widget config - including its `layout` - or a falsy value to render nothing. The widget re-renders only when the `id` of the returned config changes, which lets you switch or hide widgets based on the current state or indicator.
 
 ### Example based on the existence of a WMS relation
 

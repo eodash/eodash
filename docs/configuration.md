@@ -20,16 +20,16 @@ The link to the root [STAC](/STAC) catalog that eodash reads to build its layers
 
 ```js
 {
-  stacEndpoint: "https://esa-eodash.github.io/RACE-catalog/RACE/catalog.json",
+  stacEndpoint: "https://eoxhub-workspaces.github.io/eoxhub-test-catalog/catalog/catalog.json",
 }
 ```
 
 Alternatively, an object can be passed to configure a STAC API endpoint and dedicated raster [TiTiler services](https://developmentseed.org/titiler/). The fields are part of the [`Eodash`](/api/Configuration/type-aliases/Eodash.html#stacendpoint) type:
 
-- `endpoint` — URL of the root STAC catalog or API.
-- `api` — set to `true` when `endpoint` is a STAC API rather than a static catalog.
-- `rasterEndpoint` — base URL of a raster TiTiler service.
-- `supportedUpscalingEndpoints` — host substrings whose XYZ tiles may be upscaled.
+- `endpoint` - URL of the root STAC catalog or API.
+- `api` - set to `true` when `endpoint` is a STAC API rather than a static catalog.
+- `rasterEndpoint` - base URL of a raster TiTiler service.
+- `supportedUpscalingEndpoints` - host substrings whose XYZ tiles may be upscaled.
 ```js
 {
   stacEndpoint: {
@@ -126,7 +126,7 @@ import tools from "./tools";
 export default createEodash({
   id: "my-dashboard",
   stacEndpoint:
-    "https://esa-eodash.github.io/RACE-catalog/RACE/catalog.json",
+    "https://eoxhub-workspaces.github.io/eoxhub-test-catalog/catalog/catalog.json",
   brand: { name: "My Dashboard" },
   template: {
     background: {
@@ -162,7 +162,7 @@ import { createEodash } from "@eodash/eodash";
 export default createEodash((store) => ({
   id: "my-dashboard",
   stacEndpoint:
-    "https://esa-eodash.github.io/RACE-catalog/RACE/catalog.json",
+    "https://eoxhub-workspaces.github.io/eoxhub-test-catalog/catalog/catalog.json",
   brand: { name: "My Dashboard" },
   template: {
     // reference `store` where a widget needs the current state
@@ -185,7 +185,7 @@ The element reads its configuration from the `config` attribute, which points to
 // config.js
 export default {
   id: "my-dashboard",
-  stacEndpoint: "https://esa-eodash.github.io/RACE-catalog/RACE/catalog.json",
+  stacEndpoint: "https://eoxhub-workspaces.github.io/eoxhub-test-catalog/catalog/catalog.json",
   brand: { name: "My Dashboard" },
   template: {
     background: {
@@ -208,7 +208,7 @@ export default {
 
 A served file is loaded directly by the browser. Because it is not processed by a bundler, it cannot use bare module specifiers (like `import { ref } from "vue"`) or define new internal widgets via `.vue` files. It can still reference any internal widget already compiled into the bundle, along with [web-component](/widgets/webcomponent-widgets) and iframe widgets.
 
-The `config` property also accepts a callback that returns a configuration. The callback can be async and runs inside the host application's module graph, so it can dynamically `import` a configuration module — which is itself processed by the host's bundler, restoring the ability to import files and folders:
+The `config` property also accepts a callback that returns a configuration. The callback can be async and runs inside the host application's module graph, so it can dynamically `import` a configuration module - which is itself processed by the host's bundler, restoring the ability to import files and folders:
 
 ```js
 document.querySelector("eo-dash").config = async () =>

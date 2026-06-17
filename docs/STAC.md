@@ -406,20 +406,23 @@ For time-series chart generation using the Sentinel Hub Statistical API.
 }
 ```
 
-##### NASA VEDA (`endpoint: "veda"`)
+##### NASA VEDA (`endpoint: "veda"` | `"veda_stac"`)
 For time-series chart generation from NASA VEDA statistics.
 
 **Requirements:**
-- Link: `rel: "service"`, `endpoint: "veda"`, `href`: VEDA statistics endpoint
-- Inputs: eodash gathers COG endpoints and dates from the Indicator’s Collection or its children by reading `links` with `rel: "item"` where each link has `cog_href` and a bubbled `datetime` property on the link.
+- Link: `rel: "service"`, `endpoint: "veda"` or `"veda_stac"`, `href`: VEDA statistics endpoint
+- Inputs: eodash reads `links` with `rel: "item"` from the Indicator's Collection or its children, each carrying a bubbled `datetime`. What it sends to the VEDA API depends on the endpoint:
+  - `veda` - each item's `cog_href` (a COG URL), sent as the `url` query parameter.
+  - `veda_stac` - each item's `id` (a STAC item id), sent as the `ids` query parameter.
 
-Example child/Item links used to discover inputs:
+Example child/Item link (include `cog_href` for `veda`, `id` for `veda_stac`):
 
 ```json
 {
   "rel": "item",
   "href": "./items/2020-01-01.json",
   "cog_href": "https://veda.nasa.gov/cogs/.../cog.tif",
+  "id": "my-collection-2020-01-01",
   "datetime": "2020-01-01T00:00:00Z"
 }
 ```

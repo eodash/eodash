@@ -44,5 +44,5 @@ widget: {
 ## See also
 
 - [Internal widgets overview](/widgets/internal-widgets)
-- [EodashDatePicker](/widgets/internal-widgets/EodashDatePicker) — calendar-based date picker for use when a full timeline is not needed.
+- [EodashDatePicker](/widgets/internal-widgets/EodashDatePicker) - calendar-based date picker for use when a full timeline is not needed.
 - [EodashMap](/widgets/internal-widgets/EodashMap)

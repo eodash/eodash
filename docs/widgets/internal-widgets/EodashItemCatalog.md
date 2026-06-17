@@ -71,5 +71,5 @@ Each entry in the `filters` array configures one filter panel in `eox-itemfilter
 ## See also
 
 - [Internal widgets overview](/widgets/internal-widgets)
-- [EodashItemFilter](/widgets/internal-widgets/EodashItemFilter) — collection-level filter panel (wraps the same `eox-itemfilter` element but operates on the STAC catalog root).
-- [EodashLayoutSwitcher](/widgets/internal-widgets/EodashLayoutSwitcher) — the layout-toggle icon rendered in this widget's title row.
+- [EodashItemFilter](/widgets/internal-widgets/EodashItemFilter) - collection-level filter panel (wraps the same `eox-itemfilter` element but operates on the STAC catalog root).
+- [EodashLayoutSwitcher](/widgets/internal-widgets/EodashLayoutSwitcher) - the layout-toggle icon rendered in this widget's title row.

@@ -32,3 +32,4 @@ docs/.vitepress/cache
 docs/.generated
 docs/.vitepress/dist
 docs/api
+docs/**/*.timestamp-*.mjs

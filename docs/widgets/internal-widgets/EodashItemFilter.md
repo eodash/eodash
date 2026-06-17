@@ -51,5 +51,5 @@ Each entry in `filterProperties` configures one filter section. The default prov
 ## See also
 
 - [Internal widgets overview](/widgets/internal-widgets)
-- [EodashItemCatalog](/widgets/internal-widgets/EodashItemCatalog) — item-level search inside a selected collection.
-- [EodashTools](/widgets/internal-widgets/EodashTools) — toolbar that embeds `EodashItemFilter` inside a dialog.
+- [EodashItemCatalog](/widgets/internal-widgets/EodashItemCatalog) - item-level search inside a selected collection.
+- [EodashTools](/widgets/internal-widgets/EodashTools) - toolbar that embeds `EodashItemFilter` inside a dialog.

@@ -35,5 +35,5 @@ widget: {
 
 ## See also
 
-- [EodashProcess](/widgets/internal-widgets/EodashProcess) — produces the chart spec and data this widget renders.
-- [Eodash Store](/eodash-store) — the shared state the chart reads from.
+- [EodashProcess](/widgets/internal-widgets/EodashProcess) - produces the chart spec and data this widget renders.
+- [Eodash Store](/eodash-store) - the shared state the chart reads from.

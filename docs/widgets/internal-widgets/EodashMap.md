@@ -59,5 +59,5 @@ Every `btns` flag defaults to `true`; set one to `false` to hide that button.
 
 ## See also
 
-- [Map Layer Visualization](/STAC#map-layer-visualization) — how STAC items become the layers shown on the map.
-- [Compare mode](/widgets/internal-widgets#compare-mode) — running two maps side by side.
+- [Map Layer Visualization](/STAC#map-layer-visualization) - how STAC items become the layers shown on the map.
+- [Compare mode](/widgets/internal-widgets#compare-mode) - running two maps side by side.

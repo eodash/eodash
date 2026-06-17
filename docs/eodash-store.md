@@ -8,11 +8,11 @@ eodash fetches the SpatioTemporal Asset Catalog (STAC) endpoint [assigned in the
 
 The store is divided into three areas:
 
-- **`states`** — reactive values that drive the dashboard. They use the [Vue reactivity system](https://vuejs.org/guide/essentials/reactivity-fundamentals), so reading or writing a state updates the interface accordingly.
-- **`actions`** — functions that operate on the states, either by fetching new data or by triggering changes to existing states.
-- **`stac`** — a [Pinia store](https://pinia.vuejs.org/) that holds the STAC catalog navigation: the root catalog links, the selected STAC object, and the actions to load them.
+- **`states`** - reactive values that drive the dashboard. They use the [Vue reactivity system](https://vuejs.org/guide/essentials/reactivity-fundamentals), so reading or writing a state updates the interface accordingly.
+- **`actions`** - functions that operate on the states, either by fetching new data or by triggering changes to existing states.
+- **`stac`** - a [Pinia store](https://pinia.vuejs.org/) that holds the STAC catalog navigation: the root catalog links, the selected STAC object, and the actions to load them.
 
-## States — `store.states`
+## States - `store.states`
 
 <table>
   <thead><tr><th>Property</th><th>Type</th><th>Description</th></tr></thead>
@@ -25,7 +25,7 @@ The store is divided into three areas:
   </tbody>
 </table>
 
-## Actions — `store.actions`
+## Actions - `store.actions`
 
 <table>
   <thead><tr><th>Action</th><th>Signature</th><th>Description</th></tr></thead>
@@ -38,7 +38,7 @@ The store is divided into three areas:
   </tbody>
 </table>
 
-## STAC store — `store.stac.useSTAcStore()`
+## STAC store - `store.stac.useSTAcStore()`
 
 The STAC catalog navigation [pinia store](https://pinia.vuejs.org/). Call `store.stac.useSTAcStore()` to access these properties.
 

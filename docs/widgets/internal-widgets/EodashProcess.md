@@ -34,12 +34,12 @@ widget: {
 
 ## Inputs
 
-The form is whatever the collection's `eodash:jsonform` schema describes — eodash renders the schema as-is, so the available inputs are defined by the dataset, not by the widget see [STAC processing](/STAC#processing). On top of standard JSON Schema fields, two things are eodash-specific:
+The form is whatever the collection's `eodash:jsonform` schema describes - eodash renders the schema as-is, so the available inputs are defined by the dataset, not by the widget see [STAC processing](/STAC#processing). On top of standard JSON Schema fields, two things are eodash-specific:
 
 - **Spatial selection.** A schema field can declare a drawtools input, which lets the user draw on the map. The supported geometries are **bounding box**, **point**, **polygon**, and **feature selection** (clicking existing features of a layer). The drawn geometry is written back into the form value.
 - **Schema options.**
-  - `options.execute: true` — auto-execute. The process runs on every form change instead of showing an **Execute** button.
-  - `options.multiQuery` — when a field holds multiple selections, eodash issues one request per value and aggregates the responses into a single result.
+  - `options.execute: true` - auto-execute. The process runs on every form change instead of showing an **Execute** button.
+  - `options.multiQuery` - when a field holds multiple selections, eodash issues one request per value and aggregates the responses into a single result.
 
 ## Outputs
 
@@ -51,7 +51,7 @@ The process output is determined by the `service` links returned for the collect
 | `image/tiff` | A COG / GeoTIFF map layer. |
 | `image/png` | A static image map layer placed over the request bounding box. |
 | `application/geo+json` | A vector map layer, optionally styled from an `eox:flatstyle` link. |
-| `application/json; profile=collection` (with `endpoint: "STAC"`) | Loads another STAC collection as the output — currently used for points-of-interest collections. |
+| `application/json; profile=collection` (with `endpoint: "STAC"`) | Loads another STAC collection as the output - currently used for points-of-interest collections. |
 
 Chart output is shared through the [eodash store](/eodash-store): `EodashProcess` writes `chartSpec` and `chartData`, and `EodashChart` reads them. Map layers are added to the active map.
 
@@ -59,9 +59,9 @@ Chart output is shared through the [eodash store](/eodash-store): `EodashProcess
 
 When a `service` link carries an `endpoint` identifier, eodash routes it to a dedicated handler instead of fetching it directly. These cover backends that need their own request/response handling:
 
-- **SentinelHub** *(chart)* — runs a [SentinelHub Statistics](https://docs.sentinel-hub.com/api/latest/api/statistical/) request and feeds the result into the chart.
-- **VEDA** *(chart)* — reads cloud-optimized GeoTIFFs from a [VEDA](https://www.earthdata.nasa.gov/dashboard) collection for charting.
-- **EOxHub Workspaces** *(layers, asynchronous)* — submits the work as a job to an [EOxHub](https://hub.eox.at/) workspace and turns the finished result into map layers.
+- **SentinelHub** *(chart)* - runs a [SentinelHub Statistics](https://docs.sentinel-hub.com/api/latest/api/statistical/) request and feeds the result into the chart.
+- **VEDA** *(chart)* - reads cloud-optimized GeoTIFFs from a [VEDA](https://www.earthdata.nasa.gov/dashboard) collection for charting.
+- **EOxHub Workspaces** *(layers, asynchronous)* - submits the work as a job to an [EOxHub](https://hub.eox.at/) workspace and turns the finished result into map layers.
 
 Each handler only acts on links addressed to it, so a collection can mix custom-endpoint links with ordinary `service` links.
 
@@ -76,6 +76,6 @@ The widget supports both types of processes:
 
 ## See also
 
-- [EodashChart](/widgets/internal-widgets/EodashChart) — renders the chart output produced here.
-- [Map Layer Visualization](/STAC#map-layer-visualization) — how the layer output is shown on the map.
-- [Eodash Store](/eodash-store) — the shared `chartSpec` / `chartData` state the chart reads.
+- [EodashChart](/widgets/internal-widgets/EodashChart) - renders the chart output produced here.
+- [Map Layer Visualization](/STAC#map-layer-visualization) - how the layer output is shown on the map.
+- [Eodash Store](/eodash-store) - the shared `chartSpec` / `chartData` state the chart reads.

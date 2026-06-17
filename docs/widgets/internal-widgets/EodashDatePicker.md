@@ -37,4 +37,4 @@ widget: {
 ## See also
 
 - [Internal widgets overview](/widgets/internal-widgets)
-- [EodashTimeSlider](/widgets/internal-widgets/EodashTimeSlider) — timeline-based date selection for collections with many timestamps.
+- [EodashTimeSlider](/widgets/internal-widgets/EodashTimeSlider) - timeline-based date selection for collections with many timestamps.

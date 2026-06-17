@@ -2,12 +2,12 @@
  * Build-time loader for the Eodash Store reference. Parses the store source
  * (`core/client/store/{states,actions,stac}.js`) with the TypeScript compiler
  * and extracts each public property's name, type, and JSDoc description, so the
- * store page renders clean tables straight from source — no hand-maintenance.
+ * store page renders clean tables straight from source - no hand-maintenance.
  */
 
-import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
-import { dirname, resolve } from "node:path";
+import { readFileSync } from "fs";
+import { fileURLToPath } from "url";
+import { dirname, resolve } from "path";
 import ts from "typescript";
 
 const STORE_DIR = resolve(

@@ -43,7 +43,7 @@ export default createEodash({
 ```
 
 ::: warning
-Importing by package name only works when a bundler resolves it — build-time configs, or runtime configs bundled into your app. If the browser loads your config file directly, import by URL instead. See [here](/api/Configuration/interfaces/WebComponentProps.html#link).
+Importing by package name only works when a bundler resolves it - build-time configs, or runtime configs bundled into your app. If the browser loads your config file directly, import by URL instead. See [here](/api/Configuration/interfaces/WebComponentProps.html#link).
 :::
 
 ### Example of importing from a URL

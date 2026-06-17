@@ -48,7 +48,7 @@ import { createEodash } from "@eodash/eodash";
 export default createEodash({
   id: "my-instance",
   stacEndpoint:
-    "https://esa-eodash.github.io/RACE-catalog/RACE/catalog.json",
+    "https://eoxhub-workspaces.github.io/eoxhub-test-catalog/catalog/catalog.json",
   brand: { name: "My Dashboard" },
   template: {
     background: {
@@ -123,7 +123,7 @@ const store = window.eodashStore;
 
 export default {
   id: "my runtime config",
-  stacEndpoint: "https://esa-eodash.github.io/RACE-catalog/RACE/catalog.json",
+  stacEndpoint: "https://eoxhub-workspaces.github.io/eoxhub-test-catalog/catalog/catalog.json",
   brand: {
     noLayout: false,
     name: "My Dashboard",

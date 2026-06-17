@@ -11,12 +11,12 @@ import { getBaseConfig } from "@eodash/eodash/templates";
 
 export default getBaseConfig({
   id: "my-dashboard",
-  stacEndpoint: "https://esa-eodash.github.io/RACE-catalog/RACE/catalog.json",
+  stacEndpoint: "https://eoxhub-workspaces.github.io/eoxhub-test-catalog/catalog/catalog.json",
   brand: { name: "My Dashboard" },
 });
 ```
 
-The override is merged recursively, so a nested value such as `brand.name` replaces only that field while the rest of the base is kept. Arrays are replaced rather than concatenated, so an array you pass — `widgets`, `collectionsPalette`, or `supportedUpscalingEndpoints` — overrides the base array in full.
+The override is merged recursively, so a nested value such as `brand.name` replaces only that field while the rest of the base is kept. Arrays are replaced rather than concatenated, so an array you pass - `widgets`, `collectionsPalette`, or `supportedUpscalingEndpoints` - overrides the base array in full.
 
 The return value is a plain configuration object. Export it directly, or pass it to `createEodash` when the configuration needs access to the store.
 
@@ -38,7 +38,7 @@ import { lite } from "@eodash/eodash/templates";
 
 export default {
   id: "my-dashboard",
-  stacEndpoint: "https://esa-eodash.github.io/RACE-catalog/RACE/catalog.json",
+  stacEndpoint: "https://eoxhub-workspaces.github.io/eoxhub-test-catalog/catalog/catalog.json",
   brand: { name: "My Dashboard" },
   template: lite,
 };
@@ -53,7 +53,7 @@ import { lite, explore } from "@eodash/eodash/templates";
 
 export default {
   id: "my-dashboard",
-  stacEndpoint: "https://esa-eodash.github.io/RACE-catalog/RACE/catalog.json",
+  stacEndpoint: "https://eoxhub-workspaces.github.io/eoxhub-test-catalog/catalog/catalog.json",
   brand: { name: "My Dashboard" },
   templates: { lite, explore },
 };

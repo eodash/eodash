@@ -1,7 +1,7 @@
 /**
  * Build-time loader exposing the dependencies available inside custom widgets.
  * Mirrors the CLI's `clientModules` list (eodash dependencies minus build-only
- * packages — see `nodeModules` in `core/node/cli/globals.js`), keeping `axios`
+ * packages - see `nodeModules` in `core/node/cli/globals.js`), keeping `axios`
  * since widgets can use it. globals.js can't be imported here directly because
  * its `#!/usr/bin/env node` shebang breaks esbuild's data-loader bundling.
  */
