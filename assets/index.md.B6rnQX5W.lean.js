@@ -1,0 +1,1 @@
+import{_ as i,o as a,c as n,a2 as t}from"./chunks/framework.BqepVKQS.js";const o=JSON.parse('{"title":"Get Started","description":"","frontmatter":{},"headers":[],"relativePath":"index.md","filePath":"index.md"}'),h={name:"index.md"};function l(p,s,k,e,E,d){return a(),n("div",null,[...s[0]||(s[0]=[t("",37)])])}const g=i(h,[["render",l]]);export{o as __pageData,g as default};
