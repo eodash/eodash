@@ -1,7 +1,26 @@
 # Widgets
 
-Eodash client is a micro frontend host, that exposes a store to share stateful STAC related data and actions between the widgets.
-Eodash offers a grid based layout system and widgets can be set on the dashboard using `layout` property, The placement of the widgets is backed by the [EOxElement](https://github.com/EOX-A/EOxElements) `@eox/layout`. Refer to the [API](/api/types/core/client/types/type-aliases/Widget.html) to learn more.
+The eodash client acts as a micro-frontend host. It exposes a store to share STAC data and state between widgets.
+eodash offers a grid based layout system; widgets are placed on the dashboard through the `layout` property. The placement is backed by the [EOxElements](https://github.com/EOX-A/EOxElements) `@eox/layout` element. Refer to the [API](/api/Configuration/type-aliases/Widget.html) to learn more.
+
+## Layout
+
+Every placed widget takes a `layout` object that positions and sizes it on a 12-column grid:
+
+- `x` - 0-indexed horizontal starting column (from `0` to `11`)
+- `y` - 0-indexed vertical starting row
+- `w` - width, in grid columns (from `1` to `12`)
+- `h` - height, in grid rows
+
+Each of these fields can be specified as a number (e.g., `x: 0`). They can also be a `/`-separated string to use different sizes/positions per screen size in `mobile/tablet/desktop` order (with breakpoints at 960px and 1920px). A missing segment falls back to the previous one.
+
+```js
+// fixed: 3 columns wide, starting at column 9
+layout: { x: 9, y: 1, w: 3, h: 12 }
+
+// responsive: full width on mobile, half on tablet, a quarter on desktop
+layout: { x: 1, y: 1, w: "12/6/3", h: 12 }
+```
 
 ## Type of Widgets:
 
@@ -9,11 +28,11 @@ eodash supports the integration of three widget types `iframes`, `web-components
 
 ### Web Component Widgets
 
-Learn how to integrate Web Components that are developed using Custom Elements specification by referring to the [guide](/widgets/webcomponent-widgets) and [API](/api/types/core/client/types/interfaces/WebComponentWidget.html).
+Learn how to integrate Web Components that are developed using Custom Elements specification by referring to the [guide](/widgets/webcomponent-widgets) and [API](/api/Configuration/interfaces/WebComponentWidget.html).
 
 ### IFrame Widgets
 
-Integrating micro-frontend standalone apps and HTML files using an IFrame. Check out the [API](/api/types/core/client/types/interfaces/IFrameWidget.html) for further information.
+Integrating micro-frontend standalone apps and HTML files using an IFrame. Check out the [API](/api/Configuration/interfaces/IFrameWidget.html) for further information.
 
 #### Example
 
@@ -44,15 +63,15 @@ export default createEodash({
 
 ### Internal Widgets
 
-Eodash provides Internal Widgets as extendable Vue Components that are maintained within the package. Along with these, users can also define their own Vue Components. A guide is available to [learn more](/widgets/internal-widgets). For further information, you can refer to the [API](/api/types/core/client/types/interfaces/InternalComponentWidget.html).
+Eodash provides Internal Widgets as extendable Vue Components that are maintained within the package. Along with these, users can also define their own Vue Components. A guide is available to [learn more](/widgets/internal-widgets). For further information, you can refer to the [API](/api/Configuration/interfaces/InternalComponentWidget.html).
 
 ## Functional Widgets
 
-Functional widgets are a special form of widgets that are rendered using the [defineWidget](/api/types/core/client/types/interfaces/FunctionalWidget#definewidget) function on STAC object selection, and provides the selected STAC object as a parameter before render. The render of the widget is triggered when the `id` of the returned config changes. It gives the ability to switch and hide widgets based on a specific state or indicator.
+Functional widgets are a special form of widget rendered through the [`defineWidget`](/api/Configuration/interfaces/FunctionalWidget.html#definewidget) function on STAC object selection. The function receives the selected STAC object (and the compare selection, when present) and returns a static widget config - including its `layout` - or a falsy value to render nothing. The widget re-renders only when the `id` of the returned config changes, which lets you switch or hide widgets based on the current state or indicator.
 
 ### Example based on the existence of a WMS relation
 
-in the following example a widget is configured based on if a wms relation is found in the selected STAC object links. A `eox-stacinfo` web component is rendered if no relation found. A `eox-map` web component is rendered whenever a relation is found, and rerendered if `wmsLink["wms:layers"][0]` value changes.
+In the following example a widget is configured based on whether a WMS relation is found in the selected STAC object links. An `eox-stacinfo` web component is rendered if no relation is found. An `eox-map` web component is rendered whenever a relation is found, and re-rendered when the `wmsLink["wms:layers"][0]` value changes.
 
 ```js
 import { store } from "@eodash/eodash"
@@ -64,7 +83,6 @@ export default createEodash({
         ...
         widgets:[
             {
-              layout: { x: 9, y: 0, w: 3, h: 12 },
               defineWidget: (selectedSTAC) => {
                 const wmsLink = selectedSTAC?.links.find((link) => link.rel == "wms") ?? false;
                 return wmsLink
@@ -72,6 +90,7 @@ export default createEodash({
                     id: `${wmsLink["wms:layers"][0]} Map`,
                     title: "Map",
                     type: "web-component",
+                    layout: { x: 9, y: 0, w: 3, h: 12 },
                     widget: {
                       link: "https://cdn.skypack.dev/@eox/map",
                       properties: {
@@ -100,6 +119,7 @@ export default createEodash({
                     id: "Information",
                     title: "Information",
                     type: "web-component",
+                    layout: { x: 9, y: 0, w: 3, h: 12 },
                     widget: {
                       link: () => import("@eox/stacinfo"),
                       tagName: "eox-stacinfo",
@@ -148,7 +168,7 @@ export default createEodash({
 
 ## Loading Widget
 
-You can set a loading spinner or animation using any widget type, the configured widget will be displayed as a fallback for the dashboard suspunsible states.
+You can set a loading spinner or animation using any widget type, the configured widget will be displayed as a fallback for the dashboard's suspense states.
 
 ### Example
 
