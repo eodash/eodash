@@ -1,4 +1,5 @@
 import log from "loglevel";
+import { fetchJson } from "@/utils";
 import {
   applyProcessLayersToMap,
   extractGeometries,
@@ -50,11 +51,17 @@ export async function initProcess({
 }) {
   const isPoiAlive = enableCompare ? !!comparePoi.value : !!poi.value;
   let updatedJsonform = null;
-  if (selectedStac.value?.["eodash:jsonform"]) {
-    updatedJsonform = await fetch(
-      //@ts-expect-error eodash extention
-      selectedStac.value["eodash:jsonform"],
-    ).then((resp) => resp.json());
+  try {
+    if (selectedStac.value?.["eodash:jsonform"]) {
+      updatedJsonform = await fetchJson(
+        //@ts-expect-error eodash extention
+        selectedStac.value["eodash:jsonform"],
+        "process form definition",
+      );
+    }
+  } catch (error) {
+    console.error("[eodash] Error initializing process:", error);
+    throw error;
   }
 
   if (!updatedJsonform && isPoiAlive) {

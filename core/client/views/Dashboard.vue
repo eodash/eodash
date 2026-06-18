@@ -1,6 +1,5 @@
 <template>
   <HeaderComponent v-if="!eodash?.brand.noLayout" />
-  <ErrorAlert v-model="error" />
   <EodashOverlay />
   <Suspense>
     <TemplateComponent :style="{ height: templateHeight }" />
@@ -17,11 +16,10 @@
 import { useEodashRuntime } from "@/composables/DefineEodash";
 import { useURLSearchParametersSync, useUpdateTheme } from "@/composables";
 import { useSTAcStore } from "@/store/stac";
-import { computed, defineAsyncComponent, onErrorCaptured, ref } from "vue";
+import { computed, defineAsyncComponent, onErrorCaptured } from "vue";
 import { useDisplay } from "vuetify";
 import { loadFont } from "@/utils";
 import Loading from "@/components/Loading.vue";
-import ErrorAlert from "@/components/ErrorAlert.vue";
 import EodashOverlay from "@/components/EodashOverlay.vue";
 
 const props = defineProps({
@@ -52,7 +50,17 @@ await loadFont(eodash?.brand?.font, props.isWebComponent);
 
 const { loadSTAC, init } = useSTAcStore();
 init(eodash.stacEndpoint);
-await loadSTAC();
+try {
+  await loadSTAC();
+} catch (e) {
+  const message = e instanceof Error ? e.message : String(e);
+  errorState.value = {
+    message: message || "Failed to load STAC catalog endpoint.",
+    severity: "error",
+    critical: true,
+  };
+  console.error("Dashboard STAC Load Error:", e);
+}
 
 const { smAndDown } = useDisplay();
 
@@ -71,13 +79,13 @@ const FooterComponent = defineAsyncComponent(
 
 const templateHeight = "100%";
 
-const error = ref("");
+import { errorState } from "@/store/states";
 onErrorCaptured((e, comp, info) => {
-  error.value = `
-  ${e}.
-  component: ${comp?.$.type.name}.
-  info: ${info}.
-  `;
+  errorState.value = {
+    message: `${e}. component: ${comp?.$.type.name}. info: ${info}.`,
+    severity: "error",
+    critical: false,
+  };
 });
 </script>
 <style>

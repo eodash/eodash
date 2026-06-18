@@ -1,5 +1,6 @@
 import { Collection, Item } from "stac-js";
 import { toAbsolute } from "stac-js/src/http.js";
+import { fetchJson } from "@/utils";
 import {
   extractLayerConfig,
   extractRoles,
@@ -21,7 +22,6 @@ import {
   createLayersFromAssets,
   createLayersFromLinks,
 } from "./createLayers";
-import axios from "@/plugins/axios";
 import log from "loglevel";
 import { dataThemesBrands } from "@/utils/states";
 
@@ -104,9 +104,7 @@ export class EodashCollection {
         );
       } else {
         stacItemUrl = toAbsolute(itemOrItemLink.href, this.#collectionUrl);
-        this.selectedItem = await axios
-          .get(stacItemUrl)
-          .then((resp) => resp.data);
+        this.selectedItem = await fetchJson(stacItemUrl, "STAC item");
       }
     } else if (!this.selectedItem) {
       this.selectedItem = await this.getItem();
@@ -268,9 +266,7 @@ export class EodashCollection {
 
   async fetchCollection() {
     if (!this.#collectionStac) {
-      const col = await axios
-        .get(this.#collectionUrl)
-        .then((resp) => resp.data);
+      const col = await fetchJson(this.#collectionUrl, "STAC collection");
       this.#collectionStac = new Collection(col);
       log.debug("Fetching collection file", this.#collectionUrl);
     }

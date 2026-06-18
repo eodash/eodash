@@ -1,6 +1,7 @@
 import { registerProjection } from "@/store/actions";
 import { mapEl } from "@/store/states";
 import axios from "@/plugins/axios";
+import { fetchJson } from "@/utils";
 
 import {
   extractRoles,
@@ -80,7 +81,10 @@ export async function createLayersFromAssets(
           : {}),
       });
     } else if (assets[assetId]?.type === "application/geodb+json") {
-      const responseData = await (await fetch(assets[assetId].href)).json();
+      const responseData = await fetchJson(
+        assets[assetId].href,
+        "layer asset data",
+      );
       geoJsonIdx.push(idx);
       if (
         !responseData ||

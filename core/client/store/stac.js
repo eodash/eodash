@@ -1,6 +1,6 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
-import axios from "@/plugins/axios";
+import { fetchJson } from "@/utils";
 import {
   useAbsoluteUrl,
   useCompareAbsoluteUrl,
@@ -113,22 +113,21 @@ export const useSTAcStore = defineStore("stac", () => {
     const property = isApi.value ? "collections" : "links";
 
     log.debug("Loading STAC endpoint", url);
-    await axios
-      .get(url)
-      .then((resp) => {
-        //@ts-expect-error TODO
-        const links = resp.data[property].map((link) => {
-          if (!link.title) {
-            link.title = `${link.rel} ${link.href}`;
-          }
-          return link;
-        });
-        log.debug("Setting selected STAC", links);
-        stac.value = links;
-      })
-      .catch((err) => {
-        throw new Error("error loading assigned STAC endpoint", err);
+    try {
+      const data = await fetchJson(url, "assigned STAC endpoint");
+      //@ts-expect-error TODO
+      const links = data[property].map((link) => {
+        if (!link.title) {
+          link.title = `${link.rel} ${link.href}`;
+        }
+        return link;
       });
+      log.debug("Setting selected STAC", links);
+      stac.value = links;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      throw new Error(`Error loading assigned STAC endpoint: ${message}`);
+    }
   }
 
   /**
@@ -155,27 +154,26 @@ export const useSTAcStore = defineStore("stac", () => {
       patch({ selectedItem: stacItem });
     }
 
-    await axios
-      .get(absoluteUrl.value)
-      .then(async (resp) => {
-        await updateEodashCollections(
-          eodashCollections,
-          resp.data,
-          absoluteUrl.value,
-          collectionsPalette,
-          isApi.value,
-          rasterEndpoint.value,
-        );
-        selectedStac.value = resp.data;
-        // set indicator and poi
-        indicator.value = isPoi
-          ? indicator.value
-          : useGetSubCodeId(selectedStac.value);
-        poi.value = isPoi ? (selectedStac.value?.id ?? "") : "";
-      })
-      .catch((err) => {
-        throw new Error("error loading the selected STAC", err);
-      });
+    try {
+      const data = await fetchJson(absoluteUrl.value, "selected STAC");
+      await updateEodashCollections(
+        eodashCollections,
+        data,
+        absoluteUrl.value,
+        collectionsPalette,
+        isApi.value,
+        rasterEndpoint.value,
+      );
+      selectedStac.value = data;
+      // set indicator and poi
+      indicator.value = isPoi
+        ? indicator.value
+        : useGetSubCodeId(selectedStac.value);
+      poi.value = isPoi ? (selectedStac.value?.id ?? "") : "";
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      throw new Error(`Error loading the selected STAC: ${message}`);
+    }
   }
   /**
    * Fetches selected stac object and assign it to `selectedCompareStac`
@@ -196,26 +194,25 @@ export const useSTAcStore = defineStore("stac", () => {
       // construct absolute URL of a poi
       absoluteUrl.value = constructPoiUrl(relativePath, compareIndicator.value);
     }
-    await axios
-      .get(absoluteUrl.value)
-      .then(async (resp) => {
-        await updateEodashCollections(
-          eodashCompareCollections,
-          resp.data,
-          absoluteUrl.value,
-          [...collectionsPalette].reverse(),
-          isApi.value,
-          rasterEndpoint.value,
-        );
-        selectedCompareStac.value = resp.data;
-        compareIndicator.value = isPOI
-          ? compareIndicator.value
-          : useGetSubCodeId(selectedCompareStac.value);
-        comparePoi.value = isPOI ? (selectedCompareStac.value?.id ?? "") : "";
-      })
-      .catch((err) => {
-        throw new Error("error loading the selected comparison STAC", err);
-      });
+    try {
+      const data = await fetchJson(absoluteUrl.value, "selected comparison STAC");
+      await updateEodashCollections(
+        eodashCompareCollections,
+        data,
+        absoluteUrl.value,
+        [...collectionsPalette].reverse(),
+        isApi.value,
+        rasterEndpoint.value,
+      );
+      selectedCompareStac.value = data;
+      compareIndicator.value = isPOI
+        ? compareIndicator.value
+        : useGetSubCodeId(selectedCompareStac.value);
+      comparePoi.value = isPOI ? (selectedCompareStac.value?.id ?? "") : "";
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      throw new Error(`Error loading the selected comparison STAC: ${message}`);
+    }
   }
 
   /**

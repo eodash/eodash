@@ -73,3 +73,12 @@ export const chartSpec = ref(null);
  * @type {import("vue").Ref<import("vega-embed").VisualizationSpec | null>}
  */
 export const compareChartSpec = ref(null);
+
+/** Global error state
+ * @type {import("vue").Ref<{message: string, severity: 'error' | 'warning' | 'info', critical: boolean}>}
+ */
+export const errorState = ref({
+  message: "",
+  severity: "error",
+  critical: false,
+});
