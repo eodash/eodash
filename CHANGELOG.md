@@ -1,6 +1,13 @@
 # Changelog
 
 
+## [5.7.1](https://github.com/eodash/eodash/compare/eodash-v5.7.0...eodash-v5.7.1) (2026-06-18)
+
+
+### Bug Fixes
+
+* Prepare and Update Docs ([#404](https://github.com/eodash/eodash/issues/404)) ([f88989b](https://github.com/eodash/eodash/commit/f88989bf3ab2f8839fecf886e9c213652e310225))
+
 ## [5.7.0](https://github.com/eodash/eodash/compare/eodash-v5.6.1...eodash-v5.7.0) (2026-05-21)
 
 
