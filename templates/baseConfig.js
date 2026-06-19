@@ -22,7 +22,7 @@ const baseConfig = {
     ],
     rasterEndpoint: "https://api.explorer.eopf.copernicus.eu/rstaging",
     colormapRegistry:
-      "https://raw.githubusercontent.com/eurodatacube/eodash-assets/refs/heads/rasterform/defaults/colormaps.json",
+      "https://raw.githubusercontent.com/eurodatacube/eodash-assets/refs/heads/main/defaults/colormaps.json",
   },
   brand: {
     noLayout: true,
