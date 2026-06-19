@@ -6,6 +6,7 @@
       v-bind="config"
       :for="mapElement"
       .colormapRegistry="colormapRegistry"
+      .showLayerZoomState="true"
       .customEditorInterfaces="bandsEditorInterface"
       @datetime:updated="debouncedHandleDateTime"
       toolsAsList="true"
@@ -106,7 +107,7 @@ const eodashCols =
   props.map === "second" ? eodashCompareCollections : eodashCollections;
 const mapElement = props.map === "second" ? mapCompareEl : mapEl;
 
-/** @type { import("vue").Ref<HTMLElement & Record<string,any> | null>} */
+/** @type { import("vue").Ref<import("@eox/layercontrol").EOxLayerControl | null>} */
 const eoxLayercontrol = ref(null);
 
 // eox-timecontrol re-fires datetime:updated after layer reassignment;

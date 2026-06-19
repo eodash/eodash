@@ -77,8 +77,10 @@ export const useHandleMapMoveEnd = (mapElement, mapPosition) => {
   );
 
   onMounted(() => {
-    /** @type {import('ol/Map').default} */
-    (mapElement.value?.map)?.on("moveend", handleMoveEnd);
+    const map = mapElement.value?.map;
+    map?.on("moveend", handleMoveEnd);
+    // Seed mapPosition from the initial view
+    handleMoveEnd(/** @type {any} */ ({ map }));
   });
 
   onUnmounted(() => {
