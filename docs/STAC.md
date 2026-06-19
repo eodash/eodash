@@ -235,7 +235,7 @@ The core of this extension is the ability to define style `variables` that can b
 
 - **`variables`**: A key-value map where style properties can be defined as variables.
 - **`jsonform`**: A [EOxJSONForm](https://eox-a.github.io/EOxElements/?path=/docs/elements-eox-jsonform--docs) JSON Schema that defines a form. This form is rendered in the UI, allowing users to modify the `variables` at runtime.
-- **`legend`**: Configuration for displaying a layer's legend.
+- **`legend`**: Configuration for displaying a layer's legend. Supports dynamic scale updates via `domainProperties` (linking to form sliders) and dynamic colorscale updates via `rangeProperty` (linking to form selectors).
 - **`tooltip`**: Configuration for defining interactive tooltips that appear on feature hover or click.
 
 ```ts
@@ -245,6 +245,48 @@ type EodashStyleJson = import("ol/style/flat").FlatStyleLike & {
   jsonform?: import("json-schema").JSONSchema7;
   tooltip?: { id: string; title?: string; appendix?: string }[];
 };
+```
+
+### eodash Raster Form
+
+The `eodash:rasterform` property allows providing visualization controls for tiled layers (WMS, WMTS, XYZ) that do not use OpenLayers Flat Styles. 
+
+It can be defined at the **Collection**, **Item**, or **Link** level. When present on a link or asset, it creates a configuration form in the layer control. 
+
+- **For WMS**: Updating form values triggers a call to the source's `updateParams` method (e.g., updating `STYLES` or custom vendor parameters).
+- **For XYZ**: Updating form values triggers a refresh of the tile URL with the new parameters injected into the query string.
+
+The property can be either a **URL string** pointing to a JSON schema or a **direct JSON object**. It also supports the **`legend`** property found in eodash Flat Styles, enabling dynamic legends for tiled layers.
+
+```json
+{
+  "rel": "xyz",
+  "href": "https://tiles.example.com/{z}/{x}/{y}?rescale={{rescale}}&cbar={{cbar}}",
+  "eodash:rasterform": {
+    "legend": {
+        "rangeProperty": "cbar",
+        "domainProperties": ["vmin", "vmax"]
+    },
+    "jsonform": {
+      "type": "object",
+      "properties": {
+        "cbar": {
+          "type": "string",
+          "enum": ["magma", "viridis"],
+          "default": "viridis"
+        },
+        "vminmax": {
+          "type": "object",
+          "properties": {
+            "vmin": { "type": "number", "format": "range", "default": 0 },
+            "vmax": { "type": "number", "format": "range", "default": 1000 }
+          },
+          "format": "minmax"
+        }
+      }
+    }
+  }
+}
 ```
 
 

@@ -18,8 +18,13 @@ import container from "./container";
 
 export default createEodash({
   id: "id",
-  stacEndpoint:
-    "https://eurodatacube.github.io/eodash-catalog/RACE/catalog.json",
+  stacEndpoint: {
+    endpoint:
+      "https://esa-eodashboards.github.io/eodashboard-catalog/trilateral/"
+    api: false,
+    colormapRegistry:
+      "https://raw.githubusercontent.com/eurodatacube/eodash-assets/refs/heads/rasterform/defaults/colormaps.json",
+  },
   brand: {
     name: "Dashboard",
     font: {

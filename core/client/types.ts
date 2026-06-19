@@ -342,6 +342,7 @@ export type StacEndpoint =
       supportedUpscalingEndpoints?: Array<
         string | { url: string; titilerVersion?: 1 | 2 }
       >;
+      colormapRegistry?: string | Record<string, string[]>;
     };
 
 /** @group Eodash */
