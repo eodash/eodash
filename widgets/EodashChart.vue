@@ -34,7 +34,7 @@ import {
   onMounted,
   onBeforeUnmount,
   watch,
-  nextTick
+  nextTick,
 } from "vue";
 import { onChartClick } from "./EodashProcess/methods/handling";
 import {
@@ -92,52 +92,65 @@ onMounted(() => {
   const calculateHeight = () => {
     if (!grandParent) return;
     let availableHeight = grandParent.getBoundingClientRect().height;
-    
-    if (directParent && directParent.classList.contains('eodash-process-container')) {
-       const styles = window.getComputedStyle(directParent);
-       availableHeight -= (parseFloat(styles.paddingTop) || 0) + (parseFloat(styles.paddingBottom) || 0);
-       
-       Array.from(directParent.children).forEach(child => {
-         if (child !== el) {
-           const childHeight = child.getBoundingClientRect().height;
-           const childStyles = window.getComputedStyle(child);
-           const margins = (parseFloat(childStyles.marginTop) || 0) + (parseFloat(childStyles.marginBottom) || 0);
-           availableHeight -= (childHeight + margins);
-         }
-       });
-       
-       // Subtract height of vega-bindings if they exist inside the web component
-       const eoxChart = el.querySelector('eox-chart');
-       if (eoxChart && eoxChart.shadowRoot) {
-         const bindingsForm = eoxChart.shadowRoot.querySelector('.vega-bindings');
-         if (bindingsForm) {
-            const formHeight = bindingsForm.getBoundingClientRect().height;
-            availableHeight -= (formHeight + 12); // Add 12px extra padding for the form
-         }
-       }
 
-       // small buffer to prevent border scrollbars
-       availableHeight -= 12;
+    if (
+      directParent &&
+      directParent.classList.contains("eodash-process-container")
+    ) {
+      const styles = window.getComputedStyle(directParent);
+      availableHeight -=
+        (parseFloat(styles.paddingTop) || 0) +
+        (parseFloat(styles.paddingBottom) || 0);
+
+      Array.from(directParent.children).forEach((child) => {
+        if (child !== el) {
+          const childHeight = child.getBoundingClientRect().height;
+          const childStyles = window.getComputedStyle(child);
+          const margins =
+            (parseFloat(childStyles.marginTop) || 0) +
+            (parseFloat(childStyles.marginBottom) || 0);
+          availableHeight -= childHeight + margins;
+        }
+      });
+
+      // Subtract height of vega-bindings if they exist inside the web component
+      const eoxChart = el.querySelector("eox-chart");
+      if (eoxChart && eoxChart.shadowRoot) {
+        const bindingsForm =
+          eoxChart.shadowRoot.querySelector(".vega-bindings");
+        if (bindingsForm) {
+          const formHeight = bindingsForm.getBoundingClientRect().height;
+          availableHeight -= formHeight + 12; // Add 12px extra padding for the form
+        }
+      }
+
+      // small buffer to prevent border scrollbars
+      availableHeight -= 12;
     } else {
-       // If maximized or in another panel
-       if (directParent) {
-           const styles = window.getComputedStyle(directParent);
-           availableHeight -= (parseFloat(styles.paddingTop) || 0) + (parseFloat(styles.paddingBottom) || 0);
-       }
-       availableHeight -= 12; 
+      // If maximized or in another panel
+      if (directParent) {
+        const styles = window.getComputedStyle(directParent);
+        availableHeight -=
+          (parseFloat(styles.paddingTop) || 0) +
+          (parseFloat(styles.paddingBottom) || 0);
+      }
+      availableHeight -= 12;
     }
-    
+
     if (availableHeight > 0) {
       frameHeight.value = Math.max(150, Math.floor(availableHeight));
     }
   };
 
   const setupShadowObserver = () => {
-    const eoxChart = el.querySelector('eox-chart');
+    const eoxChart = el.querySelector("eox-chart");
     if (eoxChart && eoxChart.shadowRoot && !eoxChart.dataset.observed) {
-       const shadowObserver = new MutationObserver(() => calculateHeight());
-       shadowObserver.observe(eoxChart.shadowRoot, { childList: true, subtree: true });
-       eoxChart.dataset.observed = 'true';
+      const shadowObserver = new MutationObserver(() => calculateHeight());
+      shadowObserver.observe(eoxChart.shadowRoot, {
+        childList: true,
+        subtree: true,
+      });
+      eoxChart.dataset.observed = "true";
     }
   };
 
@@ -148,34 +161,38 @@ onMounted(() => {
   });
 
   // Watch for data changes which might trigger form re-rendering
-  watch([usedChartData, usedChartSpec], () => {
-    nextTick(() => {
-      calculateHeight();
-      setupShadowObserver();
-    });
-  }, { deep: true });
+  watch(
+    [usedChartData, usedChartSpec],
+    () => {
+      nextTick(() => {
+        calculateHeight();
+        setupShadowObserver();
+      });
+    },
+    { deep: true },
+  );
 
   if (grandParent) {
-     resizeObserver = new ResizeObserver(() => {
-       calculateHeight();
-     });
-     resizeObserver.observe(grandParent);
-     
-     if (directParent) {
-       resizeObserver.observe(directParent);
-       Array.from(directParent.children).forEach(child => {
-         if (child !== el) resizeObserver.observe(child);
-       });
-       
-       childMutationObserver = new MutationObserver(() => {
-         calculateHeight();
-         Array.from(directParent.children).forEach(child => {
-           if (child !== el) resizeObserver.observe(child);
-         });
-         setupShadowObserver();
-       });
-       childMutationObserver.observe(directParent, { childList: true });
-     }
+    resizeObserver = new ResizeObserver(() => {
+      calculateHeight();
+    });
+    resizeObserver.observe(grandParent);
+
+    if (directParent) {
+      resizeObserver.observe(directParent);
+      Array.from(directParent.children).forEach((child) => {
+        if (child !== el) resizeObserver.observe(child);
+      });
+
+      childMutationObserver = new MutationObserver(() => {
+        calculateHeight();
+        Array.from(directParent.children).forEach((child) => {
+          if (child !== el) resizeObserver.observe(child);
+        });
+        setupShadowObserver();
+      });
+      childMutationObserver.observe(directParent, { childList: true });
+    }
   }
 
   // for mobile view, the overlay panel containing chart is initially hidden
