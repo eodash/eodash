@@ -75,15 +75,91 @@ const containerEl = useTemplateRef("container");
 @type { MutationObserver | null}
 */
 let observer = null;
+/** @type {ResizeObserver | null} */
+let resizeObserver = null;
+/** @type {MutationObserver | null} */
+let childMutationObserver = null;
 
 onMounted(() => {
   const el = containerEl.value;
   if (!el) return;
 
-  const parent = el.parentElement?.parentElement;
-  if (parent) {
-    const parentHeight = parent.getBoundingClientRect().height;
-    frameHeight.value = Math.max(225, Math.floor(parentHeight));
+  const directParent = el.parentElement;
+  const grandParent = directParent?.parentElement;
+
+  const calculateHeight = () => {
+    if (!grandParent) return;
+    let availableHeight = grandParent.getBoundingClientRect().height;
+    
+    if (directParent && directParent.classList.contains('eodash-process-container')) {
+       const styles = window.getComputedStyle(directParent);
+       availableHeight -= (parseFloat(styles.paddingTop) || 0) + (parseFloat(styles.paddingBottom) || 0);
+       
+       Array.from(directParent.children).forEach(child => {
+         if (child !== el) {
+           const childHeight = child.getBoundingClientRect().height;
+           const childStyles = window.getComputedStyle(child);
+           const margins = (parseFloat(childStyles.marginTop) || 0) + (parseFloat(childStyles.marginBottom) || 0);
+           availableHeight -= (childHeight + margins);
+         }
+       });
+       
+       // Subtract height of vega-bindings if they exist inside the web component
+       const eoxChart = el.querySelector('eox-chart');
+       if (eoxChart && eoxChart.shadowRoot) {
+         const bindingsForm = eoxChart.shadowRoot.querySelector('.vega-bindings');
+         if (bindingsForm) {
+            const formHeight = bindingsForm.getBoundingClientRect().height;
+            availableHeight -= (formHeight + 12); // Add 12px extra padding for the form
+         }
+       }
+
+       // small buffer to prevent border scrollbars
+       availableHeight -= 12;
+    } else {
+       // If maximized or in another panel
+       if (directParent) {
+           const styles = window.getComputedStyle(directParent);
+           availableHeight -= (parseFloat(styles.paddingTop) || 0) + (parseFloat(styles.paddingBottom) || 0);
+       }
+       availableHeight -= 12; 
+    }
+    
+    if (availableHeight > 0) {
+      frameHeight.value = Math.max(150, Math.floor(availableHeight));
+    }
+  };
+
+  calculateHeight();
+
+  if (grandParent) {
+     resizeObserver = new ResizeObserver(() => {
+       calculateHeight();
+     });
+     resizeObserver.observe(grandParent);
+     
+     if (directParent) {
+       resizeObserver.observe(directParent);
+       Array.from(directParent.children).forEach(child => {
+         if (child !== el) resizeObserver.observe(child);
+       });
+       
+       childMutationObserver = new MutationObserver(() => {
+         calculateHeight();
+         Array.from(directParent.children).forEach(child => {
+           if (child !== el) resizeObserver.observe(child);
+         });
+         
+         // Also check for vega-bindings in shadow dom if not already observing
+         const eoxChart = el.querySelector('eox-chart');
+         if (eoxChart && eoxChart.shadowRoot && !eoxChart.dataset.observed) {
+            const shadowObserver = new MutationObserver(() => calculateHeight());
+            shadowObserver.observe(eoxChart.shadowRoot, { childList: true, subtree: true });
+            eoxChart.dataset.observed = 'true';
+         }
+       });
+       childMutationObserver.observe(directParent, { childList: true });
+     }
   }
 
   // for mobile view, the overlay panel containing chart is initially hidden
@@ -108,6 +184,8 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   observer?.disconnect();
+  resizeObserver?.disconnect();
+  childMutationObserver?.disconnect();
 });
 
 const chartStyles = computed(() => {

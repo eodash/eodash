@@ -1,5 +1,5 @@
 <template>
-  <div ref="container" class="py-1">
+  <div ref="container" class="py-1 eodash-process-container">
     <ProcessList :map-element="mapElement" :enable-compare="enableCompare" />
     <eox-jsonform
       v-if="jsonformSchema"
@@ -191,5 +191,15 @@ useAutoExec(autoExec, jsonformEl, jsonformSchema, startProcess);
 eox-jsonform {
   padding: 0.7em;
   min-height: 0px;
+}
+
+/* Force the specific panel wrapping this component to utilize 100% height */
+.bg-surface:has(.eodash-process-container) {
+  height: 100%;
+}
+
+/* Make sure this container also takes up that height */
+.eodash-process-container {
+  height: 100%;
 }
 </style>
