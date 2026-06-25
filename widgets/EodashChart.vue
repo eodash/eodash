@@ -33,6 +33,8 @@ import {
   ref,
   onMounted,
   onBeforeUnmount,
+  watch,
+  nextTick
 } from "vue";
 import { onChartClick } from "./EodashProcess/methods/handling";
 import {
@@ -130,7 +132,28 @@ onMounted(() => {
     }
   };
 
-  calculateHeight();
+  const setupShadowObserver = () => {
+    const eoxChart = el.querySelector('eox-chart');
+    if (eoxChart && eoxChart.shadowRoot && !eoxChart.dataset.observed) {
+       const shadowObserver = new MutationObserver(() => calculateHeight());
+       shadowObserver.observe(eoxChart.shadowRoot, { childList: true, subtree: true });
+       eoxChart.dataset.observed = 'true';
+    }
+  };
+
+  // Initial calculation after layout
+  nextTick(() => {
+    calculateHeight();
+    setupShadowObserver();
+  });
+
+  // Watch for data changes which might trigger form re-rendering
+  watch([usedChartData, usedChartSpec], () => {
+    nextTick(() => {
+      calculateHeight();
+      setupShadowObserver();
+    });
+  }, { deep: true });
 
   if (grandParent) {
      resizeObserver = new ResizeObserver(() => {
@@ -149,14 +172,7 @@ onMounted(() => {
          Array.from(directParent.children).forEach(child => {
            if (child !== el) resizeObserver.observe(child);
          });
-         
-         // Also check for vega-bindings in shadow dom if not already observing
-         const eoxChart = el.querySelector('eox-chart');
-         if (eoxChart && eoxChart.shadowRoot && !eoxChart.dataset.observed) {
-            const shadowObserver = new MutationObserver(() => calculateHeight());
-            shadowObserver.observe(eoxChart.shadowRoot, { childList: true, subtree: true });
-            eoxChart.dataset.observed = 'true';
-         }
+         setupShadowObserver();
        });
        childMutationObserver.observe(directParent, { childList: true });
      }
