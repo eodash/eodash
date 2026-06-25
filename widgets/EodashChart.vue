@@ -144,13 +144,13 @@ onMounted(() => {
 
   const setupShadowObserver = () => {
     const eoxChart = el.querySelector("eox-chart");
-    if (eoxChart && eoxChart.shadowRoot && !eoxChart.dataset.observed) {
+    if (eoxChart && eoxChart.shadowRoot && !eoxChart.hasAttribute("data-observed")) {
       const shadowObserver = new MutationObserver(() => calculateHeight());
       shadowObserver.observe(eoxChart.shadowRoot, {
         childList: true,
         subtree: true,
       });
-      eoxChart.dataset.observed = "true";
+      eoxChart.setAttribute("data-observed", "true");
     }
   };
 
@@ -181,13 +181,13 @@ onMounted(() => {
     if (directParent) {
       resizeObserver.observe(directParent);
       Array.from(directParent.children).forEach((child) => {
-        if (child !== el) resizeObserver.observe(child);
+        if (child !== el) resizeObserver?.observe(child);
       });
 
       childMutationObserver = new MutationObserver(() => {
         calculateHeight();
         Array.from(directParent.children).forEach((child) => {
-          if (child !== el) resizeObserver.observe(child);
+          if (child !== el) resizeObserver?.observe(child);
         });
         setupShadowObserver();
       });
