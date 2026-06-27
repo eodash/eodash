@@ -207,6 +207,10 @@ export class EodashCollection {
           timeControlValues,
           timeControlProperty: "TIME",
         }),
+        ...(!!this.#collectionStac?.["eodash:layerExclusive"] && {
+          layerControlExclusive: true,
+          layerControlExpand: false,
+        }),
       };
 
       const links = await createLayersFromLinks(
@@ -306,7 +310,7 @@ export class EodashCollection {
         undefined,
         100,
         first,
-        1000,
+        100,
         centerDatetime,
       );
     }

@@ -94,6 +94,7 @@ import {
 import {
   useHandleMapMoveEnd,
   useInitMap,
+  useMapLoading,
   useUpdateTooltipProperties,
 } from "^/EodashMap/methods";
 import { inAndOut } from "ol/easing.js";
@@ -237,22 +238,13 @@ const cursorCoordsRef = useTemplateRef("cursor-coords");
 const tooltipProperties = ref([]);
 /** @type {import("vue").Ref<Exclude<import("@/types").EodashStyleJson["tooltip"], undefined>>} */
 const compareTooltipProperties = ref([]);
-/** @type {import("vue").ComputedRef<{
-  Attribution: { collapsible: boolean };
-  ScaleLine?: { target: HTMLElement };
-  MousePosition?: { projection: string; coordinateFormat: (c: [number, number]) => string; target: HTMLElement };
-}>} */
+
 const controls = computed(() => {
-  /** @type {{
-    Attribution: { collapsible: boolean };
-    ScaleLine?: { target: HTMLElement };
-    MousePosition?: { projection: string; coordinateFormat: (c: [number, number]) => string; target: HTMLElement };
-  }} */
-  const controlsObj = {
+  const controlsObj = /** @type {import("@eox/map").ControlDictionary} */ ({
     Attribution: {
       collapsible: true,
     },
-  };
+  });
 
   if (props.enableScaleLine && scaleLineRef.value) {
     controlsObj.ScaleLine = {
@@ -263,12 +255,8 @@ const controls = computed(() => {
   if (props.enableCursorCoordinates && cursorCoordsRef.value) {
     controlsObj.MousePosition = {
       projection: "EPSG:4326",
-      coordinateFormat: (/** @type {[number, number]} */ c) => {
-        const lat = c[1];
-        const lng = c[0];
-        const latStr = `${Math.abs(lat).toFixed(3)}°${lat >= 0 ? "N" : "S"}`;
-        const lngStr = `${Math.abs(lng).toFixed(3)}°${lng >= 0 ? "E" : "W"}`;
-        return `${latStr}, ${lngStr}`;
+      coordinateFormat: (c) => {
+        return `${c?.[1].toFixed(3)} °N, ${c?.[0].toFixed(3)} °E`;
       },
       target: cursorCoordsRef.value,
     };
@@ -366,6 +354,9 @@ onMounted(() => {
   });
 });
 
+// sync map loading with the global loading state
+useMapLoading(eoxMap, compareMap);
+
 useUpdateTooltipProperties(eodashCollections, tooltipProperties);
 
 const mainTooltipStyles = computed(() => ({
@@ -394,9 +385,6 @@ const tooltipPropertyTransform = (map) => {
    * @returns {{key:string; value?:string} | undefined}
    */
   return (param) => {
-    if (tooltipAdapter.value) {
-      return tooltipAdapter.value(param, map);
-    }
     /** @type {typeof tooltipProps.value} */
     const updatedProperties = JSON.parse(
       mustache.render(JSON.stringify(tooltipProps.value), {
@@ -408,6 +396,9 @@ const tooltipPropertyTransform = (map) => {
       (prop) => prop.id === param.key,
     );
     if (!tooltipProp) {
+      if (tooltipAdapter.value) {
+        return tooltipAdapter.value(param, map);
+      }
       return undefined;
     }
     if (typeof param.value === "object") {
@@ -419,7 +410,6 @@ const tooltipPropertyTransform = (map) => {
         : 4;
       param.value = Number(param.value).toFixed(decimals).toString();
     }
-
     return {
       key: tooltipProp.title || tooltipProp.id,
       value: param.value + " " + (tooltipProp.appendix || ""),
@@ -436,58 +426,6 @@ onMounted(() => {
 </script>
 
 <style scoped>
-#cursor-coordinates {
-  position: fixed;
-  left: 24px;
-  bottom: 54px; /* Tighter spacing: watermark at 6px + ~48px */
-  color: rgba(0, 0, 0, 0.9);
-  font-size: 10px;
-  font-family: var(--eox-body-font-family);
-  background: #fffe;
-  border-radius: 4px;
-  border: none;
-  padding: 0px 3px;
-  max-height: 24px;
-}
-
-@media (max-width: 959px) {
-  #cursor-coordinates {
-    display: none; /* Hidden in mobile mode */
-  }
-}
-
-#scale-line {
-  position: fixed;
-  left: 24px;
-  bottom: 28px; /* Tighter spacing: watermark at 6px + ~22px */
-  color: #fff;
-}
-
-@media (max-width: 959px) {
-  #scale-line {
-    bottom: 102px; /* Adjusted for mobile bottom nav - closer to coordinates */
-  }
-}
-
-:deep(.ol-scale-line) {
-  background: #fffe !important;
-  border-radius: 4px !important;
-  border: none !important;
-  padding: 0px 3px 3px 3px !important;
-  font-size: 10px !important;
-  font-family: var(--eox-body-font-family);
-  max-height: 20px;
-}
-:deep(.ol-scale-line-inner) {
-  display: flex;
-  justify-content: center;
-  border: 1px solid rgba(0, 0, 0, 0.5) !important;
-  border-top: none !important;
-  color: #333 !important;
-  font-weight: 500 !important;
-  transform: translateY(1px);
-}
-
 .map-buttons-container {
   position: fixed;
   left: 0;

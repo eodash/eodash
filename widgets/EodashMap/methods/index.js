@@ -10,6 +10,8 @@ export { useEmitLayersUpdate, useOnLayersUpdate };
 import { isGlobe, mapPosition } from "@/store/states";
 import { sanitizeBbox } from "@/eodashSTAC/helpers";
 import { transformExtent } from "@eox/map";
+
+export { useMapLoading } from "./use-map-loading";
 /**
  * Holder for previous compare map view as it is overwritten by sync
  * @type { import("ol").View | null} mapElement
@@ -75,8 +77,10 @@ export const useHandleMapMoveEnd = (mapElement, mapPosition) => {
   );
 
   onMounted(() => {
-    /** @type {import('ol/Map').default} */
-    (mapElement.value?.map)?.on("moveend", handleMoveEnd);
+    const map = mapElement.value?.map;
+    map?.on("moveend", handleMoveEnd);
+    // Seed mapPosition from the initial view
+    handleMoveEnd(/** @type {any} */ ({ map }));
   });
 
   onUnmounted(() => {
@@ -139,23 +143,27 @@ export const useInitMap = (
         );
 
       if (updatedStac) {
-        if (
-          internalDatetime !== null &&
-          updatedTime === internalDatetime &&
-          updatedStac?.id === previousStac?.id &&
-          updatedItem?.id === previousItem?.id
-        ) {
-          internalDatetime = null;
-          return;
-        }
+        const isSameStac = updatedStac?.id === previousStac?.id;
+        const isSameItem = updatedItem?.id === previousItem?.id;
 
         // Item deselect: overview render is owned by the item catalog widget.
         const isItemDeselect =
           previousItem &&
           !updatedItem &&
-          updatedStac?.id === previousStac?.id &&
+          isSameStac &&
           updatedTime === previousTime;
         if (isItemDeselect) return;
+
+        // Re-fire from our own datetime.value write, skip and clear
+        const isOwnDatetimeUpdate =
+          internalDatetime !== null &&
+          updatedTime === internalDatetime &&
+          isSameStac &&
+          isSameItem;
+        if (isOwnDatetimeUpdate) {
+          internalDatetime = null;
+          return;
+        }
 
         log.debug(
           "Selected Indicator watch triggered",

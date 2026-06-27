@@ -8,8 +8,16 @@ import { tooltipAdapter } from "@/store/states";
  * @param {import("@/types").GeoJsonFeature[]} features
  * @param {import("vue").Ref<import("@eox/map").EOxMap | null>} mapElement
  * @param {string[] | undefined} hoverProperties
+ * @param {object} [stacItemsStyle]
+ * @param {object} [stacItemsInteractionStyle]
  */
-export function renderItemsFeatures(features, mapElement, hoverProperties) {
+export function renderItemsFeatures(
+  features,
+  mapElement,
+  hoverProperties,
+  stacItemsStyle,
+  stacItemsInteractionStyle,
+) {
   const currentMap = mapElement.value;
   let analysisLayers =
     /** @type {import("@eox/map/src/layers").EOxLayerTypeGroup} */ (
@@ -45,9 +53,9 @@ export function renderItemsFeatures(features, mapElement, hoverProperties) {
           JSON.stringify({ type: "FeatureCollection", features }),
         ),
       format: "GeoJSON",
-      projection: "EPSG:3857",
+      projection: "EPSG:4326",
     },
-    style: {
+    style: stacItemsStyle || {
       "fill-color": "transparent",
       "stroke-color": "#003170",
     },
@@ -58,7 +66,7 @@ export function renderItemsFeatures(features, mapElement, hoverProperties) {
           id: "stac-item-hover",
           condition: "pointermove",
           tooltip: hoverProperties?.length,
-          style: {
+          style: stacItemsInteractionStyle || {
             "stroke-color": "white",
             "stroke-width": 3,
           },
@@ -70,9 +78,9 @@ export function renderItemsFeatures(features, mapElement, hoverProperties) {
           id: "stac-items",
           condition: "click",
           tooltip: false,
-          style: {
-            "stroke-color": "white",
-            "stroke-width": 3,
+          style: stacItemsInteractionStyle || {
+            "stroke-color": "#003047",
+            "stroke-width": 3.2,
           },
         },
       },
@@ -122,19 +130,35 @@ export const useSearchOnMapMove = (itemFilter, bboxFilter, mapElement) => {
  * @param {import("vue").Ref<import("@/types").GeoJsonFeature[]>} currentItems
  * @param {import("vue").Ref<import("@eox/map").EOxMap | null>} mapElement
  * @param {string[] | undefined} hoverProperties
+ * @param {object} [stacItemsStyle]
+ * @param {object} [stacItemsInteractionStyle]
  */
 export const useRenderItemsFeatures = (
   currentItems,
   mapElement,
   hoverProperties,
+  stacItemsStyle,
+  stacItemsInteractionStyle,
 ) => {
   onMounted(() => {
-    renderItemsFeatures(currentItems.value, mapElement, hoverProperties);
+    renderItemsFeatures(
+      currentItems.value,
+      mapElement,
+      hoverProperties,
+      stacItemsStyle,
+      stacItemsInteractionStyle,
+    );
   });
 
   useOnLayersUpdate(() => {
     // consider cases where this is not needed
-    renderItemsFeatures(currentItems.value, mapElement, hoverProperties);
+    renderItemsFeatures(
+      currentItems.value,
+      mapElement,
+      hoverProperties,
+      stacItemsStyle,
+      stacItemsInteractionStyle,
+    );
   });
 };
 /**

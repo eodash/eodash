@@ -12,6 +12,7 @@ import {
   extractEoxLegendLink,
   addTooltipInteraction,
   fetchStyle,
+  getBandsProperty,
   applyTitilerUpscaling,
   encodeURLObject,
 } from "./helpers";
@@ -62,18 +63,35 @@ export async function createLayersFromAssets(
 
   const fgbIdx = [];
   const fgbSources = [];
+  const zarrAssetIds = [];
+  const zarrIdx = [];
   const assetIds = [];
 
   for (const [idx, assetId] of Object.keys(assets).entries()) {
     assetIds.push(assetId);
 
-    if (assets[assetId]?.type === "application/geo+json") {
+    if (
+      assets[assetId]?.type?.includes("application/geo+json") &&
+      assets[assetId]?.href?.includes("http")
+    ) {
       geoJsonSources.push(assets[assetId].href);
       geoJsonIdx.push(idx);
-    } else if (assets[assetId]?.type === "application/vnd.flatgeobuf") {
+    } else if (
+      assets[assetId]?.type?.includes("application/vnd.flatgeobuf") &&
+      assets[assetId]?.href?.includes("http")
+    ) {
       fgbSources.push(assets[assetId].href);
       fgbIdx.push(idx);
-    } else if (assets[assetId]?.type === "image/tiff") {
+    } else if (
+      assets[assetId]?.type ==
+      "application/vnd.zarr; version=3; profile=multiscales"
+    ) {
+      zarrAssetIds.push(assetId);
+      zarrIdx.push(idx);
+    } else if (
+      assets[assetId]?.type?.includes("image/tiff") &&
+      assets[assetId]?.href?.includes("http")
+    ) {
       geoTIFFIdx.push(idx);
       geoTIFFSources.push({
         url: assets[assetId].href,
@@ -81,7 +99,7 @@ export async function createLayersFromAssets(
           ? { attributions: assets[assetId].attribution }
           : {}),
       });
-    } else if (assets[assetId]?.type === "application/geodb+json") {
+    } else if (assets[assetId]?.type?.includes("application/geodb+json")) {
       const responseData = await (await fetch(assets[assetId].href)).json();
       geoJsonIdx.push(idx);
       if (
@@ -139,6 +157,103 @@ export async function createLayersFromAssets(
           "data:application/json;charset=utf-8," + JSON.stringify(geojson),
         ),
       );
+    }
+  }
+
+  if (geoTIFFSources.length) {
+    for (const [i, geotiffSource] of geoTIFFSources.entries()) {
+      const assetName = assetIds[geoTIFFIdx[i]];
+      const styles = await fetchStyle(stacObject, undefined, assetName);
+      // get the correct style which is not attached to a link
+      let { layerConfig, style } = extractLayerConfig(collectionId, styles);
+      let assetLayerId = createAssetID(
+        collectionId,
+        stacObject.id,
+        geoTIFFIdx[i],
+      );
+      if (
+        assets[assetName]?.roles?.includes("overlay") ||
+        assets[assetName]?.roles?.includes("baselayer")
+      ) {
+        // to prevent them being removed by date change on main dataset
+        assetLayerId = assetName;
+      }
+      log.debug("Creating WebGLTile layer from GeoTIFF", assetLayerId);
+      log.debug("Configured Sources", geoTIFFSources);
+      const sources =
+        stacObject?.["eodash:merge_assets"] !== false
+          ? geoTIFFSources
+          : [geotiffSource];
+      const layer = {
+        type: "WebGLTile",
+        source: {
+          type: "GeoTIFF",
+          normalize: !style,
+          interpolate: false,
+          sources,
+        },
+        properties: {
+          id: assetLayerId,
+          title: assets[assetName]?.title || title,
+          layerConfig,
+          layerDatetime,
+        },
+        style,
+      };
+      if (extraProperties) {
+        layer.properties = { ...layer.properties, ...extraProperties };
+      }
+      extractRoles(layer.properties, assets[assetName]);
+      addTooltipInteraction(layer, style);
+      jsonArray.push(layer);
+      if (stacObject?.["eodash:merge_assets"] !== false) break;
+    }
+  }
+
+  if (zarrAssetIds.length) {
+    for (const [i, assetName] of zarrAssetIds.entries()) {
+      // GeoZarr style and band form come entirely from the STAC `style` link.
+      const fetchedStyle = await fetchStyle(stacObject, undefined, assetName);
+      const { layerConfig, style } = extractLayerConfig(
+        collectionId,
+        fetchedStyle,
+      );
+      const bandsPath = getBandsProperty(layerConfig?.schema);
+      const defaultBands = bandsPath?.reduce(
+        (node, key) => node?.[key],
+        layerConfig?.schema,
+      )?.default ?? ["b04", "b03", "b02"];
+
+      let assetLayerId = createAssetID(collectionId, stacObject.id, zarrIdx[i]);
+      if (
+        assets[assetName]?.roles?.includes("overlay") ||
+        assets[assetName]?.roles?.includes("baselayer")
+      ) {
+        assetLayerId = assetName;
+      }
+
+      log.debug("Creating WebGLTile layer from GeoZarr", assetLayerId);
+
+      const layer = {
+        type: "WebGLTile",
+        properties: {
+          id: assetLayerId,
+          title: assets[assetName]?.title || title,
+          layerConfig,
+          layerDatetime,
+        },
+        source: {
+          type: "GeoZarr",
+          url: assets[assetName].href,
+          bands: defaultBands,
+        },
+        ...(style ? { style } : {}),
+      };
+      if (extraProperties) {
+        layer.properties = { ...layer.properties, ...extraProperties };
+      }
+      extractRoles(layer.properties, assets[assetName]);
+      jsonArray.push(layer);
     }
   }
 
@@ -268,56 +383,6 @@ export async function createLayersFromAssets(
       addTooltipInteraction(layer, style);
       jsonArray.push(layer);
       // if we merged assets (default yes), then we can break from this loop
-      if (stacObject?.["eodash:merge_assets"] !== false) break;
-    }
-  }
-
-  if (geoTIFFSources.length) {
-    for (const [i, geotiffSource] of geoTIFFSources.entries()) {
-      const assetName = assetIds[geoTIFFIdx[i]];
-      const styles = await fetchStyle(stacObject, undefined, assetName);
-      // get the correct style which is not attached to a link
-      let { layerConfig, style } = extractLayerConfig(collectionId, styles);
-      let assetLayerId = createAssetID(
-        collectionId,
-        stacObject.id,
-        geoTIFFIdx[i],
-      );
-      if (
-        assets[assetName]?.roles?.includes("overlay") ||
-        assets[assetName]?.roles?.includes("baselayer")
-      ) {
-        // to prevent them being removed by date change on main dataset
-        assetLayerId = assetName;
-      }
-      log.debug("Creating WebGLTile layer from GeoTIFF", assetLayerId);
-      log.debug("Configured Sources", geoTIFFSources);
-      const sources =
-        stacObject?.["eodash:merge_assets"] !== false
-          ? geoTIFFSources
-          : [geotiffSource];
-      const layer = {
-        type: "WebGLTile",
-        source: {
-          type: "GeoTIFF",
-          normalize: !style,
-          interpolate: false,
-          sources,
-        },
-        properties: {
-          id: assetLayerId,
-          title: assets[assetName]?.title || title,
-          layerConfig,
-          layerDatetime,
-        },
-        style,
-      };
-      if (extraProperties) {
-        layer.properties = { ...layer.properties, ...extraProperties };
-      }
-      extractRoles(layer.properties, assets[assetName]);
-      addTooltipInteraction(layer, style);
-      jsonArray.push(layer);
       if (stacObject?.["eodash:merge_assets"] !== false) break;
     }
   }

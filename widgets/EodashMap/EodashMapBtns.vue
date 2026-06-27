@@ -53,18 +53,6 @@
       <div class="tooltip left">Compare mode</div>
     </button>
     <button
-      v-if="backToPOIs && (poi || comparePoi)"
-      class="primary small circle small-elevate"
-      @click="loadPOiIndicator()"
-    >
-      <i class="small">
-        <svg viewBox="0 0 24 24">
-          <path :d="mdiStarFourPointsCircleOutline"></path>
-        </svg>
-      </i>
-      <div class="tooltip left">Back to POIs</div>
-    </button>
-    <button
       v-if="enableGlobe && !isInCompareMode"
       class="primary small circle small-elevate"
       @click="switchGlobe"
@@ -100,20 +88,36 @@
         @close="showFeedback = false"
       ></eox-feedback>
     </div>
-    <eox-geosearch
+    <button
       v-if="mapEl && !isGlobe && enableSearch"
-      :for="mapEl"
-      :endpoint="opencageUrl"
-      :params="searchParams"
-      class="geosearch-detached"
-      label="Search"
-      small
-      button
-      list-direction="left"
-      results-direction="down"
-      tooltip="Search"
-      tooltip-direction="left"
-    ></eox-geosearch>
+      class="primary small circle small-elevate"
+    >
+      <eox-geosearch
+        :for="mapEl"
+        :endpoint="opencageUrl"
+        :params="searchParams"
+        class="geosearch-detached"
+        label="Search"
+        small
+        button
+        list-direction="left"
+        results-direction="down"
+        tooltip="Search"
+        tooltip-direction="left"
+      ></eox-geosearch>
+    </button>
+    <button
+      v-if="backToPOIs && (poi || comparePoi)"
+      class="primary small circle small-elevate"
+      @click="loadPOiIndicator()"
+    >
+      <i class="small">
+        <svg viewBox="0 0 24 24">
+          <path :d="mdiStarFourPointsCircleOutline"></path>
+        </svg>
+      </i>
+      <div class="tooltip left">Back to POIs</div>
+    </button>
     <PopUp
       v-model="showCompareIndicators"
       :maxWidth="popupWidth"
@@ -128,7 +132,7 @@
       />
     </PopUp>
     <v-alert
-      v-if="showZoomHint || showItemViewHint"
+      v-if="showMosaicHint"
       class="mosaic-hint pa-2"
       color="secondary"
       type="info"
@@ -142,7 +146,10 @@
           Back to overview
         </a>
       </template>
-      <template v-else>Zoom in to explore the data</template>
+      <template v-else-if="showZoomHint">Zoom in to explore the data</template>
+      <template v-else-if="showNoDataHint">
+        No data here - pan or change filters
+      </template>
     </v-alert>
   </div>
 </template>
@@ -212,11 +219,13 @@ const {
     default: true,
   },
   compareIndicators: {
-    /** @type {import("vue").PropType<boolean | {
-    compareTemplate?:string;
-    fallbackTemplate?:string;
-    itemFilterConfig?:Partial<InstanceType<import("./EodashItemFilter.vue").default>["$props"]>
-    }> }*/
+    /**
+     * @type {import("vue").PropType<boolean | {
+     * compareTemplate?:string;
+     * fallbackTemplate?:string;
+     * itemFilterConfig?:Partial<InstanceType<import("./EodashItemFilter.vue").default>["$props"]>
+     * }> }
+     */
     type: [Boolean, Object],
     default: true,
   },
@@ -285,18 +294,30 @@ useTransparentPanel(rootRef);
 const opencageApiKey = process.env.EODASH_OPENCAGE || "NO_KEY_FOUND";
 const opencageUrl = `https://api.opencagedata.com/geocode/v1/json?key=${opencageApiKey}`;
 
-const { latestLayer, isItemView, visibilityThreshold, returnToOverview } =
-  useMosaicState();
+const {
+  latestLayer,
+  isItemView,
+  visibilityThreshold,
+  returnToOverview,
+  hasDataInView,
+} = useMosaicState();
+
+const showItemViewHint = computed(
+  () => isItemView.value && !!latestLayer.value,
+);
 
 const showZoomHint = computed(() => {
-  if (!latestLayer.value) return false;
-  if (isItemView.value) return false;
+  if (!latestLayer.value || isItemView.value) return false;
   const rawZ = mapPosition.value?.[2] ?? 4;
   return normalizeGlobeZoom(rawZ) < visibilityThreshold.value;
 });
 
-const showItemViewHint = computed(
-  () => isItemView.value && !!latestLayer.value,
+const showNoDataHint = computed(
+  () => !!latestLayer.value && !isItemView.value && !hasDataInView.value,
+);
+
+const showMosaicHint = computed(
+  () => showItemViewHint.value || showZoomHint.value || showNoDataHint.value,
 );
 </script>
 

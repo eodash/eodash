@@ -153,7 +153,6 @@ export default {
                 name: "EodashTimeSlider",
                 properties: {
                   useMosaic: true,
-                  mosaicIndicators: ["sentinel-2-l2a"],
                   filters: [
                     {
                       key: "eo:cloud_cover",
@@ -181,7 +180,7 @@ export default {
           id: "Processes",
           type: "internal",
           title: "Processes",
-          layout: { x: "9/9/10", y: 5, w: "3/3/2", h: 5 },
+          layout: { x: "9/9/10", y: 6, w: "3/3/2", h: 5 },
           widget: {
             name: "EodashProcess",
           },
