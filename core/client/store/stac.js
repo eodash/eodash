@@ -167,7 +167,6 @@ export const useSTAcStore = defineStore("stac", () => {
     await axios
       .get(absoluteUrl.value)
       .then(async (resp) => {
-        resp.data["eodash:layerExclusive"] = true;
         await updateEodashCollections(
           eodashCollections,
           resp.data,

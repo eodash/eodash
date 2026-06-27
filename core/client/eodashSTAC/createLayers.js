@@ -12,7 +12,6 @@ import {
   extractEoxLegendLink,
   addTooltipInteraction,
   fetchStyle,
-  generateGeoZarrStyle,
   getBandsProperty,
   applyTitilerUpscaling,
   encodeURLObject,
@@ -213,13 +212,9 @@ export async function createLayersFromAssets(
 
   if (zarrAssetIds.length) {
     for (const [i, assetName] of zarrAssetIds.entries()) {
-      const availableBands =
-        /** @type {{name:String, [key: string]: any}[]} */ (
-          assets[assetName]["bands"] ?? []
-        ).map((band) => band.name);
-
+      // GeoZarr style and band form come entirely from the STAC `style` link.
       const fetchedStyle = await fetchStyle(stacObject, undefined, assetName);
-      let { layerConfig, style } = extractLayerConfig(
+      const { layerConfig, style } = extractLayerConfig(
         collectionId,
         fetchedStyle,
       );
@@ -228,10 +223,6 @@ export async function createLayersFromAssets(
         (node, key) => node?.[key],
         layerConfig?.schema,
       )?.default ?? ["b04", "b03", "b02"];
-      if (!layerConfig && !style) {
-        const generated = generateGeoZarrStyle(availableBands, defaultBands);
-        ({ layerConfig, style } = extractLayerConfig(collectionId, generated));
-      }
 
       let assetLayerId = createAssetID(collectionId, stacObject.id, zarrIdx[i]);
       if (
