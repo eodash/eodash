@@ -45,15 +45,20 @@ export const createSubtitleProperty = (filtersConfig) => {
  *   title?: string,
  *   min?: number,
  *   max?: number,
+ *   step?: number,
  *   filterKeys?: string[],
  *   state?: Record<string, boolean>,
  *   placeholder?: string,
+ *   format?: string,
  * }>} filtersConfig
  * @param {boolean} datetimeFilter
  */
 // Transform simple filter configs into eox-itemfilter format
 export const createFilterProperties = (filtersConfig, datetimeFilter) => {
   const store = useSTAcStore();
+  const customDatetimeConfig = filtersConfig.find(
+    (f) => f.property === "datetime",
+  );
   const baseFilters = [
     {
       key: "collection",
@@ -65,18 +70,21 @@ export const createFilterProperties = (filtersConfig, datetimeFilter) => {
         store.stac?.filter((col) => col.id).map((col) => col.id) || [],
       ...(indicator.value && { state: { [indicator.value]: true } }),
     },
-    ...((datetimeFilter && [
-      {
-        key: "datetime",
-        title: "Date",
-        type: "range",
-        format: "date",
-      },
-    ]) ||
-      []),
+    ...(datetimeFilter || customDatetimeConfig
+      ? [
+          {
+            key: "datetime",
+            title: "Date",
+            type: "range",
+            format: "date",
+            ...(customDatetimeConfig || {}),
+          },
+        ]
+      : []),
   ];
 
   const dynamicFilters = filtersConfig
+    .filter((f) => f.property !== "datetime")
     .map((filter) => {
       const propertyKey = `properties.${filter.property}`;
 
@@ -86,6 +94,10 @@ export const createFilterProperties = (filtersConfig, datetimeFilter) => {
           title: filter.title || filter.property,
           type: "range",
           expanded: true,
+          min: filter.min,
+          max: filter.max,
+          step: filter.step,
+          format: filter.format,
           filterKeys: [filter.min || 0, filter.max || 100],
           state: filter.state ?? {
             min: filter.min ?? 0,
@@ -126,11 +138,21 @@ export const createFilterProperties = (filtersConfig, datetimeFilter) => {
  * @param {import("@/types").ItemFilterFilters} filters
  * @param {boolean} bboxFilter
  * @param {boolean} datetimeFilter
+ * @param {Number} searchLimit
  * @param {string} [sortBy]
+ * @param {string | null} [stacEndpoint]
  * @returns {string}
  */
-export const buildSearchUrl = (filters, bboxFilter, datetimeFilter, sortBy) => {
+export const buildSearchUrl = (
+  filters,
+  bboxFilter,
+  datetimeFilter,
+  searchLimit,
+  sortBy,
+  stacEndpoint,
+) => {
   const store = useSTAcStore();
+  const endpoint = stacEndpoint || store.stacEndpoint;
   const params = new URLSearchParams();
 
   if (filters.collection?.stringifiedState) {
@@ -164,9 +186,9 @@ export const buildSearchUrl = (filters, bboxFilter, datetimeFilter, sortBy) => {
     params.append("sortby", sortBy);
   }
 
-  params.append("limit", "100");
+  params.append("limit", searchLimit.toString());
 
-  return `${store.stacEndpoint}/search?${params.toString()}`;
+  return `${endpoint}/search?${params.toString()}`;
 };
 
 /**
@@ -176,7 +198,9 @@ export const buildSearchUrl = (filters, bboxFilter, datetimeFilter, sortBy) => {
  * @param {boolean} datetimeFilter
  * @param {import("vue").Ref<import("@/types").GeoJsonFeature[]>} currentItems
  * @param {import("vue").Ref<string>} sortBy
+ * @param {Number} searchLimit
  * @param {import("vue").Ref<import("stac-ts").StacItem | null>} [selectedItemRef]
+ * @param {import("vue").Ref<string | null> | string | null} [stacEndpoint]
  */
 export const createExternalFilter = (
   propsFilters,
@@ -184,15 +208,26 @@ export const createExternalFilter = (
   datetimeFilter,
   currentItems,
   sortBy,
+  searchLimit,
   selectedItemRef,
+  stacEndpoint,
 ) => {
+  const hasCustomDatetime = propsFilters.some((f) => f.property === "datetime");
+  const effectiveDatetimeFilter = datetimeFilter || hasCustomDatetime;
   let controller = new AbortController();
   /**
    * @param {Array<any>} _items
    * @param {Record<string,any>} filters
    */
   return (_items, filters) => ({
-    url: buildSearchUrl(filters, bboxFilter, datetimeFilter, sortBy.value),
+    url: buildSearchUrl(
+      filters,
+      bboxFilter,
+      effectiveDatetimeFilter,
+      searchLimit,
+      sortBy.value,
+      typeof stacEndpoint === "object" ? stacEndpoint?.value : stacEndpoint,
+    ),
     /** @param {string} url */
     fetchFn: async (url) => {
       controller.abort();

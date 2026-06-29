@@ -19,6 +19,8 @@ const getFiltersSignature = (filters) => {
  *  currentItems: import("vue").Ref<import("@/types").GeoJsonFeature[]>,
  *  mapElement: import("vue").Ref<import("@eox/map").EOxMap | null>,
  *  hoverProperties: string[] | undefined,
+ *  stacItemsStyle?: object,
+ *  stacItemsInteractionStyle?: object,
  *  itemfilterEl?: import("vue").Ref<any>,
  *  selectedItemRef?: import("vue").Ref<import("stac-ts").StacItem | null>,
  *  mosaicOptions?: {
@@ -32,6 +34,8 @@ export const createOnFilterHandler = ({
   currentItems,
   mapElement,
   hoverProperties,
+  stacItemsStyle,
+  stacItemsInteractionStyle,
   itemfilterEl,
   selectedItemRef,
   mosaicOptions = null,
@@ -41,7 +45,13 @@ export const createOnFilterHandler = ({
   /** @param {CustomEvent} evt */
   return (evt) => {
     currentItems.value = evt.detail.results;
-    renderItemsFeatures(currentItems.value, mapElement, hoverProperties);
+    renderItemsFeatures(
+      currentItems.value,
+      mapElement,
+      hoverProperties,
+      stacItemsStyle,
+      stacItemsInteractionStyle,
+    );
 
     const selected = selectedItemRef?.value;
     if (selected && itemfilterEl?.value) {
@@ -118,7 +128,7 @@ export const createOnMouseEnterResult = (mapElement) => {
    * @param {CustomEvent} evt
    */
   return (evt) => {
-    mapElement.value?.selectInteractions["stac-items"]?.highlightById([
+    mapElement.value?.selectInteractions["stac-item-hover"]?.highlightById([
       evt.detail.id,
     ]);
   };
@@ -129,6 +139,6 @@ export const createOnMouseEnterResult = (mapElement) => {
  */
 export const createOnMouseLeaveResult = (mapElement) => {
   return () => {
-    mapElement.value?.selectInteractions["stac-items"]?.highlightById([]);
+    mapElement.value?.selectInteractions["stac-item-hover"]?.highlightById([]);
   };
 };

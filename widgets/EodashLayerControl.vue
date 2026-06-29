@@ -5,6 +5,7 @@
       :key="mapElement"
       v-bind="config"
       :for="mapElement"
+      .showLayerZoomState="true"
       .customEditorInterfaces="bandsEditorInterface"
       @datetime:updated="debouncedHandleDateTime"
       toolsAsList="true"
@@ -37,6 +38,7 @@ import {
   layerControlFormValue,
   layerControlFormValueCompare,
 } from "@/utils/states";
+import { updateGeoZarrBands } from "@/eodashSTAC/helpers";
 import { storeToRefs } from "pinia";
 import { useSTAcStore } from "@/store/stac";
 import { bandsEditorInterface } from "@/utils/bands-editor";
@@ -110,7 +112,7 @@ const eodashCols =
   props.map === "second" ? eodashCompareCollections : eodashCollections;
 const mapElement = props.map === "second" ? mapCompareEl : mapEl;
 
-/** @type { import("vue").Ref<HTMLElement & Record<string,any> | null>} */
+/** @type { import("vue").Ref<import("@eox/layercontrol").EOxLayerControl | null>} */
 const eoxLayercontrol = ref(null);
 
 // eox-timecontrol re-fires datetime:updated after layer reassignment;
@@ -182,6 +184,8 @@ const debouncedHandleDateTime = (evt) => {
  * @param {Event & {detail:{layer:import("ol/layer").Layer;jsonformValue:Record<string,any>}}} evt
  */
 const onLayerConfigChange = (evt) => {
+  updateGeoZarrBands(evt.detail.layer, evt.detail.jsonformValue);
+
   if (props.map === "second") {
     layerControlFormValueCompare.value = evt.detail.jsonformValue;
   } else {

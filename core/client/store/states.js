@@ -2,7 +2,7 @@
 import log from "loglevel";
 log.setLevel(log.levels.WARN, true);
 
-import { ref, shallowRef } from "vue";
+import { reactive, ref, shallowRef } from "vue";
 
 /** Currently selected STAC endpoint */
 export const currentUrl = ref("");
@@ -75,9 +75,16 @@ export const chartSpec = ref(null);
 export const compareChartSpec = ref(null);
 
 /**
- * Global loading state
+ * Global loading state.
+ * - `loading.activeLoads` — increment/decrement to track concurrent loads
+ * - `loading.value` — derived boolean, true when `activeLoads > 0`
  */
-export const loading = ref(false);
+export const loading = reactive({
+  activeLoads: 0,
+  get value() {
+    return this.activeLoads > 0;
+  },
+});
 
 /**
  * Adapter allows external widgets to hook into tooltip property transformation

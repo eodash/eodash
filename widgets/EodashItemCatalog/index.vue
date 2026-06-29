@@ -1,6 +1,9 @@
 <template>
   <div class="d-flex flex-column">
-    <v-row class="title align-center justify-space-between flex-shrink-0">
+    <v-row
+      class="title align-center justify-space-between flex-shrink-0"
+      v-if="showTitleBlock"
+    >
       <h4>Catalog Items</h4>
       <div class="d-flex align-center">
         <v-menu v-if="sortBy?.length" v-model="sortMenu" offset-y>
@@ -162,6 +165,10 @@ const props = defineProps({
     type: String,
     default: "assets.thumbnail.href",
   },
+  showTitleBlock: {
+    type: Boolean,
+    default: true,
+  },
   filters: {
     /** @type {import("vue").PropType<import("./types").FiltersConfig>} */
     type: Array,
@@ -193,6 +200,22 @@ const props = defineProps({
   mosaicIndicators: {
     /** @type {import("vue").PropType<string[]>} */
     type: Array,
+    required: false,
+  },
+  stacEndpoint: {
+    type: String,
+    default: null,
+  },
+  searchLimit: {
+    type: Number,
+    default: 100,
+  },
+  stacItemsStyle: {
+    type: Object,
+    required: false,
+  },
+  stacItemsInteractionStyle: {
+    type: Object,
     required: false,
   },
 });
@@ -233,6 +256,9 @@ function selectSort(option) {
 const store = useSTAcStore();
 const { selectedItem, selectedCompareItem } = storeToRefs(store);
 
+const catalogEndpoint = computed(
+  () => props.stacEndpoint || store.stacEndpoint,
+);
 const {
   isItemView,
   latestLayer,
@@ -271,9 +297,10 @@ const currentItems = ref([]);
 const items = currentItems.value;
 
 // Initial data fetch
-if (store.stacEndpoint) {
+
+if (catalogEndpoint.value) {
   await axios
-    .get(store.stacEndpoint + "/search?limit=100")
+    .get(catalogEndpoint.value + `/search?limit=${props.searchLimit}`)
     .then((res) => (currentItems.value = res.data.features));
 }
 
@@ -290,7 +317,9 @@ const externalFilterHandler = createExternalFilter(
   props.datetimeFilter,
   currentItems,
   sortByParam,
+  props.searchLimit,
   activeSelectedItem,
+  catalogEndpoint,
 );
 
 watch(activeSelectedItem, (item) => {
@@ -310,6 +339,8 @@ watch(activeSelectedItem, (item) => {
       currentItems.value,
       props.enableCompare ? mapCompareEl : mapEl,
       props.hoverProperties,
+      props.stacItemsStyle,
+      props.stacItemsInteractionStyle,
     );
     nextTick(() => {
       const z = mapPosition.value[2] ?? 0;
@@ -330,6 +361,8 @@ watch(
       currentItems.value,
       props.enableCompare ? mapCompareEl : mapEl,
       props.hoverProperties,
+      props.stacItemsStyle,
+      props.stacItemsInteractionStyle,
     );
   },
 );
@@ -341,6 +374,8 @@ const onFilter = createOnFilterHandler({
   currentItems,
   mapElement: props.enableCompare ? mapCompareEl : mapEl,
   hoverProperties: props.hoverProperties,
+  stacItemsStyle: props.stacItemsStyle,
+  stacItemsInteractionStyle: props.stacItemsInteractionStyle,
   itemfilterEl,
   selectedItemRef: activeSelectedItem,
   mosaicOptions: isMosaicEnabled.value
@@ -368,6 +403,8 @@ useRenderItemsFeatures(
   currentItems,
   props.enableCompare ? mapCompareEl : mapEl,
   props.hoverProperties,
+  props.stacItemsStyle,
+  props.stacItemsInteractionStyle,
 );
 // Search on map move logic
 useSearchOnMapMove(
