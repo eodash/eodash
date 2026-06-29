@@ -215,7 +215,7 @@ const {
     /** @type {import("vue").PropType<boolean | {
     compareTemplate?:string;
     fallbackTemplate?:string;
-    itemFilterConfig?:Partial<InstanceType<import("./EodashItemFilter.vue").default>["$props"]>
+    itemFilterConfig?:Partial<InstanceType<import("^/EodashItemFilter.vue").default>["$props"]>
     }> }*/
     type: [Boolean, Object],
     default: true,

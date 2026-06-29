@@ -1,4 +1,4 @@
-import { deepmergeInto } from "deepmerge-ts";
+import { deepmergeCustom } from "deepmerge-ts";
 import lite from "./lite";
 import expert from "./expert";
 import compare from "./compare";
@@ -69,12 +69,40 @@ const baseConfig = {
 };
 
 /**
+ * Arrays are replacement semantics (user array wins, not concat).
+ * mergeArrays:false ensures e.g. widgets/collectionsPalette/supportedUpscalingEndpoints
+ * supplied by the caller fully replace the base arrays.
+ */
+const deepmerge = deepmergeCustom({ mergeArrays: false });
+
+/**
  * @param {import("vega-lite").DeepPartial<import("@/types").Eodash>} config
+ * @return {import("@/types").Eodash}
  */
 export const getBaseConfig = (config) => {
-  const merged = /** @type {import("@/types").Eodash} */ ({});
-  deepmergeInto(merged, baseConfig, config || {});
-  return merged;
+  return /** @type {import("@/types").Eodash} */ (
+    deepmerge(cloneConfig(baseConfig), config || {})
+  );
 };
+
+/**
+ * Shallow-safe deep clone that preserves functions and Symbols as references
+ * (they are intentionally shared; template functions and Symbol IDs are
+ * not mutable data). Only plain objects and arrays are cloned.
+ *
+ * @param {unknown} val
+ * @returns {unknown}
+ */
+function cloneConfig(val) {
+  if (val === null || typeof val !== "object") return val;
+  if (Array.isArray(val)) return val.map(cloneConfig);
+  if (typeof val === "function") return val;
+  /** @type {Record<string, unknown>} */
+  const out = {};
+  for (const key of Object.keys(val)) {
+    out[key] = cloneConfig(/** @type {Record<string, unknown>} */ (val)[key]);
+  }
+  return out;
+}
 
 export default baseConfig;

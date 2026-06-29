@@ -1,3 +1,7 @@
+/**
+ * @module Configuration
+ */
+
 /** @group Eodash */
 export interface WebComponentProps {
   /**
@@ -11,7 +15,8 @@ export interface WebComponentProps {
    *   ```
    *
    *   ::: warning
-   *   import maps are not available in runtime config
+   *   Importing by package name only works when a bundler resolves it (build-time configs,
+   *   or runtime configs bundled into your app). Otherwise import by URL.
    *   :::
    */
   link?: string | (() => Promise<unknown>);
@@ -93,7 +98,7 @@ export interface WebComponentWidget {
   type: "web-component";
 }
 // Internal Widget Interfaces
-/** @group Widgets */
+/** @group Widget Config */
 export interface TEodashMap {
   name: "EodashMap";
   properties?: InstanceType<
@@ -101,7 +106,7 @@ export interface TEodashMap {
   >["$props"];
 }
 
-/** @group Widgets */
+/** @group Widget Config */
 export interface TEodashDatePicker {
   name: "EodashDatePicker";
   properties?: InstanceType<
@@ -109,7 +114,7 @@ export interface TEodashDatePicker {
   >["$props"];
 }
 
-/** @group Widgets */
+/** @group Widget Config */
 export interface TEodashTimeSlider {
   name: "EodashTimeSlider";
   properties?: InstanceType<
@@ -117,7 +122,7 @@ export interface TEodashTimeSlider {
   >["$props"];
 }
 
-/** @group Widgets */
+/** @group Widget Config */
 export interface TEodashItemFilter {
   name: "EodashItemFilter";
   properties?: InstanceType<
@@ -125,7 +130,7 @@ export interface TEodashItemFilter {
   >["$props"];
 }
 
-/** @group Widgets */
+/** @group Widget Config */
 export interface TEodashLayerControl {
   name: "EodashLayerControl";
   properties?: InstanceType<
@@ -133,7 +138,7 @@ export interface TEodashLayerControl {
   >["$props"];
 }
 
-/** @group Widgets */
+/** @group Widget Config */
 export interface TEodashStacInfo {
   name: "EodashStacInfo";
   properties?: InstanceType<
@@ -141,7 +146,7 @@ export interface TEodashStacInfo {
   >["$props"];
 }
 
-/** @group Widgets */
+/** @group Widget Config */
 export interface TEodashProcess {
   name: "EodashProcess";
   properties?: InstanceType<
@@ -149,7 +154,7 @@ export interface TEodashProcess {
   >["$props"];
 }
 
-/** @group Widgets */
+/** @group Widget Config */
 export interface TEodashChart {
   name: "EodashChart";
   properties?: InstanceType<
@@ -157,15 +162,7 @@ export interface TEodashChart {
   >["$props"];
 }
 
-/** @group Widgets */
-export interface TEodashMapBtns {
-  name: "EodashMapBtns";
-  properties?: InstanceType<
-    typeof import("^/EodashMapBtns.vue").default
-  >["$props"];
-}
-
-/** @group Widgets */
+/** @group Widget Config */
 export interface TEodashTools {
   name: "EodashTools";
   properties?: InstanceType<
@@ -173,13 +170,14 @@ export interface TEodashTools {
   >["$props"];
 }
 
-/** @group Widgets */
+/** @group Widget Config */
 export interface TEodashLayoutSwitcher {
   name: "EodashLayoutSwitcher";
   properties?: InstanceType<
     typeof import("^/EodashLayoutSwitcher.vue").default
   >["$props"];
 }
+/** @group Widget Config */
 export interface TEodashItemCatalog {
   name: "EodashItemCatalog";
   properties?: InstanceType<
@@ -187,7 +185,7 @@ export interface TEodashItemCatalog {
   >["$props"];
 }
 
-/** @group Widgets */
+/** @group Widget Config */
 export interface TExportState {
   name: "ExportState";
   properties?: InstanceType<
@@ -195,12 +193,12 @@ export interface TExportState {
   >["$props"];
 }
 
-/** @group Widgets */
+/** @group Widget Config */
 export interface TPopUp {
   name: "PopUp";
   properties?: InstanceType<typeof import("^/PopUp.vue").default>["$props"];
 }
-/** @group Widgets */
+/** @group Widget Config */
 export interface TWidgetsContainer {
   name: "WidgetsContainer";
   properties?: InstanceType<
@@ -218,7 +216,7 @@ export interface TEodashLayoutSwitcher {
  * Internal Vue Components inside the
  * [widgets](https://github.com/eodash/eodash/tree/main/widgets) folder.
  * Referenced using their name without the .vue extention
- * @group Widgets
+ * @group Widget Config
  */
 export type ComponentWidget =
   | TEodashMap
@@ -228,7 +226,6 @@ export type ComponentWidget =
   | TEodashStacInfo
   | TEodashProcess
   | TEodashChart
-  | TEodashMapBtns
   | TEodashTools
   | TEodashLayoutSwitcher
   | TEodashItemCatalog
@@ -491,9 +488,19 @@ export declare const store: typeof import("@/store").default;
 
 /////
 
-export * from "./main.js";
 /**
+ * Creates an eodash instance configuration. Accepts a config object directly,
+ * or an async factory that receives the eodash store and returns the config.
+ *
  * @group Eodash
+ */
+export { createEodash } from "./main.js";
+/**
+ * eodash flat style: an OpenLayers flat style extended with interactive
+ * `variables`, a `jsonform`, a `legend`, and `tooltip` configuration.
+ *
+ * @group STAC
+ * @see [eodash Flat Styles](/STAC#eodash-flat-styles)
  */
 export type EodashStyleJson = import("ol/style/flat").FlatStyleLike & {
   variables?: Record<string, string | number | boolean | null | undefined>;
@@ -506,6 +513,9 @@ export type EodashStyleJson = import("ol/style/flat").FlatStyleLike & {
     decimals?: number;
   }[];
 };
+/**
+ * @ignore
+ */
 export type EodashRasterJSONForm = {
   jsonform: Record<string, any>;
   legend?: import("@eox/layercontrol/src/components/layer-config.js").EOxLayerControlLayerConfig["layerConfig"]["legend"];
@@ -537,6 +547,9 @@ export interface SearchParams {
   /** Maximum number of results to return */
   limit?: number;
 }
+/**
+ * @ignore
+ */
 export interface StacItemsAPIResponse {
   type: "FeatureCollection";
   features: import("stac-ts").StacItem[];
@@ -700,8 +713,8 @@ export interface GeoJsonFeatureCollection<
 /**
  * Partial STAC Authentication Extension v1.1.0
  * Generated from https://stac-extensions.github.io/authentication/v1.1.0/schema.json
+ * @ignore
  */
-
 export interface AuthScheme {
   /** Scheme keyword, e.g. http, s3, signedUrl, oauth2, apiKey, openIdConnect */
   type:
@@ -725,6 +738,9 @@ export interface AuthScheme {
   openIdConnectUrl?: string;
 }
 
+/**
+ * @ignore
+ */
 export interface OAuth2Flow {
   authorizationUrl?: string;
   tokenUrl?: string;
@@ -732,7 +748,10 @@ export interface OAuth2Flow {
   scopes: Record<string, string>;
 }
 
-/** Signed URL flow configuration */
+/**
+ * Signed URL flow configuration
+ * @ignore
+ */
 export interface SignedUrlFlow {
   authorizationApi: string;
   method: string;
@@ -748,6 +767,9 @@ export interface SignedUrlFlow {
   >;
 }
 
+/**
+ * @ignore
+ */
 export interface ApiKeyAuthScheme extends AuthScheme {
   type: "apiKey";
   name: string;
@@ -755,14 +777,23 @@ export interface ApiKeyAuthScheme extends AuthScheme {
 }
 
 import { StacItem, StacLink, StacAsset } from "stac-ts";
+/**
+ * @ignore
+ */
 export interface StacAuthItem extends StacItem {
   "auth:schemes": {
     [key: string]: AuthScheme;
   };
 }
+/**
+ * @ignore
+ */
 export interface StacAuthLink extends StacLink {
   "auth:refs": [string];
 }
+/**
+ * @ignore
+ */
 export interface StacAuthAsset extends StacAsset {
   "auth:refs": [string];
 }

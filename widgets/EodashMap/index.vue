@@ -120,38 +120,54 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
-  /** @type {import("vue").PropType<[number,number]>} */
+  /**
+   * Initial map center as [lon, lat]; falls back to the last stored map position.
+   * @default [15, 48]
+   */
   center: {
-    //@ts-expect-error todo
-    type: Array,
+    type: /** @type {import("vue").PropType<[number, number]>} */ (
+      /** @type {unknown} */ (Array)
+    ),
     default: () => [mapPosition.value?.[0] ?? 15, mapPosition.value?.[1] ?? 48],
   },
+  /**
+   * Initial zoom level; falls back to the last stored map position.
+   * @default 4
+   */
   zoom: {
     type: Number,
     default: mapPosition.value?.[2] ?? 4,
   },
+  /** Fly to the selected collection's spatial extent on selection. */
   zoomToExtent: {
     type: Boolean,
     default: true,
   },
+  /** Show live cursor coordinates as a fixed overlay at the bottom-left of the map. */
   enableCursorCoordinates: {
     type: Boolean,
     default: true,
   },
+  /** Show an OpenLayers scale-line control at the bottom-left of the map. */
   enableScaleLine: {
     type: Boolean,
     default: true,
   },
+  /** Grid position of the floating button toolbar. `x` accepts responsive `"mobile/tablet/desktop"` column notation. */
   btnsPosition: {
-    type: Object,
+    type: /** @type {import("vue").PropType<{ x: string | number; y: number; gap: number }>} */ (
+      Object
+    ),
     default: () => ({
       x: "12/9/10",
       y: 1,
       gap: 16,
     }),
   },
+  /** Toolbar feature flags; set any flag to `false` to hide the corresponding button. */
   btns: {
-    /** @type {import("vue").PropType<{
+    type: /**
+     * @type {import("vue").PropType<{
      * enableExportMap?: boolean;
      * enableChangeProjection?: boolean;
      * enableBackToPOIs?: boolean;
@@ -166,8 +182,7 @@ const props = defineProps({
      *   fallbackTemplate?:string;
      *   itemFilterConfig?:InstanceType<import("../EodashItemFilter.vue").default>["$props"]
      * };
-     * }> }*/
-    type: Object,
+     * }> } */ (Object),
     default: () => ({
       enableExportMap: true,
       enableChangeProjection: true,

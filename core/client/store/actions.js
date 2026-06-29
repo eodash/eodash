@@ -20,7 +20,7 @@ export const getLayers = () => mapEl.value?.layers ?? [];
 
 /**
  * Returns the current layers of {@link mapCompareEl}
- * * @returns {import("@eox/map").EoxLayer[]}
+ * @returns {import("@eox/map").EoxLayer[]}
  */
 export const getCompareLayers = () => mapCompareEl.value?.layers ?? [];
 
