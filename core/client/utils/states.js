@@ -146,3 +146,13 @@ export const dataThemesBrands = {
     color: "#8d845cff",
   },
 };
+
+/** @type {Map<string, import("stac-ts").StacItem[]>} */
+export const itemsCache = new Map();
+/**
+ * Split items cache stores items with their time range metadata
+ * @type {Map<string, {items: import("stac-ts").StacItem[], minTime: number, maxTime: number}>}
+ */
+export const splitItemsCache = new Map();
+
+export const timesliderUpdateRef = ref(0);

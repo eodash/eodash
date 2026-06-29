@@ -12,6 +12,8 @@ import {
   extractEoxLegendLink,
   addTooltipInteraction,
   fetchStyle,
+  applyTitilerUpscaling,
+  encodeURLObject,
 } from "./helpers";
 import { handleAuthenticationOfLink } from "./auth";
 import log from "loglevel";
@@ -571,7 +573,6 @@ export const createLayersFromLinks = async (
       viewProjectionCode,
     );
     let xyzUrl = xyzLink.href;
-
     // TODO, this does not yet work between layer time changes because we do not get
     // updated variables from OL layer due to usage of tileurlfunction
 
@@ -585,11 +586,14 @@ export const createLayersFromLinks = async (
       }
       xyzUrl = `${base}?${params.toString()}`;
     }
-
     const { supportedUpscalingEndpoints } = useSTAcStore();
-    const isUpscalingSupported = supportedUpscalingEndpoints.some(
-      (/** @type {string} */ endpoint) => xyzUrl.includes(endpoint),
+    const upscaling = applyTitilerUpscaling(
+      xyzUrl,
+      supportedUpscalingEndpoints,
     );
+    if (upscaling) {
+      xyzUrl = upscaling.url;
+    }
 
     // Add sharding for s2maps automatically
     if (xyzUrl.includes("s2maps-tiles.eu")) {
@@ -608,15 +612,15 @@ export const createLayersFromLinks = async (
       },
       source: {
         type: "XYZ",
-        url: isUpscalingSupported ? xyzUrl.replace("{y}", "{y}@2x") : xyzUrl,
+        url: xyzUrl,
         projection: projectionCode,
         ...(xyzLink.attribution ? { attributions: xyzLink.attribution } : {}),
       },
     };
-    if (isUpscalingSupported) {
+    if (upscaling) {
       // @ts-expect-error tileGrid is added here and supported in eox-map layer definition
       json.source.tileGrid = {
-        tileSize: [512, 512],
+        tileSize: upscaling.tileSize,
       };
     }
     if (
@@ -745,7 +749,7 @@ export const createLayersFromLinks = async (
         ),
         applyOptions,
       );
-      applyOptions = /** @type { object } */ (optionsObject);
+      applyOptions = /** @type {object} */ (optionsObject);
       href = url;
     }
     const json = {
@@ -792,6 +796,17 @@ export const createLayerFromRender = async (
   extraProperties,
 ) => {
   if (!collection || !collection.renders || !item) {
+    return [];
+  }
+
+  // Skip when an explicit xyz link already targets the collection on the same endpoint
+  const hasMatchingXyzLink = item.links?.some(
+    (link) =>
+      link.rel === "xyz" &&
+      link.href?.includes(rasterURL) &&
+      link.href?.includes(`/collections/${collection.id}/`),
+  );
+  if (hasMatchingXyzLink) {
     return [];
   }
 
@@ -873,52 +888,3 @@ export const createLayerFromRender = async (
 
   return layers;
 };
-/**
- *
- * @param {Record<string,any>} obj
- * @returns {string}
- */
-function encodeURLObject(obj) {
-  let str = "";
-  for (const key in obj) {
-    const value = obj[key];
-    if (value === null || value === undefined || value === "") {
-      continue;
-    }
-
-    const valueType = Array.isArray(value) ? "array" : typeof value;
-
-    switch (valueType) {
-      case "array": {
-        // Check if any element in the array is itself an array (multi-dimensional)
-        const hasNestedArrays = value.some((/** @type {any} */ item) =>
-          Array.isArray(item),
-        );
-
-        if (hasNestedArrays) {
-          // For multi-dimensional arrays, repeat the key with different values
-          for (const val of value) {
-            if (Array.isArray(val)) {
-              str += `${key}=${val.join(",")}&`;
-            } else {
-              str += `${key}=${val}&`;
-            }
-          }
-        } else {
-          // For simple arrays, join with commas
-          str += `${key}=${value.join(",")}&`;
-        }
-        break;
-      }
-      case "object": {
-        str += `${key}=${encodeURI(JSON.stringify(value))}&`;
-        break;
-      }
-      default: {
-        str += `${key}=${encodeURIComponent(value)}&`;
-        break;
-      }
-    }
-  }
-  return str;
-}

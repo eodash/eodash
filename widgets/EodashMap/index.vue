@@ -80,6 +80,7 @@ import {
   compareIndicator,
   poi,
   isGlobe,
+  tooltipAdapter,
 } from "@/store/states";
 import { storeToRefs } from "pinia";
 import { useSTAcStore } from "@/store/stac";
@@ -100,7 +101,21 @@ import mustache from "mustache";
 import EodashMapBtns from "^/EodashMap/EodashMapBtns.vue";
 
 const props = defineProps({
-  /** Enables the side-by-side compare map; requires a selected compare STAC. */
+  baseLayers: {
+    /** @type {import("vue").PropType<import("@eox/map").EoxLayer[]>} */
+    type: Array,
+    default: () => [
+      {
+        type: "Tile",
+        source: { type: "OSM" },
+        properties: {
+          id: "osm",
+          title: "Background",
+          layerControlExclusive: true,
+        },
+      },
+    ],
+  },
   enableCompare: {
     type: Boolean,
     default: false,
@@ -151,21 +166,23 @@ const props = defineProps({
   },
   /** Toolbar feature flags; set any flag to `false` to hide the corresponding button. */
   btns: {
-    type: /** @type {import("vue").PropType<{
-     *   enableExportMap?: boolean;
-     *   enableChangeProjection?: boolean;
-     *   enableBackToPOIs?: boolean;
-     *   enableSearch?: boolean;
-     *   searchParams?: object;
-     *   enableZoom?: boolean;
-     *   enableGlobe?: boolean;
-     *   enableFeedback?: boolean;
-     *   enableCompareIndicators?: boolean | {
-     *     compareTemplate?: string;
-     *     fallbackTemplate?: string;
-     *     itemFilterConfig?: InstanceType<import("../EodashItemFilter.vue").default>["$props"];
-     *   };
-     * }>} */ (Object),
+    type: /**
+     * @type {import("vue").PropType<{
+     * enableExportMap?: boolean;
+     * enableChangeProjection?: boolean;
+     * enableBackToPOIs?: boolean;
+     * enableSearch?: boolean;
+     * searchParams?: object;
+     * enableZoom?: boolean;
+     * enableGlobe?: boolean;
+     * enableMosaic?: boolean;
+     * enableFeedback?: boolean;
+     * enableCompareIndicators?: boolean | {
+     *   compareTemplate?:string;
+     *   fallbackTemplate?:string;
+     *   itemFilterConfig?:InstanceType<import("../EodashItemFilter.vue").default>["$props"]
+     * };
+     * }> } */ (Object),
     default: () => ({
       enableExportMap: true,
       enableChangeProjection: true,
@@ -174,6 +191,7 @@ const props = defineProps({
       enableSearch: true,
       enableZoom: true,
       enableGlobe: true,
+      enableMosaic: true,
       enableFeedback: true,
       searchParams: {},
     }),
@@ -218,6 +236,7 @@ const btnsProps = computed(() => ({
   enableSearch: props.btns.enableSearch ?? true,
   enableZoom: props.btns.enableZoom ?? true,
   enableGlobe: props.btns.enableGlobe ?? true,
+  enableMosaic: props.btns.enableMosaic ?? true,
   enableFeedback: props.btns.enableFeedback ?? true,
   searchParams: props.btns.searchParams,
 }));
@@ -276,28 +295,17 @@ const controls = computed(() => {
 const initialCenter = toRaw(props.center);
 const initialZoom = toRaw(mapPosition.value?.[2] ?? props.zoom);
 /** @type {import("vue").Ref<Record<string,any>[]>} */
-const eoxMapLayers = ref([
-  {
-    type: "Tile",
-    source: { type: "OSM" },
-    properties: {
-      id: "osm",
-      title: "Background",
-    },
-  },
-]);
+const eoxMapLayers = ref(
+  /** @type {Record<string,any>[]} */ (
+    structuredClone(toRaw(props.baseLayers))
+  ),
+);
 
-/** @type {import("vue").Ref<Record<string,any>[]>} */
-const eoxMapCompareLayers = ref([
-  {
-    type: "Tile",
-    source: { type: "OSM" },
-    properties: {
-      id: "osm",
-      title: "Background",
-    },
-  },
-]);
+const eoxMapCompareLayers = ref(
+  /** @type {Record<string,any>[]} */ (
+    structuredClone(toRaw(props.baseLayers))
+  ),
+);
 
 const animationOptions = ref({
   duration: 0, // Initially set to 0 for an instant "jump"
@@ -305,9 +313,10 @@ const animationOptions = ref({
 });
 
 /** @type {import("vue").Ref<import("@eox/map").EOxMap | null>} */
-const eoxMap = ref(null);
+const eoxMap = useTemplateRef("eoxMap");
 /** @type {import("vue").Ref<import("@eox/map").EOxMap | null>} */
-const compareMap = ref(null);
+const compareMap = useTemplateRef("compareMap");
+
 const { selectedCompareStac } = storeToRefs(useSTAcStore());
 const showCompare = computed(() =>
   props.enableCompare && !!selectedCompareStac.value ? "" : "first",
@@ -316,10 +325,20 @@ const showCompare = computed(() =>
 useHandleMapMoveEnd(eoxMap, mapPosition);
 
 onMounted(() => {
-  const { selectedCompareStac, selectedStac, selectedItem } =
-    storeToRefs(useSTAcStore());
+  const {
+    selectedCompareStac,
+    selectedStac,
+    selectedItem,
+    selectedCompareItem,
+  } = storeToRefs(useSTAcStore());
+  if (!eoxMap.value) {
+    console.error("EOxMap reference is not available on mounted.");
+    return;
+  }
   // assign map Element state to eox map
   mapEl.value = eoxMap.value;
+  // enable terrain
+  mapEl.value.globeConfig.terrain = true;
 
   if (props.enableCompare) {
     mapCompareEl.value = compareMap.value;
@@ -334,6 +353,8 @@ onMounted(() => {
       eoxMapCompareLayers,
       eoxMap,
       false,
+      selectedCompareItem,
+      props.baseLayers,
     );
 
     useUpdateTooltipProperties(
@@ -352,6 +373,7 @@ onMounted(() => {
     compareMap,
     props.zoomToExtent,
     selectedItem,
+    props.baseLayers,
   );
   // After the initial mount and "jump", set the animation duration for subsequent flyTo calls
   nextTick(() => {
@@ -362,11 +384,17 @@ onMounted(() => {
 useUpdateTooltipProperties(eodashCollections, tooltipProperties);
 
 const mainTooltipStyles = computed(() => ({
-  visibility: tooltipProperties.value.length ? "visible" : "hidden",
+  visibility:
+    tooltipProperties.value.length || !!tooltipAdapter.value
+      ? "visible"
+      : "hidden",
 }));
 
 const compareTooltipStyles = computed(() => ({
-  visibility: compareTooltipProperties.value.length ? "visible" : "hidden",
+  visibility:
+    compareTooltipProperties.value.length || !!tooltipAdapter.value
+      ? "visible"
+      : "hidden",
 }));
 /**
  * @param {"main" | "compare"} map
@@ -381,6 +409,9 @@ const tooltipPropertyTransform = (map) => {
    * @returns {{key:string; value?:string} | undefined}
    */
   return (param) => {
+    if (tooltipAdapter.value) {
+      return tooltipAdapter.value(param, map);
+    }
     /** @type {typeof tooltipProps.value} */
     const updatedProperties = JSON.parse(
       mustache.render(JSON.stringify(tooltipProps.value), {
