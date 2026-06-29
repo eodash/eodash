@@ -172,7 +172,7 @@ export const extractRoles = (properties, linkOrAsset) => {
 
 /**
  * Extracts a single non-link style JSON from a STAC Item optionally for a selected key mapping
- * @param { import("stac-ts").StacItem | import("stac-ts").StacCollection } stacObject
+ * @param { import("stac-ts").StacItem | import("stac-ts").StacCollection | null | undefined} stacObject
  * @param {string | undefined} linkKey
  * @param {string | undefined} assetKey
  * @returns
@@ -182,6 +182,7 @@ export const fetchStyle = async (
   linkKey = undefined,
   assetKey = undefined,
 ) => {
+  if (!stacObject) return undefined;
   let styleLink = null;
   if (linkKey) {
     styleLink = stacObject.links.find(
@@ -212,6 +213,20 @@ export const fetchStyle = async (
     return { ...styleJson };
   }
 };
+
+/**
+ * Resolves a style by preferring the item's own `style` link and falling back
+ * to the collection's. Takes the same key arguments as `fetchStyle`.
+ *
+ * @param {import("stac-ts").StacItem | import("stac-ts").StacCollection} item
+ * @param {import("stac-ts").StacCollection | null | undefined} collection
+ * @param {string} [linkKey]
+ * @param {string} [assetKey]
+ * @returns {Promise<import("@/types").EodashStyleJson | undefined>}
+ */
+export const resolveStyle = async (item, collection, linkKey, assetKey) =>
+  (await fetchStyle(item, linkKey, assetKey)) ??
+  (await fetchStyle(collection, linkKey, assetKey));
 
 /**
  * Fetches all style JSONs from a STAC Item and returns an array with style objects

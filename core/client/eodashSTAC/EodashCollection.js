@@ -231,6 +231,7 @@ export class EodashCollection {
           item,
           layerDatetime,
           extraProperties,
+          this.#collectionStac,
         )),
         ...((this.rasterEndpoint &&
           (await createLayerFromRender(
