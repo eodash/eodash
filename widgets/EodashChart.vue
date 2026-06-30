@@ -1,5 +1,5 @@
 <template>
-  <div ref="container">
+  <div ref="container" class="eodash-chart-wrapper">
     <div class="chart-frame">
       <button
         v-if="usedChartData && usedChartSpec"
@@ -70,133 +70,83 @@ const usedChartSpec = computed(() => {
 });
 
 const chartRenderKey = ref(0);
-const frameHeight = ref(225);
 const containerEl = useTemplateRef("container");
 
-/**
-@type { MutationObserver | null}
-*/
-let observer = null;
-/** @type {ResizeObserver | null} */
-let resizeObserver = null;
 /** @type {MutationObserver | null} */
-let childMutationObserver = null;
+let observer = null;
+/** @type {number | null} */
+let styleInterval = null;
 
 onMounted(() => {
   const el = containerEl.value;
   if (!el) return;
 
-  const directParent = el.parentElement;
-  const grandParent = directParent?.parentElement;
-
-  const calculateHeight = () => {
-    if (!grandParent) return;
-    let availableHeight = grandParent.getBoundingClientRect().height;
-
-    if (
-      directParent &&
-      directParent.classList.contains("eodash-process-container")
-    ) {
-      const styles = window.getComputedStyle(directParent);
-      availableHeight -=
-        (parseFloat(styles.paddingTop) || 0) +
-        (parseFloat(styles.paddingBottom) || 0);
-
-      Array.from(directParent.children).forEach((child) => {
-        if (child !== el) {
-          const childHeight = child.getBoundingClientRect().height;
-          const childStyles = window.getComputedStyle(child);
-          const margins =
-            (parseFloat(childStyles.marginTop) || 0) +
-            (parseFloat(childStyles.marginBottom) || 0);
-          availableHeight -= childHeight + margins;
-        }
-      });
-
-      // Subtract height of vega-bindings if they exist inside the web component
+  // Continuously enforce the layout structure and the form offset
+  styleInterval = window.setInterval(() => {
+    if (el) {
       const eoxChart = el.querySelector("eox-chart");
       if (eoxChart && eoxChart.shadowRoot) {
-        const bindingsForm =
-          eoxChart.shadowRoot.querySelector(".vega-bindings");
-        if (bindingsForm) {
-          const formHeight = bindingsForm.getBoundingClientRect().height;
-          availableHeight -= formHeight + 12; // Add 12px extra padding for the form
+        if (!eoxChart.shadowRoot.querySelector('#eodash-chart-styles')) {
+          const style = document.createElement("style");
+          style.id = "eodash-chart-styles";
+          style.innerHTML = `
+            .vega-embed {
+              position: relative !important;
+              display: flex !important;
+              flex-direction: column !important;
+              height: 100% !important;
+            }
+            .vega-bindings {
+              position: absolute !important;
+              top: 0 !important;
+              left: 10px !important;
+              display: flex !important;
+              flex-wrap: wrap;
+              gap: 10px;
+              background: rgba(255, 255, 255, 0.85);
+              padding: 6px 12px;
+              border-radius: 6px;
+              box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+              z-index: 100 !important;
+              max-width: calc(100% - 90px) !important;
+            }
+            .vega-bindings:empty {
+              display: none !important;
+            }
+            .vega-bind {
+              display: flex;
+              align-items: center;
+              gap: 6px;
+            }
+          `;
+          eoxChart.shadowRoot.appendChild(style);
+        }
+
+        // Dynamically pull the form up by its own height and pad the container
+        const bindingsEl = eoxChart.shadowRoot.querySelector('.vega-bindings');
+        const embedEl = eoxChart.shadowRoot.querySelector('.vega-embed');
+        
+        if (bindingsEl && bindingsEl.children.length > 0) {
+          const height = bindingsEl.getBoundingClientRect().height;
+          // Apply a smaller negative margin to pull it up slightly, 
+          // and a matching padding to the container to push the chart down.
+          const newMargin = `-${height + 5}px`;
+          const newPadding = `${height + 5}px`;
+          if (bindingsEl.style.marginTop !== newMargin) {
+             bindingsEl.style.marginTop = newMargin;
+             if (embedEl) embedEl.style.paddingTop = newPadding;
+          }
+        } else if (bindingsEl) {
+          if (bindingsEl.style.marginTop !== '') {
+             bindingsEl.style.marginTop = '';
+             if (embedEl) embedEl.style.paddingTop = '';
+          }
         }
       }
-
-      // small buffer to prevent border scrollbars
-      availableHeight -= 12;
-    } else {
-      // If maximized or in another panel
-      if (directParent) {
-        const styles = window.getComputedStyle(directParent);
-        availableHeight -=
-          (parseFloat(styles.paddingTop) || 0) +
-          (parseFloat(styles.paddingBottom) || 0);
-      }
-      availableHeight -= 12;
     }
+  }, 200);
 
-    if (availableHeight > 0) {
-      frameHeight.value = Math.max(150, Math.floor(availableHeight));
-    }
-  };
-
-  const setupShadowObserver = () => {
-    const eoxChart = el.querySelector("eox-chart");
-    if (eoxChart && eoxChart.shadowRoot && !eoxChart.hasAttribute("data-observed")) {
-      const shadowObserver = new MutationObserver(() => calculateHeight());
-      shadowObserver.observe(eoxChart.shadowRoot, {
-        childList: true,
-        subtree: true,
-      });
-      eoxChart.setAttribute("data-observed", "true");
-    }
-  };
-
-  // Initial calculation after layout
-  nextTick(() => {
-    calculateHeight();
-    setupShadowObserver();
-  });
-
-  // Watch for data changes which might trigger form re-rendering
-  watch(
-    [usedChartData, usedChartSpec],
-    () => {
-      nextTick(() => {
-        calculateHeight();
-        setupShadowObserver();
-      });
-    },
-    { deep: true },
-  );
-
-  if (grandParent) {
-    resizeObserver = new ResizeObserver(() => {
-      calculateHeight();
-    });
-    resizeObserver.observe(grandParent);
-
-    if (directParent) {
-      resizeObserver.observe(directParent);
-      Array.from(directParent.children).forEach((child) => {
-        if (child !== el) resizeObserver?.observe(child);
-      });
-
-      childMutationObserver = new MutationObserver(() => {
-        calculateHeight();
-        Array.from(directParent.children).forEach((child) => {
-          if (child !== el) resizeObserver?.observe(child);
-        });
-        setupShadowObserver();
-      });
-      childMutationObserver.observe(directParent, { childList: true });
-    }
-  }
-
-  // for mobile view, the overlay panel containing chart is initially hidden
-  // we create an observer when display of overlay is not none anymore
+  // For mobile view, handle overlay display changes
   const overlay = getOverlayParent(el);
   if (!overlay) return;
 
@@ -204,7 +154,6 @@ onMounted(() => {
     const style = getComputedStyle(overlay);
     const visible = style.display !== "none";
     if (visible) {
-      // forcibly rerender chart, otherwise size of canvas is 0
       chartRenderKey.value = Math.random();
     }
   });
@@ -217,15 +166,14 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   observer?.disconnect();
-  resizeObserver?.disconnect();
-  childMutationObserver?.disconnect();
+  if (styleInterval) window.clearInterval(styleInterval);
 });
 
 const chartStyles = computed(() => {
-  const styles = {
-    height: `${frameHeight.value}px`,
+  return {
+    height: "100%",
+    width: "100%"
   };
-  return styles;
 });
 
 const toggleIcon = computed(() =>
@@ -237,13 +185,31 @@ function toggleLayout() {
 }
 </script>
 <style scoped>
+.eodash-chart-wrapper {
+  height: 100%; /* Force full height in fullscreen layout */
+  flex-grow: 1;
+  min-height: 0; /* Critical for flex shrinking */
+  display: flex;
+  flex-direction: column;
+}
+
 .chart-frame {
   position: relative;
+  flex-grow: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  margin-top: 10px;
+}
+
+eox-chart {
+  flex-grow: 1;
+  min-height: 0;
 }
 
 .chart-toggle {
   position: absolute;
-  top: 18px;
+  top: -4px;
   right: 46px;
   z-index: 2;
   cursor: pointer;

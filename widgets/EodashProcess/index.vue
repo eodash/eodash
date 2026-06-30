@@ -191,6 +191,7 @@ useAutoExec(autoExec, jsonformEl, jsonformSchema, startProcess);
 eox-jsonform {
   padding: 0.7em;
   min-height: 0px;
+  flex-shrink: 0;
 }
 
 /* Force the specific panel wrapping this component to utilize 100% height */
@@ -198,8 +199,11 @@ eox-jsonform {
   height: 100%;
 }
 
-/* Make sure this container also takes up that height */
+/* Make sure this container takes up full height and acts as a flex column */
 .eodash-process-container {
   height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 </style>
