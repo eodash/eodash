@@ -45,7 +45,7 @@ import "@eox/drawtools";
 import "@eox/jsonform";
 import { useSTAcStore } from "@/store/stac";
 import { storeToRefs } from "pinia";
-import { computed, ref, useTemplateRef } from "vue";
+import { computed, ref, useTemplateRef, watch } from "vue";
 import ProcessList from "./ProcessList.vue";
 import EodashChart from "../EodashChart.vue";
 import { handleProcesses } from "./methods/handling";
@@ -87,6 +87,41 @@ const jsonformEl =
   /** @type {Readonly<import("vue").ShallowRef<import("@eox/jsonform").EOxJSONForm | null>>} */ (
     useTemplateRef("jsonformEl")
   );
+
+// Inject custom styles into the eox-jsonform shadow DOM to make eox-drawtools inline
+watch(jsonformEl, (el) => {
+  if (el && el.shadowRoot) {
+    const styleId = "eodash-drawtools-inline-style";
+    if (!el.shadowRoot.getElementById(styleId)) {
+      const style = document.createElement("style");
+      style.id = styleId;
+      style.textContent = `
+        .form-control:has(eox-drawtools) {
+          display: flex;
+          align-items: center;
+          gap: 15px;
+          border: none !important;
+          padding: 8px 12px !important;
+          background: transparent !important;
+        }
+        .form-control:has(eox-drawtools) > label {
+          margin: 0 !important;
+          flex-shrink: 0;
+          min-width: 120px;
+          line-height: 1;
+          display: flex;
+          align-items: center;
+        }
+        .form-control:has(eox-drawtools) > eox-drawtools {
+          flex-grow: 1;
+          display: flex;
+          align-items: center;
+        }
+      `;
+      el.shadowRoot.appendChild(style);
+    }
+  }
+});
 
 const isAsync = computed(
   () =>
