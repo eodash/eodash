@@ -89,7 +89,10 @@ const copyBtns = [
     copyFn: async () =>
       await copyToClipBoard(
         JSON.stringify(
-          removeUnneededProperties(props.getLayers(), layerControlFormValue.value)
+          removeUnneededProperties(
+            props.getLayers(),
+            layerControlFormValue.value,
+          ),
         ),
         copySuccess,
       ),

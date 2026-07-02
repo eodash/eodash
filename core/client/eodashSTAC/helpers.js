@@ -563,6 +563,10 @@ export function assignProjID(item, linkOrAsset, id, layer) {
  * @param {Record<string,any>[]} layers
  */
 export const removeUnneededProperties = (layers, formValues = {}) => {
+  /**
+   * @param {Record<string,any>} layer
+   * @returns {Record<string,any>[]}
+   */
   const processLayer = (layer) => {
     // If the layer (or group) is explicitly marked as not visible, skip it and all children
     if (layer.properties?.visible === false) {
@@ -578,15 +582,24 @@ export const removeUnneededProperties = (layers, formValues = {}) => {
     let clonedLayer;
     try {
       clonedLayer = JSON.parse(JSON.stringify(layer));
-    } catch (e) {
+    } catch (_e) {
       clonedLayer = structuredClone(layer);
     }
 
     // Flatten formValues to handle nested properties (e.g., vminmax: { vmin, vmax })
+    /**
+     * @param {Record<string,any>} obj
+     * @returns {Record<string,any>}
+     */
     const flattenFormValues = (obj) => {
+      /** @type {Record<string,any>} */
       let result = {};
       for (const key in obj) {
-        if (obj[key] !== null && typeof obj[key] === 'object' && !Array.isArray(obj[key])) {
+        if (
+          obj[key] !== null &&
+          typeof obj[key] === "object" &&
+          !Array.isArray(obj[key])
+        ) {
           Object.assign(result, flattenFormValues(obj[key]));
         } else {
           result[key] = obj[key];
@@ -600,26 +613,43 @@ export const removeUnneededProperties = (layers, formValues = {}) => {
     if (Object.keys(flatFormValues).length > 0) {
       // Stringify, render mustache, then parse back
       try {
-        const renderedString = mustache.render(JSON.stringify(clonedLayer), flatFormValues);
+        const renderedString = mustache.render(
+          JSON.stringify(clonedLayer),
+          flatFormValues,
+        );
         clonedLayer = JSON.parse(renderedString);
       } catch (e) {
-        console.warn("Failed to apply mustache templating during export cleanup:", e);
+        console.warn(
+          "Failed to apply mustache templating during export cleanup:",
+          e,
+        );
       }
     }
 
     // Burn in OpenLayers ["var", "name"] variables using flatFormValues overriding style.variables
-    const styleVariables = { ...(clonedLayer.style?.variables || {}), ...flatFormValues };
-    
+    const styleVariables = {
+      ...(clonedLayer.style?.variables || {}),
+      ...flatFormValues,
+    };
+
     // Also update the exported variables dictionary so it's correct if OL re-reads it
     if (clonedLayer.style && clonedLayer.style.variables) {
       clonedLayer.style.variables = styleVariables;
     }
 
     if (Object.keys(styleVariables).length > 0) {
+      /**
+       * @param {any} obj
+       * @returns {any}
+       */
       const burnVars = (obj) => {
         if (Array.isArray(obj)) {
           // Check if this array is exactly ["var", "variable_name"]
-          if (obj.length === 2 && obj[0] === "var" && typeof obj[1] === "string") {
+          if (
+            obj.length === 2 &&
+            obj[0] === "var" &&
+            typeof obj[1] === "string"
+          ) {
             const varName = obj[1];
             if (varName in styleVariables) {
               return styleVariables[varName];
@@ -668,9 +698,12 @@ export const removeUnneededProperties = (layers, formValues = {}) => {
     }
 
     // Cleanup unnecessary properties
+    /**
+     * @param {any} obj
+     */
     const cleanupProperties = (obj) => {
       if (!obj || typeof obj !== "object") return;
-      
+
       for (const key in obj) {
         if (obj[key] === null) {
           delete obj[key];
@@ -697,9 +730,9 @@ export const removeUnneededProperties = (layers, formValues = {}) => {
   // ensure the top level array is also deeply un-proxied if needed
   let rawLayers = layers;
   try {
-     rawLayers = JSON.parse(JSON.stringify(layers));
-  } catch(e) {
-     rawLayers = structuredClone(layers);
+    rawLayers = JSON.parse(JSON.stringify(layers));
+  } catch (_e) {
+    rawLayers = structuredClone(layers);
   }
 
   return rawLayers.flatMap(processLayer);
