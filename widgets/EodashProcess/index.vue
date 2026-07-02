@@ -1,5 +1,5 @@
 <template>
-  <div ref="container" class="py-1 eodash-process-container">
+  <div ref="container" class="eodash-process-container">
     <ProcessList :map-element="mapElement" :enable-compare="enableCompare" />
     <eox-jsonform
       v-if="jsonformSchema"
@@ -189,7 +189,7 @@ useAutoExec(autoExec, jsonformEl, jsonformSchema, startProcess);
 </script>
 <style>
 eox-jsonform {
-  padding: 0.7em;
+  padding: 0;
   min-height: 0px;
   flex-shrink: 0;
 }
@@ -204,6 +204,6 @@ eox-jsonform {
   height: 100%;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow-y: auto;
 }
 </style>

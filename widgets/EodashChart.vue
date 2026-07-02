@@ -12,7 +12,6 @@
         </svg>
       </button>
       <eox-chart
-        class="pa-2"
         v-if="usedChartData && usedChartSpec"
         .spec="toRaw(usedChartSpec)"
         :key="chartRenderKey"
@@ -81,7 +80,7 @@ onMounted(() => {
   const el = containerEl.value;
   if (!el) return;
 
-  // Continuously enforce the layout structure and the form offset
+  // Continuously inject basic styling for the bindings form to make it look decent
   styleInterval = window.setInterval(() => {
     if (el) {
       const eoxChart = el.querySelector("eox-chart");
@@ -90,57 +89,43 @@ onMounted(() => {
           const style = document.createElement("style");
           style.id = "eodash-chart-styles";
           style.innerHTML = `
-            .vega-embed {
-              position: relative !important;
+            * {
+              box-sizing: border-box !important;
+            }
+            :host, .vega-embed {
               display: flex !important;
               flex-direction: column !important;
               height: 100% !important;
+              padding: 0 !important;
+              margin: 0 !important;
             }
             .vega-bindings {
-              position: absolute !important;
-              top: 0 !important;
-              left: 10px !important;
+              flex: 0 0 auto !important;
               display: flex !important;
               flex-wrap: wrap;
               gap: 10px;
               background: rgba(255, 255, 255, 0.85);
-              padding: 6px 12px;
+              padding: 6px 12px !important;
               border-radius: 6px;
               box-shadow: 0 2px 5px rgba(0,0,0,0.15);
-              z-index: 100 !important;
-              max-width: calc(100% - 90px) !important;
+              margin: 0 !important;
             }
             .vega-bindings:empty {
               display: none !important;
+            }
+            .vega-embed > canvas, .vega-embed > svg {
+              max-height: 100% !important;
+              max-width: 100% !important;
+              object-fit: contain;
             }
             .vega-bind {
               display: flex;
               align-items: center;
               gap: 6px;
+              margin-bottom: 0 !important;
             }
           `;
           eoxChart.shadowRoot.appendChild(style);
-        }
-
-        // Dynamically pull the form up by its own height and pad the container
-        const bindingsEl = eoxChart.shadowRoot.querySelector('.vega-bindings');
-        const embedEl = eoxChart.shadowRoot.querySelector('.vega-embed');
-        
-        if (bindingsEl && bindingsEl.children.length > 0) {
-          const height = bindingsEl.getBoundingClientRect().height;
-          // Apply a smaller negative margin to pull it up slightly, 
-          // and a matching padding to the container to push the chart down.
-          const newMargin = `-${height + 5}px`;
-          const newPadding = `${height + 5}px`;
-          if (bindingsEl.style.marginTop !== newMargin) {
-             bindingsEl.style.marginTop = newMargin;
-             if (embedEl) embedEl.style.paddingTop = newPadding;
-          }
-        } else if (bindingsEl) {
-          if (bindingsEl.style.marginTop !== '') {
-             bindingsEl.style.marginTop = '';
-             if (embedEl) embedEl.style.paddingTop = '';
-          }
         }
       }
     }
@@ -166,7 +151,6 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   observer?.disconnect();
-  if (styleInterval) window.clearInterval(styleInterval);
 });
 
 const chartStyles = computed(() => {
@@ -184,11 +168,21 @@ function toggleLayout() {
   areChartsSeparateLayout.value = !areChartsSeparateLayout.value;
 }
 </script>
+
+<style>
+/* Force the outer dashboard panel wrapping this component to utilize 100% height in fullscreen mode */
+.bg-surface:has(.eodash-chart-wrapper) {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+</style>
+
 <style scoped>
 .eodash-chart-wrapper {
   height: 100%; /* Force full height in fullscreen layout */
   flex-grow: 1;
-  min-height: 0; /* Critical for flex shrinking */
+  min-height: 180px; /* Prevent chart from becoming unusably small */
   display: flex;
   flex-direction: column;
 }
@@ -196,10 +190,9 @@ function toggleLayout() {
 .chart-frame {
   position: relative;
   flex-grow: 1;
-  min-height: 0;
+  min-height: 250px; /* Prevent chart from becoming unusably small */
   display: flex;
   flex-direction: column;
-  margin-top: 10px;
 }
 
 eox-chart {
@@ -209,7 +202,7 @@ eox-chart {
 
 .chart-toggle {
   position: absolute;
-  top: -4px;
+  top: 8px;
   right: 46px;
   z-index: 2;
   cursor: pointer;
