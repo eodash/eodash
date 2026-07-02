@@ -34,7 +34,7 @@
           <strong>Map Layers Configuration</strong>
         </p>
         <div class="pa-3 code-block mb-4">
-          {{ removeUnneededProperties(getLayers()) }}
+          {{ removeUnneededProperties(getLayers(), layerControlFormValue) }}
         </div>
 
         <div v-if="chartSpec" class="mb-4">
@@ -63,6 +63,7 @@ import { copyToClipBoard } from "@/utils";
 import { ref } from "vue";
 import { getLayers as getLayerAction } from "@/store/actions";
 import { mapPosition, availableMapProjection, chartSpec } from "@/store/states";
+import { layerControlFormValue } from "@/utils/states";
 import { removeUnneededProperties } from "@/eodashSTAC/helpers";
 import { base64EncodeSpec } from "@eox/chart";
 
@@ -86,7 +87,12 @@ const copyBtns = [
   {
     id: Symbol(),
     copyFn: async () =>
-      await copyToClipBoard(JSON.stringify(props.getLayers()), copySuccess),
+      await copyToClipBoard(
+        JSON.stringify(
+          removeUnneededProperties(props.getLayers(), layerControlFormValue.value)
+        ),
+        copySuccess,
+      ),
     copyAs: "layers configuration",
   },
   {
@@ -110,7 +116,7 @@ const getMapStepCode = () => {
 #### Tour step title
 Text describing the current step of the tour and why it is interesting what the map shows currently
 `;
-  return `${preTag}'${JSON.stringify(removeUnneededProperties(props.getLayers()))}' ${endTag}`;
+  return `${preTag}'${JSON.stringify(removeUnneededProperties(props.getLayers(), layerControlFormValue.value))}' ${endTag}`;
 };
 const getMapEntryCode = () => {
   const [x, y, z] = mapPosition.value;
@@ -118,7 +124,7 @@ const getMapEntryCode = () => {
     "## Map Example <!" +
     '--{as="eox-map" style="width: 100%; height: 500px;" layers=';
   const endTag = `zoom="${z}" center=[${[x, y]}] projection="${availableMapProjection.value}" }-->`;
-  return `${preTag}'${JSON.stringify(removeUnneededProperties(props.getLayers()))}' ${endTag}`;
+  return `${preTag}'${JSON.stringify(removeUnneededProperties(props.getLayers(), layerControlFormValue.value))}' ${endTag}`;
 };
 
 const getChartExportCode = () => {
