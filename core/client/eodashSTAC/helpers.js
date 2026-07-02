@@ -172,7 +172,7 @@ export const extractRoles = (properties, linkOrAsset) => {
 
 /**
  * Extracts a single non-link style JSON from a STAC Item optionally for a selected key mapping
- * @param { import("stac-ts").StacItem | import("stac-ts").StacCollection } stacObject
+ * @param { import("stac-ts").StacItem | import("stac-ts").StacCollection | null | undefined} stacObject
  * @param {string | undefined} linkKey
  * @param {string | undefined} assetKey
  * @returns
@@ -182,6 +182,7 @@ export const fetchStyle = async (
   linkKey = undefined,
   assetKey = undefined,
 ) => {
+  if (!stacObject) return undefined;
   let styleLink = null;
   if (linkKey) {
     styleLink = stacObject.links.find(
@@ -212,6 +213,20 @@ export const fetchStyle = async (
     return { ...styleJson };
   }
 };
+
+/**
+ * Resolves a style by preferring the item's own `style` link and falling back
+ * to the collection's. Takes the same key arguments as `fetchStyle`.
+ *
+ * @param {import("stac-ts").StacItem | import("stac-ts").StacCollection} item
+ * @param {import("stac-ts").StacCollection | null | undefined} collection
+ * @param {string} [linkKey]
+ * @param {string} [assetKey]
+ * @returns {Promise<import("@/types").EodashStyleJson | undefined>}
+ */
+export const resolveStyle = async (item, collection, linkKey, assetKey) =>
+  (await fetchStyle(item, linkKey, assetKey)) ??
+  (await fetchStyle(collection, linkKey, assetKey));
 
 /**
  * Fetches all style JSONs from a STAC Item and returns an array with style objects
@@ -285,6 +300,7 @@ export const extractLayerTimeValues = (dates, currentStep) => {
     play: false,
     displayFormat: "DD.MM.YYYY HH:mm",
     animateOnClickInterval: false,
+    showUTC: true,
   };
 
   return { layerDatetime, timeControlValues };
@@ -982,6 +998,70 @@ export function extractEoxLegendLink(link) {
     };
   }
   return extraProperties;
+}
+
+/**
+ * Locate the first sub-schema whose `format` matches by walking `properties`
+ * and the `oneOf` / `allOf` / `anyOf` combinators. Returns the schema path
+ * (array of keys/indices) from the root schema to the matched node, or
+ * undefined if not found. Empty array means the input schema itself matched.
+ *
+ * @param {Record<string, any> | null | undefined} schema
+ * @param {string} [format="bands"]
+ * @returns {(string | number)[] | undefined}
+ */
+export function getBandsProperty(schema, format = "bands") {
+  if (!schema || typeof schema !== "object") return undefined;
+  if (schema.format === format) return [];
+
+  if (schema.properties) {
+    for (const key of Object.keys(schema.properties)) {
+      const sub = getBandsProperty(schema.properties[key], format);
+      if (sub) return ["properties", key, ...sub];
+    }
+  }
+
+  for (const combinator of ["oneOf", "allOf", "anyOf"]) {
+    if (!Array.isArray(schema[combinator])) continue;
+    for (let i = 0; i < schema[combinator].length; i++) {
+      const sub = getBandsProperty(schema[combinator][i], format);
+      if (sub) return [combinator, i, ...sub];
+    }
+  }
+
+  return undefined;
+}
+
+/**
+ * Checks whether a GeoZarr layer's bands changed in the jsonform output and,
+ * if so, rebuilds the source with the new 3 selected bands.
+ * Gamma and rescale are handled automatically by `applyUpdatedStyles` via
+ * `updateStyleVariables` — this function only manages source reconstruction.
+ * Uses the existing source constructor to avoid import-version mismatches.
+ *
+ * @param {import("ol/layer/Layer").default} olLayer - Layer from layerConfig:change event
+ * @param {Record<string, any>} jsonformValue - Current jsonform output
+ * @returns {boolean} true if the source was rebuilt
+ */
+export function updateGeoZarrBands(olLayer, jsonformValue) {
+  /** @type {import("@eox/map/src/layers").EOxLayerType<"WebGLTile","GeoZarr">} */
+  const jsonLayer = olLayer.get("_jsonDefinition");
+  const updatedBands = jsonformValue.bands;
+  const isGeoZarr =
+    jsonLayer?.type === "WebGLTile" && jsonLayer?.source?.type === "GeoZarr";
+  if (!jsonLayer || !jsonLayer.source || !isGeoZarr || !updatedBands) {
+    return false;
+  }
+
+  const oldBands = jsonLayer.source?.bands;
+  if (JSON.stringify(updatedBands) === JSON.stringify(oldBands)) {
+    return false;
+  }
+  jsonLayer.source.bands = [...updatedBands];
+  olLayer.setSource(
+    new window.eoxMapAdvancedOlSources.GeoZarr(jsonLayer.source),
+  );
+  return true;
 }
 
 /**

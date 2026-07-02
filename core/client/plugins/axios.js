@@ -6,24 +6,19 @@ import { loading } from "@/store/states";
 const instance = Axios.create();
 export const axios = setupCache(instance, { cacheTakeover: false });
 
-let activeRequests = 0;
-
 function installLoadingInterceptors() {
   const reqId = axios.interceptors.request.use((config) => {
-    activeRequests++;
-    loading.value = true;
+    loading.activeLoads++;
     return config;
   });
 
   const resId = axios.interceptors.response.use(
     (response) => {
-      activeRequests = Math.max(0, activeRequests - 1);
-      if (activeRequests === 0) loading.value = false;
+      loading.activeLoads = Math.max(0, loading.activeLoads - 1);
       return response;
     },
     (error) => {
-      activeRequests = Math.max(0, activeRequests - 1);
-      if (activeRequests === 0) loading.value = false;
+      loading.activeLoads = Math.max(0, loading.activeLoads - 1);
       return Promise.reject(error);
     },
   );
