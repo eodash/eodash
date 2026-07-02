@@ -80,6 +80,7 @@ import {
   compareIndicator,
   poi,
   isGlobe,
+  tooltipAdapter,
 } from "@/store/states";
 import { storeToRefs } from "pinia";
 import { useSTAcStore } from "@/store/stac";
@@ -93,6 +94,7 @@ import {
 import {
   useHandleMapMoveEnd,
   useInitMap,
+  useMapLoading,
   useUpdateTooltipProperties,
 } from "^/EodashMap/methods";
 import { inAndOut } from "ol/easing.js";
@@ -100,7 +102,21 @@ import mustache from "mustache";
 import EodashMapBtns from "^/EodashMap/EodashMapBtns.vue";
 
 const props = defineProps({
-  /** Enables the side-by-side compare map; requires a selected compare STAC. */
+  baseLayers: {
+    /** @type {import("vue").PropType<import("@eox/map").EoxLayer[]>} */
+    type: Array,
+    default: () => [
+      {
+        type: "Tile",
+        source: { type: "OSM" },
+        properties: {
+          id: "osm",
+          title: "Background",
+          layerControlExclusive: true,
+        },
+      },
+    ],
+  },
   enableCompare: {
     type: Boolean,
     default: false,
@@ -151,21 +167,23 @@ const props = defineProps({
   },
   /** Toolbar feature flags; set any flag to `false` to hide the corresponding button. */
   btns: {
-    type: /** @type {import("vue").PropType<{
-     *   enableExportMap?: boolean;
-     *   enableChangeProjection?: boolean;
-     *   enableBackToPOIs?: boolean;
-     *   enableSearch?: boolean;
-     *   searchParams?: object;
-     *   enableZoom?: boolean;
-     *   enableGlobe?: boolean;
-     *   enableFeedback?: boolean;
-     *   enableCompareIndicators?: boolean | {
-     *     compareTemplate?: string;
-     *     fallbackTemplate?: string;
-     *     itemFilterConfig?: InstanceType<import("../EodashItemFilter.vue").default>["$props"];
-     *   };
-     * }>} */ (Object),
+    type: /**
+     * @type {import("vue").PropType<{
+     * enableExportMap?: boolean;
+     * enableChangeProjection?: boolean;
+     * enableBackToPOIs?: boolean;
+     * enableSearch?: boolean;
+     * searchParams?: object;
+     * enableZoom?: boolean;
+     * enableGlobe?: boolean;
+     * enableMosaic?: boolean;
+     * enableFeedback?: boolean;
+     * enableCompareIndicators?: boolean | {
+     *   compareTemplate?:string;
+     *   fallbackTemplate?:string;
+     *   itemFilterConfig?:InstanceType<import("../EodashItemFilter.vue").default>["$props"]
+     * };
+     * }> } */ (Object),
     default: () => ({
       enableExportMap: true,
       enableChangeProjection: true,
@@ -174,6 +192,7 @@ const props = defineProps({
       enableSearch: true,
       enableZoom: true,
       enableGlobe: true,
+      enableMosaic: true,
       enableFeedback: true,
       searchParams: {},
     }),
@@ -218,6 +237,7 @@ const btnsProps = computed(() => ({
   enableSearch: props.btns.enableSearch ?? true,
   enableZoom: props.btns.enableZoom ?? true,
   enableGlobe: props.btns.enableGlobe ?? true,
+  enableMosaic: props.btns.enableMosaic ?? true,
   enableFeedback: props.btns.enableFeedback ?? true,
   searchParams: props.btns.searchParams,
 }));
@@ -233,22 +253,13 @@ const cursorCoordsRef = useTemplateRef("cursor-coords");
 const tooltipProperties = ref([]);
 /** @type {import("vue").Ref<Exclude<import("@/types").EodashStyleJson["tooltip"], undefined>>} */
 const compareTooltipProperties = ref([]);
-/** @type {import("vue").ComputedRef<{
-  Attribution: { collapsible: boolean };
-  ScaleLine?: { target: HTMLElement };
-  MousePosition?: { projection: string; coordinateFormat: (c: [number, number]) => string; target: HTMLElement };
-}>} */
+
 const controls = computed(() => {
-  /** @type {{
-    Attribution: { collapsible: boolean };
-    ScaleLine?: { target: HTMLElement };
-    MousePosition?: { projection: string; coordinateFormat: (c: [number, number]) => string; target: HTMLElement };
-  }} */
-  const controlsObj = {
+  const controlsObj = /** @type {import("@eox/map").ControlDictionary} */ ({
     Attribution: {
       collapsible: true,
     },
-  };
+  });
 
   if (props.enableScaleLine && scaleLineRef.value) {
     controlsObj.ScaleLine = {
@@ -259,12 +270,8 @@ const controls = computed(() => {
   if (props.enableCursorCoordinates && cursorCoordsRef.value) {
     controlsObj.MousePosition = {
       projection: "EPSG:4326",
-      coordinateFormat: (/** @type {[number, number]} */ c) => {
-        const lat = c[1];
-        const lng = c[0];
-        const latStr = `${Math.abs(lat).toFixed(3)}°${lat >= 0 ? "N" : "S"}`;
-        const lngStr = `${Math.abs(lng).toFixed(3)}°${lng >= 0 ? "E" : "W"}`;
-        return `${latStr}, ${lngStr}`;
+      coordinateFormat: (c) => {
+        return `${c?.[1].toFixed(3)} °N, ${c?.[0].toFixed(3)} °E`;
       },
       target: cursorCoordsRef.value,
     };
@@ -276,28 +283,17 @@ const controls = computed(() => {
 const initialCenter = toRaw(props.center);
 const initialZoom = toRaw(mapPosition.value?.[2] ?? props.zoom);
 /** @type {import("vue").Ref<Record<string,any>[]>} */
-const eoxMapLayers = ref([
-  {
-    type: "Tile",
-    source: { type: "OSM" },
-    properties: {
-      id: "osm",
-      title: "Background",
-    },
-  },
-]);
+const eoxMapLayers = ref(
+  /** @type {Record<string,any>[]} */ (
+    structuredClone(toRaw(props.baseLayers))
+  ),
+);
 
-/** @type {import("vue").Ref<Record<string,any>[]>} */
-const eoxMapCompareLayers = ref([
-  {
-    type: "Tile",
-    source: { type: "OSM" },
-    properties: {
-      id: "osm",
-      title: "Background",
-    },
-  },
-]);
+const eoxMapCompareLayers = ref(
+  /** @type {Record<string,any>[]} */ (
+    structuredClone(toRaw(props.baseLayers))
+  ),
+);
 
 const animationOptions = ref({
   duration: 0, // Initially set to 0 for an instant "jump"
@@ -305,9 +301,10 @@ const animationOptions = ref({
 });
 
 /** @type {import("vue").Ref<import("@eox/map").EOxMap | null>} */
-const eoxMap = ref(null);
+const eoxMap = useTemplateRef("eoxMap");
 /** @type {import("vue").Ref<import("@eox/map").EOxMap | null>} */
-const compareMap = ref(null);
+const compareMap = useTemplateRef("compareMap");
+
 const { selectedCompareStac } = storeToRefs(useSTAcStore());
 const showCompare = computed(() =>
   props.enableCompare && !!selectedCompareStac.value ? "" : "first",
@@ -316,10 +313,20 @@ const showCompare = computed(() =>
 useHandleMapMoveEnd(eoxMap, mapPosition);
 
 onMounted(() => {
-  const { selectedCompareStac, selectedStac, selectedItem } =
-    storeToRefs(useSTAcStore());
+  const {
+    selectedCompareStac,
+    selectedStac,
+    selectedItem,
+    selectedCompareItem,
+  } = storeToRefs(useSTAcStore());
+  if (!eoxMap.value) {
+    console.error("EOxMap reference is not available on mounted.");
+    return;
+  }
   // assign map Element state to eox map
   mapEl.value = eoxMap.value;
+  // enable terrain
+  mapEl.value.globeConfig.terrain = true;
 
   if (props.enableCompare) {
     mapCompareEl.value = compareMap.value;
@@ -334,6 +341,8 @@ onMounted(() => {
       eoxMapCompareLayers,
       eoxMap,
       false,
+      selectedCompareItem,
+      props.baseLayers,
     );
 
     useUpdateTooltipProperties(
@@ -352,6 +361,7 @@ onMounted(() => {
     compareMap,
     props.zoomToExtent,
     selectedItem,
+    props.baseLayers,
   );
   // After the initial mount and "jump", set the animation duration for subsequent flyTo calls
   nextTick(() => {
@@ -359,14 +369,23 @@ onMounted(() => {
   });
 });
 
+// sync map loading with the global loading state
+useMapLoading(eoxMap, compareMap);
+
 useUpdateTooltipProperties(eodashCollections, tooltipProperties);
 
 const mainTooltipStyles = computed(() => ({
-  visibility: tooltipProperties.value.length ? "visible" : "hidden",
+  visibility:
+    tooltipProperties.value.length || !!tooltipAdapter.value
+      ? "visible"
+      : "hidden",
 }));
 
 const compareTooltipStyles = computed(() => ({
-  visibility: compareTooltipProperties.value.length ? "visible" : "hidden",
+  visibility:
+    compareTooltipProperties.value.length || !!tooltipAdapter.value
+      ? "visible"
+      : "hidden",
 }));
 /**
  * @param {"main" | "compare"} map
@@ -392,6 +411,9 @@ const tooltipPropertyTransform = (map) => {
       (prop) => prop.id === param.key,
     );
     if (!tooltipProp) {
+      if (tooltipAdapter.value) {
+        return tooltipAdapter.value(param, map);
+      }
       return undefined;
     }
     if (typeof param.value === "object") {
@@ -403,7 +425,6 @@ const tooltipPropertyTransform = (map) => {
         : 4;
       param.value = Number(param.value).toFixed(decimals).toString();
     }
-
     return {
       key: tooltipProp.title || tooltipProp.id,
       value: param.value + " " + (tooltipProp.appendix || ""),
@@ -420,58 +441,6 @@ onMounted(() => {
 </script>
 
 <style scoped>
-#cursor-coordinates {
-  position: fixed;
-  left: 24px;
-  bottom: 54px; /* Tighter spacing: watermark at 6px + ~48px */
-  color: rgba(0, 0, 0, 0.9);
-  font-size: 10px;
-  font-family: var(--eox-body-font-family);
-  background: #fffe;
-  border-radius: 4px;
-  border: none;
-  padding: 0px 3px;
-  max-height: 24px;
-}
-
-@media (max-width: 959px) {
-  #cursor-coordinates {
-    display: none; /* Hidden in mobile mode */
-  }
-}
-
-#scale-line {
-  position: fixed;
-  left: 24px;
-  bottom: 28px; /* Tighter spacing: watermark at 6px + ~22px */
-  color: #fff;
-}
-
-@media (max-width: 959px) {
-  #scale-line {
-    bottom: 102px; /* Adjusted for mobile bottom nav - closer to coordinates */
-  }
-}
-
-:deep(.ol-scale-line) {
-  background: #fffe !important;
-  border-radius: 4px !important;
-  border: none !important;
-  padding: 0px 3px 3px 3px !important;
-  font-size: 10px !important;
-  font-family: var(--eox-body-font-family);
-  max-height: 20px;
-}
-:deep(.ol-scale-line-inner) {
-  display: flex;
-  justify-content: center;
-  border: 1px solid rgba(0, 0, 0, 0.5) !important;
-  border-top: none !important;
-  color: #333 !important;
-  font-weight: 500 !important;
-  transform: translateY(1px);
-}
-
 .map-buttons-container {
   position: fixed;
   left: 0;

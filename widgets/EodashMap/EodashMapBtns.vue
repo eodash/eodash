@@ -5,30 +5,28 @@
       class="primary small circle small-elevate"
       @click="onMapZoomIn"
     >
-      <i class="small"
-        ><svg viewBox="0 0 24 24"><path :d="mdiPlus" /></svg>
+      <i class="small">
+        <svg viewBox="0 0 24 24"><path :d="mdiPlus"></path></svg>
       </i>
       <div class="tooltip left">Zoom in</div>
     </button>
-
     <button
       v-if="enableZoom && !isGlobe"
       class="primary small circle small-elevate"
       @click="onMapZoomOut"
     >
-      <i class="small"
-        ><svg viewBox="0 0 24 24"><path :d="mdiMinus" /></svg>
+      <i class="small">
+        <svg viewBox="0 0 24 24"><path :d="mdiMinus"></path></svg>
       </i>
       <div class="tooltip left">Zoom out</div>
     </button>
-
     <button
       v-if="exportMap"
       class="primary small circle small-elevate"
       @click="showMapState = !showMapState"
     >
-      <i class="small"
-        ><svg viewBox="0 0 24 24"><path :d="mdiMapPlus" /></svg>
+      <i class="small">
+        <svg viewBox="0 0 24 24"><path :d="mdiMapPlus"></path></svg>
       </i>
       <div class="tooltip left">Extract storytelling configuration</div>
     </button>
@@ -39,8 +37,8 @@
       class="primary small circle small-elevate"
       @click="changeMapProjection(availableMapProjection)"
     >
-      <i class="small"
-        ><svg viewBox="0 0 24 24"><path :d="mdiEarthBox" /></svg>
+      <i class="small">
+        <svg viewBox="0 0 24 24"><path :d="mdiEarthBox"></path></svg>
       </i>
       <div class="tooltip left">Change map projection</div>
     </button>
@@ -49,22 +47,10 @@
       class="primary small circle small-elevate"
       @click="onCompareClick(compareIndicators)"
     >
-      <i class="small"
-        ><svg viewBox="0 0 24 24"><path :d="compareIcon" /></svg>
+      <i class="small">
+        <svg viewBox="0 0 24 24"><path :d="compareIcon"></path></svg>
       </i>
       <div class="tooltip left">Compare mode</div>
-    </button>
-    <button
-      v-if="backToPOIs && (poi || comparePoi)"
-      class="primary small circle small-elevate"
-      @click="loadPOiIndicator()"
-    >
-      <i class="small"
-        ><svg viewBox="0 0 24 24">
-          <path :d="mdiStarFourPointsCircleOutline" />
-        </svg>
-      </i>
-      <div class="tooltip left">Back to POIs</div>
     </button>
     <button
       v-if="enableGlobe && !isInCompareMode"
@@ -102,20 +88,36 @@
         @close="showFeedback = false"
       ></eox-feedback>
     </div>
-    <eox-geosearch
+    <button
       v-if="mapEl && !isGlobe && enableSearch"
-      :for="mapEl"
-      :endpoint="opencageUrl"
-      :params="searchParams"
-      class="geosearch-detached"
-      label="Search"
-      small
-      button
-      list-direction="left"
-      results-direction="down"
-      tooltip="Search"
-      tooltip-direction="left"
-    ></eox-geosearch>
+      class="primary small circle small-elevate"
+    >
+      <eox-geosearch
+        :for="mapEl"
+        :endpoint="opencageUrl"
+        :params="searchParams"
+        class="geosearch-detached"
+        label="Search"
+        small
+        button
+        list-direction="left"
+        results-direction="down"
+        tooltip="Search"
+        tooltip-direction="left"
+      ></eox-geosearch>
+    </button>
+    <button
+      v-if="backToPOIs && (poi || comparePoi)"
+      class="primary small circle small-elevate"
+      @click="loadPOiIndicator()"
+    >
+      <i class="small">
+        <svg viewBox="0 0 24 24">
+          <path :d="mdiStarFourPointsCircleOutline"></path>
+        </svg>
+      </i>
+      <div class="tooltip left">Back to POIs</div>
+    </button>
     <PopUp
       v-model="showCompareIndicators"
       :maxWidth="popupWidth"
@@ -126,9 +128,29 @@
       <EodashItemFilter
         v-bind="itemFilterConfig"
         :enableCompare="true"
-        @select="onSelectCompareIndicator"
+        @select="onSelectCompareIndicator(compareIndicators)"
       />
     </PopUp>
+    <v-alert
+      v-if="showMosaicHint"
+      class="mosaic-hint pa-2"
+      color="secondary"
+      type="info"
+      variant="elevated"
+      density="compact"
+      elevation="4"
+    >
+      <template v-if="showItemViewHint">
+        Viewing individual item —
+        <a class="mosaic-hint-link" @click.prevent="returnToOverview.emit()">
+          Back to overview
+        </a>
+      </template>
+      <template v-else-if="showZoomHint">Zoom in to explore the data</template>
+      <template v-else-if="showNoDataHint">
+        No data here - pan or change filters
+      </template>
+    </v-alert>
   </div>
 </template>
 <script setup>
@@ -140,8 +162,10 @@ import {
   comparePoi,
   isGlobe,
   mapEl,
+  mapPosition,
   poi,
 } from "@/store/states";
+import { useMosaicState, normalizeGlobeZoom } from "@/eodashSTAC/mosaic";
 import {
   mdiCompare,
   mdiCompareRemove,
@@ -195,11 +219,13 @@ const {
     default: true,
   },
   compareIndicators: {
-    /** @type {import("vue").PropType<boolean | {
-    compareTemplate?:string;
-    fallbackTemplate?:string;
-    itemFilterConfig?:Partial<InstanceType<import("^/EodashItemFilter.vue").default>["$props"]>
-    }> }*/
+    /**
+     * @type {import("vue").PropType<boolean | {
+     * compareTemplate?:string;
+     * fallbackTemplate?:string;
+     * itemFilterConfig?:Partial<InstanceType<import("./EodashItemFilter.vue").default>["$props"]>
+     * }> }
+     */
     type: [Boolean, Object],
     default: true,
   },
@@ -267,6 +293,32 @@ useTransparentPanel(rootRef);
 
 const opencageApiKey = process.env.EODASH_OPENCAGE || "NO_KEY_FOUND";
 const opencageUrl = `https://api.opencagedata.com/geocode/v1/json?key=${opencageApiKey}`;
+
+const {
+  latestLayer,
+  isItemView,
+  visibilityThreshold,
+  returnToOverview,
+  hasDataInView,
+} = useMosaicState();
+
+const showItemViewHint = computed(
+  () => isItemView.value && !!latestLayer.value,
+);
+
+const showZoomHint = computed(() => {
+  if (!latestLayer.value || isItemView.value) return false;
+  const rawZ = mapPosition.value?.[2] ?? 4;
+  return normalizeGlobeZoom(rawZ) < visibilityThreshold.value;
+});
+
+const showNoDataHint = computed(
+  () => !!latestLayer.value && !isItemView.value && !hasDataInView.value,
+);
+
+const showMosaicHint = computed(
+  () => showItemViewHint.value || showZoomHint.value || showNoDataHint.value,
+);
 </script>
 
 <style scoped>
@@ -296,11 +348,20 @@ const opencageUrl = `https://api.opencagedata.com/geocode/v1/json?key=${opencage
   pointer-events: auto !important;
 }
 
-/* Container constraints removal */
-eox-geosearch {
-  position: relative !important;
-  width: 40px;
-  overflow: visible !important;
+.mosaic-hint {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
   z-index: 10;
+  opacity: 0.8;
+  border-radius: 8px;
+  pointer-events: auto;
+}
+
+.mosaic-hint-link {
+  color: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+  pointer-events: auto;
 }
 </style>

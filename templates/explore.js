@@ -1,4 +1,3 @@
-// import { includesProcess } from "@/store/actions";
 /** @type {import("@/types").Template} */
 export default {
   gap: 16,
@@ -23,6 +22,7 @@ export default {
     widget: {
       name: "EodashMap",
       properties: {
+        zoomToExtent: false,
         enableCompare: true,
         btns: {
           enableZoom: true,
@@ -30,21 +30,23 @@ export default {
           enableChangeProjection: true,
           enableCompareIndicators: {
             fallbackTemplate: "explore",
+            compareTemplate: "compare",
             itemFilterConfig: {
               imageProperty: "assets.thumbnail.href",
             },
           },
-          enableSearch: true,
+          enableBackToPOIs: false,
+          enableSearch: false,
         },
       },
     },
   },
   widgets: [
     {
-      id: "Layercontrol",
+      id: "explore-layercontrol",
       type: "internal",
       title: "Layers",
-      layout: { x: "9/9/10", y: 0, w: "3/3/2", h: 12 },
+      layout: { x: "9/9/10", y: 0, w: "3/3/2", h: 11 },
       widget: {
         name: "EodashLayerControl",
       },
@@ -53,9 +55,13 @@ export default {
       id: "ItemCatalog",
       title: "Catalog",
       type: "internal",
-      layout: { x: 0, y: 0, w: "3/3/2", h: 12 },
+      layout: { x: 0, y: 0, w: "3/3/2", h: 11 },
       widget: {
         name: "EodashItemCatalog",
+        properties: {
+          layoutTarget: undefined,
+          hoverProperties: ["datetime", "eo:cloud_cover"],
+        },
       },
     },
   ],

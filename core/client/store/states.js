@@ -2,7 +2,7 @@
 import log from "loglevel";
 log.setLevel(log.levels.WARN, true);
 
-import { ref, shallowRef } from "vue";
+import { reactive, ref, shallowRef } from "vue";
 
 /** Currently selected STAC endpoint */
 export const currentUrl = ref("");
@@ -30,7 +30,7 @@ export const registeredProjections = ["EPSG:4326", "EPSG:3857"];
 /** available projection to be rendered by `EodashMap` */
 export const availableMapProjection = ref("EPSG:3857");
 
-/** @type {import("vue").Ref<import("@eox/map").EOxMap | null>} */
+/** @type {import("vue").Ref<import("@eox/map").EOxMap & { mapUpdateId?: number } | null>} */
 export const mapEl = shallowRef(null);
 
 /** @type {import("vue").Ref<import("@eox/map").EOxMap | null>} */
@@ -73,3 +73,21 @@ export const chartSpec = ref(null);
  * @type {import("vue").Ref<import("vega-embed").VisualizationSpec | null>}
  */
 export const compareChartSpec = ref(null);
+
+/**
+ * Global loading state.
+ * - `loading.activeLoads` — increment/decrement to track concurrent loads
+ * - `loading.value` — derived boolean, true when `activeLoads > 0`
+ */
+export const loading = reactive({
+  activeLoads: 0,
+  get value() {
+    return this.activeLoads > 0;
+  },
+});
+
+/**
+ * Adapter allows external widgets to hook into tooltip property transformation
+ * @type {import("vue").Ref<((param: {key: string, value: any}, map?: string) => {key: string, value: any} | undefined) | null>}
+ */
+export const tooltipAdapter = shallowRef(null);
