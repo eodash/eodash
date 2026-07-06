@@ -1,9 +1,6 @@
 <template>
-  <div 
-    ref="container" 
-    class="eodash-chart-wrapper"
-  >
-    <div 
+  <div ref="container" class="eodash-chart-wrapper">
+    <div
       class="chart-frame"
       :style="{ paddingBottom: hasBindings ? '25px' : '0px' }"
     >
@@ -77,14 +74,20 @@ const usedChartSpec = computed(() => {
 const hasBindings = computed(() => {
   const spec = usedChartSpec.value;
   if (!spec) return false;
-  
+
   // Recursively search for any object with a 'bind' key that represents a physical UI input
   let found = false;
+  /** @param {any} obj */
   const searchBindings = (obj) => {
-    if (found || !obj || typeof obj !== 'object') return;
-    
+    if (found || !obj || typeof obj !== "object") return;
+
     // UI bindings that take up physical DOM space are objects with an 'input' property.
-    if ('bind' in obj && typeof obj.bind === 'object' && obj.bind !== null && 'input' in obj.bind) {
+    if (
+      "bind" in obj &&
+      typeof obj.bind === "object" &&
+      obj.bind !== null &&
+      "input" in obj.bind
+    ) {
       found = true;
       return;
     }
@@ -96,33 +99,37 @@ const hasBindings = computed(() => {
 
 const renderedChartSpec = ref(null);
 
-watch(usedChartSpec, (newSpec) => {
-  if (!newSpec) {
-    renderedChartSpec.value = null;
-    return;
-  }
-  
-  // Create a deep copy so we can safely mutate it
-  const adjustedSpec = JSON.parse(JSON.stringify(newSpec));
-  
-  // Force the chart to be fully responsive to its CSS container
-  adjustedSpec.height = "container";
-  adjustedSpec.width = "container";
+watch(
+  usedChartSpec,
+  (newSpec) => {
+    if (!newSpec) {
+      renderedChartSpec.value = null;
+      return;
+    }
 
-  // Delay passing the spec to eox-chart until the next DOM update cycle.
-  // This ensures the dynamic chartStyles are physically applied
-  // to the container BEFORE Vega calculates its canvas size.
-  nextTick(() => {
-    renderedChartSpec.value = adjustedSpec;
-    chartRenderKey.value = Math.random(); // Force eox-chart to completely remount
-    
-    // Force a browser-level resize event after the chart mounts.
-    // This tells Vega to re-read the container dimensions once the CSS has finished painting.
-    setTimeout(() => {
-      window.dispatchEvent(new Event('resize'));
-    }, 150);
-  });
-}, { immediate: true });
+    // Create a deep copy so we can safely mutate it
+    const adjustedSpec = JSON.parse(JSON.stringify(newSpec));
+
+    // Force the chart to be fully responsive to its CSS container
+    adjustedSpec.height = "container";
+    adjustedSpec.width = "container";
+
+    // Delay passing the spec to eox-chart until the next DOM update cycle.
+    // This ensures the dynamic chartStyles are physically applied
+    // to the container BEFORE Vega calculates its canvas size.
+    nextTick(() => {
+      renderedChartSpec.value = adjustedSpec;
+      chartRenderKey.value = Math.random(); // Force eox-chart to completely remount
+
+      // Force a browser-level resize event after the chart mounts.
+      // This tells Vega to re-read the container dimensions once the CSS has finished painting.
+      setTimeout(() => {
+        window.dispatchEvent(new Event("resize"));
+      }, 150);
+    });
+  },
+  { immediate: true },
+);
 
 const chartRenderKey = ref(0);
 const containerEl = useTemplateRef("container");
@@ -141,7 +148,7 @@ onMounted(() => {
     if (el) {
       const eoxChart = el.querySelector("eox-chart");
       if (eoxChart && eoxChart.shadowRoot) {
-        if (!eoxChart.shadowRoot.querySelector('#eodash-chart-styles')) {
+        if (!eoxChart.shadowRoot.querySelector("#eodash-chart-styles")) {
           const style = document.createElement("style");
           style.id = "eodash-chart-styles";
           style.innerHTML = `
@@ -219,7 +226,7 @@ onBeforeUnmount(() => {
 const chartStyles = computed(() => {
   return {
     height: "100%",
-    width: "100%"
+    width: "100%",
   };
 });
 

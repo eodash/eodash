@@ -15,8 +15,8 @@
       >
       </EodashChart>
     </div>
-    <div 
-      class="eodash-process-actions" 
+    <div
+      class="eodash-process-actions"
       v-if="showExecBtn || (processResults.length && isProcessed && !isAsync)"
     >
       <v-btn
@@ -128,11 +128,13 @@ watch(jsonformEl, (el) => {
     }
 
     const injectDrawtoolsStyle = () => {
-      const drawtools = el.shadowRoot.querySelector('eox-drawtools');
+      const drawtools = el?.shadowRoot?.querySelector('eox-drawtools');
       if (drawtools && drawtools.shadowRoot) {
-        if (!drawtools.shadowRoot.getElementById('eodash-drawtools-indent-style')) {
-          const dtStyle = document.createElement('style');
-          dtStyle.id = 'eodash-drawtools-indent-style';
+        if (
+          !drawtools.shadowRoot.getElementById("eodash-drawtools-indent-style")
+        ) {
+          const dtStyle = document.createElement("style");
+          dtStyle.id = "eodash-drawtools-indent-style";
           dtStyle.textContent = `
             eox-drawtools-controller {
               display: flex;
