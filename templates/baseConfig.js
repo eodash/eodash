@@ -21,6 +21,8 @@ const baseConfig = {
       { url: "api.explorer.eopf.copernicus.eu", titilerVersion: 2 },
     ],
     rasterEndpoint: "https://api.explorer.eopf.copernicus.eu/rstaging",
+    colormapRegistry:
+      "https://raw.githubusercontent.com/eurodatacube/eodash-assets/refs/heads/main/defaults/colormaps.json",
   },
   brand: {
     noLayout: true,
