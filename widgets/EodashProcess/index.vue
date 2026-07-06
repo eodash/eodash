@@ -97,28 +97,64 @@ watch(jsonformEl, (el) => {
       style.id = styleId;
       style.textContent = `
         .form-control:has(eox-drawtools) {
-          display: flex;
-          align-items: center;
-          gap: 15px;
-          border: none !important;
+          position: relative;
           padding: 8px 12px !important;
+          border: none !important;
           background: transparent !important;
         }
         .form-control:has(eox-drawtools) > label {
+          position: absolute;
+          left: 12px;
+          top: 8px;
           margin: 0 !important;
-          flex-shrink: 0;
-          min-width: 120px;
-          line-height: 1;
+          width: calc(100% - 180px); /* Give label maximum available width */
+          line-height: 1.2;
           display: flex;
-          align-items: center;
+          align-items: flex-start;
+          padding-top: 8px;
+          pointer-events: none; /* Let clicks pass through to buttons if they overlap slightly */
         }
         .form-control:has(eox-drawtools) > eox-drawtools {
-          flex-grow: 1;
-          display: flex;
-          align-items: center;
+          display: block;
+          width: 100%;
         }
       `;
       el.shadowRoot.appendChild(style);
+    }
+
+    const injectDrawtoolsStyle = () => {
+      const drawtools = el.shadowRoot.querySelector('eox-drawtools');
+      if (drawtools && drawtools.shadowRoot) {
+        if (!drawtools.shadowRoot.getElementById('eodash-drawtools-indent-style')) {
+          const dtStyle = document.createElement('style');
+          dtStyle.id = 'eodash-drawtools-indent-style';
+          dtStyle.textContent = `
+            eox-drawtools-controller {
+              display: flex;
+              justify-content: flex-end; /* Push buttons to the right */
+              min-height: 40px;
+              width: 100%;
+            }
+            eox-drawtools-list {
+              display: block;
+              margin-top: 10px;
+              width: 100%;
+            }
+          `;
+          drawtools.shadowRoot.appendChild(dtStyle);
+          return true;
+        }
+      }
+      return false;
+    };
+
+    if (!injectDrawtoolsStyle()) {
+      const observer = new MutationObserver(() => {
+        if (injectDrawtoolsStyle()) {
+          observer.disconnect();
+        }
+      });
+      observer.observe(el.shadowRoot, { childList: true, subtree: true });
     }
   }
 });
