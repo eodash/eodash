@@ -2,6 +2,7 @@ import { toAbsolute } from "stac-js/src/http.js";
 import axios from "@/plugins/axios";
 import log from "loglevel";
 import mustache from "mustache";
+import { updateVectorLayerStyle } from "@eox/layercontrol";
 import { getStyleVariablesState } from "./triggers.js";
 import { itemsCache, splitItemsCache } from "@/utils/states.js";
 
@@ -639,8 +640,8 @@ export const removeUnneededProperties = (layers, formValues = {}) => {
         );
         clonedLayer = JSON.parse(renderedString);
       } catch (e) {
-        console.warn(
-          "Failed to apply mustache templating during export cleanup:",
+        log.warn(
+          "[eodash] Failed to apply mustache templating during export cleanup:",
           e,
         );
       }
@@ -652,41 +653,11 @@ export const removeUnneededProperties = (layers, formValues = {}) => {
       ...flatFormValues,
     };
 
-    // Also update the exported variables dictionary so it's correct if OL re-reads it
-    if (clonedLayer.style && clonedLayer.style.variables) {
-      clonedLayer.style.variables = styleVariables;
-    }
-
-    if (Object.keys(styleVariables).length > 0) {
-      /**
-       * @param {any} obj
-       * @returns {any}
-       */
-      const burnVars = (obj) => {
-        if (Array.isArray(obj)) {
-          // Check if this array is exactly ["var", "variable_name"]
-          if (
-            obj.length === 2 &&
-            obj[0] === "var" &&
-            typeof obj[1] === "string"
-          ) {
-            const varName = obj[1];
-            if (varName in styleVariables) {
-              return styleVariables[varName];
-            }
-          }
-          // Otherwise, recurse into the array
-          for (let i = 0; i < obj.length; i++) {
-            obj[i] = burnVars(obj[i]);
-          }
-        } else if (obj !== null && typeof obj === "object") {
-          for (const key in obj) {
-            obj[key] = burnVars(obj[key]);
-          }
-        }
-        return obj;
-      };
-      clonedLayer = burnVars(clonedLayer);
+    if (clonedLayer.style && Object.keys(styleVariables).length > 0) {
+      clonedLayer.style = updateVectorLayerStyle({
+        ...clonedLayer.style,
+        variables: styleVariables,
+      });
     }
 
     const {
