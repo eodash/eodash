@@ -1,6 +1,18 @@
 # Changelog
 
 
+## [5.7.1](https://github.com/eodash/eodash/compare/eodash-v5.7.0...eodash-v5.7.1) (2026-07-02)
+
+
+### Features
+
+* Mosaic endpoint integration & GeoZarr support ([#289](https://github.com/eodash/eodash/issues/289)) ([b090f00](https://github.com/eodash/eodash/commit/b090f00e8b415f816281a39d2959c240e093ce2d))
+
+
+### Bug Fixes
+
+* Prepare and Update Docs ([#404](https://github.com/eodash/eodash/issues/404)) ([f88989b](https://github.com/eodash/eodash/commit/f88989bf3ab2f8839fecf886e9c213652e310225))
+
 ## [5.7.0](https://github.com/eodash/eodash/compare/eodash-v5.6.1...eodash-v5.7.0) (2026-05-21)
 
 

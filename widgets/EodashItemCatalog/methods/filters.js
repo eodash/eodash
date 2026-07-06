@@ -1,6 +1,8 @@
 import { sanitizeBbox } from "@/eodashSTAC/helpers";
 import { indicator, mapEl } from "@/store/states";
 import { useSTAcStore } from "@/store/stac";
+import axios from "@/plugins/axios";
+import { buildCqlFilter } from "@/eodashSTAC/cql";
 
 /**
  *
@@ -43,14 +45,20 @@ export const createSubtitleProperty = (filtersConfig) => {
  *   title?: string,
  *   min?: number,
  *   max?: number,
+ *   step?: number,
  *   filterKeys?: string[],
  *   state?: Record<string, boolean>,
  *   placeholder?: string,
+ *   format?: string,
  * }>} filtersConfig
+ * @param {boolean} datetimeFilter
  */
 // Transform simple filter configs into eox-itemfilter format
-export const createFilterProperties = (filtersConfig) => {
+export const createFilterProperties = (filtersConfig, datetimeFilter) => {
   const store = useSTAcStore();
+  const customDatetimeConfig = filtersConfig.find(
+    (f) => f.property === "datetime",
+  );
   const baseFilters = [
     {
       key: "collection",
@@ -58,18 +66,25 @@ export const createFilterProperties = (filtersConfig) => {
       type: "multiselect",
       placeholder: "Select collections",
       inline: false,
-      filterKeys: store.stac?.map((col) => col.id) || [],
+      filterKeys:
+        store.stac?.filter((col) => col.id).map((col) => col.id) || [],
       ...(indicator.value && { state: { [indicator.value]: true } }),
     },
-    // {
-    //   key: "properties.datetime",
-    //   title: "Date",
-    //   type: "range",
-    //   format: "date",
-    // }
+    ...(datetimeFilter || customDatetimeConfig
+      ? [
+          {
+            key: "datetime",
+            title: "Date",
+            type: "range",
+            format: "date",
+            ...(customDatetimeConfig || {}),
+          },
+        ]
+      : []),
   ];
 
   const dynamicFilters = filtersConfig
+    .filter((f) => f.property !== "datetime")
     .map((filter) => {
       const propertyKey = `properties.${filter.property}`;
 
@@ -79,8 +94,12 @@ export const createFilterProperties = (filtersConfig) => {
           title: filter.title || filter.property,
           type: "range",
           expanded: true,
+          min: filter.min,
+          max: filter.max,
+          step: filter.step,
+          format: filter.format,
           filterKeys: [filter.min || 0, filter.max || 100],
-          state: {
+          state: filter.state ?? {
             min: filter.min ?? 0,
             max: filter.max ?? 100,
           },
@@ -115,64 +134,27 @@ export const createFilterProperties = (filtersConfig) => {
 };
 
 /**
- * Build STAC API filter string from dynamic filters
- * @param {Record<string,any>} filters
- * @param {import("../types").FiltersConfig} propsFilters
- * @returns {string}
- */
-export const buildStacFilters = (filters, propsFilters) => {
-  /** @type {string[]} */
-  const stacFilters = [];
-
-  propsFilters.forEach((filterConfig) => {
-    const filterKey = `properties.${filterConfig.property}`;
-    const filterValue = filters[filterKey];
-
-    if (!filterValue) return;
-
-    if (filterConfig.type === "range" && filterValue.state) {
-      const { min, max } = filterValue.state;
-
-      // Add range filters based on configuration
-      if (min !== undefined && min > (filterConfig.min || 0)) {
-        stacFilters.push(`${filterConfig.property}>=${min}`);
-      }
-      if (max !== undefined && max < (filterConfig.max || 100)) {
-        stacFilters.push(`${filterConfig.property}<=${max}`);
-      }
-    } else if (
-      filterConfig.type === "multiselect" &&
-      filterValue.stringifiedState
-    ) {
-      // Handle multiselect filters
-      const selectedValues = filterValue.stringifiedState;
-      if (selectedValues.length > 0) {
-        stacFilters.push(`${filterConfig.property} IN (${selectedValues})`);
-      }
-    } else if (filterConfig.type === "select" && filterValue.stringifiedState) {
-      // Handle single select filters
-      const selectedValue = filterValue.stringifiedState;
-      if (selectedValue) {
-        stacFilters.push(`${filterConfig.property}='${selectedValue}'`);
-      }
-    }
-  });
-
-  return stacFilters.join(" AND ");
-};
-
-/**
  * Build search URL with proper STAC API parameters
- * @param {Record<string,any>} filters
- * @param {Array<any>} propsFilters
+ * @param {import("@/types").ItemFilterFilters} filters
  * @param {boolean} bboxFilter
+ * @param {boolean} datetimeFilter
+ * @param {Number} searchLimit
+ * @param {string} [sortBy]
+ * @param {string | null} [stacEndpoint]
  * @returns {string}
  */
-export const buildSearchUrl = (filters, propsFilters, bboxFilter) => {
+export const buildSearchUrl = (
+  filters,
+  bboxFilter,
+  datetimeFilter,
+  searchLimit,
+  sortBy,
+  stacEndpoint,
+) => {
   const store = useSTAcStore();
+  const endpoint = stacEndpoint || store.stacEndpoint;
   const params = new URLSearchParams();
 
-  // Add collections
   if (filters.collection?.stringifiedState) {
     params.append(
       "collections",
@@ -187,30 +169,112 @@ export const buildSearchUrl = (filters, propsFilters, bboxFilter) => {
     );
   }
 
-  // Add dynamic filters
-  const stacFilter = buildStacFilters(filters, propsFilters);
-  if (stacFilter) {
-    params.append("filter", stacFilter);
+  if (datetimeFilter) {
+    const datetime = formatDatetimeParam(
+      /** @type {import("@/types").ItemFilterRange} */ (filters.datetime),
+    );
+    if (datetime) {
+      params.append("datetime", datetime);
+    }
   }
 
-  // Add limit
-  params.append("limit", "100");
+  const cqlFilter = buildCqlFilter(filters);
+  if (cqlFilter) {
+    params.append("filter", cqlFilter);
+  }
+  if (sortBy) {
+    params.append("sortby", sortBy);
+  }
 
-  return `${store.stacEndpoint}/search?${params.toString()}`;
+  params.append("limit", searchLimit.toString());
+
+  return `${endpoint}/search?${params.toString()}`;
 };
 
 /**
  *
  * @param {import("../types").FiltersConfig} propsFilters
  * @param {boolean} bboxFilter
+ * @param {boolean} datetimeFilter
+ * @param {import("vue").Ref<import("@/types").GeoJsonFeature[]>} currentItems
+ * @param {import("vue").Ref<string>} sortBy
+ * @param {Number} searchLimit
+ * @param {import("vue").Ref<import("stac-ts").StacItem | null>} [selectedItemRef]
+ * @param {import("vue").Ref<string | null> | string | null} [stacEndpoint]
  */
-export const createExternalFilter = (propsFilters, bboxFilter) => {
+export const createExternalFilter = (
+  propsFilters,
+  bboxFilter,
+  datetimeFilter,
+  currentItems,
+  sortBy,
+  searchLimit,
+  selectedItemRef,
+  stacEndpoint,
+) => {
+  const hasCustomDatetime = propsFilters.some((f) => f.property === "datetime");
+  const effectiveDatetimeFilter = datetimeFilter || hasCustomDatetime;
+  let controller = new AbortController();
   /**
    * @param {Array<any>} _items
    * @param {Record<string,any>} filters
    */
   return (_items, filters) => ({
-    url: buildSearchUrl(filters, propsFilters, bboxFilter),
-    key: "features",
+    url: buildSearchUrl(
+      filters,
+      bboxFilter,
+      effectiveDatetimeFilter,
+      searchLimit,
+      sortBy.value,
+      typeof stacEndpoint === "object" ? stacEndpoint?.value : stacEndpoint,
+    ),
+    /** @param {string} url */
+    fetchFn: async (url) => {
+      controller.abort();
+      controller = new AbortController();
+      const signal = controller.signal;
+      return await axios
+        .get(url, { signal })
+        .then((res) => {
+          /** @type {import("@/types").GeoJsonFeature[]} */
+          const results = res.data.features;
+          const selected = selectedItemRef?.value;
+          if (selected && !results.some((r) => r.id === selected.id)) {
+            return [selected, ...results];
+          }
+          return results;
+        })
+        .catch((e) => {
+          // return previous items if aborted
+          if (e.name === "AbortError" || e.name === "CanceledError") {
+            return currentItems.value;
+          }
+          console.error(e);
+          return [];
+        });
+    },
   });
 };
+/**
+ *
+ * @param {import("@/types").ItemFilterRange} datetimeFilter
+ */
+function formatDatetimeParam(datetimeFilter) {
+  if (!datetimeFilter) {
+    return null;
+  }
+  const min = datetimeFilter?.min ? new Date(datetimeFilter.min) : null;
+  const max = datetimeFilter?.max ? new Date(datetimeFilter.max) : null;
+  const start = datetimeFilter.state?.min
+    ? new Date(datetimeFilter.state.min)
+    : null;
+  const end = datetimeFilter.state?.max
+    ? new Date(datetimeFilter.state.max)
+    : null;
+  const includeStart = start && (!min || start > min);
+  const includeEnd = end && (!max || end < max);
+  if (!includeStart && !includeEnd) {
+    return null;
+  }
+  return `${includeStart ? start.toISOString() : ".."}/${includeEnd ? end.toISOString() : ".."}`;
+}

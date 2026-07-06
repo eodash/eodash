@@ -5,19 +5,24 @@
       :key="mapElement"
       v-bind="config"
       :for="mapElement"
+      .showLayerZoomState="true"
       .customEditorInterfaces="bandsEditorInterface"
       @datetime:updated="debouncedHandleDateTime"
       toolsAsList="true"
       ref="eoxLayercontrol"
       @layerConfig:change="onLayerConfigChange"
     >
-      <slot name="layerstitle">
-        <div>
-          <p v-if="title" class="mt-2 mb-2">
-            <strong>{{ title }}</strong>
-          </p>
-        </div>
-      </slot>
+      <span
+        slot="layerstitle"
+        class="d-flex justify-space-between ma-2 pa-2 flex-shrink-0"
+      >
+        <h4 v-if="title">{{ title }}</h4>
+        <EodashLayoutSwitcher
+          v-if="enableLayoutSwitcher"
+          :target="layoutTarget"
+          :icon="layoutIcon"
+        />
+      </span>
     </eox-layercontrol>
   </span>
 </template>
@@ -33,9 +38,12 @@ import {
   layerControlFormValue,
   layerControlFormValueCompare,
 } from "@/utils/states";
+import { updateGeoZarrBands } from "@/eodashSTAC/helpers";
 import { storeToRefs } from "pinia";
 import { useSTAcStore } from "@/store/stac";
 import { bandsEditorInterface } from "@/utils/bands-editor";
+import EodashLayoutSwitcher from "^/EodashLayoutSwitcher.vue";
+import { mdiViewDashboard } from "@mdi/js";
 import { useEmitLayersUpdate } from "@/composables";
 
 if (!customElements.get("eox-layercontrol")) {
@@ -60,7 +68,10 @@ const props = defineProps({
   },
   /** Heading rendered above the layer list. Set to `false` to hide it. */
   title: {
-    type: [String, Boolean],
+    type: /** @type {import("vue").PropType<string | false>} */ ([
+      String,
+      Boolean,
+    ]),
     default: "Layers",
   },
   /** CSS custom-property overrides forwarded to the underlying `eox-layercontrol` element via its `style` attribute. */
@@ -68,6 +79,14 @@ const props = defineProps({
     type: /** @type {import("vue").PropType<Record<string, string>>} */ (
       Object
     ),
+    default: {},
+  },
+  layoutIcon: {
+    type: String,
+    default: mdiViewDashboard,
+  },
+  layoutTarget: {
+    type: String,
   },
 });
 
@@ -75,6 +94,10 @@ const config = {
   tools: props.tools,
   style: props.cssVars,
 };
+
+const enableLayoutSwitcher = computed(
+  () => !!props.layoutTarget && !!props.layoutIcon,
+);
 
 const { selectedCompareStac, selectedStac } = storeToRefs(useSTAcStore());
 
@@ -89,7 +112,7 @@ const eodashCols =
   props.map === "second" ? eodashCompareCollections : eodashCollections;
 const mapElement = props.map === "second" ? mapCompareEl : mapEl;
 
-/** @type { import("vue").Ref<HTMLElement & Record<string,any> | null>} */
+/** @type { import("vue").Ref<import("@eox/layercontrol").EOxLayerControl | null>} */
 const eoxLayercontrol = ref(null);
 
 // eox-timecontrol re-fires datetime:updated after layer reassignment;
@@ -161,6 +184,8 @@ const debouncedHandleDateTime = (evt) => {
  * @param {Event & {detail:{layer:import("ol/layer").Layer;jsonformValue:Record<string,any>}}} evt
  */
 const onLayerConfigChange = (evt) => {
+  updateGeoZarrBands(evt.detail.layer, evt.detail.jsonformValue);
+
   if (props.map === "second") {
     layerControlFormValueCompare.value = evt.detail.jsonformValue;
   } else {

@@ -24,6 +24,29 @@ export default {
     widget: {
       name: "EodashMap",
       properties: {
+        baseLayers: [
+          {
+            type: "Group",
+            properties: {
+              id: "BaseLayersGroup",
+              title: "Base Layers",
+            },
+            layers: [
+              {
+                type: "Tile",
+                properties: {
+                  id: "terrain-light;:;EPSG:3857",
+                  title: "Terrain Light",
+                },
+                source: {
+                  type: "XYZ",
+                  //@ts-expect-error todo
+                  url: "https://s2maps-tiles.eu/wmts/1.0.0/terrain-light_3857/default/g/{z}/{y}/{x}.jpeg",
+                },
+              },
+            ],
+          },
+        ],
         enableCompare: true,
         zoomToExtent: true,
         btns: {

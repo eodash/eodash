@@ -3,6 +3,7 @@ import axios from "@/plugins/axios";
 import log from "loglevel";
 import mustache from "mustache";
 import { getStyleVariablesState } from "./triggers.js";
+import { itemsCache, splitItemsCache } from "@/utils/states.js";
 
 /**
  *  @param {import("stac-ts").StacLink[]} [links]
@@ -172,7 +173,7 @@ export const extractRoles = (properties, linkOrAsset) => {
 
 /**
  * Extracts a single non-link style JSON from a STAC Item optionally for a selected key mapping
- * @param { import("stac-ts").StacItem | import("stac-ts").StacCollection } stacObject
+ * @param { import("stac-ts").StacItem | import("stac-ts").StacCollection | null | undefined} stacObject
  * @param {string | undefined} linkKey
  * @param {string | undefined} assetKey
  * @returns
@@ -182,6 +183,7 @@ export const fetchStyle = async (
   linkKey = undefined,
   assetKey = undefined,
 ) => {
+  if (!stacObject) return undefined;
   let styleLink = null;
   if (linkKey) {
     styleLink = stacObject.links.find(
@@ -212,6 +214,20 @@ export const fetchStyle = async (
     return { ...styleJson };
   }
 };
+
+/**
+ * Resolves a style by preferring the item's own `style` link and falling back
+ * to the collection's. Takes the same key arguments as `fetchStyle`.
+ *
+ * @param {import("stac-ts").StacItem | import("stac-ts").StacCollection} item
+ * @param {import("stac-ts").StacCollection | null | undefined} collection
+ * @param {string} [linkKey]
+ * @param {string} [assetKey]
+ * @returns {Promise<import("@/types").EodashStyleJson | undefined>}
+ */
+export const resolveStyle = async (item, collection, linkKey, assetKey) =>
+  (await fetchStyle(item, linkKey, assetKey)) ??
+  (await fetchStyle(collection, linkKey, assetKey));
 
 /**
  * Fetches all style JSONs from a STAC Item and returns an array with style objects
@@ -252,93 +268,73 @@ export const getProjectionCode = (projection) => {
 };
 
 /**
- * Extracts layercontrol LayerDatetime property from STAC Links
- * @param {import("stac-ts").StacLink[] | import("stac-ts").StacItem[] | undefined} [items]
- * @param {string|null} [currentStep]
- **/
-export const extractLayerTimeValues = (items, currentStep) => {
-  if (!currentStep || !items?.length) {
+ * Builds layercontrol LayerDatetime + timeControlValues from a list of dates.
+ *
+ * @param {Date[] | undefined} dates
+ * @param {string | null} [currentStep] - target datetime; snapped to the closest available date
+ * @returns {{ layerDatetime: Record<string, any> | undefined, timeControlValues: { date: string }[] | undefined }}
+ */
+export const extractLayerTimeValues = (dates, currentStep) => {
+  if (!currentStep || !dates?.length || dates.length <= 1) {
     return { layerDatetime: undefined, timeControlValues: undefined };
   }
 
-  // check if items has a datetime value
-  const dateProperty = getDatetimeProperty(items);
+  const controlValues = dates.map((d) => d.toISOString()).sort();
+  const timeControlValues = controlValues.map((date) => ({ date }));
 
-  if (!dateProperty) {
-    return { layerDatetime: undefined, timeControlValues: undefined };
-  }
-  /** @type {{date:string;itemId:string}[]} */
-  const timeValues = [];
-  try {
-    /**
-     *  @param {typeof timeValues} vals
-     *  @param {import("stac-ts").StacLink} link
-     */
-    const reduceLinks = (vals, link) => {
-      if (link[dateProperty] && link.rel === "item") {
-        vals.push({
-          itemId: /** @type {string} */ (link.id),
-          date: new Date(
-            /** @type {string} */ (link[dateProperty]),
-          ).toISOString(),
-        });
-      }
-      return vals;
-    };
-
-    /**
-     *
-     * @param {typeof timeValues} vals
-     * @param {import("stac-ts").StacItem} item
-     */
-    const reduceItems = (vals, item) => {
-      const date = item.properties?.[dateProperty];
-      if (date) {
-        vals.push({
-          itemId: /** @type {string} */ (item.id),
-          date: new Date(/** @type {string} */ (date)).toISOString(),
-          ...item.properties,
-        });
-      }
-      return vals;
-    };
-    currentStep = new Date(currentStep).toISOString();
-    //@ts-expect-error TODO
-    items.reduce(isSTACItem(items[0]) ? reduceItems : reduceLinks, timeValues);
-  } catch (e) {
-    console.warn("[eodash] not supported datetime format was provided", e);
-    return { layerDatetime: undefined, timeControlValues: undefined };
-  }
-  // not enough timeValues
-  if (timeValues.length <= 1) {
-    return { layerDatetime: undefined, timeControlValues: undefined };
-  }
-
-  // item datetime is not included in the item links datetime
-  if (!timeValues.some((val) => val.date === currentStep)) {
-    const currentStepTime = new Date(currentStep).getTime();
-    currentStep = timeValues.reduce((time, step) => {
-      const aDiff = Math.abs(new Date(time).getTime() - currentStepTime);
-      const bDiff = Math.abs(new Date(step.date).getTime() - currentStepTime);
-      return bDiff < aDiff ? step.date : time;
-    }, timeValues[0].date);
+  currentStep = new Date(currentStep).toISOString();
+  if (!controlValues.includes(currentStep)) {
+    const target = new Date(currentStep).getTime();
+    currentStep = controlValues.reduce((best, d) =>
+      Math.abs(new Date(d).getTime() - target) <
+      Math.abs(new Date(best).getTime() - target)
+        ? d
+        : best,
+    );
   }
 
   const layerDatetime = {
-    controlValues: timeValues.map((d) => d.date).sort(),
+    controlValues,
     currentStep,
     slider: true,
     navigation: true,
     play: false,
     displayFormat: "DD.MM.YYYY HH:mm",
     animateOnClickInterval: false,
+    showUTC: true,
   };
 
-  return {
-    layerDatetime,
-    timeControlValues: timeValues,
-  };
+  return { layerDatetime, timeControlValues };
 };
+
+/**
+ * Fetches the daily pre-aggregation data for a STAC collection if available.
+ * Returns the raw AggregationCollection,
+ * or null if no daily pre-aggregation link exists, or the fetch fails.
+ *
+ * @param {import("stac-ts").StacCollection | undefined} stacCollection
+ * @param {string} fallbackBaseUrl - base for relative href resolution when no `self` link is present
+ * @returns {Promise<any | null>}
+ */
+export async function fetchPreAggregations(stacCollection, fallbackBaseUrl) {
+  if (!stacCollection) return null;
+  const preAggregationLink = stacCollection.links?.find(
+    (l) => l.rel === "pre-aggregation" && l["aggregation:interval"] === "daily",
+  );
+  if (!preAggregationLink) return null;
+
+  try {
+    const selfLink = stacCollection.links?.find((l) => l.rel === "self")?.href;
+    const url = toAbsolute(
+      preAggregationLink.href,
+      selfLink || fallbackBaseUrl,
+    );
+    return await axios.get(url).then((resp) => resp.data);
+  } catch (e) {
+    console.warn("[eodash] Failed to fetch pre-aggregation", e);
+    return null;
+  }
+}
 
 /**
  * Recursively find all layers whose ID up to the first ; is same as given layer
@@ -348,6 +344,9 @@ export const extractLayerTimeValues = (items, currentStep) => {
  * @returns {import("@eox/map").EoxLayer[]} Matching layer objects.
  */
 export const findLayersByLayerPrefix = (layers, referenceLayer) => {
+  if (!layers || !referenceLayer) {
+    return [];
+  }
   const refId = referenceLayer?.properties?.id;
 
   if (typeof refId !== "string" || !refId.includes(";:;")) {
@@ -895,7 +894,12 @@ export function getDatetimeProperty(linksOrItems) {
   }
 
   // TODO: consider other properties for datetime ranges
-  const datetimeProperties = ["datetime", "start_datetime", "end_datetime"];
+
+  const datetimeProperties = /** @type {const} */ ([
+    "datetime",
+    "start_datetime",
+    "end_datetime",
+  ]);
   if (checkProperties) {
     for (const prop of datetimeProperties) {
       const propExists = linksOrItems.some(
@@ -938,12 +942,73 @@ export function isSTACItem(stacObject) {
 }
 
 /**
+ * Fetches items using a split strategy (past/future) around a center date
+ * @param {string} itemsUrl
+ * @param {string} query
+ * @param {string | Date} centerDatetime
+ * @param {number} maxNumber
+ * @returns {Promise<import("stac-ts").StacItem[]>}
+ */
+export const fetchSplitItems = async (
+  itemsUrl,
+  query,
+  centerDatetime,
+  maxNumber,
+) => {
+  const center = new Date(centerDatetime).toISOString();
+  const limit = Math.ceil(maxNumber / 2);
+
+  /** @param {"past"|"future"} direction */
+  const fetchSide = async (direction) => {
+    const isPast = direction === "past";
+    const datetimeRange = isPast ? `../${center}` : `${center}/..`;
+    const sortOrder = isPast ? "-datetime" : "+datetime";
+    const queryParams = new URLSearchParams(query);
+
+    queryParams.set("limit", limit.toString());
+    queryParams.set("datetime", datetimeRange);
+    queryParams.set("sortby", sortOrder);
+
+    const splitUrl = itemsUrl.split("/");
+    const collectionId = /** @type {string} */ (splitUrl.at(-2));
+    queryParams.set("collection", collectionId);
+
+    const searchEndpoint = `${splitUrl.slice(0, -3).join("/")}/search`;
+    const items = await axios
+      .get(searchEndpoint, { params: queryParams })
+      .then((res) => res.data.features);
+    return items;
+  };
+
+  const [pastItems, futureItems] = await Promise.all([
+    fetchSide("past"),
+    fetchSide("future"),
+  ]);
+
+  const allItems = [...pastItems, ...futureItems];
+
+  // check for duplicates by ids
+  const seen = new Set();
+  const uniqueItems = [];
+  for (const item of allItems) {
+    if (!seen.has(item.id)) {
+      seen.add(item.id);
+      uniqueItems.push(item);
+    }
+  }
+
+  return uniqueItems;
+};
+
+/**
  * Fetch all STAC items from a STAC API endpoint.
  * @param {string} itemsUrl
  * @param {string} [query]
  * @param {number} [limit=100] - The maximum number of items to fetch per request.
  * @param {boolean} [returnFirst] - If true, only the first page of results will be returned.
  * @param {number} [maxNumber=1000] - if the matched number of items exceed this, only the first page will be returned.
+ * @param {string | Date} [centerDatetime] - Date to center the search around if items exceed maxNumber
+ * @returns {Promise<import("stac-ts").StacItem[]>}
  */
 export async function fetchApiItems(
   itemsUrl,
@@ -951,23 +1016,42 @@ export async function fetchApiItems(
   limit = 100,
   returnFirst = false,
   maxNumber = 1000,
+  centerDatetime,
 ) {
-  itemsUrl = itemsUrl.includes("?") ? itemsUrl.split("?")[0] : itemsUrl;
-  itemsUrl += query ? `?limit=${limit}&${query}` : `?limit=${limit}`;
+  // Exclude centerDatetime from cache key - it's only used for split search fallback
+  const cacheKey = JSON.stringify({
+    itemsUrl,
+    query,
+    limit,
+    returnFirst,
+    maxNumber,
+  });
+
+  if (itemsCache.has(cacheKey)) {
+    return itemsCache.get(cacheKey) ?? [];
+  }
+
+  const urlQuery = new URLSearchParams(query);
+  urlQuery.set("limit", limit.toString());
+
+  let finalItemsUrl = itemsUrl.includes("?")
+    ? itemsUrl.split("?")[0]
+    : itemsUrl;
+  finalItemsUrl += urlQuery.keys().toArray().length
+    ? `?${urlQuery.toString()}`
+    : "";
 
   const itemsFeatureCollection = await axios
-    .get(itemsUrl)
+    .get(finalItemsUrl)
     .then((resp) => resp.data);
+
   /** @type {import("stac-ts").StacItem[]} */
   const items = itemsFeatureCollection.features;
-  const nextLink = itemsFeatureCollection.links?.find(
-    //@ts-expect-error TODO: itemsFeatureCollection is not typed
-    (link) => link.rel === "next",
-  );
-
-  if (!nextLink || returnFirst) {
+  if (returnFirst) {
+    itemsCache.set(cacheKey, items);
     return items;
   }
+
   /** @type {number} */
   const matchedItems = itemsFeatureCollection.numberMatched;
   // Avoid fetching too many items
@@ -975,26 +1059,70 @@ export async function fetchApiItems(
     console.warn(
       `[eodash] The number of items matched (${matchedItems}) exceeds the maximum allowed (${maxNumber})`,
     );
+    // we try to narrow down the search around the center datetime
+    if (centerDatetime) {
+      // Check if we have a cached split result that covers this centerDatetime
+      const splitCacheKey = JSON.stringify({ itemsUrl, query, maxNumber });
+      const cachedSplit = splitItemsCache.get(splitCacheKey);
+      const centerTime = new Date(centerDatetime).getTime();
+
+      if (
+        cachedSplit &&
+        centerTime >= cachedSplit.minTime &&
+        centerTime <= cachedSplit.maxTime
+      ) {
+        return cachedSplit.items;
+      }
+
+      const narrowedItems = await fetchSplitItems(
+        itemsUrl,
+        query ?? "",
+        centerDatetime,
+        maxNumber,
+      );
+
+      if (!narrowedItems.length) {
+        return narrowedItems;
+      }
+      const datetimeProperty = getDatetimeProperty(narrowedItems);
+      if (!datetimeProperty) {
+        return narrowedItems;
+      }
+
+      const times = narrowedItems
+        .map((i) =>
+          i.properties[datetimeProperty]
+            ? new Date(i.properties[datetimeProperty]).getTime()
+            : null,
+        )
+        .filter((t) => t !== null);
+      if (!times.length) {
+        return narrowedItems;
+      }
+      splitItemsCache.set(splitCacheKey, {
+        items: narrowedItems,
+        minTime: Math.min(...times),
+        maxTime: Math.max(...times),
+      });
+
+      return narrowedItems;
+    }
+
+    itemsCache.set(cacheKey, items);
     return items;
   }
 
-  let [nextLinkURL, nextLinkQuery] = nextLink.href.split("?");
-  nextLinkQuery = nextLinkQuery.replace(/limit=\d+/, "");
-  if (query) {
-    const queryParams = new URLSearchParams(query);
-    const nextLinkParams = new URLSearchParams(nextLinkQuery);
+  urlQuery.set("limit", maxNumber.toString());
 
-    for (const key of nextLinkParams.keys()) {
-      queryParams.delete(key);
-    }
-    const remainingQuery = queryParams.toString();
-    if (remainingQuery) {
-      nextLinkQuery += `&${remainingQuery}`;
-    }
-  }
-
-  const nextPage = await fetchApiItems(nextLinkURL, nextLinkQuery);
-  items.push(...nextPage);
+  const allItems = await axios
+    .get(itemsUrl + "?" + urlQuery.toString())
+    .then((resp) => resp.data.features)
+    .catch((err) => {
+      console.error(err);
+      return [];
+    });
+  items.splice(0, items.length, ...allItems);
+  itemsCache.set(cacheKey, items);
   return items;
 }
 /**
@@ -1031,4 +1159,169 @@ export function extractEoxLegendLink(link) {
     };
   }
   return extraProperties;
+}
+
+/**
+ * Locate the first sub-schema whose `format` matches by walking `properties`
+ * and the `oneOf` / `allOf` / `anyOf` combinators. Returns the schema path
+ * (array of keys/indices) from the root schema to the matched node, or
+ * undefined if not found. Empty array means the input schema itself matched.
+ *
+ * @param {Record<string, any> | null | undefined} schema
+ * @param {string} [format="bands"]
+ * @returns {(string | number)[] | undefined}
+ */
+export function getBandsProperty(schema, format = "bands") {
+  if (!schema || typeof schema !== "object") return undefined;
+  if (schema.format === format) return [];
+
+  if (schema.properties) {
+    for (const key of Object.keys(schema.properties)) {
+      const sub = getBandsProperty(schema.properties[key], format);
+      if (sub) return ["properties", key, ...sub];
+    }
+  }
+
+  for (const combinator of ["oneOf", "allOf", "anyOf"]) {
+    if (!Array.isArray(schema[combinator])) continue;
+    for (let i = 0; i < schema[combinator].length; i++) {
+      const sub = getBandsProperty(schema[combinator][i], format);
+      if (sub) return [combinator, i, ...sub];
+    }
+  }
+
+  return undefined;
+}
+
+/**
+ * Checks whether a GeoZarr layer's bands changed in the jsonform output and,
+ * if so, rebuilds the source with the new 3 selected bands.
+ * Gamma and rescale are handled automatically by `applyUpdatedStyles` via
+ * `updateStyleVariables` — this function only manages source reconstruction.
+ * Uses the existing source constructor to avoid import-version mismatches.
+ *
+ * @param {import("ol/layer/Layer").default} olLayer - Layer from layerConfig:change event
+ * @param {Record<string, any>} jsonformValue - Current jsonform output
+ * @returns {boolean} true if the source was rebuilt
+ */
+export function updateGeoZarrBands(olLayer, jsonformValue) {
+  /** @type {import("@eox/map/src/layers").EOxLayerType<"WebGLTile","GeoZarr">} */
+  const jsonLayer = olLayer.get("_jsonDefinition");
+  const updatedBands = jsonformValue.bands;
+  const isGeoZarr =
+    jsonLayer?.type === "WebGLTile" && jsonLayer?.source?.type === "GeoZarr";
+  if (!jsonLayer || !jsonLayer.source || !isGeoZarr || !updatedBands) {
+    return false;
+  }
+
+  const oldBands = jsonLayer.source?.bands;
+  if (JSON.stringify(updatedBands) === JSON.stringify(oldBands)) {
+    return false;
+  }
+  jsonLayer.source.bands = [...updatedBands];
+  olLayer.setSource(
+    new window.eoxMapAdvancedOlSources.GeoZarr(jsonLayer.source),
+  );
+  return true;
+}
+
+/**
+ * Applies titiler upscaling to an XYZ tile URL based on the matched endpoint config.
+ * - titiler v1: appends `@2x` to the `{y}` tile coordinate
+ * - titiler v2: adds `tilesize=512` query parameter (v2 removed the `@2x` suffix)
+ * Plain strings in the config default to v1 behavior for backward compatibility.
+ *
+ * @param {string} url - The XYZ tile URL template
+ * @param {Array<string | { url: string; titilerVersion?: 1 | 2 }>} upscalingEndpoints
+ * @returns {{ url: string; tileSize: [number, number] } | null} null if no endpoint matches
+ */
+export function applyTitilerUpscaling(url, upscalingEndpoints) {
+  const match = upscalingEndpoints.find((entry) => {
+    const endpointUrl = typeof entry === "string" ? entry : entry.url;
+    return url.includes(endpointUrl);
+  });
+
+  if (!match) {
+    return null;
+  }
+
+  const version = typeof match === "string" ? 1 : (match.titilerVersion ?? 1);
+
+  if (version === 2) {
+    const [base, query] = url.split("?");
+    const params = new URLSearchParams(query);
+    params.set("tilesize", "512");
+    return { url: `${base}?${params.toString()}`, tileSize: [512, 512] };
+  }
+
+  return { url: url.replace("{y}", "{y}@2x"), tileSize: [512, 512] };
+}
+
+/**
+ * Picks the render presets for a collection, preferring the collection's own
+ * STAC `renders` extension and falling back to client-provided config
+ *
+ * @param {import("stac-ts").StacCollection | null | undefined} collection
+ * @param {Record<string, Record<string, import("@/types").Render>> | undefined} [configRenders]
+ * @returns {Record<string, import("@/types").Render> | undefined}
+ */
+export function resolveRenders(collection, configRenders) {
+  if (collection?.renders) {
+    return /** @type {Record<string, import("@/types").Render>} */ (
+      collection.renders
+    );
+  }
+  return collection?.id ? configRenders?.[collection.id] : undefined;
+}
+
+/**
+ * Serializes an object into a TiTiler query string. Arrays join with commas;
+ * nested arrays repeat the key (e.g. `rescale: [[0,1]]` -> `rescale=0,1`);
+ * objects are JSON-encoded. Shared by the render-extension and mosaic paths.
+ * @param {Record<string,any>} obj
+ * @returns {string}
+ */
+export function encodeURLObject(obj) {
+  let str = "";
+  for (const key in obj) {
+    const value = obj[key];
+    if (value === null || value === undefined || value === "") {
+      continue;
+    }
+
+    const valueType = Array.isArray(value) ? "array" : typeof value;
+
+    switch (valueType) {
+      case "array": {
+        // Check if any element in the array is itself an array (multi-dimensional)
+        const hasNestedArrays = value.some((/** @type {any} */ item) =>
+          Array.isArray(item),
+        );
+
+        if (hasNestedArrays) {
+          // For multi-dimensional arrays, repeat the key with different values
+          for (const val of value) {
+            if (Array.isArray(val)) {
+              str += `${key}=${val.join(",")}&`;
+            } else {
+              str += `${key}=${val}&`;
+            }
+          }
+        } else {
+          // For simple arrays, join with commas
+          str += `${key}=${value.join(",")}&`;
+        }
+        break;
+      }
+      case "object": {
+        str += `${key}=${encodeURI(JSON.stringify(value))}&`;
+        break;
+      }
+      default: {
+        str += `${key}=${encodeURIComponent(value)}&`;
+        break;
+      }
+    }
+  }
+  return str;
 }

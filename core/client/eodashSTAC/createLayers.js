@@ -12,6 +12,10 @@ import {
   extractEoxLegendLink,
   addTooltipInteraction,
   fetchStyle,
+  resolveStyle,
+  getBandsProperty,
+  applyTitilerUpscaling,
+  encodeURLObject,
 } from "./helpers";
 import { handleAuthenticationOfLink } from "./auth";
 import log from "loglevel";
@@ -41,6 +45,7 @@ function buildCapabilitiesUrl(href) {
  * @param {import("stac-ts").StacItem | import("stac-ts").StacCollection } stacObject
  * @param {Record<string, unknown>} [layerDatetime]
  * @param {object | null} [extraProperties]
+ * @param {import("stac-ts").StacCollection | null} [collection] - Used to fall back to a collection-level style link.
  **/
 export async function createLayersFromAssets(
   collectionId,
@@ -49,6 +54,7 @@ export async function createLayersFromAssets(
   stacObject,
   layerDatetime,
   extraProperties,
+  collection,
 ) {
   log.debug("Creating layers from assets");
   const jsonArray = [];
@@ -60,18 +66,35 @@ export async function createLayersFromAssets(
 
   const fgbIdx = [];
   const fgbSources = [];
+  const zarrAssetIds = [];
+  const zarrIdx = [];
   const assetIds = [];
 
   for (const [idx, assetId] of Object.keys(assets).entries()) {
     assetIds.push(assetId);
 
-    if (assets[assetId]?.type === "application/geo+json") {
+    if (
+      assets[assetId]?.type?.includes("application/geo+json") &&
+      assets[assetId]?.href?.includes("http")
+    ) {
       geoJsonSources.push(assets[assetId].href);
       geoJsonIdx.push(idx);
-    } else if (assets[assetId]?.type === "application/vnd.flatgeobuf") {
+    } else if (
+      assets[assetId]?.type?.includes("application/vnd.flatgeobuf") &&
+      assets[assetId]?.href?.includes("http")
+    ) {
       fgbSources.push(assets[assetId].href);
       fgbIdx.push(idx);
-    } else if (assets[assetId]?.type === "image/tiff") {
+    } else if (
+      assets[assetId]?.type ==
+      "application/vnd.zarr; version=3; profile=multiscales"
+    ) {
+      zarrAssetIds.push(assetId);
+      zarrIdx.push(idx);
+    } else if (
+      assets[assetId]?.type?.includes("image/tiff") &&
+      assets[assetId]?.href?.includes("http")
+    ) {
       geoTIFFIdx.push(idx);
       geoTIFFSources.push({
         url: assets[assetId].href,
@@ -79,7 +102,7 @@ export async function createLayersFromAssets(
           ? { attributions: assets[assetId].attribution }
           : {}),
       });
-    } else if (assets[assetId]?.type === "application/geodb+json") {
+    } else if (assets[assetId]?.type?.includes("application/geodb+json")) {
       const responseData = await (await fetch(assets[assetId].href)).json();
       geoJsonIdx.push(idx);
       if (
@@ -140,11 +163,122 @@ export async function createLayersFromAssets(
     }
   }
 
+  if (geoTIFFSources.length) {
+    for (const [i, geotiffSource] of geoTIFFSources.entries()) {
+      const assetName = assetIds[geoTIFFIdx[i]];
+      const styles = await resolveStyle(
+        stacObject,
+        collection,
+        undefined,
+        assetName,
+      );
+      // get the correct style which is not attached to a link
+      let { layerConfig, style } = extractLayerConfig(collectionId, styles);
+      let assetLayerId = createAssetID(
+        collectionId,
+        stacObject.id,
+        geoTIFFIdx[i],
+      );
+      if (
+        assets[assetName]?.roles?.includes("overlay") ||
+        assets[assetName]?.roles?.includes("baselayer")
+      ) {
+        // to prevent them being removed by date change on main dataset
+        assetLayerId = assetName;
+      }
+      log.debug("Creating WebGLTile layer from GeoTIFF", assetLayerId);
+      log.debug("Configured Sources", geoTIFFSources);
+      const sources =
+        stacObject?.["eodash:merge_assets"] !== false
+          ? geoTIFFSources
+          : [geotiffSource];
+      const layer = {
+        type: "WebGLTile",
+        source: {
+          type: "GeoTIFF",
+          normalize: !style,
+          interpolate: false,
+          sources,
+        },
+        properties: {
+          id: assetLayerId,
+          title: assets[assetName]?.title || title,
+          layerConfig,
+          layerDatetime,
+        },
+        style,
+      };
+      if (extraProperties) {
+        layer.properties = { ...layer.properties, ...extraProperties };
+      }
+      extractRoles(layer.properties, assets[assetName]);
+      addTooltipInteraction(layer, style);
+      jsonArray.push(layer);
+      if (stacObject?.["eodash:merge_assets"] !== false) break;
+    }
+  }
+
+  if (zarrAssetIds.length) {
+    for (const [i, assetName] of zarrAssetIds.entries()) {
+      const fetchedStyle = await resolveStyle(
+        stacObject,
+        collection,
+        undefined,
+        assetName,
+      );
+      const { layerConfig, style } = extractLayerConfig(
+        collectionId,
+        fetchedStyle,
+      );
+      const bandsPath = getBandsProperty(layerConfig?.schema);
+      const defaultBands = bandsPath?.reduce(
+        (node, key) => node?.[key],
+        layerConfig?.schema,
+      )?.default ?? ["b04", "b03", "b02"];
+
+      let assetLayerId = createAssetID(collectionId, stacObject.id, zarrIdx[i]);
+      if (
+        assets[assetName]?.roles?.includes("overlay") ||
+        assets[assetName]?.roles?.includes("baselayer")
+      ) {
+        assetLayerId = assetName;
+      }
+
+      log.debug("Creating WebGLTile layer from GeoZarr", assetLayerId);
+
+      const layer = {
+        type: "WebGLTile",
+        properties: {
+          id: assetLayerId,
+          title: assets[assetName]?.title || title,
+          layerConfig,
+          layerDatetime,
+        },
+        source: {
+          type: "GeoZarr",
+          url: assets[assetName].href,
+          bands: defaultBands,
+        },
+        ...(style ? { style } : {}),
+      };
+      if (extraProperties) {
+        layer.properties = { ...layer.properties, ...extraProperties };
+      }
+      extractRoles(layer.properties, assets[assetName]);
+      jsonArray.push(layer);
+    }
+  }
+
   if (geoJsonSources.length) {
     for (const [i, geoJsonSource] of geoJsonSources.entries()) {
       // fetch styles and separate them by their mapping between links and assets
       const assetName = assetIds[geoJsonIdx[i]];
-      const styles = await fetchStyle(stacObject, undefined, assetName);
+      const styles = await resolveStyle(
+        stacObject,
+        collection,
+        undefined,
+        assetName,
+      );
       // get the correct style which is not attached to a link
       let { layerConfig, style } = extractLayerConfig(collectionId, styles);
       let assetLayerId = createAssetID(
@@ -210,7 +344,12 @@ export async function createLayersFromAssets(
     for (const [i, fgbSource] of fgbSources.entries()) {
       // fetch styles and separate them by their mapping between links and assets
       const assetName = assetIds[fgbIdx[i]];
-      const styles = await fetchStyle(stacObject, undefined, assetName);
+      const styles = await resolveStyle(
+        stacObject,
+        collection,
+        undefined,
+        assetName,
+      );
       // get the correct style which is not attached to a link
       let { layerConfig, style } = extractLayerConfig(collectionId, styles);
       let assetLayerId = createAssetID(collectionId, stacObject.id, fgbIdx[i]);
@@ -266,56 +405,6 @@ export async function createLayersFromAssets(
       addTooltipInteraction(layer, style);
       jsonArray.push(layer);
       // if we merged assets (default yes), then we can break from this loop
-      if (stacObject?.["eodash:merge_assets"] !== false) break;
-    }
-  }
-
-  if (geoTIFFSources.length) {
-    for (const [i, geotiffSource] of geoTIFFSources.entries()) {
-      const assetName = assetIds[geoTIFFIdx[i]];
-      const styles = await fetchStyle(stacObject, undefined, assetName);
-      // get the correct style which is not attached to a link
-      let { layerConfig, style } = extractLayerConfig(collectionId, styles);
-      let assetLayerId = createAssetID(
-        collectionId,
-        stacObject.id,
-        geoTIFFIdx[i],
-      );
-      if (
-        assets[assetName]?.roles?.includes("overlay") ||
-        assets[assetName]?.roles?.includes("baselayer")
-      ) {
-        // to prevent them being removed by date change on main dataset
-        assetLayerId = assetName;
-      }
-      log.debug("Creating WebGLTile layer from GeoTIFF", assetLayerId);
-      log.debug("Configured Sources", geoTIFFSources);
-      const sources =
-        stacObject?.["eodash:merge_assets"] !== false
-          ? geoTIFFSources
-          : [geotiffSource];
-      const layer = {
-        type: "WebGLTile",
-        source: {
-          type: "GeoTIFF",
-          normalize: !style,
-          interpolate: false,
-          sources,
-        },
-        properties: {
-          id: assetLayerId,
-          title: assets[assetName]?.title || title,
-          layerConfig,
-          layerDatetime,
-        },
-        style,
-      };
-      if (extraProperties) {
-        layer.properties = { ...layer.properties, ...extraProperties };
-      }
-      extractRoles(layer.properties, assets[assetName]);
-      addTooltipInteraction(layer, style);
-      jsonArray.push(layer);
       if (stacObject?.["eodash:merge_assets"] !== false) break;
     }
   }
@@ -441,7 +530,7 @@ export const createLayersFromLinks = async (
     const key =
       /** @type {string | undefined} */ (wmtsLink["key"]) || undefined;
 
-    const styles = await fetchStyle(item, key);
+    const styles = await resolveStyle(item, collection, key);
     // get the correct style which is attached to a link
     const returnedLayerConfig = extractLayerConfig(
       collectionId,
@@ -554,7 +643,7 @@ export const createLayersFromLinks = async (
     const rasterForm = rasterformURL
       ? await axios.get(rasterformURL).then((resp) => resp.data)
       : undefined;
-    const styles = await fetchStyle(item, key);
+    const styles = await resolveStyle(item, collection, key);
     // get the correct style which is attached to a link
     let { layerConfig, style } = extractLayerConfig(
       collectionId,
@@ -571,7 +660,6 @@ export const createLayersFromLinks = async (
       viewProjectionCode,
     );
     let xyzUrl = xyzLink.href;
-
     // TODO, this does not yet work between layer time changes because we do not get
     // updated variables from OL layer due to usage of tileurlfunction
 
@@ -585,11 +673,14 @@ export const createLayersFromLinks = async (
       }
       xyzUrl = `${base}?${params.toString()}`;
     }
-
     const { supportedUpscalingEndpoints } = useSTAcStore();
-    const isUpscalingSupported = supportedUpscalingEndpoints.some(
-      (/** @type {string} */ endpoint) => xyzUrl.includes(endpoint),
+    const upscaling = applyTitilerUpscaling(
+      xyzUrl,
+      supportedUpscalingEndpoints,
     );
+    if (upscaling) {
+      xyzUrl = upscaling.url;
+    }
 
     // Add sharding for s2maps automatically
     if (xyzUrl.includes("s2maps-tiles.eu")) {
@@ -608,15 +699,15 @@ export const createLayersFromLinks = async (
       },
       source: {
         type: "XYZ",
-        url: isUpscalingSupported ? xyzUrl.replace("{y}", "{y}@2x") : xyzUrl,
+        url: xyzUrl,
         projection: projectionCode,
         ...(xyzLink.attribution ? { attributions: xyzLink.attribution } : {}),
       },
     };
-    if (isUpscalingSupported) {
+    if (upscaling) {
       // @ts-expect-error tileGrid is added here and supported in eox-map layer definition
       json.source.tileGrid = {
-        tileSize: [512, 512],
+        tileSize: upscaling.tileSize,
       };
     }
     if (
@@ -659,7 +750,7 @@ export const createLayersFromLinks = async (
     const key =
       /** @type {string | undefined} */ (vectorTileLink["key"]) || undefined;
     // fetch styles and separate them by their mapping between links and assets
-    const styles = await fetchStyle(item, key);
+    const styles = await resolveStyle(item, collection, key);
     // get the correct style which is not attached to a link
     let { layerConfig, style } = extractLayerConfig(collectionId, styles);
 
@@ -745,7 +836,7 @@ export const createLayersFromLinks = async (
         ),
         applyOptions,
       );
-      applyOptions = /** @type { object } */ (optionsObject);
+      applyOptions = /** @type {object} */ (optionsObject);
       href = url;
     }
     const json = {
@@ -792,6 +883,17 @@ export const createLayerFromRender = async (
   extraProperties,
 ) => {
   if (!collection || !collection.renders || !item) {
+    return [];
+  }
+
+  // Skip when an explicit xyz link already targets the collection on the same endpoint
+  const hasMatchingXyzLink = item.links?.some(
+    (link) =>
+      link.rel === "xyz" &&
+      link.href?.includes(rasterURL) &&
+      link.href?.includes(`/collections/${collection.id}/`),
+  );
+  if (hasMatchingXyzLink) {
     return [];
   }
 
@@ -873,52 +975,3 @@ export const createLayerFromRender = async (
 
   return layers;
 };
-/**
- *
- * @param {Record<string,any>} obj
- * @returns {string}
- */
-function encodeURLObject(obj) {
-  let str = "";
-  for (const key in obj) {
-    const value = obj[key];
-    if (value === null || value === undefined || value === "") {
-      continue;
-    }
-
-    const valueType = Array.isArray(value) ? "array" : typeof value;
-
-    switch (valueType) {
-      case "array": {
-        // Check if any element in the array is itself an array (multi-dimensional)
-        const hasNestedArrays = value.some((/** @type {any} */ item) =>
-          Array.isArray(item),
-        );
-
-        if (hasNestedArrays) {
-          // For multi-dimensional arrays, repeat the key with different values
-          for (const val of value) {
-            if (Array.isArray(val)) {
-              str += `${key}=${val.join(",")}&`;
-            } else {
-              str += `${key}=${val}&`;
-            }
-          }
-        } else {
-          // For simple arrays, join with commas
-          str += `${key}=${value.join(",")}&`;
-        }
-        break;
-      }
-      case "object": {
-        str += `${key}=${encodeURI(JSON.stringify(value))}&`;
-        break;
-      }
-      default: {
-        str += `${key}=${encodeURIComponent(value)}&`;
-        break;
-      }
-    }
-  }
-  return str;
-}
