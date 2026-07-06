@@ -1,6 +1,9 @@
 <template>
-  <div ref="container">
-    <div class="chart-frame">
+  <div ref="container" class="eodash-chart-wrapper">
+    <div
+      class="chart-frame"
+      :style="{ paddingBottom: hasBindings ? '25px' : '0px' }"
+    >
       <button
         v-if="usedChartData && usedChartSpec"
         class="chart-toggle"
@@ -12,9 +15,8 @@
         </svg>
       </button>
       <eox-chart
-        class="pa-2"
-        v-if="usedChartData && usedChartSpec"
-        .spec="toRaw(usedChartSpec)"
+        v-if="usedChartData && renderedChartSpec"
+        .spec="toRaw(renderedChartSpec)"
         :key="chartRenderKey"
         .dataValues="toRaw(usedChartData)"
         @click:item="onChartClick"
@@ -69,134 +71,136 @@ const usedChartSpec = computed(() => {
   return enableCompare ? compareChartSpec.value : chartSpec.value;
 });
 
+const hasBindings = computed(() => {
+  const spec = usedChartSpec.value;
+  if (!spec) return false;
+
+  // Recursively search for any object with a 'bind' key that represents a physical UI input
+  let found = false;
+  /** @param {any} obj */
+  const searchBindings = (obj) => {
+    if (found || !obj || typeof obj !== "object") return;
+
+    // UI bindings that take up physical DOM space are objects with an 'input' property.
+    if (
+      "bind" in obj &&
+      typeof obj.bind === "object" &&
+      obj.bind !== null &&
+      "input" in obj.bind
+    ) {
+      found = true;
+      return;
+    }
+    Object.values(obj).forEach(searchBindings);
+  };
+  searchBindings(spec);
+  return found;
+});
+
+const renderedChartSpec = ref(null);
+
+watch(
+  usedChartSpec,
+  (newSpec) => {
+    if (!newSpec) {
+      renderedChartSpec.value = null;
+      return;
+    }
+
+    // Create a deep copy so we can safely mutate it
+    const adjustedSpec = JSON.parse(JSON.stringify(newSpec));
+
+    // Force the chart to be fully responsive to its CSS container
+    adjustedSpec.height = "container";
+    adjustedSpec.width = "container";
+
+    // Delay passing the spec to eox-chart until the next DOM update cycle.
+    // This ensures the dynamic chartStyles are physically applied
+    // to the container BEFORE Vega calculates its canvas size.
+    nextTick(() => {
+      renderedChartSpec.value = adjustedSpec;
+      chartRenderKey.value = Math.random(); // Force eox-chart to completely remount
+
+      // Force a browser-level resize event after the chart mounts.
+      // This tells Vega to re-read the container dimensions once the CSS has finished painting.
+      setTimeout(() => {
+        window.dispatchEvent(new Event("resize"));
+      }, 150);
+    });
+  },
+  { immediate: true },
+);
+
 const chartRenderKey = ref(0);
-const frameHeight = ref(225);
 const containerEl = useTemplateRef("container");
 
-/**
-@type { MutationObserver | null}
-*/
-let observer = null;
-/** @type {ResizeObserver | null} */
-let resizeObserver = null;
 /** @type {MutationObserver | null} */
-let childMutationObserver = null;
+let observer = null;
+/** @type {number | null} */
+let styleInterval = null;
 
 onMounted(() => {
   const el = containerEl.value;
   if (!el) return;
 
-  const directParent = el.parentElement;
-  const grandParent = directParent?.parentElement;
-
-  const calculateHeight = () => {
-    if (!grandParent) return;
-    let availableHeight = grandParent.getBoundingClientRect().height;
-
-    if (
-      directParent &&
-      directParent.classList.contains("eodash-process-container")
-    ) {
-      const styles = window.getComputedStyle(directParent);
-      availableHeight -=
-        (parseFloat(styles.paddingTop) || 0) +
-        (parseFloat(styles.paddingBottom) || 0);
-
-      Array.from(directParent.children).forEach((child) => {
-        if (child !== el) {
-          const childHeight = child.getBoundingClientRect().height;
-          const childStyles = window.getComputedStyle(child);
-          const margins =
-            (parseFloat(childStyles.marginTop) || 0) +
-            (parseFloat(childStyles.marginBottom) || 0);
-          availableHeight -= childHeight + margins;
-        }
-      });
-
-      // Subtract height of vega-bindings if they exist inside the web component
+  // Continuously inject basic styling for the bindings form to make it look decent
+  styleInterval = window.setInterval(() => {
+    if (el) {
       const eoxChart = el.querySelector("eox-chart");
       if (eoxChart && eoxChart.shadowRoot) {
-        const bindingsForm =
-          eoxChart.shadowRoot.querySelector(".vega-bindings");
-        if (bindingsForm) {
-          const formHeight = bindingsForm.getBoundingClientRect().height;
-          availableHeight -= formHeight + 12; // Add 12px extra padding for the form
+        if (!eoxChart.shadowRoot.querySelector("#eodash-chart-styles")) {
+          const style = document.createElement("style");
+          style.id = "eodash-chart-styles";
+          style.innerHTML = `
+            * {
+              box-sizing: border-box !important;
+            }
+            #vis {
+              min-height: 100px !important;
+              flex: 1 1 auto !important;
+            }
+            :host, .vega-embed {
+              display: flex !important;
+              flex-direction: column !important;
+              height: 100% !important;
+              padding: 0 !important;
+              margin: 0 !important;
+            }
+            .vega-bindings {
+              flex: 0 0 auto !important;
+              display: flex !important;
+              flex-wrap: wrap;
+              gap: 2px !important;
+              background: rgba(255, 255, 255, 0.85);
+              padding: 6px 12px !important;
+              border-radius: 6px;
+              box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+              margin: 0 !important;
+              margin-top: -10px !important;
+              z-index: 10;
+            }
+            .vega-bindings:empty {
+              display: none !important;
+            }
+            .vega-embed > canvas, .vega-embed > svg {
+              height: 100% !important;
+              max-width: 100% !important;
+              object-fit: contain;
+            }
+            .vega-bind {
+              display: flex;
+              align-items: center;
+              gap: 6px;
+              margin-bottom: 0 !important;
+            }
+          `;
+          eoxChart.shadowRoot.appendChild(style);
         }
       }
-
-      // small buffer to prevent border scrollbars
-      availableHeight -= 12;
-    } else {
-      // If maximized or in another panel
-      if (directParent) {
-        const styles = window.getComputedStyle(directParent);
-        availableHeight -=
-          (parseFloat(styles.paddingTop) || 0) +
-          (parseFloat(styles.paddingBottom) || 0);
-      }
-      availableHeight -= 12;
     }
+  }, 200);
 
-    if (availableHeight > 0) {
-      frameHeight.value = Math.max(150, Math.floor(availableHeight));
-    }
-  };
-
-  const setupShadowObserver = () => {
-    const eoxChart = el.querySelector("eox-chart");
-    if (eoxChart && eoxChart.shadowRoot && !eoxChart.hasAttribute("data-observed")) {
-      const shadowObserver = new MutationObserver(() => calculateHeight());
-      shadowObserver.observe(eoxChart.shadowRoot, {
-        childList: true,
-        subtree: true,
-      });
-      eoxChart.setAttribute("data-observed", "true");
-    }
-  };
-
-  // Initial calculation after layout
-  nextTick(() => {
-    calculateHeight();
-    setupShadowObserver();
-  });
-
-  // Watch for data changes which might trigger form re-rendering
-  watch(
-    [usedChartData, usedChartSpec],
-    () => {
-      nextTick(() => {
-        calculateHeight();
-        setupShadowObserver();
-      });
-    },
-    { deep: true },
-  );
-
-  if (grandParent) {
-    resizeObserver = new ResizeObserver(() => {
-      calculateHeight();
-    });
-    resizeObserver.observe(grandParent);
-
-    if (directParent) {
-      resizeObserver.observe(directParent);
-      Array.from(directParent.children).forEach((child) => {
-        if (child !== el) resizeObserver?.observe(child);
-      });
-
-      childMutationObserver = new MutationObserver(() => {
-        calculateHeight();
-        Array.from(directParent.children).forEach((child) => {
-          if (child !== el) resizeObserver?.observe(child);
-        });
-        setupShadowObserver();
-      });
-      childMutationObserver.observe(directParent, { childList: true });
-    }
-  }
-
-  // for mobile view, the overlay panel containing chart is initially hidden
-  // we create an observer when display of overlay is not none anymore
+  // For mobile view, handle overlay display changes
   const overlay = getOverlayParent(el);
   if (!overlay) return;
 
@@ -204,7 +208,6 @@ onMounted(() => {
     const style = getComputedStyle(overlay);
     const visible = style.display !== "none";
     if (visible) {
-      // forcibly rerender chart, otherwise size of canvas is 0
       chartRenderKey.value = Math.random();
     }
   });
@@ -217,15 +220,14 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   observer?.disconnect();
-  resizeObserver?.disconnect();
-  childMutationObserver?.disconnect();
+  if (styleInterval) window.clearInterval(styleInterval);
 });
 
 const chartStyles = computed(() => {
-  const styles = {
-    height: `${frameHeight.value}px`,
+  return {
+    height: "100%",
+    width: "100%",
   };
-  return styles;
 });
 
 const toggleIcon = computed(() =>
@@ -236,14 +238,41 @@ function toggleLayout() {
   areChartsSeparateLayout.value = !areChartsSeparateLayout.value;
 }
 </script>
+
+<style>
+/* Force the outer dashboard panel wrapping this component to utilize 100% height in fullscreen mode */
+.bg-surface:has(.eodash-chart-wrapper) {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+</style>
+
 <style scoped>
+.eodash-chart-wrapper {
+  height: 100%; /* Force full height in fullscreen layout */
+  flex-grow: 1;
+  min-height: 180px; /* Prevent chart from becoming unusably small */
+  display: flex;
+  flex-direction: column;
+}
+
 .chart-frame {
   position: relative;
+  flex-grow: 1;
+  min-height: 180px; /* Prevent chart from becoming unusably small */
+  display: flex;
+  flex-direction: column;
+}
+
+eox-chart {
+  flex-grow: 1;
+  min-height: 0;
 }
 
 .chart-toggle {
   position: absolute;
-  top: 18px;
+  top: 8px;
   right: 46px;
   z-index: 2;
   cursor: pointer;

@@ -1,19 +1,24 @@
 <template>
-  <div ref="container" class="py-1 eodash-process-container">
-    <ProcessList :map-element="mapElement" :enable-compare="enableCompare" />
-    <eox-jsonform
-      v-if="jsonformSchema"
-      :key="jsonformKey"
-      ref="jsonformEl"
-      .schema="jsonformSchema"
-    ></eox-jsonform>
-    <EodashChart
-      v-if="!areChartsSeparateLayout"
-      :vega-embed-options="vegaEmbedOptions"
-      :enable-compare="enableCompare"
+  <div ref="container" class="eodash-process-container">
+    <div class="eodash-process-content">
+      <ProcessList :map-element="mapElement" :enable-compare="enableCompare" />
+      <eox-jsonform
+        v-if="jsonformSchema"
+        :key="jsonformKey"
+        ref="jsonformEl"
+        .schema="jsonformSchema"
+      ></eox-jsonform>
+      <EodashChart
+        v-if="!areChartsSeparateLayout"
+        :vega-embed-options="vegaEmbedOptions"
+        :enable-compare="enableCompare"
+      >
+      </EodashChart>
+    </div>
+    <div
+      class="eodash-process-actions"
+      v-if="showExecBtn || (processResults.length && isProcessed && !isAsync)"
     >
-    </EodashChart>
-    <div class="text-right">
       <v-btn
         v-if="showExecBtn"
         :loading="loading"
@@ -45,7 +50,7 @@ import "@eox/drawtools";
 import "@eox/jsonform";
 import { useSTAcStore } from "@/store/stac";
 import { storeToRefs } from "pinia";
-import { computed, ref, useTemplateRef } from "vue";
+import { computed, ref, useTemplateRef, watch } from "vue";
 import ProcessList from "./ProcessList.vue";
 import EodashChart from "../EodashChart.vue";
 import { handleProcesses } from "./methods/handling";
@@ -87,6 +92,79 @@ const jsonformEl =
   /** @type {Readonly<import("vue").ShallowRef<import("@eox/jsonform").EOxJSONForm | null>>} */ (
     useTemplateRef("jsonformEl")
   );
+
+// Inject custom styles into the eox-jsonform shadow DOM to make eox-drawtools inline
+watch(jsonformEl, (el) => {
+  if (el && el.shadowRoot) {
+    const styleId = "eodash-drawtools-inline-style";
+    if (!el.shadowRoot.getElementById(styleId)) {
+      const style = document.createElement("style");
+      style.id = styleId;
+      style.textContent = `
+        .form-control:has(eox-drawtools) {
+          position: relative;
+          padding: 8px 12px !important;
+          border: none !important;
+          background: transparent !important;
+        }
+        .form-control:has(eox-drawtools) > label {
+          position: absolute;
+          left: 12px;
+          top: 8px;
+          margin: 0 !important;
+          width: calc(100% - 180px); /* Give label maximum available width */
+          line-height: 1.2;
+          display: flex;
+          align-items: flex-start;
+          padding-top: 8px;
+          pointer-events: none; /* Let clicks pass through to buttons if they overlap slightly */
+        }
+        .form-control:has(eox-drawtools) > eox-drawtools {
+          display: block;
+          width: 100%;
+        }
+      `;
+      el.shadowRoot.appendChild(style);
+    }
+
+    const injectDrawtoolsStyle = () => {
+      const drawtools = el?.shadowRoot?.querySelector('eox-drawtools');
+      if (drawtools && drawtools.shadowRoot) {
+        if (
+          !drawtools.shadowRoot.getElementById("eodash-drawtools-indent-style")
+        ) {
+          const dtStyle = document.createElement("style");
+          dtStyle.id = "eodash-drawtools-indent-style";
+          dtStyle.textContent = `
+            eox-drawtools-controller {
+              display: flex;
+              justify-content: flex-end; /* Push buttons to the right */
+              min-height: 40px;
+              width: 100%;
+            }
+            eox-drawtools-list {
+              display: block;
+              margin-top: 10px;
+              width: 100%;
+            }
+          `;
+          drawtools.shadowRoot.appendChild(dtStyle);
+          return true;
+        }
+      }
+      return false;
+    };
+
+    if (!injectDrawtoolsStyle()) {
+      const observer = new MutationObserver(() => {
+        if (injectDrawtoolsStyle()) {
+          observer.disconnect();
+        }
+      });
+      observer.observe(el.shadowRoot, { childList: true, subtree: true });
+    }
+  }
+});
 
 const isAsync = computed(
   () =>
@@ -189,17 +267,37 @@ useAutoExec(autoExec, jsonformEl, jsonformSchema, startProcess);
 </script>
 <style>
 eox-jsonform {
-  padding: 0.7em;
+  padding: 0;
   min-height: 0px;
+  flex-shrink: 0;
 }
 
 /* Force the specific panel wrapping this component to utilize 100% height */
 .bg-surface:has(.eodash-process-container) {
-  height: 100%;
+  height: calc(100% - 30px);
+  overflow: hidden;
 }
 
-/* Make sure this container also takes up that height */
+/* Make sure this container takes up full height and acts as a flex column */
 .eodash-process-container {
   height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.eodash-process-content {
+  flex-grow: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.eodash-process-actions {
+  text-align: right;
+  padding: 4px 12px;
+  flex-shrink: 0;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  background: inherit;
 }
 </style>
