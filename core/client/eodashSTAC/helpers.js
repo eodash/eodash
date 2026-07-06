@@ -43,6 +43,26 @@ export function generateFeatures(links, extraProperties = {}, rel = "item") {
 }
 
 /**
+ * Fetches or extracts the raster form configuration for a STAC object.
+ * Supports direct JSON objects, data URIs, and URL strings.
+ *
+ * @param {string|object|undefined} rasterform - The rasterform property from the STAC object.
+ * @returns {Promise<import("@/types").EodashRasterJSONForm|undefined>}
+ */
+export async function fetchRasterForm(rasterform) {
+  if (!rasterform) {
+    return undefined;
+  }
+  if (typeof rasterform === "object") {
+    return /** @type {import("@/types").EodashRasterJSONForm} */ (rasterform);
+  }
+  if (typeof rasterform === "string") {
+    return await axios.get(rasterform).then((resp) => resp.data);
+  }
+  return undefined;
+}
+
+/**
  * Spearates and extracts layerConfig (jsonform schema & legend) from a style json
  *
  * @param {string} collectionId
@@ -238,6 +258,7 @@ export const fetchAllStyles = async (stacObject) => {
     link.rel.includes("style"),
   );
   const fetchPromises = styleLinks.map(async (link) => {
+    /** @type {import("@/types").EodashStyleJson} */
     const styleJson = await axios.get(link.href).then((resp) => resp.data);
     log.debug("fetched styles JSON", JSON.parse(JSON.stringify(styleJson)));
     return styleJson;

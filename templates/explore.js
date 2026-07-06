@@ -28,11 +28,12 @@ export default {
           enableZoom: true,
           enableExportMap: true,
           enableChangeProjection: true,
+          enableMosaic: false,
           enableCompareIndicators: {
             fallbackTemplate: "explore",
             compareTemplate: "compare",
             itemFilterConfig: {
-              imageProperty: "assets.thumbnail.href",
+              // imageProperty: "assets.thumbnail.href",
             },
           },
           enableBackToPOIs: false,
