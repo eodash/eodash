@@ -1,6 +1,10 @@
 {
   "$schema": "https://typedoc.org/schema.json",
-  "entryPoints": ["dist/types/core/client/types.d.ts", "dist/node/types.d.ts"],
+  "entryPoints": [
+    "dist/types/core/client/types.d.ts",
+    "dist/node/types.d.ts",
+    "core/node/typedoc/widgets.ts"
+  ],
   "sortEntryPoints": false,
   "docsRoot": "./docs",
   "out": "docs/api",
@@ -8,13 +12,24 @@
   "plugin": [
     "typedoc-plugin-vue",
     "typedoc-plugin-markdown",
-    "typedoc-vitepress-theme"
+    "typedoc-vitepress-theme",
+    "./core/node/typedoc/fix-vue-props-jsdoc.js",
+    "./core/node/typedoc/description-above-type.js",
+    "./core/node/typedoc/widget-props-region.js"
   ],
+  "theme": "eodash",
   "readme": "none",
   "excludeExternals": true,
+  "intentionallyNotExported": [
+    "store/index.d.ts:_default",
+    "EodashItemCatalog/types.d.ts:FiltersConfig"
+  ],
+  "disableSources": true,
   "categorizeByGroup": true,
   "defaultCategory": "Eodash",
   "jsDocCompatibility": true,
   "useTsLinkResolution": true,
-  "excludeVueProperties": false
+  "excludeVueProperties": true,
+  "useCodeBlocks": true,
+  "formatWithPrettier": true
 }

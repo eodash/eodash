@@ -10,9 +10,8 @@ import {
   extractLayerConfig,
   extractEoxLegendLink,
   addTooltipInteraction,
-  fetchStyle,
   fetchRasterForm,
-  generateGeoZarrStyle,
+  resolveStyle,
   getBandsProperty,
   applyTitilerUpscaling,
   encodeURLObject,
@@ -45,6 +44,7 @@ function buildCapabilitiesUrl(href) {
  * @param {import("stac-ts").StacItem | import("stac-ts").StacCollection } stacObject
  * @param {Record<string, unknown>} [layerDatetime]
  * @param {object | null} [extraProperties]
+ * @param {import("stac-ts").StacCollection | null} [collection] - Used to fall back to a collection-level style link.
  **/
 export async function createLayersFromAssets(
   collectionId,
@@ -53,6 +53,7 @@ export async function createLayersFromAssets(
   stacObject,
   layerDatetime,
   extraProperties,
+  collection,
 ) {
   log.debug("Creating layers from assets");
   const jsonArray = [];
@@ -164,7 +165,12 @@ export async function createLayersFromAssets(
   if (geoTIFFSources.length) {
     for (const [i, geotiffSource] of geoTIFFSources.entries()) {
       const assetName = assetIds[geoTIFFIdx[i]];
-      const styles = await fetchStyle(stacObject, undefined, assetName);
+      const styles = await resolveStyle(
+        stacObject,
+        collection,
+        undefined,
+        assetName,
+      );
       // get the correct style which is not attached to a link
       let { layerConfig, style } = extractLayerConfig(collectionId, styles);
       let assetLayerId = createAssetID(
@@ -213,13 +219,13 @@ export async function createLayersFromAssets(
 
   if (zarrAssetIds.length) {
     for (const [i, assetName] of zarrAssetIds.entries()) {
-      const availableBands =
-        /** @type {{name:String, [key: string]: any}[]} */ (
-          assets[assetName]["bands"] ?? []
-        ).map((band) => band.name);
-
-      const fetchedStyle = await fetchStyle(stacObject, undefined, assetName);
-      let { layerConfig, style } = extractLayerConfig(
+      const fetchedStyle = await resolveStyle(
+        stacObject,
+        collection,
+        undefined,
+        assetName,
+      );
+      const { layerConfig, style } = extractLayerConfig(
         collectionId,
         fetchedStyle,
       );
@@ -228,10 +234,6 @@ export async function createLayersFromAssets(
         (node, key) => node?.[key],
         layerConfig?.schema,
       )?.default ?? ["b04", "b03", "b02"];
-      if (!layerConfig && !style) {
-        const generated = generateGeoZarrStyle(availableBands, defaultBands);
-        ({ layerConfig, style } = extractLayerConfig(collectionId, generated));
-      }
 
       let assetLayerId = createAssetID(collectionId, stacObject.id, zarrIdx[i]);
       if (
@@ -270,7 +272,12 @@ export async function createLayersFromAssets(
     for (const [i, geoJsonSource] of geoJsonSources.entries()) {
       // fetch styles and separate them by their mapping between links and assets
       const assetName = assetIds[geoJsonIdx[i]];
-      const styles = await fetchStyle(stacObject, undefined, assetName);
+      const styles = await resolveStyle(
+        stacObject,
+        collection,
+        undefined,
+        assetName,
+      );
       // get the correct style which is not attached to a link
       let { layerConfig, style } = extractLayerConfig(collectionId, styles);
       let assetLayerId = createAssetID(
@@ -336,7 +343,12 @@ export async function createLayersFromAssets(
     for (const [i, fgbSource] of fgbSources.entries()) {
       // fetch styles and separate them by their mapping between links and assets
       const assetName = assetIds[fgbIdx[i]];
-      const styles = await fetchStyle(stacObject, undefined, assetName);
+      const styles = await resolveStyle(
+        stacObject,
+        collection,
+        undefined,
+        assetName,
+      );
       // get the correct style which is not attached to a link
       let { layerConfig, style } = extractLayerConfig(collectionId, styles);
       let assetLayerId = createAssetID(collectionId, stacObject.id, fgbIdx[i]);
@@ -449,7 +461,9 @@ export const createLayersFromLinks = async (
     );
     const rasterForm = await fetchRasterForm(
       /** @type {string|object|undefined} */ (
-        wmsLink?.["eodash:rasterform"] || collection?.["eodash:rasterform"]
+        wmsLink?.["eodash:rasterform"] ||
+          item?.["eodash:rasterform"] ||
+          collection?.["eodash:rasterform"]
       ),
     );
     let { layerConfig } = extractLayerConfig(
@@ -530,7 +544,9 @@ export const createLayersFromLinks = async (
 
     const rasterForm = await fetchRasterForm(
       /** @type {string|object|undefined} */ (
-        wmtsLink?.["eodash:rasterform"] || collection?.["eodash:rasterform"]
+        wmtsLink?.["eodash:rasterform"] ||
+          item?.["eodash:rasterform"] ||
+          collection?.["eodash:rasterform"]
       ),
     );
     const returnedLayerConfig = extractLayerConfig(
@@ -631,10 +647,12 @@ export const createLayersFromLinks = async (
       (xyzLink?.["proj:epsg"] || xyzLink?.["eodash:proj4_def"]);
     const rasterForm = await fetchRasterForm(
       /** @type {string|object|undefined} */ (
-        xyzLink?.["eodash:rasterform"] || collection?.["eodash:rasterform"]
+        xyzLink?.["eodash:rasterform"] ||
+          item?.["eodash:rasterform"] ||
+          collection?.["eodash:rasterform"]
       ),
     );
-    let { layerConfig, style } = extractLayerConfig(
+    let { layerConfig } = extractLayerConfig(
       collectionId,
       {},
       rasterForm,
@@ -649,19 +667,6 @@ export const createLayersFromLinks = async (
       viewProjectionCode,
     );
     let xyzUrl = xyzLink.href;
-    // TODO, this does not yet work between layer time changes because we do not get
-    // updated variables from OL layer due to usage of tileurlfunction
-
-    // update url query params with current value of style variables if applicable
-    const variables = style?.variables;
-    if (variables) {
-      const [base, query] = xyzUrl.split("?");
-      const params = new URLSearchParams(query);
-      for (const [kk, vv] of Object.entries(variables)) {
-        params.set(kk, JSON.stringify(vv));
-      }
-      xyzUrl = `${base}?${params.toString()}`;
-    }
     const { supportedUpscalingEndpoints } = useSTAcStore();
     const upscaling = applyTitilerUpscaling(
       xyzUrl,
@@ -739,7 +744,7 @@ export const createLayersFromLinks = async (
     const key =
       /** @type {string | undefined} */ (vectorTileLink["key"]) || undefined;
     // fetch styles and separate them by their mapping between links and assets
-    const styles = await fetchStyle(item, key);
+    const styles = await resolveStyle(item, collection, key);
     // get the correct style which is not attached to a link
     let { layerConfig, style } = extractLayerConfig(collectionId, styles);
 

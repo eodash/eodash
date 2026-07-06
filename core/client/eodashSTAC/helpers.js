@@ -192,7 +192,7 @@ export const extractRoles = (properties, linkOrAsset) => {
 
 /**
  * Extracts a single non-link style JSON from a STAC Item optionally for a selected key mapping
- * @param { import("stac-ts").StacItem | import("stac-ts").StacCollection } stacObject
+ * @param { import("stac-ts").StacItem | import("stac-ts").StacCollection | null | undefined} stacObject
  * @param {string | undefined} linkKey
  * @param {string | undefined} assetKey
  * @returns
@@ -202,6 +202,7 @@ export const fetchStyle = async (
   linkKey = undefined,
   assetKey = undefined,
 ) => {
+  if (!stacObject) return undefined;
   let styleLink = null;
   if (linkKey) {
     styleLink = stacObject.links.find(
@@ -232,6 +233,20 @@ export const fetchStyle = async (
     return { ...styleJson };
   }
 };
+
+/**
+ * Resolves a style by preferring the item's own `style` link and falling back
+ * to the collection's. Takes the same key arguments as `fetchStyle`.
+ *
+ * @param {import("stac-ts").StacItem | import("stac-ts").StacCollection} item
+ * @param {import("stac-ts").StacCollection | null | undefined} collection
+ * @param {string} [linkKey]
+ * @param {string} [assetKey]
+ * @returns {Promise<import("@/types").EodashStyleJson | undefined>}
+ */
+export const resolveStyle = async (item, collection, linkKey, assetKey) =>
+  (await fetchStyle(item, linkKey, assetKey)) ??
+  (await fetchStyle(collection, linkKey, assetKey));
 
 /**
  * Fetches all style JSONs from a STAC Item and returns an array with style objects
@@ -1006,22 +1021,6 @@ export function extractEoxLegendLink(link) {
   return extraProperties;
 }
 
-// Spectral palette matching the standard S2 band order used in the bands-editor example schema
-const ZARR_BAND_COLORS = [
-  "#66CCFF",
-  "#0070FF",
-  "#00C800",
-  "#FF0000",
-  "#C00040",
-  "#A00060",
-  "#CC0088",
-  "#CC33CC",
-  "#9900FF",
-  "#FF9900",
-  "#8B4513",
-  "#FF3366",
-];
-
 /**
  * Locate the first sub-schema whose `format` matches by walking `properties`
  * and the `oneOf` / `allOf` / `anyOf` combinators. Returns the schema path
@@ -1052,159 +1051,6 @@ export function getBandsProperty(schema, format = "bands") {
   }
 
   return undefined;
-}
-
-/**
- * Generates a default WebGL flat style for a GeoZarr layer.
- * The source is loaded with only `defaultBands` (3 bands in R/G/B order), so
- * `['band', 1/2/3]` always maps to the correct channel without variable indirection.
- * Band selection via the form triggers a source rebuild (not a style variable update).
- * Gamma and rescale are true style variables handled by `updateStyleVariables`.
- *
- * @param {string[]} availableBands - All selectable band names from `zarr:bands`
- * @param {string[]} defaultBands - Initially loaded bands (first 3 of availableBands)
- * @returns {import("@/types").EodashStyleJson}
- */
-export function generateGeoZarrStyle(availableBands, defaultBands) {
-  const colors = availableBands.map(
-    (_, i) => ZARR_BAND_COLORS[i % ZARR_BAND_COLORS.length],
-  );
-
-  return /** @type {import("@/types").EodashStyleJson} */ ({
-    variables: {
-      gamma: 1.5,
-      minRed: 0,
-      maxRed: 0.5,
-      minGreen: 0,
-      maxGreen: 0.5,
-      minBlue: 0,
-      maxBlue: 0.5,
-    },
-    gamma: ["var", "gamma"],
-    color: [
-      "color",
-      [
-        "interpolate",
-        ["linear"],
-        ["band", 1],
-        ["var", "minRed"],
-        0,
-        ["var", "maxRed"],
-        255,
-      ],
-      [
-        "interpolate",
-        ["linear"],
-        ["band", 2],
-        ["var", "minGreen"],
-        0,
-        ["var", "maxGreen"],
-        255,
-      ],
-      [
-        "interpolate",
-        ["linear"],
-        ["band", 3],
-        ["var", "minBlue"],
-        0,
-        ["var", "maxBlue"],
-        255,
-      ],
-    ],
-    jsonform: {
-      type: "object",
-      title: "Band Configuration",
-      required: ["bands"],
-      properties: {
-        bands: {
-          title: "Band Combination",
-          type: "array",
-          format: "bands",
-          default: defaultBands,
-          items: {
-            type: "string",
-            enum: availableBands,
-            options: {
-              enum_titles: availableBands.map((b) => b.toUpperCase()),
-              colors,
-            },
-          },
-        },
-        gamma: {
-          type: "number",
-          title: "Gamma Correction",
-          minimum: 0,
-          maximum: 5,
-          step: 0.1,
-          default: 1.5,
-          format: "range",
-        },
-        rescaleRed: {
-          title: "Red Channel",
-          type: "object",
-          properties: {
-            minRed: {
-              type: "number",
-              minimum: 0,
-              maximum: 1,
-              format: "range",
-              default: 0,
-            },
-            maxRed: {
-              type: "number",
-              minimum: 0,
-              maximum: 1,
-              format: "range",
-              default: 0.5,
-            },
-          },
-          format: "minmax",
-        },
-        rescaleGreen: {
-          title: "Green Channel",
-          type: "object",
-          properties: {
-            minGreen: {
-              type: "number",
-              minimum: 0,
-              maximum: 1,
-              format: "range",
-              default: 0,
-            },
-            maxGreen: {
-              type: "number",
-              minimum: 0,
-              maximum: 1,
-              format: "range",
-              default: 0.5,
-            },
-          },
-          format: "minmax",
-        },
-        rescaleBlue: {
-          title: "Blue Channel",
-          type: "object",
-          properties: {
-            minBlue: {
-              type: "number",
-              minimum: 0,
-              maximum: 1,
-              format: "range",
-              default: 0,
-            },
-            maxBlue: {
-              type: "number",
-              minimum: 0,
-              maximum: 1,
-              format: "range",
-              default: 0.5,
-            },
-          },
-          format: "minmax",
-        },
-      },
-    },
-  });
 }
 
 /**

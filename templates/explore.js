@@ -1,4 +1,3 @@
-// import { includesProcess } from "@/store/actions";
 /** @type {import("@/types").Template} */
 export default {
   gap: 16,
@@ -23,29 +22,7 @@ export default {
     widget: {
       name: "EodashMap",
       properties: {
-        baseLayers: [
-          {
-            type: "Group",
-            properties: {
-              id: "BaseLayersGroup",
-              title: "Base Layers",
-            },
-            layers: [
-              {
-                type: "Tile",
-                properties: {
-                  id: "terrain-light;:;EPSG:3857",
-                  title: "Terrain Light",
-                },
-                source: {
-                  type: "XYZ",
-                  //@ts-expect-error todo
-                  url: "https://s2maps-tiles.eu/wmts/1.0.0/terrain-light_3857/default/g/{z}/{y}/{x}.jpeg",
-                },
-              },
-            ],
-          },
-        ],
+        zoomToExtent: false,
         enableCompare: true,
         btns: {
           enableZoom: true,
@@ -54,21 +31,23 @@ export default {
           enableMosaic: false,
           enableCompareIndicators: {
             fallbackTemplate: "explore",
+            compareTemplate: "compare",
             itemFilterConfig: {
               // imageProperty: "assets.thumbnail.href",
             },
           },
-          enableSearch: true,
+          enableBackToPOIs: false,
+          enableSearch: false,
         },
       },
     },
   },
   widgets: [
     {
-      id: "Layercontrol",
+      id: "explore-layercontrol",
       type: "internal",
       title: "Layers",
-      layout: { x: "9/9/10", y: 0, w: "3/3/2", h: 12 },
+      layout: { x: "9/9/10", y: 0, w: "3/3/2", h: 11 },
       widget: {
         name: "EodashLayerControl",
       },
@@ -77,13 +56,12 @@ export default {
       id: "ItemCatalog",
       title: "Catalog",
       type: "internal",
-      layout: { x: 0, y: 0, w: "3/3/2", h: 12 },
+      layout: { x: 0, y: 0, w: "3/3/2", h: 11 },
       widget: {
         name: "EodashItemCatalog",
         properties: {
-          useMosaic: true,
-          // mosaicIndicators: ["sentinel-2-l2a"],
-          layoutTarget: "expert",
+          layoutTarget: undefined,
+          hoverProperties: ["datetime", "eo:cloud_cover"],
         },
       },
     },
