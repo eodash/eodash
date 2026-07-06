@@ -93,7 +93,6 @@ onMounted(() => {
               box-sizing: border-box !important;
             }
             #vis {
-              
               min-height: 200px !important;
             }
             :host, .vega-embed {
@@ -113,13 +112,14 @@ onMounted(() => {
               border-radius: 6px;
               box-shadow: 0 2px 5px rgba(0,0,0,0.15);
               margin: 0 !important;
-              margin-top: -25px !important;
+              margin-top: -5px !important;
+              z-index: 10;
             }
             .vega-bindings:empty {
               display: none !important;
             }
             .vega-embed > canvas, .vega-embed > svg {
-              max-height: 100% !important;
+              height: 100% !important;
               max-width: 100% !important;
               object-fit: contain;
             }
@@ -190,6 +190,7 @@ function toggleLayout() {
   min-height: 80px; /* Prevent chart from becoming unusably small */
   display: flex;
   flex-direction: column;
+  padding-bottom: 30px; /* Reserve space at the bottom */
 }
 
 .chart-frame {

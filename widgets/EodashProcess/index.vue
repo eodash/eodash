@@ -1,19 +1,24 @@
 <template>
   <div ref="container" class="eodash-process-container">
-    <ProcessList :map-element="mapElement" :enable-compare="enableCompare" />
-    <eox-jsonform
-      v-if="jsonformSchema"
-      :key="jsonformKey"
-      ref="jsonformEl"
-      .schema="jsonformSchema"
-    ></eox-jsonform>
-    <EodashChart
-      v-if="!areChartsSeparateLayout"
-      :vega-embed-options="vegaEmbedOptions"
-      :enable-compare="enableCompare"
+    <div class="eodash-process-content">
+      <ProcessList :map-element="mapElement" :enable-compare="enableCompare" />
+      <eox-jsonform
+        v-if="jsonformSchema"
+        :key="jsonformKey"
+        ref="jsonformEl"
+        .schema="jsonformSchema"
+      ></eox-jsonform>
+      <EodashChart
+        v-if="!areChartsSeparateLayout"
+        :vega-embed-options="vegaEmbedOptions"
+        :enable-compare="enableCompare"
+      >
+      </EodashChart>
+    </div>
+    <div 
+      class="eodash-process-actions" 
+      v-if="showExecBtn || (processResults.length && isProcessed && !isAsync)"
     >
-    </EodashChart>
-    <div class="text-right">
       <v-btn
         v-if="showExecBtn"
         :loading="loading"
@@ -267,7 +272,8 @@ eox-jsonform {
 
 /* Force the specific panel wrapping this component to utilize 100% height */
 .bg-surface:has(.eodash-process-container) {
-  height: 100%;
+  height: calc(100% - 30px);
+  overflow: hidden;
 }
 
 /* Make sure this container takes up full height and acts as a flex column */
@@ -275,6 +281,21 @@ eox-jsonform {
   height: 100%;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
+}
+
+.eodash-process-content {
+  flex-grow: 1;
   overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.eodash-process-actions {
+  text-align: right;
+  padding: 4px 12px;
+  flex-shrink: 0;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  background: inherit;
 }
 </style>
