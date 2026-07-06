@@ -1,6 +1,12 @@
 <template>
-  <div ref="container" class="eodash-chart-wrapper">
-    <div class="chart-frame">
+  <div 
+    ref="container" 
+    class="eodash-chart-wrapper"
+  >
+    <div 
+      class="chart-frame"
+      :style="{ paddingBottom: hasBindings ? '25px' : '0px' }"
+    >
       <button
         v-if="usedChartData && usedChartSpec"
         class="chart-toggle"
@@ -12,8 +18,8 @@
         </svg>
       </button>
       <eox-chart
-        v-if="usedChartData && usedChartSpec"
-        .spec="toRaw(usedChartSpec)"
+        v-if="usedChartData && renderedChartSpec"
+        .spec="toRaw(renderedChartSpec)"
         :key="chartRenderKey"
         .dataValues="toRaw(usedChartData)"
         @click:item="onChartClick"
@@ -68,6 +74,54 @@ const usedChartSpec = computed(() => {
   return enableCompare ? compareChartSpec.value : chartSpec.value;
 });
 
+const hasBindings = computed(() => {
+  const spec = usedChartSpec.value;
+  if (!spec) return false;
+  
+  // Recursively search for any object with a 'bind' key
+  let found = false;
+  const searchBindings = (obj) => {
+    if (found || !obj || typeof obj !== 'object') return;
+    if ('bind' in obj) {
+      found = true;
+      return;
+    }
+    Object.values(obj).forEach(searchBindings);
+  };
+  searchBindings(spec);
+  return found;
+});
+
+const renderedChartSpec = ref(null);
+
+watch(usedChartSpec, (newSpec) => {
+  if (!newSpec) {
+    renderedChartSpec.value = null;
+    return;
+  }
+  
+  // Create a deep copy so we can safely mutate it
+  const adjustedSpec = JSON.parse(JSON.stringify(newSpec));
+  
+  // Force the chart to be fully responsive to its CSS container
+  adjustedSpec.height = "container";
+  adjustedSpec.width = "container";
+
+  // Delay passing the spec to eox-chart until the next DOM update cycle.
+  // This ensures the dynamic chartStyles are physically applied
+  // to the container BEFORE Vega calculates its canvas size.
+  nextTick(() => {
+    renderedChartSpec.value = adjustedSpec;
+    chartRenderKey.value = Math.random(); // Force eox-chart to completely remount
+    
+    // Force a browser-level resize event after the chart mounts.
+    // This tells Vega to re-read the container dimensions once the CSS has finished painting.
+    setTimeout(() => {
+      window.dispatchEvent(new Event('resize'));
+    }, 150);
+  });
+}, { immediate: true });
+
 const chartRenderKey = ref(0);
 const containerEl = useTemplateRef("container");
 
@@ -93,7 +147,8 @@ onMounted(() => {
               box-sizing: border-box !important;
             }
             #vis {
-              min-height: 200px !important;
+              min-height: 100px !important;
+              flex: 1 1 auto !important;
             }
             :host, .vega-embed {
               display: flex !important;
@@ -112,7 +167,7 @@ onMounted(() => {
               border-radius: 6px;
               box-shadow: 0 2px 5px rgba(0,0,0,0.15);
               margin: 0 !important;
-              margin-top: -5px !important;
+              margin-top: -10px !important;
               z-index: 10;
             }
             .vega-bindings:empty {
@@ -156,6 +211,7 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   observer?.disconnect();
+  if (styleInterval) window.clearInterval(styleInterval);
 });
 
 const chartStyles = computed(() => {
@@ -190,7 +246,6 @@ function toggleLayout() {
   min-height: 80px; /* Prevent chart from becoming unusably small */
   display: flex;
   flex-direction: column;
-  padding-bottom: 30px; /* Reserve space at the bottom */
 }
 
 .chart-frame {
