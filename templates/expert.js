@@ -96,7 +96,7 @@ export default {
       id: "Layercontrol",
       type: "internal",
       title: "Layers",
-      layout: { x: 0, y: 1, w: "3/3/2", h: 11 },
+      layout: { x: 0, y: 1, w: "3/3/2", h: 10 },
       widget: {
         name: "EodashLayerControl",
         properties: {
@@ -180,7 +180,7 @@ export default {
           id: "Processes",
           type: "internal",
           title: "Processes",
-          layout: { x: "9/9/10", y: 6, w: "3/3/2", h: 5 },
+          layout: { x: "9/9/10", y: 6, w: "3/3/2", h: 6 },
           widget: {
             name: "EodashProcess",
           },
