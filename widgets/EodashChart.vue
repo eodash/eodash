@@ -78,11 +78,13 @@ const hasBindings = computed(() => {
   const spec = usedChartSpec.value;
   if (!spec) return false;
   
-  // Recursively search for any object with a 'bind' key
+  // Recursively search for any object with a 'bind' key that represents a physical UI input
   let found = false;
   const searchBindings = (obj) => {
     if (found || !obj || typeof obj !== 'object') return;
-    if ('bind' in obj) {
+    
+    // UI bindings that take up physical DOM space are objects with an 'input' property.
+    if ('bind' in obj && typeof obj.bind === 'object' && obj.bind !== null && 'input' in obj.bind) {
       found = true;
       return;
     }
@@ -243,7 +245,7 @@ function toggleLayout() {
 .eodash-chart-wrapper {
   height: 100%; /* Force full height in fullscreen layout */
   flex-grow: 1;
-  min-height: 80px; /* Prevent chart from becoming unusably small */
+  min-height: 180px; /* Prevent chart from becoming unusably small */
   display: flex;
   flex-direction: column;
 }
@@ -251,7 +253,7 @@ function toggleLayout() {
 .chart-frame {
   position: relative;
   flex-grow: 1;
-  min-height: 80px; /* Prevent chart from becoming unusably small */
+  min-height: 180px; /* Prevent chart from becoming unusably small */
   display: flex;
   flex-direction: column;
 }
