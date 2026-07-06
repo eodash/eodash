@@ -101,11 +101,22 @@ watch(jsonformEl, (el) => {
       const style = document.createElement("style");
       style.id = styleId;
       style.textContent = `
+        /* Compact standard form elements */
+        .form-control, .form-group {
+          margin-bottom: 8px !important;
+        }
+        .form-control > label, .form-group > label {
+          margin-bottom: 2px !important;
+          font-size: 0.9em;
+        }
+        
+        /* Specific layout for drawtools */
         .form-control:has(eox-drawtools) {
           position: relative;
           padding: 8px 12px !important;
           border: none !important;
           background: transparent !important;
+          margin-bottom: 8px !important;
         }
         .form-control:has(eox-drawtools) > label {
           position: absolute;
@@ -128,7 +139,7 @@ watch(jsonformEl, (el) => {
     }
 
     const injectDrawtoolsStyle = () => {
-      const drawtools = el?.shadowRoot?.querySelector('eox-drawtools');
+      const drawtools = el?.shadowRoot?.querySelector("eox-drawtools");
       if (drawtools && drawtools.shadowRoot) {
         if (
           !drawtools.shadowRoot.getElementById("eodash-drawtools-indent-style")
@@ -267,7 +278,7 @@ useAutoExec(autoExec, jsonformEl, jsonformSchema, startProcess);
 </script>
 <style>
 eox-jsonform {
-  padding: 0;
+  padding: 0 12px;
   min-height: 0px;
   flex-shrink: 0;
 }
