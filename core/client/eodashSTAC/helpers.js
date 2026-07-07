@@ -1320,6 +1320,7 @@ export function updateLayerUrl(olLayer, jsonformValue) {
     if (olLayer.get("injectedUrl") === newUrl) {
       return false;
     }
+    const source = olLayer.getSource();
     olLayer.set("injectedUrl", newUrl);
     if (source && "setUrl" in source) {
       /** @type {any} */ (source).setUrl(newUrl);
