@@ -121,6 +121,39 @@ export function extractLayerConfig(
 }
 
 /**
+ * Recursively extracts URL keys from a JSON Schema.
+ * Maps schema property names to their defined `url_key`.
+ * @param {Record<string, any> | null | undefined} schema
+ * @returns {Record<string, string>}
+ */
+export function extractUrlKeys(schema) {
+  /** @type {Record<string, string>} */
+  const keys = {};
+  if (!schema || typeof schema !== "object") return keys;
+
+  if (schema.properties) {
+    for (const [key, propDef] of Object.entries(schema.properties)) {
+      if (propDef && typeof propDef === "object") {
+        if (typeof propDef.url_key === "string") {
+          keys[key] = propDef.url_key;
+        }
+        Object.assign(keys, extractUrlKeys(propDef));
+      }
+    }
+  }
+
+  for (const combinator of ["oneOf", "allOf", "anyOf"]) {
+    if (Array.isArray(schema[combinator])) {
+      for (const sub of schema[combinator]) {
+        Object.assign(keys, extractUrlKeys(sub));
+      }
+    }
+  }
+
+  return keys;
+}
+
+/**
  *
  * @param {number[]} bbox
  * @returns
@@ -1215,6 +1248,87 @@ export function updateGeoZarrBands(olLayer, jsonformValue) {
     new window.eoxMapAdvancedOlSources.GeoZarr(jsonLayer.source),
   );
   return true;
+}
+
+/**
+ * Safely appends query parameters to a URL string, preserving templates like {z}/{x}/{y}
+ * @param {string} url
+ * @param {Record<string, string>} params
+ * @returns {string}
+ */
+function appendQueryParams(url, params) {
+  const [base, query] = url.split("?");
+  const searchParams = new URLSearchParams(query || "");
+
+  for (const [key, val] of Object.entries(params)) {
+    if (val !== undefined && val !== null && val !== "") {
+      searchParams.set(key, val);
+    } else {
+      searchParams.delete(key);
+    }
+  }
+
+  const newQuery = searchParams.toString();
+  return newQuery ? `${base}?${newQuery}` : base;
+}
+
+/**
+ * Checks whether a VectorTile layer's URL needs to be updated based on jsonform output.
+ * If the style's jsonform schema has properties with `url_key` defined, their values
+ * are injected as query parameters into the source URL.
+ *
+ * @param {import("ol/layer/Layer").default} olLayer - Layer from layerConfig:change event
+ * @param {Record<string, any>} jsonformValue - Current jsonform output
+ * @returns {boolean} true if the URL was updated
+ */
+export function updateLayerUrl(olLayer, jsonformValue) {
+  const jsonLayer = olLayer.get("_jsonDefinition");
+  if (!jsonLayer || jsonLayer.type !== "VectorTile") {
+    return false;
+  }
+
+  const schema = jsonLayer.properties?.layerConfig?.schema;
+  const urlKeys = extractUrlKeys(schema);
+
+  if (Object.keys(urlKeys).length === 0) {
+    return false;
+  }
+
+  let originalUrl = olLayer.get("originalUrl") || jsonLayer.source?.url;
+
+  if (!originalUrl || typeof originalUrl !== "string") {
+    return false;
+  }
+
+  if (!olLayer.get("originalUrl")) {
+    olLayer.set("originalUrl", originalUrl);
+  }
+
+  /** @type {Record<string, string>} */
+  const queryParamsToInject = {};
+  for (const [propName, urlKey] of Object.entries(urlKeys)) {
+    queryParamsToInject[urlKey] = jsonformValue[propName];
+  }
+
+  const newUrl = appendQueryParams(originalUrl, queryParamsToInject);
+
+  if (jsonLayer.source?.url) {
+    if (jsonLayer.source.url === newUrl) {
+      return false;
+    }
+    jsonLayer.source.url = newUrl;
+    const source = olLayer.getSource();
+    if (source && "setUrl" in source) {
+      /** @type {any} */ (source).setUrl(newUrl);
+      return true;
+    }
+    if (source && "setUrls" in source) {
+      /** @type {any} */ (source).setUrls([newUrl]);
+      return true;
+    }
+  }
+
+  return false;
 }
 
 /**
