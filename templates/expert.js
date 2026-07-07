@@ -121,53 +121,20 @@ export default {
           : null;
       },
     },
-    // {
-    //   defineWidget: (selectedSTAC) => {
-    //     return selectedSTAC
-    //       ? {
-    //           id: "expert-datepicker",
-    //           type: "internal",
-    //           layout: { x: 4, y: 7, w: 4, h: 5 },
-    //           title: "Date",
-    //           widget: {
-    //             name: "EodashDatePicker",
-    //             properties: {
-    //               hintText: `<b>Hint:</b> closest available date is displayed <br />
-    //                         on map (see Analysis Layers)`,
-    //               toggleCalendar: true,
-    //             },
-    //           },
-    //         }
-    //       : null;
-    //   },
-    // },
     {
       defineWidget: (selectedSTAC) => {
         return selectedSTAC
           ? {
-              id: "expert-datetime",
+              id: "expert-datepicker",
               type: "internal",
-              layout: { x: 1, y: 8, w: 8, h: 3 },
-              title: "Time Slider",
+              layout: { x: 4, y: 3, w: 4, h: 9 },
+              title: "Date",
               widget: {
-                name: "EodashTimeSlider",
+                name: "EodashDatePicker",
                 properties: {
-                  useMosaic: true,
-                  filters: [
-                    {
-                      key: "eo:cloud_cover",
-                      title: "Cloud Coverage %",
-                      type: "range",
-                      expanded: true,
-                      min: 0,
-                      max: 100,
-                      step: 1,
-                      state: {
-                        min: 0,
-                        max: 100,
-                      },
-                    },
-                  ],
+                  hintText: `<b>Hint:</b> closest available date is displayed <br />
+                            on map (see Analysis Layers)`,
+                  toggleCalendar: true,
                 },
               },
             }

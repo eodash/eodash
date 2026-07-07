@@ -127,10 +127,7 @@ const handleDatetimeUpdate = async (evt) => {
   const { layer, datetime } = evt.detail;
   const collectionId = layer.get("id")?.split(";:;")[0] ?? layer.get("id");
   if (processedDatetimes.get(collectionId) === datetime) return;
-  // First event per collection is eox-timecontrol's mount echo.
-  const isFirstEvent = !processedDatetimes.has(collectionId);
   processedDatetimes.set(collectionId, datetime);
-  if (isFirstEvent) return;
 
   const ec = await getColFromLayer(eodashCols, layer);
 
