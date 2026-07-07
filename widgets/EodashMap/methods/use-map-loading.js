@@ -10,11 +10,15 @@ import { loading } from "@/store/states";
  * @param {import("vue").Ref<import("@eox/map").EOxMap | null>} compareMapElement
  */
 export const useMapLoading = (mapElement, compareMapElement) => {
+  // This instance's outstanding loads, so unmount subtracts only its share.
+  let localLoads = 0;
   const startHandler = () => {
+    localLoads++;
     loading.activeLoads++;
   };
   const endHandler = () => {
-    loading.activeLoads--;
+    localLoads = Math.max(0, localLoads - 1);
+    loading.activeLoads = Math.max(0, loading.activeLoads - 1);
   };
 
   /** @param {import("@eox/map").EOxMap | null} newMapEl */
@@ -45,8 +49,10 @@ export const useMapLoading = (mapElement, compareMapElement) => {
   onUnmounted(() => {
     mapElement.value?.map.removeEventListener("loadstart", startHandler);
     mapElement.value?.map.removeEventListener("loadend", endHandler);
+    compareMapElement.value?.map.removeEventListener("loadstart", startHandler);
+    compareMapElement.value?.map.removeEventListener("loadend", endHandler);
     stopMainWatcher();
     stopCompareWatcher();
-    loading.activeLoads = 0;
+    loading.activeLoads = Math.max(0, loading.activeLoads - localLoads);
   });
 };
