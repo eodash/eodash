@@ -30,7 +30,7 @@
 <script setup>
 import "color-legend-element";
 import "@eox/timecontrol";
-import { computed, ref, watch } from "vue";
+import { computed, ref } from "vue";
 import { mapEl, mapCompareEl } from "@/store/states";
 import {
   eodashCollections,
@@ -120,20 +120,9 @@ const mapElement = props.map === "second" ? mapCompareEl : mapEl;
 /** @type { import("vue").Ref<import("@eox/layercontrol").EOxLayerControl | null>} */
 const eoxLayercontrol = ref(null);
 
-// eox-timecontrol re-fires datetime:updated after layer reassignment;
-// dedupe by (collectionId, datetime)
-const processedDatetimes = new Map();
-watch([selectedStac, selectedCompareStac], () => processedDatetimes.clear());
-
 /** @param {CustomEvent<{layer:import('ol/layer').Layer; datetime:string;}>} evt */
 const handleDatetimeUpdate = async (evt) => {
   const { layer, datetime } = evt.detail;
-  const collectionId = layer.get("id")?.split(";:;")[0] ?? layer.get("id");
-  if (processedDatetimes.get(collectionId) === datetime) return;
-  // First event per collection is eox-timecontrol's mount echo.
-  const isFirstEvent = !processedDatetimes.has(collectionId);
-  processedDatetimes.set(collectionId, datetime);
-  if (isFirstEvent) return;
 
   const ec = await getColFromLayer(eodashCols, layer);
 

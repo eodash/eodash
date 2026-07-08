@@ -33,7 +33,7 @@ export default {
             fallbackTemplate: "explore",
             compareTemplate: "compare",
             itemFilterConfig: {
-              // imageProperty: "assets.thumbnail.href",
+              imageProperty: "assets.thumbnail.href",
             },
           },
           enableBackToPOIs: false,
