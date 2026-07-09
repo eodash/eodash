@@ -76,37 +76,38 @@ function showAllPanels() {
 }
 /**
  *
- * @param {import("@eox/map").EoxLayer[]} layers
- * @return {import("@eox/map").EoxLayer[]}
+ * @param {import("@eox/map").EoxLayer[]} layers - eox map layers
+ * @returns {import("@eox/map").EoxLayer[]} anonymized Cors
  */
 function addCorsAnonym(layers) {
-  //@ts-expect-error todo
-  return layers.map((layer) => {
-    if (layer.type === "Group") {
-      layer.layers = addCorsAnonym([...(layer.layers ?? [])]);
-      return layer;
-    }
-    // check if not mapbox style as a fix for ts error
-    if (layer.type === "MapboxStyle") {
-      return layer;
-    }
+  return /** @type {import("@eox/map").EoxLayer[]} */ (
+    layers.map((layer) => {
+      if (layer.type === "Group") {
+        layer.layers = addCorsAnonym([...(layer.layers ?? [])]);
+        return layer;
+      }
+      // check if not mapbox style as a fix for ts error
+      if (layer.type === "MapboxStyle") {
+        return layer;
+      }
 
-    return {
-      ...layer,
-      ...(layer.source && {
-        source: {
-          ...layer.source,
-          crossOrigin: "anonymous",
-        },
-        ...(layer.sources && {
-          sources: layer.sources.map((source) => ({
-            ...source,
+      return {
+        ...layer,
+        ...("source" in layer && {
+          source: {
+            ...layer.source,
             crossOrigin: "anonymous",
-          })),
+          },
+          ...(layer.sources && {
+            sources: layer.sources.map((source) => ({
+              ...source,
+              crossOrigin: "anonymous",
+            })),
+          }),
         }),
-      }),
-    };
-  });
+      };
+    })
+  );
 }
 
 export const onMapZoomOut = () => {
