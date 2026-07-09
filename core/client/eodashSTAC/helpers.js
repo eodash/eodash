@@ -950,6 +950,7 @@ export function getDatetimeProperty(linksOrItems) {
     return prop;
   }
 }
+
 /**
  *
  * @param {*} stacObject
@@ -1368,26 +1369,56 @@ export function applyTitilerUpscaling(url, upscalingEndpoints) {
 }
 
 /**
- * Picks the render presets for a collection, preferring the collection's own
- * STAC `renders` extension and falling back to client-provided config
- *
+ * Picks the render presets for a collection, preferring client-provided config
+ * (`options.renders[collectionId]`) and falling back to the collection's own STAC
+ * `renders` extension when no config entry exists.
  * @param {import("stac-ts").StacCollection | null | undefined} collection
  * @param {Record<string, Record<string, import("@/types").Render>> | undefined} [configRenders]
  * @returns {Record<string, import("@/types").Render> | undefined}
  */
 export function resolveRenders(collection, configRenders) {
-  if (collection?.renders) {
-    return /** @type {Record<string, import("@/types").Render>} */ (
-      collection.renders
-    );
-  }
-  return collection?.id ? configRenders?.[collection.id] : undefined;
+  const config = collection?.id ? configRenders?.[collection.id] : undefined;
+  if (config) return config;
+  return /** @type {Record<string, import("@/types").Render>|undefined} */ (
+    collection?.renders ?? undefined
+  );
 }
 
 /**
- * Serializes an object into a TiTiler query string. Arrays join with commas;
- * nested arrays repeat the key (e.g. `rescale: [[0,1]]` -> `rescale=0,1`);
- * objects are JSON-encoded. Shared by the render-extension and mosaic paths.
+ * TiTiler expects rescale as [min,max] pairs; chunks a flat numeric list
+ * into pairs (e.g. [0,0.4,0,0.1] -> [[0,0.4],[0,0.1]]). Nested input passes through.
+ * @param {number[]|number[][]|undefined} rescale - flat or nested rescale values
+ * @returns {number[][]|undefined} rescale as [min,max] pairs
+ */
+export function normalizeRescale(rescale) {
+  if (!rescale?.length || Array.isArray(rescale[0])) {
+    return /** @type {number[][]|undefined} */ (rescale);
+  }
+  const pairs = [];
+  for (let i = 0; i < rescale.length; i += 2) {
+    pairs.push(/** @type {number[]} */ (rescale).slice(i, i + 2));
+  }
+  return pairs;
+}
+
+/**
+ * Drops NaN nodata values; NaN is already the implicit fill for float data,
+ * so forwarding `nodata=nan` to TiTiler is redundant.
+ * @param {string|number|undefined} nodata - nodata value from render/asset metadata
+ * @returns {string|number|undefined} nodata, or undefined when it is NaN
+ */
+export function normalizeNodata(nodata) {
+  if (typeof nodata === "number" && Number.isNaN(nodata)) return undefined;
+  if (typeof nodata === "string" && nodata.trim().toLowerCase() === "nan")
+    return undefined;
+  return nodata;
+}
+
+/**
+ * Serializes an object into a TiTiler query string. Arrays repeat the key per
+ * element (TiTiler list params, e.g. `assets=a&assets=b`); nested elements
+ * comma-join (`rescale: [[0,1],[0,2]]` -> `rescale=0,1&rescale=0,2`); objects
+ * are JSON-encoded. Shared by the render-extension and mosaic paths.
  * @param {Record<string,any>} obj
  * @returns {string}
  */
@@ -1403,23 +1434,12 @@ export function encodeURLObject(obj) {
 
     switch (valueType) {
       case "array": {
-        // Check if any element in the array is itself an array (multi-dimensional)
-        const hasNestedArrays = value.some((/** @type {any} */ item) =>
-          Array.isArray(item),
-        );
-
-        if (hasNestedArrays) {
-          // For multi-dimensional arrays, repeat the key with different values
-          for (const val of value) {
-            if (Array.isArray(val)) {
-              str += `${key}=${val.join(",")}&`;
-            } else {
-              str += `${key}=${val}&`;
-            }
+        for (const val of value) {
+          if (Array.isArray(val)) {
+            str += `${key}=${val.join(",")}&`;
+          } else {
+            str += `${key}=${encodeURIComponent(val)}&`;
           }
-        } else {
-          // For simple arrays, join with commas
-          str += `${key}=${value.join(",")}&`;
         }
         break;
       }

@@ -648,6 +648,10 @@ export interface Render {
   expression?: string;
   /** Zoom levels range applicable for the visualization */
   minmax_zoom?: number[];
+  /** Band indexes to apply the rendering to. */
+  bidx?: number[];
+  /** Tile size to request from the tile server. */
+  tilesize?: number;
 }
 /** @ignore */
 export interface TitilerSTACParameters {
