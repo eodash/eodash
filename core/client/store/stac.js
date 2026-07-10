@@ -184,11 +184,6 @@ export const useSTAcStore = defineStore("stac", () => {
       // construct absolute URL of a poi
       absoluteUrl.value = constructPoiUrl(relativePath, indicator.value);
     }
-    //@ts-expect-error "this" type is not exported by pinia
-    const patch = this?.$patch;
-    if (patch) {
-      patch({ selectedItem: stacItem ?? null });
-    }
 
     await axios
       .get(absoluteUrl.value)
@@ -202,6 +197,7 @@ export const useSTAcStore = defineStore("stac", () => {
           isApi.value,
           rasterEndpoint.value,
         );
+        selectedItem.value = /** @type {any} */ (stacItem) ?? null;
         selectedStac.value = resp.data;
         // set indicator and poi
         indicator.value = isPoi
@@ -237,11 +233,6 @@ export const useSTAcStore = defineStore("stac", () => {
       // construct absolute URL of a poi
       absoluteUrl.value = constructPoiUrl(relativePath, compareIndicator.value);
     }
-    //@ts-expect-error "this" type is not exported by pinia
-    const patch = this?.$patch;
-    if (stacItem && patch) {
-      patch({ selectedCompareItem: stacItem });
-    }
     await axios
       .get(absoluteUrl.value)
       .then(async (resp) => {
@@ -253,6 +244,7 @@ export const useSTAcStore = defineStore("stac", () => {
           isApi.value,
           rasterEndpoint.value,
         );
+        selectedCompareItem.value = /** @type {any} */ (stacItem) ?? null;
         selectedCompareStac.value = resp.data;
         compareIndicator.value = isPOI
           ? compareIndicator.value

@@ -18,11 +18,12 @@ const getFiltersSignature = (filters) => {
  * @param {{
  *  currentItems: import("vue").Ref<import("@/types").GeoJsonFeature[]>,
  *  mapElement: import("vue").Ref<import("@eox/map").EOxMap | null>,
- *  hoverProperties: string[] | undefined,
+ *  hoverProperties: import("vue").Ref<string[] | undefined>,
  *  stacItemsStyle?: object,
  *  stacItemsInteractionStyle?: object,
  *  itemfilterEl?: import("vue").Ref<any>,
  *  selectedItemRef?: import("vue").Ref<import("stac-ts").StacItem | null>,
+ *  onCollectionsChange?: (collectionIds: string[], results: import("@/types").GeoJsonFeature[]) => void,
  *  mosaicOptions?: {
  *    isMosaicEnabled: import("vue").ComputedRef<boolean>,
  *    getMosaicEndpoint: () => string | null | undefined,
@@ -38,9 +39,12 @@ export const createOnFilterHandler = ({
   stacItemsInteractionStyle,
   itemfilterEl,
   selectedItemRef,
+  onCollectionsChange,
   mosaicOptions = null,
 }) => {
   let lastScheduledFiltersKey = "";
+  /** @type {string | undefined} */
+  let lastCollectionState;
 
   /** @param {CustomEvent} evt */
   return (evt) => {
@@ -48,10 +52,22 @@ export const createOnFilterHandler = ({
     renderItemsFeatures(
       currentItems.value,
       mapElement,
-      hoverProperties,
+      hoverProperties.value,
       stacItemsStyle,
       stacItemsInteractionStyle,
     );
+
+    const collectionState = evt.detail.filters?.collection?.stringifiedState;
+    if (onCollectionsChange && collectionState !== lastCollectionState) {
+      lastCollectionState = collectionState;
+      const collectionIds = collectionState
+        ? String(collectionState)
+            .split(",")
+            .map((id) => id.trim())
+            .filter(Boolean)
+        : [];
+      onCollectionsChange(collectionIds, evt.detail.results);
+    }
 
     const selected = selectedItemRef?.value;
     if (selected && itemfilterEl?.value) {
