@@ -310,31 +310,33 @@ export async function creatAsyncProcessLayerDefinitions(
 
     switch (resultItem.type) {
       case "image/tiff": {
-        layers.push({
-          type: "WebGLTile",
-          properties: {
-            id: endpointLink.id + "_process" + resultItem.id + postfixId,
-            title:
-              "Results " +
-              (selectedStac?.id ?? "") +
-              " " +
-              (resultItem.id ?? ""),
-            layerControlToolsExpand: true,
-            ...(layerConfig && { layerConfig }),
-            ...extraProperties,
-          },
-          source: {
-            type: "GeoTIFF",
-            normalize: !style,
-            sources: resultItem.urls.map((url) => ({ url })),
-            //@ts-expect-error TODO
-            ...(selectedStac["eodash:mapProjection"]?.["name"] && {
-              //@ts-expect-error TODO
-              projection: selectedStac["eodash:mapProjection"]["name"],
-            }),
-          },
-          ...(style && { style }),
-        });
+        layers.push(
+          /** @type {import("@eox/map/src/layers").EOxLayerType<"WebGLTile","GeoTIFF">} */ ({
+            type: "WebGLTile",
+            properties: {
+              id: endpointLink.id + "_process" + resultItem.id + postfixId,
+              title:
+                "Results " +
+                (selectedStac?.id ?? "") +
+                " " +
+                (resultItem.id ?? ""),
+              layerControlToolsExpand: true,
+              ...(layerConfig && { layerConfig }),
+              ...extraProperties,
+            },
+            source: {
+              type: "GeoTIFF",
+              normalize: !style,
+              sources: resultItem.urls.map((url) => ({ url })),
+              //@ts-expect-error todo
+              ...(selectedStac["eodash:mapProjection"]?.["name"] && {
+                //@ts-expect-error todo
+                projection: selectedStac["eodash:mapProjection"]["name"],
+              }),
+            },
+            ...(style && { style }),
+          }),
+        );
         break;
       }
       case "application/geo+json": {

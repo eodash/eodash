@@ -140,26 +140,39 @@ export const useCatalogConfig = ({
     }
   };
 
+  /**
+   * Collections to resolve declared filters against. An empty selection means
+   * "search across all collection"
+   * @param {string[]} selectedIds
+   * @returns {string[]}
+   */
+  const resolveCollectionIds = (selectedIds) =>
+    selectedIds.length
+      ? selectedIds
+      : (store.stac ?? []).map((collection) => collection.id).filter(Boolean);
+
   const initCatalogConfig = async () => {
-    const id = enableCompare
+    const selectedId = enableCompare
       ? (store.selectedCompareStac?.id ?? compareIndicator.value ?? null)
       : (store.selectedStac?.id ?? indicator.value ?? null);
-    lastResolvedSignature = id ?? "";
-    const metadata = id ? await fetchMetadata([id]) : [];
-    buildFor(metadata, id ? [id] : []);
+    const ids = resolveCollectionIds(selectedId ? [selectedId] : []);
+    lastResolvedSignature = [...ids].sort().join(",");
+    const metadata = ids.length ? await fetchMetadata(ids) : [];
+    buildFor(metadata, ids);
   };
 
   /** @param {string[]} collectionIds */
   const onCollectionsChange = async (collectionIds) => {
-    const signature = [...collectionIds].sort().join(",");
+    const ids = resolveCollectionIds(collectionIds);
+    const signature = [...ids].sort().join(",");
     if (signature === lastResolvedSignature) return;
     lastResolvedSignature = signature;
     configController?.abort();
     const controller = new AbortController();
     configController = controller;
-    const metadata = await fetchMetadata(collectionIds, controller.signal);
+    const metadata = await fetchMetadata(ids, controller.signal);
     if (signature !== lastResolvedSignature) return;
-    buildFor(metadata, collectionIds);
+    buildFor(metadata, ids);
   };
 
   return {
