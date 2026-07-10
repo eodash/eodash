@@ -17,6 +17,8 @@ export class BandsEditor extends AbstractEditor {
   bandTitles = [];
   /** @type {string[]} */
   colors = [];
+  /** @type {(() => void) | undefined} */
+  regenerate;
 
   build() {
     super.build();
@@ -49,6 +51,12 @@ export class BandsEditor extends AbstractEditor {
     // appends
     this.container?.appendChild(this.label);
     this.container?.appendChild(this.control);
+  }
+
+  onWatchedFieldChange() {
+    super.onWatchedFieldChange();
+    // Rebuild the expression from the current slots + watched values (e.g. orbit)
+    this.regenerate?.();
   }
 }
 
