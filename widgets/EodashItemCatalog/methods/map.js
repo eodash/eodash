@@ -46,7 +46,6 @@ export function renderItemsFeatures(
     },
     source: {
       type: "Vector",
-      //@ts-expect-error todo
       url:
         "data:application/geo+json," +
         encodeURIComponent(
