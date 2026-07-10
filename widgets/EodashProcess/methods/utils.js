@@ -90,6 +90,7 @@ export async function createTiffLayerDefinition(
   // We want to make sure the urls are alphabetically sorted
   urls = urls.sort();
   /** @type {import("@eox/map/src/layers").EOxLayerType<"WebGLTile","GeoTIFF"> | undefined} */
+  //@ts-expect-error todo
   const layerdef =
     urls.length > 0
       ? {
