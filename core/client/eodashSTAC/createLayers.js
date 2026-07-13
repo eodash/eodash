@@ -751,6 +751,14 @@ export const createLayersFromLinks = async (
       );
       continue;
     }
+    // Only raster XYZ tiles are supported; skip vector & TMS scheme TileJSON
+    if (tileJSON.vector_layers || tileJSON.scheme === "tms") {
+      console.warn(
+        "[eodash] Unsupported TileJSON (only raster XYZ is supported)",
+        tilejsonLink.href,
+      );
+      continue;
+    }
 
     const tilejsonProjection =
       /** @type {number | string | {name: string, def: string} | undefined} */
@@ -790,10 +798,15 @@ export const createLayersFromLinks = async (
       },
       source: {
         type: "XYZ",
-        url: tileJSON.tiles[0],
+        ...(tileJSON.tiles.length > 1
+          ? { urls: tileJSON.tiles }
+          : { url: tileJSON.tiles[0] }),
         projection: projectionCode,
-        ...(tilejsonLink.attribution
-          ? { attributions: tilejsonLink.attribution }
+        // Link attribution wins; the TileJSON document's own is the fallback.
+        ...(tilejsonLink.attribution || tileJSON.attribution
+          ? {
+              attributions: tilejsonLink.attribution || tileJSON.attribution,
+            }
           : {}),
       },
     };
