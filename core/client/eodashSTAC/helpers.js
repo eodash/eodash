@@ -680,6 +680,21 @@ export const removeUnneededProperties = (layers, formValues = {}) => {
       }
     }
 
+    const {
+      id,
+      title,
+      mapboxStyle,
+      projection,
+      applyOptions,
+      layerConfig,
+      visible,
+    } = clonedLayer.properties || {};
+
+    // If style was not at root but in properties (layerConfig), move it to root early
+    if (!clonedLayer.style && layerConfig?.style) {
+      clonedLayer.style = layerConfig.style;
+    }
+
     // Burn in OpenLayers ["var", "name"] variables using flatFormValues overriding style.variables
     const styleVariables = {
       ...(clonedLayer.style?.variables || {}),
@@ -693,16 +708,6 @@ export const removeUnneededProperties = (layers, formValues = {}) => {
       });
     }
 
-    const {
-      id,
-      title,
-      mapboxStyle,
-      projection,
-      applyOptions,
-      layerConfig,
-      visible,
-    } = clonedLayer.properties || {};
-
     clonedLayer.properties = {
       id,
       title,
@@ -714,11 +719,6 @@ export const removeUnneededProperties = (layers, formValues = {}) => {
 
     if (clonedLayer["interactions"]) {
       delete clonedLayer["interactions"];
-    }
-
-    // If style was not at root but in properties (layerConfig), move it to root
-    if (!clonedLayer.style && layerConfig?.style) {
-      clonedLayer.style = layerConfig.style;
     }
 
     // Cleanup unnecessary properties
