@@ -1,6 +1,22 @@
 # Changelog
 
 
+## [5.8.0](https://github.com/eodash/eodash/compare/eodash-v5.7.1...eodash-v5.8.0) (2026-07-13)
+
+
+### Features
+
+* implemented injection of url parameters based on style jsonform config ([#412](https://github.com/eodash/eodash/issues/412)) ([8a470e9](https://github.com/eodash/eodash/commit/8a470e97e41e880a2e90b948426c2fd6152e8cc7))
+* Process panel chart height calculation ([#407](https://github.com/eodash/eodash/issues/407)) ([fb56fbc](https://github.com/eodash/eodash/commit/fb56fbc084942b8ab23e1f4fb6312fa7814683fd))
+* Refactor rasterform handling, enhance dynamic visualization support ([#405](https://github.com/eodash/eodash/issues/405)) ([d966ea1](https://github.com/eodash/eodash/commit/d966ea1fca9d4e17ea896c4e94a8177cba431740))
+* Support TileJSON Raster Layer ([#415](https://github.com/eodash/eodash/issues/415)) ([72b133b](https://github.com/eodash/eodash/commit/72b133b73320db568eba4768b5e9bf6682bf3aed))
+
+
+### Bug Fixes
+
+* order for burning in fixed ([#413](https://github.com/eodash/eodash/issues/413)) ([0e20fcf](https://github.com/eodash/eodash/commit/0e20fcf36f5c74f432cc4bb5c028ae0723517b4d))
+* worked on export logic, fix for vector tiles ([#408](https://github.com/eodash/eodash/issues/408)) ([8c1dc32](https://github.com/eodash/eodash/commit/8c1dc32c6493c255bc1188db72f0cf83203d758d))
+
 ## [5.7.1](https://github.com/eodash/eodash/compare/eodash-v5.7.0...eodash-v5.7.1) (2026-07-02)
 
 
