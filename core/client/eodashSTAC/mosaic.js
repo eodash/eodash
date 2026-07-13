@@ -25,6 +25,8 @@ import { useEodash, useOnLayersUpdate } from "@/composables";
 import {
   encodeURLObject,
   extractLayerTimeValues,
+  normalizeNodata,
+  normalizeRescale,
   resolveRenders,
 } from "./helpers";
 import { useSTAcStore } from "@/store/stac";
@@ -248,17 +250,21 @@ async function createMosaicLayers(mosaicEndpoint, params) {
   }
 
   const renderParamsStr = encodeURLObject({
-    assets: preset.assets,
+    // TiTiler treats assets and expression as mutually exclusive band selection
+    assets: preset.expression ? undefined : preset.assets,
     expression: preset.expression,
-    nodata: preset.nodata,
+    nodata: normalizeNodata(preset.nodata),
     resampling: preset.resampling,
     color_formula: preset.color_formula,
     colormap: preset.colormap,
     colormap_name: preset.colormap_name,
-    rescale: preset.rescale,
+    rescale: normalizeRescale(preset.rescale),
   });
 
-  const tileParams = new URLSearchParams({ tilesize: "512", ...params });
+  const tileParams = new URLSearchParams({
+    tilesize: `${preset.tilesize ?? "512"}`,
+    ...params,
+  });
   const tileJsonUrl = `${mosaicEndpoint}?${renderParamsStr}${tileParams.toString()}`;
 
   const tileJSON = await axios

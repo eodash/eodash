@@ -1,5 +1,6 @@
 import { registerProjection } from "@/store/actions";
 import { mapEl } from "@/store/states";
+import { useEodash } from "@/composables";
 
 import {
   extractRoles,
@@ -15,9 +16,13 @@ import {
   getBandsProperty,
   applyTitilerUpscaling,
   encodeURLObject,
+  normalizeRescale,
+  normalizeNodata,
+  resolveRenders,
 } from "./helpers";
 import { handleAuthenticationOfLink } from "./auth";
 import log from "loglevel";
+import axios from "@/plugins/axios";
 import { useSTAcStore } from "@/store/stac";
 
 /**
@@ -437,6 +442,10 @@ export const createLayersFromLinks = async (
     item.links.filter((l) => l.rel === "vector-tile") ?? [];
   const mapboxStyleDocumentArray =
     item.links.filter((l) => l.rel === "mapbox-style-document") ?? [];
+  // An xyz link takes precedence over a tilejson link;
+  const tilejsonArray = xyzArray.length
+    ? []
+    : (item.links.filter((l) => l.rel === "tilejson") ?? []);
   // Taking projection code from main map view, as main view defines
   // projection for comparison map
   const viewProjectionCode = mapEl?.value?.projection || "EPSG:3857";
@@ -725,6 +734,96 @@ export const createLayersFromLinks = async (
     jsonArray.push(json);
   }
 
+  for (const tilejsonLink of tilejsonArray) {
+    // The tilejson href is a complete URL with the render params baked in by the
+    // STAC producer; fetch it and use its `tiles[0]` template as an XYZ source.
+    const tileJSON = await axios
+      .get(tilejsonLink.href)
+      .then((res) => res.data)
+      .catch((err) => {
+        console.error("[eodash] Failed to fetch item TileJSON", err);
+        return null;
+      });
+    if (!tileJSON?.tiles?.[0]) {
+      console.warn(
+        "[eodash] No tile URL in item TileJSON response",
+        tilejsonLink.href,
+      );
+      continue;
+    }
+    // Only raster XYZ tiles are supported; skip vector & TMS scheme TileJSON
+    if (tileJSON.vector_layers || tileJSON.scheme === "tms") {
+      console.warn(
+        "[eodash] Unsupported TileJSON (only raster XYZ is supported)",
+        tilejsonLink.href,
+      );
+      continue;
+    }
+
+    const tilejsonProjection =
+      /** @type {number | string | {name: string, def: string} | undefined} */
+      (tilejsonLink?.["proj:epsg"] || tilejsonLink?.["eodash:proj4_def"]);
+    await registerProjection(tilejsonProjection);
+    const projectionCode = getProjectionCode(tilejsonProjection || "EPSG:3857");
+    const rasterForm = await fetchRasterForm(
+      /** @type {string|object|undefined} */ (
+        tilejsonLink?.["eodash:rasterform"] ||
+          item?.["eodash:rasterform"] ||
+          collection?.["eodash:rasterform"]
+      ),
+    );
+    const { layerConfig } = extractLayerConfig(
+      collectionId,
+      {},
+      rasterForm,
+      "tileUrl",
+    );
+    const linkId = createLayerID(
+      collectionId,
+      item.id,
+      tilejsonLink,
+      viewProjectionCode,
+    );
+
+    log.debug("TileJSON layer added", linkId);
+    /** @type {Record<string, any>} */
+    const json = {
+      type: "Tile",
+      properties: {
+        id: linkId,
+        title: tilejsonLink.title || title || item.id,
+        roles: tilejsonLink.roles,
+        layerDatetime,
+        layerConfig,
+      },
+      source: {
+        type: "XYZ",
+        ...(tileJSON.tiles.length > 1
+          ? { urls: tileJSON.tiles }
+          : { url: tileJSON.tiles[0] }),
+        projection: projectionCode,
+        // Link attribution wins; the TileJSON document's own is the fallback.
+        ...(tilejsonLink.attribution || tileJSON.attribution
+          ? {
+              attributions: tilejsonLink.attribution || tileJSON.attribution,
+            }
+          : {}),
+      },
+    };
+    if (Number.isFinite(tileJSON.minzoom)) json.minZoom = tileJSON.minzoom;
+    if (Number.isFinite(tileJSON.maxzoom)) json.maxZoom = tileJSON.maxzoom;
+
+    extractRoles(json.properties, tilejsonLink);
+    if (extraProperties !== null) {
+      json.properties = {
+        ...json.properties,
+        ...extraProperties,
+        ...extractEoxLegendLink(tilejsonLink),
+      };
+    }
+    jsonArray.push(json);
+  }
+
   for (const vectorTileLink of vectorTileArray ?? []) {
     const vectorTileLinkProjection =
       /** @type {number | string | {name: string, def: string} | undefined} */
@@ -876,18 +975,21 @@ export const createLayerFromRender = async (
   item,
   extraProperties,
 ) => {
-  if (!collection || !collection.renders || !item) {
+  // config renders > collection STAC renders > item renders
+  const renders = /** @type {Record<string,import("@/types").Render>} */ (
+    resolveRenders(collection, useEodash()?.options?.renders) ?? item?.renders
+  );
+  if (!collection || !item || !renders) {
     return [];
   }
 
-  // Skip when an explicit xyz link already targets the collection on the same endpoint
-  const hasMatchingXyzLink = item.links?.some(
+  // Yield to a raster xyz/tilejson link — createLayersFromLinks renders it.
+  const hasMatchingTileLink = item.links?.some(
     (link) =>
-      link.rel === "xyz" &&
-      link.href?.includes(rasterURL) &&
-      link.href?.includes(`/collections/${collection.id}/`),
+      (link.rel === "xyz" || link.rel === "tilejson") &&
+      link.href?.includes(rasterURL),
   );
-  if (hasMatchingXyzLink) {
+  if (hasMatchingTileLink) {
     return [];
   }
 
@@ -898,44 +1000,60 @@ export const createLayerFromRender = async (
   );
   let { layerConfig } = extractLayerConfig(collection.id, {}, rasterForm);
 
-  const renders = /** @type {Record<string,import("@/types").Render>} */ (
-    collection.renders ?? item?.renders
-  );
+  /**
+   * Resolves the first defined value of a property across a render's assets,
+   * checking item assets before falling back to collection assets.
+   * @param {import("@/types").Render} render
+   * @param {string} propertyName
+   * @returns {any}
+   */
+  const getRenderAssetProperty = (render, propertyName) => {
+    for (const assetKey of render.assets ?? []) {
+      const asset = item?.assets?.[assetKey] ?? collection?.assets?.[assetKey];
+      const value = asset?.[propertyName];
+      if (value !== undefined) {
+        return value;
+      }
+    }
+    return undefined;
+  };
+
   const layers = [];
-  // special case for rescale
   for (const key in renders) {
     const title = renders[key].title;
 
-    const assetsCollection =
-      renders[key].assets[0] in item["assets"] ? item : collection;
+    const expression =
+      renders[key].expression ??
+      getRenderAssetProperty(renders[key], "expression");
 
     const paramsObject = {
-      assets: renders[key].assets,
-      expression:
-        renders[key].expression ??
-        assetsCollection["assets"]?.[renders[key].assets[0]]?.expression,
-      nodata:
-        renders[key].nodata ??
-        assetsCollection["assets"]?.[renders[key].assets[0]]?.nodata,
+      // TiTiler treats assets and expression as mutually exclusive band selection
+      assets: expression ? undefined : renders[key].assets,
+      expression,
+      nodata: normalizeNodata(
+        renders[key].nodata ?? getRenderAssetProperty(renders[key], "nodata"),
+      ),
       resampling:
         renders[key].resampling ??
-        assetsCollection["assets"]?.[renders[key].assets[0]]?.resampling,
+        getRenderAssetProperty(renders[key], "resampling"),
       color_formula:
         renders[key].color_formula ??
-        assetsCollection["assets"]?.[renders[key].assets[0]]?.color_formula,
+        getRenderAssetProperty(renders[key], "color_formula"),
       colormap:
         renders[key].colormap ??
-        assetsCollection["assets"]?.[renders[key].assets[0]]?.colormap,
+        getRenderAssetProperty(renders[key], "colormap"),
       colormap_name:
         renders[key].colormap_name ??
-        assetsCollection["assets"]?.[renders[key].assets[0]]?.colormap_name,
-      rescale:
-        renders[key].rescale ??
-        assetsCollection["assets"]?.[renders[key].assets[0]]?.rescale,
+        getRenderAssetProperty(renders[key], "colormap_name"),
+      rescale: normalizeRescale(
+        renders[key].rescale ?? getRenderAssetProperty(renders[key], "rescale"),
+      ),
+      bidx: renders[key].bidx,
+      tilesize: renders[key].tilesize,
     };
     const paramsStr = encodeURLObject(paramsObject);
     const url = `${rasterURL}/collections/${collection.id}/items/${item.id}/tiles/WebMercatorQuad/{z}/{x}/{y}?${paramsStr}`;
-    layers.push({
+    const json = {
       /** @type {"Tile"} */
       type: "Tile",
       properties: {
@@ -958,7 +1076,14 @@ export const createLayerFromRender = async (
         url,
         projection: "EPSG:3857",
       },
-    });
+    };
+    if (renders[key].tilesize) {
+      // @ts-expect-error tileGrid is added here and supported in eox-map layer definition
+      json.source.tileGrid = {
+        tileSize: [renders[key].tilesize, renders[key].tilesize],
+      };
+    }
+    layers.push(json);
   }
 
   return layers;

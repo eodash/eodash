@@ -89,10 +89,10 @@ export async function createTiffLayerDefinition(
   }
   // We want to make sure the urls are alphabetically sorted
   urls = urls.sort();
-  /** @type {import("@eox/map/src/layers").EOxLayerType<"WebGLTile","GeoTIFF"> | undefined} */
+
   const layerdef =
     urls.length > 0
-      ? {
+      ? /** @type {import("@eox/map/src/layers").EOxLayerType<"WebGLTile","GeoTIFF">} */ ({
           type: "WebGLTile",
           source: {
             type: "GeoTIFF",
@@ -106,7 +106,7 @@ export async function createTiffLayerDefinition(
             layerControlToolsExpand: true,
           },
           ...(style && { style: style }),
-        }
+        })
       : undefined;
 
   // We want to see if the currently selected indicator uses a
@@ -309,31 +309,33 @@ export async function creatAsyncProcessLayerDefinitions(
 
     switch (resultItem.type) {
       case "image/tiff": {
-        layers.push({
-          type: "WebGLTile",
-          properties: {
-            id: endpointLink.id + "_process" + resultItem.id + postfixId,
-            title:
-              "Results " +
-              (selectedStac?.id ?? "") +
-              " " +
-              (resultItem.id ?? ""),
-            layerControlToolsExpand: true,
-            ...(layerConfig && { layerConfig }),
-            ...extraProperties,
-          },
-          source: {
-            type: "GeoTIFF",
-            normalize: !style,
-            sources: resultItem.urls.map((url) => ({ url })),
-            //@ts-expect-error TODO
-            ...(selectedStac["eodash:mapProjection"]?.["name"] && {
+        layers.push(
+          /** @type {import("@eox/map/src/layers").EOxLayerType<"WebGLTile","GeoTIFF">} */ ({
+            type: "WebGLTile",
+            properties: {
+              id: endpointLink.id + "_process" + resultItem.id + postfixId,
+              title:
+                "Results " +
+                (selectedStac?.id ?? "") +
+                " " +
+                (resultItem.id ?? ""),
+              layerControlToolsExpand: true,
+              ...(layerConfig && { layerConfig }),
+              ...extraProperties,
+            },
+            source: {
+              type: "GeoTIFF",
+              normalize: !style,
+              sources: resultItem.urls.map((url) => ({ url })),
               //@ts-expect-error TODO
-              projection: selectedStac["eodash:mapProjection"]["name"],
-            }),
-          },
-          ...(style && { style }),
-        });
+              ...(selectedStac["eodash:mapProjection"]?.["name"] && {
+                //@ts-expect-error TODO
+                projection: selectedStac["eodash:mapProjection"]["name"],
+              }),
+            },
+            ...(style && { style }),
+          }),
+        );
         break;
       }
       case "application/geo+json": {

@@ -192,9 +192,14 @@ export class EodashCollection {
 
     const isSupported =
       item.links.some((link) =>
-        ["wms", "xyz", "wmts", "vector-tile", "mapbox-style-document"].includes(
-          link.rel,
-        ),
+        [
+          "wms",
+          "xyz",
+          "wmts",
+          "vector-tile",
+          "mapbox-style-document",
+          "tilejson",
+        ].includes(link.rel),
       ) || Object.keys(dataAssets).length;
 
     if (isSupported) {
@@ -356,7 +361,9 @@ export class EodashCollection {
       (/** @type {any} */ a) => a.key?.startsWith("datetime_") || a.interval,
     );
     if (datetimeAgg?.buckets) {
-      return datetimeAgg.buckets.map((/** @type {any} */ b) => new Date(b.key));
+      return datetimeAgg.buckets
+        .map((/** @type {any} */ b) => new Date(b.key))
+        .filter((/** @type {Date} */ d) => !isNaN(d.getTime()));
     }
 
     const items = await this.getItems(true, false, centerDatetime);
@@ -371,7 +378,9 @@ export class EodashCollection {
           new Date(/** @type {string} */ (i.properties?.[datetimeProperty]))
       : //@ts-expect-error todo
         (i) => new Date(/** @type {string} */ (i[datetimeProperty]));
-    return items?.map(mapToDates) || [];
+    return (items ?? [])
+      .map(mapToDates)
+      .filter((/** @type {Date} */ d) => !isNaN(d.getTime()));
   }
 
   async getExtent() {
