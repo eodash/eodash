@@ -23,7 +23,7 @@ const getFiltersSignature = (filters) => {
  *  stacItemsInteractionStyle?: object,
  *  itemfilterEl?: import("vue").Ref<any>,
  *  selectedItemRef?: import("vue").Ref<import("stac-ts").StacItem | null>,
- *  onCollectionsChange?: (collectionIds: string[], results: import("@/types").GeoJsonFeature[]) => void,
+ *  onCollectionsChange?: (results: import("@/types").GeoJsonFeature[]) => void,
  *  mosaicOptions?: {
  *    isMosaicEnabled: import("vue").ComputedRef<boolean>,
  *    getMosaicEndpoint: () => string | null | undefined,
@@ -60,13 +60,7 @@ export const createOnFilterHandler = ({
     const collectionState = evt.detail.filters?.collection?.stringifiedState;
     if (onCollectionsChange && collectionState !== lastCollectionState) {
       lastCollectionState = collectionState;
-      const collectionIds = collectionState
-        ? String(collectionState)
-            .split(",")
-            .map((id) => id.trim())
-            .filter(Boolean)
-        : [];
-      onCollectionsChange(collectionIds, evt.detail.results);
+      onCollectionsChange(evt.detail.results);
     }
 
     const selected = selectedItemRef?.value;

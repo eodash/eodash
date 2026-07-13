@@ -204,7 +204,7 @@ export function useHoverTooltip(hoverProperties) {
   };
   onMounted(() => {
     tooltipAdapter.value = ({ key, value }) => {
-      if (!!value && hoverProperties.value?.includes(key)) {
+      if (value != null && hoverProperties.value?.includes(key)) {
         return { key: formatKey(key), value: formatValue(value) };
       }
       return undefined;

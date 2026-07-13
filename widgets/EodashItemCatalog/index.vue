@@ -310,25 +310,21 @@ if (catalogEndpoint.value) {
     .then((res) => (currentItems.value = res.data.features));
 }
 
-// Filter/sort/display config: derived from the active collection's metadata
-// unless provided via props; updated imperatively from the filter event.
+// Filter/sort/hover config: author-declared, shown or hidden per collection
+// based on the properties present in the current search results.
 const {
   filterProperties,
   sortByOptions,
   hoverProperties: effectiveHoverProperties,
-  initCatalogConfig,
-  onCollectionsChange,
+  applyItems,
 } = useCatalogConfig({
   itemfilterEl,
-  endpoint: catalogEndpoint,
-  store,
   datetimeFilter: props.datetimeFilter,
-  enableCompare: props.enableCompare,
   declaredFilters: props.filters ?? [],
   declaredSortBy: props.sortBy ?? [],
   declaredHoverProperties: props.hoverProperties ?? [],
 });
-await initCatalogConfig();
+applyItems(currentItems.value);
 selectedSort.value = sortByOptions.value[0] ?? null;
 sortByParam.value = selectedSort.value
   ? `-${selectedSort.value.property}`
@@ -403,8 +399,8 @@ const onFilter = createOnFilterHandler({
   stacItemsInteractionStyle: props.stacItemsInteractionStyle,
   itemfilterEl,
   selectedItemRef: activeSelectedItem,
-  onCollectionsChange: async (collectionIds) => {
-    await onCollectionsChange(collectionIds);
+  onCollectionsChange: (results) => {
+    applyItems(results);
     // keep the user's sort when the new collection still offers it
     const stillValid = sortByOptions.value.some(
       (option) => option.property === selectedSort.value?.property,
