@@ -1,6 +1,6 @@
 # EodashItemCatalog
 
-A STAC item search and browse panel. It wraps [`eox-itemfilter`](https://eox-a.github.io/EOxElements/?path=/docs/elements-eox-itemfilter--docs), fetches items from `<stacEndpoint>/search?limit=100` on mount, and renders configurable filters alongside a results list. The declared properties are resolved against the selected collection's STAC metadata (summaries and queryables) and whenever the collection changes. Range bounds are derived from the queryables, and a declared filter, sort option, or hover field the collection does not describe is omitted. Selecting an item loads it into the map. Item footprints are drawn on the map and highlighted on hover; when `bboxFilter` is true the search re-runs on every map move.
+A STAC item search and browse panel. It wraps [`eox-itemfilter`](https://eox-a.github.io/EOxElements/?path=/docs/elements-eox-itemfilter--docs), fetches items from `<stacEndpoint>/search?limit=100` on mount, and renders configurable filters alongside a results list. A declared `filters`, `sortBy`, or `hoverProperties` entry is shown only while the current result items actually carry that property, so entries that do not apply to the selected collection are hidden. Selecting an item loads it into the map. Item footprints are drawn on the map and highlighted on hover; when `bboxFilter` is true the search re-runs on every map move.
 
 ## Example
 
@@ -54,6 +54,8 @@ widget: {
 ### Filters (`filters`)
 
 Each entry in the `filters` array configures one filter panel in `eox-itemfilter`. The defaults provide a single cloud-cover range filter.
+
+To bootstrap this config from a live STAC API, run `node core/node/scripts/suggestFilters.js <stac-api-endpoint>`; it inspects the collections' queryables and summaries and prints a suggested `filters` array to review and paste.
 
 | Field | Type | Required | Description |
 | --- | --- | --- | --- |
