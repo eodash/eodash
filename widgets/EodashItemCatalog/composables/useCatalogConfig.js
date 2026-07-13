@@ -149,7 +149,9 @@ export const useCatalogConfig = ({
   const resolveCollectionIds = (selectedIds) =>
     selectedIds.length
       ? selectedIds
-      : (store.stac ?? []).map((collection) => collection.id).filter(Boolean);
+      : (store.stac ?? []).map(
+          (collection) => /** @type {string} */ (collection.id),
+        );
 
   const initCatalogConfig = async () => {
     const selectedId = enableCompare
