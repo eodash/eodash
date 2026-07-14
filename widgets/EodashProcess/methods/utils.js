@@ -326,9 +326,9 @@ export async function creatAsyncProcessLayerDefinitions(
               type: "GeoTIFF",
               normalize: !style,
               sources: resultItem.urls.map((url) => ({ url })),
-              //@ts-expect-error todo
+              //@ts-expect-error TODO
               ...(selectedStac["eodash:mapProjection"]?.["name"] && {
-                //@ts-expect-error todo
+                //@ts-expect-error TODO
                 projection: selectedStac["eodash:mapProjection"]["name"],
               }),
             },
