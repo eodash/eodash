@@ -105,7 +105,7 @@ import {
 } from "./methods/handlers";
 import { mdiViewDashboard } from "@mdi/js";
 import EodashLayoutSwitcher from "^/EodashLayoutSwitcher.vue";
-import { mapCompareEl, mapEl, mapPosition } from "@/store/states";
+import { indicator, mapCompareEl, mapEl, mapPosition } from "@/store/states";
 import axios from "@/plugins/axios";
 import {
   useInitMosaic,
@@ -229,11 +229,9 @@ const itemfilterEl = useTemplateRef("itemfilter");
 const sortMenu = ref(false);
 const sortOrder = ref("-");
 /** @type {import("vue").Ref<{ property: string, label: string } | null>} */
-const selectedSort = ref(props.sortBy?.[0] ?? null);
+const selectedSort = ref(null);
 const sortByParam = ref("-datetime");
-/**
- *  Updates the sortBy direction
- */
+/** Rebuild sortByParam from the current property and order. */
 function updateSortByParam() {
   sortByParam.value = `${sortOrder.value === "+" ? "" : "-"}${
     selectedSort.value?.property ?? "datetime"
@@ -241,7 +239,7 @@ function updateSortByParam() {
 }
 /**
  * Handle sort option selection
- * @param {{ property: string, label: string }} option -  property and label
+ * @param {{ property: string, label: string }} option
  */
 function selectSort(option) {
   if (selectedSort.value?.property === option.property) {
@@ -310,25 +308,37 @@ if (catalogEndpoint.value) {
     .then((res) => (currentItems.value = res.data.features));
 }
 
-// Filter/sort/hover config: author-declared, shown or hidden per collection
-// based on the properties present in the current search results.
+// Per-collection filter/sort/hover config.
 const {
   filterProperties,
   sortByOptions,
   hoverProperties: effectiveHoverProperties,
-  applyItems,
+  applyCollections,
 } = useCatalogConfig({
   itemfilterEl,
   datetimeFilter: props.datetimeFilter,
   declaredFilters: props.filters ?? [],
   declaredSortBy: props.sortBy ?? [],
   declaredHoverProperties: props.hoverProperties ?? [],
+  endpoint: /** @type {string} */ (catalogEndpoint.value),
 });
-applyItems(currentItems.value);
+
+/**
+ * @param {string[]} ids selected collection ids
+ * @returns {string[]} collection ids to resolve the config against
+ */
+const resolveCollectionIds = (ids) => {
+  if (ids.length) {
+    return ids;
+  }
+  return (store.stac ?? []).map((col) => /** @type {string} */ (col.id));
+};
+
+// same seed as the collection facet in `createFilterProperties`
+const initialCollections = indicator.value ? [indicator.value] : [];
+await applyCollections(resolveCollectionIds(initialCollections));
 selectedSort.value = sortByOptions.value[0] ?? null;
-sortByParam.value = selectedSort.value
-  ? `-${selectedSort.value.property}`
-  : "-datetime";
+updateSortByParam();
 
 const subTitleProperty = createSubtitleProperty(props.filters ?? []);
 
@@ -399,8 +409,9 @@ const onFilter = createOnFilterHandler({
   stacItemsInteractionStyle: props.stacItemsInteractionStyle,
   itemfilterEl,
   selectedItemRef: activeSelectedItem,
-  onCollectionsChange: (results) => {
-    applyItems(results);
+  initialCollections,
+  onCollectionsChange: async (collectionIds) => {
+    await applyCollections(resolveCollectionIds(collectionIds));
     // keep the user's sort when the new collection still offers it
     const stillValid = sortByOptions.value.some(
       (option) => option.property === selectedSort.value?.property,
@@ -408,9 +419,7 @@ const onFilter = createOnFilterHandler({
     if (!stillValid) {
       selectedSort.value = sortByOptions.value[0] ?? null;
       sortOrder.value = "-";
-      if (selectedSort.value) {
-        sortByParam.value = `-${selectedSort.value.property}`;
-      }
+      updateSortByParam();
     }
   },
   mosaicOptions: isMosaicEnabled.value
