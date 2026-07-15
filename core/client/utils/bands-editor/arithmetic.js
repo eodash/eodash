@@ -11,12 +11,6 @@ const MUSTACHE_REGEX = /\{\{([^}]+)\}\}/g;
 export function buildArithmeticInterface(editor, colors, bands, bandTitles) {
   const formulaTemplate = editor.schema.formulaTemplate || "{{A}}";
 
-  // Seed initial slot values from configured defaults.
-  const defaultVariables = editor.schema.options?.defaultVariables;
-  if (defaultVariables && !Object.keys(editor.variableValues ?? {}).length) {
-    editor.variableValues = { ...defaultVariables };
-  }
-
   const style = createSlotStyles(bands, colors);
   editor.control?.appendChild(style);
 
@@ -24,29 +18,8 @@ export function buildArithmeticInterface(editor, colors, bands, bandTitles) {
 
   editor.control?.appendChild(document.createElement("hr"));
 
-  // Render the formula with variable drop slots.
+  // Add formula display with embedded slots after the bands
   addFormulaSlots(editor, formulaTemplate, bands, bandTitles);
-
-  // Rebuild and emit the expression when dependent values change.
-  editor.regenerate = () => {
-    //@ts-expect-error custom editor value
-    editor.value = generateFormulaString(editor);
-    editor.onChange(true);
-  };
-}
-
-/**
- * Resolve {{placeholders}} using watched field values.
- * @param {import("./index.js").BandsEditor} editor - The editor instance
- * @param {string} str - String that may contain {{watched}} placeholders
- * @returns {string} String with watched placeholders resolved
- */
-function resolveWatchedPlaceholders(editor, str) {
-  const watched = editor.getWatchedFieldValues?.() ?? {};
-  return str.replace(MUSTACHE_REGEX, (match, name) => {
-    const value = watched[name.trim()];
-    return typeof value === "string" ? value : match;
-  });
 }
 
 /**
@@ -60,19 +33,14 @@ function generateFormulaString(editor) {
 
   const variableValues = editor.variableValues || {};
 
-  const withBands = formulaTemplate.replace(
-    MUSTACHE_REGEX,
-    (match, variable) => {
-      const bandValue = variableValues[variable.trim()];
-      return bandValue || match;
-    },
-  );
-
-  return resolveWatchedPlaceholders(editor, withBands);
+  return formulaTemplate.replace(MUSTACHE_REGEX, (match, variable) => {
+    const bandValue = variableValues[variable.trim()];
+    return bandValue || match; // Keep placeholder if no value assigned
+  });
 }
 
 /**
- * Add the formula display with drop slots for variables.
+ * Add formula display with embedded circular slots
  * @param {import("./index.js").BandsEditor} editor - The editor instance
  * @param {string} template - Formula template string
  * @param {Array<string>} bands - Array of band identifiers
@@ -94,6 +62,7 @@ function addFormulaSlots(editor, template, bands, bandTitles) {
     }
 
     if (!part.match(MUSTACHE_REGEX)) {
+      // This is formula text
       part = part.trim();
       if (part) {
         const textElement = document.createElement("span");
@@ -104,6 +73,7 @@ function addFormulaSlots(editor, template, bands, bandTitles) {
       return;
     }
 
+    // This is a variable placeholder
     const variable = part.replace(/[{}]/g, "").trim();
     const slotElement = createSlot(variable, (e) => {
       e.preventDefault();
@@ -115,17 +85,17 @@ function addFormulaSlots(editor, template, bands, bandTitles) {
 
       editor.variableValues[variable] = enumValue;
 
-      // Keep all instances of the same variable in sync.
+      // Update ALL slots for this variable using unified system
       updateAllSlotsForVariable(editor, variable, enumValue, title);
 
-      // Store the current rendered formula as the field value.
+      // final formula string as the value
       //@ts-expect-error todo
       editor.value = generateFormulaString(editor);
       editor.onChange(true);
     });
     formulaContainer.appendChild(slotElement);
 
-    // A variable can appear multiple times in the template.
+    // Track all slots for this variable
     if (!editor.variableSlots[variable]) {
       editor.variableSlots[variable] = [];
     }
@@ -134,14 +104,14 @@ function addFormulaSlots(editor, template, bands, bandTitles) {
 
   editor.control?.appendChild(formulaContainer);
 
-  // Hydrate slots after DOM nodes are mounted.
+  // Initialize slots with existing values after all slots are created
   setTimeout(() => {
     initializeSlots(editor);
   });
 }
 
 /**
- * Initialize slot UI from current variable values.
+ * Initialize all slots with existing values
  * @param {import("./index.js").BandsEditor} editor - The editor instance
  */
 function initializeSlots(editor) {
@@ -159,7 +129,7 @@ function initializeSlots(editor) {
 }
 
 /**
- * Update all slot instances for one variable.
+ * Update all slots for a specific variable with band circle
  * @param {import("./index.js").BandsEditor} editor - The editor instance
  * @param {string} variable - Variable name
  * @param {string} enumValue - Band value

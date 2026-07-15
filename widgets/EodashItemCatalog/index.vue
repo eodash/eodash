@@ -193,6 +193,15 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  /**
+   * Show the declared filters and their `filterKeys` as-is, without fetching
+   * per-collection metadata to resolve/narrow options. Use for large catalogs
+   * where fetching every collection's summaries/queryables does not scale.
+   */
+  staticFilters: {
+    type: Boolean,
+    default: false,
+  },
   useMosaic: {
     type: Boolean,
     default: false,
@@ -308,7 +317,6 @@ if (catalogEndpoint.value) {
     .then((res) => (currentItems.value = res.data.features));
 }
 
-// Per-collection filter/sort/hover config.
 const {
   filterProperties,
   sortByOptions,
@@ -321,6 +329,7 @@ const {
   declaredSortBy: props.sortBy ?? [],
   declaredHoverProperties: props.hoverProperties ?? [],
   endpoint: /** @type {string} */ (catalogEndpoint.value),
+  staticFilters: props.staticFilters,
 });
 
 /**
@@ -334,9 +343,10 @@ const resolveCollectionIds = (ids) => {
   return (store.stac ?? []).map((col) => /** @type {string} */ (col.id));
 };
 
-// same seed as the collection facet in `createFilterProperties`
 const initialCollections = indicator.value ? [indicator.value] : [];
-await applyCollections(resolveCollectionIds(initialCollections));
+await applyCollections(
+  props.staticFilters ? [] : resolveCollectionIds(initialCollections),
+);
 selectedSort.value = sortByOptions.value[0] ?? null;
 updateSortByParam();
 
@@ -411,6 +421,7 @@ const onFilter = createOnFilterHandler({
   selectedItemRef: activeSelectedItem,
   initialCollections,
   onCollectionsChange: async (collectionIds) => {
+    if (props.staticFilters) return;
     await applyCollections(resolveCollectionIds(collectionIds));
     // keep the user's sort when the new collection still offers it
     const stillValid = sortByOptions.value.some(
@@ -420,6 +431,7 @@ const onFilter = createOnFilterHandler({
       selectedSort.value = sortByOptions.value[0] ?? null;
       sortOrder.value = "-";
       updateSortByParam();
+      itemfilterEl.value?.search();
     }
   },
   mosaicOptions: isMosaicEnabled.value

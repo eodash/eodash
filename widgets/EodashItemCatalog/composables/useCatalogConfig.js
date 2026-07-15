@@ -28,6 +28,7 @@ const clamp = (value, lo, hi) => Math.min(Math.max(value, lo), hi);
  * @param {import("../types").SortOption[]} options.declaredSortBy author-declared sort options
  * @param {string[]} options.declaredHoverProperties author-declared hover properties
  * @param {string} options.endpoint STAC API root
+ * @param {boolean} [options.staticFilters] show declared filters/options as-is, skipping the per-collection metadata fetch
  * @returns config
  */
 export const useCatalogConfig = ({
@@ -37,6 +38,7 @@ export const useCatalogConfig = ({
   declaredSortBy = [],
   declaredHoverProperties = [],
   endpoint,
+  staticFilters = false,
 }) => {
   /** @type {import("vue").Ref<Record<string, any>[]>} */
   const filterProperties = ref([]);
@@ -64,33 +66,49 @@ export const useCatalogConfig = ({
   };
 
   /**
+   * Build the eox filter config from resolved filters and reconcile the
+   * element's live filter state.
+   * @param {import("../types").FiltersConfig} resolvedFilters resolved filters
+   */
+  const setFilterProperties = (resolvedFilters) => {
+    const rebuilt = /** @type {Record<string, any>[]} */ (
+      createFilterProperties(resolvedFilters, datetimeFilter)
+    );
+    const live = itemfilterEl.value?.filters;
+    reOverlayLiveState(rebuilt, live);
+    pruneHiddenFilters(rebuilt, live);
+    filterProperties.value = rebuilt;
+  };
+
+  /**
    * Resolve and rebuild the config for the selected collections - caching their
    * metadata on first use - and reconcile the element's live filter state.
    * Stale runs (superseded by a newer selection) bail out before writing.
    * @param {string[]} [collectionIds] selected collection ids
    */
   const applyCollections = async (collectionIds = []) => {
+    if (staticFilters) {
+      sortByOptions.value = [...declaredSortBy];
+      hoverProperties.value = [...declaredHoverProperties];
+      setFilterProperties(declaredFilters);
+      return;
+    }
+
     const token = ++epoch;
     const metadataList = await Promise.all(collectionIds.map(loadMetadata));
     if (token !== epoch) return;
 
-    const visibleFilters = declaredFilters
-      .filter((filter) => isAvailable(filter.property, metadataList))
-      .map((filter) => resolveFilter(filter, metadataList));
     sortByOptions.value = declaredSortBy.filter((option) =>
       isAvailable(option.property, metadataList),
     );
     hoverProperties.value = declaredHoverProperties.filter((property) =>
       isAvailable(property, metadataList),
     );
-
-    const rebuilt = /** @type {Record<string, any>[]} */ (
-      createFilterProperties(visibleFilters, datetimeFilter)
+    setFilterProperties(
+      declaredFilters
+        .filter((filter) => isAvailable(filter.property, metadataList))
+        .map((filter) => resolveFilter(filter, metadataList)),
     );
-    const live = itemfilterEl.value?.filters;
-    reOverlayLiveState(rebuilt, live);
-    filterProperties.value = rebuilt;
-    pruneHiddenFilters(rebuilt, live);
   };
 
   return { filterProperties, sortByOptions, hoverProperties, applyCollections };
@@ -220,7 +238,7 @@ function reOverlayLiveState(rebuilt, live) {
 }
 
 /**
- *  drops the hidden keys
+ * Drop live filter state whose key is no longer in the rebuilt config.
  * @param {Record<string, any>[]} rebuilt freshly built filter properties
  * @param {Record<string, any> | undefined} live element's live `filters` state
  */
