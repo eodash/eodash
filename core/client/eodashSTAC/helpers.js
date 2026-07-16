@@ -1455,3 +1455,37 @@ export function encodeURLObject(obj) {
   }
   return str;
 }
+
+/**
+ * Estimate a lon/lat center and an OL zoom that fit a WGS84 bbox
+ * @param {number[]} bbox - `[minX, minY, maxX, maxY]` in EPSG:4326
+ * @param {number[]} [size] - map viewport `[width, height]` in px
+ * @returns {{ center: number[]; zoom: number }}
+ */
+export const bboxToCenterZoom = (
+  [minX, minY, maxX, maxY],
+  size = [800, 600],
+) => {
+  const WORLD = 256;
+  /** @param {number} lat */
+  const latRad = (lat) => {
+    const sin = Math.sin((lat * Math.PI) / 180);
+    const rad = Math.log((1 + sin) / (1 - sin)) / 2;
+    return Math.max(Math.min(rad, Math.PI), -Math.PI) / 2;
+  };
+  const latFraction = Math.max((latRad(maxY) - latRad(minY)) / Math.PI, 1e-9);
+  const lngDiff = maxX - minX;
+  const lngFraction = Math.max(
+    (lngDiff < 0 ? lngDiff + 360 : lngDiff) / 360,
+    1e-9,
+  );
+  const zoom = Math.min(
+    Math.log2(size[1] / WORLD / latFraction),
+    Math.log2(size[0] / WORLD / lngFraction),
+    20,
+  );
+  return {
+    center: [(minX + maxX) / 2, (minY + maxY) / 2],
+    zoom: Math.max(0, Math.floor(zoom)),
+  };
+};
