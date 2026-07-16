@@ -102,6 +102,11 @@ export const createOnSelectHandler = (store, enableCompare, mapElement) => {
   return async (evt) => {
     const item = /** @type {import("stac-ts").StacItem} */ (evt.detail);
     if (!item) {
+      if (enableCompare) {
+        store.selectedCompareItem = null;
+      } else {
+        store.selectedItem = null;
+      }
       return;
     }
     if (enableCompare) {
