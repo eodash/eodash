@@ -22,7 +22,7 @@ const getFiltersSignature = (filters) => {
  *  stacItemsStyle?: object,
  *  stacItemsInteractionStyle?: object,
  *  itemfilterEl?: import("vue").Ref<any>,
- *  selectedItemRef?: import("vue").Ref<import("stac-ts").StacItem | null>,
+ *  selectedItemRef?: import("vue").Ref<import("stac-ts").StacItem | null | undefined>,
  *  onCollectionsChange?: (collectionIds: string[]) => void,
  *  initialCollections?: string[],
  *  mosaicOptions?: {
@@ -102,11 +102,6 @@ export const createOnSelectHandler = (store, enableCompare, mapElement) => {
   return async (evt) => {
     const item = /** @type {import("stac-ts").StacItem} */ (evt.detail);
     if (!item) {
-      if (enableCompare) {
-        store.selectedCompareItem = null;
-      } else {
-        store.selectedItem = null;
-      }
       return;
     }
     if (enableCompare) {
