@@ -76,7 +76,7 @@
     "@eox/geosearch": "^1.2.0",
     "@eox/itemfilter": "^1.17.3",
     "@eox/jsonform": "^1.12.1",
-    "@eox/layercontrol": "https://pkg.pr.new/EOX-A/EOxElements/@eox/layercontrol@4fbcc54",
+    "@eox/layercontrol": "https://pkg.pr.new/EOX-A/EOxElements/@eox/layercontrol@7eb12be",
     "@eox/layout": "^1.0.0",
     "@eox/map": "^2.7.0",
     "@eox/stacinfo": "^1.2.0",
