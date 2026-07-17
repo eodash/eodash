@@ -19,6 +19,7 @@ import {
   normalizeRescale,
   normalizeNodata,
   resolveRenders,
+  applyRasterFormValue,
 } from "./helpers";
 import { handleAuthenticationOfLink } from "./auth";
 import log from "loglevel";
@@ -539,6 +540,7 @@ export const createLayersFromLinks = async (
         ...extractEoxLegendLink(wmsLink),
       };
     }
+    applyRasterFormValue(json, collectionId);
     jsonArray.push(json);
   }
 
@@ -647,6 +649,7 @@ export const createLayersFromLinks = async (
         ...extractEoxLegendLink(wmtsLink),
       };
     }
+    applyRasterFormValue(json, collectionId);
     jsonArray.push(json);
   }
 
@@ -731,6 +734,7 @@ export const createLayersFromLinks = async (
         ...extractEoxLegendLink(xyzLink),
       };
     }
+    applyRasterFormValue(json, collectionId);
     jsonArray.push(json);
   }
 
@@ -821,6 +825,7 @@ export const createLayersFromLinks = async (
         ...extractEoxLegendLink(tilejsonLink),
       };
     }
+    applyRasterFormValue(json, collectionId);
     jsonArray.push(json);
   }
 
@@ -1083,6 +1088,7 @@ export const createLayerFromRender = async (
         tileSize: [renders[key].tilesize, renders[key].tilesize],
       };
     }
+    applyRasterFormValue(json, collection.id);
     layers.push(json);
   }
 

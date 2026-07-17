@@ -50,6 +50,12 @@ export const layerControlFormValue = ref({});
 export const layerControlFormValueCompare = ref({});
 
 /**
+ * Current value of the rasterform (tileUrl) JSON form, keyed by collection id.
+ * @type {import("vue").Ref<Record<string, Record<string, any>>>}
+ */
+export const rasterFormValue = ref({});
+
+/**
  * STAC indicators color palette, defaults to Bank-Wong palette
  *  @type {string[]} */
 export const collectionsPalette = reactive([

@@ -61,41 +61,56 @@ export function getStyleVariablesState(collectionId, variables) {
   if (!analysisGroup) {
     return variables;
   }
-  const matchingLayer = analysisGroup.layers?.find((layer) => {
-    const [collection, ..._other] = layer.properties?.id.split(";:;") ?? [
-      "",
-      "",
-      "",
-    ];
+  
+  const matchingLayers = (analysisGroup.layers ?? []).filter((layer) => {
+    const [collection] = layer.properties?.id.split(";:;") ?? [];
     return collection === collectionId;
   });
+  console.log(
+    "[DBG-SV] called",
+    collectionId,
+    "newKeys:",
+    Object.keys(variables),
+    "matching:",
+    matchingLayers.map((l) => l.properties?.id),
+  );
 
-  if (!matchingLayer) {
-    return variables;
-  }
-  // TODO instead tap into store for changed variables state per layer
-  // because XYZ and WMTS use tileurlfunction update, where we can not retrieve
-  // current values from OL layers anyhow
-
-  const olLayer = mapElement.getLayerById(matchingLayer.properties?.id ?? "");
-  let oldVariablesState =
-    /** @type {import("ol/layer").Vector} */ (
-      olLayer
-      //@ts-expect-error variables doesn't exist in non-flat style
-    ).getStyle?.()?.variables ??
-    //@ts-expect-error (styleVariables_ is a private property)
-    /** @type {import("ol/layer").WebGLTile} */ (olLayer).styleVariables_;
-
-  if (!oldVariablesState) {
-    return variables;
-  }
   const styleVariablesKeys = Object.keys(variables);
-  const matchingKeys =
-    Object.keys(oldVariablesState).every((key) =>
-      styleVariablesKeys.includes(key),
-    ) &&
-    styleVariablesKeys.every((key) =>
-      Object.keys(oldVariablesState).includes(key),
+  for (const matchingLayer of matchingLayers) {
+    const olLayer = mapElement.getLayerById(matchingLayer.properties?.id ?? "");
+    const oldVariablesState =
+      /** @type {import("ol/layer").Vector} */ (
+        olLayer
+        //@ts-expect-error variables doesn't exist in non-flat style
+      ).getStyle?.()?.variables ??
+      //@ts-expect-error (styleVariables_ is a private property)
+      /** @type {import("ol/layer").WebGLTile} */ (olLayer).styleVariables_;
+
+    console.log(
+      "[DBG-SV] layer",
+      matchingLayer.properties?.id,
+      "oldVars:",
+      oldVariablesState && JSON.parse(JSON.stringify(oldVariablesState)),
     );
-  return matchingKeys ? oldVariablesState : variables;
+    if (!oldVariablesState) {
+      continue;
+    }
+    // Carry over the values for keys that still apply, keep the rest.
+    const sharedKeys = styleVariablesKeys.filter(
+      (key) => key in oldVariablesState,
+    );
+    if (!sharedKeys.length) {
+      continue;
+    }
+    const merged = {
+      ...variables,
+      ...Object.fromEntries(
+        sharedKeys.map((key) => [key, oldVariablesState[key]]),
+      ),
+    };
+    console.log("[DBG-SV] returning merged", merged);
+    return merged;
+  }
+  console.log("[DBG-SV] no match, returning defaults");
+  return variables;
 }

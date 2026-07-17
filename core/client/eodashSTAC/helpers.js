@@ -4,7 +4,7 @@ import log from "loglevel";
 import mustache from "mustache";
 import { updateVectorLayerStyle } from "@eox/layercontrol";
 import { getStyleVariablesState } from "./triggers.js";
-import { itemsCache, splitItemsCache } from "@/utils/states.js";
+import { itemsCache, splitItemsCache, rasterFormValue } from "@/utils/states.js";
 
 /**
  *  @param {import("stac-ts").StacLink[]} [links]
@@ -1334,6 +1334,80 @@ export function updateLayerUrl(olLayer, jsonformValue) {
   }
 
   return false;
+}
+
+/**
+ * Injects jsonform values into a tile URL.
+ * Nested objects are spread into their sub-keys, arrays become repeated params.
+ * Keeps parity so a baked URL matches what a live jsonform edit would produce.
+ *
+ * @param {string} url
+ * @param {Record<string, any>} values
+ * @returns {string}
+ */
+function applyValuesToUrl(url, values) {
+  const [base, query] = url.split("?");
+  const searchParams = new URLSearchParams(query || "");
+  for (const [key, value] of Object.entries(values)) {
+    if (value === undefined || value === null || value === "") {
+      continue;
+    }
+    if (Array.isArray(value)) {
+      searchParams.delete(key);
+      value.forEach((v) => searchParams.append(key, String(v)));
+    } else if (typeof value === "object") {
+      for (const [k, v] of Object.entries(value)) {
+        if (v !== undefined && v !== null && v !== "") {
+          searchParams.set(k, String(v));
+        }
+      }
+    } else {
+      searchParams.set(key, String(value));
+    }
+  }
+  const qs = searchParams.toString();
+  return qs ? `${base}?${qs}` : base;
+}
+
+/**
+ * Bakes the last user-selected rasterform value (see {@link rasterFormValue}) into a
+ * freshly built tileUrl layer so the selection survives a time/item rebuild. Values
+ * are written into the source (WMS params or the tile URL) because eox reads initial
+ * values back from there (`getStartVals`) and overwrites by param key on live edits.
+ * Mutates the layer in place.
+ * @param {Record<string, any>} layer - built layer json
+ * @param {string} collectionId
+ */
+export function applyRasterFormValue(layer, collectionId) {
+  if (layer?.properties?.layerConfig?.type !== "tileUrl") {
+    return;
+  }
+  const value = rasterFormValue.value[collectionId];
+  const source = layer.source;
+  console.log(
+    "[DBG-RF] bake id:",
+    layer.properties?.id,
+    "key:",
+    collectionId,
+    "cachedValue:",
+    value,
+    "urlBefore:",
+    source?.url,
+  );
+  if (!source || !value || !Object.keys(value).length) {
+    return;
+  }
+  if (source.params) {
+    // WMS: applied via updateParams, read back via getParams
+    Object.assign(source.params, value);
+    return;
+  }
+  if (typeof source.url === "string") {
+    source.url = applyValuesToUrl(source.url, value);
+  } else if (Array.isArray(source.urls)) {
+    //@ts-expect-error todo
+    source.urls = source.urls.map((u) => applyValuesToUrl(u, value));
+  }
 }
 
 /**
