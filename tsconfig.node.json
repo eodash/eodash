@@ -16,7 +16,6 @@
     "tests/cli/**/*.js",
     "tests/cli/**/*.spec.js",
     "tests/cli/**/*.test.js",
-    "cypress.config.js",
     "rollup.config.js",
     "vitest.config.js"
   ]
