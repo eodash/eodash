@@ -7,6 +7,23 @@ import { mountAsyncComponent } from "../support/mount";
 
 vi.mock("@eox/itemfilter", () => ({}));
 
+
+const axiosMock = vi.hoisted(() => ({ get: vi.fn() }));
+vi.mock("@/plugins/axios", () => ({ default: axiosMock, axios: axiosMock }));
+
+const QUERYABLES = {
+  "eo:cloud_cover": { type: "number", minimum: 0, maximum: 100 },
+};
+
+const serveCatalogApi = () =>
+  axiosMock.get.mockImplementation((/** @type {string} */ url) => {
+    if (url.includes("/queryables"))
+      return Promise.resolve({ data: { properties: QUERYABLES } });
+    if (url.includes("/collections/"))
+      return Promise.resolve({ data: { summaries: {} } });
+    return Promise.resolve({ data: { features: [] } });
+  });
+
 // Map/mosaic seams are template-tier; spy on them so wiring and arguments stay
 // testable here. Factories return stable inner spies so dispatched events trace.
 const spies = vi.hoisted(() => {
@@ -65,7 +82,12 @@ const hasLayoutSwitcher = () =>
   );
 
 /** Store seeded with two collections so createFilterProperties has content. */
-const withCollections = { stac: { stac: [{ id: "collA" }, { id: "collB" }] } };
+const withCollections = {
+  stac: {
+    stac: [{ id: "collA" }, { id: "collB" }],
+    stacEndpoint: "https://stac",
+  },
+};
 const HOVER = ["datetime", "eo:cloud_cover"];
 
 describe("EodashItemCatalog", () => {
@@ -74,6 +96,8 @@ describe("EodashItemCatalog", () => {
     mapEl.value = null;
     mapCompareEl.value = null;
     for (const spy of Object.values(spies)) vi.mocked(spy).mockClear();
+    axiosMock.get.mockReset();
+    serveCatalogApi();
   });
 
   describe("rendering", () => {
@@ -144,6 +168,27 @@ describe("EodashItemCatalog", () => {
       expect(keys).toContain("properties.eo:cloud_cover");
     });
 
+    test("drops declared filters no selected collection exposes", async () => {
+      await mountAsyncComponent(EodashItemCatalog, {
+        props: {
+          filters: [
+            { property: "eo:cloud_cover", type: "range", title: "Clouds" },
+            { property: "sat:orbit_state", type: "multiselect", title: "Orbit" },
+          ],
+        },
+        initialState: withCollections,
+      });
+
+      await expect.poll(() => filterEl()?.filterProperties).toBeTruthy();
+      const keys = filterEl()?.filterProperties.map(
+        (/** @type {any} */ f) => f.key,
+      );
+      // Resolved against the collections' queryables: cloud cover is exposed,
+      // orbit state is not.
+      expect(keys).toContain("properties.eo:cloud_cover");
+      expect(keys).not.toContain("properties.sat:orbit_state");
+    });
+
     test("renders custom filters and results titles", async () => {
       const { screen } = await mountAsyncComponent(EodashItemCatalog, {
         props: { filtersTitle: "Refine", resultsTitle: "Scenes" },
@@ -175,12 +220,12 @@ describe("EodashItemCatalog", () => {
       });
 
       expect(spies.createOnFilterHandler).toHaveBeenCalledWith(
-        expect.objectContaining({
-          mapElement: mapEl,
-          hoverProperties: HOVER,
-          mosaicOptions: null,
-        }),
+        expect.objectContaining({ mapElement: mapEl }),
       );
+      // The collection-resolved hover properties are handed over as a ref.
+      const { hoverProperties } =
+        spies.createOnFilterHandler.mock.calls[0][0];
+      expect(hoverProperties.value).toEqual(HOVER);
     });
 
     test("passes the primary map to the hover-result handlers", async () => {
@@ -200,7 +245,7 @@ describe("EodashItemCatalog", () => {
       expect(spies.useRenderItemsFeatures).toHaveBeenCalledWith(
         expect.anything(),
         mapEl,
-        HOVER,
+        expect.objectContaining({ value: HOVER }),
         undefined,
         undefined,
       );
@@ -237,7 +282,9 @@ describe("EodashItemCatalog", () => {
         initialState: withCollections,
       });
 
-      expect(spies.useHoverTooltip).toHaveBeenCalledWith(HOVER);
+      expect(spies.useHoverTooltip).toHaveBeenCalledWith(
+        expect.objectContaining({ value: HOVER }),
+      );
     });
 
     test("initializes mosaic disabled by default", async () => {
