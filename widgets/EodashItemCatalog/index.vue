@@ -285,7 +285,7 @@ const isMosaicEnabled = computed(
 );
 
 const activeSelectedItem =
-  /** @type {import("vue").Ref<import("stac-ts").StacItem | null>} */ (
+  /** @type {import("vue").Ref<import("stac-ts").StacItem | null | undefined>} */ (
     props.enableCompare ? selectedCompareItem : selectedItem
   );
 
@@ -300,7 +300,7 @@ if (props.useMosaic) {
 }
 
 onUnmounted(() => {
-  activeSelectedItem.value = null;
+  activeSelectedItem.value = undefined;
 });
 
 // Reactive state

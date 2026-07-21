@@ -101,7 +101,7 @@ export const useHandleMapMoveEnd = (mapElement, mapPosition) => {
  * @param {import("vue").Ref<Record<string,any>[]>} mapLayers
  * @param {import("vue").Ref<import("@eox/map").EOxMap| null>} partnerMap
  * @param {boolean} zoomToExtent
- * @param {import("vue").Ref<import("stac-ts").StacItem | import("stac-ts").StacLink | null>} [selectedItem]
+ * @param {import("vue").Ref<import("stac-ts").StacItem | import("stac-ts").StacLink | null | undefined>} [selectedItem]
  * @param {Record<string, any>[]} [defaultBaseLayers]
  */
 export const useInitMap = (
@@ -134,25 +134,20 @@ export const useInitMap = (
     watching,
     async (updated, previous) => {
       const [updatedStac, updatedTime, updatedItem] =
-        /** @type {[import("stac-ts").StacCollection, string, import("stac-ts").StacItem | null]} */ (
-          selectedItem ? updated : [updated[0], updated[1], null]
+        /** @type {[import("stac-ts").StacCollection, string, import("stac-ts").StacItem | null | undefined]} */ (
+          selectedItem ? updated : [updated[0], updated[1], undefined]
         );
       const [previousStac, previousTime, previousItem] =
         /** @type {[import("stac-ts").StacCollection, string, import("stac-ts").StacItem]} */ (
-          selectedItem ? previous : [previous[0], previous[1], null]
+          selectedItem ? previous : [previous[0], previous[1], undefined]
         );
 
       if (updatedStac) {
         const isSameStac = updatedStac?.id === previousStac?.id;
         const isSameItem = updatedItem?.id === previousItem?.id;
-
-        // Item deselect: overview render is owned by the item catalog widget.
-        const isItemDeselect =
-          previousItem &&
-          !updatedItem &&
-          isSameStac &&
-          updatedTime === previousTime;
-        if (isItemDeselect) return;
+        // `null` = item explicitly cleared (render no data layers);
+        // `undefined` = no explicit choice, fall back to default/latest.
+        const isItemCleared = updatedItem === null;
 
         // Re-fire from our own datetime.value write, skip and clear
         const isOwnDatetimeUpdate =
@@ -244,6 +239,7 @@ export const useInitMap = (
         }
         let resolvedTime = updatedItem ?? updatedTime;
         if (
+          !isItemCleared &&
           !updatedItem &&
           endInterval !== null &&
           endInterval.toISOString() !== datetime.value &&
@@ -262,7 +258,7 @@ export const useInitMap = (
         layersCollection = await createLayersConfig(
           updatedStac,
           eodashCols,
-          updatedItem ?? resolvedTime,
+          isItemCleared ? null : (updatedItem ?? resolvedTime),
           defaultBaseLayers,
         );
 
@@ -270,6 +266,7 @@ export const useInitMap = (
           // Try to move map view to extent only when main
           // indicator and map changes
           if (
+            !isItemCleared &&
             !updatedItem &&
             mapElement?.value?.id === "main" &&
             updatedStac.extent?.spatial.bbox &&
