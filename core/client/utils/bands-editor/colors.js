@@ -5,7 +5,10 @@
  * @returns {string[]} Array of color strings
  */
 export function generateBandColors(schema, format) {
-  const bands = format === "bands" ? schema.items?.enum : schema.enum || [];
+  const bands =
+    format === "bands"
+      ? schema.items?.enum
+      : (schema.options?.enum ?? schema.enum ?? []);
   const colors =
     format === "bands"
       ? schema.items?.options?.colors

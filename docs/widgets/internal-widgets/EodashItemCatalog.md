@@ -1,6 +1,6 @@
 # EodashItemCatalog
 
-A STAC item search and browse panel. It wraps [`eox-itemfilter`](https://eox-a.github.io/EOxElements/?path=/docs/elements-eox-itemfilter--docs), fetches items from `<stacEndpoint>/search?limit=100` on mount, and renders configurable filters alongside a results list. Selecting an item loads it into the map. Item footprints are drawn on the map and highlighted on hover; when `bboxFilter` is true the search re-runs on every map move.
+A STAC item search and browse panel. It wraps [`eox-itemfilter`](https://eox-a.github.io/EOxElements/?path=/docs/elements-eox-itemfilter--docs), fetches items from `<stacEndpoint>/search?limit=<searchLimit>` (100 by default) on mount, and renders configurable filters alongside a results list. A declared `filters`, `sortBy`, or `hoverProperties` entry is shown only when a selected collection has that property; with none selected, all are shown. Filter values - range bounds and multiselect options - are filled from the collection's STAC `summaries` and `queryables` as well. Set `staticFilters: true` to skip this lookup and use the declared filters as-is (for large catalogs). Selecting an item loads it into the map. Item footprints are drawn on the map and highlighted on hover; when `bboxFilter` is true the search re-runs on every map move.
 
 ## Example
 
@@ -62,8 +62,10 @@ Each entry in the `filters` array configures one filter panel in `eox-itemfilter
 | `title` | `string` | no | Label shown above the filter control. |
 | `min` | `number` | no | Minimum value for `type: "range"`. |
 | `max` | `number` | no | Maximum value for `type: "range"`. |
+| `step` | `number` | no | Step increment for `type: "range"` sliders. |
+| `format` | `string` | no | Value format string applied to `range` labels. |
 | `filterKeys` | `string[]` | no | Additional STAC keys matched by this filter entry. |
-| `state` | `Record<string, boolean>` | no | Initial selection state for `multiselect`/`select`. |
+| `state` | `Record<string, boolean> \| { min: number, max: number }` | no | Initial selection state: a boolean map for `multiselect`/`select`, or `{ min, max }` for `range`. |
 | `placeholder` | `string` | no | Placeholder text for `select` inputs. |
 | `icon` | `string` | no | SVG markup rendered next to the filter label. |
 | `unitLabel` | `string` | no | Unit suffix appended to range values (e.g. `"%"`). |

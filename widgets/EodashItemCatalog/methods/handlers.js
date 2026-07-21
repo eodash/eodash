@@ -18,11 +18,13 @@ const getFiltersSignature = (filters) => {
  * @param {{
  *  currentItems: import("vue").Ref<import("@/types").GeoJsonFeature[]>,
  *  mapElement: import("vue").Ref<import("@eox/map").EOxMap | null>,
- *  hoverProperties: string[] | undefined,
+ *  hoverProperties: import("vue").Ref<string[] | undefined>,
  *  stacItemsStyle?: object,
  *  stacItemsInteractionStyle?: object,
  *  itemfilterEl?: import("vue").Ref<any>,
  *  selectedItemRef?: import("vue").Ref<import("stac-ts").StacItem | null>,
+ *  onCollectionsChange?: (collectionIds: string[]) => void,
+ *  initialCollections?: string[],
  *  mosaicOptions?: {
  *    isMosaicEnabled: import("vue").ComputedRef<boolean>,
  *    getMosaicEndpoint: () => string | null | undefined,
@@ -38,9 +40,12 @@ export const createOnFilterHandler = ({
   stacItemsInteractionStyle,
   itemfilterEl,
   selectedItemRef,
+  onCollectionsChange,
+  initialCollections = [],
   mosaicOptions = null,
 }) => {
   let lastScheduledFiltersKey = "";
+  let lastCollectionSignature = [...initialCollections].sort().join(",");
 
   /** @param {CustomEvent} evt */
   return (evt) => {
@@ -48,10 +53,22 @@ export const createOnFilterHandler = ({
     renderItemsFeatures(
       currentItems.value,
       mapElement,
-      hoverProperties,
+      hoverProperties.value,
       stacItemsStyle,
       stacItemsInteractionStyle,
     );
+
+    const collectionState = evt.detail.filters?.collection?.stringifiedState;
+    const collectionIds = collectionState
+      ? String(collectionState)
+          .split(",")
+          .map((id) => id.trim())
+      : [];
+    const signature = [...collectionIds].sort().join(",");
+    if (onCollectionsChange && signature !== lastCollectionSignature) {
+      lastCollectionSignature = signature;
+      onCollectionsChange(collectionIds);
+    }
 
     const selected = selectedItemRef?.value;
     if (selected && itemfilterEl?.value) {
@@ -85,6 +102,11 @@ export const createOnSelectHandler = (store, enableCompare, mapElement) => {
   return async (evt) => {
     const item = /** @type {import("stac-ts").StacItem} */ (evt.detail);
     if (!item) {
+      if (enableCompare) {
+        store.selectedCompareItem = null;
+      } else {
+        store.selectedItem = null;
+      }
       return;
     }
     if (enableCompare) {

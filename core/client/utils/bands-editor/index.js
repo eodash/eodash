@@ -24,11 +24,13 @@ export class BandsEditor extends AbstractEditor {
     const format = this.schema.format || "bands";
 
     this.bands =
-      format === "bands" ? this.schema.items?.enum : this.schema.enum || [];
+      format === "bands"
+        ? this.schema.items?.enum
+        : (this.schema.options?.enum ?? this.schema.enum ?? []);
     this.bandTitles =
       format === "bands"
         ? this.schema.items?.options?.enum_titles
-        : this.schema.options.enum_titles || this.bands;
+        : this.schema.options?.enum_titles || this.bands;
     this.colors = generateBandColors(this.schema, format);
 
     // control
