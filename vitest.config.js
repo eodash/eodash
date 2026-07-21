@@ -22,11 +22,8 @@ const clientDeps = Object.keys(pkg.dependencies ?? {}).filter(
   (m) => !nodeOnlyDeps.includes(m),
 );
 
-const vuetifySubpaths = [
-  "vuetify/components",
-  "vuetify/directives",
-  "vuetify/components/VTable",
-];
+// vite-plugin-vuetify is used instead
+const componentDeps = clientDeps.filter((m) => m !== "vuetify");
 
 /** Shared source aliases (mirror the CLI's viteConfig aliases). */
 const alias = {
@@ -87,7 +84,7 @@ export default defineConfig({
         ],
         resolve: { alias },
         define: { "process.env": {} },
-        optimizeDeps: { include: [...clientDeps, ...vuetifySubpaths] },
+        optimizeDeps: { include: componentDeps, exclude: ["vuetify"] },
         test: {
           name: "component",
           include: ["tests/component/**/*.test.js"],
