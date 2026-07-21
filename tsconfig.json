@@ -16,7 +16,7 @@
     "resolveJsonModule": true,
     "esModuleInterop": true,
     "lib": ["esnext", "dom", "DOM.Iterable"],
-    "types": ["node", "vuetify", "cypress"],
+    "types": ["node", "vuetify"],
     "paths": {
       "@/*": ["core/client/*"],
       "^/*": ["widgets/*"]

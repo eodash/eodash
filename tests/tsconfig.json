@@ -1,0 +1,16 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "composite": false,
+    "noEmit": true,
+    "types": ["node", "vuetify", "vitest/globals", "@vitest/browser/matchers"]
+  },
+  "include": [
+    "../core/client/vite-env.d.ts",
+    "component/**/*.js",
+    "support/**/*.js",
+    "support/**/*.ts",
+    "fixtures/**/*.js",
+    "unit/**/*.js"
+  ]
+}
