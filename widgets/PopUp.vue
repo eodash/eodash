@@ -2,16 +2,16 @@
   <span>
     <v-dialog
       v-bind="config"
+      v-model="dialog"
       absolute
       scrollable
       scroll-strategy="block"
       close-on-back
-      v-model="dialog"
     >
       <v-sheet>
         <component
-          v-if="widget"
           :is="definedWidget.component"
+          v-if="widget"
           :key="definedWidget.id"
           v-bind="definedWidget.props"
         />

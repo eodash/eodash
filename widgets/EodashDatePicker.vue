@@ -16,13 +16,13 @@
         >
           <v-btn
             v-if="!hideArrows"
+            v-tooltip:bottom="'Set date to oldest available dataset'"
             density="compact"
             :size="lgAndDown ? 'x-small' : 'large'"
-            v-tooltip:bottom="'Set date to oldest available dataset'"
             variant="text"
-            @click="jumpDate(true)"
             class="py-2"
             style="flex-shrink: 1; padding: 0"
+            @click="jumpDate(true)"
           >
             <v-icon :icon="[mdiRayEndArrow]" />
           </v-btn>
@@ -33,7 +33,6 @@
             <input
               v-if="!hideInputField"
               :value="inputValue"
-              v-on="inputEvents"
               class="flex-grow px-1 py-1 dark:bg-gray-700"
               style="
                 margin: 1px;
@@ -42,17 +41,18 @@
                 overflow: hidden;
                 text-overflow: ellipsis;
               "
+              v-on="inputEvents"
             />
           </div>
           <v-btn
             v-if="!hideArrows"
+            v-tooltip:bottom="'Set date to latest available dataset'"
             density="compact"
             :size="lgAndDown ? 'x-small' : 'large'"
             variant="text"
-            v-tooltip:bottom="'Set date to latest available dataset'"
-            @click="jumpDate(false)"
             class="py-2"
             style="flex-shrink: 1; padding: 0"
+            @click="jumpDate(false)"
           >
             <v-icon :icon="[mdiRayStartArrow]" />
           </v-btn>
@@ -65,13 +65,13 @@
         >
           <v-btn
             v-if="!hideArrows"
+            v-tooltip:bottom="'Set date to oldest available dataset'"
             density="compact"
             :size="lgAndDown ? 'x-small' : 'large'"
-            v-tooltip:bottom="'Set date to oldest available dataset'"
             variant="text"
-            @click="jumpDate(true)"
             class="py-2"
             style="flex-shrink: 1"
+            @click="jumpDate(true)"
           >
             <v-icon :icon="[mdiRayEndArrow]" />
           </v-btn>
@@ -82,7 +82,6 @@
             <input
               v-if="!hideInputField"
               :value="maskedCurrentDate"
-              @change="onInputChange"
               class="flex-grow px-1 py-1 dark:bg-gray-700"
               style="
                 margin: 1px;
@@ -91,17 +90,18 @@
                 overflow: hidden;
                 text-overflow: ellipsis;
               "
+              @change="onInputChange"
             />
           </div>
           <v-btn
             v-if="!hideArrows"
+            v-tooltip:bottom="'Set date to latest available dataset'"
             density="compact"
             :size="lgAndDown ? 'x-small' : 'large'"
             variant="text"
-            v-tooltip:bottom="'Set date to latest available dataset'"
-            @click="jumpDate(false)"
             class="py-2"
             style="flex-shrink: 1"
+            @click="jumpDate(false)"
           >
             <v-icon :icon="[mdiRayStartArrow]" />
           </v-btn>
@@ -212,12 +212,7 @@ defineProps({
 /**
  * Attributes displayed on datepicker
  *
- * @type {import("vue").Reactive<
- *   (
- *     | Partial<import("v-calendar/dist/types/src/utils/attribute").AttributeConfig>
- *     | undefined
- *   )[]
- * >}
+ * @type {import("vue").Reactive<Array<Partial<import("v-calendar/dist/types/src/utils/attribute").AttributeConfig> | undefined>>}
  */
 const attributes = reactive([]);
 

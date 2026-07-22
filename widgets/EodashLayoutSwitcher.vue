@@ -1,15 +1,15 @@
 <template>
   <div ref="rootRef">
     <v-tooltip v-if="!mobile" :text="`Switch to ${target} mode`">
-      <template v-slot:activator="{ props }">
+      <template #activator="{ props }">
         <v-icon
           v-bind="props"
-          @click="activeTemplate = target"
           :icon="[icon]"
+          @click="activeTemplate = target"
         ></v-icon>
       </template>
     </v-tooltip>
-    <v-icon v-else @click="activeTemplate = target" :icon="[icon]"></v-icon>
+    <v-icon v-else :icon="[icon]" @click="activeTemplate = target"></v-icon>
   </div>
 </template>
 

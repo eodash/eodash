@@ -12,7 +12,7 @@ import log from "loglevel";
 /**
  * Polls the process status and fetches a result item when the process is successful.
  *
- * @param {Object} params - Parameters for polling the process status.
+ * @param {object} params - Parameters for polling the process status.
  * @param {import("vue").Ref<import("../types").AsyncJob[]>} params.jobs - The list of jobs to update.
  * @param {string} params.processUrl - The URL of the process JSON report.
  * @param {import("vue").Ref<boolean>} params.isPolling - checks wether the polling should continue
@@ -213,7 +213,7 @@ export const loadProcess = async (jobObject, selectedStac, mapElement) => {
 /**
  * load a geotiff to the map from an existing process
  *
- * @param {Object} params
+ * @param {object} params
  * @param {import("stac-ts").StacCollection | null} params.selectedStac
  * @param {string} params.jobId
  * @param {import("../types").EOxHubProcessResults} params.results

@@ -5,10 +5,10 @@
       .enabled="showCompare"
     >
       <eox-map
-        class="fill-height fill-width overflow-none"
+        id="main"
         slot="first"
         ref="eoxMap"
-        id="main"
+        class="fill-height fill-width overflow-none"
         .animationOptions="animationOptions"
         .center="initialCenter"
         .zoom="initialZoom"
@@ -21,10 +21,10 @@
         />
       </eox-map>
       <eox-map
-        class="fill-height fill-width overflow-none"
         id="compare"
         slot="second"
         ref="compareMap"
+        class="fill-height fill-width overflow-none"
         .layers="eoxMapCompareLayers"
       >
         <eox-map-tooltip

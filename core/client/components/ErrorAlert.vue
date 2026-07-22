@@ -5,12 +5,12 @@
     location="start bottom"
     type="error"
     position="fixed"
-    @click:close="error = ''"
     variant="elevated"
     :icon="[mdiAlertCircle]"
     class="alert"
     closable
     :close-icon="[mdiClose]"
+    @click:close="error = ''"
   >
     {{ errorMessage }}
     <details is="animated-details">
