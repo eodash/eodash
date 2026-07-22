@@ -50,10 +50,17 @@ export const layerControlFormValue = ref({});
 export const layerControlFormValueCompare = ref({});
 
 /**
- * Current value of the rasterform (tileUrl) JSON form, keyed by collection id.
+ * Remembers each layer's configuration form values so a user's styling and band
+ * choices persist when the map rebuilds — for example when the date or the
+ * selected item changes.
+ *
+ * Entries are keyed by collection and editor kind (style vs. tile URL), which is
+ * what keeps a choice through item/time changes and stops the style and raster
+ * editors from overwriting one another. A collection that exposes two layers of
+ * the same kind shares one slot.
  * @type {import("vue").Ref<Record<string, Record<string, any>>>}
  */
-export const rasterFormValue = ref({});
+export const layerConfigFormState = ref({});
 
 /**
  * STAC indicators color palette, defaults to Bank-Wong palette

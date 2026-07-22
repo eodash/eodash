@@ -37,12 +37,12 @@ import {
   eodashCompareCollections,
   layerControlFormValue,
   layerControlFormValueCompare,
-  rasterFormValue,
 } from "@/utils/states";
 import {
   getColFromLayer,
   updateGeoZarrBands,
   updateLayerUrl,
+  persistLayerConfigState,
 } from "@/eodashSTAC/helpers";
 import { storeToRefs } from "pinia";
 import { useSTAcStore } from "@/store/stac";
@@ -181,21 +181,8 @@ const debouncedHandleDateTime = (evt) => {
 const onLayerConfigChange = (evt) => {
   updateGeoZarrBands(evt.detail.layer, evt.detail.jsonformValue);
   updateLayerUrl(evt.detail.layer, evt.detail.jsonformValue);
-
-  // cache rasterForm state
-  const jsonLayer = evt.detail.layer.get("_jsonDefinition");
-  const [collectionId] = (evt.detail.layer.get("id") ?? "").split(";:;");
-  console.log(
-    "[DBG-LC] change id:",
-    evt.detail.layer.get("id"),
-    "type:",
-    jsonLayer?.properties?.layerConfig?.type,
-    "value:",
-    evt.detail.jsonformValue,
-  );
-  if (collectionId && jsonLayer?.properties?.layerConfig?.type === "tileUrl") {
-    rasterFormValue.value[collectionId] = evt.detail.jsonformValue;
-  }
+  // remember the selection so it survives a time/item rebuild
+  persistLayerConfigState(evt.detail.layer, evt.detail.jsonformValue);
 
   if (props.map === "second") {
     layerControlFormValueCompare.value = evt.detail.jsonformValue;

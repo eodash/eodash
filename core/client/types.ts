@@ -521,6 +521,17 @@ export type EodashRasterJSONForm = {
   jsonform: Record<string, any>;
   legend?: import("@eox/layercontrol/src/components/layer-config.js").EOxLayerControlLayerConfig["layerConfig"]["legend"];
 };
+/**
+ * layerConfig attached to a built layer, consumed by eox-layercontrol to render
+ * the config editor. Produced by `extractLayerConfig`.
+ * @ignore
+ */
+export type EodashLayerConfig = {
+  schema: Record<string, any>;
+  type: "style" | "tileUrl";
+  legend?: import("@eox/layercontrol/src/components/layer-config.js").EOxLayerControlLayerConfig["layerConfig"]["legend"];
+};
+
 /** @ignore */
 export type LayersEventBusKeys =
   | "layers:updated"

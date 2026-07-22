@@ -4,7 +4,7 @@
 import { changeMapProjection, registerProjection } from "@/store/actions";
 import log from "loglevel";
 import { getProjectionCode } from "./helpers";
-import { availableMapProjection, mapEl } from "@/store/states";
+import { availableMapProjection } from "@/store/states";
 
 /**
  * checks if there's a projection on the Collection and
@@ -41,76 +41,3 @@ export const setMapProjFromCol = async (STAcCollection) => {
     await changeMapProjection((availableMapProjection.value = ""));
   }
 };
-/**
- *
- * @param {string} collectionId
- * @param {import("@/types").EodashStyleJson["variables"]} variables
- */
-export function getStyleVariablesState(collectionId, variables) {
-  const mapElement = /** @type {import("@eox/map").EOxMap} */ (mapEl.value);
-  if (!mapElement || !mapElement.layers.length || !variables) {
-    return variables;
-  }
-
-  const analysisGroup =
-    /** @type {import("@eox/map/src/layers").EOxLayerTypeGroup | undefined} */ (
-      mapElement.layers.find(
-        (layer) => layer.properties?.id === "AnalysisGroup",
-      )
-    );
-  if (!analysisGroup) {
-    return variables;
-  }
-  
-  const matchingLayers = (analysisGroup.layers ?? []).filter((layer) => {
-    const [collection] = layer.properties?.id.split(";:;") ?? [];
-    return collection === collectionId;
-  });
-  console.log(
-    "[DBG-SV] called",
-    collectionId,
-    "newKeys:",
-    Object.keys(variables),
-    "matching:",
-    matchingLayers.map((l) => l.properties?.id),
-  );
-
-  const styleVariablesKeys = Object.keys(variables);
-  for (const matchingLayer of matchingLayers) {
-    const olLayer = mapElement.getLayerById(matchingLayer.properties?.id ?? "");
-    const oldVariablesState =
-      /** @type {import("ol/layer").Vector} */ (
-        olLayer
-        //@ts-expect-error variables doesn't exist in non-flat style
-      ).getStyle?.()?.variables ??
-      //@ts-expect-error (styleVariables_ is a private property)
-      /** @type {import("ol/layer").WebGLTile} */ (olLayer).styleVariables_;
-
-    console.log(
-      "[DBG-SV] layer",
-      matchingLayer.properties?.id,
-      "oldVars:",
-      oldVariablesState && JSON.parse(JSON.stringify(oldVariablesState)),
-    );
-    if (!oldVariablesState) {
-      continue;
-    }
-    // Carry over the values for keys that still apply, keep the rest.
-    const sharedKeys = styleVariablesKeys.filter(
-      (key) => key in oldVariablesState,
-    );
-    if (!sharedKeys.length) {
-      continue;
-    }
-    const merged = {
-      ...variables,
-      ...Object.fromEntries(
-        sharedKeys.map((key) => [key, oldVariablesState[key]]),
-      ),
-    };
-    console.log("[DBG-SV] returning merged", merged);
-    return merged;
-  }
-  console.log("[DBG-SV] no match, returning defaults");
-  return variables;
-}
