@@ -4,13 +4,13 @@
       v-if="showControls"
       :key="mapElement"
       v-bind="config"
+      ref="eoxLayercontrol"
       :for="mapElement"
       .colormapRegistry="colormapRegistry"
       .showLayerZoomState="true"
       .customEditorInterfaces="bandsEditorInterface"
-      @datetime:updated="debouncedHandleDateTime"
       toolsAsList="true"
-      ref="eoxLayercontrol"
+      @datetime:updated="debouncedHandleDateTime"
       @layerConfig:change="onLayerConfigChange"
     >
       <span
@@ -137,7 +137,7 @@ const handleDatetimeUpdate = async (evt) => {
     );
   }
   if (!updatedLayers?.length) return;
-  /** @type {Record<String,any>[] | undefined} */
+  /** @type {Record<string, any>[] | undefined} */
   const dataLayers = updatedLayers?.find(
     (l) => l?.properties?.id === "AnalysisGroup",
   )?.layers;

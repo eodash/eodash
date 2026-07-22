@@ -1,7 +1,7 @@
 import path from "path";
 
 /**
- * @param {Object} [options]
+ * @param {object} [options]
  * @param {string} [options.customElementFileName = 'asWebComponent.js'] the basename of the file containing defineCustomElement
  * @param {string} [options.stylePlaceHolder = '__VUE_CE_STYLES__'] the placeholder for styles in the custom element file, will be automatically injected
  * @returns {import("vite").Plugin}

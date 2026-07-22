@@ -418,8 +418,8 @@ export async function createLayersFromAssets(
 
 /**
  * @param {string} collectionId
- * @param {import('stac-ts').StacItem} item
  * @param {string} title
+ * @param {import('stac-ts').StacItem} item
  * @param {Record<string,any>} [layerDatetime]
  * @param {object | null} [extraProperties]
  * @param {import('stac-ts').StacCollection} [collection]
@@ -963,9 +963,9 @@ export const createLayersFromLinks = async (
 };
 /**
  * Implementation of a function that creates a layer from the render extention
+ * @param {string} rasterURL
  * @param {import("stac-ts").StacCollection | undefined | null} collection
  * @param {import("stac-ts").StacItem | undefined | null} item
- * @param {string} rasterURL
  * @param {Record<string, any>} [extraProperties]
  * @returns {Promise<import("@eox/map/src/layers").EOxLayerType<"Tile","XYZ">[]>}
  */

@@ -6,9 +6,9 @@
     >
       <button
         v-if="usedChartData && usedChartSpec"
+        v-tooltip="areChartsSeparateLayout ? 'Minimize' : 'Maximize'"
         class="chart-toggle"
         @click="toggleLayout"
-        v-tooltip="areChartsSeparateLayout ? 'Minimize' : 'Maximize'"
       >
         <svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true">
           <path :d="toggleIcon" />
@@ -16,12 +16,12 @@
       </button>
       <eox-chart
         v-if="usedChartData && renderedChartSpec"
-        .spec="toRaw(renderedChartSpec)"
         :key="chartRenderKey"
+        .spec="toRaw(renderedChartSpec)"
         .dataValues="toRaw(usedChartData)"
-        @click:item="onChartClick"
         :style="chartStyles"
         .opt="vegaEmbedOptions"
+        @click:item="onChartClick"
       />
     </div>
   </div>

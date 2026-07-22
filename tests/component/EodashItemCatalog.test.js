@@ -7,7 +7,6 @@ import { mountAsyncComponent } from "../support/mount";
 
 vi.mock("@eox/itemfilter", () => ({}));
 
-
 const axiosMock = vi.hoisted(() => ({ get: vi.fn() }));
 vi.mock("@/plugins/axios", () => ({ default: axiosMock, axios: axiosMock }));
 
@@ -173,7 +172,11 @@ describe("EodashItemCatalog", () => {
         props: {
           filters: [
             { property: "eo:cloud_cover", type: "range", title: "Clouds" },
-            { property: "sat:orbit_state", type: "multiselect", title: "Orbit" },
+            {
+              property: "sat:orbit_state",
+              type: "multiselect",
+              title: "Orbit",
+            },
           ],
         },
         initialState: withCollections,
@@ -223,8 +226,7 @@ describe("EodashItemCatalog", () => {
         expect.objectContaining({ mapElement: mapEl }),
       );
       // The collection-resolved hover properties are handed over as a ref.
-      const { hoverProperties } =
-        spies.createOnFilterHandler.mock.calls[0][0];
+      const { hoverProperties } = spies.createOnFilterHandler.mock.calls[0][0];
       expect(hoverProperties.value).toEqual(HOVER);
     });
 

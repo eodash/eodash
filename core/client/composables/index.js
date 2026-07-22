@@ -135,7 +135,7 @@ export const useUpdateTheme = (themeName, themeDefinition = {}) => {
     Object.keys(themeDefinition)
   ).forEach((key) => {
     if (key === "dark") {
-      theme.themes.value[themeName][key] = /** @type {Boolean} */ (
+      theme.themes.value[themeName][key] = /** @type {boolean} */ (
         themeDefinition[key]
       );
     } else {

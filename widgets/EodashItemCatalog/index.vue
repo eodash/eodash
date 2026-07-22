@@ -1,13 +1,13 @@
 <template>
   <div class="d-flex flex-column">
     <v-row
-      class="title align-center justify-space-between flex-shrink-0"
       v-if="showTitleBlock"
+      class="title align-center justify-space-between flex-shrink-0"
     >
       <h4>Catalog Items</h4>
       <div class="d-flex align-center">
         <v-menu v-if="sortByOptions?.length" v-model="sortMenu" offset-y>
-          <template v-slot:activator="{ props: menuProps }">
+          <template #activator="{ props: menuProps }">
             <v-tooltip location="bottom">
               <template #activator="{ props: tooltipProps }">
                 <v-btn
@@ -29,8 +29,8 @@
             <v-list-item
               v-for="option in sortByOptions"
               :key="option.property"
-              @click="selectSort(option)"
               :active="selectedSort?.property === option.property"
+              @click="selectSort(option)"
             >
               <v-list-item-title>
                 {{ option.label }}
@@ -53,19 +53,19 @@
       </div>
     </v-row>
     <eox-itemfilter
-      class="itemfilter-scroll"
       ref="itemfilter"
+      class="itemfilter-scroll"
       titleProperty="id"
       .imageProperty="imageProperty"
       .subTitleProperty="subTitleProperty"
       .filterProperties="filterProperties"
       .items="items"
       .styleOverride="itemfilterStyleOverride"
+      :externalFilter="externalFilterHandler"
       @select="onSelectItem"
       @filter="onFilter"
       @mouseenter:result="onMouseEnterResult"
       @mouseleave:result="onMouseLeaveResult"
-      :externalFilter="externalFilterHandler"
     >
       <h4 slot="filterstitle" style="margin: 14px 8px">{{ filtersTitle }}</h4>
       <h4 slot="resultstitle" style="margin: 14px 8px">{{ resultsTitle }}</h4>
