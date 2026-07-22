@@ -443,7 +443,7 @@ export const createLayersFromLinks = async (
     item.links.filter((l) => l.rel === "vector-tile") ?? [];
   const mapboxStyleDocumentArray =
     item.links.filter((l) => l.rel === "mapbox-style-document") ?? [];
-  // An xyz link takes precedence over a tilejson link;
+  // An xyz link takes precedence over a tilejson link
   const tilejsonArray = xyzArray.length
     ? []
     : (item.links.filter((l) => l.rel === "tilejson") ?? []);
@@ -494,8 +494,8 @@ export const createLayersFromLinks = async (
       properties: {
         id: linkId,
         title: wmsLink.title || title || item.id,
-        layerDatetime,
-        layerConfig,
+        ...(!!layerDatetime && { layerDatetime }),
+        ...(!!layerConfig && { layerConfig }),
       },
       source: {
         type: "TileWMS",

@@ -69,18 +69,14 @@ export const useSTAcStore = defineStore("stac", () => {
   const selectedCompareStac = ref(null);
   /**
    * Currently selected item
-   * @type {import("vue").Ref<import("stac-ts").StacLink | import("stac-ts").StacItem | null>}
+   * @type {import("vue").Ref<import("stac-ts").StacLink | import("stac-ts").StacItem | null | undefined>}
    */
-  /**
-   * Currently selected item
-   * @type {import("vue").Ref<import("stac-ts").StacLink | import("stac-ts").StacItem | null>}
-   */
-  const selectedItem = ref(null);
+  const selectedItem = ref(undefined);
   /**
    * Currently selected compare item
-   * @type {import("vue").Ref<import("stac-ts").StacLink | import("stac-ts").StacItem | null>}
+   * @type {import("vue").Ref<import("stac-ts").StacLink | import("stac-ts").StacItem | null | undefined>}
    */
-  const selectedCompareItem = ref(null);
+  const selectedCompareItem = ref(undefined);
 
   /**
    * Initializes the store by assigning the STAC endpoint.
@@ -184,16 +180,10 @@ export const useSTAcStore = defineStore("stac", () => {
       // construct absolute URL of a poi
       absoluteUrl.value = constructPoiUrl(relativePath, indicator.value);
     }
-    //@ts-expect-error "this" type is not exported by pinia
-    const patch = this?.$patch;
-    if (patch) {
-      patch({ selectedItem: stacItem ?? null });
-    }
 
     await axios
       .get(absoluteUrl.value)
       .then(async (resp) => {
-        resp.data["eodash:layerExclusive"] = true;
         await updateEodashCollections(
           eodashCollections,
           resp.data,
@@ -202,6 +192,7 @@ export const useSTAcStore = defineStore("stac", () => {
           isApi.value,
           rasterEndpoint.value,
         );
+        selectedItem.value = /** @type {any} */ (stacItem) ?? undefined;
         selectedStac.value = resp.data;
         // set indicator and poi
         indicator.value = isPoi
@@ -237,11 +228,6 @@ export const useSTAcStore = defineStore("stac", () => {
       // construct absolute URL of a poi
       absoluteUrl.value = constructPoiUrl(relativePath, compareIndicator.value);
     }
-    //@ts-expect-error "this" type is not exported by pinia
-    const patch = this?.$patch;
-    if (stacItem && patch) {
-      patch({ selectedCompareItem: stacItem });
-    }
     await axios
       .get(absoluteUrl.value)
       .then(async (resp) => {
@@ -253,6 +239,7 @@ export const useSTAcStore = defineStore("stac", () => {
           isApi.value,
           rasterEndpoint.value,
         );
+        selectedCompareItem.value = /** @type {any} */ (stacItem) ?? undefined;
         selectedCompareStac.value = resp.data;
         compareIndicator.value = isPOI
           ? compareIndicator.value

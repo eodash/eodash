@@ -61,7 +61,6 @@ export default {
         name: "EodashItemCatalog",
         properties: {
           layoutTarget: undefined,
-          hoverProperties: ["datetime", "eo:cloud_cover"],
         },
       },
     },
