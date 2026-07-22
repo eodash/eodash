@@ -1,11 +1,11 @@
 <template>
   <eox-itemfilter
-    class="fill-height"
     v-bind="config"
     ref="eoxItemFilter"
+    class="fill-height"
     style="overflow: auto; --background-color: none"
-    @select="onSelect"
     .items="items"
+    @select="onSelect"
   >
     <h4 slot="filterstitle" style="margin: 14px 8px">{{ filtersTitle }}</h4>
     <h4 slot="resultstitle" style="margin: 14px 8px">{{ resultsTitle }}</h4>

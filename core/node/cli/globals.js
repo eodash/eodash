@@ -36,7 +36,7 @@ export const clientModules = Object.keys(appPkgJSON?.dependencies).filter(
 /**
  * CLI flags object
  *
- * @typedef {Object} Options
+ * @typedef {object} Options
  * @property {string | false} publicDir
  * @property {string} outDir
  * @property {string | false} entryPoint

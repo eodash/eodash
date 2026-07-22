@@ -391,7 +391,7 @@ export class EodashCollection {
    * Get closest Item Link from a certain date,
    * get the latest if no date provided
    *  @param {Date} [date]
-   *  @return {Promise<import("stac-ts").StacItem | import("stac-ts").StacLink | undefined>} item
+   *  @returns {Promise<import("stac-ts").StacItem | import("stac-ts").StacLink | undefined>} item
    **/
   async getItem(date) {
     let items = await this.getItems(false, true);

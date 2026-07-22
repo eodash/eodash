@@ -50,13 +50,7 @@ const internalWidgets = (() => {
 /**
  * Composable that converts widgets Configurations to defined imported widgets
  *
- * @param {(
- *       | import("@/types").Widget
- *       | import("@/types").BackgroundWidget
- *       | Omit<import("@/types").Widget, "layout">
- *       | undefined
- *     )[]
- *   | undefined} widgetConfigs
+ * @param {Array<import("@/types").Widget | import("@/types").BackgroundWidget | Omit<import("@/types").Widget, "layout"> | undefined> | undefined} widgetConfigs
  */
 export const useDefineWidgets = (widgetConfigs) => {
   /** @type {ReactiveDefinedWidget[]} */

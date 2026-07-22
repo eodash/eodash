@@ -4,8 +4,8 @@
       <ErrorAlert v-model="error" />
       <Suspense>
         <component
-          v-if="loading?.component"
           :is="loading?.component"
+          v-if="loading?.component"
           v-bind="loading?.props"
         ></component>
         <div v-else class="text-center">Loading...</div>

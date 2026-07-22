@@ -18,9 +18,9 @@
         <tr v-for="item in currentJobs" :key="item.jobID">
           <td>
             <a
+              v-tooltip="'Process details'"
               class="processUrl"
               target="_blank"
-              v-tooltip="'Process details'"
               :href="getJobStatusUrl(item.jobID, currentIndicator)"
               >{{
                 new Date(item.job_start_datetime).toISOString().slice(0, 16)
@@ -31,29 +31,32 @@
           <td>{{ item.status }}</td>
           <td style="padding: 0px">
             <v-btn
+              v-tooltip="'Load results to map'"
               :disabled="item.status !== 'successful'"
               color="primary"
-              @click="loadProcess(item, currentStac, mapElement)"
               :icon="[mdiUploadBox]"
               variant="text"
-              v-tooltip="'Load results to map'"
+              @click="loadProcess(item, currentStac, mapElement)"
             >
             </v-btn>
           </td>
           <td style="padding: 0px">
             <v-btn
+              v-tooltip="'Download results'"
               :disabled="item.status !== 'successful'"
               color="primary"
-              @click="downloadPreviousResults(item, currentStac)"
               :icon="[mdiDownloadBox]"
               variant="text"
-              v-tooltip="'Download results'"
+              @click="downloadPreviousResults(item, currentStac)"
             >
             </v-btn>
           </td>
           <td style="padding: 0px">
             <v-btn
+              v-tooltip="'Remove job'"
               color="#ff5252"
+              :icon="[mdiTrashCanOutline]"
+              variant="text"
               @click="
                 deleteJob(
                   toRef(() => currentJobs),
@@ -61,9 +64,6 @@
                   currentIndicator,
                 )
               "
-              :icon="[mdiTrashCanOutline]"
-              variant="text"
-              v-tooltip="'Remove job'"
             >
             </v-btn>
           </td>

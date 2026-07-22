@@ -17,8 +17,8 @@
       >
         <Suspense>
           <component
-            id="bg-widget"
             :is="bgWidget?.component"
+            id="bg-widget"
             v-bind="bgWidget?.props"
           />
         </Suspense>
@@ -26,8 +26,8 @@
       <template v-for="(importedWidget, idx) in importedWidgets" :key="idx">
         <Transition name="fade">
           <eox-layout-item
-            :id="importedWidget.value.id.toString()"
             v-if="importedWidget.value.component"
+            :id="importedWidget.value.id.toString()"
             :key="importedWidget.value.id"
             class="panel"
             :h="importedWidget.value.layout.h"
@@ -38,8 +38,8 @@
             <Suspense>
               <div class="bg-surface pointer">
                 <component
-                  :key="importedWidget.value.id"
                   :is="importedWidget.value.component"
+                  :key="importedWidget.value.id"
                   v-bind="importedWidget.value.props"
                 />
               </div>

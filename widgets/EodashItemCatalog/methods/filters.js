@@ -138,7 +138,7 @@ export const createFilterProperties = (filtersConfig, datetimeFilter) => {
  * @param {import("@/types").ItemFilterFilters} filters
  * @param {boolean} bboxFilter
  * @param {boolean} datetimeFilter
- * @param {Number} searchLimit
+ * @param {number} searchLimit
  * @param {string} [sortBy]
  * @param {string | null} [stacEndpoint]
  * @returns {string}
@@ -198,7 +198,7 @@ export const buildSearchUrl = (
  * @param {boolean} datetimeFilter
  * @param {import("vue").Ref<import("@/types").GeoJsonFeature[]>} currentItems
  * @param {import("vue").Ref<string>} sortBy
- * @param {Number} searchLimit
+ * @param {number} searchLimit
  * @param {import("vue").Ref<import("stac-ts").StacItem | null | undefined>} [selectedItemRef]
  * @param {import("vue").Ref<string | null> | string | null} [stacEndpoint]
  */

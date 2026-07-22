@@ -10,12 +10,12 @@
           <v-btn
             v-for="btn in copyBtns"
             v-show="!btn.showIf || btn.showIf()"
-            class="text-body-2"
-            @click="btn.copyFn"
             :key="btn.id"
+            class="text-body-2"
             small
             variant="text"
             :prepend-icon="[mdiContentCopy]"
+            @click="btn.copyFn"
           >
             copy as {{ btn.copyAs }}
           </v-btn>

@@ -2,10 +2,10 @@
   <v-main class="overflow-hidden pa-0">
     <Suspense suspensible>
       <component
-        id="bg-widget"
-        v-if="bgWidget?.component"
-        :key="bgWidget.id"
         :is="bgWidget.component"
+        v-if="bgWidget?.component"
+        id="bg-widget"
+        :key="bgWidget.id"
         v-bind="bgWidget.props"
       ></component>
     </Suspense>
@@ -32,12 +32,12 @@
         </div>
         <Suspense suspensible>
           <div
-            class="d-flex flex-column justify-center component-container"
             v-show="activeIdx === idx"
+            class="d-flex flex-column justify-center component-container"
           >
             <component
-              :key="importedWidget.value.id"
               :is="importedWidget.value.component"
+              :key="importedWidget.value.id"
               v-bind="importedWidget.value.props"
             />
           </div>
