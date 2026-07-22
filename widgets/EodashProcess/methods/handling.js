@@ -26,9 +26,8 @@ import { getLayers, getCompareLayers } from "@/store/actions";
 /**
  * Fetch and set the jsonform schema to initialize the process
  *
- * @export
  * @async
- * @param {Object} params
+ * @param {object} params
  * @param {import("vue").Ref<import("stac-ts").StacCollection | null>} params.selectedStac
  * @param {import("vue").Ref<Record<string,any> | null>} params.jsonformSchema
  * @param {import("vue").Ref<any[]>} params.processResults
@@ -139,8 +138,7 @@ function waitForLayerRender(layer) {
  * Returns null if any required layerId cannot be resolved (layer not yet in map).
  * Callers should treat null as "retry when layers:updated fires".
  *
- * @export
- * @param {Object} params
+ * @param {object} params
  * @param {Record<string,any> | null} params.jsonformSchema
  * @param {Record<string, any>[] | undefined} params.newLayers
  * @param {boolean} params.enableCompare
@@ -328,7 +326,7 @@ export async function handleProcesses({
 
 /**
  * Reset the process state
- * @param {Object} params
+ * @param {object} params
  * @param {import("vue").Ref<boolean>} params.loading
  * @param {import("vue").Ref<boolean>} params.isProcessed
  * @param {import("vue").Ref<boolean>} params.isPolling

@@ -67,7 +67,7 @@ export async function createAnimationLayers(
  * @param {number[] | undefined} bbox
  * @param {import("vue").Ref<import("stac-ts").StacCollection|null>} selectedStac
  * @param {import("@/types").ItemFilterFilters} filters
- * @return {Promise<Array<{ layers: Record<string, any>[]; date: string }>>}
+ * @returns {Promise<Array<{ layers: Record<string, any>[]; date: string }>>}
  */
 async function createAPILayers(
   stacEndpoint,

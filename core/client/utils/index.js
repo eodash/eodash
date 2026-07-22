@@ -156,9 +156,9 @@ export const setCollectionsPalette = (colors) => {
 
 /**
  * Updates the eodash collections by fetching and processing collection data from specified URLs
+ * @param {import('@/eodashSTAC/EodashCollection').EodashCollection[]} eodashCollections  - The array of existing eodash collections to be updated
  * @param {import("stac-ts").StacCollection} selectedStac - The indicator object
  * @param {string} absoluteUrl - The absolute indicator URL
- * @param {import('@/eodashSTAC/EodashCollection').EodashCollection[]} eodashCollections  - The array of existing eodash collections to be updated
  * @param {string[]} colorPalette - The color palette to assign to each collection
  * @param {boolean} isAPI - Flag indicating if the collection is fetched from an API
  * @param {string | null} rasterEndpoint - Optional raster endpoint URL

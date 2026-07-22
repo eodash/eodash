@@ -127,7 +127,7 @@ export async function processCharts({
             jsonformValue: jsonformValue,
             rawJsonformValue,
             link: link,
-            flatstyleUrl: /** @type string */ (link["eox:flatstyle"]),
+            flatstyleUrl: /** @type {string} */ (link["eox:flatstyle"]),
             jsonformSchema,
           });
           break checkForData;
@@ -135,7 +135,7 @@ export async function processCharts({
           await injectVegaUrlData(spec, {
             url: link.href,
             jsonformValue: jsonformValue,
-            flatstyleUrl: /** @type string */ (link["eox:flatstyle"]),
+            flatstyleUrl: /** @type {string} */ (link["eox:flatstyle"]),
           });
           break checkForData;
         default:

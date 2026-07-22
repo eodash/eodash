@@ -427,8 +427,8 @@ export const findLayersByLayerPrefix = (layers, referenceLayer) => {
 
 /**
  * Find JSON layer by ID
- *  @param {string} layer
  *  @param {import("@eox/map").EoxLayer[]} layers
+ *  @param {string} layer
  *  @returns {import("@eox/map").EoxLayer | undefined}
  **/
 export const findLayer = (layers, layer) => {

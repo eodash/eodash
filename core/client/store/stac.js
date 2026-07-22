@@ -51,20 +51,14 @@ export const useSTAcStore = defineStore("stac", () => {
   /**
    * Selected STAC object.
    *
-   * @type {import("vue").Ref<
-   *   | import("stac-ts").StacCollection
-   *   | null
-   * >}
+   * @type {import("vue").Ref<import("stac-ts").StacCollection | null>}
    */
   const selectedStac = ref(null);
 
   /**
    * Selected STAC object.
    *
-   * @type {import("vue").Ref<
-   *   | import("stac-ts").StacCollection
-   *   | null
-   * >}
+   * @type {import("vue").Ref<import("stac-ts").StacCollection | null>}
    */
   const selectedCompareStac = ref(null);
   /**
@@ -167,7 +161,7 @@ export const useSTAcStore = defineStore("stac", () => {
    *
    * @param {string} relativePath - Stac link href
    * @param {boolean} [isPoi=false] - If true, the STAC is loaded for a point of interest
-   * @param {Object} [stacItem] - The STAC item to load
+   * @param {object} [stacItem] - The STAC item to load
    * @returns {Promise<void>}
    * @see {@link selectedStac}
    */
@@ -209,7 +203,7 @@ export const useSTAcStore = defineStore("stac", () => {
    *
    * @param {string} relativePath - Stac link href
    * @param {boolean} [isPOI=false] - If true, the STAC is loaded for a point of interest
-   * @param {Object} [stacItem] - The STAC item to load
+   * @param {object} [stacItem] - The STAC item to load
    * @returns {Promise<void>}
    * @see {@link selectedCompareStac}
    */
