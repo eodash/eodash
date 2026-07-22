@@ -6,7 +6,7 @@
     >
       <h4>Catalog Items</h4>
       <div class="d-flex align-center">
-        <v-menu v-if="sortBy?.length" v-model="sortMenu" offset-y>
+        <v-menu v-if="sortByOptions?.length" v-model="sortMenu" offset-y>
           <template v-slot:activator="{ props: menuProps }">
             <v-tooltip location="bottom">
               <template #activator="{ props: tooltipProps }">
@@ -27,15 +27,15 @@
           </template>
           <v-list density="compact" color="primary">
             <v-list-item
-              v-for="option in props.sortBy"
+              v-for="option in sortByOptions"
               :key="option.property"
               @click="selectSort(option)"
-              :active="selectedSort.property === option.property"
+              :active="selectedSort?.property === option.property"
             >
               <v-list-item-title>
                 {{ option.label }}
                 <v-icon
-                  v-if="selectedSort.property === option.property"
+                  v-if="selectedSort?.property === option.property"
                   size="x-small"
                   class="ml-1"
                 >
@@ -87,9 +87,9 @@ import { storeToRefs } from "pinia";
 import { useSTAcStore } from "@/store/stac";
 import {
   createExternalFilter,
-  createFilterProperties,
   createSubtitleProperty,
 } from "./methods/filters";
+import { useCatalogConfig } from "./composables/useCatalogConfig";
 import {
   useSearchOnMapMove,
   useRenderItemsFeatures,
@@ -105,7 +105,7 @@ import {
 } from "./methods/handlers";
 import { mdiViewDashboard } from "@mdi/js";
 import EodashLayoutSwitcher from "^/EodashLayoutSwitcher.vue";
-import { mapCompareEl, mapEl, mapPosition } from "@/store/states";
+import { indicator, mapCompareEl, mapEl, mapPosition } from "@/store/states";
 import axios from "@/plugins/axios";
 import {
   useInitMosaic,
@@ -193,6 +193,15 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  /**
+   * Show the declared filters and their `filterKeys` as-is, without fetching
+   * per-collection metadata to resolve/narrow options. Use for large catalogs
+   * where fetching every collection's summaries/queryables does not scale.
+   */
+  staticFilters: {
+    type: Boolean,
+    default: false,
+  },
   useMosaic: {
     type: Boolean,
     default: false,
@@ -201,6 +210,7 @@ const props = defineProps({
     /** @type {import("vue").PropType<string[]>} */
     type: Array,
     required: false,
+    default: undefined,
   },
   stacEndpoint: {
     type: String,
@@ -213,10 +223,12 @@ const props = defineProps({
   stacItemsStyle: {
     type: Object,
     required: false,
+    default: undefined,
   },
   stacItemsInteractionStyle: {
     type: Object,
     required: false,
+    default: undefined,
   },
 });
 
@@ -225,12 +237,13 @@ const itemfilterEl = useTemplateRef("itemfilter");
 // Sorting states
 const sortMenu = ref(false);
 const sortOrder = ref("-");
-const selectedSort = ref(props.sortBy?.[0] ?? "");
+/** @type {import("vue").Ref<{ property: string, label: string } | null>} */
+const selectedSort = ref(null);
 const sortByParam = ref("-datetime");
-
+/** Rebuild sortByParam from the current property and order. */
 function updateSortByParam() {
   sortByParam.value = `${sortOrder.value === "+" ? "" : "-"}${
-    selectedSort.value.property
+    selectedSort.value?.property ?? "datetime"
   }`;
 }
 /**
@@ -238,7 +251,7 @@ function updateSortByParam() {
  * @param {{ property: string, label: string }} option
  */
 function selectSort(option) {
-  if (selectedSort.value.property === option.property) {
+  if (selectedSort.value?.property === option.property) {
     // Flip order if same property
     sortOrder.value = sortOrder.value === "-" ? "+" : "-";
   } else {
@@ -272,7 +285,7 @@ const isMosaicEnabled = computed(
 );
 
 const activeSelectedItem =
-  /** @type {import("vue").Ref<import("stac-ts").StacItem | null>} */ (
+  /** @type {import("vue").Ref<import("stac-ts").StacItem | null | undefined>} */ (
     props.enableCompare ? selectedCompareItem : selectedItem
   );
 
@@ -287,7 +300,7 @@ if (props.useMosaic) {
 }
 
 onUnmounted(() => {
-  activeSelectedItem.value = null;
+  activeSelectedItem.value = undefined;
 });
 
 // Reactive state
@@ -304,15 +317,43 @@ if (catalogEndpoint.value) {
     .then((res) => (currentItems.value = res.data.features));
 }
 
-const filterProperties = createFilterProperties(
-  props.filters,
-  props.datetimeFilter,
-);
+const {
+  filterProperties,
+  sortByOptions,
+  hoverProperties: effectiveHoverProperties,
+  applyCollections,
+} = useCatalogConfig({
+  itemfilterEl,
+  datetimeFilter: props.datetimeFilter,
+  declaredFilters: props.filters ?? [],
+  declaredSortBy: props.sortBy ?? [],
+  declaredHoverProperties: props.hoverProperties ?? [],
+  endpoint: /** @type {string} */ (catalogEndpoint.value),
+  staticFilters: props.staticFilters,
+});
 
-const subTitleProperty = createSubtitleProperty(props.filters);
+/**
+ * @param {string[]} ids selected collection ids
+ * @returns {string[]} collection ids to resolve the config against
+ */
+const resolveCollectionIds = (ids) => {
+  if (ids.length) {
+    return ids;
+  }
+  return (store.stac ?? []).map((col) => /** @type {string} */ (col.id));
+};
+
+const initialCollections = indicator.value ? [indicator.value] : [];
+await applyCollections(
+  props.staticFilters ? [] : resolveCollectionIds(initialCollections),
+);
+selectedSort.value = sortByOptions.value[0] ?? null;
+updateSortByParam();
+
+const subTitleProperty = createSubtitleProperty(props.filters ?? []);
 
 const externalFilterHandler = createExternalFilter(
-  props.filters,
+  props.filters ?? [],
   props.bboxFilter,
   props.datetimeFilter,
   currentItems,
@@ -338,7 +379,7 @@ watch(activeSelectedItem, (item) => {
     renderItemsFeatures(
       currentItems.value,
       props.enableCompare ? mapCompareEl : mapEl,
-      props.hoverProperties,
+      effectiveHoverProperties.value,
       props.stacItemsStyle,
       props.stacItemsInteractionStyle,
     );
@@ -360,7 +401,7 @@ watch(
     renderItemsFeatures(
       currentItems.value,
       props.enableCompare ? mapCompareEl : mapEl,
-      props.hoverProperties,
+      effectiveHoverProperties.value,
       props.stacItemsStyle,
       props.stacItemsInteractionStyle,
     );
@@ -373,11 +414,26 @@ const scheduleMosaicUpdate = useScheduleMosaicUpdate();
 const onFilter = createOnFilterHandler({
   currentItems,
   mapElement: props.enableCompare ? mapCompareEl : mapEl,
-  hoverProperties: props.hoverProperties,
+  hoverProperties: effectiveHoverProperties,
   stacItemsStyle: props.stacItemsStyle,
   stacItemsInteractionStyle: props.stacItemsInteractionStyle,
   itemfilterEl,
   selectedItemRef: activeSelectedItem,
+  initialCollections,
+  onCollectionsChange: async (collectionIds) => {
+    if (props.staticFilters) return;
+    await applyCollections(resolveCollectionIds(collectionIds));
+    // keep the user's sort when the new collection still offers it
+    const stillValid = sortByOptions.value.some(
+      (option) => option.property === selectedSort.value?.property,
+    );
+    if (!stillValid) {
+      selectedSort.value = sortByOptions.value[0] ?? null;
+      sortOrder.value = "-";
+      updateSortByParam();
+      itemfilterEl.value?.search();
+    }
+  },
   mosaicOptions: isMosaicEnabled.value
     ? {
         isMosaicEnabled,
@@ -402,7 +458,7 @@ const onSelectItem = createOnSelectHandler(
 useRenderItemsFeatures(
   currentItems,
   props.enableCompare ? mapCompareEl : mapEl,
-  props.hoverProperties,
+  effectiveHoverProperties,
   props.stacItemsStyle,
   props.stacItemsInteractionStyle,
 );
@@ -427,7 +483,7 @@ useInitMosaic(
 );
 
 // highlight on feature hover
-useHoverTooltip(props.hoverProperties);
+useHoverTooltip(effectiveHoverProperties);
 const onMouseEnterResult = createOnMouseEnterResult(
   props.enableCompare ? mapCompareEl : mapEl,
 );

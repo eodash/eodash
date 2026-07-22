@@ -64,6 +64,7 @@ export function renderItemsFeatures(
         options: {
           id: "stac-item-hover",
           condition: "pointermove",
+          active: true,
           tooltip: hoverProperties?.length,
           style: stacItemsInteractionStyle || {
             "stroke-color": "white",
@@ -76,6 +77,7 @@ export function renderItemsFeatures(
         options: {
           id: "stac-items",
           condition: "click",
+          active: true,
           tooltip: false,
           style: stacItemsInteractionStyle || {
             "stroke-color": "#003047",
@@ -92,6 +94,10 @@ export function renderItemsFeatures(
     currentMap.addOrUpdateLayer(stacItemsLayer);
     return;
   } else {
+    // should be fixed in eox-map upstream
+    for (const id of ["stac-items", "stac-item-hover"]) {
+      if (currentMap.selectInteractions?.[id]) currentMap.removeSelect(id);
+    }
     analysisLayers.layers.unshift(stacItemsLayer);
     currentMap.layers = [...currentMap.layers];
   }
@@ -128,7 +134,7 @@ export const useSearchOnMapMove = (itemFilter, bboxFilter, mapElement) => {
  *
  * @param {import("vue").Ref<import("@/types").GeoJsonFeature[]>} currentItems
  * @param {import("vue").Ref<import("@eox/map").EOxMap | null>} mapElement
- * @param {string[] | undefined} hoverProperties
+ * @param {import("vue").Ref<string[] | undefined>} hoverProperties
  * @param {object} [stacItemsStyle]
  * @param {object} [stacItemsInteractionStyle]
  */
@@ -143,7 +149,7 @@ export const useRenderItemsFeatures = (
     renderItemsFeatures(
       currentItems.value,
       mapElement,
-      hoverProperties,
+      hoverProperties.value,
       stacItemsStyle,
       stacItemsInteractionStyle,
     );
@@ -154,7 +160,7 @@ export const useRenderItemsFeatures = (
     renderItemsFeatures(
       currentItems.value,
       mapElement,
-      hoverProperties,
+      hoverProperties.value,
       stacItemsStyle,
       stacItemsInteractionStyle,
     );
@@ -162,7 +168,7 @@ export const useRenderItemsFeatures = (
 };
 /**
  * Registers a tooltip adapter that displays item properties when hovering over map features.
- * @param {string[]} [hoverProperties]
+ * @param {import("vue").Ref<string[] | undefined>} hoverProperties
  */
 export function useHoverTooltip(hoverProperties) {
   /**
@@ -198,7 +204,7 @@ export function useHoverTooltip(hoverProperties) {
   };
   onMounted(() => {
     tooltipAdapter.value = ({ key, value }) => {
-      if (hoverProperties && hoverProperties.includes(key)) {
+      if (value != null && hoverProperties.value?.includes(key)) {
         return { key: formatKey(key), value: formatValue(value) };
       }
       return undefined;

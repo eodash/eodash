@@ -199,7 +199,7 @@ export const buildSearchUrl = (
  * @param {import("vue").Ref<import("@/types").GeoJsonFeature[]>} currentItems
  * @param {import("vue").Ref<string>} sortBy
  * @param {Number} searchLimit
- * @param {import("vue").Ref<import("stac-ts").StacItem | null>} [selectedItemRef]
+ * @param {import("vue").Ref<import("stac-ts").StacItem | null | undefined>} [selectedItemRef]
  * @param {import("vue").Ref<string | null> | string | null} [stacEndpoint]
  */
 export const createExternalFilter = (
