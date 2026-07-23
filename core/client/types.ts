@@ -522,6 +522,12 @@ export type EodashRasterJSONForm = {
   legend?: import("@eox/layercontrol/src/components/layer-config.js").EOxLayerControlLayerConfig["layerConfig"]["legend"];
 };
 /**
+ * Which map a layer/config belongs to: "main" map, "compare"
+ * map.
+ * @ignore
+ */
+export type MapKey = "main" | "compare";
+/**
  * layerConfig attached to a built layer, consumed by eox-layercontrol to render
  * the config editor. Produced by `extractLayerConfig`.
  * @ignore

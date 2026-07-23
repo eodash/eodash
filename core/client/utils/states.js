@@ -54,11 +54,12 @@ export const layerControlFormValueCompare = ref({});
  * choices persist when the map rebuilds — for example when the date or the
  * selected item changes.
  *
- * Entries are keyed by collection and editor kind (style vs. tile URL), which is
- * what keeps a choice through item/time changes and stops the style and raster
- * editors from overwriting one another. A collection that exposes two layers of
- * the same kind shares one slot.
- * @type {import("vue").Ref<Record<string, Record<string, any>>>}
+ * Entries are keyed by map (main vs. compare), then collection, then editor kind
+ * (style vs. tile URL): the map key keeps the two maps independent, the collection
+ * key keeps a choice through item/time changes, and the kind key stops the style
+ * and raster editors from overwriting one another. A collection that exposes two
+ * layers of the same kind shares one slot.
+ * @type {import("vue").Ref<Record<string, Record<string, Record<string, any>>>>}
  */
 export const layerConfigFormState = ref({});
 
