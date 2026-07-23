@@ -162,6 +162,7 @@ export const setCollectionsPalette = (colors) => {
  * @param {string[]} colorPalette - The color palette to assign to each collection
  * @param {boolean} isAPI - Flag indicating if the collection is fetched from an API
  * @param {string | null} rasterEndpoint - Optional raster endpoint URL
+ * @param {import("@/types").MapKey} [map] - which map these collections belong to
  * @async
  * @description This function extracts collection URLs from the indicator, fetches collection data,
  * processes parquet items if available, and updates the eodashCollections array with new collection data.
@@ -174,6 +175,7 @@ export const updateEodashCollections = async (
   colorPalette,
   isAPI,
   rasterEndpoint = null,
+  map = "main",
 ) => {
   // init eodash collections
   const collectionUrls = extractCollectionUrls(selectedStac, absoluteUrl);
@@ -182,6 +184,7 @@ export const updateEodashCollections = async (
     collectionUrls.map((cu, idx) => {
       return new Promise((resolve, _reject) => {
         const ec = new EodashCollection(cu, isAPI, rasterEndpoint);
+        ec.map = map;
         ec.fetchCollection().then((col) => {
           // assign color from the palette
           ec.color = colorPalette[idx % colorPalette.length];

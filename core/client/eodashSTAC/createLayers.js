@@ -19,6 +19,7 @@ import {
   normalizeRescale,
   normalizeNodata,
   resolveRenders,
+  applyRasterFormValue,
 } from "./helpers";
 import { handleAuthenticationOfLink } from "./auth";
 import log from "loglevel";
@@ -50,6 +51,7 @@ function buildCapabilitiesUrl(href) {
  * @param {Record<string, unknown>} [layerDatetime]
  * @param {object | null} [extraProperties]
  * @param {import("stac-ts").StacCollection | null} [collection] - Used to fall back to a collection-level style link.
+ * @param {import("@/types").MapKey} [map] - which map the layers are built for
  **/
 export async function createLayersFromAssets(
   collectionId,
@@ -59,6 +61,7 @@ export async function createLayersFromAssets(
   layerDatetime,
   extraProperties,
   collection,
+  map = "main",
 ) {
   log.debug("Creating layers from assets");
   const jsonArray = [];
@@ -177,7 +180,13 @@ export async function createLayersFromAssets(
         assetName,
       );
       // get the correct style which is not attached to a link
-      let { layerConfig, style } = extractLayerConfig(collectionId, styles);
+      let { layerConfig, style } = extractLayerConfig(
+      collectionId,
+      styles,
+      undefined,
+      undefined,
+      map,
+    );
       let assetLayerId = createAssetID(
         collectionId,
         stacObject.id,
@@ -233,6 +242,9 @@ export async function createLayersFromAssets(
       const { layerConfig, style } = extractLayerConfig(
         collectionId,
         fetchedStyle,
+        undefined,
+        undefined,
+        map,
       );
       const bandsPath = getBandsProperty(layerConfig?.schema);
       const defaultBands = bandsPath?.reduce(
@@ -284,7 +296,13 @@ export async function createLayersFromAssets(
         assetName,
       );
       // get the correct style which is not attached to a link
-      let { layerConfig, style } = extractLayerConfig(collectionId, styles);
+      let { layerConfig, style } = extractLayerConfig(
+      collectionId,
+      styles,
+      undefined,
+      undefined,
+      map,
+    );
       let assetLayerId = createAssetID(
         collectionId,
         stacObject.id,
@@ -355,7 +373,13 @@ export async function createLayersFromAssets(
         assetName,
       );
       // get the correct style which is not attached to a link
-      let { layerConfig, style } = extractLayerConfig(collectionId, styles);
+      let { layerConfig, style } = extractLayerConfig(
+      collectionId,
+      styles,
+      undefined,
+      undefined,
+      map,
+    );
       let assetLayerId = createAssetID(collectionId, stacObject.id, fgbIdx[i]);
       if (
         assets[assetName]?.roles?.includes("overlay") ||
@@ -423,6 +447,7 @@ export async function createLayersFromAssets(
  * @param {Record<string,any>} [layerDatetime]
  * @param {object | null} [extraProperties]
  * @param {import('stac-ts').StacCollection} [collection]
+ * @param {import("@/types").MapKey} [map] - which map the layers are built for
  */
 export const createLayersFromLinks = async (
   collectionId,
@@ -431,6 +456,7 @@ export const createLayersFromLinks = async (
   layerDatetime,
   extraProperties,
   collection,
+  map = "main",
 ) => {
   log.debug("Creating layers from links");
   /** @type {Record<string,any>[]} */
@@ -480,6 +506,7 @@ export const createLayersFromLinks = async (
       {},
       rasterForm,
       "tileUrl",
+      map,
     );
 
     log.debug("WMS Layer added", linkId);
@@ -539,6 +566,7 @@ export const createLayersFromLinks = async (
         ...extractEoxLegendLink(wmsLink),
       };
     }
+    applyRasterFormValue(json, collectionId, map);
     jsonArray.push(json);
   }
 
@@ -563,6 +591,7 @@ export const createLayersFromLinks = async (
       {},
       rasterForm,
       "tileUrl",
+      map,
     );
     const projectionCode = getProjectionCode(wmtsLinkProjection || "EPSG:3857");
     // TODO: WARNING! This is a temporary project specific implementation
@@ -647,6 +676,7 @@ export const createLayersFromLinks = async (
         ...extractEoxLegendLink(wmtsLink),
       };
     }
+    applyRasterFormValue(json, collectionId, map);
     jsonArray.push(json);
   }
 
@@ -666,6 +696,7 @@ export const createLayersFromLinks = async (
       {},
       rasterForm,
       "tileUrl",
+      map,
     );
     await registerProjection(xyzLinkProjection);
     const projectionCode = getProjectionCode(xyzLinkProjection || "EPSG:3857");
@@ -731,6 +762,7 @@ export const createLayersFromLinks = async (
         ...extractEoxLegendLink(xyzLink),
       };
     }
+    applyRasterFormValue(json, collectionId, map);
     jsonArray.push(json);
   }
 
@@ -777,6 +809,7 @@ export const createLayersFromLinks = async (
       {},
       rasterForm,
       "tileUrl",
+      map,
     );
     const linkId = createLayerID(
       collectionId,
@@ -821,6 +854,7 @@ export const createLayersFromLinks = async (
         ...extractEoxLegendLink(tilejsonLink),
       };
     }
+    applyRasterFormValue(json, collectionId, map);
     jsonArray.push(json);
   }
 
@@ -845,7 +879,13 @@ export const createLayersFromLinks = async (
     // fetch styles and separate them by their mapping between links and assets
     const styles = await resolveStyle(item, collection, key);
     // get the correct style which is not attached to a link
-    let { layerConfig, style } = extractLayerConfig(collectionId, styles);
+    let { layerConfig, style } = extractLayerConfig(
+      collectionId,
+      styles,
+      undefined,
+      undefined,
+      map,
+    );
 
     let href = vectorTileLink.href;
     if ("auth:schemes" in item && "auth:refs" in vectorTileLink) {
@@ -967,6 +1007,7 @@ export const createLayersFromLinks = async (
  * @param {import("stac-ts").StacItem | undefined | null} item
  * @param {string} rasterURL
  * @param {Record<string, any>} [extraProperties]
+ * @param {import("@/types").MapKey} [map] - which map the layers are built for
  * @returns {Promise<import("@eox/map/src/layers").EOxLayerType<"Tile","XYZ">[]>}
  */
 export const createLayerFromRender = async (
@@ -974,6 +1015,7 @@ export const createLayerFromRender = async (
   collection,
   item,
   extraProperties,
+  map = "main",
 ) => {
   // config renders > collection STAC renders > item renders
   const renders = /** @type {Record<string,import("@/types").Render>} */ (
@@ -998,7 +1040,13 @@ export const createLayerFromRender = async (
       item?.["eodash:rasterform"] || collection?.["eodash:rasterform"]
     ),
   );
-  let { layerConfig } = extractLayerConfig(collection.id, {}, rasterForm);
+  let { layerConfig } = extractLayerConfig(
+    collection.id,
+    {},
+    rasterForm,
+    undefined,
+    map,
+  );
 
   /**
    * Resolves the first defined value of a property across a render's assets,
@@ -1083,6 +1131,7 @@ export const createLayerFromRender = async (
         tileSize: [renders[key].tilesize, renders[key].tilesize],
       };
     }
+    applyRasterFormValue(json, collection.id, map);
     layers.push(json);
   }
 

@@ -4,7 +4,7 @@
 import { changeMapProjection, registerProjection } from "@/store/actions";
 import log from "loglevel";
 import { getProjectionCode } from "./helpers";
-import { availableMapProjection, mapEl } from "@/store/states";
+import { availableMapProjection } from "@/store/states";
 
 /**
  * checks if there's a projection on the Collection and
@@ -41,61 +41,3 @@ export const setMapProjFromCol = async (STAcCollection) => {
     await changeMapProjection((availableMapProjection.value = ""));
   }
 };
-/**
- *
- * @param {string} collectionId
- * @param {import("@/types").EodashStyleJson["variables"]} variables
- */
-export function getStyleVariablesState(collectionId, variables) {
-  const mapElement = /** @type {import("@eox/map").EOxMap} */ (mapEl.value);
-  if (!mapElement || !mapElement.layers.length || !variables) {
-    return variables;
-  }
-
-  const analysisGroup =
-    /** @type {import("@eox/map/src/layers").EOxLayerTypeGroup | undefined} */ (
-      mapElement.layers.find(
-        (layer) => layer.properties?.id === "AnalysisGroup",
-      )
-    );
-  if (!analysisGroup) {
-    return variables;
-  }
-  const matchingLayer = analysisGroup.layers?.find((layer) => {
-    const [collection, ..._other] = layer.properties?.id.split(";:;") ?? [
-      "",
-      "",
-      "",
-    ];
-    return collection === collectionId;
-  });
-
-  if (!matchingLayer) {
-    return variables;
-  }
-  // TODO instead tap into store for changed variables state per layer
-  // because XYZ and WMTS use tileurlfunction update, where we can not retrieve
-  // current values from OL layers anyhow
-
-  const olLayer = mapElement.getLayerById(matchingLayer.properties?.id ?? "");
-  let oldVariablesState =
-    /** @type {import("ol/layer").Vector} */ (
-      olLayer
-      //@ts-expect-error variables doesn't exist in non-flat style
-    ).getStyle?.()?.variables ??
-    //@ts-expect-error (styleVariables_ is a private property)
-    /** @type {import("ol/layer").WebGLTile} */ (olLayer).styleVariables_;
-
-  if (!oldVariablesState) {
-    return variables;
-  }
-  const styleVariablesKeys = Object.keys(variables);
-  const matchingKeys =
-    Object.keys(oldVariablesState).every((key) =>
-      styleVariablesKeys.includes(key),
-    ) &&
-    styleVariablesKeys.every((key) =>
-      Object.keys(oldVariablesState).includes(key),
-    );
-  return matchingKeys ? oldVariablesState : variables;
-}

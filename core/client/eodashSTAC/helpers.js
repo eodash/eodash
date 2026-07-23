@@ -3,8 +3,11 @@ import axios from "@/plugins/axios";
 import log from "loglevel";
 import mustache from "mustache";
 import { updateVectorLayerStyle } from "@eox/layercontrol";
-import { getStyleVariablesState } from "./triggers.js";
-import { itemsCache, splitItemsCache } from "@/utils/states.js";
+import {
+  itemsCache,
+  splitItemsCache,
+  layerConfigFormState,
+} from "@/utils/states.js";
 
 /**
  *  @param {import("stac-ts").StacLink[]} [links]
@@ -68,15 +71,17 @@ export async function fetchRasterForm(rasterform) {
  * Spearates and extracts layerConfig (jsonform schema & legend) from a style json
  *
  * @param {string} collectionId
- *  @param { import("@/types").EodashStyleJson} [style]
+ * @param { import("@/types").EodashStyleJson} [style]
  * @param {Record<string,any>} [rasterJsonform]
- * @param {string} [layerConfigType]
- * */
+ * @param {"style" | "tileUrl"} [layerConfigType]
+ * @param {import("@/types").MapKey} [map]
+ **/
 export function extractLayerConfig(
   collectionId,
   style,
   rasterJsonform,
   layerConfigType,
+  map = "main",
 ) {
   if (!style && !rasterJsonform) {
     return { layerConfig: undefined, style: undefined };
@@ -85,14 +90,20 @@ export function extractLayerConfig(
     style = { ...style };
   }
 
-  if (style?.variables && Object.keys(style.variables ?? {}).length) {
-    style.variables = getStyleVariablesState(collectionId, style.variables);
+  if (style?.variables) {
+    // render the saved rescale/gamma from the first frame
+    style.variables = applyStyleVariables(collectionId, style.variables, map);
   }
 
   if (rasterJsonform) {
     return {
       layerConfig: {
-        schema: rasterJsonform.jsonform,
+        schema: restorePersistedSchema(
+          rasterJsonform.jsonform,
+          collectionId,
+          "tileUrl",
+          map,
+        ),
         legend: rasterJsonform.legend,
         type: "tileUrl",
       },
@@ -100,12 +111,16 @@ export function extractLayerConfig(
     };
   }
 
-  /** @type {Record<string,unknown> | undefined} */
+  /** @type {import("@/types").EodashLayerConfig | undefined} */
   let layerConfig = undefined;
 
   if (style?.jsonform) {
     // this explicitly sets legend only if jsonform is configured
-    layerConfig = { schema: style.jsonform, type: layerConfigType || "style" };
+    const type = layerConfigType || "style";
+    layerConfig = {
+      schema: restorePersistedSchema(style.jsonform, collectionId, type, map),
+      type,
+    };
     delete style.jsonform;
     if (style?.legend) {
       layerConfig.legend = style.legend;
@@ -118,6 +133,191 @@ export function extractLayerConfig(
   );
 
   return { layerConfig, style };
+}
+
+/**
+ * Deep-clones `schema` and overwrites each leaf property's `default` with the
+ * matching entry in `values` (keyed by property name), walking nested
+ * `properties`, `oneOf`/`allOf`/`anyOf` branches and local `$ref`s. Leaves the
+ * original schema untouched so shared/cached schemas are not mutated.
+ *
+ * @param {Record<string, any>} schema
+ * @param {Record<string, any>} values - Flat map of property name -> persisted value.
+ * @returns {Record<string, any>}
+ */
+export function seedSchemaDefaults(schema, values) {
+  if (!schema || typeof schema !== "object" || !values) return schema;
+  const cloned = JSON.parse(JSON.stringify(schema));
+
+  /**
+   * @param {Record<string, any> | undefined} node
+   * @param {Set<string>} seenRefs
+   */
+  const walk = (node, seenRefs) => {
+    if (!node || typeof node !== "object") return;
+    if (typeof node.$ref === "string" && !seenRefs.has(node.$ref)) {
+      walk(
+        resolveLocalRef(node.$ref, cloned),
+        new Set([...seenRefs, node.$ref]),
+      );
+    }
+    if (node.properties) {
+      for (const [key, propSchema] of Object.entries(node.properties)) {
+        if (
+          key in values &&
+          /** @type {any} */ (propSchema)?.type !== "object"
+        ) {
+          /** @type {any} */ (propSchema).default = JSON.parse(
+            JSON.stringify(values[key]),
+          );
+        } else {
+          walk(/** @type {any} */ (propSchema), seenRefs);
+        }
+      }
+    }
+    for (const combinator of ["oneOf", "allOf", "anyOf"]) {
+      if (Array.isArray(node[combinator]))
+        node[combinator].forEach((/** @type {any} */ branch) =>
+          walk(branch, seenRefs),
+        );
+    }
+  };
+  walk(cloned, new Set());
+  return cloned;
+}
+
+/**
+ * Resolves a local `$ref` pointer (e.g. `#/definitions/foo`) against `rootSchema`.
+ *
+ * @param {string} ref
+ * @param {Record<string, any>} rootSchema
+ * @returns {Record<string, any> | undefined}
+ */
+function resolveLocalRef(ref, rootSchema) {
+  if (!ref.startsWith("#/")) return undefined;
+  return ref
+    .slice(2)
+    .split("/")
+    .reduce(
+      (node, part) => node?.[part.replace(/~1/g, "/").replace(/~0/g, "~")],
+      rootSchema,
+    );
+}
+
+/**
+ * Flattens a nested jsonform value into a single map keyed by leaf property name
+ * (e.g. `{ rescaleRed: { minRed, maxRed } }` -> `{ minRed, maxRed }`). Arrays are
+ * kept whole (bands stay a single value).
+ * @param {Record<string, any>} obj
+ * @returns {Record<string, any>}
+ */
+export function flattenFormValues(obj) {
+  /** @type {Record<string, any>} */
+  const result = {};
+  for (const key in obj) {
+    if (
+      obj[key] !== null &&
+      typeof obj[key] === "object" &&
+      !Array.isArray(obj[key])
+    ) {
+      Object.assign(result, flattenFormValues(obj[key]));
+    } else {
+      result[key] = obj[key];
+    }
+  }
+  return result;
+}
+
+/**
+ * @param {string} collectionId
+ * @param {"style" | "tileUrl"} type
+ * @param {import("@/types").MapKey} map
+ * @returns {Record<string, any> | undefined}
+ */
+function getCachedConfig(collectionId, type, map) {
+  return layerConfigFormState.value[map]?.[collectionId]?.[type];
+}
+
+/**
+ * Remembers a layer config editor's current value (see {@link layerConfigFormState})
+ * so it can be restored after a time/item rebuild. Call from the `layerConfig:change`
+ * handler.
+ * @param {import("ol/layer/Layer").default} olLayer - layer from the change event
+ * @param {Record<string, any>} value - current jsonform value
+ * @param {import("@/types").MapKey} [map] - which map the edit belongs to
+ */
+export function persistLayerConfigState(olLayer, value, map = "main") {
+  const layerConfig = olLayer.get("_jsonDefinition")?.properties?.layerConfig;
+  const type = layerConfig?.type;
+  const [collectionId] = (olLayer.get("id") ?? "").split(";:;");
+  if (!collectionId || (type !== "style" && type !== "tileUrl")) return;
+  // form opted out of persistence (top level schema option)
+  if (layerConfig?.schema?.options?.persist_state === false) return;
+  const byCollection = (layerConfigFormState.value[map] ??= {});
+  (byCollection[collectionId] ??= {})[type] = value;
+}
+
+/**
+ * Restores a remembered selection onto a rebuilt schema by seeding its leaf
+ * defaults — the channel the range/minmax and bands editors honor on a fresh
+ * mount (they ignore startval).
+ * @param {Record<string, any>} schema
+ * @param {string} collectionId
+ * @param {"style" | "tileUrl"} type
+ * @param {import("@/types").MapKey} [map]
+ * @returns {Record<string, any>} seeded schema (original untouched)
+ */
+export function restorePersistedSchema(schema, collectionId, type, map = "main") {
+  // form opted out of persistence
+  if (schema?.options?.persist_state === false) return schema;
+  const cached = getCachedConfig(collectionId, type, map);
+  if (!cached || !Object.keys(cached).length) return schema;
+  return seedSchemaDefaults(schema, flattenFormValues(cached));
+}
+
+/**
+ * Mirrors the remembered style variables onto a rebuilt style so the layer
+ * renders the saved rescale/gamma from the first frame.
+ * @param {string} collectionId
+ * @param {Record<string, any>} [variables]
+ * @param {import("@/types").MapKey} [map]
+ * @returns {Record<string, any> | undefined}
+ */
+export function applyStyleVariables(collectionId, variables, map = "main") {
+  const cached = getCachedConfig(collectionId, "style", map);
+  if (!cached || !variables) return variables;
+  const values = flattenFormValues(cached);
+  const merged = { ...variables };
+  for (const key of Object.keys(merged)) {
+    if (key in values) merged[key] = values[key];
+  }
+  return merged;
+}
+
+/**
+ * Writes the remembered tileUrl selection into a rebuilt layer's source (WMS
+ * params or the tile URL) so eox reads it back as the form's start values
+ * (`getStartVals`). Mutates in place.
+ * @param {Record<string, any>} layer - built layer json
+ * @param {string} collectionId
+ * @param {import("@/types").MapKey} [map]
+ */
+export function applyRasterFormValue(layer, collectionId, map = "main") {
+  if (layer?.properties?.layerConfig?.type !== "tileUrl") return;
+  const value = getCachedConfig(collectionId, "tileUrl", map);
+  const source = layer.source;
+  if (!source || !value || !Object.keys(value).length) return;
+  if (source.params) {
+    Object.assign(source.params, flattenFormValues(value));
+    return;
+  }
+  if (typeof source.url === "string") {
+    source.url = applyValuesToUrl(source.url, value);
+  } else if (Array.isArray(source.urls)) {
+    source.urls = /** @type {string[]} */ (source.urls).map((u) =>
+      applyValuesToUrl(u, value),
+    );
+  }
 }
 
 /**
@@ -641,26 +841,6 @@ export const removeUnneededProperties = (layers, formValues = {}) => {
     }
 
     // Flatten formValues to handle nested properties (e.g., vminmax: { vmin, vmax })
-    /**
-     * @param {Record<string,any>} obj
-     * @returns {Record<string,any>}
-     */
-    const flattenFormValues = (obj) => {
-      /** @type {Record<string,any>} */
-      let result = {};
-      for (const key in obj) {
-        if (
-          obj[key] !== null &&
-          typeof obj[key] === "object" &&
-          !Array.isArray(obj[key])
-        ) {
-          Object.assign(result, flattenFormValues(obj[key]));
-        } else {
-          result[key] = obj[key];
-        }
-      }
-      return result;
-    };
     const flatFormValues = flattenFormValues(formValues);
 
     // Burn in style variables using Mustache if formValues are provided
@@ -1334,6 +1514,39 @@ export function updateLayerUrl(olLayer, jsonformValue) {
   }
 
   return false;
+}
+
+/**
+ * Injects jsonform values into a tile URL.
+ * Nested objects are spread into their sub-keys, arrays become repeated params.
+ * Keeps parity so a baked URL matches what a live jsonform edit would produce.
+ *
+ * @param {string} url
+ * @param {Record<string, any>} values
+ * @returns {string}
+ */
+function applyValuesToUrl(url, values) {
+  const [base, query] = url.split("?");
+  const searchParams = new URLSearchParams(query || "");
+  for (const [key, value] of Object.entries(values)) {
+    if (value === undefined || value === null || value === "") {
+      continue;
+    }
+    if (Array.isArray(value)) {
+      searchParams.delete(key);
+      value.forEach((v) => searchParams.append(key, String(v)));
+    } else if (typeof value === "object") {
+      for (const [k, v] of Object.entries(value)) {
+        if (v !== undefined && v !== null && v !== "") {
+          searchParams.set(k, String(v));
+        }
+      }
+    } else {
+      searchParams.set(key, String(value));
+    }
+  }
+  const qs = searchParams.toString();
+  return qs ? `${base}?${qs}` : base;
 }
 
 /**
