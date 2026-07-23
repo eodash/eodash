@@ -7,9 +7,7 @@ import vue from "@vitejs/plugin-vue";
 import vuetify from "vite-plugin-vuetify";
 
 const pkg = createRequire(import.meta.url)("./package.json");
-// Mirror core/node/cli/globals.js `clientModules`: app dependencies minus the
-// node-only ones. Pre-bundling them stops Vite discovering a dep mid-run (via a
-// dynamic/side-effect widget import) and reloading a test.
+
 const nodeOnlyDeps = [
   "commander",
   "vite",
@@ -30,7 +28,43 @@ const alias = {
   "@": fileURLToPath(new URL("./core/client", import.meta.url)),
   "^": fileURLToPath(new URL("./widgets", import.meta.url)),
   "user:widgets": fileURLToPath(new URL("./widgets", import.meta.url)),
+  "user:config": fileURLToPath(
+    new URL("./tests/support/user-config-stub.js", import.meta.url),
+  ),
 };
+
+/** Vue plugin with the app's custom-element compiler option. */
+const vuePlugin = () =>
+  vue({
+    template: {
+      compilerOptions: {
+        isCustomElement: (tag) => !tag.includes("v-") && tag.includes("-"),
+      },
+    },
+  });
+
+/**
+ * A mounted-Vue browser project (component + template tiers). vuetify is
+ * excluded from the optimizer because `autoImport` rewrites SFCs to
+ * per-component subpaths that Vite would otherwise discover mid-run.
+ * @param {Record<string, unknown>} test Project `test` config (name, include, timeouts, ...).
+ */
+const browserAppProject = (test) => ({
+  plugins: [vuePlugin(), vuetify({ autoImport: true })],
+  resolve: { alias },
+  define: { "process.env": {} },
+  optimizeDeps: { include: componentDeps, exclude: ["vuetify"] },
+  test: {
+    browser: {
+      enabled: true,
+      provider: playwright(),
+      headless: true,
+      viewport: { width: 1440, height: 900 },
+      instances: [{ browser: /** @type {const} */ ("chromium") }],
+    },
+    ...test,
+  },
+});
 
 export default defineConfig({
   test: {
@@ -70,33 +104,15 @@ export default defineConfig({
           testTimeout: 3 * 60 * 1000,
         },
       },
-      {
-        plugins: [
-          vue({
-            template: {
-              compilerOptions: {
-                isCustomElement: (tag) =>
-                  !tag.includes("v-") && tag.includes("-"),
-              },
-            },
-          }),
-          vuetify({ autoImport: true }),
-        ],
-        resolve: { alias },
-        define: { "process.env": {} },
-        optimizeDeps: { include: componentDeps, exclude: ["vuetify"] },
-        test: {
-          name: "component",
-          include: ["tests/component/**/*.test.js"],
-          browser: {
-            enabled: true,
-            provider: playwright(),
-            headless: true,
-            viewport: { width: 1440, height: 900 },
-            instances: [{ browser: "chromium" }],
-          },
-        },
-      },
+      browserAppProject({
+        name: "component",
+        include: ["tests/component/**/*.test.js"],
+      }),
+      browserAppProject({
+        name: "template",
+        include: ["tests/template/**/*.test.js"],
+        testTimeout: 60 * 1000,
+      }),
     ],
   },
 });

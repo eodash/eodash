@@ -9,6 +9,7 @@
   "include": [
     "../core/client/vite-env.d.ts",
     "component/**/*.js",
+    "template/**/*.js",
     "support/**/*.js",
     "support/**/*.ts",
     "fixtures/**/*.js",
