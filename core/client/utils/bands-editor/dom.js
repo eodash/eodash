@@ -1,44 +1,6 @@
 import { getBandColor } from "./colors.js";
 
 /**
- * Create band styles
- * @param {string[]} bands - Array of band identifiers
- * @param {string[]} colors - Array of color strings
- * @param {string} additionalStyles - Additional CSS styles
- * @returns {HTMLStyleElement} Style element
- */
-export function createBandStyles(bands, colors, additionalStyles = "") {
-  const style = document.createElement("style");
-  style.innerHTML = `
-    [data-band], [data-slot] {
-      display: inline-flex;
-      border: 1px solid darkgrey;
-      border-radius: 50%;
-      height: 40px;
-      aspect-ratio: 1/1;
-      padding: 4px;
-      margin: 2px;
-      align-items: center;
-      justify-content: center;
-      cursor: move;
-      font-size: 10px;
-    }
-    ${bands
-      .map(
-        (band) =>
-          `[data-band="${band}"] { background: ${getBandColor(
-            band,
-            bands,
-            colors,
-          )}; color: black; }`,
-      )
-      .join("\n")}
-    ${additionalStyles}
-  `;
-  return style;
-}
-
-/**
  * Create a draggable band element.
  * @param {string} enumValue
  * @param {string} title
@@ -61,13 +23,14 @@ export function createBandDiv(enumValue, title) {
  * @param {Array<string>} bandTitles - Array of band titles
  */
 export function addDraggableBands(editor, bands, bandTitles) {
+  const palette = document.createElement("div");
+  palette.classList.add("bands-palette");
   bands.forEach((band, index) => {
     const title = bandTitles[index];
-    const bandDiv = createBandDiv(band, title);
-
     // createBandDiv already sets up drag functionality
-    editor.control?.appendChild(bandDiv);
+    palette.appendChild(createBandDiv(band, title));
   });
+  editor.control?.appendChild(palette);
 }
 
 /**
@@ -82,7 +45,7 @@ export function createSlotStyles(bands, colors) {
     /* Base styles for all band elements */
     [data-band] {
       display: inline-flex;
-      border: 1px solid darkgrey;
+      border: 1px solid var(--outline, darkgrey);
       border-radius: 50%;
       height: 40px;
       aspect-ratio: 1/1;
@@ -92,29 +55,53 @@ export function createSlotStyles(bands, colors) {
       justify-content: center;
       cursor: move;
       font-size: 10px;
+      font-weight: 500;
+      transition: box-shadow 150ms ease;
+    }
+    [data-band]:hover {
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    /* One card holding the palette and the slots */
+    .bands-editor {
+      background: var(--surface-container, #f0f0f0);
+      border: 1px solid var(--outline-variant, #ccc);
+      border-radius: 4px;
+      padding: 12px;
+      margin: 8px 0;
+    }
+    .bands-editor hr {
+      border: none;
+      border-top: 1px solid var(--outline-variant, #ccc);
+      margin: 8px 0;
+    }
+
+    /* Centered palette of draggable bands */
+    .bands-palette {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 4px;
+      padding: 8px 0;
     }
 
     /* Band color styles */
     ${bands
       .map(
         (band) =>
-          `[data-band="${band}"] { background: ${getBandColor(
-            band,
-            bands,
-            colors,
-          )}; color: black; }`,
+          `[data-band="${band}"] { background: ${getBandColor(band, bands, colors)}; color: black; }`,
       )
       .join("\n")}
 
-    /* RGB slot styles */
+    /* Drop slot styles */
     [data-slot] {
       display: inline-flex;
       width: 50px;
       height: 50px;
       aspect-ratio: 1/1;
       padding: 1px;
-      border: 2px solid #666;
-      background: #f0f0f0;
+      border: 2px solid var(--outline, #666);
+      background: var(--surface-container-low, #f0f0f0);
       border-radius: 50%;
       align-items: center;
       justify-content: center;
@@ -122,29 +109,27 @@ export function createSlotStyles(bands, colors) {
       margin: 2px;
       position: relative;
       box-sizing: border-box;
+      transition: border-color 150ms ease, background 150ms ease;
     }
     [data-slot]:hover {
-      border-color: #333;
-      background: #f9f9f9;
+      border-color: var(--primary, #333);
+      background: var(--surface-container-high, #f9f9f9);
     }
     [data-slot]::before {
       content: attr(data-slot);
       position: absolute;
       font-size: 12px;
       font-weight: bold;
-      color: #666;
+      color: var(--on-surface-variant, #666);
       z-index: 0;
     }
 
-    /* container */
+    /* slots row inside the card */
     .slots-container {
       font-family: monospace;
       font-size: 18px;
-      padding: 16px;
-      background: #f0f0f0;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      margin: 8px 0;
+      color: var(--on-surface, inherit);
+      padding: 8px 0;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -156,6 +141,14 @@ export function createSlotStyles(bands, colors) {
       font-size: 18px;
       margin: 0 2px;
     }
+
+    /* RGB channel affordance */
+    .rgb-slots [data-slot] {
+      border-style: dashed;
+    }
+    .rgb-slots [data-slot="R"] { border-color: #e57373; }
+    .rgb-slots [data-slot="G"] { border-color: #81c784; }
+    .rgb-slots [data-slot="B"] { border-color: #64b5f6; }
   `;
   return style;
 }
@@ -185,12 +178,14 @@ export function createSlot(identifier, onDrop) {
  * @param {string} title - Band title
  */
 export function fillSlotWithBand(slot, enumValue, title) {
-  // clear existing band and add new one
-  const existingBand = slot.querySelector("[data-band]");
-  if (existingBand) {
-    existingBand.remove();
-  }
+  clearSlot(slot);
+  slot.appendChild(createBandDiv(enumValue, title));
+}
 
-  const bandDiv = createBandDiv(enumValue, title);
-  slot.appendChild(bandDiv);
+/**
+ * Remove the band from a slot, if any
+ * @param {HTMLElement} slot - Slot element
+ */
+export function clearSlot(slot) {
+  slot.querySelector("[data-band]")?.remove();
 }
