@@ -1,4 +1,4 @@
-import { getBandColor } from "./colors.js";
+import { getBandColor, contrastText } from "./colors.js";
 
 /**
  * Create band styles
@@ -96,14 +96,10 @@ export function createSlotStyles(bands, colors) {
 
     /* Band color styles */
     ${bands
-      .map(
-        (band) =>
-          `[data-band="${band}"] { background: ${getBandColor(
-            band,
-            bands,
-            colors,
-          )}; color: black; }`,
-      )
+      .map((band) => {
+        const bg = getBandColor(band, bands, colors);
+        return `[data-band="${band}"] { background: ${bg}; color: ${contrastText(bg)}; }`;
+      })
       .join("\n")}
 
     /* RGB slot styles */
