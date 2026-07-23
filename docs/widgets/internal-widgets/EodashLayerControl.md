@@ -34,6 +34,41 @@ widget: {
 }
 ```
 
+## Layer Configuration Forms
+
+Layers can expose configuration forms in the panel, defined through [eodash Flat Styles](/STAC#eodash-flat-styles) or [`eodash:rasterform`](/STAC#eodash-raster-form) in the STAC metadata.
+
+### State persistence
+
+Form values are remembered per collection and per map (main/compare), and re-applied when the map rebuilds its layers (datetime change, item selection). Opt a form out when its values are only valid for a specific item:
+
+```json
+{
+  "jsonform": {
+    "options": { "persist_state": false }
+  }
+}
+```
+
+### Item templating
+
+Form definitions may contain `${...}` placeholders, resolved as dotted paths against the STAC item being rendered — so one definition can serve item-dependent variants:
+
+```json
+{
+  "expression": {
+    "type": "string",
+    "enum": [
+      "/${properties.sat:orbit_state}:vv",
+      "/${properties.sat:orbit_state}:vh"
+    ],
+    "default": "/${properties.sat:orbit_state}:vv"
+  }
+}
+```
+
+For an item with `"sat:orbit_state": "ascending"`, the form renders with `/ascending:vv`. <span v-pre>`{{ }}`</span> templates are untouched and still evaluated by the form at runtime. see [json-editor](https://github.com/json-editor/json-editor#templates)
+
 <!-- @widget-props -->
 
 ## See also

@@ -181,12 +181,12 @@ export async function createLayersFromAssets(
       );
       // get the correct style which is not attached to a link
       let { layerConfig, style } = extractLayerConfig(
-      collectionId,
-      styles,
-      undefined,
-      undefined,
-      map,
-    );
+        collectionId,
+        styles,
+        undefined,
+        undefined,
+        map,
+      );
       let assetLayerId = createAssetID(
         collectionId,
         stacObject.id,
@@ -297,12 +297,12 @@ export async function createLayersFromAssets(
       );
       // get the correct style which is not attached to a link
       let { layerConfig, style } = extractLayerConfig(
-      collectionId,
-      styles,
-      undefined,
-      undefined,
-      map,
-    );
+        collectionId,
+        styles,
+        undefined,
+        undefined,
+        map,
+      );
       let assetLayerId = createAssetID(
         collectionId,
         stacObject.id,
@@ -374,12 +374,12 @@ export async function createLayersFromAssets(
       );
       // get the correct style which is not attached to a link
       let { layerConfig, style } = extractLayerConfig(
-      collectionId,
-      styles,
-      undefined,
-      undefined,
-      map,
-    );
+        collectionId,
+        styles,
+        undefined,
+        undefined,
+        map,
+      );
       let assetLayerId = createAssetID(collectionId, stacObject.id, fgbIdx[i]);
       if (
         assets[assetName]?.roles?.includes("overlay") ||
@@ -500,6 +500,7 @@ export const createLayersFromLinks = async (
           item?.["eodash:rasterform"] ||
           collection?.["eodash:rasterform"]
       ),
+      item,
     );
     let { layerConfig } = extractLayerConfig(
       collectionId,
@@ -585,6 +586,7 @@ export const createLayersFromLinks = async (
           item?.["eodash:rasterform"] ||
           collection?.["eodash:rasterform"]
       ),
+      item,
     );
     const returnedLayerConfig = extractLayerConfig(
       collectionId,
@@ -690,6 +692,7 @@ export const createLayersFromLinks = async (
           item?.["eodash:rasterform"] ||
           collection?.["eodash:rasterform"]
       ),
+      item,
     );
     let { layerConfig } = extractLayerConfig(
       collectionId,
@@ -803,6 +806,7 @@ export const createLayersFromLinks = async (
           item?.["eodash:rasterform"] ||
           collection?.["eodash:rasterform"]
       ),
+      item,
     );
     const { layerConfig } = extractLayerConfig(
       collectionId,
@@ -1039,6 +1043,7 @@ export const createLayerFromRender = async (
     /** @type {string|object|undefined} */ (
       item?.["eodash:rasterform"] || collection?.["eodash:rasterform"]
     ),
+    item,
   );
   let { layerConfig } = extractLayerConfig(
     collection.id,
