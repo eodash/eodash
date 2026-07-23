@@ -60,7 +60,28 @@ export default {
       widget: {
         name: "EodashItemCatalog",
         properties: {
-          layoutTarget: undefined,
+          useMosaic: false,
+          layoutTarget: "mosaic",
+          datetimeFilter: true,
+          filters: [
+            {
+              property: "eo:cloud_cover",
+              type: "range",
+              title: "Cloud cover",
+              unitLabel: "%",
+            },
+            {
+              property: "platform",
+              type: "multiselect",
+              title: "Platform",
+            },
+            {
+              property: "sat:orbit_state",
+              type: "multiselect",
+              title: "Orbit direction",
+            },
+          ],
+          hoverProperties: ["datetime", "eo:cloud_cover", "sat:orbit_state"],
         },
       },
     },

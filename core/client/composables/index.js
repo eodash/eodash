@@ -23,7 +23,7 @@ import mustache from "mustache";
 import { toAbsolute } from "stac-js/src/http.js";
 import axios from "@/plugins/axios";
 import { storeToRefs } from "pinia";
-
+import { bboxToCenterZoom, sanitizeBbox } from "@/eodashSTAC/helpers";
 /**
 /** @type {import('@/types').Eodash | null}*/
 
@@ -163,6 +163,8 @@ export const useURLSearchParametersSync = () => {
         y,
         /** @type {number | undefined} */
         z;
+      /** @type {number[] | undefined} - restored item extent; wins over x/y/z */
+      let itemBbox;
       for (const [key, value] of searchParams) {
         switch (key) {
           case "template": {
@@ -215,6 +217,21 @@ export const useURLSearchParametersSync = () => {
                   const poiAbsoluteUrl = toAbsolute(poiUrl, indicatorUrl);
                   await store.loadSelectedSTAC(poiAbsoluteUrl, true);
                 }
+              } else if (store.isApi && searchParams.has("item")) {
+                // Restore a specific catalog item within the collection
+                const itemId = searchParams.get("item");
+                const itemUrl = `${store.stacEndpoint}/collections/${match.id}/items/${itemId}`;
+                /** @type {import("stac-ts").StacItem | null} */
+                const item = await axios
+                  .get(itemUrl)
+                  .then((resp) => resp.data)
+                  .catch(() => null);
+                await store.loadSelectedSTAC(
+                  /** @type {string} */ (match.id),
+                  false,
+                  item ?? undefined,
+                );
+                itemBbox = /** @type {any} */ (item)?.bbox;
               } else {
                 await store.loadSelectedSTAC(
                   /** @type {string} */ (store.isApi ? match.id : match.href),
@@ -251,7 +268,18 @@ export const useURLSearchParametersSync = () => {
         }
       }
 
-      if (x && y && z) {
+      if (itemBbox?.length) {
+        // A restored item extent takes precedence over the saved x/y/z.
+        const { center, zoom } = bboxToCenterZoom(
+          sanitizeBbox(itemBbox),
+          mapEl.value?.map?.getSize?.(),
+        );
+        mapPosition.value = [center[0], center[1], zoom];
+        if (mapEl.value) {
+          mapEl.value.center = center;
+          mapEl.value.zoom = zoom;
+        }
+      } else if (x && y && z) {
         log.debug("Coordinates found, applying map poisition", x, y, z);
         mapPosition.value = [x, y, z];
         if (mapEl.value) {
@@ -265,14 +293,16 @@ export const useURLSearchParametersSync = () => {
       }
     }
 
+    const { selectedItem } = storeToRefs(useSTAcStore());
     watch(
-      [indicator, mapPosition, datetime, activeTemplate, poi],
+      [indicator, mapPosition, datetime, activeTemplate, poi, selectedItem],
       ([
         updatedIndicator,
         updatedMapPosition,
         updatedDatetime,
         updatedTemplate,
         updatedPoi,
+        updatedItem,
       ]) => {
         if ("URLSearchParams" in window) {
           const searchParams = new URLSearchParams(window.location.search);
@@ -298,6 +328,13 @@ export const useURLSearchParametersSync = () => {
             }
           } else {
             searchParams.set("poi", updatedPoi);
+          }
+
+          const itemId = /** @type {any} */ (updatedItem)?.id;
+          if (itemId) {
+            searchParams.set("item", itemId);
+          } else if (searchParams.has("item")) {
+            searchParams.delete("item");
           }
 
           const newRelativePathQuery =
