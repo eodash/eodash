@@ -48,23 +48,54 @@ export function generateFeatures(links, extraProperties = {}, rel = "item") {
 }
 
 /**
+ * Renders `${...}` placeholders in a JSON config against a view, e.g.
+ * `${properties.sat:orbit_state}` against a STAC item. Returns the input
+ * unchanged when it holds no placeholders or rendering fails.
+ *
+ * @template T
+ * @param {T} json
+ * @param {Record<string, any>} view - lookup context for the placeholders
+ * @returns {T}
+ */
+export function renderConfigTemplate(json, view) {
+  if (!json || typeof json !== "object") {
+    return json;
+  }
+  const str = JSON.stringify(json);
+  if (!str.includes("${")) {
+    return json;
+  }
+  try {
+    return JSON.parse(
+      mustache.render(str, view, {}, { tags: ["${", "}"], escape: (v) => v }),
+    );
+  } catch (e) {
+    log.warn("[eodash] failed to render config template:", e);
+    return json;
+  }
+}
+
+/**
  * Fetches or extracts the raster form configuration for a STAC object.
- * Supports direct JSON objects, data URIs, and URL strings.
+ * Supports direct JSON objects, data URIs, and URL strings. `${...}`
+ * placeholders are rendered against `item` when provided.
  *
  * @param {string|object|undefined} rasterform - The rasterform property from the STAC object.
+ * @param {import("stac-ts").StacItem} [item] - Item the form is rendered against.
  * @returns {Promise<import("@/types").EodashRasterJSONForm|undefined>}
  */
-export async function fetchRasterForm(rasterform) {
-  if (!rasterform) {
-    return undefined;
+export async function fetchRasterForm(rasterform, item) {
+  /** @type {import("@/types").EodashRasterJSONForm | undefined} */
+  let form = undefined;
+  if (typeof rasterform === "object" && rasterform) {
+    form = /** @type {import("@/types").EodashRasterJSONForm} */ (rasterform);
+  } else if (typeof rasterform === "string" && rasterform) {
+    form = await axios.get(rasterform).then((resp) => resp.data);
   }
-  if (typeof rasterform === "object") {
-    return /** @type {import("@/types").EodashRasterJSONForm} */ (rasterform);
+  if (!form || !item) {
+    return form;
   }
-  if (typeof rasterform === "string") {
-    return await axios.get(rasterform).then((resp) => resp.data);
-  }
-  return undefined;
+  return renderConfigTemplate(form, item);
 }
 
 /**
@@ -267,7 +298,12 @@ export function persistLayerConfigState(olLayer, value, map = "main") {
  * @param {import("@/types").MapKey} [map]
  * @returns {Record<string, any>} seeded schema (original untouched)
  */
-export function restorePersistedSchema(schema, collectionId, type, map = "main") {
+export function restorePersistedSchema(
+  schema,
+  collectionId,
+  type,
+  map = "main",
+) {
   // form opted out of persistence
   if (schema?.options?.persist_state === false) return schema;
   const cached = getCachedConfig(collectionId, type, map);
@@ -471,7 +507,8 @@ export const fetchStyle = async (
 
 /**
  * Resolves a style by preferring the item's own `style` link and falling back
- * to the collection's. Takes the same key arguments as `fetchStyle`.
+ * to the collection's. Takes the same key arguments as `fetchStyle`. `${...}`
+ * placeholders are rendered against `item` (see {@link renderConfigTemplate}).
  *
  * @param {import("stac-ts").StacItem | import("stac-ts").StacCollection} item
  * @param {import("stac-ts").StacCollection | null | undefined} collection
@@ -479,9 +516,15 @@ export const fetchStyle = async (
  * @param {string} [assetKey]
  * @returns {Promise<import("@/types").EodashStyleJson | undefined>}
  */
-export const resolveStyle = async (item, collection, linkKey, assetKey) =>
-  (await fetchStyle(item, linkKey, assetKey)) ??
-  (await fetchStyle(collection, linkKey, assetKey));
+export const resolveStyle = async (item, collection, linkKey, assetKey) => {
+  const style =
+    (await fetchStyle(item, linkKey, assetKey)) ??
+    (await fetchStyle(collection, linkKey, assetKey));
+  if (!style || !item) {
+    return style;
+  }
+  return renderConfigTemplate(style, item);
+};
 
 /**
  * Fetches all style JSONs from a STAC Item and returns an array with style objects
