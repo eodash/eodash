@@ -257,6 +257,8 @@ type EodashStyleJson = import("ol/style/flat").FlatStyleLike & {
 };
 ```
 
+Form values persist across layer rebuilds, and definitions support `${...}` item templating — see [Layer Configuration Forms](/widgets/internal-widgets/EodashLayerControl#layer-configuration-forms).
+
 ### eodash Raster Form
 
 The `eodash:rasterform` property allows providing visualization controls for tiled layers (WMS, WMTS, XYZ) that do not use OpenLayers Flat Styles. 
