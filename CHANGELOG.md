@@ -1,6 +1,19 @@
 # Changelog
 
 
+## [5.9.0](https://github.com/eodash/eodash/compare/eodash-v5.8.0...eodash-v5.9.0) (2026-07-23)
+
+
+### Features
+
+* Support "item" URL search parameter ([#419](https://github.com/eodash/eodash/issues/419)) ([8ced5be](https://github.com/eodash/eodash/commit/8ced5be65355dfc81c763a4cdf86bbcad2cca931))
+
+
+### Bug Fixes
+
+* Adapt Item Catalog props and filters based on selected collections  ([#414](https://github.com/eodash/eodash/issues/414)) ([a1a9abe](https://github.com/eodash/eodash/commit/a1a9abec16bd9ee7cb1754182df47c274259500b))
+* Explicit item deselect ([#416](https://github.com/eodash/eodash/issues/416)) ([077a1e8](https://github.com/eodash/eodash/commit/077a1e82c6f4d3e78668fd97655516a78f0a87dc))
+
 ## [5.8.0](https://github.com/eodash/eodash/compare/eodash-v5.7.1...eodash-v5.8.0) (2026-07-13)
 
 
