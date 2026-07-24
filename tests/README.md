@@ -2,7 +2,7 @@
 
 This guide explains how to run and write tests in `eodash`. We use Vitest across the board.
 
-Tests are split into three projects. The `unit` and `component` projects run in headless Chromium via Playwright, while `cli` runs in Node.
+Tests are split into four projects. The `unit`, `component`, and `template` projects run in headless Chromium via Playwright, while `cli` runs in Node.
 
 ## Setup
 
@@ -22,6 +22,7 @@ The main commands are:
 | `npm run test`           | Run all test projects headlessly (this is what CI runs).       |
 | `npm run test:unit`      | Run the unit project.                                          |
 | `npm run test:component` | Run the component project.                                     |
+| `npm run test:template`  | Run the template project.                                      |
 | `npm run test:cli`       | Run the CLI project.                                           |
 | `npm run vitest`         | Open the Vitest UI in watch mode for unit and component tests. |
 | `npm run vitest:browser` | Open a headed browser to watch component tests render.         |
@@ -36,10 +37,11 @@ npm run test:component -- tests/component/EodashLayerControl.test.js
 
 Tests are split by what they actually do
 
-```text
+```
 tests/
   component/   # Tests that mount Vue components. Heavy things are mocked here.
   unit/        # Plain JS function tests (STAC pipeline, store logic). No mounting allowed.
+  template/    # Full-app tests per template, against real STAC endpoints.
   cli/         # Tests for the Node CLI.
   support/     # Shared helpers like mount.js, element stubs, and store mocks.
   fixtures/    # Mock data or stand-ins shared across tiers.
@@ -49,9 +51,17 @@ tests/
 
 ### Where does it go?
 
-- **`tests/unit/`**: feature-level functions and composables: the STAC pipeline, store logic, widget `methods/`. Test a feature's entry points with realistic inputs instead of writing a suite per helper. No mounting here.
-- **`tests/component/`**: Vue components and their reactivity: rendering, props and events, state writes. Mock what the unit tier already covers and drive the component through DOM events.
-- **`tests/template/`** (upcoming): e2e integration tests between widgets, states, and feature pipelines working together in a full app against real STAC endpoints, with little to no mocking.
+Ask in order, first "yes" wins. Each behavior is tested in one tier only.
+
+1. Is it a plain function, data in and data out? `tests/unit/`. All edge cases go here.
+2. Is it one widget's rendering, props, or events? `tests/component/`. Assert what the widget hands to the mocked boundary, not what happens behind it.
+3. Does it need widgets, store, map, and network working together? `tests/template/`. One user-driven flow per feature, asserting hardcoded values from a pinned indicator.
+4. Is it the CLI or the build? `tests/cli/`.
+
+Guidelines to avoid duplicate coverage:
+
+- Write expected values by hand rather than computing them. When a test needs the source's own logic to derive the right answer, that logic is better covered by a unit test with fixed inputs and outputs.
+- Higher tiers verify wiring, not logic. Once a unit test establishes a function's correctness, a single template flow showing the app calls it is enough; its variations don't need to be repeated there.
 
 ### Mounting components
 
@@ -64,4 +74,4 @@ Helpers in `tests/support/mount.js` can be used to mount Vue components.
 
 Keep component tests hermetic: mock network requests and heavy external web components.
 
-The idea is that mocking defers coverage,but it doesn't replace it; any code written by eodash that is mocked in component testing needs its own unit tests or template tier coverage.
+The idea is that mocking defers coverage, but it doesn't replace it; any code written by eodash that is mocked in component testing needs its own unit tests or template tier coverage.

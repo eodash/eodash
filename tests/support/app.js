@@ -22,6 +22,8 @@ export function mountApp({ config, template, initialUrl }) {
   const container = document.body.appendChild(document.createElement("div"));
   container.id = "app";
 
+  container.style.height = "100vh";
+
   const app = createApp(App, { config });
   registerPlugins(app);
   app.mount(container);
