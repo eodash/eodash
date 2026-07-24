@@ -1,5 +1,4 @@
 import { render } from "vitest-browser-vue";
-//@ts-expect-error todo
 import { utils } from "vitest/browser";
 import { Suspense, h } from "vue";
 import { createVuetify } from "vuetify";

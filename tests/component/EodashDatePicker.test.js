@@ -1,6 +1,8 @@
-import { beforeEach, describe, expect, test } from "vitest";
+import { beforeEach, describe, expect, test, vi } from "vitest";
+import { userEvent } from "vitest/browser";
 import EodashDatePicker from "^/EodashDatePicker.vue";
 import { datetime } from "@/store/states";
+import { eodashCollections, eodashCompareCollections } from "@/utils/states";
 import { mountComponent } from "../support/mount";
 
 /**
@@ -10,10 +12,26 @@ import { mountComponent } from "../support/mount";
 const input = (selector) =>
   /** @type {HTMLInputElement | null} */ (document.querySelector(selector));
 
+/**
+ * Stand-in EodashCollection exposing only what the datepicker reads.
+ * @param {Date[]} dates
+ */
+const mockCollection = (dates) =>
+  /** @type {import("@/eodashSTAC/EodashCollection").EodashCollection} */ (
+    /** @type {unknown} */ ({
+      color: "#ff0000",
+      collectionStac: { id: "coll" },
+      fetchCollection: vi.fn().mockResolvedValue(undefined),
+      getDates: vi.fn().mockResolvedValue(dates),
+    })
+  );
+
 describe("EodashDatePicker", () => {
   beforeEach(() => {
-    // `datetime` is a module singleton; reset it so tests don't bleed.
+    // `datetime` and the collection arrays are module singletons; reset them.
     datetime.value = "";
+    eodashCollections.splice(0, eodashCollections.length);
+    eodashCompareCollections.splice(0, eodashCompareCollections.length);
   });
 
   test("renders the calendar", async () => {
@@ -92,5 +110,44 @@ describe("EodashDatePicker", () => {
     await expect
       .poll(() => input(".datePicker input")?.value)
       .toBe("2024-06-15");
+  });
+
+  describe("jump-date arrows", () => {
+    const DATES = [
+      new Date("2024-01-01T00:00:00Z"),
+      new Date("2024-06-15T00:00:00Z"),
+      new Date("2024-12-31T00:00:00Z"),
+    ];
+
+    /** Mount with one dated collection; returns [oldest, latest] buttons. */
+    const mountWithDates = async () => {
+      const ec = mockCollection(DATES);
+      eodashCollections.push(ec);
+      await mountComponent(EodashDatePicker, {
+        initialState: { stac: { selectedStac: { id: "coll" } } },
+      });
+      const [oldest, latest] = document.querySelectorAll(".datePicker .v-btn");
+      return { ec, oldest, latest };
+    };
+
+    test("jumps to the latest available date from the collection", async () => {
+      const { ec, latest } = await mountWithDates();
+
+      // Attributes build async from getDates(); retry the idempotent click.
+      await vi.waitFor(async () => {
+        await userEvent.click(latest);
+        expect(datetime.value).toBe("2024-12-31T00:00:00.000Z");
+      });
+      expect(ec.getDates).toHaveBeenCalled();
+    });
+
+    test("jumps to the oldest available date from the collection", async () => {
+      const { oldest } = await mountWithDates();
+
+      await vi.waitFor(async () => {
+        await userEvent.click(oldest);
+        expect(datetime.value).toBe("2024-01-01T00:00:00.000Z");
+      });
+    });
   });
 });
