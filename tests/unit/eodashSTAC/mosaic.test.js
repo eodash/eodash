@@ -101,8 +101,8 @@ describe("mosaic", () => {
       expect(layer.properties.id).toBe("ind;:;mosaic");
       expect(layer.minZoom).toBe(8);
       // Written into the AnalysisGroup and reassigned onto the map.
-      expect(mapEl.value.layers[0].properties.id).toBe("AnalysisGroup");
-      expect(mapEl.value.layers[0].layers).toEqual([layer]);
+      expect(mapEl.value?.layers[0].properties?.id).toBe("AnalysisGroup");
+      expect(mapEl.value?.layers?.[0]?.layers).toEqual([layer]);
     });
 
     test("collapses an equal-day time range to a single datetime", async () => {

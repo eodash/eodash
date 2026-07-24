@@ -39,8 +39,7 @@ export const readParquetItems = async (url) => {
     rowFormat: "object",
     // set utf8 to false to avoid parsing wkb to string
     utf8: false,
-    /*** @param {import("stac-ts").StacItem[]} data */
-    //@ts-expect-error rows are expected be array of arrays in hyparquet
+    /** @param {Record<string, any>[]} data */
     onComplete: (data) => {
       items.push(...(adjustParquetItems(data) ?? []));
     },
@@ -50,8 +49,10 @@ export const readParquetItems = async (url) => {
 };
 
 /**
+ * Normalize raw geoparquet rows into STAC items: non-STAC columns move under
+ * `properties`, BigInts become numbers, and the bbox object becomes an array.
  *
- * @param {import("stac-ts").StacItem[]} items
+ * @param {Record<string, any>[]} items - raw rows as decoded by hyparquet
  */
 export const adjustParquetItems = (items) => {
   return items.map((item) => {
@@ -71,7 +72,6 @@ export const adjustParquetItems = (items) => {
       })(item.assets),
 
       bbox: ((bbox) => {
-        //@ts-expect-error bbox conversion by stac-geoparquet
         const { xmax, xmin, ymax, ymin } = bbox;
         return [xmin, ymin, xmax, ymax].map((v) => parseFloat(v));
       })(item.bbox),
@@ -81,7 +81,7 @@ export const adjustParquetItems = (items) => {
 
 /**
  *
- * @param {import("stac-ts").StacItem} item
+ * @param {Record<string, any>} item
  */
 function moveItemProperties(item) {
   const stacProperties = [
@@ -112,7 +112,7 @@ function moveItemProperties(item) {
 
 /**
  *
- * @param {import("stac-ts").StacItem} item
+ * @param {Record<string, any>} item
  */
 function adjustItemsBigInts(item) {
   /** @param {*} obj */
