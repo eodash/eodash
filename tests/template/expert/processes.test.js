@@ -41,18 +41,24 @@ describe("expert template - processes", () => {
     "renders the process form when %s is selected",
     async (id) => {
       const child = store.stac?.find((link) => link.id === id);
-      expect(child, `indicator "${id}" present in catalog`).toBeTruthy();
+      if (!child) throw new Error(`indicator "${id}" not in catalog`);
 
-      await store.loadSelectedSTAC(/** @type {string} */ (child.href));
+      await store.loadSelectedSTAC(child.href);
       await expect
         .poll(() => store.selectedStac?.id, { timeout: 1000 * 15 })
         .toBe(id);
 
-      // includesProcess -> EodashProcess mounts its jsonform + drawtools.
+      // includesProcess -> EodashProcess mounts its jsonform;
       await expect
         .poll(() => query("eox-jsonform"), { timeout: 1000 * 15 })
         .toBeTruthy();
-      expect(query("eox-drawtools")).toBeTruthy();
+      await expect
+        .poll(
+          () =>
+            query("eox-jsonform")?.shadowRoot?.querySelector("eox-drawtools"),
+          { timeout: 1000 * 15 },
+        )
+        .toBeTruthy();
     },
   );
 });

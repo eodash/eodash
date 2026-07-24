@@ -1,5 +1,5 @@
 <template>
-  <div ref="rootRef">
+  <div id="eodash-layout-switcher" ref="rootRef">
     <v-tooltip v-if="!mobile" :text="`Switch to ${target} mode`">
       <template #activator="{ props }">
         <v-icon

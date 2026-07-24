@@ -9,10 +9,14 @@
   "include": [
     "../core/client/vite-env.d.ts",
     "component/**/*.js",
+    "component/**/*.ts",
     "template/**/*.js",
+    "template/**/*.ts",
     "support/**/*.js",
     "support/**/*.ts",
     "fixtures/**/*.js",
-    "unit/**/*.js"
+    "fixtures/**/*.ts",
+    "unit/**/*.js",
+    "unit/**/*.ts"
   ]
 }
