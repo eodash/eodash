@@ -6,6 +6,7 @@ import {
   fetchApiItems,
   fetchPreAggregations,
   fetchStyle,
+  renderConfigTemplate,
   fetchAllStyles,
   findLayer,
   generateFeatures,
@@ -262,7 +263,7 @@ export class EodashCollection {
     } else {
       // get the correct style which is not attached to a link
       const id = this.#collectionStac?.id ?? "";
-      const styles = await fetchStyle(item);
+      const styles = renderConfigTemplate(await fetchStyle(item), item);
       let { layerConfig, style } = extractLayerConfig(
         id,
         styles,
