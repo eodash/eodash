@@ -49,6 +49,12 @@ export class EodashCollection {
   /** @type {string | undefined} */
   color;
 
+  /**
+   * Which map this collection is rendered on.
+   * @type {import("@/types").MapKey}
+   */
+  map = "main";
+
   //  read only
   get collectionStac() {
     return this.#collectionStac;
@@ -225,6 +231,7 @@ export class EodashCollection {
         layerDatetime,
         extraProperties,
         this.#collectionStac,
+        this.map,
       );
 
       jsonArray.push(
@@ -237,6 +244,7 @@ export class EodashCollection {
           layerDatetime,
           extraProperties,
           this.#collectionStac,
+          this.map,
         )),
         ...((this.rasterEndpoint &&
           (await createLayerFromRender(
@@ -247,6 +255,7 @@ export class EodashCollection {
               ...extraProperties,
               ...(layerDatetime && { layerDatetime }),
             },
+            this.map,
           ))) ||
           []),
       );
@@ -254,7 +263,13 @@ export class EodashCollection {
       // get the correct style which is not attached to a link
       const id = this.#collectionStac?.id ?? "";
       const styles = await fetchStyle(item);
-      let { layerConfig, style } = extractLayerConfig(id, styles);
+      let { layerConfig, style } = extractLayerConfig(
+        id,
+        styles,
+        undefined,
+        undefined,
+        this.map,
+      );
       // fallback to STAC
       const json = {
         type: "STAC",
