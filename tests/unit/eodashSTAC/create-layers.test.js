@@ -99,7 +99,12 @@ describe("EodashCollection.buildJsonArray", () => {
       const [layer] = await build(
         makeItem({
           links: [
-            { rel: "wms", href: "https://wms", title: "WMS", "wms:layers": "L" },
+            {
+              rel: "wms",
+              href: "https://wms",
+              title: "WMS",
+              "wms:layers": "L",
+            },
           ],
         }),
       );
@@ -228,7 +233,9 @@ describe("EodashCollection.buildJsonArray", () => {
     test("builds a WebGLTile/GeoTIFF layer from an image/tiff data asset", async () => {
       const [layer] = await build(
         makeItem({
-          assets: { data: dataAsset({ type: "image/tiff", href: "https://x.tif" }) },
+          assets: {
+            data: dataAsset({ type: "image/tiff", href: "https://x.tif" }),
+          },
         }),
       );
 
@@ -279,8 +286,14 @@ describe("EodashCollection.buildJsonArray", () => {
       const layers = await build(
         makeItem({
           assets: {
-            a: dataAsset({ type: "application/geo+json", href: "https://a.geojson" }),
-            b: dataAsset({ type: "application/geo+json", href: "https://b.geojson" }),
+            a: dataAsset({
+              type: "application/geo+json",
+              href: "https://a.geojson",
+            }),
+            b: dataAsset({
+              type: "application/geo+json",
+              href: "https://b.geojson",
+            }),
           },
         }),
         {
@@ -318,7 +331,11 @@ describe("EodashCollection.buildJsonArray", () => {
       const layers = await build(
         makeItem({
           assets: {
-            thumb: { type: "image/png", href: "https://x.png", roles: ["thumbnail"] },
+            thumb: {
+              type: "image/png",
+              href: "https://x.png",
+              roles: ["thumbnail"],
+            },
           },
         }),
       );
@@ -338,7 +355,9 @@ describe("EodashCollection.buildJsonArray", () => {
       // renders is gated behind a supported link/asset, so include a raster asset.
       const layers = await build(
         makeItem({
-          assets: { data: dataAsset({ type: "image/tiff", href: "https://x.tif" }) },
+          assets: {
+            data: dataAsset({ type: "image/tiff", href: "https://x.tif" }),
+          },
         }),
         { colOver: colWithRenders, rasterEndpoint: "https://raster" },
       );

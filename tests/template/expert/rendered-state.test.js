@@ -1,75 +1,49 @@
 import { afterAll, beforeAll, describe, expect, test, vi } from "vitest";
 import { page } from "vitest/browser";
-import { useSTAcStore } from "@/store/stac";
-import { pinia } from "@/plugins";
-import { getBaseConfig } from "../../../templates/baseConfig";
-import { mountApp } from "../../support/app";
-import { analysisGroup, dataLayer } from "../../support/layers";
+import { analysisGroup, dataLayer, dataLayerId } from "../../support/layers";
+import { bootExpert, selectIndicator, TIMEOUT } from "../../support/template";
 
 const STAC_ENDPOINT =
   "https://esa-eodashboards.github.io/eodashboard-catalog/trilateral/catalog.json";
-
 const IMAGE_LEGEND_ID = "ndvi_deepESDL";
 const COLOR_LEGEND_ID =
   "Absorbing Aerosol Index (AAI) by Sentinel-5P TROPOMI (Monthly)";
-const BOOT_TIMEOUT = 1000 * 15;
-const TIMEOUT = 1000 * 10;
 
 // Boot once, switch selection through the store, inspect the rendered state.
 describe("expert template - rendered state", () => {
-  /** @type {ReturnType<typeof mountApp>} */
-  let app;
-  /** @param {string} sel @returns {any} */
-  const query = (sel) => app.container.querySelector(sel);
-  const store = useSTAcStore(pinia);
+  /** @type {Awaited<ReturnType<typeof bootExpert>>} */
+  let ctx;
 
   /** Select an indicator and wait for its layers to replace the previous. */
   const select = async (/** @type {string} */ id) => {
-    const prevId = dataLayer(analysisGroup(query("eox-map")))?.properties?.id;
-    const child = store.stac?.find((l) => l.id === id);
-    if (!child) throw new Error(`indicator "${id}" not in catalog`);
-    await store.loadSelectedSTAC(child.href);
+    const prevId = dataLayerId(ctx.query("eox-map"));
+    await selectIndicator(ctx.store, id);
     await vi.waitFor(
       () => {
-        if (store.selectedStac?.id !== id) throw new Error("not selected");
-        const dl = dataLayer(analysisGroup(query("eox-map")));
-        if (!dl || dl.properties?.id === prevId) {
-          throw new Error("layers not rebuilt");
-        }
+        const dl = dataLayerId(ctx.query("eox-map"));
+        if (!dl || dl === prevId) throw new Error("layers not rebuilt");
       },
       { timeout: TIMEOUT },
     );
   };
 
-  beforeAll(async () => {
-    app = mountApp({
-      template: "expert",
-      config: () =>
-        getBaseConfig({ stacEndpoint: { endpoint: STAC_ENDPOINT } }),
-    });
-    await vi.waitFor(
-      () => {
-        if (!(query("eox-map") && store.stac?.length)) {
-          throw new Error("map was not initialised");
-        }
-      },
-      { timeout: BOOT_TIMEOUT },
-    );
-  });
-
-  afterAll(() => app?.unmount());
-
   /** The selected indicator's data-layer properties on the map. */
   const dataLayerProperties = () => {
-    const layer = dataLayer(analysisGroup(query("eox-map")));
+    const layer = dataLayer(analysisGroup(ctx.query("eox-map")));
     if (!layer?.properties) throw new Error("no data layer on the map");
     return layer.properties;
   };
 
+  beforeAll(async () => {
+    ctx = await bootExpert({ endpoint: STAC_ENDPOINT });
+  });
+
+  afterAll(() => ctx?.app.unmount());
+
   test("stac info shows the title and description", async () => {
     await select(IMAGE_LEGEND_ID);
-    const title = store.selectedStac?.title ?? "";
-    const description = store.selectedStac?.description ?? "";
+    const title = ctx.store.selectedStac?.title ?? "";
+    const description = ctx.store.selectedStac?.description ?? "";
     // eox-stacinfo renders into shadow DOM; page locators pierce it.
     await expect.element(page.getByText(title).first()).toBeVisible();
 
@@ -80,7 +54,7 @@ describe("expert template - rendered state", () => {
 
   test("the analysis group is expanded", () => {
     expect(
-      analysisGroup(query("eox-map"))?.properties?.layerControlExpand,
+      analysisGroup(ctx.query("eox-map"))?.properties?.layerControlExpand,
     ).toBe(true);
   });
 

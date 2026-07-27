@@ -1,10 +1,7 @@
-import { afterAll, beforeAll, describe, expect, test, vi } from "vitest";
+import { afterAll, beforeAll, describe, expect, test } from "vitest";
 import { page, userEvent } from "vitest/browser";
-import { useSTAcStore } from "@/store/stac";
-import { pinia } from "@/plugins";
-import { getBaseConfig } from "../../../templates/baseConfig";
-import { mountApp } from "../../support/app";
 import { analysisGroup } from "../../support/layers";
+import { bootExpert, TIMEOUT } from "../../support/template";
 
 const STAC_ENDPOINT =
   "https://esa-eodashboards.github.io/eodashboard-catalog/trilateral/catalog.json";
@@ -12,8 +9,6 @@ const INDICATOR_ID = "NO2_daily";
 const INDICATOR_TITLE = "Air Quality (tropospheric NO2 concetrations)";
 // Configured in expert.js as the sole base layer.
 const BASE_LAYER_ID = "terrain-light;:;EPSG:3857";
-const BOOT_TIMEOUT = 1000 * 15;
-const TIMEOUT = 1000 * 10;
 
 /**
  * Depth-first search for a layer id across nested eox-map layer groups.
@@ -29,55 +24,40 @@ const hasLayer = (layers, id) =>
 // One boot per file; the tests form an ordered scenario against a single app
 // instance (fresh boot -> open the picker -> select -> interact).
 describe("expert template", () => {
-  /** @type {ReturnType<typeof mountApp>} */
-  let app;
-  /** @param {string} sel @returns {any} */
-  const query = (sel) => app.container.querySelector(sel);
-  const store = useSTAcStore(pinia);
+  /** @type {Awaited<ReturnType<typeof bootExpert>>} */
+  let ctx;
 
   beforeAll(async () => {
-    app = mountApp({
-      template: "expert",
-      config: () =>
-        getBaseConfig({ stacEndpoint: { endpoint: STAC_ENDPOINT } }),
-    });
-    await vi.waitFor(
-      () => {
-        if (!(query("eox-map") && store.stac?.length)) {
-          throw new Error("map was not initialised");
-        }
-      },
-      { timeout: BOOT_TIMEOUT },
-    );
+    ctx = await bootExpert({ endpoint: STAC_ENDPOINT });
   });
 
-  afterAll(() => app?.unmount());
+  afterAll(() => ctx?.app.unmount());
 
   test("boots without an error alert", () => {
-    expect(query(".v-alert")).toBeNull();
+    expect(ctx.query(".v-alert")).toBeNull();
   });
 
   test("renders the map and btns", () => {
-    expect(query("eox-map")).toBeTruthy();
-    expect(query(".v-btn")).toBeTruthy();
+    expect(ctx.query("eox-map")).toBeTruthy();
+    expect(ctx.query(".v-btn")).toBeTruthy();
   });
 
   test("fills the page height", () => {
     expect(
-      query("eox-map").getBoundingClientRect().height,
+      ctx.query("eox-map").getBoundingClientRect().height,
     ).toBeGreaterThanOrEqual(window.innerHeight);
   });
 
   test("assigns the configured base layer", async () => {
     await expect
-      .poll(() => hasLayer(query("eox-map")?.layers, BASE_LAYER_ID), {
+      .poll(() => hasLayer(ctx.query("eox-map")?.layers, BASE_LAYER_ID), {
         timeout: TIMEOUT,
       })
       .toBe(true);
   });
 
   test("renders the layout switcher", () => {
-    expect(query("#eodash-layout-switcher")).toBeTruthy();
+    expect(ctx.query("#eodash-layout-switcher")).toBeTruthy();
   });
 
   test("clicking select indicator opens the item filter popup", async () => {
@@ -107,20 +87,20 @@ describe("expert template", () => {
   });
 
   test("selecting an indicator renders its layers and gated widgets", async () => {
-    // Popup open from the previous test;
+    // The popup is still open from the previous test.
     await userEvent.click(page.getByText(INDICATOR_TITLE, { exact: true }));
 
     await expect
-      .poll(() => store.selectedStac?.id, { timeout: TIMEOUT })
+      .poll(() => ctx.store.selectedStac?.id, { timeout: TIMEOUT })
       .toBe(INDICATOR_ID);
     await expect
-      .poll(() => query("eox-layercontrol"), { timeout: TIMEOUT })
+      .poll(() => ctx.query("eox-layercontrol"), { timeout: TIMEOUT })
       .toBeTruthy();
     await expect
-      .poll(() => query("eox-stacinfo"), { timeout: TIMEOUT })
+      .poll(() => ctx.query("eox-stacinfo"), { timeout: TIMEOUT })
       .toBeTruthy();
     await expect
-      .poll(() => analysisGroup(query("eox-map"))?.layers.length ?? 0, {
+      .poll(() => analysisGroup(ctx.query("eox-map"))?.layers.length ?? 0, {
         timeout: TIMEOUT,
       })
       .toBeGreaterThan(0);
@@ -131,10 +111,9 @@ describe("expert template", () => {
       Number(new URLSearchParams(window.location.search).get("z"));
     const before = getZ();
 
-    // Wheel over the map canvas zooms (OL MouseWheelZoom) -> moveend -> url z.
-    await userEvent.wheel(query("eox-map"), { delta: { x: 0, y: 200 } });
+    // Wheel zoom -> moveend -> url z. Direction-agnostic.
+    await userEvent.wheel(ctx.query("eox-map"), { delta: { x: 0, y: 200 } });
 
-    // Direction-agnostic: the zoom level changed and is written to the url.
     await expect
       .poll(
         () => {
