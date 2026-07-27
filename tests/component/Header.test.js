@@ -1,7 +1,6 @@
 import { describe, expect, test } from "vitest";
 import Header from "@/components/Header.vue";
-import { mountComponent } from "../support/mount";
-import { mockEodash } from "../support/eodash";
+import { mockEodash, mountComponent } from "../support/mount";
 
 describe("Header", () => {
   test("renders the brand name", async () => {

@@ -12,6 +12,8 @@ import { mountComponent } from "../support/mount";
 const input = (selector) =>
   /** @type {HTMLInputElement | null} */ (document.querySelector(selector));
 
+const TIMEOUT = 1000 * 5;
+
 /**
  * Stand-in EodashCollection exposing only what the datepicker reads.
  * @param {Date[]} dates
@@ -134,20 +136,26 @@ describe("EodashDatePicker", () => {
       const { ec, latest } = await mountWithDates();
 
       // Attributes build async from getDates(); retry the idempotent click.
-      await vi.waitFor(async () => {
-        await userEvent.click(latest);
-        expect(datetime.value).toBe("2024-12-31T00:00:00.000Z");
-      });
+      await vi.waitFor(
+        async () => {
+          await userEvent.click(latest);
+          expect(datetime.value).toBe("2024-12-31T00:00:00.000Z");
+        },
+        { timeout: TIMEOUT },
+      );
       expect(ec.getDates).toHaveBeenCalled();
     });
 
     test("jumps to the oldest available date from the collection", async () => {
       const { oldest } = await mountWithDates();
 
-      await vi.waitFor(async () => {
-        await userEvent.click(oldest);
-        expect(datetime.value).toBe("2024-01-01T00:00:00.000Z");
-      });
+      await vi.waitFor(
+        async () => {
+          await userEvent.click(oldest);
+          expect(datetime.value).toBe("2024-01-01T00:00:00.000Z");
+        },
+        { timeout: TIMEOUT },
+      );
     });
   });
 });

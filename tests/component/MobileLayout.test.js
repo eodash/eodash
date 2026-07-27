@@ -1,8 +1,7 @@
 import { beforeEach, describe, expect, test } from "vitest";
 import { page } from "vitest/browser";
 import MobileLayout from "@/components/MobileLayout.vue";
-import { mountComponent } from "../support/mount";
-import { mockEodash, mockTemplate } from "../support/eodash";
+import { mockEodash, mockTemplate, mountComponent } from "../support/mount";
 
 describe("MobileLayout", () => {
   const template = mockTemplate();

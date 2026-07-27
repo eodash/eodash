@@ -11,9 +11,11 @@ import {
   poi,
 } from "@/store/states";
 import { provideEodashInstance } from "@/composables";
-import { mockEodash } from "../../support/eodash";
-import { stubCustomElement } from "../../support/elements";
-import { mountAsyncComponent } from "../../support/mount";
+import {
+  mockEodash,
+  mountAsyncComponent,
+  stubCustomElement,
+} from "../../support/mount";
 
 vi.mock("@eox/geosearch", () => ({}));
 vi.mock("@eox/feedback", () => ({}));
@@ -69,7 +71,10 @@ const mountBtns = (options = {}) =>
     rootSetup: () => provideEodashInstance(),
   });
 
-/** @returns {HTMLElement | undefined} The map button whose tooltip includes `text`. */
+/**
+ * @param text
+ * @returns {HTMLElement | undefined} The map button whose tooltip includes `text`.
+ */
 const btnByTooltip = (/** @type {string} */ text) =>
   /** @type {HTMLElement[]} */ ([
     ...document.querySelectorAll(".map-buttons button"),

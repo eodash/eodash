@@ -9,8 +9,7 @@ import {
   tooltipAdapter,
 } from "@/store/states";
 import { layerControlFormValue } from "@/utils/states";
-import { stubCustomElement } from "../../support/elements";
-import { mountAsyncComponent } from "../../support/mount";
+import { mountAsyncComponent, stubCustomElement } from "../../support/mount";
 
 vi.mock("@eox/map", () => ({}));
 vi.mock("@eox/map/src/plugins/advancedLayersAndSources", () => ({}));

@@ -3,6 +3,7 @@
   "compilerOptions": {
     "composite": false,
     "noEmit": true,
+    "moduleResolution": "bundler",
     "types": ["node", "vuetify", "vitest/globals", "@vitest/browser/matchers"]
   },
   "include": [

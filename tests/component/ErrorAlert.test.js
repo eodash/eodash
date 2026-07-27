@@ -1,7 +1,6 @@
 import { describe, expect, test } from "vitest";
 import ErrorAlert from "@/components/ErrorAlert.vue";
-import { mockEodash } from "../support/eodash";
-import { mountComponent } from "../support/mount";
+import { mockEodash, mountComponent } from "../support/mount";
 
 const DEFAULT_MESSAGE = "something went wrong, please try again later";
 
