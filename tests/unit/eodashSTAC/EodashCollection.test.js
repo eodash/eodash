@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import { EodashCollection } from "@/eodashSTAC/EodashCollection";
+import { serveUrls, stacCollection } from "../../support/fixtures";
 
 const axiosMock = vi.hoisted(() => ({ get: vi.fn() }));
 vi.mock("@/plugins/axios", () => ({ default: axiosMock, axios: axiosMock }));
@@ -29,19 +30,16 @@ const ITEM_LINKS = [
 ];
 
 /** @param {Record<string, any>[]} links */
-const collectionJson = (links) => ({
-  type: "Collection",
-  stac_version: "1.0.0",
-  id: "coll",
-  title: "Coll",
-  description: "d",
-  license: "proprietary",
-  extent: {
-    spatial: { bbox: [[0, 0, 1, 1]] },
-    temporal: { interval: [["2023-01-01T00:00:00Z", "2023-01-20T00:00:00Z"]] },
-  },
-  links,
-});
+const collectionJson = (links) =>
+  stacCollection({
+    extent: {
+      spatial: { bbox: [[0, 0, 1, 1]] },
+      temporal: {
+        interval: [["2023-01-01T00:00:00Z", "2023-01-20T00:00:00Z"]],
+      },
+    },
+    links,
+  });
 
 const ITEM_JSON = {
   type: "Feature",
@@ -58,15 +56,15 @@ const NEW_LAYER = {
   properties: { id: "coll;:;i2;:;3857" },
 };
 
-/** Serve the collection plus any extra url -> data pairs through axios. */
-const serveUrls = (/** @type {Record<string, any>} */ extra = {}) => {
-  axiosMock.get.mockImplementation((/** @type {string} */ url) => {
-    if (url === COLLECTION_URL)
-      return Promise.resolve({ data: collectionJson(ITEM_LINKS) });
-    if (url in extra) return Promise.resolve({ data: extra[url] });
-    return Promise.reject(new Error(`unmocked url ${url}`));
+/**
+ * Serve the collection plus any extra url -> data pairs through axios.
+ * @param {Record<string, any>} [extra]
+ */
+const serve = (extra = {}) =>
+  serveUrls(axiosMock, {
+    [COLLECTION_URL]: collectionJson(ITEM_LINKS),
+    ...extra,
   });
-};
 
 describe("EodashCollection", () => {
   /** @type {import("vitest").MockInstance} */
@@ -85,7 +83,7 @@ describe("EodashCollection", () => {
   describe("getItem (static catalog)", () => {
     /** @returns {Promise<EodashCollection>} */
     const staticCollection = async () => {
-      serveUrls();
+      serve();
       const col = new EodashCollection(COLLECTION_URL, false);
       await col.fetchCollection();
       return col;
@@ -118,7 +116,7 @@ describe("EodashCollection", () => {
       // Characterization of the API-branch quirk (`datetime: ../date`,
       // sortby -datetime): unlike the static branch, an item shortly AFTER
       // the requested date is ignored. Regression marker if ever "fixed".
-      serveUrls({
+      serve({
         "https://cat/search": { features: [{ id: "before-item" }] },
       });
       const col = new EodashCollection(COLLECTION_URL, true);
@@ -145,25 +143,21 @@ describe("EodashCollection", () => {
         "aggregation:interval": "daily",
         href: "https://cat/agg.json",
       };
-      axiosMock.get.mockImplementation((/** @type {string} */ url) =>
-        Promise.resolve({
-          data:
-            url === COLLECTION_URL
-              ? collectionJson([...ITEM_LINKS, aggLink])
-              : {
-                  aggregations: [
-                    {
-                      key: "datetime_frequency",
-                      buckets: [
-                        { key: "2023-02-01" },
-                        { key: "not-a-date" },
-                        { key: "2023-02-02" },
-                      ],
-                    },
-                  ],
-                },
-        }),
-      );
+      serveUrls(axiosMock, {
+        [COLLECTION_URL]: collectionJson([...ITEM_LINKS, aggLink]),
+        [aggLink.href]: {
+          aggregations: [
+            {
+              key: "datetime_frequency",
+              buckets: [
+                { key: "2023-02-01" },
+                { key: "not-a-date" },
+                { key: "2023-02-02" },
+              ],
+            },
+          ],
+        },
+      });
       const col = new EodashCollection(COLLECTION_URL, false);
 
       const dates = await col.getDates();
@@ -208,7 +202,7 @@ describe("EodashCollection", () => {
     });
 
     test("resolves a Date to the closest item and builds its layers", async () => {
-      serveUrls({ "https://cat/items/i2.json": ITEM_JSON });
+      serve({ "https://cat/items/i2.json": ITEM_JSON });
       const col = new EodashCollection(COLLECTION_URL, false);
 
       const layers = await col.createLayersJson(
@@ -220,7 +214,7 @@ describe("EodashCollection", () => {
     });
 
     test("fetches blob-link items through native fetch", async () => {
-      serveUrls();
+      serve();
       const fetchSpy = vi
         .spyOn(globalThis, "fetch")
         .mockResolvedValue(
@@ -239,7 +233,7 @@ describe("EodashCollection", () => {
 
   describe("updateLayerJson", () => {
     test("replaces the prefix-matched layers with the new item's layers", async () => {
-      serveUrls({ "https://cat/items/i2.json": ITEM_JSON });
+      serve({ "https://cat/items/i2.json": ITEM_JSON });
       const col = new EodashCollection(COLLECTION_URL, false);
       const oldLayer = { type: "Tile", properties: { id: "coll;:;i1;:;3857" } };
       const osm = { type: "Tile", properties: { id: "osm" } };
@@ -259,6 +253,7 @@ describe("EodashCollection", () => {
       );
 
       expect(updated?.[0].properties?.id).toBe("AnalysisGroup");
+      //@ts-expect-error todo
       expect(updated?.[0].layers).toEqual([NEW_LAYER]);
       expect(updated?.[1]).toBe(osm);
       // Immutable: the input tree still holds the old layer.

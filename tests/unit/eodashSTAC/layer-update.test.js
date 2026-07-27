@@ -4,7 +4,7 @@ import {
   updateGeoZarrBands,
   updateLayerUrl,
 } from "@/eodashSTAC/helpers";
-import { fakeOlLayer, VT_SCHEMA, vtDefinition } from "../../fixtures/ol";
+import { mockOlLayer, VT_SCHEMA, vtDefinition } from "../../support/fixtures";
 
 describe("extractUrlKeys", () => {
   test("collects url_key through nested properties and combinators", () => {
@@ -31,7 +31,7 @@ describe("updateLayerUrl", () => {
   test("injects the url_key values as query params and updates the source", () => {
     const jsonDefinition = vtDefinition("https://vt/{z}/{x}/{y}");
     const source = { setUrl: vi.fn() };
-    const layer = fakeOlLayer({ jsonDefinition, source });
+    const layer = mockOlLayer({ jsonDefinition, source });
 
     const updated = updateLayerUrl(/** @type {any} */ (layer), { flood: 30 });
 
@@ -45,7 +45,7 @@ describe("updateLayerUrl", () => {
 
   test("rebuilds from the cached originalUrl — params never compound", () => {
     const source = { setUrl: vi.fn() };
-    const layer = fakeOlLayer({
+    const layer = mockOlLayer({
       jsonDefinition: vtDefinition("https://vt/tiles"),
       source,
     });
@@ -60,7 +60,7 @@ describe("updateLayerUrl", () => {
 
   test("is a no-op when the injected url is unchanged", () => {
     const source = { setUrl: vi.fn() };
-    const layer = fakeOlLayer({
+    const layer = mockOlLayer({
       jsonDefinition: vtDefinition("https://vt/tiles"),
       source,
     });
@@ -73,21 +73,21 @@ describe("updateLayerUrl", () => {
   });
 
   test("ignores non-VectorTile layers, keyless schemas and missing urls", () => {
-    const nonVt = fakeOlLayer({
+    const nonVt = mockOlLayer({
       jsonDefinition: { type: "Vector", source: { url: "https://x" } },
     });
     expect(updateLayerUrl(/** @type {any} */ (nonVt), { flood: 1 })).toBe(
       false,
     );
 
-    const noKeys = fakeOlLayer({
+    const noKeys = mockOlLayer({
       jsonDefinition: vtDefinition("https://x", {}),
     });
     expect(updateLayerUrl(/** @type {any} */ (noKeys), { flood: 1 })).toBe(
       false,
     );
 
-    const noUrl = fakeOlLayer({
+    const noUrl = mockOlLayer({
       jsonDefinition: {
         type: "VectorTile",
         properties: { layerConfig: { schema: VT_SCHEMA } },
@@ -101,7 +101,7 @@ describe("updateLayerUrl", () => {
 
   test("falls back to setUrls when the source has no setUrl", () => {
     const source = { setUrls: vi.fn() };
-    const layer = fakeOlLayer({
+    const layer = mockOlLayer({
       jsonDefinition: vtDefinition("https://vt/tiles"),
       source,
     });
@@ -136,7 +136,7 @@ describe("updateGeoZarrBands", () => {
   test("rebuilds the source when the bands change", () => {
     vi.stubGlobal("eoxMapAdvancedOlSources", { GeoZarr: GeoZarrStub });
     const jsonDefinition = gzDefinition(["b04", "b03", "b02"]);
-    const layer = fakeOlLayer({ jsonDefinition });
+    const layer = mockOlLayer({ jsonDefinition });
     const bands = ["b08", "b04", "b03"];
 
     const updated = updateGeoZarrBands(/** @type {any} */ (layer), { bands });
@@ -151,7 +151,7 @@ describe("updateGeoZarrBands", () => {
 
   test("skips JSON-equal bands without touching the source", () => {
     vi.stubGlobal("eoxMapAdvancedOlSources", { GeoZarr: GeoZarrStub });
-    const layer = fakeOlLayer({ jsonDefinition: gzDefinition(["b04", "b03"]) });
+    const layer = mockOlLayer({ jsonDefinition: gzDefinition(["b04", "b03"]) });
 
     const updated = updateGeoZarrBands(/** @type {any} */ (layer), {
       bands: ["b04", "b03"],
@@ -162,21 +162,21 @@ describe("updateGeoZarrBands", () => {
   });
 
   test("ignores non-GeoZarr layers and missing bands", () => {
-    const xyz = fakeOlLayer({
+    const xyz = mockOlLayer({
       jsonDefinition: { type: "WebGLTile", source: { type: "XYZ" } },
     });
     expect(updateGeoZarrBands(/** @type {any} */ (xyz), { bands: ["b"] })).toBe(
       false,
     );
 
-    const gz = fakeOlLayer({ jsonDefinition: gzDefinition(["b04"]) });
+    const gz = mockOlLayer({ jsonDefinition: gzDefinition(["b04"]) });
     expect(updateGeoZarrBands(/** @type {any} */ (gz), {})).toBe(false);
   });
 
   test("currently throws when the advanced-sources global is missing", () => {
     // Characterization (layercontrol.md): no guard around
     // window.eoxMapAdvancedOlSources — decide fix vs keep before refactor.
-    const layer = fakeOlLayer({ jsonDefinition: gzDefinition(["b04"]) });
+    const layer = mockOlLayer({ jsonDefinition: gzDefinition(["b04"]) });
 
     expect(() =>
       updateGeoZarrBands(/** @type {any} */ (layer), { bands: ["b08"] }),

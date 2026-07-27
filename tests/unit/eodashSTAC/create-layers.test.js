@@ -1,11 +1,13 @@
 import { beforeEach, describe, expect, test, vi } from "vitest";
-import { createApp } from "vue";
 import { createPinia, setActivePinia } from "pinia";
 import { EodashCollection } from "@/eodashSTAC/EodashCollection";
 import { mapEl } from "@/store/states";
 import { useSTAcStore } from "@/store/stac";
-import { eodashKey } from "@/utils/keys";
-import { provideEodashInstance } from "@/composables";
+import {
+  provideEodash,
+  serveUrls,
+  stacCollection,
+} from "../../support/fixtures";
 
 // Per-type layer shapes built by EodashCollection.buildJsonArray. Item
 // resolution lives in EodashCollection.test.js, grouping in
@@ -16,40 +18,18 @@ const axiosMock = vi.hoisted(() => ({ get: vi.fn() }));
 vi.mock("@/plugins/axios", () => ({ default: axiosMock, axios: axiosMock }));
 
 // createLayerFromRender reads useEodash().
-const providerApp = createApp({});
-providerApp.provide(eodashKey, /** @type {any} */ ({ id: "test" }));
-providerApp.runWithContext(() => provideEodashInstance());
-
-/** @param {Record<string, any>} [over] */
-const collectionJson = (over = {}) => ({
-  type: "Collection",
-  stac_version: "1.0.0",
-  id: "coll",
-  title: "Coll",
-  description: "d",
-  license: "proprietary",
-  extent: {
-    spatial: { bbox: [[0, 0, 1, 1]] },
-    temporal: { interval: [[null, null]] },
-  },
-  links: [],
-  assets: {},
-  ...over,
-});
+provideEodash();
 
 /**
  * Serve the collection JSON plus extra url -> data pairs (tilejson, geojson).
  * @param {Record<string, any>} [extras]
  * @param {Record<string, any>} [colOver]
  */
-const serve = (extras = {}, colOver = {}) => {
-  axiosMock.get.mockImplementation((/** @type {string} */ url) => {
-    if (url === COLLECTION_URL)
-      return Promise.resolve({ data: collectionJson(colOver) });
-    if (url in extras) return Promise.resolve({ data: extras[url] });
-    return Promise.reject(new Error(`unmocked url ${url}`));
+const serve = (extras = {}, colOver = {}) =>
+  serveUrls(axiosMock, {
+    [COLLECTION_URL]: stacCollection(colOver),
+    ...extras,
   });
-};
 
 /** @param {Record<string, any>} [over] */
 const makeItem = (over = {}) => ({
@@ -78,12 +58,19 @@ const build = async (item, opts = {}) => {
   );
 };
 
-/** Link layer id: coll;:;item;:;linkId;:;proj. */
-const linkId = (/** @type {string} */ id) => `coll;:;item;:;${id};:;EPSG:3857`;
-/** Only "data"-role assets become layers. */
-const dataAsset = (/** @type {Record<string,any>} */ a) => ({
+/**
+ * Link layer id: coll;:;item;:;linkId;:;proj.
+ * @param {string} id
+ */
+const linkId = (id) => `coll;:;item;:;${id};:;EPSG:3857`;
+
+/**
+ * Only "data"-role assets become layers.
+ * @param {Record<string, any>} asset
+ */
+const dataAsset = (asset) => ({
   roles: ["data"],
-  ...a,
+  ...asset,
 });
 
 describe("EodashCollection.buildJsonArray", () => {
@@ -375,8 +362,11 @@ describe("EodashCollection.buildJsonArray", () => {
   });
 
   describe("datetime and time controls", () => {
-    // Item links carry the dates getDates reads.
-    const datedCollection = (/** @type {string[]} */ isoDates) => ({
+    /**
+     * Item links carry the dates getDates reads.
+     * @param {string[]} isoDates
+     */
+    const datedCollection = (isoDates) => ({
       links: isoDates.map((d, i) => ({
         rel: "item",
         href: `https://cat/items/i${i}.json`,
@@ -384,7 +374,9 @@ describe("EodashCollection.buildJsonArray", () => {
         datetime: d,
       })),
     });
-    const xyzItem = (/** @type {string} */ datetime) =>
+
+    /** @param {string} datetime */
+    const xyzItem = (datetime) =>
       makeItem({
         properties: { datetime },
         links: [{ rel: "xyz", href: "https://xyz/{z}/{x}/{y}", title: "XYZ" }],

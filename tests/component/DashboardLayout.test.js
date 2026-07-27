@@ -1,7 +1,6 @@
 import { describe, expect, test } from "vitest";
 import DashboardLayout from "@/components/DashboardLayout.vue";
-import { mountComponent } from "../support/mount";
-import { mockEodash, mockTemplate } from "../support/eodash";
+import { mockEodash, mockTemplate, mountComponent } from "../support/mount";
 
 describe("DashboardLayout", () => {
   const template = mockTemplate();

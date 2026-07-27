@@ -9,9 +9,8 @@ import {
   layerControlFormValueCompare,
 } from "@/utils/states";
 import { eoxLayersKey } from "@/utils/keys";
-import { fakeOlLayer, vtDefinition } from "../fixtures/ol";
-import { stubCustomElement } from "../support/elements";
-import { mountAsyncComponent } from "../support/mount";
+import { mockOlLayer, vtDefinition } from "../support/fixtures";
+import { mountAsyncComponent, stubCustomElement } from "../support/mount";
 
 vi.mock("@eox/layercontrol", () => ({
   updateVectorLayerStyle: (/** @type {Record<string, unknown>} */ s) => s,
@@ -93,7 +92,7 @@ const seedCollection = (updatedLayers, collections = eodashCollections) => {
 const emitDatetime = async (datetime) => {
   layercontrolEl()?.dispatchEvent(
     new CustomEvent("datetime:updated", {
-      detail: { layer: fakeOlLayer({ id: "coll;:;i1;:;3857" }), datetime },
+      detail: { layer: mockOlLayer({ id: "coll;:;i1;:;3857" }), datetime },
     }),
   );
   await vi.advanceTimersByTimeAsync(600);
@@ -209,7 +208,7 @@ describe("EodashLayerControl", () => {
       layercontrolEl()?.dispatchEvent(
         new CustomEvent("datetime:updated", {
           detail: {
-            layer: fakeOlLayer({ id: "coll;:;i1;:;3857" }),
+            layer: mockOlLayer({ id: "coll;:;i1;:;3857" }),
             datetime: "2023-01-05T00:00:00Z",
           },
         }),
@@ -290,7 +289,7 @@ describe("EodashLayerControl", () => {
       await mountControl({ initialState: withStac });
 
       emitConfigChange({
-        layer: fakeOlLayer(),
+        layer: mockOlLayer(),
         jsonformValue: { flood: 30 },
       });
 
@@ -306,7 +305,7 @@ describe("EodashLayerControl", () => {
       });
 
       emitConfigChange({
-        layer: fakeOlLayer(),
+        layer: mockOlLayer(),
         jsonformValue: { flood: 30 },
       });
 
@@ -320,7 +319,7 @@ describe("EodashLayerControl", () => {
 
       const source = { setUrl: vi.fn() };
       emitConfigChange({
-        layer: fakeOlLayer({
+        layer: mockOlLayer({
           jsonDefinition: vtDefinition("https://vt/tiles"),
           source,
         }),

@@ -1,7 +1,6 @@
 import { describe, expect, test } from "vitest";
 import Loading from "@/components/Loading.vue";
-import { mockEodash } from "../support/eodash";
-import { mountComponent } from "../support/mount";
+import { mockEodash, mountComponent } from "../support/mount";
 
 const loadingWidget = {
   id: "load",

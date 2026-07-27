@@ -1,7 +1,6 @@
 import { describe, expect, test } from "vitest";
 import Footer from "@/components/Footer.vue";
-import { mountComponent } from "../support/mount";
-import { mockEodash } from "../support/eodash";
+import { mockEodash, mountComponent } from "../support/mount";
 
 describe("Footer", () => {
   test("renders the footer text", async () => {

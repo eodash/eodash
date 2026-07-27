@@ -1,5 +1,4 @@
 import { beforeEach, describe, expect, test, vi } from "vitest";
-import { createApp } from "vue";
 import { createPinia, setActivePinia } from "pinia";
 import {
   checkMosaicDataInView,
@@ -16,18 +15,13 @@ import {
   mapPosition,
 } from "@/store/states";
 import { eodashCollections } from "@/utils/states";
-import { eodashKey } from "@/utils/keys";
-import { provideEodashInstance } from "@/composables";
+import { provideEodash } from "../../support/fixtures";
 
 const axiosMock = vi.hoisted(() => ({ get: vi.fn() }));
 vi.mock("@/plugins/axios", () => ({ default: axiosMock, axios: axiosMock }));
 
-// createMosaicLayers calls useEodash(); satisfy the module singleton without
-// mounting by injecting through an app context.
-const eodashConfig = /** @type {any} */ ({ id: "test" });
-const providerApp = createApp({});
-providerApp.provide(eodashKey, eodashConfig);
-providerApp.runWithContext(() => provideEodashInstance());
+// createMosaicLayers calls useEodash().
+provideEodash();
 
 // One pinia for the whole file: useMosaicState is a shared composable whose
 // mosaicEndpoint computed captures the store from its first invocation.
