@@ -13,3 +13,10 @@ export const analysisGroup = (mapEl) =>
  */
 export const dataLayer = (group) =>
   group?.layers.find((l) => l.properties?.layerDatetime) ?? group?.layers[0];
+
+/**
+ * The current analysis data-layer id on the map.
+ * @param {import("@eox/map").EOxMap | undefined} mapEl
+ */
+export const dataLayerId = (mapEl) =>
+  dataLayer(analysisGroup(mapEl))?.properties?.id;

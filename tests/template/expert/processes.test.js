@@ -1,62 +1,39 @@
-import { afterAll, beforeAll, describe, expect, test, vi } from "vitest";
-import { useSTAcStore } from "@/store/stac";
-import { pinia } from "@/plugins";
-import { getBaseConfig } from "../../../templates/baseConfig";
-import { mountApp } from "../../support/app";
+import { afterAll, beforeAll, describe, expect, test } from "vitest";
+import { bootExpert, selectIndicator, TIMEOUT } from "../../support/template";
 
 const STAC_ENDPOINT =
   "https://esa-eodashboards.github.io/eodashboard-catalog/trilateral/catalog.json";
 // Indicators whose STAC collection has a `service` link (includesProcess).
 const PROCESS_INDICATORS = ["NO2_daily", "methane_monitoring"];
 
-// Boot once (so the map is ready), then switch selection through several process
-// indicators via the store. Store-driven switching is intentional here: this
-// file covers process rendering across many indicators, not the selection UI.
+// Boot once, then switch selection through several process indicators via the
+// store: this covers process rendering per indicator, not the selection UI.
 describe("expert template - processes", () => {
-  /** @type {ReturnType<typeof mountApp>} */
-  let app;
-  /** @param {string} sel @returns {any} */
-  const query = (sel) => app.container.querySelector(sel);
-  const store = useSTAcStore(pinia);
+  /** @type {Awaited<ReturnType<typeof bootExpert>>} */
+  let ctx;
 
   beforeAll(async () => {
-    app = mountApp({
-      template: "expert",
-      config: () =>
-        getBaseConfig({ stacEndpoint: { endpoint: STAC_ENDPOINT } }),
-    });
-    await vi.waitFor(
-      () => {
-        if (!(query("eox-map") && store.stac?.length)) {
-          throw new Error("map was not initialised");
-        }
-      },
-      { timeout: 1000 * 15 },
-    );
+    ctx = await bootExpert({ endpoint: STAC_ENDPOINT });
   });
 
-  afterAll(() => app?.unmount());
+  afterAll(() => ctx?.app.unmount());
 
   test.each(PROCESS_INDICATORS)(
     "renders the process form when %s is selected",
     async (id) => {
-      const child = store.stac?.find((link) => link.id === id);
-      if (!child) throw new Error(`indicator "${id}" not in catalog`);
+      await selectIndicator(ctx.store, id);
 
-      await store.loadSelectedSTAC(child.href);
+      // includesProcess -> EodashProcess mounts its jsonform.
       await expect
-        .poll(() => store.selectedStac?.id, { timeout: 1000 * 15 })
-        .toBe(id);
-
-      // includesProcess -> EodashProcess mounts its jsonform;
-      await expect
-        .poll(() => query("eox-jsonform"), { timeout: 1000 * 15 })
+        .poll(() => ctx.query("eox-jsonform"), { timeout: TIMEOUT })
         .toBeTruthy();
       await expect
         .poll(
           () =>
-            query("eox-jsonform")?.shadowRoot?.querySelector("eox-drawtools"),
-          { timeout: 1000 * 15 },
+            ctx
+              .query("eox-jsonform")
+              ?.shadowRoot?.querySelector("eox-drawtools"),
+          { timeout: TIMEOUT },
         )
         .toBeTruthy();
     },
