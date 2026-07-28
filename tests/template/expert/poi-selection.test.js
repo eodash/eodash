@@ -10,9 +10,8 @@ import {
 
 const STAC_ENDPOINT =
   "https://esa-eodashboards.github.io/eodashboard-catalog/trilateral/catalog.json";
-// POI indicator: point locations on the "geodb-collection" layer. Its STAC
-// service link renders {{feature}} on select and loads that location's whole
-// collection.
+// POI indicator: its STAC service link renders {{feature}} on select and loads
+// that location's whole collection.
 const INDICATOR_ID = "N3a2_chl_concentration_tri_esa";
 // The nested collection holds the location child links (its own id repeated).
 const LOCATIONS_URL = STAC_ENDPOINT.replace(

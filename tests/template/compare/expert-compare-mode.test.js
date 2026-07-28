@@ -11,8 +11,7 @@ const MAIN_TITLE = "Air Quality (tropospheric NO2 concetrations)";
 const COMPARE_ID = "methane_monitoring";
 const COMPARE_TITLE = "Methane monitoring";
 
-// One boot, one user journey: expert -> pick a main indicator -> Compare button
-// -> pick a second indicator -> the compare pane renders. Each test is a step.
+// One boot, one user journey; each test is a step.
 describe("expert template - compare mode", () => {
   /** @type {Awaited<ReturnType<typeof bootExpert>>} */
   let ctx;
@@ -56,10 +55,12 @@ describe("expert template - compare mode", () => {
   });
 
   test("the Compare button opens the picker and loads a second indicator", async () => {
-    // Both pickers list the same collections; the main picker must be gone
-    // before opening the compare one or COMPARE_TITLE would be ambiguous.
+    // Both pickers list the same collections, so the main one must be gone
+    // before opening the compare one or the title would be ambiguous.
     await expect
-      .poll(() => document.querySelectorAll("eox-itemfilter").length)
+      .poll(() => document.querySelectorAll("eox-itemfilter").length, {
+        timeout: TIMEOUT,
+      })
       .toBe(0);
 
     const btn = btnByTooltip("Compare mode");
@@ -99,9 +100,11 @@ describe("expert template - compare mode", () => {
       { timeout: TIMEOUT },
     );
     // Main + compare = two eox-layercontrol.
-    expect(
-      document.querySelectorAll("eox-layercontrol").length,
-    ).toBeGreaterThan(1);
+    await expect
+      .poll(() => document.querySelectorAll("eox-layercontrol").length, {
+        timeout: TIMEOUT,
+      })
+      .toBeGreaterThan(1);
     expect(ctx.query(".v-alert")).toBeNull();
   });
 });

@@ -5,6 +5,7 @@ import { playwright } from "@vitest/browser-playwright";
 //@ts-expect-error todo
 import vue from "@vitejs/plugin-vue";
 import vuetify from "vite-plugin-vuetify";
+import { serveFiles, stopServingFiles } from "./tests/support/commands.js";
 
 const pkg = createRequire(import.meta.url)("./package.json");
 
@@ -16,12 +17,10 @@ const nodeOnlyDeps = [
   "dotenv",
   "stac-ts",
 ];
-const clientDeps = Object.keys(pkg.dependencies ?? {}).filter(
-  (m) => !nodeOnlyDeps.includes(m),
-);
 
-// vite-plugin-vuetify is used instead
-const componentDeps = clientDeps.filter((m) => m !== "vuetify");
+const clientDeps = Object.keys(pkg.dependencies ?? {}).filter(
+  (m) => !nodeOnlyDeps.includes(m) && m !== "vuetify",
+);
 
 /** Shared source aliases (mirror the CLI's viteConfig aliases). */
 const alias = {
@@ -33,68 +32,9 @@ const alias = {
   ),
 };
 
-/** Vue plugin with the app's custom-element compiler option. */
-const vuePlugin = () =>
-  vue({
-    template: {
-      compilerOptions: {
-        isCustomElement: (tag) => !tag.includes("v-") && tag.includes("-"),
-      },
-    },
-  });
-
-/**
- * A mounted-Vue browser project (component + template tiers). vuetify is
- * excluded from the optimizer because `autoImport` rewrites SFCs to
- * per-component subpaths that Vite would otherwise discover mid-run.
- * @param {Record<string, unknown>} test Project `test` config (name, include, timeouts, ...).
- */
-const browserAppProject = (test) => ({
-  plugins: [vuePlugin(), vuetify({ autoImport: true })],
-  resolve: { alias },
-  define: { "process.env": {} },
-  optimizeDeps: { include: componentDeps, exclude: ["vuetify"] },
-  test: {
-    browser: {
-      enabled: true,
-      provider: playwright(),
-      headless: true,
-      viewport: { width: 1440, height: 900 },
-      instances: [{ browser: /** @type {const} */ ("chromium") }],
-    },
-    ...test,
-  },
-});
-
 export default defineConfig({
   test: {
     projects: [
-      {
-        // Logic/unit tests run in a headless browser
-        plugins: [
-          vue({
-            template: {
-              compilerOptions: {
-                isCustomElement: (tag) =>
-                  !tag.includes("v-") && tag.includes("-"),
-              },
-            },
-          }),
-        ],
-        resolve: { alias },
-        define: { "process.env": {} },
-        optimizeDeps: { include: clientDeps },
-        test: {
-          name: "unit",
-          include: ["tests/unit/**/*.test.js"],
-          browser: {
-            enabled: true,
-            provider: playwright(),
-            headless: true,
-            instances: [{ browser: "chromium" }],
-          },
-        },
-      },
       {
         resolve: { alias },
         test: {
@@ -104,15 +44,44 @@ export default defineConfig({
           testTimeout: 3 * 60 * 1000,
         },
       },
-      browserAppProject({
-        name: "component",
-        include: ["tests/component/**/*.test.js"],
-      }),
-      browserAppProject({
-        name: "template",
-        include: ["tests/template/**/*.test.js"],
-        testTimeout: 60 * 1000,
-      }),
+      // One project for all browser tiers: a project launches its own browser,
+      // so per-tier projects would open one window each in headed mode. Tiers
+      // are scoped by path filters instead (`vitest run tests/unit`).
+      {
+        plugins: [
+          vue({
+            template: {
+              compilerOptions: {
+                isCustomElement: (tag) =>
+                  !tag.includes("v-") && tag.includes("-"),
+              },
+            },
+          }),
+          vuetify({ autoImport: true }),
+        ],
+        resolve: { alias },
+        define: { "process.env": {} },
+        optimizeDeps: { include: clientDeps, exclude: ["vuetify"] },
+        test: {
+          name: "browser",
+          include: [
+            "tests/unit/**/*.test.js",
+            "tests/component/**/*.test.js",
+            "tests/template/**/*.test.js",
+          ],
+          testTimeout: 60 * 1000,
+          // Template boots (app + real STAC fetches) run in beforeAll hooks.
+          hookTimeout: 60 * 1000,
+          browser: {
+            enabled: true,
+            provider: playwright(),
+            headless: true,
+            viewport: { width: 1440, height: 900 },
+            instances: [{ browser: "chromium" }],
+            commands: { serveFiles, stopServingFiles },
+          },
+        },
+      },
     ],
   },
 });

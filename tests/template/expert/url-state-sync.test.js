@@ -27,10 +27,9 @@ describe("expert template - deep link restores the map position", () => {
   });
 });
 
-// Booting with `?indicator=&datetime=` restores that selection on load with no
-// interaction. GTIME is a process-free multi-child indicator: no drawtools
-// initialises during the boot race (a process indicator throws inside
-// eox-drawtools), and each child renders its own analysis layer.
+// Booting with `?indicator=&datetime=` restores that selection with no
+// interaction. GTIME is process-free (a process indicator throws inside
+// eox-drawtools on a deep link) and multi-child, so each child renders a layer.
 describe("expert template - deep link restores indicator, datetime and layers", () => {
   const INDICATOR_ID = "GTIME";
   const DEEP_LINK = `?template=expert&indicator=${INDICATOR_ID}&datetime=2024-01-01`;

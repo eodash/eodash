@@ -19,11 +19,16 @@ describe("expert template - process execution (predictive maintenance)", () => {
   /** @type {Awaited<ReturnType<typeof bootExpert>>} */
   let ctx;
 
-  /** A process result layer rendered into the analysis group. */
-  const hasResultLayer = () =>
-    analysisGroup(ctx.query("eox-map"))?.layers.some((l) =>
+  /** Reads the rendered result layer, so an unloaded source cannot pass. */
+  const resultFeatureCount = () => {
+    const mapEl = ctx.query("eox-map");
+    const id = analysisGroup(mapEl)?.layers.find((l) =>
       l.properties?.id.includes("_process"),
-    );
+    )?.properties?.id;
+    return id
+      ? (mapEl.getLayerById(id)?.getSource()?.getFeatures()?.length ?? 0)
+      : 0;
+  };
 
   beforeAll(async () => {
     ctx = await bootExpert({ endpoint: STAC_ENDPOINT });
@@ -51,7 +56,9 @@ describe("expert template - process execution (predictive maintenance)", () => {
     );
     await vi.waitFor(
       () => {
-        if (!hasResultLayer()) throw new Error("result layer not rendered");
+        if (!resultFeatureCount()) {
+          throw new Error("result features not loaded");
+        }
       },
       { timeout: TIMEOUT },
     );
@@ -70,7 +77,15 @@ describe("expert template - process execution (predictive maintenance)", () => {
       { timeout: TIMEOUT },
     );
     expect(ctx.query("eox-chart")).toBeTruthy();
-    expect(hasResultLayer()).toBe(true);
+    // The result layer reloads after the chart, so it settles on its own.
+    await vi.waitFor(
+      () => {
+        if (!resultFeatureCount()) {
+          throw new Error("result features not reloaded");
+        }
+      },
+      { timeout: TIMEOUT },
+    );
     expect(ctx.query(".v-alert")).toBeNull();
   });
 

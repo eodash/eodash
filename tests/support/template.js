@@ -7,16 +7,27 @@ import { mountApp } from "./app";
 export const TIMEOUT = 1000 * 15;
 
 /**
- * Boot the expert template against a STAC endpoint (or a full deep link) and
- * wait until the map and the root catalog are ready.
+ * Boot a template against a STAC endpoint (or a full deep link) and wait until
+ * the map and the root catalog are ready.
  *
- * @param {{ endpoint: string, initialUrl?: string }} opts
+ * @param {{ template?: string, endpoint: string, api?: boolean, initialUrl?: string }} opts
  */
-export async function bootExpert({ endpoint, initialUrl }) {
+export async function bootTemplate({
+  template = "expert",
+  endpoint,
+  api = false,
+  initialUrl,
+}) {
   const store = useSTAcStore(pinia);
   const app = mountApp({
-    ...(initialUrl ? { initialUrl } : { template: "expert" }),
-    config: () => getBaseConfig({ stacEndpoint: { endpoint } }),
+    ...(initialUrl ? { initialUrl } : { template }),
+    // No remote fonts: the loader throws when a stylesheet cannot be reached.
+    config: () =>
+      getBaseConfig({
+        stacEndpoint: { endpoint, api },
+        //@ts-expect-error workaround to not fallback
+        brand: { font: null },
+      }),
   });
   /** @param {string} sel @returns {any} */
   const query = (sel) => app.container.querySelector(sel);
@@ -32,6 +43,12 @@ export async function bootExpert({ endpoint, initialUrl }) {
 
   return { app, container: app.container, query, store };
 }
+
+/**
+ * Boot the expert template; see {@link bootTemplate}.
+ * @param {{ endpoint: string, initialUrl?: string }} opts
+ */
+export const bootExpert = (opts) => bootTemplate(opts);
 
 /**
  * Select an indicator through the store and wait until it is the selection.

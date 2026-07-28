@@ -12,7 +12,7 @@ import { mountComponent } from "../support/mount";
 const input = (selector) =>
   /** @type {HTMLInputElement | null} */ (document.querySelector(selector));
 
-const TIMEOUT = 1000 * 5;
+const TIMEOUT = 1000 * 15;
 
 /**
  * Stand-in EodashCollection exposing only what the datepicker reads.

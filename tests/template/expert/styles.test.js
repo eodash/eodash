@@ -30,8 +30,8 @@ describe("expert template - eodash styles", () => {
     const layer = /** @type {any} */ (
       dataLayer(analysisGroup(ctx.query("eox-map")))
     );
-    // A style with `variables` is managed through the layercontrol form, so it
-    // is attached as layerConfig.style instead of the layer's top-level style.
+    // A style with `variables` is driven by the layercontrol form, so it lands
+    // on layerConfig.style rather than the layer's top-level style.
     const { layerConfig } = layer.properties;
     expect(layerConfig.style["fill-color"]).toBeTruthy();
     expect(layerConfig.style.variables).toBeTruthy();

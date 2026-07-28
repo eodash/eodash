@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, test } from "vitest";
 import { page, userEvent } from "vitest/browser";
-import { analysisGroup } from "../../support/layers";
+import { analysisGroup, getLayer } from "../../support/layers";
 import { bootExpert, TIMEOUT } from "../../support/template";
 
 const STAC_ENDPOINT =
@@ -10,19 +10,7 @@ const INDICATOR_TITLE = "Air Quality (tropospheric NO2 concetrations)";
 // Configured in expert.js as the sole base layer.
 const BASE_LAYER_ID = "terrain-light;:;EPSG:3857";
 
-/**
- * Depth-first search for a layer id across nested eox-map layer groups.
- * @param {any[]} layers
- * @param {string} id
- * @returns {boolean}
- */
-const hasLayer = (layers, id) =>
-  (layers ?? []).some(
-    (l) => l?.properties?.id === id || hasLayer(l?.layers, id),
-  );
-
-// One boot per file; the tests form an ordered scenario against a single app
-// instance (fresh boot -> open the picker -> select -> interact).
+// One boot, one user journey; each test is a step.
 describe("expert template", () => {
   /** @type {Awaited<ReturnType<typeof bootExpert>>} */
   let ctx;
@@ -50,10 +38,10 @@ describe("expert template", () => {
 
   test("assigns the configured base layer", async () => {
     await expect
-      .poll(() => hasLayer(ctx.query("eox-map")?.layers, BASE_LAYER_ID), {
+      .poll(() => getLayer(ctx.query("eox-map"), BASE_LAYER_ID), {
         timeout: TIMEOUT,
       })
-      .toBe(true);
+      .toBeTruthy();
   });
 
   test("renders the layout switcher", () => {

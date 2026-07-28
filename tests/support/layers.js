@@ -20,3 +20,22 @@ export const dataLayer = (group) =>
  */
 export const dataLayerId = (mapEl) =>
   dataLayer(analysisGroup(mapEl))?.properties?.id;
+
+/**
+ * Depth-first lookup of a layer by id, across nested groups.
+ * @param {import("@eox/map").EOxMap | undefined} mapEl
+ * @param {string} id
+ * @returns {any}
+ */
+export const getLayer = (mapEl, id) => {
+  /** @param {any[]} [layers] @returns {any} */
+  const search = (layers) => {
+    for (const layer of layers ?? []) {
+      if (layer?.properties?.id === id) return layer;
+      const nested = search(layer?.layers);
+      if (nested) return nested;
+    }
+    return undefined;
+  };
+  return search(mapEl?.layers);
+};

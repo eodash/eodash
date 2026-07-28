@@ -32,7 +32,7 @@ const allJsdocOff = Object.fromEntries(
 );
 
 export default [
-  ...eox,
+  ...eox.filter((c) => !c?.name?.includes("cypress")),
   {
     ignores: ["public/", "dist/", ".eodash/", "docs/"],
   },

@@ -2,7 +2,7 @@
 
 This guide explains how to run and write tests in `eodash`. We use Vitest across the board.
 
-Tests are split into four projects. The `unit`, `component`, and `template` projects run in headless Chromium via Playwright, while `cli` runs in Node.
+Tests run in two projects: `browser` holds the unit, component and template tiers and runs in headless Chromium via Playwright, and `cli` runs in Node.
 
 ## Setup
 
@@ -17,20 +17,21 @@ npx playwright install chromium
 
 The main commands are:
 
-| Command                  | Action                                                         |
-| ------------------------ | -------------------------------------------------------------- |
-| `npm run test`           | Run all test projects headlessly (this is what CI runs).       |
-| `npm run test:unit`      | Run the unit project.                                          |
-| `npm run test:component` | Run the component project.                                     |
-| `npm run test:template`  | Run the template project.                                      |
-| `npm run test:cli`       | Run the CLI project.                                           |
-| `npm run vitest`         | Open the Vitest UI in watch mode for unit and component tests. |
-| `npm run vitest:browser` | Open a headed browser to watch component tests render.         |
+| Command                  | Action                                            |
+| ------------------------ | ------------------------------------------------- |
+| `npm run test`           | Run everything headlessly (this is what CI runs). |
+| `npm run test:unit`      | Run the unit tier.                                |
+| `npm run test:component` | Run the component tier.                           |
+| `npm run test:template`  | Run the template tier.                            |
+| `npm run test:cli`       | Run the CLI project.                              |
+| `npm run vitest`         | Open the Vitest UI in watch mode, all projects.   |
+| `npm run test:browser`   | Watch the browser project headlessly.             |
+| `npm run vitest:browser` | Watch the browser project in one headed window.   |
 
-To run a specific file, append the path after `--`:
+To run a specific file, pass its path:
 
 ```sh
-npm run test:component -- tests/component/EodashLayerControl.test.js
+npx vitest run tests/component/EodashLayerControl.test.js
 ```
 
 ## Directory layout
@@ -43,8 +44,8 @@ tests/
   unit/        # Plain JS function tests (STAC pipeline, store logic). No mounting allowed.
   template/    # Full-app tests per template, against real STAC endpoints.
   cli/         # Tests for the Node CLI.
-  support/     # Shared helpers like mount.js, element stubs, and store mocks.
-  fixtures/    # Mock data or stand-ins shared across tiers.
+  support/     # Shared helpers: mounting, booting a template, fixtures, commands.
+  support/assets/  # Files served in place of upstream responses.
 ```
 
 ## Writing tests
@@ -70,8 +71,17 @@ Helpers in `tests/support/mount.js` can be used to mount Vue components.
 - `mountComponent` for standard widgets.
 - `mountAsyncComponent` for widgets with async setup.
 
+### Booting a template
+
+`tests/support/template.js` boots the whole app for the template tier. `bootTemplate` returns the mounted container, a `query` helper for elements, and the store; drive the result as a user would rather than setting store state.
+
 ### Mocking
 
 Keep component tests hermetic: mock network requests and heavy external web components.
 
 The idea is that mocking defers coverage, but it doesn't replace it; any code written by eodash that is mocked in component testing needs its own unit tests or template tier coverage.
+
+There are two ways to intercept a network request, depending on who makes it:
+
+- Most requests go through axios, so mocking `@/plugins/axios` is enough. See the `serve*` helpers in `tests/support/fixtures.js`.
+- Some requests are made by libraries instead, and never reach axios. `commands.serveFiles` answers those with a file from `tests/support/assets/`, matched by a part of the url.
