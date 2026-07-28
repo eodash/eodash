@@ -232,6 +232,7 @@ export const useSTAcStore = defineStore("stac", () => {
           [...collectionsPalette].reverse(),
           isApi.value,
           rasterEndpoint.value,
+          "compare",
         );
         selectedCompareItem.value = /** @type {any} */ (stacItem) ?? undefined;
         selectedCompareStac.value = resp.data;

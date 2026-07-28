@@ -5,9 +5,10 @@
  * @returns {string[]} Array of color strings
  */
 export function generateBandColors(schema, format) {
+  /** @type {string[]} */
   const bands =
     format === "bands"
-      ? schema.items?.enum
+      ? (schema.items?.enum ?? [])
       : (schema.options?.enum ?? schema.enum ?? []);
   const colors =
     format === "bands"
@@ -17,13 +18,17 @@ export function generateBandColors(schema, format) {
     return colors;
   }
 
-  return bands.map(
-    () =>
-      "#" +
-      Math.floor(Math.random() * 16777215)
-        .toString(16)
-        .padStart(6, "0"),
-  );
+  // Stable hex per band so chips keep their color across rebuilds/tab
+  // switches; channels clamped to the light half so black text stays legible.
+  return bands.map((band) => {
+    let hash = 0;
+    for (let i = 0; i < band.length; i++) {
+      hash = band.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    return [16, 8, 0]
+      .map((shift) => (((hash >>> shift) & 0xff) | 0x80).toString(16))
+      .reduce((hex, channel) => hex + channel, "#");
+  });
 }
 
 /**
