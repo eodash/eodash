@@ -4,12 +4,12 @@
     :key="unref(mapEl)"
     ref="eoxTimecontrol"
     .for="mapEl"
-    @select="onSelect"
-    titleKey="title"
+    title-key="title"
     class="pa-4"
     .externalMapRendering="true"
     .animate="animate"
     .initDate="initDate"
+    @select="onSelect"
   >
     <div class="d-flex g-10 align-center">
       <eox-timecontrol-date class="flex-grow-1"></eox-timecontrol-date>

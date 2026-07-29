@@ -34,8 +34,8 @@ export function getGeoJsonProperties(jsonformSchema) {
 
 /**
  * Converts jsonform geojson values to stringified geometries
- * @param {Record<string,any> |null} [jsonformSchema]
  * @param {Record<string,any>} jsonformValue
+ * @param {Record<string,any> |null} [jsonformSchema]
  **/
 export function extractGeometries(jsonformValue, jsonformSchema) {
   const geojsonKeys = getGeoJsonProperties(jsonformSchema);
@@ -119,13 +119,12 @@ export async function createTiffLayerDefinition(
 /**
  * @param {string} fileName
  * @param {string|Record<string,any>} content
- * @returns
  */
 export const download = (fileName, content) => {
   if (!content) {
     return;
   }
-  let url = /** @type string */ (content);
+  let url = /** @type {string} */ (content);
   if (typeof content === "object") {
     content = JSON.stringify(content);
     const blob = new Blob([content], { type: "text" });
@@ -411,9 +410,10 @@ async function fetchProcessStyles(endpointLink) {
   let flatStyles = null;
   if (endpointLink["eox:flatstyle"]) {
     if (typeof endpointLink["eox:flatstyle"] === "string") {
+      /** @type {import("@/types").EodashStyleJson} */
       flatStyles = await axios
         .get(/** @type {string} */ (endpointLink["eox:flatstyle"]))
-        .then((resp) => /** @type {} */ resp.data);
+        .then((resp) => resp.data);
     } else if (
       Array.isArray(endpointLink["eox:flatstyle"]) &&
       endpointLink["eox:flatstyle"].length

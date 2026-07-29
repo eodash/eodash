@@ -16,17 +16,17 @@
       </EodashChart>
     </div>
     <div
-      class="eodash-process-actions"
       v-if="showExecBtn || (processResults.length && isProcessed && !isAsync)"
+      class="eodash-process-actions"
     >
       <v-btn
         v-if="showExecBtn"
         :loading="loading"
         style="margin-right: 8px"
         :append-icon="[mdiCogPlayOutline]"
-        @click="startProcess"
         density="comfortable"
         size="small"
+        @click="startProcess"
       >
         Execute
       </v-btn>
@@ -35,9 +35,9 @@
         color="primary"
         style="margin-right: 8px"
         :append-icon="[mdiDownloadCircleOutline]"
-        @click="downloadResults"
         size="small"
         density="comfortable"
+        @click="downloadResults"
       >
         Download
       </v-btn>
