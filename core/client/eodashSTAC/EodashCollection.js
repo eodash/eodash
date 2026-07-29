@@ -1,5 +1,6 @@
 import { Collection, Item } from "stac-js";
 import { toAbsolute } from "stac-js/src/http.js";
+import axios from "@/plugins/axios";
 import { fetchJson } from "@/utils";
 import {
   extractLayerConfig,
