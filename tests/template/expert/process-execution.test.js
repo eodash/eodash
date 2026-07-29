@@ -10,7 +10,7 @@ import {
 } from "../../support/template";
 
 const STAC_ENDPOINT =
-  "https://GTIF-Austria.github.io/public-catalog/GTIF-Austria/catalog.json";
+  "https://eoxhub-workspaces.github.io/eoxhub-test-catalog/catalog/catalog.json";
 const INDICATOR_ID = "predictive_maintenance";
 // Process execution fetches the timeseries/reference services over the network.
 const TIMEOUT = 1000 * 20;

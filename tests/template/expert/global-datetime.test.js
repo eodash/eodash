@@ -4,13 +4,11 @@ import { analysisGroup } from "../../support/layers";
 import { bootExpert, selectIndicator, TIMEOUT } from "../../support/template";
 
 const STAC_ENDPOINT =
-  "https://GTIF-Austria.github.io/public-catalog/GTIF-Austria/catalog.json";
-// Three child collections on the same yearly grid (2024/2025). Snapping is
-// unit-tested in create-layers.test.js; this covers the wiring: one global
-// datetime fans out to every collection's layer.
-const INDICATOR_ID = "geothermal_energy_potential";
-const TARGET_DATETIME = "2024-03-01";
-const EXPECTED_STEP = "2024-01-01T00:00:00.000Z";
+  "https://eoxhub-workspaces.github.io/eoxhub-test-catalog/catalog/catalog.json";
+// Its child collections span the same days on different grids (hourly and
+// daily), so one global datetime makes each layer snap to its own closest date.
+const INDICATOR_ID = "city_temperature_indicator";
+const TARGET_DATETIME = "2019-06-28";
 
 describe("expert template - global datetime", () => {
   /** @type {Awaited<ReturnType<typeof bootExpert>>} */
@@ -36,17 +34,23 @@ describe("expert template - global datetime", () => {
 
   afterAll(() => ctx?.app.unmount());
 
-  test("snaps every collection's layer to the closest available date", async () => {
+  test("snaps every collection's layer to its own closest available date", async () => {
     datetime.value = TARGET_DATETIME;
+    const target = new Date(TARGET_DATETIME).getTime();
+    const distance = (/** @type {string} */ date) =>
+      Math.abs(new Date(date).getTime() - target);
 
     await vi.waitFor(
       () => {
         const layers = timedLayers();
-        const snapped = layers.every(
-          (l) => l.properties?.layerDatetime.currentStep === EXPECTED_STEP,
-        );
-        if (!layers.length || !snapped) {
-          throw new Error(`layers did not snap to ${EXPECTED_STEP}`);
+        if (layers.length < 2) throw new Error("collections not ready");
+        for (const layer of layers) {
+          /** @type {{ controlValues: string[]; currentStep: string }} */
+          const { controlValues, currentStep } = layer.properties.layerDatetime;
+          const closest = Math.min(...controlValues.map(distance));
+          if (distance(currentStep) > closest) {
+            throw new Error(`${layer.properties.id} snapped to a farther date`);
+          }
         }
       },
       { timeout: TIMEOUT },

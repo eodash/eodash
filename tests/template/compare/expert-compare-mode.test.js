@@ -5,11 +5,11 @@ import { analysisGroup, dataLayer } from "../../support/layers";
 import { bootExpert, TIMEOUT } from "../../support/template";
 
 const STAC_ENDPOINT =
-  "https://esa-eodashboards.github.io/eodashboard-catalog/trilateral/catalog.json";
-const MAIN_ID = "NO2_daily";
-const MAIN_TITLE = "Air Quality (tropospheric NO2 concetrations)";
-const COMPARE_ID = "methane_monitoring";
-const COMPARE_TITLE = "Methane monitoring";
+  "https://eoxhub-workspaces.github.io/eoxhub-test-catalog/catalog/catalog.json";
+const MAIN_ID = "N1_NO2_monthly";
+const MAIN_TITLE = "Nitrogen Dioxide (Monthly)";
+const COMPARE_ID = "N2_CO2_mean";
+const COMPARE_TITLE = "Carbon Dioxide from OMI (daily)";
 
 // One boot, one user journey; each test is a step.
 describe("expert template - compare mode", () => {

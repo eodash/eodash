@@ -3,8 +3,8 @@ import { datetime } from "@/store/states";
 import { analysisGroup } from "../../support/layers";
 import { bootExpert, TIMEOUT } from "../../support/template";
 
-const GTIF =
-  "https://GTIF-Austria.github.io/public-catalog/GTIF-Austria/catalog.json";
+const TEST_CATALOG =
+  "https://eoxhub-workspaces.github.io/eoxhub-test-catalog/catalog/catalog.json";
 
 // A deep link with only x/y/z restores the map view. No indicator, so nothing
 // zoom-to-extents over the restored position.
@@ -14,7 +14,7 @@ describe("expert template - deep link restores the map position", () => {
   let ctx;
 
   beforeAll(async () => {
-    ctx = await bootExpert({ endpoint: GTIF, initialUrl: DEEP_LINK });
+    ctx = await bootExpert({ endpoint: TEST_CATALOG, initialUrl: DEEP_LINK });
   });
 
   afterAll(() => ctx?.app.unmount());
@@ -31,13 +31,13 @@ describe("expert template - deep link restores the map position", () => {
 // interaction. GTIME is process-free (a process indicator throws inside
 // eox-drawtools on a deep link) and multi-child, so each child renders a layer.
 describe("expert template - deep link restores indicator, datetime and layers", () => {
-  const INDICATOR_ID = "GTIME";
+  const INDICATOR_ID = "endpoint_integration";
   const DEEP_LINK = `?template=expert&indicator=${INDICATOR_ID}&datetime=2024-01-01`;
   /** @type {Awaited<ReturnType<typeof bootExpert>>} */
   let ctx;
 
   beforeAll(async () => {
-    ctx = await bootExpert({ endpoint: GTIF, initialUrl: DEEP_LINK });
+    ctx = await bootExpert({ endpoint: TEST_CATALOG, initialUrl: DEEP_LINK });
   });
 
   afterAll(() => ctx?.app.unmount());

@@ -3,9 +3,9 @@ import { analysisGroup, dataLayer } from "../../support/layers";
 import { bootExpert, selectIndicator, TIMEOUT } from "../../support/template";
 
 const STAC_ENDPOINT =
-  "https://GTIF-Austria.github.io/public-catalog/GTIF-Austria/catalog.json";
-// Collection with a `style` link: flat style + variables, tooltip and jsonform.
-const INDICATOR_ID = "UEPI_visualizer_2";
+  "https://eoxhub-workspaces.github.io/eoxhub-test-catalog/catalog/catalog.json";
+// Its data layer has a style with variables, a jsonform and a tooltip.
+const INDICATOR_ID = "client_side_rendering";
 
 describe("expert template - eodash styles", () => {
   /** @type {Awaited<ReturnType<typeof bootExpert>>} */
@@ -30,12 +30,12 @@ describe("expert template - eodash styles", () => {
     const layer = /** @type {any} */ (
       dataLayer(analysisGroup(ctx.query("eox-map")))
     );
-    // A style with `variables` is driven by the layercontrol form, so it lands
-    // on layerConfig.style rather than the layer's top-level style.
-    const { layerConfig } = layer.properties;
-    expect(layerConfig.style["fill-color"]).toBeTruthy();
-    expect(layerConfig.style.variables).toBeTruthy();
-    expect(layerConfig.schema).toBeTruthy(); // the style's jsonform
+    // OpenLayers exposes applied variables only privately, so assert the style
+    // the layer rendered from.
+    expect(ctx.query("eox-map").getLayerById(layer.properties.id)).toBeTruthy();
+    expect(layer.style.variables).toMatchObject({ vmin: 0, vmax: 200 });
+    expect(layer.style.tooltip).toBeTruthy();
+    expect(layer.properties.layerConfig?.schema).toBeTruthy();
   });
 
   test("sets the tooltip from the style", async () => {

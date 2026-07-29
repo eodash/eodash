@@ -4,10 +4,9 @@ import { analysisGroup, dataLayer, dataLayerId } from "../../support/layers";
 import { bootExpert, selectIndicator, TIMEOUT } from "../../support/template";
 
 const STAC_ENDPOINT =
-  "https://esa-eodashboards.github.io/eodashboard-catalog/trilateral/catalog.json";
+  "https://eoxhub-workspaces.github.io/eoxhub-test-catalog/catalog/catalog.json";
 const IMAGE_LEGEND_ID = "ndvi_deepESDL";
-const COLOR_LEGEND_ID =
-  "Absorbing Aerosol Index (AAI) by Sentinel-5P TROPOMI (Monthly)";
+const COLOR_LEGEND_ID = "N2_CO2_mean";
 
 // Boot once, switch selection through the store, inspect the rendered state.
 describe("expert template - rendered state", () => {

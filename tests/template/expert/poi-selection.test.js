@@ -9,7 +9,7 @@ import {
 } from "../../support/template";
 
 const STAC_ENDPOINT =
-  "https://esa-eodashboards.github.io/eodashboard-catalog/trilateral/catalog.json";
+  "https://eoxhub-workspaces.github.io/eoxhub-test-catalog/catalog/catalog.json";
 // POI indicator: its STAC service link renders {{feature}} on select and loads
 // that location's whole collection.
 const INDICATOR_ID = "N3a2_chl_concentration_tri_esa";

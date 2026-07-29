@@ -4,9 +4,9 @@ import { analysisGroup, getLayer } from "../../support/layers";
 import { bootExpert, TIMEOUT } from "../../support/template";
 
 const STAC_ENDPOINT =
-  "https://esa-eodashboards.github.io/eodashboard-catalog/trilateral/catalog.json";
-const INDICATOR_ID = "NO2_daily";
-const INDICATOR_TITLE = "Air Quality (tropospheric NO2 concetrations)";
+  "https://eoxhub-workspaces.github.io/eoxhub-test-catalog/catalog/catalog.json";
+const INDICATOR_ID = "N1_NO2_monthly";
+const INDICATOR_TITLE = "Nitrogen Dioxide (Monthly)";
 // Configured in expert.js as the sole base layer.
 const BASE_LAYER_ID = "terrain-light;:;EPSG:3857";
 

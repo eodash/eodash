@@ -9,7 +9,7 @@ import {
 } from "../../support/template";
 
 const STAC_ENDPOINT =
-  "https://esa-earthcode.github.io/science-hub-catalog/science-hub/catalog.json";
+  "https://eoxhub-workspaces.github.io/eoxhub-test-catalog/catalog/catalog.json";
 const INDICATOR_ID = "stormtracker";
 const HOVER = "SelectLayerHoverInteraction";
 const CLICK = "SelectLayerClickInteraction";
