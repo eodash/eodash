@@ -84,7 +84,7 @@ const props = defineProps({
     type: /** @type {import("vue").PropType<Record<string, string>>} */ (
       Object
     ),
-    default: {},
+    default: () => ({}),
   },
   layoutIcon: {
     type: String,
