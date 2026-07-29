@@ -3,11 +3,8 @@ import terminateProcess from "terminate/promise";
 /**
  * @param {import("child_process").ChildProcessWithoutNullStreams} subprocess
  * @param {Function} assertFn
+ * @param {{delay?:number; terminate?:"before"|"after"}} options - terminate subproces before or after assertion
  * @returns
- * @optional @param {{
- * delay?:number;
- * terminate?:"before"|"after" // terminate subproces before or after assertion
- * }} options
  */
 export async function assertAndKillChildProcess(
   subprocess,
