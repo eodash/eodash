@@ -3,6 +3,7 @@ node_modules
 /dist
 tsconfig.tsbuildinfo
 .eodash
+
 # local env files
 .env.local
 .env.*.local
@@ -22,11 +23,6 @@ pnpm-debug.log*
 *.njsproj
 *.sln
 *.sw?
-.claude
-
-# Cypress 
-tests/cypress/downloads
-tests/cypress/screenshots
 
 # docs
 docs/.vitepress/cache
@@ -34,3 +30,7 @@ docs/.generated
 docs/.vitepress/dist
 docs/api
 docs/**/*.timestamp-*.mjs
+
+# tests
+**/**/__screenshots__/
+.vitest-attachments

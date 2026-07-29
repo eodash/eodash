@@ -1,7 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 
-// expert.js and compare.js import from "@/store/actions" which requires the
-// full Vue/Pinia stack. Mock it out so the test stays pure and fast.
+// expert.js/compare.js import "@/store/actions", which needs the full Vue/Pinia stack; mock it out.
 vi.mock("@/store/actions", () => ({
   includesProcess: vi.fn(),
   shouldShowChartWidget: vi.fn(),
@@ -9,8 +8,6 @@ vi.mock("@/store/actions", () => ({
 
 // Import after the mock is registered.
 const { getBaseConfig } = await import("../../templates/baseConfig.js");
-
-// ---- array replacement (not concatenation) ----
 
 describe("getBaseConfig - array replacement semantics", () => {
   it("user collectionsPalette replaces base palette, not appends to it", () => {
@@ -38,12 +35,9 @@ describe("getBaseConfig - array replacement semantics", () => {
 
   it("omitting an array key keeps the base array intact", () => {
     const result = getBaseConfig({ brand: { name: "Custom" } });
-    // base has 9 entries in collectionsPalette
     expect(result.brand.theme.collectionsPalette).toHaveLength(9);
   });
 });
-
-// ---- no shared mutable references with the singleton ----
 
 describe("getBaseConfig - isolated output (no shared references)", () => {
   it("mutating returned brand.theme does not affect a second call", () => {
@@ -63,14 +57,11 @@ describe("getBaseConfig - isolated output (no shared references)", () => {
   it("returned stacEndpoint is not the same reference as baseConfig singleton", () => {
     const result = getBaseConfig({});
     const originalEndpoint = result.stacEndpoint.endpoint;
-    // If this were a shared ref, mutating it would affect subsequent calls.
     result.stacEndpoint.endpoint = "https://mutated.example.com";
     const second = getBaseConfig({});
     expect(second.stacEndpoint.endpoint).toBe(originalEndpoint);
   });
 });
-
-// ---- stacEndpoint type-mismatch: user passes string over base object ----
 
 describe("getBaseConfig - stacEndpoint string override", () => {
   it("string stacEndpoint from user replaces the base object entirely", () => {
@@ -80,8 +71,6 @@ describe("getBaseConfig - stacEndpoint string override", () => {
     expect(result.stacEndpoint).toBe("https://my-api.example.com");
   });
 });
-
-// ---- deep merge still works for partial overrides ----
 
 describe("getBaseConfig - partial deep merge preserved", () => {
   it("user brand.name overrides base while keeping other brand fields", () => {
