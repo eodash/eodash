@@ -6,6 +6,7 @@
     :position="errorState.critical ? 'absolute' : 'fixed'"
     @click:close="resetError"
     :icon="[icon]"
+    variant="elevated"
     class="alert bg-surface rounded-xl px-4 py-3"
     :class="[
       { 'critical-error': errorState.critical },

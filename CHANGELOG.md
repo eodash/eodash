@@ -1,6 +1,51 @@
 # Changelog
 
 
+## [5.8.0](https://github.com/eodash/eodash/compare/eodash-v5.7.1...eodash-v5.8.0) (2026-07-13)
+
+
+### Features
+
+* implemented injection of url parameters based on style jsonform config ([#412](https://github.com/eodash/eodash/issues/412)) ([8a470e9](https://github.com/eodash/eodash/commit/8a470e97e41e880a2e90b948426c2fd6152e8cc7))
+* Process panel chart height calculation ([#407](https://github.com/eodash/eodash/issues/407)) ([fb56fbc](https://github.com/eodash/eodash/commit/fb56fbc084942b8ab23e1f4fb6312fa7814683fd))
+* Refactor rasterform handling, enhance dynamic visualization support ([#405](https://github.com/eodash/eodash/issues/405)) ([d966ea1](https://github.com/eodash/eodash/commit/d966ea1fca9d4e17ea896c4e94a8177cba431740))
+* Support TileJSON Raster Layer ([#415](https://github.com/eodash/eodash/issues/415)) ([72b133b](https://github.com/eodash/eodash/commit/72b133b73320db568eba4768b5e9bf6682bf3aed))
+
+
+### Bug Fixes
+
+* order for burning in fixed ([#413](https://github.com/eodash/eodash/issues/413)) ([0e20fcf](https://github.com/eodash/eodash/commit/0e20fcf36f5c74f432cc4bb5c028ae0723517b4d))
+* worked on export logic, fix for vector tiles ([#408](https://github.com/eodash/eodash/issues/408)) ([8c1dc32](https://github.com/eodash/eodash/commit/8c1dc32c6493c255bc1188db72f0cf83203d758d))
+
+## [5.7.1](https://github.com/eodash/eodash/compare/eodash-v5.7.0...eodash-v5.7.1) (2026-07-02)
+
+
+### Features
+
+* Mosaic endpoint integration & GeoZarr support ([#289](https://github.com/eodash/eodash/issues/289)) ([b090f00](https://github.com/eodash/eodash/commit/b090f00e8b415f816281a39d2959c240e093ce2d))
+
+
+### Bug Fixes
+
+* Prepare and Update Docs ([#404](https://github.com/eodash/eodash/issues/404)) ([f88989b](https://github.com/eodash/eodash/commit/f88989bf3ab2f8839fecf886e9c213652e310225))
+
+## [5.7.0](https://github.com/eodash/eodash/compare/eodash-v5.6.1...eodash-v5.7.0) (2026-05-21)
+
+
+### Features
+
+* integrate eox-feedback as a button ([#375](https://github.com/eodash/eodash/issues/375)) ([a9ae221](https://github.com/eodash/eodash/commit/a9ae22186fb7b4fc8498fa9b0899e79e5d56c193))
+* Timeline animations  ([#283](https://github.com/eodash/eodash/issues/283)) ([9927593](https://github.com/eodash/eodash/commit/9927593bd2646f3a4a2d2dba1244f9d59548eec3))
+
+
+### Bug Fixes
+
+* catch errors when saved process run url not available ([#390](https://github.com/eodash/eodash/issues/390)) ([05eb9f0](https://github.com/eodash/eodash/commit/05eb9f047742a8aeb0ade766e2f496fe2a6a20d0))
+* handling errors of eoapi/sh statistics apis permitting loading of charts of partial response set - non-failing requests ([#353](https://github.com/eodash/eodash/issues/353)) ([69a4459](https://github.com/eodash/eodash/commit/69a4459e07b39add3cac8cca5b8ee34eacc4781b))
+* increase break by 1 pixel to not trigger on normal screen size ([#399](https://github.com/eodash/eodash/issues/399)) ([154e4c7](https://github.com/eodash/eodash/commit/154e4c71cdc77c9115544cea22382fa2d07fa8f8))
+* mouse coordinates format E/W/N/S ([#397](https://github.com/eodash/eodash/issues/397)) ([9ad7d7c](https://github.com/eodash/eodash/commit/9ad7d7c39ad7af74e6206dbe97f009934be59541))
+* Processing Feature Selection & Duplicate Vector Source Fetches ([#374](https://github.com/eodash/eodash/issues/374)) ([91fa5e1](https://github.com/eodash/eodash/commit/91fa5e14604a15c7f2baf4f712ffad8c1e575219))
+
 ## [5.6.1](https://github.com/eodash/eodash/compare/eodash-v5.6.0...eodash-v5.6.1) (2026-03-17)
 
 

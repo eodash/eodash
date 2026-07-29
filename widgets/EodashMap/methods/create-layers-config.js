@@ -9,7 +9,8 @@ import log from "loglevel";
  *   | null
  * } selectedIndicator
  * @param {EodashCollection[]} eodashCols
- * @param {string | import("stac-ts").StacItem | null} [timeOrItem] - time as a string, or a stac item
+ * @param {string | import("stac-ts").StacItem | null} [timeOrItem] - time as a string, or a stac item; `null` = item explicitly cleared (render no data layers), `undefined` = default/latest fallback
+ * @param {Record<string, any>[]} [defaultBaseLayers] - Optional default baselayers to use if the indicator does not provide any
  * @returns {Promise<Record<string, any>[]>}
  */
 
@@ -17,6 +18,7 @@ export const createLayersConfig = async (
   selectedIndicator,
   eodashCols,
   timeOrItem,
+  defaultBaseLayers = [],
 ) => {
   log.debug(
     "Creating layers config",
@@ -36,19 +38,33 @@ export const createLayersConfig = async (
   };
 
   for (const ec of eodashCols) {
+    if (timeOrItem === null) {
+      // Item explicitly cleared: render no data layers and drop the
+      // collection's sticky selected-item cache so it does not resurface.
+      ec.selectedItem = undefined;
+      continue;
+    }
     /** @type {Record<string,any>[]} */
     let layers;
+    let dateOrItem;
     if (timeOrItem) {
-      const dateOrItem =
-        typeof timeOrItem === "string" ? new Date(timeOrItem) : timeOrItem;
-      layers = await ec.createLayersJson(dateOrItem);
+      if (typeof timeOrItem === "string" && timeOrItem.includes("/")) {
+        dateOrItem = timeOrItem;
+      } else {
+        dateOrItem =
+          typeof timeOrItem === "string" ? new Date(timeOrItem) : timeOrItem;
+      }
+      layers = await ec.createLayersJson(/** @type {any} */ (dateOrItem));
     } else {
       layers = await ec.createLayersJson(undefined);
     }
+
     // Add expand to all analysis layers
     layers.forEach((dl) => {
-      dl.properties.layerControlExpand = true;
-      dl.properties.layerControlToolsExpand = true;
+      if (!dl.properties?.layerControlExclusive) {
+        dl.properties.layerControlExpand = true;
+        dl.properties.layerControlToolsExpand = true;
+      }
     });
     dataLayers.layers.push(...layers);
   }
@@ -141,17 +157,7 @@ export const createLayersConfig = async (
     });
   } else {
     // Default to some baselayer
-    baseLayers.layers.push({
-      type: "Tile",
-      properties: {
-        id: "osm",
-        title: "Background",
-        layerControlExclusive: true,
-      },
-      source: {
-        type: "OSM",
-      },
-    });
+    baseLayers.layers.push(...defaultBaseLayers);
   }
 
   if (baseLayers.layers.length) {

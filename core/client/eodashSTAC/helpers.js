@@ -2,7 +2,13 @@ import { toAbsolute } from "stac-js/src/http.js";
 import axios from "@/plugins/axios";
 import { fetchJson } from "@/utils";
 import log from "loglevel";
-import { getStyleVariablesState } from "./triggers.js";
+import mustache from "mustache";
+import { updateVectorLayerStyle } from "@eox/layercontrol";
+import {
+  itemsCache,
+  splitItemsCache,
+  layerConfigFormState,
+} from "@/utils/states.js";
 
 /**
  *  @param {import("stac-ts").StacLink[]} [links]
@@ -43,18 +49,71 @@ export function generateFeatures(links, extraProperties = {}, rel = "item") {
 }
 
 /**
+ * Renders `${...}` placeholders in a JSON config against a view, e.g.
+ * `${properties.sat:orbit_state}` against a STAC item. Returns the input
+ * unchanged when it holds no placeholders or rendering fails.
+ *
+ * @template T
+ * @param {T} json
+ * @param {Record<string, any>} view - lookup context for the placeholders
+ * @returns {T}
+ */
+export function renderConfigTemplate(json, view) {
+  if (!json || typeof json !== "object") {
+    return json;
+  }
+  const str = JSON.stringify(json);
+  if (!str.includes("${")) {
+    return json;
+  }
+  try {
+    return JSON.parse(
+      mustache.render(str, view, {}, { tags: ["${", "}"], escape: (v) => v }),
+    );
+  } catch (e) {
+    log.warn("[eodash] failed to render config template:", e);
+    return json;
+  }
+}
+
+/**
+ * Fetches or extracts the raster form configuration for a STAC object.
+ * Supports direct JSON objects, data URIs, and URL strings. `${...}`
+ * placeholders are rendered against `item` when provided.
+ *
+ * @param {string|object|undefined} rasterform - The rasterform property from the STAC object.
+ * @param {import("stac-ts").StacItem} [item] - Item the form is rendered against.
+ * @returns {Promise<import("@/types").EodashRasterJSONForm|undefined>}
+ */
+export async function fetchRasterForm(rasterform, item) {
+  /** @type {import("@/types").EodashRasterJSONForm | undefined} */
+  let form = undefined;
+  if (typeof rasterform === "object" && rasterform) {
+    form = /** @type {import("@/types").EodashRasterJSONForm} */ (rasterform);
+  } else if (typeof rasterform === "string" && rasterform) {
+    form = await axios.get(rasterform).then((resp) => resp.data);
+  }
+  if (!form || !item) {
+    return form;
+  }
+  return renderConfigTemplate(form, item);
+}
+
+/**
  * Spearates and extracts layerConfig (jsonform schema & legend) from a style json
  *
  * @param {string} collectionId
- *  @param { import("@/types").EodashStyleJson} [style]
+ * @param { import("@/types").EodashStyleJson} [style]
  * @param {Record<string,any>} [rasterJsonform]
- * @param {string} [layerConfigType]
- * */
+ * @param {"style" | "tileUrl"} [layerConfigType]
+ * @param {import("@/types").MapKey} [map]
+ **/
 export function extractLayerConfig(
   collectionId,
   style,
   rasterJsonform,
   layerConfigType,
+  map = "main",
 ) {
   if (!style && !rasterJsonform) {
     return { layerConfig: undefined, style: undefined };
@@ -63,14 +122,20 @@ export function extractLayerConfig(
     style = { ...style };
   }
 
-  if (style?.variables && Object.keys(style.variables ?? {}).length) {
-    style.variables = getStyleVariablesState(collectionId, style.variables);
+  if (style?.variables) {
+    // render the saved rescale/gamma from the first frame
+    style.variables = applyStyleVariables(collectionId, style.variables, map);
   }
 
   if (rasterJsonform) {
     return {
       layerConfig: {
-        schema: rasterJsonform.jsonform,
+        schema: restorePersistedSchema(
+          rasterJsonform.jsonform,
+          collectionId,
+          "tileUrl",
+          map,
+        ),
         legend: rasterJsonform.legend,
         type: "tileUrl",
       },
@@ -78,12 +143,16 @@ export function extractLayerConfig(
     };
   }
 
-  /** @type {Record<string,unknown> | undefined} */
+  /** @type {import("@/types").EodashLayerConfig | undefined} */
   let layerConfig = undefined;
 
   if (style?.jsonform) {
     // this explicitly sets legend only if jsonform is configured
-    layerConfig = { schema: style.jsonform, type: layerConfigType || "style" };
+    const type = layerConfigType || "style";
+    layerConfig = {
+      schema: restorePersistedSchema(style.jsonform, collectionId, type, map),
+      type,
+    };
     delete style.jsonform;
     if (style?.legend) {
       layerConfig.legend = style.legend;
@@ -96,6 +165,229 @@ export function extractLayerConfig(
   );
 
   return { layerConfig, style };
+}
+
+/**
+ * Deep-clones `schema` and overwrites each leaf property's `default` with the
+ * matching entry in `values` (keyed by property name), walking nested
+ * `properties`, `oneOf`/`allOf`/`anyOf` branches and local `$ref`s. Leaves the
+ * original schema untouched so shared/cached schemas are not mutated.
+ *
+ * @param {Record<string, any>} schema
+ * @param {Record<string, any>} values - Flat map of property name -> persisted value.
+ * @returns {Record<string, any>}
+ */
+export function seedSchemaDefaults(schema, values) {
+  if (!schema || typeof schema !== "object" || !values) return schema;
+  const cloned = JSON.parse(JSON.stringify(schema));
+
+  /**
+   * @param {Record<string, any> | undefined} node
+   * @param {Set<string>} seenRefs
+   */
+  const walk = (node, seenRefs) => {
+    if (!node || typeof node !== "object") return;
+    if (typeof node.$ref === "string" && !seenRefs.has(node.$ref)) {
+      walk(
+        resolveLocalRef(node.$ref, cloned),
+        new Set([...seenRefs, node.$ref]),
+      );
+    }
+    if (node.properties) {
+      for (const [key, propSchema] of Object.entries(node.properties)) {
+        if (
+          key in values &&
+          /** @type {any} */ (propSchema)?.type !== "object"
+        ) {
+          /** @type {any} */ (propSchema).default = JSON.parse(
+            JSON.stringify(values[key]),
+          );
+        } else {
+          walk(/** @type {any} */ (propSchema), seenRefs);
+        }
+      }
+    }
+    for (const combinator of ["oneOf", "allOf", "anyOf"]) {
+      if (Array.isArray(node[combinator]))
+        node[combinator].forEach((/** @type {any} */ branch) =>
+          walk(branch, seenRefs),
+        );
+    }
+  };
+  walk(cloned, new Set());
+  return cloned;
+}
+
+/**
+ * Resolves a local `$ref` pointer (e.g. `#/definitions/foo`) against `rootSchema`.
+ *
+ * @param {string} ref
+ * @param {Record<string, any>} rootSchema
+ * @returns {Record<string, any> | undefined}
+ */
+function resolveLocalRef(ref, rootSchema) {
+  if (!ref.startsWith("#/")) return undefined;
+  return ref
+    .slice(2)
+    .split("/")
+    .reduce(
+      (node, part) => node?.[part.replace(/~1/g, "/").replace(/~0/g, "~")],
+      rootSchema,
+    );
+}
+
+/**
+ * Flattens a nested jsonform value into a single map keyed by leaf property name
+ * (e.g. `{ rescaleRed: { minRed, maxRed } }` -> `{ minRed, maxRed }`). Arrays are
+ * kept whole (bands stay a single value).
+ * @param {Record<string, any>} obj
+ * @returns {Record<string, any>}
+ */
+export function flattenFormValues(obj) {
+  /** @type {Record<string, any>} */
+  const result = {};
+  for (const key in obj) {
+    if (
+      obj[key] !== null &&
+      typeof obj[key] === "object" &&
+      !Array.isArray(obj[key])
+    ) {
+      Object.assign(result, flattenFormValues(obj[key]));
+    } else {
+      result[key] = obj[key];
+    }
+  }
+  return result;
+}
+
+/**
+ * @param {string} collectionId
+ * @param {"style" | "tileUrl"} type
+ * @param {import("@/types").MapKey} map
+ * @returns {Record<string, any> | undefined}
+ */
+function getCachedConfig(collectionId, type, map) {
+  return layerConfigFormState.value[map]?.[collectionId]?.[type];
+}
+
+/**
+ * Remembers a layer config editor's current value (see {@link layerConfigFormState})
+ * so it can be restored after a time/item rebuild. Call from the `layerConfig:change`
+ * handler.
+ * @param {import("ol/layer/Layer").default} olLayer - layer from the change event
+ * @param {Record<string, any>} value - current jsonform value
+ * @param {import("@/types").MapKey} [map] - which map the edit belongs to
+ */
+export function persistLayerConfigState(olLayer, value, map = "main") {
+  const layerConfig = olLayer.get("_jsonDefinition")?.properties?.layerConfig;
+  const type = layerConfig?.type;
+  const [collectionId] = (olLayer.get("id") ?? "").split(";:;");
+  if (!collectionId || (type !== "style" && type !== "tileUrl")) return;
+  // form opted out of persistence (top level schema option)
+  if (layerConfig?.schema?.options?.persist_state === false) return;
+  const byCollection = (layerConfigFormState.value[map] ??= {});
+  (byCollection[collectionId] ??= {})[type] = value;
+}
+
+/**
+ * Restores a remembered selection onto a rebuilt schema by seeding its leaf
+ * defaults — the channel the range/minmax and bands editors honor on a fresh
+ * mount (they ignore startval).
+ * @param {Record<string, any>} schema
+ * @param {string} collectionId
+ * @param {"style" | "tileUrl"} type
+ * @param {import("@/types").MapKey} [map]
+ * @returns {Record<string, any>} seeded schema (original untouched)
+ */
+export function restorePersistedSchema(
+  schema,
+  collectionId,
+  type,
+  map = "main",
+) {
+  // form opted out of persistence
+  if (schema?.options?.persist_state === false) return schema;
+  const cached = getCachedConfig(collectionId, type, map);
+  if (!cached || !Object.keys(cached).length) return schema;
+  return seedSchemaDefaults(schema, flattenFormValues(cached));
+}
+
+/**
+ * Mirrors the remembered style variables onto a rebuilt style so the layer
+ * renders the saved rescale/gamma from the first frame.
+ * @param {string} collectionId
+ * @param {Record<string, any>} [variables]
+ * @param {import("@/types").MapKey} [map]
+ * @returns {Record<string, any> | undefined}
+ */
+export function applyStyleVariables(collectionId, variables, map = "main") {
+  const cached = getCachedConfig(collectionId, "style", map);
+  if (!cached || !variables) return variables;
+  const values = flattenFormValues(cached);
+  const merged = { ...variables };
+  for (const key of Object.keys(merged)) {
+    if (key in values) merged[key] = values[key];
+  }
+  return merged;
+}
+
+/**
+ * Writes the remembered tileUrl selection into a rebuilt layer's source (WMS
+ * params or the tile URL) so eox reads it back as the form's start values
+ * (`getStartVals`). Mutates in place.
+ * @param {Record<string, any>} layer - built layer json
+ * @param {string} collectionId
+ * @param {import("@/types").MapKey} [map]
+ */
+export function applyRasterFormValue(layer, collectionId, map = "main") {
+  if (layer?.properties?.layerConfig?.type !== "tileUrl") return;
+  const value = getCachedConfig(collectionId, "tileUrl", map);
+  const source = layer.source;
+  if (!source || !value || !Object.keys(value).length) return;
+  if (source.params) {
+    Object.assign(source.params, flattenFormValues(value));
+    return;
+  }
+  if (typeof source.url === "string") {
+    source.url = applyValuesToUrl(source.url, value);
+  } else if (Array.isArray(source.urls)) {
+    source.urls = /** @type {string[]} */ (source.urls).map((u) =>
+      applyValuesToUrl(u, value),
+    );
+  }
+}
+
+/**
+ * Recursively extracts URL keys from a JSON Schema.
+ * Maps schema property names to their defined `url_key`.
+ * @param {Record<string, any> | null | undefined} schema
+ * @returns {Record<string, string>}
+ */
+export function extractUrlKeys(schema) {
+  /** @type {Record<string, string>} */
+  const keys = {};
+  if (!schema || typeof schema !== "object") return keys;
+
+  if (schema.properties) {
+    for (const [key, propDef] of Object.entries(schema.properties)) {
+      if (propDef && typeof propDef === "object") {
+        if (typeof propDef.url_key === "string") {
+          keys[key] = propDef.url_key;
+        }
+        Object.assign(keys, extractUrlKeys(propDef));
+      }
+    }
+  }
+
+  for (const combinator of ["oneOf", "allOf", "anyOf"]) {
+    if (Array.isArray(schema[combinator])) {
+      for (const sub of schema[combinator]) {
+        Object.assign(keys, extractUrlKeys(sub));
+      }
+    }
+  }
+
+  return keys;
 }
 
 /**
@@ -172,7 +464,7 @@ export const extractRoles = (properties, linkOrAsset) => {
 
 /**
  * Extracts a single non-link style JSON from a STAC Item optionally for a selected key mapping
- * @param { import("stac-ts").StacItem | import("stac-ts").StacCollection } stacObject
+ * @param { import("stac-ts").StacItem | import("stac-ts").StacCollection | null | undefined} stacObject
  * @param {string | undefined} linkKey
  * @param {string | undefined} assetKey
  * @returns
@@ -182,6 +474,7 @@ export const fetchStyle = async (
   linkKey = undefined,
   assetKey = undefined,
 ) => {
+  if (!stacObject) return undefined;
   let styleLink = null;
   if (linkKey) {
     styleLink = stacObject.links.find(
@@ -214,6 +507,27 @@ export const fetchStyle = async (
 };
 
 /**
+ * Resolves a style by preferring the item's own `style` link and falling back
+ * to the collection's. Takes the same key arguments as `fetchStyle`. `${...}`
+ * placeholders are rendered against `item` (see {@link renderConfigTemplate}).
+ *
+ * @param {import("stac-ts").StacItem | import("stac-ts").StacCollection} item
+ * @param {import("stac-ts").StacCollection | null | undefined} collection
+ * @param {string} [linkKey]
+ * @param {string} [assetKey]
+ * @returns {Promise<import("@/types").EodashStyleJson | undefined>}
+ */
+export const resolveStyle = async (item, collection, linkKey, assetKey) => {
+  const style =
+    (await fetchStyle(item, linkKey, assetKey)) ??
+    (await fetchStyle(collection, linkKey, assetKey));
+  if (!style || !item) {
+    return style;
+  }
+  return renderConfigTemplate(style, item);
+};
+
+/**
  * Fetches all style JSONs from a STAC Item and returns an array with style objects
  * @param {import("stac-ts").StacItem | import("stac-ts").StacCollection} stacObject
  * @returns { Promise <Array<import("@/types").EodashStyleJson>>}
@@ -223,6 +537,7 @@ export const fetchAllStyles = async (stacObject) => {
     link.rel.includes("style"),
   );
   const fetchPromises = styleLinks.map(async (link) => {
+    /** @type {import("@/types").EodashStyleJson} */
     const styleJson = await fetchJson(link.href, "style definition");
     log.debug("fetched styles JSON", JSON.parse(JSON.stringify(styleJson)));
     return styleJson;
@@ -252,93 +567,73 @@ export const getProjectionCode = (projection) => {
 };
 
 /**
- * Extracts layercontrol LayerDatetime property from STAC Links
- * @param {import("stac-ts").StacLink[] | import("stac-ts").StacItem[] | undefined} [items]
- * @param {string|null} [currentStep]
- **/
-export const extractLayerTimeValues = (items, currentStep) => {
-  if (!currentStep || !items?.length) {
+ * Builds layercontrol LayerDatetime + timeControlValues from a list of dates.
+ *
+ * @param {Date[] | undefined} dates
+ * @param {string | null} [currentStep] - target datetime; snapped to the closest available date
+ * @returns {{ layerDatetime: Record<string, any> | undefined, timeControlValues: { date: string }[] | undefined }}
+ */
+export const extractLayerTimeValues = (dates, currentStep) => {
+  if (!currentStep || !dates?.length || dates.length <= 1) {
     return { layerDatetime: undefined, timeControlValues: undefined };
   }
 
-  // check if items has a datetime value
-  const dateProperty = getDatetimeProperty(items);
+  const controlValues = dates.map((d) => d.toISOString()).sort();
+  const timeControlValues = controlValues.map((date) => ({ date }));
 
-  if (!dateProperty) {
-    return { layerDatetime: undefined, timeControlValues: undefined };
-  }
-  /** @type {{date:string;itemId:string}[]} */
-  const timeValues = [];
-  try {
-    /**
-     *  @param {typeof timeValues} vals
-     *  @param {import("stac-ts").StacLink} link
-     */
-    const reduceLinks = (vals, link) => {
-      if (link[dateProperty] && link.rel === "item") {
-        vals.push({
-          itemId: /** @type {string} */ (link.id),
-          date: new Date(
-            /** @type {string} */ (link[dateProperty]),
-          ).toISOString(),
-        });
-      }
-      return vals;
-    };
-
-    /**
-     *
-     * @param {typeof timeValues} vals
-     * @param {import("stac-ts").StacItem} item
-     */
-    const reduceItems = (vals, item) => {
-      const date = item.properties?.[dateProperty];
-      if (date) {
-        vals.push({
-          itemId: /** @type {string} */ (item.id),
-          date: new Date(/** @type {string} */ (date)).toISOString(),
-          ...item.properties,
-        });
-      }
-      return vals;
-    };
-    currentStep = new Date(currentStep).toISOString();
-    //@ts-expect-error TODO
-    items.reduce(isSTACItem(items[0]) ? reduceItems : reduceLinks, timeValues);
-  } catch (e) {
-    console.warn("[eodash] not supported datetime format was provided", e);
-    return { layerDatetime: undefined, timeControlValues: undefined };
-  }
-  // not enough timeValues
-  if (timeValues.length <= 1) {
-    return { layerDatetime: undefined, timeControlValues: undefined };
-  }
-
-  // item datetime is not included in the item links datetime
-  if (!timeValues.some((val) => val.date === currentStep)) {
-    const currentStepTime = new Date(currentStep).getTime();
-    currentStep = timeValues.reduce((time, step) => {
-      const aDiff = Math.abs(new Date(time).getTime() - currentStepTime);
-      const bDiff = Math.abs(new Date(step.date).getTime() - currentStepTime);
-      return bDiff < aDiff ? step.date : time;
-    }, timeValues[0].date);
+  currentStep = new Date(currentStep).toISOString();
+  if (!controlValues.includes(currentStep)) {
+    const target = new Date(currentStep).getTime();
+    currentStep = controlValues.reduce((best, d) =>
+      Math.abs(new Date(d).getTime() - target) <
+      Math.abs(new Date(best).getTime() - target)
+        ? d
+        : best,
+    );
   }
 
   const layerDatetime = {
-    controlValues: timeValues.map((d) => d.date).sort(),
+    controlValues,
     currentStep,
     slider: true,
     navigation: true,
     play: false,
     displayFormat: "DD.MM.YYYY HH:mm",
     animateOnClickInterval: false,
+    showUTC: true,
   };
 
-  return {
-    layerDatetime,
-    timeControlValues: timeValues,
-  };
+  return { layerDatetime, timeControlValues };
 };
+
+/**
+ * Fetches the daily pre-aggregation data for a STAC collection if available.
+ * Returns the raw AggregationCollection,
+ * or null if no daily pre-aggregation link exists, or the fetch fails.
+ *
+ * @param {import("stac-ts").StacCollection | undefined} stacCollection
+ * @param {string} fallbackBaseUrl - base for relative href resolution when no `self` link is present
+ * @returns {Promise<any | null>}
+ */
+export async function fetchPreAggregations(stacCollection, fallbackBaseUrl) {
+  if (!stacCollection) return null;
+  const preAggregationLink = stacCollection.links?.find(
+    (l) => l.rel === "pre-aggregation" && l["aggregation:interval"] === "daily",
+  );
+  if (!preAggregationLink) return null;
+
+  try {
+    const selfLink = stacCollection.links?.find((l) => l.rel === "self")?.href;
+    const url = toAbsolute(
+      preAggregationLink.href,
+      selfLink || fallbackBaseUrl,
+    );
+    return await axios.get(url).then((resp) => resp.data);
+  } catch (e) {
+    console.warn("[eodash] Failed to fetch pre-aggregation", e);
+    return null;
+  }
+}
 
 /**
  * Recursively find all layers whose ID up to the first ; is same as given layer
@@ -348,6 +643,9 @@ export const extractLayerTimeValues = (items, currentStep) => {
  * @returns {import("@eox/map").EoxLayer[]} Matching layer objects.
  */
 export const findLayersByLayerPrefix = (layers, referenceLayer) => {
+  if (!layers || !referenceLayer) {
+    return [];
+  }
   const refId = referenceLayer?.properties?.id;
 
   if (typeof refId !== "string" || !refId.includes(";:;")) {
@@ -373,8 +671,8 @@ export const findLayersByLayerPrefix = (layers, referenceLayer) => {
 
 /**
  * Find JSON layer by ID
- *  @param {string} layer
  *  @param {import("@eox/map").EoxLayer[]} layers
+ *  @param {string} layer
  *  @returns {import("@eox/map").EoxLayer | undefined}
  **/
 export const findLayer = (layers, layer) => {
@@ -562,20 +860,130 @@ export function assignProjID(item, linkOrAsset, id, layer) {
  *
  * @param {Record<string,any>[]} layers
  */
-export const removeUnneededProperties = (layers) => {
-  const cloned = structuredClone(layers);
-  cloned.forEach((layer) => {
-    const id = layer.properties.id;
-    const title = layer.properties.title;
-    layer.properties = { id, title };
-    if (layer["interactions"]) {
-      delete layer["interactions"];
+export const removeUnneededProperties = (layers, formValues = {}) => {
+  /**
+   * @param {Record<string,any>} layer
+   * @returns {Record<string,any>[]}
+   */
+  const processLayer = (layer) => {
+    // If the layer (or group) is explicitly marked as not visible, skip it and all children
+    if (layer.properties?.visible === false) {
+      return [];
     }
-    if (layer.type === "Group") {
-      layer.layers = removeUnneededProperties(layer.layers);
+
+    // If it's a Group, we just want its children
+    if (layer.type === "Group" && Array.isArray(layer.layers)) {
+      return layer.layers.flatMap(processLayer);
     }
-  });
-  return cloned;
+
+    // Break any Vue Proxies/OpenLayers getters by stringifying first
+    let clonedLayer;
+    try {
+      clonedLayer = JSON.parse(JSON.stringify(layer));
+    } catch (_e) {
+      clonedLayer = structuredClone(layer);
+    }
+
+    // Flatten formValues to handle nested properties (e.g., vminmax: { vmin, vmax })
+    const flatFormValues = flattenFormValues(formValues);
+
+    // Burn in style variables using Mustache if formValues are provided
+    if (Object.keys(flatFormValues).length > 0) {
+      // Stringify, render mustache, then parse back
+      try {
+        const renderedString = mustache.render(
+          JSON.stringify(clonedLayer),
+          flatFormValues,
+        );
+        clonedLayer = JSON.parse(renderedString);
+      } catch (e) {
+        log.warn(
+          "[eodash] Failed to apply mustache templating during export cleanup:",
+          e,
+        );
+      }
+    }
+
+    const {
+      id,
+      title,
+      mapboxStyle,
+      projection,
+      applyOptions,
+      layerConfig,
+      visible,
+    } = clonedLayer.properties || {};
+
+    // If style was not at root but in properties (layerConfig), move it to root early
+    if (!clonedLayer.style && layerConfig?.style) {
+      clonedLayer.style = layerConfig.style;
+    }
+
+    // Burn in OpenLayers ["var", "name"] variables using flatFormValues overriding style.variables
+    const styleVariables = {
+      ...(clonedLayer.style?.variables || {}),
+      ...flatFormValues,
+    };
+
+    if (clonedLayer.style && Object.keys(styleVariables).length > 0) {
+      clonedLayer.style = updateVectorLayerStyle({
+        ...clonedLayer.style,
+        variables: styleVariables,
+      });
+    }
+
+    clonedLayer.properties = {
+      id,
+      title,
+      ...(mapboxStyle && { mapboxStyle }),
+      ...(projection && { projection }),
+      ...(applyOptions && { applyOptions }),
+      ...(visible !== undefined && { visible }),
+    };
+
+    if (clonedLayer["interactions"]) {
+      delete clonedLayer["interactions"];
+    }
+
+    // Cleanup unnecessary properties
+    /**
+     * @param {any} obj
+     */
+    const cleanupProperties = (obj) => {
+      if (!obj || typeof obj !== "object") return;
+
+      for (const key in obj) {
+        if (obj[key] === null) {
+          delete obj[key];
+        } else if (Array.isArray(obj[key])) {
+          if (obj[key].length === 0) {
+            // Remove empty arrays like empty interactions
+            delete obj[key];
+          } else {
+            obj[key].forEach(cleanupProperties);
+          }
+        } else if (typeof obj[key] === "object") {
+          cleanupProperties(obj[key]);
+          if (Object.keys(obj[key]).length === 0) {
+            // we don't delete empty objects for now as it might break schema requirements
+          }
+        }
+      }
+    };
+    cleanupProperties(clonedLayer);
+
+    return [clonedLayer];
+  };
+
+  // ensure the top level array is also deeply un-proxied if needed
+  let rawLayers = layers;
+  try {
+    rawLayers = JSON.parse(JSON.stringify(layers));
+  } catch (_e) {
+    rawLayers = structuredClone(layers);
+  }
+
+  return rawLayers.flatMap(processLayer);
 };
 
 /**
@@ -735,7 +1143,12 @@ export function getDatetimeProperty(linksOrItems) {
   }
 
   // TODO: consider other properties for datetime ranges
-  const datetimeProperties = ["datetime", "start_datetime", "end_datetime"];
+
+  const datetimeProperties = /** @type {const} */ ([
+    "datetime",
+    "start_datetime",
+    "end_datetime",
+  ]);
   if (checkProperties) {
     for (const prop of datetimeProperties) {
       const propExists = linksOrItems.some(
@@ -761,6 +1174,7 @@ export function getDatetimeProperty(linksOrItems) {
     return prop;
   }
 }
+
 /**
  *
  * @param {*} stacObject
@@ -778,12 +1192,73 @@ export function isSTACItem(stacObject) {
 }
 
 /**
+ * Fetches items using a split strategy (past/future) around a center date
+ * @param {string} itemsUrl
+ * @param {string} query
+ * @param {string | Date} centerDatetime
+ * @param {number} maxNumber
+ * @returns {Promise<import("stac-ts").StacItem[]>}
+ */
+export const fetchSplitItems = async (
+  itemsUrl,
+  query,
+  centerDatetime,
+  maxNumber,
+) => {
+  const center = new Date(centerDatetime).toISOString();
+  const limit = Math.ceil(maxNumber / 2);
+
+  /** @param {"past"|"future"} direction */
+  const fetchSide = async (direction) => {
+    const isPast = direction === "past";
+    const datetimeRange = isPast ? `../${center}` : `${center}/..`;
+    const sortOrder = isPast ? "-datetime" : "+datetime";
+    const queryParams = new URLSearchParams(query);
+
+    queryParams.set("limit", limit.toString());
+    queryParams.set("datetime", datetimeRange);
+    queryParams.set("sortby", sortOrder);
+
+    const splitUrl = itemsUrl.split("/");
+    const collectionId = /** @type {string} */ (splitUrl.at(-2));
+    queryParams.set("collection", collectionId);
+
+    const searchEndpoint = `${splitUrl.slice(0, -3).join("/")}/search`;
+    const items = await axios
+      .get(searchEndpoint, { params: queryParams })
+      .then((res) => res.data.features);
+    return items;
+  };
+
+  const [pastItems, futureItems] = await Promise.all([
+    fetchSide("past"),
+    fetchSide("future"),
+  ]);
+
+  const allItems = [...pastItems, ...futureItems];
+
+  // check for duplicates by ids
+  const seen = new Set();
+  const uniqueItems = [];
+  for (const item of allItems) {
+    if (!seen.has(item.id)) {
+      seen.add(item.id);
+      uniqueItems.push(item);
+    }
+  }
+
+  return uniqueItems;
+};
+
+/**
  * Fetch all STAC items from a STAC API endpoint.
  * @param {string} itemsUrl
  * @param {string} [query]
  * @param {number} [limit=100] - The maximum number of items to fetch per request.
  * @param {boolean} [returnFirst] - If true, only the first page of results will be returned.
  * @param {number} [maxNumber=1000] - if the matched number of items exceed this, only the first page will be returned.
+ * @param {string | Date} [centerDatetime] - Date to center the search around if items exceed maxNumber
+ * @returns {Promise<import("stac-ts").StacItem[]>}
  */
 export async function fetchApiItems(
   itemsUrl,
@@ -791,23 +1266,42 @@ export async function fetchApiItems(
   limit = 100,
   returnFirst = false,
   maxNumber = 1000,
+  centerDatetime,
 ) {
-  itemsUrl = itemsUrl.includes("?") ? itemsUrl.split("?")[0] : itemsUrl;
-  itemsUrl += query ? `?limit=${limit}&${query}` : `?limit=${limit}`;
+  // Exclude centerDatetime from cache key - it's only used for split search fallback
+  const cacheKey = JSON.stringify({
+    itemsUrl,
+    query,
+    limit,
+    returnFirst,
+    maxNumber,
+  });
+
+  if (itemsCache.has(cacheKey)) {
+    return itemsCache.get(cacheKey) ?? [];
+  }
+
+  const urlQuery = new URLSearchParams(query);
+  urlQuery.set("limit", limit.toString());
+
+  let finalItemsUrl = itemsUrl.includes("?")
+    ? itemsUrl.split("?")[0]
+    : itemsUrl;
+  finalItemsUrl += urlQuery.keys().toArray().length
+    ? `?${urlQuery.toString()}`
+    : "";
 
   const itemsFeatureCollection = await axios
-    .get(itemsUrl)
+    .get(finalItemsUrl)
     .then((resp) => resp.data);
+
   /** @type {import("stac-ts").StacItem[]} */
   const items = itemsFeatureCollection.features;
-  const nextLink = itemsFeatureCollection.links?.find(
-    //@ts-expect-error TODO: itemsFeatureCollection is not typed
-    (link) => link.rel === "next",
-  );
-
-  if (!nextLink || returnFirst) {
+  if (returnFirst) {
+    itemsCache.set(cacheKey, items);
     return items;
   }
+
   /** @type {number} */
   const matchedItems = itemsFeatureCollection.numberMatched;
   // Avoid fetching too many items
@@ -815,26 +1309,70 @@ export async function fetchApiItems(
     console.warn(
       `[eodash] The number of items matched (${matchedItems}) exceeds the maximum allowed (${maxNumber})`,
     );
+    // we try to narrow down the search around the center datetime
+    if (centerDatetime) {
+      // Check if we have a cached split result that covers this centerDatetime
+      const splitCacheKey = JSON.stringify({ itemsUrl, query, maxNumber });
+      const cachedSplit = splitItemsCache.get(splitCacheKey);
+      const centerTime = new Date(centerDatetime).getTime();
+
+      if (
+        cachedSplit &&
+        centerTime >= cachedSplit.minTime &&
+        centerTime <= cachedSplit.maxTime
+      ) {
+        return cachedSplit.items;
+      }
+
+      const narrowedItems = await fetchSplitItems(
+        itemsUrl,
+        query ?? "",
+        centerDatetime,
+        maxNumber,
+      );
+
+      if (!narrowedItems.length) {
+        return narrowedItems;
+      }
+      const datetimeProperty = getDatetimeProperty(narrowedItems);
+      if (!datetimeProperty) {
+        return narrowedItems;
+      }
+
+      const times = narrowedItems
+        .map((i) =>
+          i.properties[datetimeProperty]
+            ? new Date(i.properties[datetimeProperty]).getTime()
+            : null,
+        )
+        .filter((t) => t !== null);
+      if (!times.length) {
+        return narrowedItems;
+      }
+      splitItemsCache.set(splitCacheKey, {
+        items: narrowedItems,
+        minTime: Math.min(...times),
+        maxTime: Math.max(...times),
+      });
+
+      return narrowedItems;
+    }
+
+    itemsCache.set(cacheKey, items);
     return items;
   }
 
-  let [nextLinkURL, nextLinkQuery] = nextLink.href.split("?");
-  nextLinkQuery = nextLinkQuery.replace(/limit=\d+/, "");
-  if (query) {
-    const queryParams = new URLSearchParams(query);
-    const nextLinkParams = new URLSearchParams(nextLinkQuery);
+  urlQuery.set("limit", maxNumber.toString());
 
-    for (const key of nextLinkParams.keys()) {
-      queryParams.delete(key);
-    }
-    const remainingQuery = queryParams.toString();
-    if (remainingQuery) {
-      nextLinkQuery += `&${remainingQuery}`;
-    }
-  }
-
-  const nextPage = await fetchApiItems(nextLinkURL, nextLinkQuery);
-  items.push(...nextPage);
+  const allItems = await axios
+    .get(itemsUrl + "?" + urlQuery.toString())
+    .then((resp) => resp.data.features)
+    .catch((err) => {
+      console.error(err);
+      return [];
+    });
+  items.splice(0, items.length, ...allItems);
+  itemsCache.set(cacheKey, items);
   return items;
 }
 /**
@@ -872,3 +1410,339 @@ export function extractEoxLegendLink(link) {
   }
   return extraProperties;
 }
+
+/**
+ * Locate the first sub-schema whose `format` matches by walking `properties`
+ * and the `oneOf` / `allOf` / `anyOf` combinators. Returns the schema path
+ * (array of keys/indices) from the root schema to the matched node, or
+ * undefined if not found. Empty array means the input schema itself matched.
+ *
+ * @param {Record<string, any> | null | undefined} schema
+ * @param {string} [format="bands"]
+ * @returns {(string | number)[] | undefined}
+ */
+export function getBandsProperty(schema, format = "bands") {
+  if (!schema || typeof schema !== "object") return undefined;
+  if (schema.format === format) return [];
+
+  if (schema.properties) {
+    for (const key of Object.keys(schema.properties)) {
+      const sub = getBandsProperty(schema.properties[key], format);
+      if (sub) return ["properties", key, ...sub];
+    }
+  }
+
+  for (const combinator of ["oneOf", "allOf", "anyOf"]) {
+    if (!Array.isArray(schema[combinator])) continue;
+    for (let i = 0; i < schema[combinator].length; i++) {
+      const sub = getBandsProperty(schema[combinator][i], format);
+      if (sub) return [combinator, i, ...sub];
+    }
+  }
+
+  return undefined;
+}
+
+/**
+ * Checks whether a GeoZarr layer's bands changed in the jsonform output and,
+ * if so, rebuilds the source with the new 3 selected bands.
+ * Gamma and rescale are handled automatically by `applyUpdatedStyles` via
+ * `updateStyleVariables` — this function only manages source reconstruction.
+ * Uses the existing source constructor to avoid import-version mismatches.
+ *
+ * @param {import("ol/layer/Layer").default} olLayer - Layer from layerConfig:change event
+ * @param {Record<string, any>} jsonformValue - Current jsonform output
+ * @returns {boolean} true if the source was rebuilt
+ */
+export function updateGeoZarrBands(olLayer, jsonformValue) {
+  /** @type {import("@eox/map/src/layers").EOxLayerType<"WebGLTile","GeoZarr">} */
+  const jsonLayer = olLayer.get("_jsonDefinition");
+  const updatedBands = jsonformValue.bands;
+  const isGeoZarr =
+    jsonLayer?.type === "WebGLTile" && jsonLayer?.source?.type === "GeoZarr";
+  if (!jsonLayer || !jsonLayer.source || !isGeoZarr || !updatedBands) {
+    return false;
+  }
+
+  const oldBands = jsonLayer.source?.bands;
+  if (JSON.stringify(updatedBands) === JSON.stringify(oldBands)) {
+    return false;
+  }
+  jsonLayer.source.bands = [...updatedBands];
+  olLayer.setSource(
+    new window.eoxMapAdvancedOlSources.GeoZarr(jsonLayer.source),
+  );
+  return true;
+}
+
+/**
+ * Safely appends query parameters to a URL string, preserving templates like {z}/{x}/{y}
+ * @param {string} url
+ * @param {Record<string, string>} params
+ * @returns {string}
+ */
+function appendQueryParams(url, params) {
+  const [base, query] = url.split("?");
+  const searchParams = new URLSearchParams(query || "");
+
+  for (const [key, val] of Object.entries(params)) {
+    if (val !== undefined && val !== null && val !== "") {
+      searchParams.set(key, val);
+    } else {
+      searchParams.delete(key);
+    }
+  }
+
+  const newQuery = searchParams.toString();
+  return newQuery ? `${base}?${newQuery}` : base;
+}
+
+/**
+ * Checks whether a VectorTile layer's URL needs to be updated based on jsonform output.
+ * If the style's jsonform schema has properties with `url_key` defined, their values
+ * are injected as query parameters into the source URL.
+ *
+ * @param {import("ol/layer/Layer").default} olLayer - Layer from layerConfig:change event
+ * @param {Record<string, any>} jsonformValue - Current jsonform output
+ * @returns {boolean} true if the URL was updated
+ */
+export function updateLayerUrl(olLayer, jsonformValue) {
+  const jsonLayer = olLayer.get("_jsonDefinition");
+  if (!jsonLayer || jsonLayer.type !== "VectorTile") {
+    return false;
+  }
+
+  const schema = jsonLayer.properties?.layerConfig?.schema;
+  const urlKeys = extractUrlKeys(schema);
+
+  if (Object.keys(urlKeys).length === 0) {
+    return false;
+  }
+
+  let originalUrl = olLayer.get("originalUrl") || jsonLayer.source?.url;
+
+  if (!originalUrl || typeof originalUrl !== "string") {
+    return false;
+  }
+
+  if (!olLayer.get("originalUrl")) {
+    olLayer.set("originalUrl", originalUrl);
+  }
+
+  /** @type {Record<string, string>} */
+  const queryParamsToInject = {};
+  for (const [propName, urlKey] of Object.entries(urlKeys)) {
+    queryParamsToInject[urlKey] = jsonformValue[propName];
+  }
+
+  const newUrl = appendQueryParams(originalUrl, queryParamsToInject);
+
+  if (jsonLayer.source?.url) {
+    if (jsonLayer.source.url === newUrl) {
+      return false;
+    }
+    jsonLayer.source.url = newUrl;
+    if (olLayer.get("injectedUrl") === newUrl) {
+      return false;
+    }
+    const source = olLayer.getSource();
+    olLayer.set("injectedUrl", newUrl);
+    if (source && "setUrl" in source) {
+      /** @type {any} */ (source).setUrl(newUrl);
+      return true;
+    }
+    if (source && "setUrls" in source) {
+      /** @type {any} */ (source).setUrls([newUrl]);
+      return true;
+    }
+  }
+
+  return false;
+}
+
+/**
+ * Injects jsonform values into a tile URL.
+ * Nested objects are spread into their sub-keys, arrays become repeated params.
+ * Keeps parity so a baked URL matches what a live jsonform edit would produce.
+ *
+ * @param {string} url
+ * @param {Record<string, any>} values
+ * @returns {string}
+ */
+function applyValuesToUrl(url, values) {
+  const [base, query] = url.split("?");
+  const searchParams = new URLSearchParams(query || "");
+  for (const [key, value] of Object.entries(values)) {
+    if (value === undefined || value === null || value === "") {
+      continue;
+    }
+    if (Array.isArray(value)) {
+      searchParams.delete(key);
+      value.forEach((v) => searchParams.append(key, String(v)));
+    } else if (typeof value === "object") {
+      for (const [k, v] of Object.entries(value)) {
+        if (v !== undefined && v !== null && v !== "") {
+          searchParams.set(k, String(v));
+        }
+      }
+    } else {
+      searchParams.set(key, String(value));
+    }
+  }
+  const qs = searchParams.toString();
+  return qs ? `${base}?${qs}` : base;
+}
+
+/**
+ * Applies titiler upscaling to an XYZ tile URL based on the matched endpoint config.
+ * - titiler v1: appends `@2x` to the `{y}` tile coordinate
+ * - titiler v2: adds `tilesize=512` query parameter (v2 removed the `@2x` suffix)
+ * Plain strings in the config default to v1 behavior for backward compatibility.
+ *
+ * @param {string} url - The XYZ tile URL template
+ * @param {Array<string | { url: string; titilerVersion?: 1 | 2 }>} upscalingEndpoints
+ * @returns {{ url: string; tileSize: [number, number] } | null} null if no endpoint matches
+ */
+export function applyTitilerUpscaling(url, upscalingEndpoints) {
+  const match = upscalingEndpoints.find((entry) => {
+    const endpointUrl = typeof entry === "string" ? entry : entry.url;
+    return url.includes(endpointUrl);
+  });
+
+  if (!match) {
+    return null;
+  }
+
+  const version = typeof match === "string" ? 1 : (match.titilerVersion ?? 1);
+
+  if (version === 2) {
+    const [base, query] = url.split("?");
+    const params = new URLSearchParams(query);
+    params.set("tilesize", "512");
+    return { url: `${base}?${params.toString()}`, tileSize: [512, 512] };
+  }
+
+  return { url: url.replace("{y}", "{y}@2x"), tileSize: [512, 512] };
+}
+
+/**
+ * Picks the render presets for a collection, preferring client-provided config
+ * (`options.renders[collectionId]`) and falling back to the collection's own STAC
+ * `renders` extension when no config entry exists.
+ * @param {import("stac-ts").StacCollection | null | undefined} collection
+ * @param {Record<string, Record<string, import("@/types").Render>> | undefined} [configRenders]
+ * @returns {Record<string, import("@/types").Render> | undefined}
+ */
+export function resolveRenders(collection, configRenders) {
+  const config = collection?.id ? configRenders?.[collection.id] : undefined;
+  if (config) return config;
+  return /** @type {Record<string, import("@/types").Render>|undefined} */ (
+    collection?.renders ?? undefined
+  );
+}
+
+/**
+ * TiTiler expects rescale as [min,max] pairs; chunks a flat numeric list
+ * into pairs (e.g. [0,0.4,0,0.1] -> [[0,0.4],[0,0.1]]). Nested input passes through.
+ * @param {number[]|number[][]|undefined} rescale - flat or nested rescale values
+ * @returns {number[][]|undefined} rescale as [min,max] pairs
+ */
+export function normalizeRescale(rescale) {
+  if (!rescale?.length || Array.isArray(rescale[0])) {
+    return /** @type {number[][]|undefined} */ (rescale);
+  }
+  const pairs = [];
+  for (let i = 0; i < rescale.length; i += 2) {
+    pairs.push(/** @type {number[]} */ (rescale).slice(i, i + 2));
+  }
+  return pairs;
+}
+
+/**
+ * Drops NaN nodata values; NaN is already the implicit fill for float data,
+ * so forwarding `nodata=nan` to TiTiler is redundant.
+ * @param {string|number|undefined} nodata - nodata value from render/asset metadata
+ * @returns {string|number|undefined} nodata, or undefined when it is NaN
+ */
+export function normalizeNodata(nodata) {
+  if (typeof nodata === "number" && Number.isNaN(nodata)) return undefined;
+  if (typeof nodata === "string" && nodata.trim().toLowerCase() === "nan")
+    return undefined;
+  return nodata;
+}
+
+/**
+ * Serializes an object into a TiTiler query string. Arrays repeat the key per
+ * element (TiTiler list params, e.g. `assets=a&assets=b`); nested elements
+ * comma-join (`rescale: [[0,1],[0,2]]` -> `rescale=0,1&rescale=0,2`); objects
+ * are JSON-encoded. Shared by the render-extension and mosaic paths.
+ * @param {Record<string,any>} obj
+ * @returns {string}
+ */
+export function encodeURLObject(obj) {
+  let str = "";
+  for (const key in obj) {
+    const value = obj[key];
+    if (value === null || value === undefined || value === "") {
+      continue;
+    }
+
+    const valueType = Array.isArray(value) ? "array" : typeof value;
+
+    switch (valueType) {
+      case "array": {
+        for (const val of value) {
+          if (Array.isArray(val)) {
+            str += `${key}=${val.join(",")}&`;
+          } else {
+            str += `${key}=${encodeURIComponent(val)}&`;
+          }
+        }
+        break;
+      }
+      case "object": {
+        str += `${key}=${encodeURI(JSON.stringify(value))}&`;
+        break;
+      }
+      default: {
+        str += `${key}=${encodeURIComponent(value)}&`;
+        break;
+      }
+    }
+  }
+  return str;
+}
+
+/**
+ * Estimate a lon/lat center and an OL zoom that fit a WGS84 bbox
+ * @param {number[]} bbox - `[minX, minY, maxX, maxY]` in EPSG:4326
+ * @param {number[]} [size] - map viewport `[width, height]` in px
+ * @returns {{ center: number[]; zoom: number }}
+ */
+export const bboxToCenterZoom = (
+  [minX, minY, maxX, maxY],
+  size = [800, 600],
+) => {
+  const WORLD = 256;
+  /** @param {number} lat */
+  const latRad = (lat) => {
+    const sin = Math.sin((lat * Math.PI) / 180);
+    const rad = Math.log((1 + sin) / (1 - sin)) / 2;
+    return Math.max(Math.min(rad, Math.PI), -Math.PI) / 2;
+  };
+  const latFraction = Math.max((latRad(maxY) - latRad(minY)) / Math.PI, 1e-9);
+  const lngDiff = maxX - minX;
+  const lngFraction = Math.max(
+    (lngDiff < 0 ? lngDiff + 360 : lngDiff) / 360,
+    1e-9,
+  );
+  const zoom = Math.min(
+    Math.log2(size[1] / WORLD / latFraction),
+    Math.log2(size[0] / WORLD / lngFraction),
+    20,
+  );
+  return {
+    center: [(minX + maxX) / 2, (minY + maxY) / 2],
+    zoom: Math.max(0, Math.floor(zoom)),
+  };
+};

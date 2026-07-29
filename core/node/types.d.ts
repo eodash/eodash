@@ -1,4 +1,8 @@
 /**
+ * @module CLI
+ */
+
+/**
  * Eodash CLI configuration
  *
  * @group CLI

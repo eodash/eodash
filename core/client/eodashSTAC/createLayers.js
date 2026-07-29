@@ -1,7 +1,7 @@
 import { registerProjection } from "@/store/actions";
 import { mapEl } from "@/store/states";
-import axios from "@/plugins/axios";
 import { fetchJson } from "@/utils";
+import { useEodash } from "@/composables";
 
 import {
   extractRoles,
@@ -12,10 +12,19 @@ import {
   extractLayerConfig,
   extractEoxLegendLink,
   addTooltipInteraction,
-  fetchStyle,
+  fetchRasterForm,
+  resolveStyle,
+  getBandsProperty,
+  applyTitilerUpscaling,
+  encodeURLObject,
+  normalizeRescale,
+  normalizeNodata,
+  resolveRenders,
+  applyRasterFormValue,
 } from "./helpers";
 import { handleAuthenticationOfLink } from "./auth";
 import log from "loglevel";
+import axios from "@/plugins/axios";
 import { useSTAcStore } from "@/store/stac";
 
 /**
@@ -42,6 +51,8 @@ function buildCapabilitiesUrl(href) {
  * @param {import("stac-ts").StacItem | import("stac-ts").StacCollection } stacObject
  * @param {Record<string, unknown>} [layerDatetime]
  * @param {object | null} [extraProperties]
+ * @param {import("stac-ts").StacCollection | null} [collection] - Used to fall back to a collection-level style link.
+ * @param {import("@/types").MapKey} [map] - which map the layers are built for
  **/
 export async function createLayersFromAssets(
   collectionId,
@@ -50,6 +61,8 @@ export async function createLayersFromAssets(
   stacObject,
   layerDatetime,
   extraProperties,
+  collection,
+  map = "main",
 ) {
   log.debug("Creating layers from assets");
   const jsonArray = [];
@@ -61,18 +74,35 @@ export async function createLayersFromAssets(
 
   const fgbIdx = [];
   const fgbSources = [];
+  const zarrAssetIds = [];
+  const zarrIdx = [];
   const assetIds = [];
 
   for (const [idx, assetId] of Object.keys(assets).entries()) {
     assetIds.push(assetId);
 
-    if (assets[assetId]?.type === "application/geo+json") {
+    if (
+      assets[assetId]?.type?.includes("application/geo+json") &&
+      assets[assetId]?.href?.includes("http")
+    ) {
       geoJsonSources.push(assets[assetId].href);
       geoJsonIdx.push(idx);
-    } else if (assets[assetId]?.type === "application/vnd.flatgeobuf") {
+    } else if (
+      assets[assetId]?.type?.includes("application/vnd.flatgeobuf") &&
+      assets[assetId]?.href?.includes("http")
+    ) {
       fgbSources.push(assets[assetId].href);
       fgbIdx.push(idx);
-    } else if (assets[assetId]?.type === "image/tiff") {
+    } else if (
+      assets[assetId]?.type ==
+      "application/vnd.zarr; version=3; profile=multiscales"
+    ) {
+      zarrAssetIds.push(assetId);
+      zarrIdx.push(idx);
+    } else if (
+      assets[assetId]?.type?.includes("image/tiff") &&
+      assets[assetId]?.href?.includes("http")
+    ) {
       geoTIFFIdx.push(idx);
       geoTIFFSources.push({
         url: assets[assetId].href,
@@ -80,7 +110,7 @@ export async function createLayersFromAssets(
           ? { attributions: assets[assetId].attribution }
           : {}),
       });
-    } else if (assets[assetId]?.type === "application/geodb+json") {
+    } else if (assets[assetId]?.type?.includes("application/geodb+json")) {
       const responseData = await fetchJson(
         assets[assetId].href,
         "layer asset data",
@@ -144,13 +174,139 @@ export async function createLayersFromAssets(
     }
   }
 
+  if (geoTIFFSources.length) {
+    for (const [i, geotiffSource] of geoTIFFSources.entries()) {
+      const assetName = assetIds[geoTIFFIdx[i]];
+      const styles = await resolveStyle(
+        stacObject,
+        collection,
+        undefined,
+        assetName,
+      );
+      // get the correct style which is not attached to a link
+      let { layerConfig, style } = extractLayerConfig(
+        collectionId,
+        styles,
+        undefined,
+        undefined,
+        map,
+      );
+      let assetLayerId = createAssetID(
+        collectionId,
+        stacObject.id,
+        geoTIFFIdx[i],
+      );
+      if (
+        assets[assetName]?.roles?.includes("overlay") ||
+        assets[assetName]?.roles?.includes("baselayer")
+      ) {
+        // to prevent them being removed by date change on main dataset
+        assetLayerId = assetName;
+      }
+      log.debug("Creating WebGLTile layer from GeoTIFF", assetLayerId);
+      log.debug("Configured Sources", geoTIFFSources);
+      const sources =
+        stacObject?.["eodash:merge_assets"] !== false
+          ? geoTIFFSources
+          : [geotiffSource];
+      const layer = {
+        type: "WebGLTile",
+        source: {
+          type: "GeoTIFF",
+          normalize: !style,
+          interpolate: false,
+          sources,
+        },
+        properties: {
+          id: assetLayerId,
+          title: assets[assetName]?.title || title,
+          layerConfig,
+          layerDatetime,
+        },
+        style,
+      };
+      if (extraProperties) {
+        layer.properties = { ...layer.properties, ...extraProperties };
+      }
+      extractRoles(layer.properties, assets[assetName]);
+      addTooltipInteraction(layer, style);
+      jsonArray.push(layer);
+      if (stacObject?.["eodash:merge_assets"] !== false) break;
+    }
+  }
+
+  if (zarrAssetIds.length) {
+    for (const [i, assetName] of zarrAssetIds.entries()) {
+      const fetchedStyle = await resolveStyle(
+        stacObject,
+        collection,
+        undefined,
+        assetName,
+      );
+      const { layerConfig, style } = extractLayerConfig(
+        collectionId,
+        fetchedStyle,
+        undefined,
+        undefined,
+        map,
+      );
+      const bandsPath = getBandsProperty(layerConfig?.schema);
+      const defaultBands = bandsPath?.reduce(
+        (node, key) => node?.[key],
+        layerConfig?.schema,
+      )?.default ?? ["b04", "b03", "b02"];
+
+      let assetLayerId = createAssetID(collectionId, stacObject.id, zarrIdx[i]);
+      if (
+        assets[assetName]?.roles?.includes("overlay") ||
+        assets[assetName]?.roles?.includes("baselayer")
+      ) {
+        assetLayerId = assetName;
+      }
+
+      log.debug("Creating WebGLTile layer from GeoZarr", assetLayerId);
+
+      const layer = {
+        type: "WebGLTile",
+        properties: {
+          id: assetLayerId,
+          title: assets[assetName]?.title || title,
+          layerConfig,
+          layerDatetime,
+        },
+        source: {
+          type: "GeoZarr",
+          url: assets[assetName].href,
+          bands: defaultBands,
+        },
+        ...(style ? { style } : {}),
+      };
+      if (extraProperties) {
+        layer.properties = { ...layer.properties, ...extraProperties };
+      }
+      extractRoles(layer.properties, assets[assetName]);
+      jsonArray.push(layer);
+    }
+  }
+
   if (geoJsonSources.length) {
     for (const [i, geoJsonSource] of geoJsonSources.entries()) {
       // fetch styles and separate them by their mapping between links and assets
       const assetName = assetIds[geoJsonIdx[i]];
-      const styles = await fetchStyle(stacObject, undefined, assetName);
+      const styles = await resolveStyle(
+        stacObject,
+        collection,
+        undefined,
+        assetName,
+      );
       // get the correct style which is not attached to a link
-      let { layerConfig, style } = extractLayerConfig(collectionId, styles);
+      let { layerConfig, style } = extractLayerConfig(
+        collectionId,
+        styles,
+        undefined,
+        undefined,
+        map,
+      );
       let assetLayerId = createAssetID(
         collectionId,
         stacObject.id,
@@ -214,9 +370,20 @@ export async function createLayersFromAssets(
     for (const [i, fgbSource] of fgbSources.entries()) {
       // fetch styles and separate them by their mapping between links and assets
       const assetName = assetIds[fgbIdx[i]];
-      const styles = await fetchStyle(stacObject, undefined, assetName);
+      const styles = await resolveStyle(
+        stacObject,
+        collection,
+        undefined,
+        assetName,
+      );
       // get the correct style which is not attached to a link
-      let { layerConfig, style } = extractLayerConfig(collectionId, styles);
+      let { layerConfig, style } = extractLayerConfig(
+        collectionId,
+        styles,
+        undefined,
+        undefined,
+        map,
+      );
       let assetLayerId = createAssetID(collectionId, stacObject.id, fgbIdx[i]);
       if (
         assets[assetName]?.roles?.includes("overlay") ||
@@ -274,66 +441,17 @@ export async function createLayersFromAssets(
     }
   }
 
-  if (geoTIFFSources.length) {
-    for (const [i, geotiffSource] of geoTIFFSources.entries()) {
-      const assetName = assetIds[geoTIFFIdx[i]];
-      const styles = await fetchStyle(stacObject, undefined, assetName);
-      // get the correct style which is not attached to a link
-      let { layerConfig, style } = extractLayerConfig(collectionId, styles);
-      let assetLayerId = createAssetID(
-        collectionId,
-        stacObject.id,
-        geoTIFFIdx[i],
-      );
-      if (
-        assets[assetName]?.roles?.includes("overlay") ||
-        assets[assetName]?.roles?.includes("baselayer")
-      ) {
-        // to prevent them being removed by date change on main dataset
-        assetLayerId = assetName;
-      }
-      log.debug("Creating WebGLTile layer from GeoTIFF", assetLayerId);
-      log.debug("Configured Sources", geoTIFFSources);
-      const sources =
-        stacObject?.["eodash:merge_assets"] !== false
-          ? geoTIFFSources
-          : [geotiffSource];
-      const layer = {
-        type: "WebGLTile",
-        source: {
-          type: "GeoTIFF",
-          normalize: !style,
-          interpolate: false,
-          sources,
-        },
-        properties: {
-          id: assetLayerId,
-          title: assets[assetName]?.title || title,
-          layerConfig,
-          layerDatetime,
-        },
-        style,
-      };
-      if (extraProperties) {
-        layer.properties = { ...layer.properties, ...extraProperties };
-      }
-      extractRoles(layer.properties, assets[assetName]);
-      addTooltipInteraction(layer, style);
-      jsonArray.push(layer);
-      if (stacObject?.["eodash:merge_assets"] !== false) break;
-    }
-  }
-
   return jsonArray;
 }
 
 /**
  * @param {string} collectionId
- * @param {import('stac-ts').StacItem} item
  * @param {string} title
+ * @param {import('stac-ts').StacItem} item
  * @param {Record<string,any>} [layerDatetime]
  * @param {object | null} [extraProperties]
  * @param {import('stac-ts').StacCollection} [collection]
+ * @param {import("@/types").MapKey} [map] - which map the layers are built for
  */
 export const createLayersFromLinks = async (
   collectionId,
@@ -342,6 +460,7 @@ export const createLayersFromLinks = async (
   layerDatetime,
   extraProperties,
   collection,
+  map = "main",
 ) => {
   log.debug("Creating layers from links");
   /** @type {Record<string,any>[]} */
@@ -353,6 +472,10 @@ export const createLayersFromLinks = async (
     item.links.filter((l) => l.rel === "vector-tile") ?? [];
   const mapboxStyleDocumentArray =
     item.links.filter((l) => l.rel === "mapbox-style-document") ?? [];
+  // An xyz link takes precedence over a tilejson link
+  const tilejsonArray = xyzArray.length
+    ? []
+    : (item.links.filter((l) => l.rel === "tilejson") ?? []);
   // Taking projection code from main map view, as main view defines
   // projection for comparison map
   const viewProjectionCode = mapEl?.value?.projection || "EPSG:3857";
@@ -375,6 +498,22 @@ export const createLayersFromLinks = async (
       wmsLink,
       viewProjectionCode,
     );
+    const rasterForm = await fetchRasterForm(
+      /** @type {string|object|undefined} */ (
+        wmsLink?.["eodash:rasterform"] ||
+          item?.["eodash:rasterform"] ||
+          collection?.["eodash:rasterform"]
+      ),
+      item,
+    );
+    let { layerConfig } = extractLayerConfig(
+      collectionId,
+      {},
+      rasterForm,
+      "tileUrl",
+      map,
+    );
+
     log.debug("WMS Layer added", linkId);
     const tileSize = /** @type {number[]} */ (
       "wms:tilesize" in wmsLink
@@ -386,7 +525,8 @@ export const createLayersFromLinks = async (
       properties: {
         id: linkId,
         title: wmsLink.title || title || item.id,
-        layerDatetime,
+        ...(!!layerDatetime && { layerDatetime }),
+        ...(!!layerConfig && { layerConfig }),
       },
       source: {
         type: "TileWMS",
@@ -431,6 +571,7 @@ export const createLayersFromLinks = async (
         ...extractEoxLegendLink(wmsLink),
       };
     }
+    applyRasterFormValue(json, collectionId, map);
     jsonArray.push(json);
   }
 
@@ -442,16 +583,21 @@ export const createLayersFromLinks = async (
       (wmtsLink?.["proj:epsg"] || wmtsLink?.["eodash:proj4_def"]);
 
     await registerProjection(wmtsLinkProjection);
-    const key =
-      /** @type {string | undefined} */ (wmtsLink["key"]) || undefined;
 
-    const styles = await fetchStyle(item, key);
-    // get the correct style which is attached to a link
+    const rasterForm = await fetchRasterForm(
+      /** @type {string|object|undefined} */ (
+        wmtsLink?.["eodash:rasterform"] ||
+          item?.["eodash:rasterform"] ||
+          collection?.["eodash:rasterform"]
+      ),
+      item,
+    );
     const returnedLayerConfig = extractLayerConfig(
       collectionId,
-      styles,
-      undefined,
+      {},
+      rasterForm,
       "tileUrl",
+      map,
     );
     const projectionCode = getProjectionCode(wmtsLinkProjection || "EPSG:3857");
     // TODO: WARNING! This is a temporary project specific implementation
@@ -472,14 +618,6 @@ export const createLayersFromLinks = async (
 
     // TODO, this does not yet work between layer time changes because we do not get
     // updated variables from OL layer due to usage of tileurlfunction
-
-    // update dimensions with current value of style variables if applicable
-    const variables = returnedLayerConfig?.style?.variables;
-    if (variables) {
-      for (const [kk, vv] of Object.entries(variables)) {
-        dimensionsWithoutStyle[kk] = vv;
-      }
-    }
 
     if (wmtsLink.href.includes("marine.copernicus")) {
       log.debug(
@@ -521,6 +659,7 @@ export const createLayersFromLinks = async (
           id: linkId,
           title: wmtsLink.title || title || item.id,
           layerDatetime,
+          layerConfig: returnedLayerConfig.layerConfig,
         },
         source: {
           type: "WMTSCapabilities",
@@ -543,6 +682,7 @@ export const createLayersFromLinks = async (
         ...extractEoxLegendLink(wmtsLink),
       };
     }
+    applyRasterFormValue(json, collectionId, map);
     jsonArray.push(json);
   }
 
@@ -550,21 +690,20 @@ export const createLayersFromLinks = async (
     const xyzLinkProjection =
       /** @type {number | string | {name: string, def: string} | undefined} */
       (xyzLink?.["proj:epsg"] || xyzLink?.["eodash:proj4_def"]);
-    const key = /** @type {string | undefined} */ (xyzLink["key"]) || undefined;
-    const rasterformURL = /** @type {string|undefined} */ (
-      collection?.["eodash:rasterform"]
+    const rasterForm = await fetchRasterForm(
+      /** @type {string|object|undefined} */ (
+        xyzLink?.["eodash:rasterform"] ||
+          item?.["eodash:rasterform"] ||
+          collection?.["eodash:rasterform"]
+      ),
+      item,
     );
-    /** @type {import("@/types").EodashRasterJSONForm|undefined} */
-    const rasterForm = rasterformURL
-      ? await axios.get(rasterformURL).then((resp) => resp.data)
-      : undefined;
-    const styles = await fetchStyle(item, key);
-    // get the correct style which is attached to a link
-    let { layerConfig, style } = extractLayerConfig(
+    let { layerConfig } = extractLayerConfig(
       collectionId,
-      styles,
+      {},
       rasterForm,
       "tileUrl",
+      map,
     );
     await registerProjection(xyzLinkProjection);
     const projectionCode = getProjectionCode(xyzLinkProjection || "EPSG:3857");
@@ -575,25 +714,14 @@ export const createLayersFromLinks = async (
       viewProjectionCode,
     );
     let xyzUrl = xyzLink.href;
-
-    // TODO, this does not yet work between layer time changes because we do not get
-    // updated variables from OL layer due to usage of tileurlfunction
-
-    // update url query params with current value of style variables if applicable
-    const variables = style?.variables;
-    if (variables) {
-      const [base, query] = xyzUrl.split("?");
-      const params = new URLSearchParams(query);
-      for (const [kk, vv] of Object.entries(variables)) {
-        params.set(kk, JSON.stringify(vv));
-      }
-      xyzUrl = `${base}?${params.toString()}`;
-    }
-
     const { supportedUpscalingEndpoints } = useSTAcStore();
-    const isUpscalingSupported = supportedUpscalingEndpoints.some(
-      (/** @type {string} */ endpoint) => xyzUrl.includes(endpoint),
+    const upscaling = applyTitilerUpscaling(
+      xyzUrl,
+      supportedUpscalingEndpoints,
     );
+    if (upscaling) {
+      xyzUrl = upscaling.url;
+    }
 
     // Add sharding for s2maps automatically
     if (xyzUrl.includes("s2maps-tiles.eu")) {
@@ -612,15 +740,15 @@ export const createLayersFromLinks = async (
       },
       source: {
         type: "XYZ",
-        url: isUpscalingSupported ? xyzUrl.replace("{y}", "{y}@2x") : xyzUrl,
+        url: xyzUrl,
         projection: projectionCode,
         ...(xyzLink.attribution ? { attributions: xyzLink.attribution } : {}),
       },
     };
-    if (isUpscalingSupported) {
+    if (upscaling) {
       // @ts-expect-error tileGrid is added here and supported in eox-map layer definition
       json.source.tileGrid = {
-        tileSize: [512, 512],
+        tileSize: upscaling.tileSize,
       };
     }
     if (
@@ -641,6 +769,100 @@ export const createLayersFromLinks = async (
         ...extractEoxLegendLink(xyzLink),
       };
     }
+    applyRasterFormValue(json, collectionId, map);
+    jsonArray.push(json);
+  }
+
+  for (const tilejsonLink of tilejsonArray) {
+    // The tilejson href is a complete URL with the render params baked in by the
+    // STAC producer; fetch it and use its `tiles[0]` template as an XYZ source.
+    const tileJSON = await axios
+      .get(tilejsonLink.href)
+      .then((res) => res.data)
+      .catch((err) => {
+        console.error("[eodash] Failed to fetch item TileJSON", err);
+        return null;
+      });
+    if (!tileJSON?.tiles?.[0]) {
+      console.warn(
+        "[eodash] No tile URL in item TileJSON response",
+        tilejsonLink.href,
+      );
+      continue;
+    }
+    // Only raster XYZ tiles are supported; skip vector & TMS scheme TileJSON
+    if (tileJSON.vector_layers || tileJSON.scheme === "tms") {
+      console.warn(
+        "[eodash] Unsupported TileJSON (only raster XYZ is supported)",
+        tilejsonLink.href,
+      );
+      continue;
+    }
+
+    const tilejsonProjection =
+      /** @type {number | string | {name: string, def: string} | undefined} */
+      (tilejsonLink?.["proj:epsg"] || tilejsonLink?.["eodash:proj4_def"]);
+    await registerProjection(tilejsonProjection);
+    const projectionCode = getProjectionCode(tilejsonProjection || "EPSG:3857");
+    const rasterForm = await fetchRasterForm(
+      /** @type {string|object|undefined} */ (
+        tilejsonLink?.["eodash:rasterform"] ||
+          item?.["eodash:rasterform"] ||
+          collection?.["eodash:rasterform"]
+      ),
+      item,
+    );
+    const { layerConfig } = extractLayerConfig(
+      collectionId,
+      {},
+      rasterForm,
+      "tileUrl",
+      map,
+    );
+    const linkId = createLayerID(
+      collectionId,
+      item.id,
+      tilejsonLink,
+      viewProjectionCode,
+    );
+
+    log.debug("TileJSON layer added", linkId);
+    /** @type {Record<string, any>} */
+    const json = {
+      type: "Tile",
+      properties: {
+        id: linkId,
+        title: tilejsonLink.title || title || item.id,
+        roles: tilejsonLink.roles,
+        layerDatetime,
+        layerConfig,
+      },
+      source: {
+        type: "XYZ",
+        ...(tileJSON.tiles.length > 1
+          ? { urls: tileJSON.tiles }
+          : { url: tileJSON.tiles[0] }),
+        projection: projectionCode,
+        // Link attribution wins; the TileJSON document's own is the fallback.
+        ...(tilejsonLink.attribution || tileJSON.attribution
+          ? {
+              attributions: tilejsonLink.attribution || tileJSON.attribution,
+            }
+          : {}),
+      },
+    };
+    if (Number.isFinite(tileJSON.minzoom)) json.minZoom = tileJSON.minzoom;
+    if (Number.isFinite(tileJSON.maxzoom)) json.maxZoom = tileJSON.maxzoom;
+
+    extractRoles(json.properties, tilejsonLink);
+    if (extraProperties !== null) {
+      json.properties = {
+        ...json.properties,
+        ...extraProperties,
+        ...extractEoxLegendLink(tilejsonLink),
+      };
+    }
+    applyRasterFormValue(json, collectionId, map);
     jsonArray.push(json);
   }
 
@@ -663,9 +885,15 @@ export const createLayersFromLinks = async (
     const key =
       /** @type {string | undefined} */ (vectorTileLink["key"]) || undefined;
     // fetch styles and separate them by their mapping between links and assets
-    const styles = await fetchStyle(item, key);
+    const styles = await resolveStyle(item, collection, key);
     // get the correct style which is not attached to a link
-    let { layerConfig, style } = extractLayerConfig(collectionId, styles);
+    let { layerConfig, style } = extractLayerConfig(
+      collectionId,
+      styles,
+      undefined,
+      undefined,
+      map,
+    );
 
     let href = vectorTileLink.href;
     if ("auth:schemes" in item && "auth:refs" in vectorTileLink) {
@@ -749,7 +977,7 @@ export const createLayersFromLinks = async (
         ),
         applyOptions,
       );
-      applyOptions = /** @type { object } */ (optionsObject);
+      applyOptions = /** @type {object} */ (optionsObject);
       href = url;
     }
     const json = {
@@ -783,10 +1011,11 @@ export const createLayersFromLinks = async (
 };
 /**
  * Implementation of a function that creates a layer from the render extention
+ * @param {string} rasterURL
  * @param {import("stac-ts").StacCollection | undefined | null} collection
  * @param {import("stac-ts").StacItem | undefined | null} item
- * @param {string} rasterURL
  * @param {Record<string, any>} [extraProperties]
+ * @param {import("@/types").MapKey} [map] - which map the layers are built for
  * @returns {Promise<import("@eox/map/src/layers").EOxLayerType<"Tile","XYZ">[]>}
  */
 export const createLayerFromRender = async (
@@ -794,62 +1023,94 @@ export const createLayerFromRender = async (
   collection,
   item,
   extraProperties,
+  map = "main",
 ) => {
-  if (!collection || !collection.renders || !item) {
+  // config renders > collection STAC renders > item renders
+  const renders = /** @type {Record<string,import("@/types").Render>} */ (
+    resolveRenders(collection, useEodash()?.options?.renders) ?? item?.renders
+  );
+  if (!collection || !item || !renders) {
     return [];
   }
 
-  const rasterformURL = /** @type {string|undefined} */ (
-    collection?.["eodash:rasterform"]
+  // Yield to a raster xyz/tilejson link — createLayersFromLinks renders it.
+  const hasMatchingTileLink = item.links?.some(
+    (link) =>
+      (link.rel === "xyz" || link.rel === "tilejson") &&
+      link.href?.includes(rasterURL),
   );
-  /** @type {import("@/types").EodashRasterJSONForm|undefined} */
-  const rasterForm = rasterformURL
-    ? await axios.get(rasterformURL).then((resp) => resp.data)
-    : undefined;
+  if (hasMatchingTileLink) {
+    return [];
+  }
+
+  const rasterForm = await fetchRasterForm(
+    /** @type {string|object|undefined} */ (
+      item?.["eodash:rasterform"] || collection?.["eodash:rasterform"]
+    ),
+    item,
+  );
   let { layerConfig } = extractLayerConfig(
     collection.id,
-    await fetchStyle(item),
+    {},
     rasterForm,
+    undefined,
+    map,
   );
 
-  const renders = /** @type {Record<string,import("@/types").Render>} */ (
-    collection.renders ?? item?.renders
-  );
+  /**
+   * Resolves the first defined value of a property across a render's assets,
+   * checking item assets before falling back to collection assets.
+   * @param {import("@/types").Render} render
+   * @param {string} propertyName
+   * @returns {any}
+   */
+  const getRenderAssetProperty = (render, propertyName) => {
+    for (const assetKey of render.assets ?? []) {
+      const asset = item?.assets?.[assetKey] ?? collection?.assets?.[assetKey];
+      const value = asset?.[propertyName];
+      if (value !== undefined) {
+        return value;
+      }
+    }
+    return undefined;
+  };
+
   const layers = [];
-  // special case for rescale
   for (const key in renders) {
     const title = renders[key].title;
 
-    const assetsCollection =
-      renders[key].assets[0] in item["assets"] ? item : collection;
+    const expression =
+      renders[key].expression ??
+      getRenderAssetProperty(renders[key], "expression");
 
     const paramsObject = {
-      assets: renders[key].assets,
-      expression:
-        renders[key].expression ??
-        assetsCollection["assets"]?.[renders[key].assets[0]]?.expression,
-      nodata:
-        renders[key].nodata ??
-        assetsCollection["assets"]?.[renders[key].assets[0]]?.nodata,
+      // TiTiler treats assets and expression as mutually exclusive band selection
+      assets: expression ? undefined : renders[key].assets,
+      expression,
+      nodata: normalizeNodata(
+        renders[key].nodata ?? getRenderAssetProperty(renders[key], "nodata"),
+      ),
       resampling:
         renders[key].resampling ??
-        assetsCollection["assets"]?.[renders[key].assets[0]]?.resampling,
+        getRenderAssetProperty(renders[key], "resampling"),
       color_formula:
         renders[key].color_formula ??
-        assetsCollection["assets"]?.[renders[key].assets[0]]?.color_formula,
+        getRenderAssetProperty(renders[key], "color_formula"),
       colormap:
         renders[key].colormap ??
-        assetsCollection["assets"]?.[renders[key].assets[0]]?.colormap,
+        getRenderAssetProperty(renders[key], "colormap"),
       colormap_name:
         renders[key].colormap_name ??
-        assetsCollection["assets"]?.[renders[key].assets[0]]?.colormap_name,
-      rescale:
-        renders[key].rescale ??
-        assetsCollection["assets"]?.[renders[key].assets[0]]?.rescale,
+        getRenderAssetProperty(renders[key], "colormap_name"),
+      rescale: normalizeRescale(
+        renders[key].rescale ?? getRenderAssetProperty(renders[key], "rescale"),
+      ),
+      bidx: renders[key].bidx,
+      tilesize: renders[key].tilesize,
     };
     const paramsStr = encodeURLObject(paramsObject);
     const url = `${rasterURL}/collections/${collection.id}/items/${item.id}/tiles/WebMercatorQuad/{z}/{x}/{y}?${paramsStr}`;
-    layers.push({
+    const json = {
       /** @type {"Tile"} */
       type: "Tile",
       properties: {
@@ -872,57 +1133,16 @@ export const createLayerFromRender = async (
         url,
         projection: "EPSG:3857",
       },
-    });
+    };
+    if (renders[key].tilesize) {
+      // @ts-expect-error tileGrid is added here and supported in eox-map layer definition
+      json.source.tileGrid = {
+        tileSize: [renders[key].tilesize, renders[key].tilesize],
+      };
+    }
+    applyRasterFormValue(json, collection.id, map);
+    layers.push(json);
   }
 
   return layers;
 };
-/**
- *
- * @param {Record<string,any>} obj
- * @returns {string}
- */
-function encodeURLObject(obj) {
-  let str = "";
-  for (const key in obj) {
-    const value = obj[key];
-    if (value === null || value === undefined || value === "") {
-      continue;
-    }
-
-    const valueType = Array.isArray(value) ? "array" : typeof value;
-
-    switch (valueType) {
-      case "array": {
-        // Check if any element in the array is itself an array (multi-dimensional)
-        const hasNestedArrays = value.some((/** @type {any} */ item) =>
-          Array.isArray(item),
-        );
-
-        if (hasNestedArrays) {
-          // For multi-dimensional arrays, repeat the key with different values
-          for (const val of value) {
-            if (Array.isArray(val)) {
-              str += `${key}=${val.join(",")}&`;
-            } else {
-              str += `${key}=${val}&`;
-            }
-          }
-        } else {
-          // For simple arrays, join with commas
-          str += `${key}=${value.join(",")}&`;
-        }
-        break;
-      }
-      case "object": {
-        str += `${key}=${encodeURI(JSON.stringify(value))}&`;
-        break;
-      }
-      default: {
-        str += `${key}=${encodeURIComponent(value)}&`;
-        break;
-      }
-    }
-  }
-  return str;
-}

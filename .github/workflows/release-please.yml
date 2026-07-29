@@ -10,17 +10,17 @@ permissions:
 name: release-please
 jobs:
   release-please:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Release Please! 🤖
-        uses: googleapis/release-please-action@16a9c90856f42705d54a6fda1823352bdc62cf38 # v4
+        uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5
         id: release
       - name: Checkout 🛎
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           fetch-depth: 0 # Fetch all history and tags
       - name: Setup node env 🏗
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
         with:
           node-version: 24
           check-latest: true
@@ -36,7 +36,7 @@ jobs:
           npx pkg-pr-new publish --comment=update
         if: ${{ !steps.release.outputs.release_created }}
       - name: Login to ghcr 🔧
-        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+        uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}

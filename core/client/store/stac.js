@@ -31,9 +31,15 @@ export const useSTAcStore = defineStore("stac", () => {
 
   /**
    * List of supported endpoints for upscaling
-   * @type {import("vue").Ref<string[]>}
+   * @type {import("vue").Ref<Array<string | { url: string; titilerVersion?: 1 | 2 }>>}
    */
   const supportedUpscalingEndpoints = ref([]);
+
+  /**
+   * Registry of colormap ranges
+   * @type {import("vue").Ref<Record<string, string[]> | null>}
+   */
+  const colormapRegistry = ref(null);
 
   /**
    * Links of the root STAC catalog
@@ -45,27 +51,26 @@ export const useSTAcStore = defineStore("stac", () => {
   /**
    * Selected STAC object.
    *
-   * @type {import("vue").Ref<
-   *   | import("stac-ts").StacCollection
-   *   | null
-   * >}
+   * @type {import("vue").Ref<import("stac-ts").StacCollection | null>}
    */
   const selectedStac = ref(null);
 
   /**
    * Selected STAC object.
    *
-   * @type {import("vue").Ref<
-   *   | import("stac-ts").StacCollection
-   *   | null
-   * >}
+   * @type {import("vue").Ref<import("stac-ts").StacCollection | null>}
    */
   const selectedCompareStac = ref(null);
   /**
    * Currently selected item
-   * @type {import("vue").Ref<import("stac-ts").StacLink | import("stac-ts").StacItem | null>}
+   * @type {import("vue").Ref<import("stac-ts").StacLink | import("stac-ts").StacItem | null | undefined>}
    */
-  const selectedItem = ref(null);
+  const selectedItem = ref(undefined);
+  /**
+   * Currently selected compare item
+   * @type {import("vue").Ref<import("stac-ts").StacLink | import("stac-ts").StacItem | null | undefined>}
+   */
+  const selectedCompareItem = ref(undefined);
 
   /**
    * Initializes the store by assigning the STAC endpoint.
@@ -85,6 +90,25 @@ export const useSTAcStore = defineStore("stac", () => {
     rasterEndpoint.value = endpoint.rasterEndpoint ?? null;
     supportedUpscalingEndpoints.value =
       endpoint.supportedUpscalingEndpoints ?? [];
+    if (endpoint.colormapRegistry) {
+      loadColormapRegistry(endpoint.colormapRegistry);
+    }
+  }
+
+  /**
+   * Loads the colormap registry from a URL or object
+   * @param {string | Record<string, string[]>} registry
+   */
+  async function loadColormapRegistry(registry) {
+    if (typeof registry === "object") {
+      colormapRegistry.value = registry;
+      return;
+    }
+    try {
+      colormapRegistry.value = await fetchJson(registry, "colormap registry");
+    } catch (err) {
+      log.error("Error loading colormap registry", err);
+    }
   }
 
   /**
@@ -135,7 +159,7 @@ export const useSTAcStore = defineStore("stac", () => {
    *
    * @param {string} relativePath - Stac link href
    * @param {boolean} [isPoi=false] - If true, the STAC is loaded for a point of interest
-   * @param {Object} [stacItem] - The STAC item to load
+   * @param {object} [stacItem] - The STAC item to load
    * @returns {Promise<void>}
    * @see {@link selectedStac}
    */
@@ -148,11 +172,6 @@ export const useSTAcStore = defineStore("stac", () => {
       // construct absolute URL of a poi
       absoluteUrl.value = constructPoiUrl(relativePath, indicator.value);
     }
-    //@ts-expect-error "this" type is not exported by pinia
-    const patch = this?.$patch;
-    if (stacItem && patch) {
-      patch({ selectedItem: stacItem });
-    }
 
     try {
       const data = await fetchJson(absoluteUrl.value, "selected STAC");
@@ -164,6 +183,7 @@ export const useSTAcStore = defineStore("stac", () => {
         isApi.value,
         rasterEndpoint.value,
       );
+      selectedItem.value = /** @type {any} */ (stacItem) ?? undefined;
       selectedStac.value = data;
       // set indicator and poi
       indicator.value = isPoi
@@ -180,10 +200,15 @@ export const useSTAcStore = defineStore("stac", () => {
    *
    * @param {string} relativePath - Stac link href
    * @param {boolean} [isPOI=false] - If true, the STAC is loaded for a point of interest
+   * @param {object} [stacItem] - The STAC item to load
    * @returns {Promise<void>}
    * @see {@link selectedCompareStac}
    */
-  async function loadSelectedCompareSTAC(relativePath = "", isPOI = false) {
+  async function loadSelectedCompareSTAC(
+    relativePath = "",
+    isPOI = false,
+    stacItem,
+  ) {
     if (!stacEndpoint.value) {
       return Promise.reject(
         new Error("STAC endpoint is not defined in eodash configuration"),
@@ -195,7 +220,10 @@ export const useSTAcStore = defineStore("stac", () => {
       absoluteUrl.value = constructPoiUrl(relativePath, compareIndicator.value);
     }
     try {
-      const data = await fetchJson(absoluteUrl.value, "selected comparison STAC");
+      const data = await fetchJson(
+        absoluteUrl.value,
+        "selected comparison STAC",
+      );
       await updateEodashCollections(
         eodashCompareCollections,
         data,
@@ -203,7 +231,9 @@ export const useSTAcStore = defineStore("stac", () => {
         [...collectionsPalette].reverse(),
         isApi.value,
         rasterEndpoint.value,
+        "compare",
       );
+      selectedCompareItem.value = /** @type {any} */ (stacItem) ?? undefined;
       selectedCompareStac.value = data;
       compareIndicator.value = isPOI
         ? compareIndicator.value
@@ -213,6 +243,7 @@ export const useSTAcStore = defineStore("stac", () => {
       const message = err instanceof Error ? err.message : String(err);
       throw new Error(`Error loading the selected comparison STAC: ${message}`);
     }
+
   }
 
   /**
@@ -244,6 +275,7 @@ export const useSTAcStore = defineStore("stac", () => {
 
   return {
     stacEndpoint,
+    rasterEndpoint,
     isApi,
     stac,
     init,
@@ -254,6 +286,9 @@ export const useSTAcStore = defineStore("stac", () => {
     selectedStac,
     selectedCompareStac,
     selectedItem,
+    selectedCompareItem,
     supportedUpscalingEndpoints,
+    colormapRegistry,
+    loadColormapRegistry,
   };
 });

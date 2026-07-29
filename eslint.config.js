@@ -1,22 +1,18 @@
-import pluginVue from "eslint-plugin-vue";
 import eox from "@eox/eslint-config";
 
 export default [
-  ...eox,
-  ...pluginVue.configs["flat/essential"],
+  ...eox.filter((c) => !c?.name?.includes("cypress")),
   {
     ignores: ["public/", "dist/", ".eodash/", "docs/"],
   },
   {
     files: ["core/client/**/*.vue", "widgets/**/*.vue"],
     rules: {
-      "vue/no-deprecated-html-element-is": "warn",
-      "vue/multi-word-component-names": "off",
       "vue/no-deprecated-slot-attribute": [
-        "error",
+        "warn",
         {
-          // used for the `eox-itemfilter` titles and slots in eox-map
-          ignore: ["h4", "eox-map"],
+          // used for the `eox-itemfilter` & `eox-layercontrol` titles and slots
+          ignore: ["h4", "eox-map", "span", "div"],
         },
       ],
     },

@@ -2,7 +2,7 @@
   "jsonform": {
     "properties": {},
     "options": {
-      "removeProperties": ["bidx", "variables"],
+      "removeProperties": ["bidx", "variables", "color_formula"],
       "no_additional_properties": true
     },
     "oneOf": [
@@ -26,18 +26,18 @@
             "items": {
               "type": "string",
               "enum": [
-                "/measurements/reflectance/r60m:b01",
-                "/measurements/reflectance/r60m:b02",
-                "/measurements/reflectance/r60m:b03",
-                "/measurements/reflectance/r60m:b04",
-                "/measurements/reflectance/r60m:b05",
-                "/measurements/reflectance/r60m:b06",
-                "/measurements/reflectance/r60m:b07",
-                "/measurements/reflectance/r10m:b08",
-                "/measurements/reflectance/r60m:b8a",
-                "/measurements/reflectance/r60m:b09",
-                "/measurements/reflectance/r60m:b11",
-                "/measurements/reflectance/r60m:b12"
+                "/measurements/reflectance/b01",
+                "/measurements/reflectance/b02",
+                "/measurements/reflectance/b03",
+                "/measurements/reflectance/b04",
+                "/measurements/reflectance/b05",
+                "/measurements/reflectance/b06",
+                "/measurements/reflectance/b07",
+                "/measurements/reflectance/b08",
+                "/measurements/reflectance/b8a",
+                "/measurements/reflectance/b09",
+                "/measurements/reflectance/b11",
+                "/measurements/reflectance/b12"
               ],
               "options": {
                 "enum_titles": [
@@ -114,21 +114,21 @@
             "type": "string",
             "format": "bands-arithmetic",
             "formulaTemplate": "({{X}}-{{Y}})/({{X}}+{{Y}})",
-            "default": "(/measurements/reflectance/r60m:b8a−/measurements/reflectance/r60m:b04)/(/measurements/reflectance/r60m:b8a+/measurements/reflectance/r60m:b04)",
+            "default": "(/measurements/reflectance/b8a−/measurements/reflectance/b04)/(/measurements/reflectance/b8a+/measurements/reflectance/b04)",
             "title": "Band Arithmetic Expression",
             "enum": [
-              "/measurements/reflectance/r60m:b01",
-              "/measurements/reflectance/r60m:b02",
-              "/measurements/reflectance/r60m:b03",
-              "/measurements/reflectance/r60m:b04",
-              "/measurements/reflectance/r60m:b05",
-              "/measurements/reflectance/r60m:b06",
-              "/measurements/reflectance/r60m:b07",
-              "/measurements/reflectance/r10m:b08",
-              "/measurements/reflectance/r60m:b8a",
-              "/measurements/reflectance/r60m:b09",
-              "/measurements/reflectance/r60m:b11",
-              "/measurements/reflectance/r60m:b12"
+              "/measurements/reflectance/b01",
+              "/measurements/reflectance/b02",
+              "/measurements/reflectance/b03",
+              "/measurements/reflectance/b04",
+              "/measurements/reflectance/b05",
+              "/measurements/reflectance/b06",
+              "/measurements/reflectance/b07",
+              "/measurements/reflectance/b08",
+              "/measurements/reflectance/b8a",
+              "/measurements/reflectance/b09",
+              "/measurements/reflectance/b11",
+              "/measurements/reflectance/b12"
             ],
             "options": {
               "enum_titles": [
@@ -213,18 +213,18 @@
             "formulaTemplate": "({{A}})/({{B}})",
             "title": "Band Arithmetic Expression",
             "enum": [
-              "/measurements/reflectance/r60m:b01",
-              "/measurements/reflectance/r60m:b02",
-              "/measurements/reflectance/r60m:b03",
-              "/measurements/reflectance/r60m:b04",
-              "/measurements/reflectance/r60m:b05",
-              "/measurements/reflectance/r60m:b06",
-              "/measurements/reflectance/r60m:b07",
-              "/measurements/reflectance/r10m:b08",
-              "/measurements/reflectance/r60m:b8a",
-              "/measurements/reflectance/r60m:b09",
-              "/measurements/reflectance/r60m:b11",
-              "/measurements/reflectance/r60m:b12"
+              "/measurements/reflectance/b01",
+              "/measurements/reflectance/b02",
+              "/measurements/reflectance/b03",
+              "/measurements/reflectance/b04",
+              "/measurements/reflectance/b05",
+              "/measurements/reflectance/b06",
+              "/measurements/reflectance/b07",
+              "/measurements/reflectance/b08",
+              "/measurements/reflectance/b8a",
+              "/measurements/reflectance/b09",
+              "/measurements/reflectance/b11",
+              "/measurements/reflectance/b12"
             ],
             "options": {
               "enum_titles": [
@@ -270,18 +270,18 @@
     "definitions": {
       "bandOptions": {
         "enum": [
-          "/measurements/reflectance/r60m:b01",
-          "/measurements/reflectance/r60m:b02",
-          "/measurements/reflectance/r60m:b03",
-          "/measurements/reflectance/r60m:b04",
-          "/measurements/reflectance/r60m:b05",
-          "/measurements/reflectance/r60m:b06",
-          "/measurements/reflectance/r60m:b07",
-          "/measurements/reflectance/r10m:b08",
-          "/measurements/reflectance/r60m:b8a",
-          "/measurements/reflectance/r60m:b09",
-          "/measurements/reflectance/r60m:b11",
-          "/measurements/reflectance/r60m:b12"
+          "/measurements/reflectance/b01",
+          "/measurements/reflectance/b02",
+          "/measurements/reflectance/b03",
+          "/measurements/reflectance/b04",
+          "/measurements/reflectance/b05",
+          "/measurements/reflectance/b06",
+          "/measurements/reflectance/b07",
+          "/measurements/reflectance/b08",
+          "/measurements/reflectance/b8a",
+          "/measurements/reflectance/b09",
+          "/measurements/reflectance/b11",
+          "/measurements/reflectance/b12"
         ],
         "options": {
           "enum_titles": [

@@ -5,7 +5,9 @@ import {
   extractLayerConfig,
   extractRoles,
   fetchApiItems,
+  fetchPreAggregations,
   fetchStyle,
+  renderConfigTemplate,
   fetchAllStyles,
   findLayer,
   generateFeatures,
@@ -47,6 +49,12 @@ export class EodashCollection {
 
   /** @type {string | undefined} */
   color;
+
+  /**
+   * Which map this collection is rendered on.
+   * @type {import("@/types").MapKey}
+   */
+  map = "main";
 
   //  read only
   get collectionStac() {
@@ -171,11 +179,13 @@ export class EodashCollection {
     // will try to extract anything it supports but for which we have
     // less control.
 
-    const { layerDatetime, timeControlValues } = extractLayerTimeValues(
-      await this.getItems(),
+    const itemDate =
       item.properties?.datetime ??
-        item.properties.start_datetime ??
-        itemDatetime,
+      item.properties.start_datetime ??
+      itemDatetime;
+    const { layerDatetime, timeControlValues } = extractLayerTimeValues(
+      await this.getDates(itemDate),
+      itemDate,
     );
 
     const dataAssets = Object.keys(item?.assets ?? {}).reduce((data, ast) => {
@@ -187,9 +197,14 @@ export class EodashCollection {
 
     const isSupported =
       item.links.some((link) =>
-        ["wms", "xyz", "wmts", "vector-tile", "mapbox-style-document"].includes(
-          link.rel,
-        ),
+        [
+          "wms",
+          "xyz",
+          "wmts",
+          "vector-tile",
+          "mapbox-style-document",
+          "tilejson",
+        ].includes(link.rel),
       ) || Object.keys(dataAssets).length;
 
     if (isSupported) {
@@ -202,6 +217,10 @@ export class EodashCollection {
           timeControlValues,
           timeControlProperty: "TIME",
         }),
+        ...(!!this.#collectionStac?.["eodash:layerExclusive"] && {
+          layerControlExclusive: true,
+          layerControlExpand: false,
+        }),
       };
 
       const links = await createLayersFromLinks(
@@ -211,6 +230,7 @@ export class EodashCollection {
         layerDatetime,
         extraProperties,
         this.#collectionStac,
+        this.map,
       );
 
       jsonArray.push(
@@ -222,6 +242,8 @@ export class EodashCollection {
           item,
           layerDatetime,
           extraProperties,
+          this.#collectionStac,
+          this.map,
         )),
         ...((this.rasterEndpoint &&
           (await createLayerFromRender(
@@ -232,14 +254,21 @@ export class EodashCollection {
               ...extraProperties,
               ...(layerDatetime && { layerDatetime }),
             },
+            this.map,
           ))) ||
           []),
       );
     } else {
       // get the correct style which is not attached to a link
       const id = this.#collectionStac?.id ?? "";
-      const styles = await fetchStyle(item);
-      let { layerConfig, style } = extractLayerConfig(id, styles);
+      const styles = renderConfigTemplate(await fetchStyle(item), item);
+      let { layerConfig, style } = extractLayerConfig(
+        id,
+        styles,
+        undefined,
+        undefined,
+        this.map,
+      );
       // fallback to STAC
       const json = {
         type: "STAC",
@@ -275,24 +304,33 @@ export class EodashCollection {
 
   /**
    * Returns all item links sorted by datetime ascendingly
-   * @param {boolean} [fields=false] if true, fetch items from API with only properties
+   * @param {boolean} [fields=false] if true, fetch items from API with only properties.datetime to optimize performance
    * @param {boolean} [first] - if true, returns the first page of items only (for API collections)
+   * @param {string | Date} [centerDatetime] - Date to center the search around if items exceed maxNumber
    * @returns {Promise<import("stac-ts").StacLink[] | import("stac-ts").StacItem[] | undefined>}
    */
-  async getItems(fields = false, first = false) {
+  async getItems(fields = false, first = false, centerDatetime = undefined) {
     const items = this.#collectionStac?.links.filter((i) => i.rel === "item");
-
-    if (this.isAPI && !items?.length) {
+    if (this.isAPI && !items?.length && !first) {
       const itemUrl = this.#collectionUrl + "/items";
       if (fields) {
         return await fetchApiItems(
           itemUrl,
-          `fields=properties,-assets,-geometry,-links,-bbox`,
+          `fields=properties.datetime,-assets,-geometry,-links,-bbox`,
           100,
           first,
+          1000,
+          centerDatetime,
         );
       }
-      return await fetchApiItems(itemUrl, undefined, 100, first);
+      return await fetchApiItems(
+        itemUrl,
+        undefined,
+        100,
+        first,
+        100,
+        centerDatetime,
+      );
     }
 
     const datetimeProperty = getDatetimeProperty(this.#collectionStac?.links);
@@ -311,9 +349,36 @@ export class EodashCollection {
     );
   }
 
-  async getDates() {
-    const items = await this.getItems(true, false);
+  /**
+   * Returns all available dates for the collection, sorted as the source
+   * provides. Tries the daily `pre-aggregation` link first (cheap, single
+   * request), falls back to fetching items via the API. Use anywhere the
+   * collection's date list is needed (date picker, mosaic time control,
+   * single-item time slider).
+   *
+   * NOTE: only the `daily` aggregation interval is consumed today. Other
+   * intervals (`monthly`, `hourly`) fall through to the API path.
+   *
+   * @param {string | Date} [centerDatetime]
+   * @returns {Promise<Date[]>}
+   */
+  async getDates(centerDatetime) {
+    await this.fetchCollection();
 
+    const aggregation = await fetchPreAggregations(
+      this.#collectionStac,
+      this.#collectionUrl,
+    );
+    const datetimeAgg = aggregation?.aggregations?.find(
+      (/** @type {any} */ a) => a.key?.startsWith("datetime_") || a.interval,
+    );
+    if (datetimeAgg?.buckets) {
+      return datetimeAgg.buckets
+        .map((/** @type {any} */ b) => new Date(b.key))
+        .filter((/** @type {Date} */ d) => !isNaN(d.getTime()));
+    }
+
+    const items = await this.getItems(true, false, centerDatetime);
     const datetimeProperty = getDatetimeProperty(items);
     if (!datetimeProperty || !items?.length) {
       return [];
@@ -325,7 +390,9 @@ export class EodashCollection {
           new Date(/** @type {string} */ (i.properties?.[datetimeProperty]))
       : //@ts-expect-error todo
         (i) => new Date(/** @type {string} */ (i[datetimeProperty]));
-    return items?.map(mapToDates) || [];
+    return (items ?? [])
+      .map(mapToDates)
+      .filter((/** @type {Date} */ d) => !isNaN(d.getTime()));
   }
 
   async getExtent() {
@@ -336,24 +403,36 @@ export class EodashCollection {
    * Get closest Item Link from a certain date,
    * get the latest if no date provided
    *  @param {Date} [date]
-   *  @return {Promise<import("stac-ts").StacItem | import("stac-ts").StacLink | undefined>} item
+   *  @returns {Promise<import("stac-ts").StacItem | import("stac-ts").StacLink | undefined>} item
    **/
   async getItem(date) {
-    if (!date) {
-      const items = await this.getItems(false, true);
-      // in case no datetime property is found, return the last item
+    let items = await this.getItems(false, true);
+    if (!(date instanceof Date) || isNaN(date.getTime())) {
+      // in case no date was provided, return the last item
       return items && items.at(-1);
     }
 
-    const items = await this.getItems();
+    if (this.isAPI) {
+      const urlArr = this.#collectionUrl.split("/").slice(0, -2);
+      const searchURL = urlArr.join("/") + "/search";
+      const targetItem = await axios
+        .get(searchURL, {
+          params: {
+            collections: this.#collectionStac?.id,
+            datetime: `../${date.toISOString()}`,
+            limit: 1,
+            sortby: "-datetime",
+          },
+        })
+        .then((resp) => resp.data?.features?.[0]);
+      return targetItem;
+    }
     const datetimeProperty = getDatetimeProperty(items);
     if (!datetimeProperty) {
       // in case no datetime property is found, return the last item
-      const items = await this.getItems(false, true);
-      // in case no datetime property is found, return the last item
       return items && items.at(-1);
     }
-    return (await this.getItems())?.sort((a, b) => {
+    return items?.sort((a, b) => {
       const distanceA = Math.abs(
         new Date(
           /** @type {number} */ (
@@ -400,7 +479,7 @@ export class EodashCollection {
   async updateLayerJson(datetime, layerId, currentLayers) {
     await this.fetchCollection();
     const datetimeProperty = getDatetimeProperty(
-      await this.getItems(true, true),
+      await this.getItems(false, true),
     );
     if (!datetimeProperty) {
       console.warn("[eodash] no datetime property found in collection");

@@ -1,10 +1,15 @@
 # STAC
 
-eodash leverages the SpatioTemporal Asset Catalog (STAC) specification to discover and display geospatial data. The implementation uses a two-tiered collection structure and a set of STAC extensions to handle various data types and services.
+eodash leverages the SpatioTemporal Asset Catalog (STAC) specification to discover and display geospatial data, through a two-tiered collection structure and a set of STAC extensions that handle various data types and services.
+
+::: tip Catalog Generation
+For eodash catalog generation checkout [eodash_catalog](https://github.com/eodash/eodash_catalog) for detailed guides, please check out the [Wiki](https://github.com/eodash/eodash_catalog/wiki).
+:::
+
 
 ## Two-Level Collections
 
-eodash uses a two-level STAC collection hierarchy to provide a user-friendly experience for data exploration.
+eodash uses a two-level STAC collection hierarchy for data exploration. While eodash can connect to generic STAC endpoints and standard catalogs, the Indicator schema enables additional dashboard features such as visualizing multiple datasets together over time.
 
 ### 1. Indicators (Collection of Collections)
 
@@ -235,7 +240,7 @@ The core of this extension is the ability to define style `variables` that can b
 
 - **`variables`**: A key-value map where style properties can be defined as variables.
 - **`jsonform`**: A [EOxJSONForm](https://eox-a.github.io/EOxElements/?path=/docs/elements-eox-jsonform--docs) JSON Schema that defines a form. This form is rendered in the UI, allowing users to modify the `variables` at runtime.
-- **`legend`**: Configuration for displaying a layer's legend.
+- **`legend`**: Configuration for displaying a layer's legend. Supports dynamic scale updates via `domainProperties` (linking to form sliders) and dynamic colorscale updates via `rangeProperty` (linking to form selectors).
 - **`tooltip`**: Configuration for defining interactive tooltips that appear on feature hover or click.
 
 ```ts
@@ -243,8 +248,57 @@ type EodashStyleJson = import("ol/style/flat").FlatStyleLike & {
   variables?: Record<string, string | number | boolean | null | undefined>;
   legend?: import("@eox/layercontrol/src/components/layer-config.js").EOxLayerControlLayerConfig["layerConfig"]["legend"];
   jsonform?: import("json-schema").JSONSchema7;
-  tooltip?: { id: string; title?: string; appendix?: string }[];
+  tooltip?: {
+    id: string;
+    title?: string;
+    appendix?: string;
+    decimals?: number;
+  }[];
 };
+```
+
+Form values persist across layer rebuilds, and definitions support `${...}` item templating — see [Layer Configuration Forms](/widgets/internal-widgets/EodashLayerControl#layer-configuration-forms).
+
+### eodash Raster Form
+
+The `eodash:rasterform` property allows providing visualization controls for tiled layers (WMS, WMTS, XYZ) that do not use OpenLayers Flat Styles. 
+
+It can be defined at the **Collection**, **Item**, or **Link** level. When present on a link or asset, it creates a configuration form in the layer control. 
+
+- **For WMS**: Updating form values triggers a call to the source's `updateParams` method (e.g., updating `STYLES` or custom vendor parameters).
+- **For XYZ**: Updating form values triggers a refresh of the tile URL with the new parameters injected into the query string.
+
+The property can be either a **URL string** pointing to a JSON schema or a **direct JSON object**. It also supports the **`legend`** property found in eodash Flat Styles, enabling dynamic legends for tiled layers.
+
+```json
+{
+  "rel": "xyz",
+  "href": "https://tiles.example.com/{z}/{x}/{y}?rescale={{rescale}}&cbar={{cbar}}",
+  "eodash:rasterform": {
+    "legend": {
+        "rangeProperty": "cbar",
+        "domainProperties": ["vmin", "vmax"]
+    },
+    "jsonform": {
+      "type": "object",
+      "properties": {
+        "cbar": {
+          "type": "string",
+          "enum": ["magma", "viridis"],
+          "default": "viridis"
+        },
+        "vminmax": {
+          "type": "object",
+          "properties": {
+            "vmin": { "type": "number", "format": "range", "default": 0 },
+            "vmax": { "type": "number", "format": "range", "default": 1000 }
+          },
+          "format": "minmax"
+        }
+      }
+    }
+  }
+}
 ```
 
 
@@ -371,7 +425,7 @@ Links with an `endpoint` property are handled by dedicated adapters for external
 **Available Endpoints:**
 
 ##### Sentinel Hub (`endpoint: "sentinelhub"`)
-For time-series chart generation using Sentinel Hub Aggregation API.
+For time-series chart generation using the Sentinel Hub Statistical API.
 
 **Requirements:**
 - Link: `rel: "service"`, `endpoint: "sentinelhub"`, `href: [SH API endpoint]`
@@ -396,17 +450,23 @@ For time-series chart generation using Sentinel Hub Aggregation API.
 }
 ```
 
-2) NASA VEDA statistics for charts
-- Link: `rel: "service"`, `endpoint: "veda"`, `href`: VEDA statistics endpoint
-- eodash gathers COG endpoints and dates from the Indicator’s Collection or its children by reading `links` with `rel: "item"` where each link has `cog_href` and a bubbled `datetime` property on the link.
+##### NASA VEDA (`endpoint: "veda"` | `"veda_stac"`)
+For time-series chart generation from NASA VEDA statistics.
 
-Example child/Item links used to discover inputs:
+**Requirements:**
+- Link: `rel: "service"`, `endpoint: "veda"` or `"veda_stac"`, `href`: VEDA statistics endpoint
+- Inputs: eodash reads `links` with `rel: "item"` from the Indicator's Collection or its children, each carrying a bubbled `datetime`. What it sends to the VEDA API depends on the endpoint:
+  - `veda` - each item's `cog_href` (a COG URL), sent as the `url` query parameter.
+  - `veda_stac` - each item's `id` (a STAC item id), sent as the `ids` query parameter.
+
+Example child/Item link (include `cog_href` for `veda`, `id` for `veda_stac`):
 
 ```json
 {
   "rel": "item",
   "href": "./items/2020-01-01.json",
   "cog_href": "https://veda.nasa.gov/cogs/.../cog.tif",
+  "id": "my-collection-2020-01-01",
   "datetime": "2020-01-01T00:00:00Z"
 }
 ```
@@ -435,24 +495,25 @@ For asynchronous processing workflows that generate map layers.
 }
 ```
 
-### STAC Collection Output
+##### STAC Collection (`endpoint: "STAC"`)
+Loads another STAC Collection as the processing result.
 
-To load another STAC Collection as a processing result:
+**Requirements:**
+- Link: `rel: "service"`, `endpoint: "STAC"`, `type: "application/json; profile=collection"`
+- The `href` uses form values via Mustache templating; eodash loads the returned Collection into the UI.
 
 ```json
 {
   "rel": "service",
-  "endpoint": "STAC", 
+  "endpoint": "STAC",
   "type": "application/json; profile=collection",
   "href": "https://stac.example.com/{{collection}}.json"
 }
 ```
 
-The `href` uses form values via Mustache templating. eodash loads the returned Collection into the UI.
-
 ## STAC Extensions
 
-eodash utilizes the following STAC community extensions to enhance its capabilities:
+eodash uses the following STAC community extensions:
 
 - **Projection Extension**: https://github.com/stac-extensions/projection
 - **Web Map Links Extension**: https://github.com/stac-extensions/web-map-links

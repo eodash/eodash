@@ -126,7 +126,7 @@ export async function processCharts({
             jsonformValue: jsonformValue,
             rawJsonformValue,
             link: link,
-            flatstyleUrl: /** @type string */ (link["eox:flatstyle"]),
+            flatstyleUrl: /** @type {string} */ (link["eox:flatstyle"]),
             jsonformSchema,
           });
           break checkForData;
@@ -134,7 +134,7 @@ export async function processCharts({
           await injectVegaUrlData(spec, {
             url: link.href,
             jsonformValue: jsonformValue,
-            flatstyleUrl: /** @type string */ (link["eox:flatstyle"]),
+            flatstyleUrl: /** @type {string} */ (link["eox:flatstyle"]),
           });
           break checkForData;
         default:
@@ -419,7 +419,6 @@ export async function processVector(links, jsonformValue, layerId) {
       type: "Vector",
       source: {
         type: "Vector",
-        //@ts-expect-error TODO
         url: mustache.render(link.href, {
           ...(jsonformValue ?? {}),
         }),

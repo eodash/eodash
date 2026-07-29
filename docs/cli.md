@@ -1,6 +1,6 @@
 # Eodash Command Line Interface
 
-eodash CLI is powered by [Vite](https://vite.dev), providing an optimized development experience and producing minified ESM bundles for production.
+eodash CLI wraps [Vite](https://vite.dev) to serve and build your dashboard, providing an optimized development experience and producing minified ESM bundles for production.
 
 <script setup>
     const options = {
@@ -23,7 +23,7 @@ eodash CLI is powered by [Vite](https://vite.dev), providing an optimized develo
     }
     const devOptions = Object.keys(options).filter(opt => opt !==  "--outDir <path>");
     const buildOptions =  Object.keys(options).filter(opt => !["--cacheDir <path>","-b, --base <path>", "-p, --port <port>","-o, --open", "--host [IP address]","--no-host"].includes(opt));
-    const preiewOptions = Object.keys(options).filter(opt => ["-v, --version", "-b, --base <path>","-p, --port <port>","-o, --open","--host [IP address]","--no-host"].includes(opt))
+    const previewOptions = Object.keys(options).filter(opt => ["-v, --version", "-b, --base <path>","-p, --port <port>","-o, --open","--host [IP address]","--no-host"].includes(opt))
 
 </script>
 
@@ -96,7 +96,7 @@ eodash preview
     <th>Default</th>
 
   </tr>
-  <tr v-for="opt in preiewOptions" >
+  <tr v-for="opt in previewOptions" >
     <td>{{opt}}</td>
     <td>{{ options[opt][0]}}</td>
     <td>{{ options[opt]?.[1] ?? '--'}}</td>
@@ -105,7 +105,7 @@ eodash preview
 
 ## Configuration
 
-While running the eodash command line, it automatically tries to locate a configuration file named `eodash.config.js` from the root folder of your project. You can also explicitly specify a config file to use with the `--config` or `-c` CLI option (resolved relative to your projects root folder). You can also override the configuration values using the CLI options. refer to the [API](/api/node/types/interfaces/EodashConfig.html) to learn more:
+While running the eodash command line, it automatically tries to locate a configuration file named `eodash.config.js` from the root folder of your project. You can also explicitly specify a config file to use with the `--config` or `-c` CLI option (resolved relative to your projects root folder). You can also override the configuration values using the CLI options. refer to the [API](/api/CLI/interfaces/EodashConfig.html) to learn more:
 
 ### `eodash.config.js` Basic Example
 
@@ -131,7 +131,7 @@ export default {
 }
 ```
 
-Or using the `defineConfig` helper funtion
+Or using the `defineConfig` helper function
 
 ```js
 import { defineConfig } from "@eodash/eodash/config"

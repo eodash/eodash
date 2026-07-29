@@ -1,4 +1,3 @@
-// import { includesProcess } from "@/store/actions";
 /** @type {import("@/types").Template} */
 export default {
   gap: 16,
@@ -23,28 +22,32 @@ export default {
     widget: {
       name: "EodashMap",
       properties: {
+        zoomToExtent: false,
         enableCompare: true,
         btns: {
           enableZoom: true,
           enableExportMap: true,
           enableChangeProjection: true,
+          enableMosaic: false,
           enableCompareIndicators: {
             fallbackTemplate: "explore",
+            compareTemplate: "compare",
             itemFilterConfig: {
               imageProperty: "assets.thumbnail.href",
             },
           },
-          enableSearch: true,
+          enableBackToPOIs: false,
+          enableSearch: false,
         },
       },
     },
   },
   widgets: [
     {
-      id: "Layercontrol",
+      id: "explore-layercontrol",
       type: "internal",
       title: "Layers",
-      layout: { x: "9/9/10", y: 0, w: "3/3/2", h: 12 },
+      layout: { x: "9/9/10", y: 0, w: "3/3/2", h: 11 },
       widget: {
         name: "EodashLayerControl",
       },
@@ -53,9 +56,33 @@ export default {
       id: "ItemCatalog",
       title: "Catalog",
       type: "internal",
-      layout: { x: 0, y: 0, w: "3/3/2", h: 12 },
+      layout: { x: 0, y: 0, w: "3/3/2", h: 11 },
       widget: {
         name: "EodashItemCatalog",
+        properties: {
+          useMosaic: false,
+          layoutTarget: "mosaic",
+          datetimeFilter: true,
+          filters: [
+            {
+              property: "eo:cloud_cover",
+              type: "range",
+              title: "Cloud cover",
+              unitLabel: "%",
+            },
+            {
+              property: "platform",
+              type: "multiselect",
+              title: "Platform",
+            },
+            {
+              property: "sat:orbit_state",
+              type: "multiselect",
+              title: "Orbit direction",
+            },
+          ],
+          hoverProperties: ["datetime", "eo:cloud_cover", "sat:orbit_state"],
+        },
       },
     },
   ],

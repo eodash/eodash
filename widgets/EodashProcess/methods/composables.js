@@ -5,9 +5,8 @@ import { getCompareLayers, getLayers } from "@/store/actions";
 /**
  * Composable resposible of timing the Initialization of the process
  *
- * @export
  * @async
- * @param {Object} params
+ * @param {object} params
  * @param {import("vue").Ref<import("stac-ts").StacCollection | null>} params.selectedStac
  * @param {import("vue").Ref<Record<string,any> | null>} params.jsonformSchema
  * @param {import("vue").Ref<any[]>} params.processResults
@@ -59,6 +58,19 @@ export const useInitProcess = ({
       });
 
       if (newJsonForm) {
+        // Layer rebuilds strip drawtools' selection interactions; remount
+        // the form so initSelection re-attaches them.
+        const selectionStripped =
+          Object.values(newJsonForm.properties ?? {}).some(
+            (p) => p?.options?.drawtools?.layerId,
+          ) &&
+          !mapElement.value?.selectInteractions?.[
+            "SelectLayerClickInteraction"
+          ];
+        if (selectionStripped) {
+          jsonformSchema.value = null;
+          await nextTick();
+        }
         jsonformSchema.value = newJsonForm;
       }
     }

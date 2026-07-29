@@ -1,0 +1,15 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "types": ["node"]
+  },
+  "include": [
+    ".vitepress/**/*.ts",
+    ".vitepress/**/*.d.ts",
+    ".vitepress/**/*.js",
+    ".vitepress/**/*.vue",
+    "api/typedoc-sidebar.json"
+  ],
+  "exclude": ["node_modules", ".vitepress/cache", ".vitepress/dist"]
+}

@@ -4,8 +4,11 @@ export interface FilterConfigItem {
   title?: string;
   min?: number;
   max?: number;
+  step?: number;
+  format?: string;
   filterKeys?: string[];
-  state?: Record<string, boolean>;
+  /** boolean map for select/multiselect; `{ min, max }` for range */
+  state?: Record<string, any>;
   placeholder?: string;
   /** svg icon */
   icon?: string;
@@ -13,3 +16,8 @@ export interface FilterConfigItem {
 }
 
 export type FiltersConfig = FilterConfigItem[];
+
+export interface SortOption {
+  property: string;
+  label: string;
+}

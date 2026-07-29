@@ -24,6 +24,27 @@ export default {
     widget: {
       name: "EodashMap",
       properties: {
+        baseLayers: [
+          {
+            type: "Tile",
+            properties: {
+              id: "terrain-light;:;EPSG:3857",
+              title: "Terrain Light",
+              roles: ["baselayer", "visible"],
+              group: "baselayer",
+              visible: true,
+              layerControlExclusive: true,
+            },
+            source: {
+              type: "XYZ",
+              url: "https://{a-e}.s2maps-tiles.eu/wmts/1.0.0/terrain-light_3857/default/g/{z}/{y}/{x}.jpeg",
+              projection: "EPSG:3857",
+              attributions:
+                '{ OSM: Data &copy; <a href="http://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors and <a href="https://maps.eox.at/#data" target="_blank">others</a>, Rendering &copy; <a href="http://eox.at" target="_blank">EOX</a> }',
+            },
+            preload: Infinity,
+          },
+        ],
         enableCompare: true,
         zoomToExtent: true,
         btns: {
@@ -73,7 +94,7 @@ export default {
       id: "Layercontrol",
       type: "internal",
       title: "Layers",
-      layout: { x: 0, y: 1, w: "3/3/2", h: 11 },
+      layout: { x: 0, y: 1, w: "3/3/2", h: 10 },
       widget: {
         name: "EodashLayerControl",
         properties: {
@@ -124,7 +145,7 @@ export default {
           id: "Processes",
           type: "internal",
           title: "Processes",
-          layout: { x: "9/9/10", y: 6, w: "3/3/2", h: 5 },
+          layout: { x: "9/9/10", y: 6, w: "3/3/2", h: 6 },
           widget: {
             name: "EodashProcess",
           },
