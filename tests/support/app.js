@@ -3,29 +3,28 @@ import App from "@/App.vue";
 import { registerPlugins } from "@/plugins";
 
 /**
- * Bootstrap the full eodash app like `render.js` does — `createApp(App)` with
- * the real plugin stack — into a test container. No `config` prop is passed,
- * so config resolves through the real runtime path (App -> Dashboard ->
- * useEodashRuntime), landing on the `user:config` module. NOTE: no
- * `user:config` alias is wired in vitest.config.js yet — the template tier must
- * add one before the first mountApp consumer, or the import will fail.
+ * Boot the full eodash app for template-tier tests. `config` flows to App's
+ * `config` prop; the template is picked via the `?template=` URL param. App's
+ * `<Suspense>` resolves over the network, so assert readiness with `expect.poll`.
  *
- * Known limit: `registerPlugins` installs a module-singleton Pinia, and store
- * states are singletons too, so state bleeds across mounts. Keep one
- * meaningful boot per file until a shared reset helper exists.
- *
- * @param {{ initialUrl?: string }} [options]
+ * @param {object} options
+ * @param {string | (() => unknown)} options.config Eodash config.
+ * @param {string} [options.template] Active template key (sets `?template=`).
+ * @param {string} [options.initialUrl] Full initial URL (overrides `template`).
  * @returns {{ app: import("vue").App, container: HTMLElement, unmount: () => void }}
  */
-export function mountApp({ initialUrl } = {}) {
-  if (initialUrl) {
-    window.history.replaceState({}, "", initialUrl);
+export function mountApp({ config, template, initialUrl }) {
+  const url = initialUrl ?? (template ? `?template=${template}` : undefined);
+  if (url) {
+    window.history.replaceState({}, "", url);
   }
 
   const container = document.body.appendChild(document.createElement("div"));
   container.id = "app";
 
-  const app = createApp(App);
+  container.style.height = "100vh";
+
+  const app = createApp(App, { config });
   registerPlugins(app);
   app.mount(container);
 

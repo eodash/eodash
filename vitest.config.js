@@ -5,11 +5,10 @@ import { playwright } from "@vitest/browser-playwright";
 //@ts-expect-error todo
 import vue from "@vitejs/plugin-vue";
 import vuetify from "vite-plugin-vuetify";
+import { serveFiles, stopServingFiles } from "./tests/support/commands.js";
 
 const pkg = createRequire(import.meta.url)("./package.json");
-// Mirror core/node/cli/globals.js `clientModules`: app dependencies minus the
-// node-only ones. Pre-bundling them stops Vite discovering a dep mid-run (via a
-// dynamic/side-effect widget import) and reloading a test.
+
 const nodeOnlyDeps = [
   "commander",
   "vite",
@@ -18,49 +17,24 @@ const nodeOnlyDeps = [
   "dotenv",
   "stac-ts",
 ];
-const clientDeps = Object.keys(pkg.dependencies ?? {}).filter(
-  (m) => !nodeOnlyDeps.includes(m),
-);
 
-// vite-plugin-vuetify is used instead
-const componentDeps = clientDeps.filter((m) => m !== "vuetify");
+const clientDeps = Object.keys(pkg.dependencies ?? {}).filter(
+  (m) => !nodeOnlyDeps.includes(m) && m !== "vuetify",
+);
 
 /** Shared source aliases (mirror the CLI's viteConfig aliases). */
 const alias = {
   "@": fileURLToPath(new URL("./core/client", import.meta.url)),
   "^": fileURLToPath(new URL("./widgets", import.meta.url)),
   "user:widgets": fileURLToPath(new URL("./widgets", import.meta.url)),
+  "user:config": fileURLToPath(
+    new URL("./tests/support/user-config-stub.js", import.meta.url),
+  ),
 };
 
 export default defineConfig({
   test: {
     projects: [
-      {
-        // Logic/unit tests run in a headless browser
-        plugins: [
-          vue({
-            template: {
-              compilerOptions: {
-                isCustomElement: (tag) =>
-                  !tag.includes("v-") && tag.includes("-"),
-              },
-            },
-          }),
-        ],
-        resolve: { alias },
-        define: { "process.env": {} },
-        optimizeDeps: { include: clientDeps },
-        test: {
-          name: "unit",
-          include: ["tests/unit/**/*.test.js"],
-          browser: {
-            enabled: true,
-            provider: playwright(),
-            headless: true,
-            instances: [{ browser: "chromium" }],
-          },
-        },
-      },
       {
         resolve: { alias },
         test: {
@@ -70,6 +44,9 @@ export default defineConfig({
           testTimeout: 3 * 60 * 1000,
         },
       },
+      // One project for all browser tiers: a project launches its own browser,
+      // so per-tier projects would open one window each in headed mode. Tiers
+      // are scoped by path filters instead (`vitest run tests/unit`).
       {
         plugins: [
           vue({
@@ -84,16 +61,24 @@ export default defineConfig({
         ],
         resolve: { alias },
         define: { "process.env": {} },
-        optimizeDeps: { include: componentDeps, exclude: ["vuetify"] },
+        optimizeDeps: { include: clientDeps, exclude: ["vuetify"] },
         test: {
-          name: "component",
-          include: ["tests/component/**/*.test.js"],
+          name: "browser",
+          include: [
+            "tests/unit/**/*.test.js",
+            "tests/component/**/*.test.js",
+            "tests/template/**/*.test.js",
+          ],
+          testTimeout: 60 * 1000,
+          // Template boots (app + real STAC fetches) run in beforeAll hooks.
+          hookTimeout: 60 * 1000,
           browser: {
             enabled: true,
             provider: playwright(),
             headless: true,
             viewport: { width: 1440, height: 900 },
             instances: [{ browser: "chromium" }],
+            commands: { serveFiles, stopServingFiles },
           },
         },
       },

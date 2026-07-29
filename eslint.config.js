@@ -1,7 +1,7 @@
 import eox from "@eox/eslint-config";
 
 export default [
-  ...eox,
+  ...eox.filter((c) => !c?.name?.includes("cypress")),
   {
     ignores: ["public/", "dist/", ".eodash/", "docs/"],
   },

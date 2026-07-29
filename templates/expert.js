@@ -26,24 +26,23 @@ export default {
       properties: {
         baseLayers: [
           {
-            type: "Group",
+            type: "Tile",
             properties: {
-              id: "BaseLayersGroup",
-              title: "Base Layers",
+              id: "terrain-light;:;EPSG:3857",
+              title: "Terrain Light",
+              roles: ["baselayer", "visible"],
+              group: "baselayer",
+              visible: true,
+              layerControlExclusive: true,
             },
-            layers: [
-              {
-                type: "Tile",
-                properties: {
-                  id: "terrain-light;:;EPSG:3857",
-                  title: "Terrain Light",
-                },
-                source: {
-                  type: "XYZ",
-                  url: "https://s2maps-tiles.eu/wmts/1.0.0/terrain-light_3857/default/g/{z}/{y}/{x}.jpeg",
-                },
-              },
-            ],
+            source: {
+              type: "XYZ",
+              url: "https://{a-e}.s2maps-tiles.eu/wmts/1.0.0/terrain-light_3857/default/g/{z}/{y}/{x}.jpeg",
+              projection: "EPSG:3857",
+              attributions:
+                '{ OSM: Data &copy; <a href="http://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors and <a href="https://maps.eox.at/#data" target="_blank">others</a>, Rendering &copy; <a href="http://eox.at" target="_blank">EOX</a> }',
+            },
+            preload: Infinity,
           },
         ],
         enableCompare: true,

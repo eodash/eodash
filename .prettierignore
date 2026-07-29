@@ -1,2 +1,4 @@
 CHANGELOG.md
 docs/
+# Captured upstream responses, kept exactly as served
+tests/support/assets/
