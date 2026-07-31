@@ -1,7 +1,6 @@
 import mustache from "mustache";
 import { extractLayerConfig } from "@/eodashSTAC/helpers";
 import axios from "@/plugins/axios";
-import { fetchJson } from "@/utils";
 import { createTiffLayerDefinition, separateEndpointLinks } from "./utils";
 import { useSTAcStore } from "@/store/stac";
 import { isFirstLoad } from "@/utils/states";
@@ -43,7 +42,9 @@ export async function processCharts({
 }) {
   if (!specUrl || !links) return [null, null];
   /** @type {import("vega-lite").TopLevelSpec} **/
-  const spec = await fetchJson(specUrl, "chart definition");
+  const spec = await axios.get(specUrl).then((resp) => {
+    return resp.data;
+  });
 
   /** @type {Record<string,any>} */
   const dataValues = {};
@@ -192,7 +193,7 @@ async function injectVegaInlineData(
             { ...jsonformValue, [match]: value },
             flatstyleUrl,
           );
-          dataValues.push(await fetchJson(dataUrl, "vega data"));
+          dataValues.push(await axios.get(dataUrl).then((resp) => resp.data));
         }
       }
       /** @type {import("vega-lite/build/src/data").InlineData} */
@@ -202,7 +203,9 @@ async function injectVegaInlineData(
     // if no array matches, we can just do a single request
     const dataUrl = await renderDataUrl(url, jsonformValue, flatstyleUrl);
     /** @type {import("vega-lite/build/src/data").InlineData} */
-    (spec.data).values = await fetchJson(dataUrl, "vega data");
+    (spec.data).values = await axios.get(dataUrl).then((resp) => {
+      return resp.data;
+    });
   } else if (link.method == "POST") {
     // get body template to be used in POST request, check first if available
     if (!link.body) {
@@ -296,7 +299,7 @@ async function injectVegaUrlData(spec, { url, jsonformValue, flatstyleUrl }) {
 async function renderDataUrl(url, jsonformValue, flatstyleUrl) {
   let flatStyles = {};
   if (flatstyleUrl) {
-    flatStyles = await fetchJson(flatstyleUrl, "style definition");
+    flatStyles = await axios.get(flatstyleUrl).then((resp) => resp.data);
   }
 
   return mustache.render(url, {
@@ -399,10 +402,8 @@ export async function processVector(links, jsonformValue, layerId) {
 
   for (const link of vectorLinks) {
     if ("eox:flatstyle" in (link ?? {})) {
-      flatStyleJSON = await fetchJson(
-        /** @type {string} */ (link["eox:flatstyle"]),
-        "style definition",
-      );
+      flatStyleJSON = await axios.get(/** @type {string} */ (link["eox:flatstyle"]))
+        .then((resp) => resp.data);
     }
 
     /** @type {Record<string,any>|undefined} */

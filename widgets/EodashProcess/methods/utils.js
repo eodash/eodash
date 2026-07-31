@@ -5,7 +5,7 @@ import {
   replaceLayer,
   extractLayerLegend,
 } from "@/eodashSTAC/helpers";
-import { fetchJson } from "@/utils";
+import axios from "@/plugins/axios";
 import { getCompareLayers, getLayers } from "@/store/actions";
 import { isMulti } from "@eox/jsonform/src/custom-inputs/spatial/utils";
 
@@ -75,10 +75,9 @@ export async function createTiffLayerDefinition(
 ) {
   let flatStyleJSON = null;
   if ("eox:flatstyle" in (link ?? {})) {
-    flatStyleJSON = await fetchJson(
-      /** @type {string} */ (link["eox:flatstyle"]),
-      "style definition",
-    );
+    flatStyleJSON = await axios
+      .get(/** @type {string} */ (link["eox:flatstyle"]))
+      .then((resp) => resp.data);
   }
 
   let layerConfig;
@@ -412,10 +411,9 @@ async function fetchProcessStyles(endpointLink) {
   if (endpointLink["eox:flatstyle"]) {
     if (typeof endpointLink["eox:flatstyle"] === "string") {
       /** @type {import("@/types").EodashStyleJson} */
-      flatStyles = await fetchJson(
-        /** @type {string} */ (endpointLink["eox:flatstyle"]),
-        "style definition",
-      );
+      flatStyles = await axios
+        .get(/** @type {string} */ (endpointLink["eox:flatstyle"]))
+        .then((resp) => resp.data);
     } else if (
       Array.isArray(endpointLink["eox:flatstyle"]) &&
       endpointLink["eox:flatstyle"].length
@@ -427,23 +425,21 @@ async function fetchProcessStyles(endpointLink) {
         /** @type {{id:string;url:string}[]} */
         (endpointLink["eox:flatstyle"]).map(async (styleDict) => {
           //@ts-expect-error TODO
-          flatStyles[styleDict.id] = await fetchJson(
-            styleDict.url,
-            `style definition (${styleDict.id})`,
-          );
+          flatStyles[styleDict.id] = await axios
+            .get(styleDict.url)
+            .then((resp) =>/** @type {import("@/types").EodashStyleJson} */ (resp.data));
         }),
       );
     } else {
       // multipleStyles as a flag to indicate it
       flatStyles = { multipleStyles: true };
       await Promise.all(
-        Object.keys(endpointLink["eox:flatstyle"] ?? {}).map(async (key) => {
+        Object.keys(endpointLink["eox:flatstyle"] ?? {}).map((key) => {
           //@ts-expect-error TODO
-          flatStyles[key] = await fetchJson(
+          flatStyles[key] = axios
             //@ts-expect-error TODO
-            endpointLink["eox:flatstyle"][key],
-            `style definition (${key})`,
-          );
+            .get(endpointLink["eox:flatstyle"][key])
+            .then((resp) => resp.data);
         }),
       );
     }

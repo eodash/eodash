@@ -1,6 +1,4 @@
 import log from "loglevel";
-import axios from "@/plugins/axios";
-import Axios from "axios";
 import { collectionsPalette } from "./states";
 import {
   extractCollectionUrls,
@@ -11,61 +9,6 @@ import { EodashCollection } from "@/eodashSTAC/EodashCollection";
 import { toAbsolute } from "stac-js/src/http.js";
 import { readParquetItems } from "@/eodashSTAC/parquet";
 import WebFontLoader from "webfontloader";
-
-/**
- * Fetches JSON data from a URL with descriptive error handling
- *
- * @param {string} url - The URL to fetch from
- * @param {string} [description="file"] - A description of the file being fetched (for error messages)
- * @returns {Promise<any>}
- */
-export const fetchJson = async (url, description = "file") => {
-  try {
-    const response = await axios.get(url);
-    let data = response.data;
-
-    // Handle string responses (e.g., if Content-Type is not application/json)
-    if (typeof data === "string") {
-      const trimmedData = data.trim();
-      if (trimmedData.startsWith("<!DOCTYPE html>")) {
-        throw new Error(
-          `Expected JSON but received an HTML document. The URL might be incorrect or pointing to a landing page.`,
-        );
-      }
-      try {
-        data = JSON.parse(trimmedData);
-      } catch (e) {
-        const parseMsg = e instanceof Error ? e.message : String(e);
-        throw new Error(
-          `Failed to parse ${description} as JSON. Please ensure the file is valid JSON. (Error: ${parseMsg})`,
-        );
-      }
-    }
-
-    if (data === null || typeof data !== "object") {
-      throw new Error(
-        `Expected a JSON object for ${description} but received ${typeof data}.`,
-      );
-    }
-
-    return data;
-  } catch (error) {
-    let message = `Failed to load ${description} from ${url}.`;
-    if (Axios.isAxiosError(error)) {
-      if (error.response) {
-        message += ` (Server responded with ${error.response.status}: ${error.response.statusText})`;
-      } else if (error.request) {
-        message += ` (No response received from server. Please check your connection or the URL.)`;
-      } else {
-        message += ` (Error: ${error.message})`;
-      }
-    } else {
-      const errMsg = error instanceof Error ? error.message : String(error);
-      message += ` (Error: ${errMsg})`;
-    }
-    throw new Error(message);
-  }
-};
 
 /**
  * Loads font in the app using `webfontloader`
@@ -237,12 +180,11 @@ export const updateEodashCollections = async (
   // init eodash collections
   const collectionUrls = extractCollectionUrls(selectedStac, absoluteUrl);
 
-  try {
-    const collections = await Promise.all(
-      collectionUrls.map(async (cu, idx) => {
-        const ec = new EodashCollection(cu, isAPI, rasterEndpoint);
-        ec.map = map;
-        const col = await ec.fetchCollection();
+  await Promise.all(
+    collectionUrls.map((cu, idx) => {
+      const ec = new EodashCollection(cu, isAPI, rasterEndpoint);
+      ec.map = map;
+      return ec.fetchCollection().then((col) => {
         // assign color from the palette
         ec.color = colorPalette[idx % colorPalette.length];
         const parquetAsset = Object.values(col.assets ?? {}).find(
@@ -255,11 +197,15 @@ export const updateEodashCollections = async (
           return ec;
         }
 
-        const items = await readParquetItems(toAbsolute(parquetAsset.href, cu));
-        col.links.push(...generateLinksFromItems(items));
-        return ec;
-      }),
-    );
+        return readParquetItems(toAbsolute(parquetAsset.href, cu)).then(
+          (items) => {
+            col.links.push(...generateLinksFromItems(items));
+            return ec;
+          },
+        );
+      });
+    }),
+  ).then(async (collections) => {
     // revoke old blob urls in the previous collections. see generateLinksFromItems in "../eodashSTAC/helpers.js"
     eodashCollections.forEach((ec) => {
       revokeCollectionBlobUrls(ec);
@@ -268,9 +214,7 @@ export const updateEodashCollections = async (
     eodashCollections.splice(0, eodashCollections.length);
     // update eodashCollections
     eodashCollections.push(...collections);
-  } catch (error) {
-    console.error("Error updating eodash collections:", error);
-  }
+  });
 };
 /**
  *

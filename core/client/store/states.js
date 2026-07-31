@@ -75,13 +75,9 @@ export const chartSpec = ref(null);
 export const compareChartSpec = ref(null);
 
 /** Global error state
- * @type {import("vue").Ref<{message: string, severity: 'error' | 'warning' | 'info', critical: boolean}>}
+ * @type {import("vue").Ref<{message: string, details: string, severity: "error" | "warning" | "info"}>}
  */
-export const errorState = ref({
-  message: "",
-  severity: "error",
-  critical: false,
-});
+export const errorState = ref({ message: "", details: "", severity: "error" });
 
 /**
  * Global loading state.

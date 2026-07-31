@@ -2,27 +2,37 @@
   <v-alert
     v-if="errorState.message"
     translate="yes"
-    :location="errorState.critical ? 'center' : 'start bottom'"
-    :position="errorState.critical ? 'absolute' : 'fixed'"
-    @click:close="resetError"
+    role="alert"
+    location="start bottom"
+    position="fixed"
     :icon="[icon]"
     variant="elevated"
     class="alert bg-surface rounded-xl px-4 py-3"
-    :class="[
-      { 'critical-error': errorState.critical },
-      `alert-${errorState.severity}`
-    ]"
+    :class="`alert-${errorState.severity}`"
     closable
     :close-icon="[mdiClose]"
+    close-label="Dismiss"
+    @click:close="resetError"
   >
     <div class="d-flex flex-column">
-      <div class="text-subtitle-1 font-weight-bold mb-1" :class="`text-${errorState.severity}-accent`">
-        {{ title }}
+      <div
+        class="text-subtitle-1 font-weight-bold mb-1"
+        :class="`text-${errorState.severity}-accent`"
+      >
+        {{
+          errorState.severity === "error"
+            ? (eodash?.brand?.errorMessage ?? "Something went wrong")
+            : "Notice"
+        }}
       </div>
-      <div v-if="errorState.message" class="text-body-2 message-body mb-2">
-        {{ conciseMessage }}
+      <div class="text-body-2 message-body mb-2">
+        {{ errorState.message }}
       </div>
-      <v-expansion-panels v-if="remainingDetails" variant="accordion" class="error-details">
+      <v-expansion-panels
+        v-if="errorState.details"
+        variant="accordion"
+        class="error-details"
+      >
         <v-expansion-panel
           title="Further Details"
           elevation="0"
@@ -35,10 +45,12 @@
                   size="x-small"
                   variant="text"
                   :icon="[mdiContentCopy]"
+                  aria-label="Copy error details"
+                  title="Copy error details"
                   @click="copyError"
                 ></v-btn>
               </div>
-              <pre>{{ remainingDetails }}</pre>
+              <pre>{{ errorState.details }}</pre>
             </div>
           </v-expansion-panel-text>
         </v-expansion-panel>
@@ -60,13 +72,6 @@ import { errorState } from "@/store/states";
 
 const eodash = inject(eodashKey);
 
-const title = computed(() => {
-  if (errorState.value.critical) {
-    return eodash?.brand?.errorMessage ?? "Unable to load catalog endpoint";
-  }
-  return errorState.value.severity === "warning" ? "Notice" : "Something went wrong";
-});
-
 const icon = computed(() => {
   switch (errorState.value.severity) {
     case "warning":
@@ -78,29 +83,15 @@ const icon = computed(() => {
   }
 });
 
-const conciseMessage = computed(() => {
-  const msg = errorState.value.message;
-  if (!msg || typeof msg !== "string") return "";
-  const lines = msg.split("\n").filter((l) => l.trim());
-  return lines[0];
-});
-
-const remainingDetails = computed(() => {
-  const msg = errorState.value.message;
-  if (!msg || typeof msg !== "string") return "";
-  const lines = msg.split("\n");
-  const firstLineIndex = lines.findIndex((l) => l.trim() === conciseMessage.value);
-  if (firstLineIndex === -1) return msg;
-  const remaining = lines.slice(firstLineIndex + 1).join("\n").trim();
-  return remaining || null;
-});
-
 const resetError = () => {
-  errorState.value = { message: "", severity: "error", critical: false };
+  errorState.value = { message: "", details: "", severity: "error" };
 };
 
 const copyError = () => {
-  navigator.clipboard.writeText(errorState.value.message);
+  // undefined on insecure origins
+  navigator.clipboard?.writeText(
+    `${errorState.value.message}\n${errorState.value.details}`,
+  );
 };
 </script>
 <style scoped>
@@ -124,6 +115,15 @@ const copyError = () => {
 .alert-info {
   border-left-color: rgb(var(--v-theme-info)) !important;
 }
+.alert-error :deep(.v-alert__prepend) {
+  color: rgb(var(--v-theme-error));
+}
+.alert-warning :deep(.v-alert__prepend) {
+  color: #fb8c00;
+}
+.alert-info :deep(.v-alert__prepend) {
+  color: rgb(var(--v-theme-info));
+}
 .text-error-accent {
   color: rgb(var(--v-theme-error));
 }
@@ -136,11 +136,6 @@ const copyError = () => {
 .message-body {
   color: rgba(var(--v-theme-on-surface), 0.87);
   line-height: 1.4;
-}
-.critical-error {
-  max-width: 600px;
-  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.25) !important;
-  border-left-width: 8px !important;
 }
 .error-details {
   background: transparent !important;
@@ -159,7 +154,9 @@ const copyError = () => {
   padding: 0 !important;
 }
 .technical-info {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-family:
+    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+    "Courier New", monospace;
   font-size: 0.75rem;
   max-height: 200px;
   overflow: auto;

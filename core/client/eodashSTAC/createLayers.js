@@ -1,6 +1,5 @@
 import { registerProjection } from "@/store/actions";
 import { mapEl } from "@/store/states";
-import { fetchJson } from "@/utils";
 import { useEodash } from "@/composables";
 
 import {
@@ -111,10 +110,7 @@ export async function createLayersFromAssets(
           : {}),
       });
     } else if (assets[assetId]?.type?.includes("application/geodb+json")) {
-      const responseData = await fetchJson(
-        assets[assetId].href,
-        "layer asset data",
-      );
+      const responseData = await axios.get(assets[assetId].href).then((resp) => resp.data);
       geoJsonIdx.push(idx);
       if (
         !responseData ||

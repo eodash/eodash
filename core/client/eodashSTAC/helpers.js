@@ -1,6 +1,5 @@
 import { toAbsolute } from "stac-js/src/http.js";
 import axios from "@/plugins/axios";
-import { fetchJson } from "@/utils";
 import log from "loglevel";
 import mustache from "mustache";
 import { updateVectorLayerStyle } from "@eox/layercontrol";
@@ -499,7 +498,7 @@ export const fetchStyle = async (
   }
   if (styleLink) {
     /** @type {import("@/types").EodashStyleJson} */
-    const styleJson = await fetchJson(styleLink.href, "style definition");
+    const styleJson = await axios.get(styleLink.href).then((resp) => resp.data);
 
     log.debug("fetched styles JSON", JSON.parse(JSON.stringify(styleJson)));
     return { ...styleJson };
@@ -538,7 +537,7 @@ export const fetchAllStyles = async (stacObject) => {
   );
   const fetchPromises = styleLinks.map(async (link) => {
     /** @type {import("@/types").EodashStyleJson} */
-    const styleJson = await fetchJson(link.href, "style definition");
+    const styleJson = await axios.get(link.href).then((resp) => resp.data);
     log.debug("fetched styles JSON", JSON.parse(JSON.stringify(styleJson)));
     return styleJson;
   });

@@ -1,6 +1,6 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
-import { fetchJson } from "@/utils";
+import axios from "@/plugins/axios";
 import {
   useAbsoluteUrl,
   useCompareAbsoluteUrl,
@@ -105,7 +105,8 @@ export const useSTAcStore = defineStore("stac", () => {
       return;
     }
     try {
-      colormapRegistry.value = await fetchJson(registry, "colormap registry");
+      const resp = await axios.get(registry);
+      colormapRegistry.value = resp.data;
     } catch (err) {
       log.error("Error loading colormap registry", err);
     }
@@ -137,10 +138,9 @@ export const useSTAcStore = defineStore("stac", () => {
     const property = isApi.value ? "collections" : "links";
 
     log.debug("Loading STAC endpoint", url);
-    try {
-      const data = await fetchJson(url, "assigned STAC endpoint");
+    await axios.get(url).then((resp) => {
       //@ts-expect-error TODO
-      const links = data[property].map((link) => {
+      const links = resp.data[property].map((link) => {
         if (!link.title) {
           link.title = `${link.rel} ${link.href}`;
         }
@@ -148,10 +148,7 @@ export const useSTAcStore = defineStore("stac", () => {
       });
       log.debug("Setting selected STAC", links);
       stac.value = links;
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      throw new Error(`Error loading assigned STAC endpoint: ${message}`);
-    }
+    });
   }
 
   /**
@@ -173,27 +170,23 @@ export const useSTAcStore = defineStore("stac", () => {
       absoluteUrl.value = constructPoiUrl(relativePath, indicator.value);
     }
 
-    try {
-      const data = await fetchJson(absoluteUrl.value, "selected STAC");
+    await axios.get(absoluteUrl.value).then(async (resp) => {
       await updateEodashCollections(
         eodashCollections,
-        data,
+        resp.data,
         absoluteUrl.value,
         collectionsPalette,
         isApi.value,
         rasterEndpoint.value,
       );
       selectedItem.value = /** @type {any} */ (stacItem) ?? undefined;
-      selectedStac.value = data;
+      selectedStac.value = resp.data;
       // set indicator and poi
       indicator.value = isPoi
         ? indicator.value
         : useGetSubCodeId(selectedStac.value);
       poi.value = isPoi ? (selectedStac.value?.id ?? "") : "";
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      throw new Error(`Error loading the selected STAC: ${message}`);
-    }
+    });
   }
   /**
    * Fetches selected stac object and assign it to `selectedCompareStac`
@@ -219,14 +212,10 @@ export const useSTAcStore = defineStore("stac", () => {
       // construct absolute URL of a poi
       absoluteUrl.value = constructPoiUrl(relativePath, compareIndicator.value);
     }
-    try {
-      const data = await fetchJson(
-        absoluteUrl.value,
-        "selected comparison STAC",
-      );
+    await axios.get(absoluteUrl.value).then(async (resp) => {
       await updateEodashCollections(
         eodashCompareCollections,
-        data,
+        resp.data,
         absoluteUrl.value,
         [...collectionsPalette].reverse(),
         isApi.value,
@@ -234,16 +223,12 @@ export const useSTAcStore = defineStore("stac", () => {
         "compare",
       );
       selectedCompareItem.value = /** @type {any} */ (stacItem) ?? undefined;
-      selectedCompareStac.value = data;
+      selectedCompareStac.value = resp.data;
       compareIndicator.value = isPOI
         ? compareIndicator.value
         : useGetSubCodeId(selectedCompareStac.value);
       comparePoi.value = isPOI ? (selectedCompareStac.value?.id ?? "") : "";
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      throw new Error(`Error loading the selected comparison STAC: ${message}`);
-    }
-
+    });
   }
 
   /**

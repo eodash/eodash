@@ -1,5 +1,4 @@
 import log from "loglevel";
-import { fetchJson } from "@/utils";
 import {
   applyProcessLayersToMap,
   extractGeometries,
@@ -21,6 +20,7 @@ import { processCharts, processLayers, processSTAC } from "./outputs";
 import { handleLayersCustomEndpoints } from "./custom-endpoints/layers";
 import { handleChartCustomEndpoints } from "./custom-endpoints/chart";
 import { useSTAcStore } from "@/store/stac";
+import axios from "@/plugins/axios";
 import { useGetSubCodeId } from "@/composables";
 import { getLayers, getCompareLayers } from "@/store/actions";
 
@@ -50,17 +50,10 @@ export async function initProcess({
 }) {
   const isPoiAlive = enableCompare ? !!comparePoi.value : !!poi.value;
   let updatedJsonform = null;
-  try {
-    if (selectedStac.value?.["eodash:jsonform"]) {
-      updatedJsonform = await fetchJson(
-        //@ts-expect-error eodash extention
-        selectedStac.value["eodash:jsonform"],
-        "process form definition",
-      );
-    }
-  } catch (error) {
-    console.error("[eodash] Error initializing process:", error);
-    throw error;
+  if (selectedStac.value?.["eodash:jsonform"]) {
+    updatedJsonform = await axios
+      //@ts-expect-error eodash extention
+      .get(selectedStac.value["eodash:jsonform"]).then((resp) => resp.data);
   }
 
   if (!updatedJsonform && isPoiAlive) {
