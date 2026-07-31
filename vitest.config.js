@@ -5,7 +5,11 @@ import { playwright } from "@vitest/browser-playwright";
 //@ts-expect-error todo
 import vue from "@vitejs/plugin-vue";
 import vuetify from "vite-plugin-vuetify";
-import { serveFiles, stopServingFiles } from "./tests/support/commands.js";
+import {
+  serveFiles,
+  serveResponses,
+  stopServingFiles,
+} from "./tests/support/commands.js";
 
 const pkg = createRequire(import.meta.url)("./package.json");
 
@@ -78,7 +82,7 @@ export default defineConfig({
             headless: true,
             viewport: { width: 1440, height: 900 },
             instances: [{ browser: "chromium" }],
-            commands: { serveFiles, stopServingFiles },
+            commands: { serveFiles, serveResponses, stopServingFiles },
           },
         },
       },

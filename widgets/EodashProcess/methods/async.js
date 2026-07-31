@@ -44,7 +44,9 @@ export async function pollProcessStatus({
     // Fetch the process JSON report
     const cacheBuster = new Date().getTime(); // Add a timestamp for cache busting
     const processReport = await axios
-      .get(`${processUrl}?t=${cacheBuster}`).then((resp) => resp.data).catch((error) => {
+      .get(`${processUrl}?t=${cacheBuster}`)
+      .then((resp) => resp.data)
+      .catch((error) => {
         console.error("Error while polling process status:", error);
         return null;
       });

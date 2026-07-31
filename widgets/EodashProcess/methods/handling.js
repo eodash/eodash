@@ -53,7 +53,8 @@ export async function initProcess({
   if (selectedStac.value?.["eodash:jsonform"]) {
     updatedJsonform = await axios
       //@ts-expect-error eodash extention
-      .get(selectedStac.value["eodash:jsonform"]).then((resp) => resp.data);
+      .get(selectedStac.value["eodash:jsonform"])
+      .then((resp) => resp.data);
   }
 
   if (!updatedJsonform && isPoiAlive) {

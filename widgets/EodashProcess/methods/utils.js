@@ -427,7 +427,10 @@ async function fetchProcessStyles(endpointLink) {
           //@ts-expect-error TODO
           flatStyles[styleDict.id] = await axios
             .get(styleDict.url)
-            .then((resp) =>/** @type {import("@/types").EodashStyleJson} */ (resp.data));
+            .then(
+              (resp) =>
+                /** @type {import("@/types").EodashStyleJson} */ (resp.data),
+            );
         }),
       );
     } else {

@@ -8,14 +8,15 @@ import {
   serveUrls,
   stacCollection,
 } from "../../support/fixtures";
+import axios from "@/plugins/axios";
 
 // Per-type layer shapes built by EodashCollection.buildJsonArray. Item
 // resolution lives in EodashCollection.test.js, grouping in
 // create-layers-config.test.js, legend in the template rendered-state test.
 
 const COLLECTION_URL = "https://cat/collections/coll";
-const axiosMock = vi.hoisted(() => ({ get: vi.fn() }));
-vi.mock("@/plugins/axios", () => ({ default: axiosMock, axios: axiosMock }));
+
+const axiosMock = { get: vi.spyOn(axios, "get") };
 
 // createLayerFromRender reads useEodash().
 provideEodash();

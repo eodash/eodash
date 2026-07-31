@@ -112,7 +112,9 @@ export class EodashCollection {
         );
       } else {
         stacItemUrl = toAbsolute(itemOrItemLink.href, this.#collectionUrl);
-        this.selectedItem = await axios.get(stacItemUrl).then((resp) => resp.data);
+        this.selectedItem = await axios
+          .get(stacItemUrl)
+          .then((resp) => resp.data);
       }
     } else if (!this.selectedItem) {
       this.selectedItem = await this.getItem();
@@ -295,7 +297,9 @@ export class EodashCollection {
 
   async fetchCollection() {
     if (!this.#collectionStac) {
-      const col = await axios.get(this.#collectionUrl).then((resp) => resp.data);
+      const col = await axios
+        .get(this.#collectionUrl)
+        .then((resp) => resp.data);
       this.#collectionStac = new Collection(col);
       log.debug("Fetching collection file", this.#collectionUrl);
     }

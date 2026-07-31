@@ -402,7 +402,8 @@ export async function processVector(links, jsonformValue, layerId) {
 
   for (const link of vectorLinks) {
     if ("eox:flatstyle" in (link ?? {})) {
-      flatStyleJSON = await axios.get(/** @type {string} */ (link["eox:flatstyle"]))
+      flatStyleJSON = await axios
+        .get(/** @type {string} */ (link["eox:flatstyle"]))
         .then((resp) => resp.data);
     }
 
