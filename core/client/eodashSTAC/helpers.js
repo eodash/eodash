@@ -1597,7 +1597,7 @@ function applyValuesToUrl(url, values) {
  * - titiler v1: appends `@2x` to the `{y}` tile coordinate
  * - titiler v2: adds `tilesize=512` query parameter (v2 removed the `@2x` suffix)
  * Plain strings in the config default to v1 behavior for backward compatibility.
- * - scaleFactor, if larger than 1, multiplies the default size of 512px tile requested from server by the value
+ * - scaleFactor, if larger than 1, multiplies the default size of 512px tile requested from server by the value at the expense of larger data transfers
  * for v1, the value is rounded to nearest integer, for titiler v2 it can be a decimal
  *
  * @param {string} url - The XYZ tile URL template
