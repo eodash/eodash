@@ -1616,8 +1616,7 @@ export function applyTitilerUpscaling(url, upscalingEndpoints) {
 
   const version = typeof match === "string" ? 1 : (match.titilerVersion ?? 1);
 
-  const scaleFactor =
-    typeof match === "string" ? 1 : (match.scaleFactor ?? 1);
+  const scaleFactor = typeof match === "string" ? 1 : (match.scaleFactor ?? 1);
 
   if (version === 2) {
     const [base, query] = url.split("?");

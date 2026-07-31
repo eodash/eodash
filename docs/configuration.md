@@ -37,8 +37,8 @@ Alternatively, an object can be passed to configure a STAC API endpoint and dedi
     api: true,
     rasterEndpoint: "https://api.explorer.eopf.copernicus.eu/raster",
     supportedUpscalingEndpoints: [
-      { url: "https://api.explorer.eopf.copernicus.eu/raster", titilerVersion: 1 },
-      { url: "https://api.explorer.eopf.copernicus.eu/rstaging", titilerVersion: 2 },
+      { url: "https://api.explorer.eopf.copernicus.eu/raster", titilerVersion: 1, scaleFactor: 2 },
+      { url: "https://api.explorer.eopf.copernicus.eu/rstaging", titilerVersion: 2, scaleFactor: 4 },
     ],
   },
 }

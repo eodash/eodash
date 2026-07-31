@@ -337,7 +337,7 @@ export type StacEndpoint =
       rasterEndpoint?: string;
       vectorEndpoint?: string;
       supportedUpscalingEndpoints?: Array<
-        string | { url: string; titilerVersion?: 1 | 2 }
+        string | { url: string; titilerVersion?: 1 | 2; scaleFactor?: number }
       >;
       colormapRegistry?: string | Record<string, string[]>;
     };
