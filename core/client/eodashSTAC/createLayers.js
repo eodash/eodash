@@ -595,10 +595,7 @@ export const createLayersFromLinks = async (
       "tileUrl",
       map,
     );
-    const projectionCode = getProjectionCode(wmtsLinkProjection || "EPSG:3857");
-    // TODO: WARNING! This is a temporary project specific implementation
-    // that needs to be removed once catalog and wmts creation from capabilities
-    // combined with custom view projections is solved
+    const linkProjectionCode = getProjectionCode(wmtsLinkProjection || "EPSG:3857");
     let json;
     const linkId = createLayerID(
       collectionId,
@@ -612,64 +609,29 @@ export const createLayersFromLinks = async (
     let { style, matrixSet, ...dimensionsWithoutStyle } = { ...dimensions };
     let extractedStyle = /** @type { string } */ (style || "default");
 
-    // TODO, this does not yet work between layer time changes because we do not get
-    // updated variables from OL layer due to usage of tileurlfunction
+    log.debug("WMTS Layer from capabilities added", linkId);
 
-    if (wmtsLink.href.includes("marine.copernicus")) {
-      log.debug(
-        "Warning: WMTS Layer from capabilities added, function needs to be updated",
-        linkId,
-      );
-      json = {
-        type: "Tile",
-        properties: {
-          id: linkId,
-          title: title || item.id,
-          layerDatetime,
-          layerConfig: returnedLayerConfig.layerConfig,
-        },
-        source: {
-          type: "WMTS",
-          // TODO: Hard coding url as the current one set is for capabilities
-          url: "https://wmts.marine.copernicus.eu/teroWmts",
-          layer: wmtsLink["wmts:layer"],
-          style: extractedStyle,
-          // TODO: Hard coding matrixSet until we find solution to wmts creation from capabilities
-          matrixSet: "EPSG:3857",
-          projection: projectionCode,
-          tileGrid: {
-            tileSize: [128, 128],
-          },
-          ...(wmtsLink.attribution
-            ? { attributions: wmtsLink.attribution }
-            : {}),
-          dimensions: dimensionsWithoutStyle,
-        },
-      };
-    } else {
-      log.debug("WMTS Layer from capabilities added", linkId);
-
-      json = {
-        type: "Tile",
-        properties: {
-          id: linkId,
-          title: wmtsLink.title || title || item.id,
-          layerDatetime,
-          layerConfig: returnedLayerConfig.layerConfig,
-        },
-        source: {
-          type: "WMTSCapabilities",
-          url: buildCapabilitiesUrl(wmtsLink.href),
-          layer: wmtsLink["wmts:layer"],
-          style: extractedStyle,
-          ...(matrixSet ? { matrixSet } : {}),
-          ...(wmtsLink.attribution
-            ? { attributions: wmtsLink.attribution }
-            : {}),
-          dimensions: dimensionsWithoutStyle,
-        },
-      };
-    }
+    json = {
+      type: "Tile",
+      properties: {
+        id: linkId,
+        title: wmtsLink.title || title || item.id,
+        layerDatetime,
+        layerConfig: returnedLayerConfig.layerConfig,
+      },
+      source: {
+        type: "WMTSCapabilities",
+        url: buildCapabilitiesUrl(wmtsLink.href),
+        layer: wmtsLink["wmts:layer"],
+        projection: linkProjectionCode,
+        style: extractedStyle,
+        ...(matrixSet ? { matrixSet } : {}),
+        ...(wmtsLink.attribution
+          ? { attributions: wmtsLink.attribution }
+          : {}),
+        dimensions: dimensionsWithoutStyle,
+      },
+    };
     extractRoles(json.properties, wmtsLink);
     if (extraProperties !== null) {
       json.properties = {
