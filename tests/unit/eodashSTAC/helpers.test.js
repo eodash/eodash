@@ -12,44 +12,54 @@ describe("applyTitilerUpscaling", () => {
   test("applies v1 upscaling (default)", () => {
     const upscalingEndpoints = ["https://api.example.com"];
     const result = applyTitilerUpscaling(url, upscalingEndpoints);
-    expect(result.url).toBe("https://api.example.com/tiles/{z}/{x}/{y}@2x?assets=data");
+    expect(result.url).toBe(
+      "https://api.example.com/tiles/{z}/{x}/{y}@2x?assets=data",
+    );
     expect(result.tileSize).toEqual([512, 512]);
   });
 
   test("applies v1 upscaling with scaleFactor", () => {
     const upscalingEndpoints = [
-      { url: "https://api.example.com", titilerVersion: 1, scaleFactor: 3 }
+      { url: "https://api.example.com", titilerVersion: 1, scaleFactor: 3 },
     ];
     const result = applyTitilerUpscaling(url, upscalingEndpoints);
     // scaleFactor 3 -> exponent = Math.round(2 * 3) = 6
-    expect(result.url).toBe("https://api.example.com/tiles/{z}/{x}/{y}@6x?assets=data");
+    expect(result.url).toBe(
+      "https://api.example.com/tiles/{z}/{x}/{y}@6x?assets=data",
+    );
   });
 
   test("applies v2 upscaling", () => {
     const upscalingEndpoints = [
-      { url: "https://api.example.com", titilerVersion: 2 }
+      { url: "https://api.example.com", titilerVersion: 2 },
     ];
     const result = applyTitilerUpscaling(url, upscalingEndpoints);
-    expect(result.url).toBe("https://api.example.com/tiles/{z}/{x}/{y}?assets=data&tilesize=512");
+    expect(result.url).toBe(
+      "https://api.example.com/tiles/{z}/{x}/{y}?assets=data&tilesize=512",
+    );
     expect(result.tileSize).toEqual([512, 512]);
   });
 
   test("applies v2 upscaling with decimal scaleFactor", () => {
     const upscalingEndpoints = [
-      { url: "https://api.example.com", titilerVersion: 2, scaleFactor: 1.5 }
+      { url: "https://api.example.com", titilerVersion: 2, scaleFactor: 1.5 },
     ];
     const result = applyTitilerUpscaling(url, upscalingEndpoints);
     // 512 * 1.5 = 768
-    expect(result.url).toBe("https://api.example.com/tiles/{z}/{x}/{y}?assets=data&tilesize=768");
+    expect(result.url).toBe(
+      "https://api.example.com/tiles/{z}/{x}/{y}?assets=data&tilesize=768",
+    );
   });
 
   test("applies v1 upscaling with decimal scaleFactor (rounded)", () => {
     const upscalingEndpoints = [
-      { url: "https://api.example.com", titilerVersion: 1, scaleFactor: 1.4 }
+      { url: "https://api.example.com", titilerVersion: 1, scaleFactor: 1.4 },
     ];
     const result = applyTitilerUpscaling(url, upscalingEndpoints);
     // scaleFactor 1.4 -> exponent = Math.round(2 * 1.4) = Math.round(2.8) = 3
-    expect(result.url).toBe("https://api.example.com/tiles/{z}/{x}/{y}@3x?assets=data");
+    expect(result.url).toBe(
+      "https://api.example.com/tiles/{z}/{x}/{y}@3x?assets=data",
+    );
   });
 
   test("handles plain string as v1 with scaleFactor 1", () => {

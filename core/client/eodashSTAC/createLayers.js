@@ -595,7 +595,9 @@ export const createLayersFromLinks = async (
       "tileUrl",
       map,
     );
-    const linkProjectionCode = getProjectionCode(wmtsLinkProjection || "EPSG:3857");
+    const linkProjectionCode = getProjectionCode(
+      wmtsLinkProjection || "EPSG:3857",
+    );
     let json;
     const linkId = createLayerID(
       collectionId,
@@ -626,9 +628,7 @@ export const createLayersFromLinks = async (
         projection: linkProjectionCode,
         style: extractedStyle,
         ...(matrixSet ? { matrixSet } : {}),
-        ...(wmtsLink.attribution
-          ? { attributions: wmtsLink.attribution }
-          : {}),
+        ...(wmtsLink.attribution ? { attributions: wmtsLink.attribution } : {}),
         dimensions: dimensionsWithoutStyle,
       },
     };
