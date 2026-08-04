@@ -391,7 +391,7 @@ export function processImage(links, jsonformValue, origBbox) {
  */
 export async function processVector(links, jsonformValue, layerId) {
   if (!links) return;
-  /** @type {import("@eox/map/src/layers").EOxLayerType<"Vector",any>[]} */
+  /** @type {import("@eox/map").EoxLayer[]} */
   const layers = [];
   const vectorLinks = links.filter(
     (link) => link.rel === "service" && link.type === "application/geo+json",
@@ -416,8 +416,8 @@ export async function processVector(links, jsonformValue, layerId) {
       layerConfig = extracted.layerConfig;
       style = extracted.style;
     }
-    /** @type {import("@eox/map/src/layers").EOxLayerType<"Vector","Vector"|"FlatGeoBuf">} */
-    const layer = {
+    /** @type {import("@eox/map").EoxLayer} */
+    const layer = /** @type {any} */ ({
       type: "Vector",
       source: {
         type: "Vector",
@@ -432,7 +432,7 @@ export async function processVector(links, jsonformValue, layerId) {
         ...(layerConfig && { ...layerConfig }),
       },
       ...(style && { style }),
-    };
+    });
     layers.push(layer);
   }
   return layers;

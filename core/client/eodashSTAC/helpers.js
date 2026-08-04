@@ -253,8 +253,8 @@ export function tmsToTileGridOptions(tms, targetTileSize = [512, 512]) {
   }
   const firstMatrix = tms.tileMatrices[0];
   let origin = firstMatrix.pointOfOrigin;
-  let resolutions = tms.tileMatrices.map((m) => m.cellSize);
-  const matrixIds = tms.tileMatrices.map((m) => m.id);
+  let resolutions = tms.tileMatrices.map((/** @type {any} */ m) => m.cellSize);
+  const matrixIds = tms.tileMatrices.map((/** @type {any} */ m) => m.id);
   const originalTileWidth = firstMatrix.tileWidth;
   const originalTileHeight = firstMatrix.tileHeight;
 
@@ -269,7 +269,7 @@ export function tmsToTileGridOptions(tms, targetTileSize = [512, 512]) {
 
   if (targetTileSize) {
     const scale = targetTileSize[0] / originalTileWidth;
-    resolutions = resolutions.map((r) => r / scale);
+    resolutions = resolutions.map((/** @type {any} */ r) => r / scale);
     tileSize = targetTileSize;
   }
 
@@ -285,7 +285,7 @@ export function tmsToTileGridOptions(tms, targetTileSize = [512, 512]) {
 
   let projection = undefined;
   if (tms.crs) {
-    const match = tms.crs.match(/EPSG\/[^\/]+\/(\d+)$/);
+    const match = tms.crs.match(/EPSG\/[^/]+\/(\d+)$/);
     if (match) {
       projection = `EPSG:${match[1]}`;
     } else if (tms.crs.includes("EPSG:")) {
@@ -1154,9 +1154,11 @@ export function generateLinksFromItems(items) {
           asset.href.startsWith("s3://veda-data-store"),
         )?.href,
       }),
-      ...(item.properties?.["eodash:tilematrixset"] && {
-        "eodash:tilematrixset": item.properties["eodash:tilematrixset"],
-      }),
+      ...(item.properties?.["eodash:tilematrixset"]
+        ? {
+            "eodash:tilematrixset": item.properties["eodash:tilematrixset"],
+          }
+        : {}),
     };
   });
 }

@@ -705,10 +705,12 @@ export const createLayersFromLinks = async (
       },
     };
 
-    const tileMatrixSetId = xyzLink["eodash:tilematrixset"];
+    const tileMatrixSetId = /** @type {any} */ (xyzLink["eodash:tilematrixset"]);
     if (tileMatrixSetId) {
       const store = useSTAcStore();
-      const tileMatrixSetRegistry = store.tileMatrixSetRegistry;
+      const tileMatrixSetRegistry = /** @type {any} */ (
+        store.tileMatrixSetRegistry
+      );
       const tmsEntries = Array.isArray(tileMatrixSetRegistry)
         ? tileMatrixSetRegistry
         : tileMatrixSetRegistry?.tileMatrixSets;
@@ -756,13 +758,13 @@ export const createLayersFromLinks = async (
         // @ts-expect-error tileGrid supported in eox-map
         json.source.tileGrid = tmsOptions;
         if (tmsOptions.projection) {
-          json.source.projection = tmsOptions.projection;
+          /** @type {any} */ (json.source).projection = tmsOptions.projection;
           await registerProjection(tmsOptions.projection);
         }
       }
     }
 
-    if (upscaling && !json.source.tileGrid) {
+    if (upscaling && !/** @type {any} */ (json.source).tileGrid) {
       // @ts-expect-error tileGrid is added here and supported in eox-map layer definition
       json.source.tileGrid = {
         tileSize: [512, 512],
@@ -1094,11 +1096,14 @@ export const createLayerFromRender = async (
 
   const layers = [];
   const store = useSTAcStore();
-  const tileMatrixSetRegistry = store.tileMatrixSetRegistry;
-  const tileMatrixSetId =
+  const tileMatrixSetRegistry = /** @type {any} */ (
+    store.tileMatrixSetRegistry
+  );
+  const tileMatrixSetId = /** @type {any} */ (
     item?.["eodash:tilematrixset"] ||
     collection?.["eodash:tilematrixset"] ||
-    "WebMercatorQuad";
+    "WebMercatorQuad"
+  );
 
   const tmsEntries = Array.isArray(tileMatrixSetRegistry)
     ? tileMatrixSetRegistry
@@ -1199,7 +1204,7 @@ export const createLayerFromRender = async (
       // @ts-expect-error tileGrid supported in eox-map
       json.source.tileGrid = tmsOptions;
       if (tmsOptions.projection) {
-        json.source.projection = tmsOptions.projection;
+        /** @type {any} */ (json.source).projection = tmsOptions.projection;
         await registerProjection(tmsOptions.projection);
       }
     } else if (renders[key].tilesize) {
