@@ -15,6 +15,7 @@ import {
   resolveStyle,
   getBandsProperty,
   applyTitilerUpscaling,
+  tmsToTileGridOptions,
   encodeURLObject,
   normalizeRescale,
   normalizeNodata,
@@ -703,10 +704,68 @@ export const createLayersFromLinks = async (
         ...(xyzLink.attribution ? { attributions: xyzLink.attribution } : {}),
       },
     };
-    if (upscaling) {
+
+    const tileMatrixSetId = xyzLink["eodash:tilematrixset"];
+    if (tileMatrixSetId) {
+      const store = useSTAcStore();
+      const tileMatrixSetRegistry = store.tileMatrixSetRegistry;
+      const tmsEntries = Array.isArray(tileMatrixSetRegistry)
+        ? tileMatrixSetRegistry
+        : tileMatrixSetRegistry?.tileMatrixSets;
+
+      let tms =
+        tmsEntries?.find((/** @type {any} */ t) => t.id === tileMatrixSetId) ||
+        tileMatrixSetRegistry?.[tileMatrixSetId];
+
+      // If we only have a summary (links), fetch the full definition
+      if (tms && !tms.tileMatrices && tms.links) {
+        const tilingSchemeRel =
+          "http://www.opengis.net/def/rel/ogc/1.0/tiling-scheme";
+        const definitionLink = tms.links.find(
+          (/** @type {any} */ l) =>
+            l.rel === tilingSchemeRel || l.type === "application/json",
+        );
+        if (definitionLink) {
+          let href = definitionLink.href;
+          if (!href.includes("f=json") && !href.includes(".json")) {
+            href += href.includes("?") ? "&f=json" : "?f=json";
+          }
+          tms = await axios.get(href).then((res) => res.data);
+          // Cache the full definition back in registry
+          if (tms) {
+            store.tileMatrixSetRegistry = {
+              ...(tileMatrixSetRegistry || {}),
+              [tileMatrixSetId]: tms,
+            };
+          }
+        }
+      }
+
+      if (!tms && tileMatrixSetId.startsWith("http")) {
+        tms = await axios.get(tileMatrixSetId).then((res) => res.data);
+        if (tms) {
+          store.tileMatrixSetRegistry = {
+            ...(tileMatrixSetRegistry || {}),
+            [tileMatrixSetId]: tms,
+          };
+        }
+      }
+
+      if (tms) {
+        const tmsOptions = tmsToTileGridOptions(tms, [512, 512]);
+        // @ts-expect-error tileGrid supported in eox-map
+        json.source.tileGrid = tmsOptions;
+        if (tmsOptions.projection) {
+          json.source.projection = tmsOptions.projection;
+          await registerProjection(tmsOptions.projection);
+        }
+      }
+    }
+
+    if (upscaling && !json.source.tileGrid) {
       // @ts-expect-error tileGrid is added here and supported in eox-map layer definition
       json.source.tileGrid = {
-        tileSize: upscaling.tileSize,
+        tileSize: [512, 512],
       };
     }
     if (
@@ -1034,6 +1093,48 @@ export const createLayerFromRender = async (
   };
 
   const layers = [];
+  const store = useSTAcStore();
+  const tileMatrixSetRegistry = store.tileMatrixSetRegistry;
+  const tileMatrixSetId =
+    item?.["eodash:tilematrixset"] ||
+    collection?.["eodash:tilematrixset"] ||
+    "WebMercatorQuad";
+
+  const tmsEntries = Array.isArray(tileMatrixSetRegistry)
+    ? tileMatrixSetRegistry
+    : tileMatrixSetRegistry?.tileMatrixSets;
+
+  let tms =
+    tmsEntries?.find((/** @type {any} */ t) => t.id === tileMatrixSetId) ||
+    tileMatrixSetRegistry?.[tileMatrixSetId];
+
+  // If we only have a summary (links), fetch the full definition
+  if (tms && !tms.tileMatrices && tms.links) {
+    const tilingSchemeRel =
+      "http://www.opengis.net/def/rel/ogc/1.0/tiling-scheme";
+    const definitionLink = tms.links.find(
+      (/** @type {any} */ l) =>
+        l.rel === tilingSchemeRel || l.type === "application/json",
+    );
+    if (definitionLink) {
+      let href = definitionLink.href;
+      if (!href.includes("f=json") && !href.includes(".json")) {
+        href += href.includes("?") ? "&f=json" : "?f=json";
+      }
+      tms = await axios.get(href).then((res) => res.data);
+      if (tms) {
+        store.tileMatrixSetRegistry = {
+          ...(tileMatrixSetRegistry || {}),
+          [tileMatrixSetId]: tms,
+        };
+      }
+    }
+  }
+
+  if (!tms && tileMatrixSetId.startsWith("http")) {
+    tms = await axios.get(tileMatrixSetId).then((res) => res.data);
+  }
+
   for (const key in renders) {
     const title = renders[key].title;
 
@@ -1067,7 +1168,7 @@ export const createLayerFromRender = async (
       tilesize: renders[key].tilesize,
     };
     const paramsStr = encodeURLObject(paramsObject);
-    const url = `${rasterURL}/collections/${collection.id}/items/${item.id}/tiles/WebMercatorQuad/{z}/{x}/{y}?${paramsStr}`;
+    const url = `${rasterURL}/collections/${collection.id}/items/${item.id}/tiles/${tileMatrixSetId}/{z}/{x}/{y}?${paramsStr}`;
     const json = {
       /** @type {"Tile"} */
       type: "Tile",
@@ -1092,10 +1193,19 @@ export const createLayerFromRender = async (
         projection: "EPSG:3857",
       },
     };
-    if (renders[key].tilesize) {
+
+    if (tms) {
+      const tmsOptions = tmsToTileGridOptions(tms, [512, 512]);
+      // @ts-expect-error tileGrid supported in eox-map
+      json.source.tileGrid = tmsOptions;
+      if (tmsOptions.projection) {
+        json.source.projection = tmsOptions.projection;
+        await registerProjection(tmsOptions.projection);
+      }
+    } else if (renders[key].tilesize) {
       // @ts-expect-error tileGrid is added here and supported in eox-map layer definition
       json.source.tileGrid = {
-        tileSize: [renders[key].tilesize, renders[key].tilesize],
+        tileSize: [512, 512],
       };
     }
     applyRasterFormValue(json, collection.id, map);

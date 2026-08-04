@@ -18,8 +18,14 @@ const baseConfig = {
     // api: true,
     supportedUpscalingEndpoints: [
       { url: "openveda.cloud", titilerVersion: 1 },
-      { url: "api.explorer.eopf.copernicus.eu", titilerVersion: 2 },
+      { url: "api.explorer.eopf.copernicus.eu", titilerVersion: 2, },
+      {
+        url: "eoapi.workspace.cif.hub-otc.eox.at",
+        titilerVersion: 2,
+        scaleFactor: 3,
+      },
     ],
+    tileMatrixSetRegistry: "https://eoapi.workspace.cif.hub-otc.eox.at/raster/tileMatrixSets?f=json",
     colormapRegistry:
       "https://raw.githubusercontent.com/eurodatacube/eodash-assets/refs/heads/main/defaults/colormaps.json",
   },

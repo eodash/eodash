@@ -340,6 +340,7 @@ export type StacEndpoint =
         string | { url: string; titilerVersion?: 1 | 2; scaleFactor?: number }
       >;
       colormapRegistry?: string | Record<string, string[]>;
+      tileMatrixSetRegistry?: string | Record<string, any>;
     };
 
 /** @group Eodash */

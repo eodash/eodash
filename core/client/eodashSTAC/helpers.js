@@ -236,6 +236,74 @@ function resolveLocalRef(ref, rootSchema) {
 }
 
 /**
+ * Converts a OGC TileMatrixSet definition to OpenLayers TileGrid options.
+ * @param {Record<string, any>} tms - The TileMatrixSet JSON definition
+ * @param {[number, number]} [targetTileSize] - Optional target tile size for upscaling
+ * @returns {Record<string, any>}
+ */
+/**
+ * Converts a OGC TileMatrixSet definition to OpenLayers TileGrid options.
+ * @param {Record<string, any>} tms - The TileMatrixSet JSON definition
+ * @param {[number, number]} [targetTileSize] - Optional target tile size for upscaling
+ * @returns {Record<string, any>}
+ */
+export function tmsToTileGridOptions(tms, targetTileSize = [512, 512]) {
+  if (!tms?.tileMatrices?.length) {
+    return {};
+  }
+  const firstMatrix = tms.tileMatrices[0];
+  let origin = firstMatrix.pointOfOrigin;
+  let resolutions = tms.tileMatrices.map((m) => m.cellSize);
+  const matrixIds = tms.tileMatrices.map((m) => m.id);
+  const originalTileWidth = firstMatrix.tileWidth;
+  const originalTileHeight = firstMatrix.tileHeight;
+
+  // Handle axis order
+  const isNE = tms.orderedAxes?.[0] === "N";
+  if (isNE) {
+    // Swap origin to [E, N] for OpenLayers
+    origin = [origin[1], origin[0]];
+  }
+
+  let tileSize = [originalTileWidth, originalTileHeight];
+
+  if (targetTileSize) {
+    const scale = targetTileSize[0] / originalTileWidth;
+    resolutions = resolutions.map((r) => r / scale);
+    tileSize = targetTileSize;
+  }
+
+  // Calculate extent based on Level 0 grid dimensions
+  const sizeX =
+    firstMatrix.matrixWidth * originalTileWidth * firstMatrix.cellSize;
+  const sizeY =
+    firstMatrix.matrixHeight * originalTileHeight * firstMatrix.cellSize;
+
+  // extent = [minX, minY, maxX, maxY]
+  // Assumes topLeft origin and Y increases upwards
+  const extent = [origin[0], origin[1] - sizeY, origin[0] + sizeX, origin[1]];
+
+  let projection = undefined;
+  if (tms.crs) {
+    const match = tms.crs.match(/EPSG\/[^\/]+\/(\d+)$/);
+    if (match) {
+      projection = `EPSG:${match[1]}`;
+    } else if (tms.crs.includes("EPSG:")) {
+      projection = tms.crs.substring(tms.crs.indexOf("EPSG:"));
+    }
+  }
+
+  return {
+    origin,
+    resolutions,
+    matrixIds,
+    tileSize,
+    extent,
+    projection,
+  };
+}
+
+/**
  * Flattens a nested jsonform value into a single map keyed by leaf property name
  * (e.g. `{ rescaleRed: { minRed, maxRed } }` -> `{ minRed, maxRed }`). Arrays are
  * kept whole (bands stay a single value).
@@ -1086,6 +1154,9 @@ export function generateLinksFromItems(items) {
           asset.href.startsWith("s3://veda-data-store"),
         )?.href,
       }),
+      ...(item.properties?.["eodash:tilematrixset"] && {
+        "eodash:tilematrixset": item.properties["eodash:tilematrixset"],
+      }),
     };
   });
 }
@@ -1621,12 +1692,15 @@ export function applyTitilerUpscaling(url, upscalingEndpoints) {
   if (version === 2) {
     const [base, query] = url.split("?");
     const params = new URLSearchParams(query);
-    const tilesize = Math.round(512 * scaleFactor).toString();
-    params.set("tilesize", tilesize);
+    const size = Math.round(512 * scaleFactor);
+    params.set("tilesize", size.toString());
     return { url: `${base}?${params.toString()}`, tileSize: [512, 512] };
   }
   const exponent = Math.round(2 * scaleFactor).toString();
-  return { url: url.replace("{y}", `{y}@${exponent}x`), tileSize: [512, 512] };
+  return {
+    url: url.replace("{y}", `{y}@${exponent}x`),
+    tileSize: [512, 512],
+  };
 }
 
 /**
