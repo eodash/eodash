@@ -706,7 +706,11 @@ export const createLayersFromLinks = async (
       },
     };
 
-    const tms = resolveTmsByProjection(projectionCode);
+    const store = useSTAcStore();
+    const tms = resolveTmsByProjection(
+      projectionCode,
+      store.tileMatrixSetRegistry,
+    );
     if (tms) {
       const tmsOptions = tmsToTileGridOptions(tms, [512, 512]);
       // @ts-expect-error tileGrid supported in eox-map
@@ -1044,8 +1048,12 @@ export const createLayerFromRender = async (
   };
 
   const layers = [];
+  const store = useSTAcStore();
   const projectionCode = "EPSG:3857";
-  const tms = resolveTmsByProjection(projectionCode);
+  const tms = resolveTmsByProjection(
+    projectionCode,
+    store.tileMatrixSetRegistry,
+  );
 
   for (const key in renders) {
     const title = renders[key].title;
