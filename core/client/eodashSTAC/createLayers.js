@@ -16,6 +16,7 @@ import {
   getBandsProperty,
   applyTitilerUpscaling,
   tmsToTileGridOptions,
+  resolveTmsByProjection,
   encodeURLObject,
   normalizeRescale,
   normalizeNodata,
@@ -705,66 +706,14 @@ export const createLayersFromLinks = async (
       },
     };
 
-    const tileMatrixSetId = /** @type {any} */ (xyzLink["eodash:tilematrixset"]);
-    if (tileMatrixSetId) {
-      const store = useSTAcStore();
-      const tileMatrixSetRegistry = /** @type {any} */ (
-        store.tileMatrixSetRegistry
-      );
-      const tmsEntries = Array.isArray(tileMatrixSetRegistry)
-        ? tileMatrixSetRegistry
-        : tileMatrixSetRegistry?.tileMatrixSets;
-
-      let tms =
-        tmsEntries?.find((/** @type {any} */ t) => t.id === tileMatrixSetId) ||
-        tileMatrixSetRegistry?.[tileMatrixSetId];
-
-      // If we only have a summary (links), fetch the full definition
-      if (tms && !tms.tileMatrices && tms.links) {
-        const tilingSchemeRel =
-          "http://www.opengis.net/def/rel/ogc/1.0/tiling-scheme";
-        const definitionLink = tms.links.find(
-          (/** @type {any} */ l) =>
-            l.rel === tilingSchemeRel || l.type === "application/json",
-        );
-        if (definitionLink) {
-          let href = definitionLink.href;
-          if (!href.includes("f=json") && !href.includes(".json")) {
-            href += href.includes("?") ? "&f=json" : "?f=json";
-          }
-          tms = await axios.get(href).then((res) => res.data);
-          // Cache the full definition back in registry
-          if (tms) {
-            store.tileMatrixSetRegistry = {
-              ...(tileMatrixSetRegistry || {}),
-              [tileMatrixSetId]: tms,
-            };
-          }
-        }
-      }
-
-      if (!tms && tileMatrixSetId.startsWith("http")) {
-        tms = await axios.get(tileMatrixSetId).then((res) => res.data);
-        if (tms) {
-          store.tileMatrixSetRegistry = {
-            ...(tileMatrixSetRegistry || {}),
-            [tileMatrixSetId]: tms,
-          };
-        }
-      }
-
-      if (tms) {
-        const tmsOptions = tmsToTileGridOptions(tms, [512, 512]);
-        // @ts-expect-error tileGrid supported in eox-map
-        json.source.tileGrid = tmsOptions;
-        if (tmsOptions.projection) {
-          /** @type {any} */ (json.source).projection = tmsOptions.projection;
-          await registerProjection(tmsOptions.projection);
-        }
-      }
+    const tms = resolveTmsByProjection(projectionCode);
+    if (tms) {
+      const tmsOptions = tmsToTileGridOptions(tms, [512, 512]);
+      // @ts-expect-error tileGrid supported in eox-map
+      json.source.tileGrid = tmsOptions;
     }
 
-    if (upscaling && !/** @type {any} */ (json.source).tileGrid) {
+    if (upscaling && !(/** @type {any} */ (json.source)?.tileGrid)) {
       // @ts-expect-error tileGrid is added here and supported in eox-map layer definition
       json.source.tileGrid = {
         tileSize: [512, 512],
@@ -1095,50 +1044,8 @@ export const createLayerFromRender = async (
   };
 
   const layers = [];
-  const store = useSTAcStore();
-  const tileMatrixSetRegistry = /** @type {any} */ (
-    store.tileMatrixSetRegistry
-  );
-  const tileMatrixSetId = /** @type {any} */ (
-    item?.["eodash:tilematrixset"] ||
-    collection?.["eodash:tilematrixset"] ||
-    "WebMercatorQuad"
-  );
-
-  const tmsEntries = Array.isArray(tileMatrixSetRegistry)
-    ? tileMatrixSetRegistry
-    : tileMatrixSetRegistry?.tileMatrixSets;
-
-  let tms =
-    tmsEntries?.find((/** @type {any} */ t) => t.id === tileMatrixSetId) ||
-    tileMatrixSetRegistry?.[tileMatrixSetId];
-
-  // If we only have a summary (links), fetch the full definition
-  if (tms && !tms.tileMatrices && tms.links) {
-    const tilingSchemeRel =
-      "http://www.opengis.net/def/rel/ogc/1.0/tiling-scheme";
-    const definitionLink = tms.links.find(
-      (/** @type {any} */ l) =>
-        l.rel === tilingSchemeRel || l.type === "application/json",
-    );
-    if (definitionLink) {
-      let href = definitionLink.href;
-      if (!href.includes("f=json") && !href.includes(".json")) {
-        href += href.includes("?") ? "&f=json" : "?f=json";
-      }
-      tms = await axios.get(href).then((res) => res.data);
-      if (tms) {
-        store.tileMatrixSetRegistry = {
-          ...(tileMatrixSetRegistry || {}),
-          [tileMatrixSetId]: tms,
-        };
-      }
-    }
-  }
-
-  if (!tms && tileMatrixSetId.startsWith("http")) {
-    tms = await axios.get(tileMatrixSetId).then((res) => res.data);
-  }
+  const projectionCode = "EPSG:3857";
+  const tms = resolveTmsByProjection(projectionCode);
 
   for (const key in renders) {
     const title = renders[key].title;
@@ -1172,8 +1079,9 @@ export const createLayerFromRender = async (
       bidx: renders[key].bidx,
       tilesize: renders[key].tilesize,
     };
+    const tmsId = tms?.id || "WebMercatorQuad";
     const paramsStr = encodeURLObject(paramsObject);
-    const url = `${rasterURL}/collections/${collection.id}/items/${item.id}/tiles/${tileMatrixSetId}/{z}/{x}/{y}?${paramsStr}`;
+    const url = `${rasterURL}/collections/${collection.id}/items/${item.id}/tiles/${tmsId}/{z}/{x}/{y}?${paramsStr}`;
     const json = {
       /** @type {"Tile"} */
       type: "Tile",
@@ -1182,7 +1090,7 @@ export const createLayerFromRender = async (
           collection.id,
           item.id,
           { id: item.id, href: "", title, rel: "" },
-          "EPSG:3857",
+          projectionCode,
         ),
         title,
         roles: item.roles,
@@ -1195,7 +1103,7 @@ export const createLayerFromRender = async (
         /** @type {"XYZ"} */
         type: "XYZ",
         url,
-        projection: "EPSG:3857",
+        projection: projectionCode,
       },
     };
 

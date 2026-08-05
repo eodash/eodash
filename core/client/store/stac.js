@@ -73,12 +73,6 @@ export const useSTAcStore = defineStore("stac", () => {
   const selectedCompareItem = ref(undefined);
 
   /**
-   * Registry of TileMatrixSets
-   * @type {import("vue").Ref<Record<string, any> | null>}
-   */
-  const tileMatrixSetRegistry = ref(null);
-
-  /**
    * Initializes the store by assigning the STAC endpoint.
    * @param {import("@/types").StacEndpoint} endpoint
    */
@@ -98,26 +92,6 @@ export const useSTAcStore = defineStore("stac", () => {
       endpoint.supportedUpscalingEndpoints ?? [];
     if (endpoint.colormapRegistry) {
       loadColormapRegistry(endpoint.colormapRegistry);
-    }
-    if (endpoint.tileMatrixSetRegistry) {
-      loadTileMatrixSetRegistry(endpoint.tileMatrixSetRegistry);
-    }
-  }
-
-  /**
-   * Loads the tileMatrixSet registry from a URL or object
-   * @param {string | Record<string, any>} registry
-   */
-  async function loadTileMatrixSetRegistry(registry) {
-    if (typeof registry === "object") {
-      tileMatrixSetRegistry.value = registry;
-      return;
-    }
-    try {
-      const resp = await axios.get(registry);
-      tileMatrixSetRegistry.value = resp.data;
-    } catch (err) {
-      log.error("Error loading TileMatrixSet registry", err);
     }
   }
 
@@ -316,7 +290,5 @@ export const useSTAcStore = defineStore("stac", () => {
     supportedUpscalingEndpoints,
     colormapRegistry,
     loadColormapRegistry,
-    tileMatrixSetRegistry,
-    loadTileMatrixSetRegistry,
   };
 });

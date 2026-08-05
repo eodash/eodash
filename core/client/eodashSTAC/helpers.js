@@ -3,6 +3,7 @@ import axios from "@/plugins/axios";
 import log from "loglevel";
 import mustache from "mustache";
 import { updateVectorLayerStyle } from "@eox/layercontrol";
+import { tmsRegistry } from "./tmsRegistry";
 import {
   itemsCache,
   splitItemsCache,
@@ -233,6 +234,31 @@ function resolveLocalRef(ref, rootSchema) {
       (node, part) => node?.[part.replace(/~1/g, "/").replace(/~0/g, "~")],
       rootSchema,
     );
+}
+
+/**
+ * Resolves a TileMatrixSet definition by projection code.
+ * @param {string} projectionCode - e.g. "EPSG:3857"
+ * @returns {Record<string, any> | undefined}
+ */
+export function resolveTmsByProjection(projectionCode) {
+  if (!projectionCode) return undefined;
+  // Standardize EPSG:XXXX
+  const code = projectionCode.toUpperCase();
+
+  // Find first TMS that matches this projection
+  for (const tms of Object.values(tmsRegistry)) {
+    const crs = tms.crs || "";
+    if (
+      crs.includes(code) ||
+      (code.startsWith("EPSG:") &&
+        (crs.endsWith(`/${code.split(":")[1]}`) ||
+          crs.includes(`::${code.split(":")[1]}`)))
+    ) {
+      return tms;
+    }
+  }
+  return undefined;
 }
 
 /**
