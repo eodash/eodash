@@ -26,7 +26,7 @@ const baseConfig = {
       },
     ],
     tileMatrixSetRegistry:
-      "https://eoapi.workspace.cif.hub-otc.eox.at/raster/tileMatrixSets?f=json",
+      "https://raw.githubusercontent.com/eurodatacube/eodash-assets/refs/heads/main/defaults/tmsRegistry.json",
     colormapRegistry:
       "https://raw.githubusercontent.com/eurodatacube/eodash-assets/refs/heads/main/defaults/colormaps.json",
   },

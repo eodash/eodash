@@ -1181,11 +1181,6 @@ export function generateLinksFromItems(items) {
           asset.href.startsWith("s3://veda-data-store"),
         )?.href,
       }),
-      ...(item.properties?.["eodash:tilematrixset"]
-        ? {
-            "eodash:tilematrixset": item.properties["eodash:tilematrixset"],
-          }
-        : {}),
     };
   });
 }
