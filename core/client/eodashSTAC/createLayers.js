@@ -1119,14 +1119,10 @@ export const createLayerFromRender = async (
       const tmsOptions = tmsToTileGridOptions(tms, [512, 512]);
       // @ts-expect-error tileGrid supported in eox-map
       json.source.tileGrid = tmsOptions;
-      if (tmsOptions.projection) {
-        /** @type {any} */ (json.source).projection = tmsOptions.projection;
-        await registerProjection(tmsOptions.projection);
-      }
     } else if (renders[key].tilesize) {
       // @ts-expect-error tileGrid is added here and supported in eox-map layer definition
       json.source.tileGrid = {
-        tileSize: [512, 512],
+        tileSize: renders[key].tilesize,
       };
     }
     applyRasterFormValue(json, collection.id, map);
