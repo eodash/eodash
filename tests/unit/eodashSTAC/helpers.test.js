@@ -86,7 +86,6 @@ describe("tmsToTileGridOptions", () => {
     expect(options.resolutions).toHaveLength(2);
     expect(options.matrixIds).toEqual(["0", "1"]);
     expect(options.tileSize).toEqual([256, 256]);
-    expect(options.projection).toBe("EPSG:3857");
   });
 
   test("handles targetTileSize for upscaling", () => {

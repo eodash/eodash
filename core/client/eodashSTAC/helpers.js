@@ -310,23 +310,12 @@ const isNE = ["N", "Lat", "Y"].includes(tms.orderedAxes?.[0]);
   // Assumes topLeft origin and Y increases upwards
   const extent = [origin[0], origin[1] - sizeY, origin[0] + sizeX, origin[1]];
 
-  let projection = undefined;
-  if (tms.crs) {
-    const match = tms.crs.match(/EPSG\/[^/]+\/(\d+)$/);
-    if (match) {
-      projection = `EPSG:${match[1]}`;
-    } else if (tms.crs.includes("EPSG:")) {
-      projection = tms.crs.substring(tms.crs.indexOf("EPSG:"));
-    }
-  }
-
   return {
     origin,
     resolutions,
     matrixIds,
     tileSize,
     extent,
-    projection,
   };
 }
 
