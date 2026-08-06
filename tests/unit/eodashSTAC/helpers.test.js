@@ -23,9 +23,18 @@ describe("applyTitilerUpscaling", () => {
       { url: "https://api.example.com", titilerVersion: 1, scaleFactor: 3 },
     ];
     const result = applyTitilerUpscaling(url, upscalingEndpoints);
-    // scaleFactor 3 -> exponent = Math.round(2 * 3) = 6
     expect(result.url).toBe(
-      "https://api.example.com/tiles/{z}/{x}/{y}@6x?assets=data",
+      "https://api.example.com/tiles/{z}/{x}/{y}@3x?assets=data",
+    );
+  });
+
+  test("applies v1 upscaling guard (max 4)", () => {
+    const upscalingEndpoints = [
+      { url: "https://api.example.com", titilerVersion: 1, scaleFactor: 10 },
+    ];
+    const result = applyTitilerUpscaling(url, upscalingEndpoints);
+    expect(result.url).toBe(
+      "https://api.example.com/tiles/{z}/{x}/{y}@4x?assets=data",
     );
   });
 
@@ -40,23 +49,23 @@ describe("applyTitilerUpscaling", () => {
     expect(result.tileSize).toEqual([512, 512]);
   });
 
-  test("applies v2 upscaling with decimal scaleFactor", () => {
+  test("applies v2 upscaling with scaleFactor (no limit)", () => {
     const upscalingEndpoints = [
-      { url: "https://api.example.com", titilerVersion: 2, scaleFactor: 1.5 },
+      { url: "https://api.example.com", titilerVersion: 2, scaleFactor: 8 },
     ];
     const result = applyTitilerUpscaling(url, upscalingEndpoints);
-    // 512 * 1.5 = 768
+    // 256 * 8 = 2048
     expect(result.url).toBe(
-      "https://api.example.com/tiles/{z}/{x}/{y}?assets=data&tilesize=768",
+      "https://api.example.com/tiles/{z}/{x}/{y}?assets=data&tilesize=2048",
     );
   });
 
   test("applies v1 upscaling with decimal scaleFactor (rounded)", () => {
     const upscalingEndpoints = [
-      { url: "https://api.example.com", titilerVersion: 1, scaleFactor: 1.4 },
+      { url: "https://api.example.com", titilerVersion: 1, scaleFactor: 3.4 },
     ];
     const result = applyTitilerUpscaling(url, upscalingEndpoints);
-    // scaleFactor 1.4 -> exponent = Math.round(2 * 1.4) = Math.round(2.8) = 3
+    // scaleFactor 3.4 -> exponent = Math.round(3.4) = 3
     expect(result.url).toBe(
       "https://api.example.com/tiles/{z}/{x}/{y}@3x?assets=data",
     );
