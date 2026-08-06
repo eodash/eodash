@@ -41,7 +41,9 @@ describe("resolveTmsByProjection", () => {
   });
 
   test("returns undefined for no match", () => {
-    expect(resolveTmsByProjection("EPSG:32632", customRegistry)).toBeUndefined();
+    expect(
+      resolveTmsByProjection("EPSG:32632", customRegistry),
+    ).toBeUndefined();
   });
 
   test("returns undefined for missing input", () => {
@@ -91,7 +93,9 @@ describe("tmsToTileGridOptions", () => {
     const options = tmsToTileGridOptions(tms, [512, 512]);
     expect(options.tileSize).toEqual([512, 512]);
     // Resolutions should be halved if tile size is doubled
-    expect(options.resolutions[0]).toBeCloseTo(tms.tileMatrices[0].cellSize / 2);
+    expect(options.resolutions[0]).toBeCloseTo(
+      tms.tileMatrices[0].cellSize / 2,
+    );
   });
 
   test("handles orderedAxes NE (swaps origin)", () => {

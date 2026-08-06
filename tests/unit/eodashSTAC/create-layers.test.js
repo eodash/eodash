@@ -386,7 +386,9 @@ describe("EodashCollection.buildJsonArray", () => {
     test("XYZ layer uses TMS from registry", async () => {
       const [layer] = await build(
         makeItem({
-          links: [{ rel: "xyz", href: "https://xyz/{z}/{x}/{y}", title: "XYZ" }],
+          links: [
+            { rel: "xyz", href: "https://xyz/{z}/{x}/{y}", title: "XYZ" },
+          ],
         }),
         { tileMatrixSetRegistry: customTms },
       );
@@ -409,7 +411,9 @@ describe("EodashCollection.buildJsonArray", () => {
         },
       );
 
-      const renderLayer = layers.find((l) => l.source?.url?.includes("/tiles/"));
+      const renderLayer = layers.find((l) =>
+        l.source?.url?.includes("/tiles/"),
+      );
       expect(renderLayer.source.url).toContain("/tiles/CustomTMS/");
       expect(renderLayer.source.tileGrid).toBeDefined();
       expect(renderLayer.source.tileGrid.matrixIds).toEqual(["0"]);
