@@ -1,141 +1,104 @@
 <template>
   <div ref="rootRef" class="datePicker">
-    <VCDatePicker
-      ref="datePicker"
-      v-model.number="currentDate"
-      :attributes="attributes"
-      :masks="masks"
-      expanded
-      class="overflow-auto"
-      style="background-color: transparent; max-width: 100%"
+    <!-- show-utc keeps eox off local start-of-day, which otherwise shifts a
+         stepped date back a day for anyone east of UTC. layer-id-key groups
+         items by title, which is what the hover popup labels them with.
+         externalMapRendering stops eox writing TIME params into the map
+         sources: eodash re-renders those layers itself. -->
+    <eox-timecontrol
+      :key="mapElement"
+      ref="timecontrolRef"
+      show-utc
+      layer-id-key="title"
+      .for="mapElement"
+      .externalMapRendering="true"
+      .initDate="[datetime]"
+      @select="onSelect"
     >
-      <template v-if="toggleCalendar" #default="{ inputValue, inputEvents }">
-        <div
-          class="d-flex flex-row align-center justify-center pb-1"
-          style="overflow: hidden; width: 100%"
-        >
+      <!-- Reversed: the date element has to precede the picker in the DOM,
+           since popup mode anchors the calendar to its shadow root. -->
+      <div class="d-flex flex-column-reverse">
+        <!-- Sized and coloured to match the step arrows eox renders inside
+             eox-timecontrol-date, so the row reads as one control. -->
+        <div class="d-flex flex-row align-center justify-center pb-1">
           <v-btn
             v-if="!hideArrows"
             v-tooltip:bottom="'Set date to oldest available dataset'"
-            density="compact"
-            :size="lgAndDown ? 'x-small' : 'large'"
+            icon
+            size="small"
             variant="text"
-            class="py-2"
-            style="flex-shrink: 1; padding: 0"
+            color="primary"
             @click="jumpDate(true)"
           >
-            <v-icon :icon="[mdiRayEndArrow]" />
+            <v-icon :icon="[mdiPageFirst]" />
           </v-btn>
-          <div
-            class="flex rounded-lg border border-gray-300 dark:border-gray-600"
-            style="margin: 2px; min-width: 0"
-          >
-            <input
-              v-if="!hideInputField"
-              :value="inputValue"
-              class="flex-grow px-1 py-1 dark:bg-gray-700"
-              style="
-                margin: 1px;
-                width: 100%;
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
-              "
-              v-on="inputEvents"
-            />
-          </div>
+          <eox-timecontrol-date
+            v-if="!hideInputField || toggleCalendar"
+            class="d-flex align-center"
+            .navigation="!hideArrows"
+          ></eox-timecontrol-date>
           <v-btn
             v-if="!hideArrows"
             v-tooltip:bottom="'Set date to latest available dataset'"
-            density="compact"
-            :size="lgAndDown ? 'x-small' : 'large'"
+            icon
+            size="small"
             variant="text"
-            class="py-2"
-            style="flex-shrink: 1; padding: 0"
+            color="primary"
             @click="jumpDate(false)"
           >
-            <v-icon :icon="[mdiRayStartArrow]" />
+            <v-icon :icon="[mdiPageLast]" />
           </v-btn>
         </div>
-      </template>
-      <template v-else #footer>
-        <div
-          class="d-flex flex-row align-center justify-center pb-1"
-          style="overflow: hidden; width: 100%"
-        >
-          <v-btn
-            v-if="!hideArrows"
-            v-tooltip:bottom="'Set date to oldest available dataset'"
-            density="compact"
-            :size="lgAndDown ? 'x-small' : 'large'"
-            variant="text"
-            class="py-2"
-            style="flex-shrink: 1"
-            @click="jumpDate(true)"
-          >
-            <v-icon :icon="[mdiRayEndArrow]" />
-          </v-btn>
-          <div
-            class="flex rounded-lg border border-gray-300 dark:border-gray-600"
-            style="margin: 2px; min-width: 0"
-          >
-            <input
-              v-if="!hideInputField"
-              :value="maskedCurrentDate"
-              class="flex-grow px-1 py-1 dark:bg-gray-700"
-              style="
-                margin: 1px;
-                width: 100%;
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
-              "
-              @change="onInputChange"
-            />
-          </div>
-          <v-btn
-            v-if="!hideArrows"
-            v-tooltip:bottom="'Set date to latest available dataset'"
-            density="compact"
-            :size="lgAndDown ? 'x-small' : 'large'"
-            variant="text"
-            class="py-2"
-            style="flex-shrink: 1"
-            @click="jumpDate(false)"
-          >
-            <v-icon :icon="[mdiRayStartArrow]" />
-          </v-btn>
-        </div>
-      </template>
-    </VCDatePicker>
+        <eox-timecontrol-picker
+          .showDots="true"
+          .showItems="showItems"
+          .popup="toggleCalendar"
+        ></eox-timecontrol-picker>
+      </div>
+    </eox-timecontrol>
   </div>
 </template>
 <script setup>
-import { DatePicker as VCDatePicker } from "v-calendar";
-import { useDisplay } from "vuetify";
-import "v-calendar/style.css";
-import {
-  watch,
-  reactive,
-  ref,
-  customRef,
-  onMounted,
-  computed,
-  useTemplateRef,
-} from "vue";
-import { useSTAcStore } from "@/store/stac";
-import { datetime } from "@/store/states";
-import { mdiRayStartArrow, mdiRayEndArrow } from "@mdi/js";
-import { eodashCollections, eodashCompareCollections } from "@/utils/states";
+import "@eox/timecontrol";
+import { watch, customRef, onUnmounted, useTemplateRef } from "vue";
+import { datetime, mapEl, mapCompareEl } from "@/store/states";
+import { mdiPageFirst, mdiPageLast } from "@mdi/js";
 import log from "loglevel";
 import { useTransparentPanel } from "@/composables";
-import { storeToRefs } from "pinia";
 
-const { lgAndDown } = useDisplay();
+const props = defineProps({
+  hintText: {
+    type: String,
+    default: null,
+  },
+  hideArrows: {
+    type: Boolean,
+    default: false,
+  },
+  hideInputField: {
+    type: Boolean,
+    default: false,
+  },
+  toggleCalendar: {
+    type: Boolean,
+    default: false,
+  },
+  showItems: {
+    type: Boolean,
+    default: false,
+  },
+  map: {
+    type: String,
+    default: "first",
+  },
+});
+
+const mapElement = props.map === "second" ? mapCompareEl : mapEl;
 
 const rootEl = useTemplateRef("rootRef");
 
-const datePickerEl = useTemplateRef("datePicker");
+/** @type {import("vue").ShallowRef<import("@eox/timecontrol").EOxTimeControl | null>} */
+const timecontrolEl = useTemplateRef("timecontrolRef");
 
 // holds the number value of the datetime
 const currentDate = customRef((track, trigger) => ({
@@ -156,184 +119,83 @@ const currentDate = customRef((track, trigger) => ({
     }
 
     datetime.value = date.toISOString();
-    //@ts-expect-error supports move method https://vcalendar.io/datepicker/basics.html#basics
-    datePickerEl.value?.move({
-      month: date.getMonth() + 1,
-      year: date.getFullYear(),
-    });
   },
 }));
 
-const masks = ref({
-  input: "YYYY-MM-DD",
-});
+// The UTC day the calendar shows. The calendar is day-resolution, so a day-level
+// guard is enough to stop the datetime <-> calendar echo.
+let calendarDay = "";
 
 /** @param {Date} date */
-const formatDate = (date) => {
-  const years = date.getFullYear();
-  const month = date.getMonth() + 1;
-  const day = date.getDate();
-  return `${years}-${month < 10 ? "0" + month : month}-${
-    day < 10 ? "0" + day : day
-  }`;
-};
-/**
- *
- * @param e {Event}
- */
-const onInputChange = (e) => {
-  currentDate.value = new Date(
-    /** @type {HTMLInputElement} */ (e.target)?.value,
-  ).getTime();
-};
-const maskedCurrentDate = computed(() =>
-  formatDate(new Date(currentDate.value)),
-);
+const utcDay = (date) => date.toISOString().slice(0, 10);
 
-defineProps({
-  hintText: {
-    type: String,
-    default: null,
-  },
-  hideArrows: {
-    type: Boolean,
-    default: false,
-  },
-  hideInputField: {
-    type: Boolean,
-    default: false,
-  },
-  toggleCalendar: {
-    type: Boolean,
-    default: false,
-  },
+/** @param {CustomEvent<{date: [Date, Date]}>} e */
+const onSelect = (e) => {
+  const [selected] = e.detail.date;
+  calendarDay = utcDay(selected);
+  applyDotColors();
+  currentDate.value = selected.getTime();
+};
+
+// datetime is also written elsewhere (URL restore, time slider, chart clicks).
+watch(datetime, (iso) => {
+  const el = timecontrolEl.value;
+  const date = new Date(iso);
+  if (!el || utcDay(date) === calendarDay) {
+    return;
+  }
+  calendarDay = utcDay(date);
+  el.dateChange([iso, iso], el);
 });
 
+/** Number of `--dot-color-*` slots eox declares. */
+const DOT_COLOR_SLOTS = 11;
+
 /**
- * Attributes displayed on datepicker
- *
- * @type {import("vue").Reactive<Array<Partial<import("v-calendar/dist/types/src/utils/attribute").AttributeConfig> | undefined>>}
+ * eox never carries the layer colour into its items, so the dots are coloured
+ * here. It reads the slots off `body` and mounts the popup calendar there too,
+ * so body is the only scope both the inline and popup calendars share. Slot N
+ * follows eox's own group order, which is `sliderValues`.
  */
-const attributes = reactive([]);
+const applyDotColors = () => {
+  const { style } = document.body;
+  const sliders = timecontrolEl.value?.sliderValues ?? [];
 
-const { selectedCompareStac, selectedStac } = storeToRefs(useSTAcStore());
-
-watch(
-  [selectedStac, selectedCompareStac],
-  async ([updatedStac, updatedCompareStac]) => {
-    attributes.splice(0, attributes.length);
-    if (!updatedStac && !updatedCompareStac) {
-      log.debug("No STAC selected, clearing datepicker attributes");
-      return;
+  for (let idx = 0; idx < DOT_COLOR_SLOTS; idx++) {
+    const color = sliders[idx]?.layerInstance?.get("color");
+    if (color) {
+      style.setProperty(`--dot-color-${idx + 1}`, color);
+    } else {
+      style.removeProperty(`--dot-color-${idx + 1}`);
     }
-
-    const attrs =
-      /** @type {Partial<import("v-calendar/dist/types/src/utils/attribute").AttributeConfig>[]} */ ([
-        ...(await fetchCollectionsAttributes(eodashCollections)),
-        ...(await fetchCollectionsAttributes(eodashCompareCollections)),
-      ]);
-    attributes.push(...attrs);
-  },
-  { immediate: true },
-);
-
-/**
- *
- * @param {import("@/eodashSTAC/EodashCollection").EodashCollection[]} eodashCollections
- */
-async function fetchCollectionsAttributes(eodashCollections) {
-  if (!eodashCollections || !eodashCollections.length) {
-    return [];
   }
+};
 
-  return await Promise.all(
-    eodashCollections.map((ec, idx) => {
-      return ec.fetchCollection().then(async () => {
-        const dates = await ec.getDates();
-        if (!dates || !dates.length) {
-          log.debug(
-            `Collection ${ec.collectionStac?.id} has no dates, skipping datepicker attribute`,
-          );
-          return undefined;
-        }
+onUnmounted(() => {
+  const { style } = document.body;
+  for (let idx = 0; idx < DOT_COLOR_SLOTS; idx++) {
+    style.removeProperty(`--dot-color-${idx + 1}`);
+  }
+});
 
-        return {
-          key: "id-" + idx.toString() + Math.random().toString(16).slice(2),
-          dot: {
-            style: {
-              backgroundColor: ec.color,
-            },
-          },
-          dates,
-          content: {
-            style: {
-              color: "#000000",
-              "font-weight": "bold",
-            },
-          },
-        };
-      });
-    }),
-  );
-}
 /**
  * @param {boolean} reverse
  */
 function jumpDate(reverse) {
-  if (attributes.length) {
-    let latestDateMS = reverse ? Infinity : -Infinity;
-    attributes.forEach((coll) => {
-      if (coll?.dates) {
-        coll.dates.forEach((d) => {
-          // TODO: we need to handle time ranges and other options here
-          if (d instanceof Date) {
-            const mathFun = reverse ? "min" : "max";
-            latestDateMS = Math[mathFun](latestDateMS, d.getTime());
-          }
-        });
-      }
-    });
-    currentDate.value =
-      latestDateMS === -Infinity
-        ? Date.now()
-        : latestDateMS === Infinity
-          ? 0
-          : latestDateMS;
+  // TODO: we need to handle time ranges and other options here
+  const times = (timecontrolEl.value?.items.get() ?? []).map((item) =>
+    new Date(item.utc).getTime(),
+  );
+  if (times.length) {
+    currentDate.value = times.reduce((a, b) =>
+      reverse ? Math.min(a, b) : Math.max(a, b),
+    );
   }
 }
-
-// fixes calendar dispalcement on lib mode
-const transform = ref("");
-onMounted(() => {
-  // keeping the reactive translate just in case,
-  // but seems like static css would work as well
-  // because the visual is same both in lib and in app mode
-  transform.value = document.querySelector("eo-dash")
-    ? "translate3d(30px,-50px,0)"
-    : "translate3d(30px,-50px,0)";
-});
 
 useTransparentPanel(rootEl);
 </script>
 <style>
-.vc-popover-content {
-  --vc-nav-hover-bg: rgba(var(--v-theme-on-surface), 0.1);
-  --vc-nav-item-active-color: rgb(var(--v-theme-on-secondary));
-  --vc-nav-item-active-bg: rgba(var(--v-theme-secondary), 0.8);
-  --vc-focus-ring: 0 0 0 2px rgba(var(--v-theme-secondary), 0.5);
-}
-.vc-container {
-  --vc-day-content-hover-bg: rgba(var(--v-theme-on-surface), 0.2);
-  --vc-focus-ring: 0 0 0 2px rgba(var(--v-theme-secondary), 0.4);
-  --vc-header-arrow-hover-bg: rgba(var(--v-theme-secondary), 0.1);
-}
-.vc-attr {
-  --vc-accent-600: rgba(var(--v-theme-secondary), 0.8);
-}
-.datePicker {
-  --vc-day-content-hover-bg: red;
-}
-
 @media (min-width: 960px) {
   .datePicker {
     position: absolute;
@@ -344,20 +206,7 @@ useTransparentPanel(rootEl);
     width: fit-content;
   }
 }
-.vc-day-content {
-  color: #5e5e5e;
-  font-weight: normal;
-}
 
-.vc-highlight-content-solid {
-  color: white !important;
-}
-
-.vc-popover-content-wrapper {
-  transform: v-bind("transform") !important;
-}
-
-.vc-date-picker-content,
 .datePicker {
   backdrop-filter: blur(10px) !important;
   border-radius: 8px;
@@ -372,11 +221,30 @@ useTransparentPanel(rootEl);
   ) !important;
 }
 
-.vc-popover-caret.direction-top.align-left {
-  clip-path: polygon(0% 0%, 100% 0%, 0% 100%, 0% 100%);
+/* Level eox's 32px step arrows with the 40px jump buttons beside them. */
+.datePicker eox-timecontrol-date::part(previous),
+.datePicker eox-timecontrol-date::part(next) {
+  width: 40px;
+  height: 40px;
 }
 
-.vc-bordered {
-  border: none;
+/* Must out-specify the `:host` defaults of the eox shadow styles.
+   The popup calendar is appended to the document body, hence `body > .vc`. */
+.datePicker eox-timecontrol-picker,
+.datePicker eox-timecontrol-date,
+body > .vc {
+  --primary: rgb(var(--v-theme-primary));
+  --on-primary: rgb(var(--v-theme-on-primary));
+  --on-surface: rgb(var(--v-theme-on-surface));
+  --surface-container-lowest: transparent;
+}
+
+body > .vc {
+  --surface-container-lowest: rgba(
+    var(--v-theme-surface),
+    var(--v-surface-opacity, 0.8)
+  );
+  backdrop-filter: blur(10px);
+  border-radius: 8px;
 }
 </style>
