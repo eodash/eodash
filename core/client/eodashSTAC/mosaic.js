@@ -255,7 +255,10 @@ async function createMosaicLayers(mosaicEndpoint, params) {
 
   const store = useSTAcStore();
 
-  const projection = preset.projection ?? "EPSG:3857";
+  const projection =
+    /** @type {string | number | {name: string, def: string} | undefined} */ (
+      preset.projection
+    ) ?? "EPSG:3857";
   const projectionCode = getProjectionCode(projection);
   await registerProjection(projection);
 

@@ -711,16 +711,18 @@ export const createLayersFromLinks = async (
       projectionCode,
       store.tileMatrixSetRegistry,
     );
+    const tileSize = upscaling ? 512 : 256;
+    // @ts-expect-error tileGrid supported in eox-map
+    json.source.tileGrid = {
+      tileSize: [tileSize, tileSize],
+    };
     if (tms) {
-      const tmsOptions = tmsToTileGridOptions(tms, [512, 512]);
+      const tmsOptions = tmsToTileGridOptions(tms, [tileSize, tileSize]);
       // @ts-expect-error tileGrid supported in eox-map
-      json.source.tileGrid = tmsOptions;
-    }
-
-    if (upscaling && !(/** @type {any} */ (json.source)?.tileGrid)) {
-      // @ts-expect-error tileGrid is added here and supported in eox-map layer definition
       json.source.tileGrid = {
-        tileSize: [512, 512],
+        // @ts-expect-error tileGrid supported in eox-map
+        ...json.source.tileGrid,
+        ...tmsOptions,
       };
     }
     if (
