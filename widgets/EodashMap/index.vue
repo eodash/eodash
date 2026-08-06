@@ -12,7 +12,6 @@
         .animationOptions="animationOptions"
         .center="initialCenter"
         .zoom="initialZoom"
-        .layers="eoxMapLayers"
         .controls="controls"
       >
         <eox-map-tooltip
@@ -25,7 +24,6 @@
         slot="second"
         ref="compareMap"
         class="fill-height fill-width overflow-none"
-        .layers="eoxMapCompareLayers"
       >
         <eox-map-tooltip
           :style="compareTooltipStyles"
@@ -70,7 +68,15 @@
 <script setup>
 import "@eox/map";
 import "@eox/map/src/plugins/advancedLayersAndSources";
-import { nextTick, computed, onMounted, ref, toRaw, useTemplateRef } from "vue";
+import {
+  nextTick,
+  computed,
+  onMounted,
+  ref,
+  toRaw,
+  useTemplateRef,
+  watchPostEffect,
+} from "vue";
 import {
   datetime,
   mapEl,
@@ -82,6 +88,7 @@ import {
   isGlobe,
   tooltipAdapter,
 } from "@/store/states";
+import { assignLayers } from "@/store/actions";
 import { storeToRefs } from "pinia";
 import { useSTAcStore } from "@/store/stac";
 import { useDisplay, useLayout } from "vuetify";
@@ -306,6 +313,11 @@ const animationOptions = ref({
 const eoxMap = useTemplateRef("eoxMap");
 /** @type {import("vue").Ref<import("@eox/map").EOxMap | null>} */
 const compareMap = useTemplateRef("compareMap");
+
+watchPostEffect(() => assignLayers(eoxMap.value, eoxMapLayers.value));
+watchPostEffect(() =>
+  assignLayers(compareMap.value, eoxMapCompareLayers.value),
+);
 
 const { selectedCompareStac } = storeToRefs(useSTAcStore());
 const showCompare = computed(() =>

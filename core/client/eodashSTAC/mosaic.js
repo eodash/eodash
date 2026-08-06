@@ -6,7 +6,7 @@ import {
   mapEl,
   mapPosition,
 } from "@/store/states";
-import { getLayers } from "@/store/actions";
+import { assignLayers, getLayers } from "@/store/actions";
 import {
   computed,
   nextTick,
@@ -388,12 +388,8 @@ function assignAnalysisLayer(layersToAssign) {
   const mapLayers = getLayers();
   const { analysisGroup, layers } = ensureAnalysisGroup(mapLayers);
   analysisGroup.layers = layersToAssign;
-  if (mapEl.value) {
-    // Reassign to trigger map re-render after in-place layer mutation
-    mapEl.value.layers = /** @type {import("@eox/map").EoxLayer[]} */ ([
-      ...layers,
-    ]);
-  }
+  // Reassign to trigger map re-render after in-place layer mutation
+  assignLayers(mapEl.value, [...layers]);
 }
 
 /**

@@ -6,11 +6,18 @@ const instance = Axios.create();
 export const axios = setupCache(instance, { cacheTakeover: false });
 
 /**
+ * @typedef {object} EodashResource
+ * @property {string} label
+ * @property {"error" | "warning" | "info"} severity
+ * @property {(doc: {links?: Record<string, any>[]} & Record<string, any>) => (string | undefined)[]} urls
+ */
+
+/**
  * STAC properties worth naming when they fail, each declaring where its urls
  * live and how much the user loses. Adding one is a single entry; anything
  * unlisted keeps the bare url and stops what was asked for.
  *
- * @type {Record<string, {label: string, severity: "error" | "warning" | "info", urls: (doc: {links?: Record<string, any>[]} & Record<string, any>) => (string | undefined)[]}>}
+ * @type {Record<string, EodashResource>}
  */
 const RESOURCES = {
   "eodash:vegadefinition": {
@@ -18,11 +25,19 @@ const RESOURCES = {
     severity: "warning",
     urls: (doc) => [doc["eodash:vegadefinition"]],
   },
-  // without the schema the process form cannot render at all
   "eodash:jsonform": {
     label: "process form definition",
     severity: "error",
     urls: (doc) => [doc["eodash:jsonform"]],
+  },
+  "eodash:rasterform": {
+    label: "raster form definition",
+    severity: "warning",
+    urls: (doc) =>
+      [
+        doc["eodash:rasterform"],
+        ...(doc.links?.map((l) => l["eodash:rasterform"]) ?? []),
+      ].filter((form) => typeof form === "string"),
   },
   style: {
     label: "layer style",

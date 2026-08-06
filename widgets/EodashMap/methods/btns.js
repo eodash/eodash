@@ -1,4 +1,4 @@
-import { getLayers, setActiveTemplate } from "@/store/actions";
+import { assignLayers, getLayers, setActiveTemplate } from "@/store/actions";
 import { useSTAcStore } from "@/store/stac";
 import { activeTemplate, isGlobe, mapEl } from "@/store/states";
 import { easeOut } from "ol/easing.js";
@@ -24,7 +24,7 @@ export const switchGlobe = () => {
         }
         return layer;
       });
-    mapEl.value.layers = layers;
+    assignLayers(mapEl.value, layers);
   }
   mapEl.value.projection = isGlobe.value ? "EPSG:3857" : "globe";
   if (isGlobe.value) {

@@ -62,12 +62,27 @@ vi.mock("^/EodashMap/EodashMapBtns.vue", () => ({
   },
 }));
 
+// ol compiles the styles as layers are assigned, so a style it rejects throws
+// out of this setter rather than anywhere a test could otherwise observe.
+const layersSetter = vi.hoisted(() => ({ rejects: false }));
+
 // Minimal eox-map so onMounted's `globeConfig.terrain` assignment succeeds (an
 // unhandled throw there cascades into unrelated failures).
 stubCustomElement(
   "eox-map",
   class extends HTMLElement {
     globeConfig = {};
+    /** @type {any[]} */
+    #layers = [];
+    set layers(value) {
+      if (layersSetter.rejects) {
+        throw new Error("flat style is invalid");
+      }
+      this.#layers = value;
+    }
+    get layers() {
+      return this.#layers;
+    }
   },
 );
 
@@ -87,6 +102,7 @@ describe("EodashMap", () => {
     mapPosition.value = [];
     tooltipAdapter.value = null;
     layerControlFormValue.value = {};
+    layersSetter.rejects = false;
     for (const fn of Object.values(methods)) vi.mocked(fn).mockClear();
   });
 
@@ -124,6 +140,37 @@ describe("EodashMap", () => {
       expect(format([10, 20])).toBe("20.000 °N, 10.000 °E");
       expect(format([-10.5, -20.5])).toBe("20.500 °S, 10.500 °W");
       expect(format(null)).toBe("");
+    });
+  });
+
+  describe("layer assignment", () => {
+    test("logs what eox-map rejects rather than losing it to vue", async () => {
+      const logged = vi.spyOn(console, "error").mockImplementation(() => {});
+      layersSetter.rejects = true;
+
+      await mountAsyncComponent(EodashMap);
+
+      await expect
+        .poll(() =>
+          logged.mock.calls.some(([message]) =>
+            String(message).includes("eox-map rejected the assigned layers"),
+          ),
+        )
+        .toBe(true);
+      expect(logged.mock.calls.at(-1)?.[1]).toBeInstanceOf(Error);
+      logged.mockRestore();
+    });
+
+    test("keeps the map usable after a rejected assignment", async () => {
+      vi.spyOn(console, "error").mockImplementation(() => {});
+      layersSetter.rejects = true;
+
+      await mountAsyncComponent(EodashMap, { props: { center: [10, 20] } });
+
+      // contained: the element still mounts and its other props still bind
+      await expect.poll(() => mainMap()).toBeTruthy();
+      expect(mainMap()?.center).toEqual([10, 20]);
+      vi.mocked(console.error).mockRestore();
     });
   });
 

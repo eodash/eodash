@@ -25,6 +25,23 @@ export const getLayers = () => mapEl.value?.layers ?? [];
 export const getCompareLayers = () => mapCompareEl.value?.layers ?? [];
 
 /**
+ * Assigns layers to an `eox-map`
+ *
+ * @param {(import("@eox/map").EOxMap) | null} [map]
+ * @param {Record<string, any>[]} [layers]
+ */
+export const assignLayers = (map, layers) => {
+  if (!map || !layers) {
+    return;
+  }
+  try {
+    map.layers = /** @type {import("@eox/map").EoxLayer[]} */ (layers);
+  } catch (error) {
+    console.error("[eodash] eox-map rejected the assigned layers:", error);
+  }
+};
+
+/**
  * Register EPSG projection in `eox-map`
  * @param {string|number|{name: string, def: string, extent?:number[]}} [projection]*/
 export const registerProjection = async (projection) => {
