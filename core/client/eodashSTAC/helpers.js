@@ -286,7 +286,7 @@ export function tmsToTileGridOptions(tms, targetTileSize = [512, 512]) {
   const originalTileHeight = firstMatrix.tileHeight;
 
   // Handle axis order
-  const isNE = tms.orderedAxes?.[0] === "N";
+const isNE = ["N", "Lat", "Y"].includes(tms.orderedAxes?.[0]);
   if (isNE) {
     // Swap origin to [E, N] for OpenLayers
     origin = [origin[1], origin[0]];
