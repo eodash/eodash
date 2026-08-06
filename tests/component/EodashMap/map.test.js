@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, test, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import EodashMap from "^/EodashMap/index.vue";
 import {
   compareIndicator,
@@ -9,6 +9,7 @@ import {
   tooltipAdapter,
 } from "@/store/states";
 import { layerControlFormValue } from "@/utils/states";
+import { flatStylesToStyleFunction } from "ol/render/canvas/style.js";
 import { mountAsyncComponent, stubCustomElement } from "../../support/mount";
 
 vi.mock("@eox/map", () => ({}));
@@ -62,12 +63,9 @@ vi.mock("^/EodashMap/EodashMapBtns.vue", () => ({
   },
 }));
 
-// ol compiles the styles as layers are assigned, so a style it rejects throws
-// out of this setter rather than anywhere a test could otherwise observe.
-const layersSetter = vi.hoisted(() => ({ rejects: false }));
-
 // Minimal eox-map so onMounted's `globeConfig.terrain` assignment succeeds (an
-// unhandled throw there cascades into unrelated failures).
+// unhandled throw there cascades into unrelated failures). Styles go through
+// the real ol compiler, as eox-map does, to check ol thrown errors.
 stubCustomElement(
   "eox-map",
   class extends HTMLElement {
@@ -75,8 +73,10 @@ stubCustomElement(
     /** @type {any[]} */
     #layers = [];
     set layers(value) {
-      if (layersSetter.rejects) {
-        throw new Error("flat style is invalid");
+      for (const layer of value ?? []) {
+        if (layer.style) {
+          flatStylesToStyleFunction([layer.style]);
+        }
       }
       this.#layers = value;
     }
@@ -102,7 +102,6 @@ describe("EodashMap", () => {
     mapPosition.value = [];
     tooltipAdapter.value = null;
     layerControlFormValue.value = {};
-    layersSetter.rejects = false;
     for (const fn of Object.values(methods)) vi.mocked(fn).mockClear();
   });
 
@@ -144,33 +143,48 @@ describe("EodashMap", () => {
   });
 
   describe("layer assignment", () => {
-    test("logs what eox-map rejects rather than losing it to vue", async () => {
-      const logged = vi.spyOn(console, "error").mockImplementation(() => {});
-      layersSetter.rejects = true;
+    // `case` takes pairs plus a fallback, so an even count is uncompilable
+    const brokenStyle = /** @type {any} */ ([
+      {
+        type: "Vector",
+        properties: { id: "broken" },
+        style: {
+          "text-value": ["case", ["get", "a"], "one", ["get", "b"], "two"],
+        },
+      },
+    ]);
 
-      await mountAsyncComponent(EodashMap);
+    const captureErrors = () =>
+      vi.spyOn(console, "error").mockImplementation(() => {});
 
+    afterEach(() => vi.restoreAllMocks());
+
+    test("logs what ol rejects rather than losing it to vue", async () => {
+      const logged = captureErrors();
+
+      await mountAsyncComponent(EodashMap, {
+        props: { baseLayers: brokenStyle },
+      });
+
+      // ol's own wording, so the throw came back out of the assignment
       await expect
-        .poll(() =>
-          logged.mock.calls.some(([message]) =>
-            String(message).includes("eox-map rejected the assigned layers"),
-          ),
-        )
-        .toBe(true);
-      expect(logged.mock.calls.at(-1)?.[1]).toBeInstanceOf(Error);
-      logged.mockRestore();
+        .poll(() => logged.mock.calls.at(-1)?.[1]?.message)
+        .toContain("expected an odd number of arguments for case");
+      expect(logged.mock.calls.at(-1)?.[0]).toBe(
+        "[eodash] eox-map rejected the assigned layers:",
+      );
     });
 
     test("keeps the map usable after a rejected assignment", async () => {
-      vi.spyOn(console, "error").mockImplementation(() => {});
-      layersSetter.rejects = true;
+      captureErrors();
 
-      await mountAsyncComponent(EodashMap, { props: { center: [10, 20] } });
+      await mountAsyncComponent(EodashMap, {
+        props: { baseLayers: brokenStyle, center: [10, 20] },
+      });
 
       // contained: the element still mounts and its other props still bind
       await expect.poll(() => mainMap()).toBeTruthy();
       expect(mainMap()?.center).toEqual([10, 20]);
-      vi.mocked(console.error).mockRestore();
     });
   });
 
