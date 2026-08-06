@@ -1049,11 +1049,6 @@ export const createLayerFromRender = async (
 
   const layers = [];
   const store = useSTAcStore();
-  const projectionCode = "EPSG:3857";
-  const tms = resolveTmsByProjection(
-    projectionCode,
-    store.tileMatrixSetRegistry,
-  );
 
   for (const key in renders) {
     const title = renders[key].title;
@@ -1061,6 +1056,14 @@ export const createLayerFromRender = async (
     const expression =
       renders[key].expression ??
       getRenderAssetProperty(renders[key], "expression");
+
+    const projection =
+      renders[key].projection ??
+      getRenderAssetProperty(renders[key], "projection") ??
+      "EPSG:3857";
+
+    const projectionCode = getProjectionCode(projection);
+    await registerProjection(projection);
 
     const paramsObject = {
       // TiTiler treats assets and expression as mutually exclusive band selection
@@ -1087,6 +1090,10 @@ export const createLayerFromRender = async (
       bidx: renders[key].bidx,
       tilesize: renders[key].tilesize,
     };
+    const tms = resolveTmsByProjection(
+      projectionCode,
+      store.tileMatrixSetRegistry,
+    );
     const tmsId = tms?.id || "WebMercatorQuad";
     const paramsStr = encodeURLObject(paramsObject);
     const url = `${rasterURL}/collections/${collection.id}/items/${item.id}/tiles/${tmsId}/{z}/{x}/{y}?${paramsStr}`;
@@ -1114,9 +1121,9 @@ export const createLayerFromRender = async (
         projection: projectionCode,
       },
     };
-
+    const tilesize = renders[key].tilesize || 512;
     if (tms) {
-      const tmsOptions = tmsToTileGridOptions(tms, [512, 512]);
+      const tmsOptions = tmsToTileGridOptions(tms, [tilesize, tilesize]);
       // @ts-expect-error tileGrid supported in eox-map
       json.source.tileGrid = tmsOptions;
     } else if (renders[key].tilesize) {

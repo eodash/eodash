@@ -73,12 +73,61 @@ describe("mosaic", () => {
       expect(state.latestLayer.value).toBeNull();
     });
 
+    test("XYZ layer uses matched TMS from registry and updates TiTiler URL", async () => {
+      const customTms = {
+        CustomTMS: {
+          id: "CustomTMS",
+          crs: "http://www.opengis.net/def/crs/EPSG/0/3035",
+          tileMatrices: [
+            {
+              id: "0",
+              cellSize: 100,
+              pointOfOrigin: [0, 0],
+              matrixWidth: 1,
+              matrixHeight: 1,
+              tileWidth: 512,
+              tileHeight: 512,
+            },
+          ],
+        },
+      };
+      store.tileMatrixSetRegistry = customTms;
+      store.selectedStac = /** @type {any} */ ({
+        id: "coll",
+        renders: {
+          first: { ...RENDERS.first, projection: "EPSG:3035" },
+        },
+      });
+      mapEl.value = /** @type {any} */ ({
+        layers: [],
+        registerProjectionFromCode: vi.fn(),
+      });
+      axiosMock.get.mockResolvedValue({
+        data: { tiles: ["https://tiles/{z}/{x}/{y}"] },
+      });
+
+      await updateMosaicLayer(ENDPOINT, {});
+
+      // TiTiler URL should use CustomTMS instead of WebMercatorQuad
+      const requestedUrl = lastRequestedUrl().toString();
+      expect(requestedUrl).toContain("/CustomTMS/");
+      expect(requestedUrl).not.toContain("/WebMercatorQuad/");
+
+      const layer = /** @type {any} */ (state.latestLayer.value);
+      expect(layer.source.tileGrid).toBeDefined();
+      expect(layer.source.tileGrid.matrixIds).toEqual(["0"]);
+      expect(layer.source.projection).toBe("EPSG:3035");
+    });
+
     test("builds the tile layer from the first render preset only", async () => {
       store.selectedStac = /** @type {any} */ ({
         id: "coll",
         renders: RENDERS,
       });
-      mapEl.value = /** @type {any} */ ({ layers: [] });
+      mapEl.value = /** @type {any} */ ({
+        layers: [],
+        registerProjectionFromCode: vi.fn(),
+      });
       axiosMock.get.mockResolvedValue({
         data: { tiles: ["https://tiles/{z}/{x}/{y}"] },
       });

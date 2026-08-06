@@ -22,12 +22,16 @@ import {
   useEventBus,
 } from "@vueuse/core";
 import { useEodash, useOnLayersUpdate } from "@/composables";
+import { registerProjection } from "@/store/actions";
 import {
   encodeURLObject,
   extractLayerTimeValues,
+  getProjectionCode,
   normalizeNodata,
   normalizeRescale,
   resolveRenders,
+  resolveTmsByProjection,
+  tmsToTileGridOptions,
 } from "./helpers";
 import { useSTAcStore } from "@/store/stac";
 import { eodashCollections } from "@/utils/states";
@@ -249,6 +253,18 @@ async function createMosaicLayers(mosaicEndpoint, params) {
     return [];
   }
 
+  const store = useSTAcStore();
+
+  const projection = preset.projection ?? "EPSG:3857";
+  const projectionCode = getProjectionCode(projection);
+  await registerProjection(projection);
+
+  const tms = resolveTmsByProjection(
+    projectionCode,
+    store.tileMatrixSetRegistry,
+  );
+  const tmsId = tms?.id || "WebMercatorQuad";
+
   const renderParamsStr = encodeURLObject({
     // TiTiler treats assets and expression as mutually exclusive band selection
     assets: preset.expression ? undefined : preset.assets,
@@ -265,7 +281,7 @@ async function createMosaicLayers(mosaicEndpoint, params) {
     tilesize: `${preset.tilesize ?? "512"}`,
     ...params,
   });
-  const tileJsonUrl = `${mosaicEndpoint}?${renderParamsStr}${tileParams.toString()}`;
+  const tileJsonUrl = `${mosaicEndpoint.replace("/WebMercatorQuad/", `/${tmsId}/`)}?${renderParamsStr}${tileParams.toString()}`;
 
   const tileJSON = await axios
     .get(tileJsonUrl)
@@ -279,20 +295,30 @@ async function createMosaicLayers(mosaicEndpoint, params) {
     return [];
   }
 
-  return [
-    {
-      type: "Tile",
-      minZoom: useMosaicState().visibilityThreshold.value,
-      properties: {
-        id: `${indicator.value};:;mosaic`,
-        title: "Mosaic Layer",
-      },
-      source: {
-        type: "XYZ",
-        url: tileJSON.tiles[0],
-      },
+  const layer = {
+    type: "Tile",
+    minZoom: useMosaicState().visibilityThreshold.value,
+    properties: {
+      id: `${indicator.value};:;mosaic`,
+      title: "Mosaic Layer",
     },
-  ];
+    source: {
+      type: "XYZ",
+      url: tileJSON.tiles[0],
+      projection: projectionCode,
+    },
+  };
+  const tileSize = preset.tilesize || 512;
+  // @ts-expect-error tileGrid is added here and supported in eox-map layer definition
+  layer.source.tileGrid = {
+    tileSize,
+  };
+  if (tms) {
+    const tmsOptions = tmsToTileGridOptions(tms, [tileSize, tileSize]);
+    // @ts-expect-error tileGrid supported in eox-map
+    layer.source.tileGrid = { ...layer.source.tileGrid, ...tmsOptions };
+  }
+  return [layer];
 }
 
 /**
