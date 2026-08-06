@@ -193,7 +193,7 @@ const indexResources = (doc) => {
 };
 
 /**
- * Shows the failure to the user. The only writer of `errorState`.
+ * Shows a transport failure to the user.
  *
  * @param {string} verb
  * @param {string} reason

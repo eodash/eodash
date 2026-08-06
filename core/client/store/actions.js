@@ -1,4 +1,5 @@
 import {
+  errorState,
   mapEl,
   mapCompareEl,
   registeredProjections,
@@ -37,7 +38,11 @@ export const assignLayers = (map, layers) => {
   try {
     map.layers = /** @type {import("@eox/map").EoxLayer[]} */ (layers);
   } catch (error) {
-    console.error("[eodash] eox-map rejected the assigned layers:", error);
+    errorState.value = {
+      message: "Some layers could not be rendered correctly",
+      details: `${error}`,
+      severity: "warning",
+    };
   }
 };
 

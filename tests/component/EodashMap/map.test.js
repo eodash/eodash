@@ -1,7 +1,8 @@
-import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
+import { beforeEach, describe, expect, test, vi } from "vitest";
 import EodashMap from "^/EodashMap/index.vue";
 import {
   compareIndicator,
+  errorState,
   indicator,
   mapEl,
   mapPosition,
@@ -102,6 +103,7 @@ describe("EodashMap", () => {
     mapPosition.value = [];
     tooltipAdapter.value = null;
     layerControlFormValue.value = {};
+    errorState.value = { message: "", details: "", severity: "error" };
     for (const fn of Object.values(methods)) vi.mocked(fn).mockClear();
   });
 
@@ -154,30 +156,23 @@ describe("EodashMap", () => {
       },
     ]);
 
-    const captureErrors = () =>
-      vi.spyOn(console, "error").mockImplementation(() => {});
-
-    afterEach(() => vi.restoreAllMocks());
-
-    test("logs what ol rejects rather than losing it to vue", async () => {
-      const logged = captureErrors();
-
+    test("banners what ol rejects rather than losing it to vue", async () => {
       await mountAsyncComponent(EodashMap, {
         props: { baseLayers: brokenStyle },
       });
 
       // ol's own wording, so the throw came back out of the assignment
       await expect
-        .poll(() => logged.mock.calls.at(-1)?.[1]?.message)
+        .poll(() => errorState.value.details)
         .toContain("expected an odd number of arguments for case");
-      expect(logged.mock.calls.at(-1)?.[0]).toBe(
-        "[eodash] eox-map rejected the assigned layers:",
+      expect(errorState.value.message).toBe(
+        "Some layers could not be rendered correctly",
       );
+      // the other layers still render, so it does not read as an error
+      expect(errorState.value.severity).toBe("warning");
     });
 
     test("keeps the map usable after a rejected assignment", async () => {
-      captureErrors();
-
       await mountAsyncComponent(EodashMap, {
         props: { baseLayers: brokenStyle, center: [10, 20] },
       });
