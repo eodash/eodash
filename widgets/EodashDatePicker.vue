@@ -1,25 +1,15 @@
 <template>
   <div ref="rootRef" class="datePicker">
-    <!-- show-utc keeps eox off local start-of-day, which otherwise shifts a
-         stepped date back a day for anyone east of UTC. layer-id-key groups
-         items by title, which is what the hover popup labels them with.
-         externalMapRendering stops eox writing TIME params into the map
-         sources: eodash re-renders those layers itself. -->
     <eox-timecontrol
-      :key="mapElement"
+      :key="revision"
       ref="timecontrolRef"
       show-utc
       layer-id-key="title"
-      .for="mapElement"
-      .externalMapRendering="true"
-      .initDate="[datetime]"
+      .controlValues="controlValues"
+      .initDate="!!datetime ? [datetime] : null"
       @select="onSelect"
     >
-      <!-- Reversed: the date element has to precede the picker in the DOM,
-           since popup mode anchors the calendar to its shadow root. -->
       <div class="d-flex flex-column-reverse">
-        <!-- Sized and coloured to match the step arrows eox renders inside
-             eox-timecontrol-date, so the row reads as one control. -->
         <div class="d-flex flex-row align-center justify-center pb-1">
           <v-btn
             v-if="!hideArrows"
@@ -34,8 +24,11 @@
           </v-btn>
           <eox-timecontrol-date
             v-if="!hideInputField || toggleCalendar"
+            ref="dateRef"
             class="d-flex align-center"
             .navigation="!hideArrows"
+            @mousemove="showCalendar"
+            @mouseleave="hideCalendar"
           ></eox-timecontrol-date>
           <v-btn
             v-if="!hideArrows"
@@ -50,6 +43,7 @@
           </v-btn>
         </div>
         <eox-timecontrol-picker
+          ref="pickerRef"
           .showDots="true"
           .showItems="showItems"
           .popup="toggleCalendar"
@@ -60,17 +54,16 @@
 </template>
 <script setup>
 import "@eox/timecontrol";
-import { watch, customRef, onUnmounted, useTemplateRef } from "vue";
-import { datetime, mapEl, mapCompareEl } from "@/store/states";
+import { watch, ref, customRef, onUnmounted, useTemplateRef } from "vue";
+import { useSTAcStore } from "@/store/stac";
+import { datetime } from "@/store/states";
 import { mdiPageFirst, mdiPageLast } from "@mdi/js";
+import { eodashCollections, eodashCompareCollections } from "@/utils/states";
 import log from "loglevel";
 import { useTransparentPanel } from "@/composables";
+import { storeToRefs } from "pinia";
 
 const props = defineProps({
-  hintText: {
-    type: String,
-    default: null,
-  },
   hideArrows: {
     type: Boolean,
     default: false,
@@ -85,17 +78,16 @@ const props = defineProps({
   },
   showItems: {
     type: Boolean,
-    default: false,
-  },
-  map: {
-    type: String,
-    default: "first",
+    default: true,
   },
 });
 
-const mapElement = props.map === "second" ? mapCompareEl : mapEl;
-
 const rootEl = useTemplateRef("rootRef");
+
+const dateEl = useTemplateRef("dateRef");
+
+/** @type {import("vue").ShallowRef<HTMLElement | null>} */
+const pickerEl = useTemplateRef("pickerRef");
 
 /** @type {import("vue").ShallowRef<import("@eox/timecontrol").EOxTimeControl | null>} */
 const timecontrolEl = useTemplateRef("timecontrolRef");
@@ -122,22 +114,20 @@ const currentDate = customRef((track, trigger) => ({
   },
 }));
 
-// The UTC day the calendar shows. The calendar is day-resolution, so a day-level
-// guard is enough to stop the datetime <-> calendar echo.
+// Guards the datetime <-> calendar echo, at the calendar's own day resolution.
 let calendarDay = "";
 
 /** @param {Date} date */
-const utcDay = (date) => date.toISOString().slice(0, 10);
+const utcDay = (date) =>
+  isNaN(date.getTime()) ? "" : date.toISOString().slice(0, 10);
 
 /** @param {CustomEvent<{date: [Date, Date]}>} e */
 const onSelect = (e) => {
   const [selected] = e.detail.date;
   calendarDay = utcDay(selected);
-  applyDotColors();
   currentDate.value = selected.getTime();
 };
 
-// datetime is also written elsewhere (URL restore, time slider, chart clicks).
 watch(datetime, (iso) => {
   const el = timecontrolEl.value;
   const date = new Date(iso);
@@ -148,43 +138,152 @@ watch(datetime, (iso) => {
   el.dateChange([iso, iso], el);
 });
 
+/** @type {import("vue").Ref<import("@/types").DatePickerControlValue[]>} */
+const controlValues = ref([]);
+
+// eox only derives its items in `firstUpdated`, so a change needs a remount.
+const revision = ref(0);
+
+const { selectedCompareStac, selectedStac } = storeToRefs(useSTAcStore());
+
+watch(
+  [selectedStac, selectedCompareStac],
+  async ([updatedStac, updatedCompareStac]) => {
+    if (!updatedStac && !updatedCompareStac) {
+      log.debug("No STAC selected, clearing datepicker dates");
+      controlValues.value = [];
+      revision.value++;
+      return;
+    }
+
+    controlValues.value = [
+      ...(await fetchCollectionsDates(eodashCollections)),
+      ...(await fetchCollectionsDates(eodashCompareCollections, " (compare)")),
+    ];
+    revision.value++;
+  },
+  { immediate: true },
+);
+
+/**
+ *
+ * @param {import("@/eodashSTAC/EodashCollection").EodashCollection[]} eodashCollections
+ * @param {string} [suffix] Keeps compare ids distinct.
+ * @returns {Promise<import("@/types").DatePickerControlValue[]>}
+ */
+async function fetchCollectionsDates(eodashCollections, suffix = "") {
+  const values = await Promise.all(
+    eodashCollections.map(async (ec) => {
+      await ec.fetchCollection();
+      const dates = await ec.getDates();
+      if (!dates?.length) {
+        return null;
+      }
+
+      return {
+        id: `${ec.collectionStac?.id ?? ""}${suffix}`,
+        title: ec.collectionStac?.title ?? ec.collectionStac?.id ?? "",
+        color: ec.color,
+        timeControlValues: dates.map((date) => ({ date: date.toISOString() })),
+      };
+    }),
+  ).catch((e) => {
+    console.error("[eodash] Datepicker failed to read collection dates", e);
+    return /** @type {import("@/types").DatePickerControlValue[]} **/ ([]);
+  });
+
+  return values.filter((value) => !!value);
+}
+
 /** Number of `--dot-color-*` slots eox declares. */
 const DOT_COLOR_SLOTS = 11;
 
 /**
- * eox never carries the layer colour into its items, so the dots are coloured
- * here. It reads the slots off `body` and mounts the popup calendar there too,
- * so body is the only scope both the inline and popup calendars share. Slot N
- * follows eox's own group order, which is `sliderValues`.
+ * sets a color for each layer
+ *
+ * @param {import("@/types").DatePickerControlValue[]} values
  */
-const applyDotColors = () => {
-  const { style } = document.body;
-  const sliders = timecontrolEl.value?.sliderValues ?? [];
-
-  for (let idx = 0; idx < DOT_COLOR_SLOTS; idx++) {
-    const color = sliders[idx]?.layerInstance?.get("color");
-    if (color) {
-      style.setProperty(`--dot-color-${idx + 1}`, color);
-    } else {
-      style.removeProperty(`--dot-color-${idx + 1}`);
+const applyDotColors = (values) => {
+  // The popup reads them off body, the inline calendar off the host.
+  for (const el of [document.body, pickerEl.value]) {
+    if (!el) {
+      continue;
+    }
+    for (let idx = 0; idx < DOT_COLOR_SLOTS; idx++) {
+      const color = values[idx]?.color;
+      if (color) {
+        el.style.setProperty(`--dot-color-${idx + 1}`, color);
+      } else {
+        el.style.removeProperty(`--dot-color-${idx + 1}`);
+      }
     }
   }
 };
 
-onUnmounted(() => {
-  const { style } = document.body;
-  for (let idx = 0; idx < DOT_COLOR_SLOTS; idx++) {
-    style.removeProperty(`--dot-color-${idx + 1}`);
+// `post` so the remounted picker exists by the time it is written to.
+watch(controlValues, applyDotColors, { immediate: true, flush: "post" });
+onUnmounted(() => applyDotColors([]));
+
+/** `cal` is only assigned inside initCalendar's setTimeout. */
+const calendar = () =>
+  /** @type {import("@eox/timecontrol/src/components/timecontrol-picker").EOxTimeControlPicker | null} */ (
+    timecontrolEl.value?.getTimeControlPicker() ?? null
+  )?.cal;
+
+const popupEl = () =>
+  /** @type {HTMLElement | undefined} */ (calendar()?.context?.mainElement);
+
+/**
+ * The popup opens on click by default; the old picker opened on hover.
+ *
+ * @param {MouseEvent} e
+ */
+const showCalendar = (e) => {
+  if (!props.toggleCalendar || !isOverField(e)) {
+    return;
   }
-});
+  calendar()?.show();
+  popupEl()?.addEventListener("mouseleave", hideCalendar);
+};
+
+/**
+ * Whether the pointer is over the date field, matched by geometry
+ *
+ * @param {MouseEvent} e
+ */
+const isOverField = (e) => {
+  const field = dateEl.value?.shadowRoot
+    ?.querySelector("input")
+    ?.getBoundingClientRect();
+  const row = dateEl.value?.getBoundingClientRect();
+
+  return (
+    !!field &&
+    !!row &&
+    e.clientX >= field.left &&
+    e.clientX <= field.right &&
+    e.clientY >= row.top &&
+    e.clientY <= row.bottom
+  );
+};
+
+/** @param {MouseEvent} e */
+const hideCalendar = (e) => {
+  const enteredEl = /** @type {Node | null} */ (e.relatedTarget);
+  // Moving between the field and the popup must not close it.
+  if (dateEl.value?.contains(enteredEl) || popupEl()?.contains(enteredEl)) {
+    return;
+  }
+  calendar()?.hide();
+};
 
 /**
  * @param {boolean} reverse
  */
 function jumpDate(reverse) {
   // TODO: we need to handle time ranges and other options here
-  const times = (timecontrolEl.value?.items.get() ?? []).map((item) =>
-    new Date(item.utc).getTime(),
+  const times = controlValues.value.flatMap((coll) =>
+    coll.timeControlValues.map(({ date }) => new Date(date).getTime()),
   );
   if (times.length) {
     currentDate.value = times.reduce((a, b) =>
@@ -221,15 +320,12 @@ useTransparentPanel(rootEl);
   ) !important;
 }
 
-/* Level eox's 32px step arrows with the 40px jump buttons beside them. */
 .datePicker eox-timecontrol-date::part(previous),
 .datePicker eox-timecontrol-date::part(next) {
   width: 40px;
   height: 40px;
 }
 
-/* Must out-specify the `:host` defaults of the eox shadow styles.
-   The popup calendar is appended to the document body, hence `body > .vc`. */
 .datePicker eox-timecontrol-picker,
 .datePicker eox-timecontrol-date,
 body > .vc {
