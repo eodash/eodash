@@ -337,7 +337,18 @@ export type StacEndpoint =
       rasterEndpoint?: string;
       vectorEndpoint?: string;
       supportedUpscalingEndpoints?: Array<
-        string | { url: string; titilerVersion?: 1 | 2 }
+        | string
+        | {
+            url: string;
+            titilerVersion?: 1 | 2;
+            /**
+             * The scaling factor for tile requests.
+             * For TiTiler v1, it corresponds to the `@nx` suffix (e.g., 2 for `@2x`). Max 4.
+             * For TiTiler v2, it multiplies the base tile size of 256px (e.g., 2 for `tilesize=512`).
+             * Defaults to 2 (baseline 512px tiles).
+             */
+            scaleFactor?: number;
+          }
       >;
       colormapRegistry?: string | Record<string, string[]>;
     };

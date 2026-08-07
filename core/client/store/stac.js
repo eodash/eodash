@@ -30,8 +30,11 @@ export const useSTAcStore = defineStore("stac", () => {
   const isApi = ref(false);
 
   /**
-   * List of supported endpoints for upscaling
-   * @type {import("vue").Ref<Array<string | { url: string; titilerVersion?: 1 | 2 }>>}
+   * List of supported endpoints for upscaling.
+   * `scaleFactor` for v1 corresponds to `@nx` suffix (max 4).
+   * `scaleFactor` for v2 multiplies base tile size of 256px.
+   * Default `scaleFactor` is 2.
+   * @type {import("vue").Ref<Array<string | { url: string; titilerVersion?: 1 | 2, scaleFactor?: number; }>>}
    */
   const supportedUpscalingEndpoints = ref([]);
 

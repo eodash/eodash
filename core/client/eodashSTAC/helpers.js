@@ -1597,9 +1597,11 @@ function applyValuesToUrl(url, values) {
  * - titiler v1: appends `@2x` to the `{y}` tile coordinate
  * - titiler v2: adds `tilesize=512` query parameter (v2 removed the `@2x` suffix)
  * Plain strings in the config default to v1 behavior for backward compatibility.
+ * - scaleFactor, if larger than 2, multiplies the default size of 512px tile requested from server by the value at the expense of larger data transfers
+ * for v1, the value is rounded to nearest integer, for titiler v2 it can be a decimal
  *
  * @param {string} url - The XYZ tile URL template
- * @param {Array<string | { url: string; titilerVersion?: 1 | 2 }>} upscalingEndpoints
+ * @param {Array<string | { url: string; titilerVersion?: 1 | 2, scaleFactor?: number }>} upscalingEndpoints
  * @returns {{ url: string; tileSize: [number, number] } | null} null if no endpoint matches
  */
 export function applyTitilerUpscaling(url, upscalingEndpoints) {
@@ -1613,15 +1615,18 @@ export function applyTitilerUpscaling(url, upscalingEndpoints) {
   }
 
   const version = typeof match === "string" ? 1 : (match.titilerVersion ?? 1);
+  let scaleFactor = typeof match === "string" ? 2 : (match.scaleFactor ?? 2);
 
   if (version === 2) {
     const [base, query] = url.split("?");
     const params = new URLSearchParams(query);
-    params.set("tilesize", "512");
+    const tilesize = Math.round(256 * scaleFactor).toString();
+    params.set("tilesize", tilesize);
     return { url: `${base}?${params.toString()}`, tileSize: [512, 512] };
   }
-
-  return { url: url.replace("{y}", "{y}@2x"), tileSize: [512, 512] };
+  scaleFactor = Math.min(scaleFactor, 4);
+  const exponent = Math.round(scaleFactor).toString();
+  return { url: url.replace("{y}", `{y}@${exponent}x`), tileSize: [512, 512] };
 }
 
 /**
