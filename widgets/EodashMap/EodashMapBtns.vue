@@ -107,6 +107,16 @@
       ></eox-geosearch>
     </button>
     <button
+      v-if="enableGeolocation"
+      class="primary small circle small-elevate"
+      @click="onGeolocationClick"
+    >
+      <i class="small">
+        <svg viewBox="0 0 24 24"><path :d="mdiCrosshairsGps"></path></svg>
+      </i>
+      <div class="tooltip left">Show your location</div>
+    </button>
+    <button
       v-if="backToPOIs && (poi || comparePoi)"
       class="primary small circle small-elevate"
       @click="loadPOiIndicator()"
@@ -176,6 +186,7 @@ import {
   mdiStarFourPointsCircleOutline,
   mdiEarth,
   mdiMessageQuestion,
+  mdiCrosshairsGps,
 } from "@mdi/js";
 import ExportState from "^/ExportState.vue";
 import { computed, ref } from "vue";
@@ -209,6 +220,8 @@ const {
   searchParams,
   enableGlobe,
   enableFeedback,
+  enableGeolocation,
+  onGeolocationClick,
 } = defineProps({
   exportMap: {
     type: Boolean,
@@ -252,6 +265,16 @@ const {
   enableFeedback: {
     type: Boolean,
     default: true,
+  },
+  enableGeolocation: {
+    type: Boolean,
+    default: true,
+  },
+  onGeolocationClick: {
+    type: /** @type {import("vue").PropType<(payload: PointerEvent) => void>} */ (
+      Function
+    ),
+    default: () => {},
   },
 });
 

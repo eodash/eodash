@@ -125,6 +125,13 @@ describe("EodashMapBtns", () => {
       expect(btnByTooltip("Change map projection")).toBeTruthy();
       expect(btnByTooltip("Back to POIs")).toBeTruthy();
       expect(btnByTooltip("Provide Feedback")).toBeTruthy();
+      expect(btnByTooltip("Show your location")).toBeTruthy();
+    });
+
+    test("shows the geolocation button when enableGeolocation is true", async () => {
+      await mountBtns({ props: { enableGeolocation: true } });
+
+      expect(btnByTooltip("Show your location")).toBeTruthy();
     });
 
     test("hides the zoom buttons when enableZoom is false", async () => {
@@ -215,6 +222,15 @@ describe("EodashMapBtns", () => {
       await mountBtns();
       btnByTooltip("Back to POIs")?.click();
       expect(loadPOiIndicator).toHaveBeenCalled();
+    });
+
+    test("geolocation delegates to onGeolocationClick", async () => {
+      const onGeolocationClick = vi.fn();
+      await mountBtns({
+        props: { enableGeolocation: true, onGeolocationClick },
+      });
+      btnByTooltip("Show your location")?.click();
+      expect(onGeolocationClick).toHaveBeenCalled();
     });
   });
 

@@ -33,6 +33,7 @@
         />
       </eox-map>
     </eox-map-compare>
+    <div ref="geoTarget" style="display: none"></div>
     <div
       v-if="enableCursorCoordinates"
       id="cursor-coordinates"
@@ -60,6 +61,9 @@
         "
         :enableZoom="(indicator || compareIndicator || poi) ? btnsProps.enableZoom : false
         "
+        :enableGeolocation="(indicator || compareIndicator || poi) ? btnsProps.enableGeolocation : false
+        "
+        :onGeolocationClick="centerOnPosition"
         :enableGlobe="(indicator || compareIndicator || poi) ? btnsProps.enableGlobe : false"
         :enableFeedback="(indicator || compareIndicator || poi) ? btnsProps.enableFeedback : false"
         :searchParams="btnsProps.searchParams"
@@ -154,6 +158,23 @@ const props = defineProps({
     type: Boolean,
     default: true,
   },
+  /** Show a geolocation control. */
+  enableGeolocation: {
+    type: Boolean,
+    default: true,
+  },
+  /** Options for the geolocation control. */
+  geolocationOptions: {
+    type: Object,
+    default: () => ({
+      style: {
+        "circle-radius": 12,
+        "circle-fill-color": "red",
+        "circle-stroke-color": "white",
+        "circle-stroke-width": 3,
+      },
+    }),
+  },
   /** Grid position of the floating button toolbar. `x` accepts responsive `"mobile/tablet/desktop"` column notation. */
   btnsPosition: {
     type: /** @type {import("vue").PropType<{ x: string | number; y: number; gap: number }>} */ (
@@ -178,6 +199,8 @@ const props = defineProps({
      * enableGlobe?: boolean;
      * enableMosaic?: boolean;
      * enableFeedback?: boolean;
+     * enableGeolocation?: boolean;
+     * geolocationOptions?: object;
      * enableCompareIndicators?: boolean | {
      *   compareTemplate?:string;
      *   fallbackTemplate?:string;
@@ -194,6 +217,15 @@ const props = defineProps({
       enableGlobe: true,
       enableMosaic: true,
       enableFeedback: true,
+      enableGeolocation: true,
+      geolocationOptions: {
+        style: {
+          "circle-radius": 12,
+          "circle-fill-color": "red",
+          "circle-stroke-color": "white",
+          "circle-stroke-width": 3,
+        },
+      },
       searchParams: {},
     }),
   },
@@ -239,6 +271,8 @@ const btnsProps = computed(() => ({
   enableGlobe: props.btns.enableGlobe ?? true,
   enableMosaic: props.btns.enableMosaic ?? true,
   enableFeedback: props.btns.enableFeedback ?? true,
+  enableGeolocation: props.btns.enableGeolocation ?? true,
+  geolocationOptions: props.btns.geolocationOptions ?? {},
   searchParams: props.btns.searchParams,
 }));
 
@@ -248,6 +282,7 @@ if (btnsProps.value.enableGlobe) {
 // Prepare containers for scale line and cursor coordinates
 const scaleLineRef = useTemplateRef("scale-line");
 const cursorCoordsRef = useTemplateRef("cursor-coords");
+const geoTarget = useTemplateRef("geoTarget");
 
 /** @type {import("vue").Ref<Exclude<import("@/types").EodashStyleJson["tooltip"], undefined>>} */
 const tooltipProperties = ref([]);
@@ -279,6 +314,19 @@ const controls = computed(() => {
     };
   }
 
+  if (props.enableGeolocation || btnsProps.value.enableGeolocation) {
+    const geoOptions = {
+      tracking: true,
+      trackHeading: true,
+      highAccuracy: true,
+      trackAccuracy: true,
+      ...props.geolocationOptions,
+      ...btnsProps.value.geolocationOptions,
+      target: geoTarget.value || undefined,
+    };
+    controlsObj.Geolocation = geoOptions;
+  }
+
   return controlsObj;
 });
 
@@ -306,6 +354,28 @@ const animationOptions = ref({
 const eoxMap = useTemplateRef("eoxMap");
 /** @type {import("vue").Ref<import("@eox/map").EOxMap | null>} */
 const compareMap = useTemplateRef("compareMap");
+
+/**
+ * Trigger geolocation centering.
+ * Exposed for use in EodashMapBtns.vue
+ */
+const centerOnPosition = () => {
+  const map = eoxMap.value?.map;
+  if (!map) return;
+  const control = /** @type {any} */ (
+    map
+      .getControls()
+      .getArray()
+      .find((c) => !!(/** @type {any} */ (c).centerOnPosition))
+  );
+  if (control) {
+    control.centerOnPosition();
+  }
+};
+
+defineExpose({
+  centerOnPosition,
+});
 
 const { selectedCompareStac } = storeToRefs(useSTAcStore());
 const showCompare = computed(() =>
