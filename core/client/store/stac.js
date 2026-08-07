@@ -30,8 +30,11 @@ export const useSTAcStore = defineStore("stac", () => {
   const isApi = ref(false);
 
   /**
-   * List of supported endpoints for upscaling
-   * @type {import("vue").Ref<Array<string | { url: string; titilerVersion?: 1 | 2 }>>}
+   * List of supported endpoints for upscaling.
+   * `scaleFactor` for v1 corresponds to `@nx` suffix (max 4).
+   * `scaleFactor` for v2 multiplies base tile size of 256px.
+   * Default `scaleFactor` is 2.
+   * @type {import("vue").Ref<Array<string | { url: string; titilerVersion?: 1 | 2, scaleFactor?: number; }>>}
    */
   const supportedUpscalingEndpoints = ref([]);
 
@@ -73,6 +76,12 @@ export const useSTAcStore = defineStore("stac", () => {
   const selectedCompareItem = ref(undefined);
 
   /**
+   * Custom registry of TileMatrixSets that replaces the default eodash registry
+   * @type {import("vue").Ref<Record<string, any> | null>}
+   */
+  const tileMatrixSetRegistry = ref(null);
+
+  /**
    * Initializes the store by assigning the STAC endpoint.
    * @param {import("@/types").StacEndpoint} endpoint
    */
@@ -92,6 +101,26 @@ export const useSTAcStore = defineStore("stac", () => {
       endpoint.supportedUpscalingEndpoints ?? [];
     if (endpoint.colormapRegistry) {
       loadColormapRegistry(endpoint.colormapRegistry);
+    }
+    if (endpoint.tileMatrixSetRegistry) {
+      loadTileMatrixSetRegistry(endpoint.tileMatrixSetRegistry);
+    }
+  }
+
+  /**
+   * Loads the tileMatrixSet registry from a URL or object
+   * @param {string | Record<string, any>} registry
+   */
+  async function loadTileMatrixSetRegistry(registry) {
+    if (typeof registry === "object") {
+      tileMatrixSetRegistry.value = registry;
+      return;
+    }
+    try {
+      const resp = await axios.get(registry);
+      tileMatrixSetRegistry.value = resp.data;
+    } catch (err) {
+      log.error("Error loading TileMatrixSet registry", err);
     }
   }
 
@@ -290,5 +319,7 @@ export const useSTAcStore = defineStore("stac", () => {
     supportedUpscalingEndpoints,
     colormapRegistry,
     loadColormapRegistry,
+    tileMatrixSetRegistry,
+    loadTileMatrixSetRegistry,
   };
 });

@@ -46,6 +46,7 @@ const QUERYABLES = {
 const routes = {
   // Pulled in by baseConfig on every boot.
   "/defaults/colormaps.json": {},
+  "/defaults/tmsRegistry.json": {},
   "/collections": { collections: [COLLECTION] },
   [`/collections/${COLLECTION_ID}`]: COLLECTION,
   [`/collections/${COLLECTION_ID}/queryables`]: QUERYABLES,
