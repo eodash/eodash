@@ -236,6 +236,90 @@ function resolveLocalRef(ref, rootSchema) {
 }
 
 /**
+ * Resolves a TileMatrixSet definition by projection code.
+ * @param {string} projectionCode - e.g. "EPSG:3857"
+ * @param {Record<string, any> | null} customRegistry - registry with tileset to definition mappings
+ * @returns {Record<string, any> | undefined}
+ */
+export function resolveTmsByProjection(projectionCode, customRegistry) {
+  if (!projectionCode || !customRegistry) return undefined;
+  const code = projectionCode.toUpperCase();
+
+  const tmsEntries = Object.values(customRegistry);
+
+  // Find first TMS that matches this projection
+  for (const tms of tmsEntries) {
+    const crs = tms.crs || "";
+    if (
+      crs.includes(code) ||
+      (code.startsWith("EPSG:") &&
+        (crs.endsWith(`/${code.split(":")[1]}`) ||
+          crs.includes(`::${code.split(":")[1]}`)))
+    ) {
+      return tms;
+    }
+  }
+  return undefined;
+}
+
+/**
+ * Converts a OGC TileMatrixSet definition to OpenLayers TileGrid options.
+ * @param {Record<string, any>} tms - The TileMatrixSet JSON definition
+ * @param {[number, number]} [targetTileSize] - Optional target tile size for upscaling
+ * @returns {Record<string, any>}
+ */
+/**
+ * Converts a OGC TileMatrixSet definition to OpenLayers TileGrid options.
+ * @param {Record<string, any>} tms - The TileMatrixSet JSON definition
+ * @param {[number, number]} [targetTileSize] - Optional target tile size for upscaling
+ * @returns {Record<string, any>}
+ */
+export function tmsToTileGridOptions(tms, targetTileSize = [512, 512]) {
+  if (!tms?.tileMatrices?.length) {
+    return {};
+  }
+  const firstMatrix = tms.tileMatrices[0];
+  let origin = firstMatrix.pointOfOrigin;
+  let resolutions = tms.tileMatrices.map((/** @type {any} */ m) => m.cellSize);
+  const matrixIds = tms.tileMatrices.map((/** @type {any} */ m) => m.id);
+  const originalTileWidth = firstMatrix.tileWidth;
+  const originalTileHeight = firstMatrix.tileHeight;
+
+  // Handle axis order
+  const isNE = ["N", "Lat", "Y"].includes(tms.orderedAxes?.[0]);
+  if (isNE) {
+    // Swap origin to [E, N] for OpenLayers
+    origin = [origin[1], origin[0]];
+  }
+
+  let tileSize = [originalTileWidth, originalTileHeight];
+
+  if (targetTileSize) {
+    const scale = targetTileSize[0] / originalTileWidth;
+    resolutions = resolutions.map((/** @type {any} */ r) => r / scale);
+    tileSize = targetTileSize;
+  }
+
+  // Calculate extent based on Level 0 grid dimensions
+  const sizeX =
+    firstMatrix.matrixWidth * originalTileWidth * firstMatrix.cellSize;
+  const sizeY =
+    firstMatrix.matrixHeight * originalTileHeight * firstMatrix.cellSize;
+
+  // extent = [minX, minY, maxX, maxY]
+  // Assumes topLeft origin and Y increases upwards
+  const extent = [origin[0], origin[1] - sizeY, origin[0] + sizeX, origin[1]];
+
+  return {
+    origin,
+    resolutions,
+    matrixIds,
+    tileSize,
+    extent,
+  };
+}
+
+/**
  * Flattens a nested jsonform value into a single map keyed by leaf property name
  * (e.g. `{ rescaleRed: { minRed, maxRed } }` -> `{ minRed, maxRed }`). Arrays are
  * kept whole (bands stay a single value).

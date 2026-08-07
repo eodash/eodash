@@ -351,6 +351,7 @@ export type StacEndpoint =
           }
       >;
       colormapRegistry?: string | Record<string, string[]>;
+      tileMatrixSetRegistry?: string | Record<string, any>;
     };
 
 /** @group Eodash */
@@ -680,6 +681,8 @@ export interface Render {
   bidx?: number[];
   /** Tile size to request from the tile server. */
   tilesize?: number;
+  /** Used for custom Proj4 projection definitions. */
+  projection?: Record<string, unknown>;
 }
 /** @ignore */
 export interface TitilerSTACParameters {
