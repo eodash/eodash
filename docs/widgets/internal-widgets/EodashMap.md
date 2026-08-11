@@ -54,6 +54,8 @@ Every `btns` flag defaults to `true`; set one to `false` to hide that button.
 | `enableSearch` | Search for a location. |
 | `enableFeedback` | Open the feedback form. |
 | `enableBackToPOIs` | Return to the points of interest. |
+| `enableGeolocation` | Uses the browser Geolocation API to pan map to device location. |
+| `geolocationOptions` | Object containing [geolocation options](https://eox-a.github.io/EOxElements/?path=/story/elements-eox-map--geolocation&globals=code-language:vanilla). |
 | `enableCompareIndicators` | Pick the dataset shown on the compare map. May also be an object with `compareTemplate`, `fallbackTemplate`, and `itemFilterConfig`. |
 
 

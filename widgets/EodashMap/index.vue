@@ -31,6 +31,7 @@
         />
       </eox-map>
     </eox-map-compare>
+    <div ref="geoTarget" style="display: none"></div>
     <div
       v-if="enableCursorCoordinates"
       id="cursor-coordinates"
@@ -57,6 +58,8 @@
         :enableSearch="(indicator || compareIndicator || poi) ? btnsProps.enableSearch : false
         "
         :enableZoom="(indicator || compareIndicator || poi) ? btnsProps.enableZoom : false
+        "
+        :enableGeolocation="(indicator || compareIndicator || poi) ? btnsProps.enableGeolocation : false
         "
         :enableGlobe="(indicator || compareIndicator || poi) ? btnsProps.enableGlobe : false"
         :enableFeedback="(indicator || compareIndicator || poi) ? btnsProps.enableFeedback : false"
@@ -185,6 +188,8 @@ const props = defineProps({
      * enableGlobe?: boolean;
      * enableMosaic?: boolean;
      * enableFeedback?: boolean;
+     * enableGeolocation?: boolean;
+     * geolocationOptions?: object;
      * enableCompareIndicators?: boolean | {
      *   compareTemplate?:string;
      *   fallbackTemplate?:string;
@@ -201,6 +206,15 @@ const props = defineProps({
       enableGlobe: true,
       enableMosaic: true,
       enableFeedback: true,
+      enableGeolocation: true,
+      geolocationOptions: {
+        style: {
+          "circle-radius": 12,
+          "circle-fill-color": "red",
+          "circle-stroke-color": "white",
+          "circle-stroke-width": 3,
+        },
+      },
       searchParams: {},
     }),
   },
@@ -246,6 +260,8 @@ const btnsProps = computed(() => ({
   enableGlobe: props.btns.enableGlobe ?? true,
   enableMosaic: props.btns.enableMosaic ?? true,
   enableFeedback: props.btns.enableFeedback ?? true,
+  enableGeolocation: props.btns.enableGeolocation ?? true,
+  geolocationOptions: props.btns.geolocationOptions ?? {},
   searchParams: props.btns.searchParams,
 }));
 
@@ -255,6 +271,7 @@ if (btnsProps.value.enableGlobe) {
 // Prepare containers for scale line and cursor coordinates
 const scaleLineRef = useTemplateRef("scale-line");
 const cursorCoordsRef = useTemplateRef("cursor-coords");
+const geoTarget = useTemplateRef("geoTarget");
 
 /** @type {import("vue").Ref<Exclude<import("@/types").EodashStyleJson["tooltip"], undefined>>} */
 const tooltipProperties = ref([]);
@@ -284,6 +301,18 @@ const controls = computed(() => {
       },
       target: cursorCoordsRef.value,
     };
+  }
+
+  if (btnsProps.value.enableGeolocation) {
+    const geoOptions = {
+      tracking: true,
+      trackHeading: true,
+      highAccuracy: true,
+      trackAccuracy: true,
+      ...btnsProps.value.geolocationOptions,
+      target: geoTarget.value || undefined,
+    };
+    controlsObj.Geolocation = geoOptions;
   }
 
   return controlsObj;

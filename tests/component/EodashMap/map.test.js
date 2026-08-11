@@ -54,6 +54,7 @@ vi.mock("^/EodashMap/EodashMapBtns.vue", () => ({
       "enableZoom",
       "enableGlobe",
       "enableFeedback",
+      "enableGeolocation",
       "searchParams",
     ],
     setup(/** @type {any} */ props) {
@@ -142,6 +143,15 @@ describe("EodashMap", () => {
       expect(format([-10.5, -20.5])).toBe("20.500 °S, 10.500 °W");
       expect(format(null)).toBe("");
     });
+
+    test("binds Geolocation control onto eox-map when enabled", async () => {
+      await mountAsyncComponent(EodashMap, {
+        props: { btns: { enableGeolocation: true } },
+      });
+
+      await expect.poll(() => mainMap()?.controls?.Geolocation).toBeTruthy();
+      expect(mainMap()?.controls.Geolocation.tracking).toBe(true);
+    });
   });
 
   describe("layer assignment", () => {
@@ -225,6 +235,16 @@ describe("EodashMap", () => {
       await expect.poll(() => btnsCapture.props).toBeTruthy();
       expect(btnsCapture.props.exportMap).toBe(true);
       expect(btnsCapture.props.enableGlobe).toBe(false);
+    });
+
+    test("forwards geolocation once an indicator is selected", async () => {
+      indicator.value = "collA";
+      await mountAsyncComponent(EodashMap, {
+        props: { btns: { enableGeolocation: true } },
+      });
+
+      await expect.poll(() => btnsCapture.props).toBeTruthy();
+      expect(btnsCapture.props.enableGeolocation).toBe(true);
     });
   });
 
