@@ -186,3 +186,17 @@ export const onCompareClick = (compareIndicators) => {
   setActiveTemplate(fallbackTemplate);
   triggerRef(selectedStac);
 };
+
+export const onGeolocationClick = () => {
+  const map = mapEl.value?.map;
+  if (!map) return;
+  const control = /** @type {any} */ (
+    map
+      .getControls()
+      .getArray()
+      .find((c) => !!(/** @type {any} */ (c).centerOnPosition))
+  );
+  if (control) {
+    control.centerOnPosition();
+  }
+};

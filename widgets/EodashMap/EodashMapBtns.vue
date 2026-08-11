@@ -201,6 +201,7 @@ import {
   onMapZoomOut,
   onMapZoomIn,
   showCompareIndicators,
+  onGeolocationClick,
 } from "./methods/btns";
 import "@eox/geosearch";
 
@@ -221,7 +222,6 @@ const {
   enableGlobe,
   enableFeedback,
   enableGeolocation,
-  onGeolocationClick,
 } = defineProps({
   exportMap: {
     type: Boolean,
@@ -269,12 +269,6 @@ const {
   enableGeolocation: {
     type: Boolean,
     default: true,
-  },
-  onGeolocationClick: {
-    type: /** @type {import("vue").PropType<(payload: PointerEvent) => void>} */ (
-      Function
-    ),
-    default: () => {},
   },
 });
 

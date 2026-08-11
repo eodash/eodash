@@ -61,7 +61,6 @@
         "
         :enableGeolocation="(indicator || compareIndicator || poi) ? btnsProps.enableGeolocation : false
         "
-        :onGeolocationClick="centerOnPosition"
         :enableGlobe="(indicator || compareIndicator || poi) ? btnsProps.enableGlobe : false"
         :enableFeedback="(indicator || compareIndicator || poi) ? btnsProps.enableFeedback : false"
         :searchParams="btnsProps.searchParams"
@@ -344,23 +343,6 @@ const eoxMap = useTemplateRef("eoxMap");
 /** @type {import("vue").Ref<import("@eox/map").EOxMap | null>} */
 const compareMap = useTemplateRef("compareMap");
 
-/**
- * Trigger geolocation centering.
- * Exposed for use in EodashMapBtns.vue
- */
-const centerOnPosition = () => {
-  const map = eoxMap.value?.map;
-  if (!map) return;
-  const control = /** @type {any} */ (
-    map
-      .getControls()
-      .getArray()
-      .find((c) => !!(/** @type {any} */ (c).centerOnPosition))
-  );
-  if (control) {
-    control.centerOnPosition();
-  }
-};
 watchPostEffect(() => assignLayers(eoxMap.value, eoxMapLayers.value));
 watchPostEffect(() =>
   assignLayers(compareMap.value, eoxMapCompareLayers.value),
