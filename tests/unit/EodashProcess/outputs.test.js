@@ -13,9 +13,12 @@ import {
   S_MULTIQUERY,
   serviceLink,
 } from "./fixtures";
+import axios from "@/plugins/axios";
 
-const axiosMock = vi.hoisted(() => ({ get: vi.fn(), post: vi.fn() }));
-vi.mock("@/plugins/axios", () => ({ default: axiosMock, axios: axiosMock }));
+const axiosMock = {
+  get: vi.spyOn(axios, "get"),
+  post: vi.spyOn(axios, "post"),
+};
 
 describe("processImage", () => {
   test("builds a static image layer per image/png service link", () => {

@@ -182,28 +182,27 @@ export const updateEodashCollections = async (
 
   await Promise.all(
     collectionUrls.map((cu, idx) => {
-      return new Promise((resolve, _reject) => {
-        const ec = new EodashCollection(cu, isAPI, rasterEndpoint);
-        ec.map = map;
-        ec.fetchCollection().then((col) => {
-          // assign color from the palette
-          ec.color = colorPalette[idx % colorPalette.length];
-          const parquetAsset = Object.values(col.assets ?? {}).find(
-            (asset) =>
-              asset.type === "application/vnd.apache.parquet" &&
-              asset.roles?.includes("collection-mirror"),
-          );
+      const ec = new EodashCollection(cu, isAPI, rasterEndpoint);
+      ec.map = map;
+      return ec.fetchCollection().then((col) => {
+        // assign color from the palette
+        ec.color = colorPalette[idx % colorPalette.length];
+        const parquetAsset = Object.values(col.assets ?? {}).find(
+          (asset) =>
+            asset.type === "application/vnd.apache.parquet" &&
+            asset.roles?.includes("collection-mirror"),
+        );
 
-          if (!parquetAsset) {
-            resolve(ec);
-            return;
-          }
+        if (!parquetAsset) {
+          return ec;
+        }
 
-          readParquetItems(toAbsolute(parquetAsset.href, cu)).then((items) => {
+        return readParquetItems(toAbsolute(parquetAsset.href, cu)).then(
+          (items) => {
             col.links.push(...generateLinksFromItems(items));
-            resolve(ec);
-          });
-        });
+            return ec;
+          },
+        );
       });
     }),
   ).then(async (collections) => {

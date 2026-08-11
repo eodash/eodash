@@ -81,7 +81,16 @@ Keep component tests hermetic: mock network requests and heavy external web comp
 
 The idea is that mocking defers coverage, but it doesn't replace it; any code written by eodash that is mocked in component testing needs its own unit tests or template tier coverage.
 
-There are two ways to intercept a network request, depending on who makes it:
+Two ways to intercept a request, depending on who makes it:
 
-- Most requests go through axios, so mocking `@/plugins/axios` is enough. See the `serve*` helpers in `tests/support/fixtures.js`.
-- Some requests are made by libraries instead, and never reach axios. `commands.serveFiles` answers those with a file from `tests/support/assets/`, matched by a part of the url.
+- Most requests go through axios, so stubbing it is enough. See `serveUrls` in `tests/support/fixtures.js`.
+- Some are made by libraries and never reach axios. `commands.serveFiles` and `commands.serveResponses` route the browser itself, so they catch those too.
+
+Both match a url by a part of it. `serveFiles` answers with a file from the repo, `serveResponses` with one you write inline:
+
+```js
+await commands.serveFiles({ geoparquet: "tests/support/assets/x.parquet" });
+await commands.serveResponses({ "collection.json": { body: "{}" } });
+```
+
+Call `await commands.stopServingFiles()` in `afterEach`, and give each test its own url, the axios cache answers a repeated one without hitting your route.

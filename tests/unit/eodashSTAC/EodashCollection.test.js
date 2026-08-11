@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import { EodashCollection } from "@/eodashSTAC/EodashCollection";
 import { serveUrls, stacCollection } from "../../support/fixtures";
+import axios from "@/plugins/axios";
 
-const axiosMock = vi.hoisted(() => ({ get: vi.fn() }));
-vi.mock("@/plugins/axios", () => ({ default: axiosMock, axios: axiosMock }));
+const axiosMock = { get: vi.spyOn(axios, "get") };
 
 const COLLECTION_URL = "https://cat/collections/coll";
 
@@ -72,7 +72,7 @@ describe("EodashCollection", () => {
 
   beforeEach(() => {
     vi.restoreAllMocks();
-    axiosMock.get.mockReset();
+    axiosMock.get = vi.spyOn(axios, "get");
     // The layer-building chain (createLayers) is its own surface; stub it so
     // these tests pin item resolution, not layer shapes.
     buildSpy = vi

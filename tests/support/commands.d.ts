@@ -5,6 +5,12 @@ import "@vitest/browser-playwright";
 declare module "vitest/browser" {
   interface BrowserCommands {
     serveFiles: (routes: Record<string, string>) => Promise<void>;
+    serveResponses: (
+      routes: Record<
+        string,
+        "abort" | { status?: number; body?: string; contentType?: string }
+      >,
+    ) => Promise<void>;
     stopServingFiles: () => Promise<void>;
   }
 }
