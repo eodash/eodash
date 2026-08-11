@@ -20,6 +20,7 @@ import { processCharts, processLayers, processSTAC } from "./outputs";
 import { handleLayersCustomEndpoints } from "./custom-endpoints/layers";
 import { handleChartCustomEndpoints } from "./custom-endpoints/chart";
 import { useSTAcStore } from "@/store/stac";
+import axios from "@/plugins/axios";
 import { useGetSubCodeId } from "@/composables";
 import { getLayers, getCompareLayers } from "@/store/actions";
 
@@ -50,10 +51,10 @@ export async function initProcess({
   const isPoiAlive = enableCompare ? !!comparePoi.value : !!poi.value;
   let updatedJsonform = null;
   if (selectedStac.value?.["eodash:jsonform"]) {
-    updatedJsonform = await fetch(
+    updatedJsonform = await axios
       //@ts-expect-error eodash extention
-      selectedStac.value["eodash:jsonform"],
-    ).then((resp) => resp.json());
+      .get(selectedStac.value["eodash:jsonform"])
+      .then((resp) => resp.data);
   }
 
   if (!updatedJsonform && isPoiAlive) {

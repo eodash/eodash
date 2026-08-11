@@ -2,6 +2,7 @@ import { useOnLayersUpdate } from "@/composables";
 import { onMounted, onUnmounted } from "vue";
 import { createOnSelectHandler } from "./handlers";
 import { tooltipAdapter } from "@/store/states";
+import { assignLayers } from "@/store/actions";
 
 /**
  *
@@ -35,7 +36,7 @@ export function renderItemsFeatures(
       },
       layers: [],
     };
-    currentMap.layers = [...currentMap.layers, analysisLayers];
+    assignLayers(currentMap, [...currentMap.layers, analysisLayers]);
   }
   /** @type {import("@eox/map").EoxLayer} */
   const stacItemsLayer = /** @type {any} */ ({
@@ -99,7 +100,7 @@ export function renderItemsFeatures(
       if (currentMap.selectInteractions?.[id]) currentMap.removeSelect(id);
     }
     analysisLayers.layers.unshift(stacItemsLayer);
-    currentMap.layers = [...currentMap.layers];
+    assignLayers(currentMap, [...currentMap.layers]);
   }
 }
 

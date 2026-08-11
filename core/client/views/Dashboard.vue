@@ -1,6 +1,5 @@
 <template>
   <HeaderComponent v-if="!eodash?.brand.noLayout" />
-  <ErrorAlert v-model="error" />
   <EodashOverlay />
   <Suspense>
     <TemplateComponent :style="{ height: templateHeight }" />
@@ -17,11 +16,10 @@
 import { useEodashRuntime } from "@/composables/DefineEodash";
 import { useURLSearchParametersSync, useUpdateTheme } from "@/composables";
 import { useSTAcStore } from "@/store/stac";
-import { computed, defineAsyncComponent, onErrorCaptured, ref } from "vue";
+import { computed, defineAsyncComponent } from "vue";
 import { useDisplay } from "vuetify";
 import { loadFont } from "@/utils";
 import Loading from "@/components/Loading.vue";
-import ErrorAlert from "@/components/ErrorAlert.vue";
 import EodashOverlay from "@/components/EodashOverlay.vue";
 
 const props = defineProps({
@@ -70,15 +68,6 @@ const FooterComponent = defineAsyncComponent(
 );
 
 const templateHeight = "100%";
-
-const error = ref("");
-onErrorCaptured((e, comp, info) => {
-  error.value = `
-  ${e}.
-  component: ${comp?.$.type.name}.
-  info: ${info}.
-  `;
-});
 </script>
 <style>
 .loading-container {

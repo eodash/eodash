@@ -167,22 +167,17 @@ export const useSTAcStore = defineStore("stac", () => {
     const property = isApi.value ? "collections" : "links";
 
     log.debug("Loading STAC endpoint", url);
-    await axios
-      .get(url)
-      .then((resp) => {
-        //@ts-expect-error TODO
-        const links = resp.data[property].map((link) => {
-          if (!link.title) {
-            link.title = `${link.rel} ${link.href}`;
-          }
-          return link;
-        });
-        log.debug("Setting selected STAC", links);
-        stac.value = links;
-      })
-      .catch((err) => {
-        throw new Error("error loading assigned STAC endpoint", err);
+    await axios.get(url).then((resp) => {
+      //@ts-expect-error TODO
+      const links = resp.data[property].map((link) => {
+        if (!link.title) {
+          link.title = `${link.rel} ${link.href}`;
+        }
+        return link;
       });
+      log.debug("Setting selected STAC", links);
+      stac.value = links;
+    });
   }
 
   /**
@@ -204,28 +199,23 @@ export const useSTAcStore = defineStore("stac", () => {
       absoluteUrl.value = constructPoiUrl(relativePath, indicator.value);
     }
 
-    await axios
-      .get(absoluteUrl.value)
-      .then(async (resp) => {
-        await updateEodashCollections(
-          eodashCollections,
-          resp.data,
-          absoluteUrl.value,
-          collectionsPalette,
-          isApi.value,
-          rasterEndpoint.value,
-        );
-        selectedItem.value = /** @type {any} */ (stacItem) ?? undefined;
-        selectedStac.value = resp.data;
-        // set indicator and poi
-        indicator.value = isPoi
-          ? indicator.value
-          : useGetSubCodeId(selectedStac.value);
-        poi.value = isPoi ? (selectedStac.value?.id ?? "") : "";
-      })
-      .catch((err) => {
-        throw new Error("error loading the selected STAC", err);
-      });
+    await axios.get(absoluteUrl.value).then(async (resp) => {
+      await updateEodashCollections(
+        eodashCollections,
+        resp.data,
+        absoluteUrl.value,
+        collectionsPalette,
+        isApi.value,
+        rasterEndpoint.value,
+      );
+      selectedItem.value = /** @type {any} */ (stacItem) ?? undefined;
+      selectedStac.value = resp.data;
+      // set indicator and poi
+      indicator.value = isPoi
+        ? indicator.value
+        : useGetSubCodeId(selectedStac.value);
+      poi.value = isPoi ? (selectedStac.value?.id ?? "") : "";
+    });
   }
   /**
    * Fetches selected stac object and assign it to `selectedCompareStac`
@@ -251,28 +241,23 @@ export const useSTAcStore = defineStore("stac", () => {
       // construct absolute URL of a poi
       absoluteUrl.value = constructPoiUrl(relativePath, compareIndicator.value);
     }
-    await axios
-      .get(absoluteUrl.value)
-      .then(async (resp) => {
-        await updateEodashCollections(
-          eodashCompareCollections,
-          resp.data,
-          absoluteUrl.value,
-          [...collectionsPalette].reverse(),
-          isApi.value,
-          rasterEndpoint.value,
-          "compare",
-        );
-        selectedCompareItem.value = /** @type {any} */ (stacItem) ?? undefined;
-        selectedCompareStac.value = resp.data;
-        compareIndicator.value = isPOI
-          ? compareIndicator.value
-          : useGetSubCodeId(selectedCompareStac.value);
-        comparePoi.value = isPOI ? (selectedCompareStac.value?.id ?? "") : "";
-      })
-      .catch((err) => {
-        throw new Error("error loading the selected comparison STAC", err);
-      });
+    await axios.get(absoluteUrl.value).then(async (resp) => {
+      await updateEodashCollections(
+        eodashCompareCollections,
+        resp.data,
+        absoluteUrl.value,
+        [...collectionsPalette].reverse(),
+        isApi.value,
+        rasterEndpoint.value,
+        "compare",
+      );
+      selectedCompareItem.value = /** @type {any} */ (stacItem) ?? undefined;
+      selectedCompareStac.value = resp.data;
+      compareIndicator.value = isPOI
+        ? compareIndicator.value
+        : useGetSubCodeId(selectedCompareStac.value);
+      comparePoi.value = isPOI ? (selectedCompareStac.value?.id ?? "") : "";
+    });
   }
 
   /**

@@ -112,7 +112,9 @@ export async function createLayersFromAssets(
           : {}),
       });
     } else if (assets[assetId]?.type?.includes("application/geodb+json")) {
-      const responseData = await (await fetch(assets[assetId].href)).json();
+      const responseData = await axios
+        .get(assets[assetId].href)
+        .then((resp) => resp.data);
       geoJsonIdx.push(idx);
       if (
         !responseData ||

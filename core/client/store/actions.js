@@ -1,4 +1,5 @@
 import {
+  errorState,
   mapEl,
   mapCompareEl,
   registeredProjections,
@@ -23,6 +24,27 @@ export const getLayers = () => mapEl.value?.layers ?? [];
  * @returns {import("@eox/map").EoxLayer[]}
  */
 export const getCompareLayers = () => mapCompareEl.value?.layers ?? [];
+
+/**
+ * Assigns layers to an `eox-map`
+ *
+ * @param {(import("@eox/map").EOxMap) | null} [map]
+ * @param {Record<string, any>[]} [layers]
+ */
+export const assignLayers = (map, layers) => {
+  if (!map || !layers) {
+    return;
+  }
+  try {
+    map.layers = /** @type {import("@eox/map").EoxLayer[]} */ (layers);
+  } catch (error) {
+    errorState.value = {
+      message: "Some layers could not be rendered correctly",
+      details: `${error}`,
+      severity: "warning",
+    };
+  }
+};
 
 /**
  * Register EPSG projection in `eox-map`

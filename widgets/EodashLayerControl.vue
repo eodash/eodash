@@ -32,6 +32,7 @@ import "color-legend-element";
 import "@eox/timecontrol";
 import { computed, ref } from "vue";
 import { mapEl, mapCompareEl } from "@/store/states";
+import { assignLayers } from "@/store/actions";
 import {
   eodashCollections,
   eodashCompareCollections,
@@ -149,8 +150,7 @@ const handleDatetimeUpdate = async (evt) => {
       dl.properties.layerControlExpand = true;
       dl.properties.layerControlToolsExpand = true;
     });
-    /** @type {HTMLElement & Record<string,any>} */
-    (mapElement.value).layers = updatedLayers;
+    assignLayers(mapElement.value, updatedLayers);
     // Emit after layer assignment so listeners resolve against the new layer.
     await useEmitLayersUpdate(
       props.map === "second" ? "compareLayertime:updated" : "layertime:updated",

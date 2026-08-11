@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, test, vi } from "vitest";
 import EodashMap from "^/EodashMap/index.vue";
 import {
   compareIndicator,
+  errorState,
   indicator,
   mapEl,
   mapPosition,
@@ -9,6 +10,7 @@ import {
   tooltipAdapter,
 } from "@/store/states";
 import { layerControlFormValue } from "@/utils/states";
+import { flatStylesToStyleFunction } from "ol/render/canvas/style.js";
 import { mountAsyncComponent, stubCustomElement } from "../../support/mount";
 
 vi.mock("@eox/map", () => ({}));
@@ -65,11 +67,25 @@ vi.mock("^/EodashMap/EodashMapBtns.vue", () => ({
 }));
 
 // Minimal eox-map so onMounted's `globeConfig.terrain` assignment succeeds (an
-// unhandled throw there cascades into unrelated failures).
+// unhandled throw there cascades into unrelated failures). Styles go through
+// the real ol compiler, as eox-map does, to check ol thrown errors.
 stubCustomElement(
   "eox-map",
   class extends HTMLElement {
     globeConfig = {};
+    /** @type {any[]} */
+    #layers = [];
+    set layers(value) {
+      for (const layer of value ?? []) {
+        if (layer.style) {
+          flatStylesToStyleFunction([layer.style]);
+        }
+      }
+      this.#layers = value;
+    }
+    get layers() {
+      return this.#layers;
+    }
   },
 );
 
@@ -89,6 +105,7 @@ describe("EodashMap", () => {
     mapPosition.value = [];
     tooltipAdapter.value = null;
     layerControlFormValue.value = {};
+    errorState.value = { message: "", details: "", severity: "error" };
     for (const fn of Object.values(methods)) vi.mocked(fn).mockClear();
   });
 
@@ -135,6 +152,45 @@ describe("EodashMap", () => {
 
       await expect.poll(() => mainMap()?.controls?.Geolocation).toBeTruthy();
       expect(mainMap()?.controls.Geolocation.tracking).toBe(true);
+    });
+  });
+
+  describe("layer assignment", () => {
+    // `case` takes pairs plus a fallback, so an even count is uncompilable
+    const brokenStyle = /** @type {any} */ ([
+      {
+        type: "Vector",
+        properties: { id: "broken" },
+        style: {
+          "text-value": ["case", ["get", "a"], "one", ["get", "b"], "two"],
+        },
+      },
+    ]);
+
+    test("banners what ol rejects rather than losing it to vue", async () => {
+      await mountAsyncComponent(EodashMap, {
+        props: { baseLayers: brokenStyle },
+      });
+
+      // ol's own wording, so the throw came back out of the assignment
+      await expect
+        .poll(() => errorState.value.details)
+        .toContain("expected an odd number of arguments for case");
+      expect(errorState.value.message).toBe(
+        "Some layers could not be rendered correctly",
+      );
+      // the other layers still render, so it does not read as an error
+      expect(errorState.value.severity).toBe("warning");
+    });
+
+    test("keeps the map usable after a rejected assignment", async () => {
+      await mountAsyncComponent(EodashMap, {
+        props: { baseLayers: brokenStyle, center: [10, 20] },
+      });
+
+      // contained: the element still mounts and its other props still bind
+      await expect.poll(() => mainMap()).toBeTruthy();
+      expect(mainMap()?.center).toEqual([10, 20]);
     });
   });
 
