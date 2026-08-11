@@ -257,13 +257,13 @@ type EodashStyleJson = import("ol/style/flat").FlatStyleLike & {
 };
 ```
 
-Form values persist across layer rebuilds, and definitions support `${...}` item templating — see [Layer Configuration Forms](/widgets/internal-widgets/EodashLayerControl#layer-configuration-forms).
+Form values persist across layer rebuilds, and definitions support `${...}` item templating — see [Layer Configuration Forms](/widgets/internal-widgets/EodashLayerControl#layer-configuration-forms). Links and assets with a `"baselayer"` or `"overlay"` role do not get the form.
 
 ### eodash Raster Form
 
 The `eodash:rasterform` property allows providing visualization controls for tiled layers (WMS, WMTS, XYZ) that do not use OpenLayers Flat Styles. 
 
-It can be defined at the **Collection**, **Item**, or **Link** level. When present on a link or asset, it creates a configuration form in the layer control. 
+It can be defined at the **Collection**, **Item**, or **Link** level. When present on a link or asset, it creates a configuration form in the layer control. Links and assets with a `"baselayer"` or `"overlay"` role are skipped and do not get the form.
 
 - **For WMS**: Updating form values triggers a call to the source's `updateParams` method (e.g., updating `STYLES` or custom vendor parameters).
 - **For XYZ**: Updating form values triggers a refresh of the tile URL with the new parameters injected into the query string.
