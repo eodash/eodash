@@ -43,11 +43,14 @@ const makeItem = (over = {}) => ({
 
 /**
  * @param {Record<string, any>} item
- * @param {{ extras?: Record<string,any>, colOver?: Record<string,any>, rasterEndpoint?: string, color?: string, itemDatetime?: string }} [opts]
+ * @param {{ extras?: Record<string,any>, colOver?: Record<string,any>, rasterEndpoint?: string, color?: string, itemDatetime?: string, tileMatrixSetRegistry?: Record<string, any> }} [opts]
  * @returns {Promise<any[]>}
  */
 const build = async (item, opts = {}) => {
   serve(opts.extras, opts.colOver);
+  if (opts.tileMatrixSetRegistry) {
+    useSTAcStore().tileMatrixSetRegistry = opts.tileMatrixSetRegistry;
+  }
   const ec = new EodashCollection(COLLECTION_URL, false, opts.rasterEndpoint);
   await ec.fetchCollection();
   if (opts.color) ec.color = opts.color;
@@ -359,6 +362,62 @@ describe("EodashCollection.buildJsonArray", () => {
       expect(renderLayer.source.url).toContain(
         "/collections/coll/items/item/tiles/WebMercatorQuad/{z}/{x}/{y}?",
       );
+    });
+  });
+
+  describe("tileMatrixSetRegistry integration", () => {
+    const customTms = {
+      CustomTMS: {
+        id: "CustomTMS",
+        crs: "http://www.opengis.net/def/crs/EPSG/0/3857",
+        tileMatrices: [
+          {
+            id: "0",
+            cellSize: 100,
+            pointOfOrigin: [0, 0],
+            matrixWidth: 1,
+            matrixHeight: 1,
+            tileWidth: 512,
+            tileHeight: 512,
+          },
+        ],
+      },
+    };
+
+    test("XYZ layer uses TMS from registry", async () => {
+      const [layer] = await build(
+        makeItem({
+          links: [
+            { rel: "xyz", href: "https://xyz/{z}/{x}/{y}", title: "XYZ" },
+          ],
+        }),
+        { tileMatrixSetRegistry: customTms },
+      );
+
+      expect(layer.source.tileGrid).toBeDefined();
+      expect(layer.source.tileGrid.matrixIds).toEqual(["0"]);
+    });
+
+    test("Render layer uses TMS from registry", async () => {
+      const layers = await build(
+        makeItem({
+          assets: {
+            data: dataAsset({ type: "image/tiff", href: "https://x.tif" }),
+          },
+        }),
+        {
+          colOver: { renders: { ndvi: { assets: ["b04"] } } },
+          rasterEndpoint: "https://raster",
+          tileMatrixSetRegistry: customTms,
+        },
+      );
+
+      const renderLayer = layers.find((l) =>
+        l.source?.url?.includes("/tiles/"),
+      );
+      expect(renderLayer.source.url).toContain("/tiles/CustomTMS/");
+      expect(renderLayer.source.tileGrid).toBeDefined();
+      expect(renderLayer.source.tileGrid.matrixIds).toEqual(["0"]);
     });
   });
 

@@ -15,6 +15,8 @@ import {
   resolveStyle,
   getBandsProperty,
   applyTitilerUpscaling,
+  tmsToTileGridOptions,
+  resolveTmsByProjection,
   encodeURLObject,
   normalizeRescale,
   normalizeNodata,
@@ -597,10 +599,9 @@ export const createLayersFromLinks = async (
       "tileUrl",
       map,
     );
-    const projectionCode = getProjectionCode(wmtsLinkProjection || "EPSG:3857");
-    // TODO: WARNING! This is a temporary project specific implementation
-    // that needs to be removed once catalog and wmts creation from capabilities
-    // combined with custom view projections is solved
+    const linkProjectionCode = getProjectionCode(
+      wmtsLinkProjection || "EPSG:3857",
+    );
     let json;
     const linkId = createLayerID(
       collectionId,
@@ -614,64 +615,27 @@ export const createLayersFromLinks = async (
     let { style, matrixSet, ...dimensionsWithoutStyle } = { ...dimensions };
     let extractedStyle = /** @type { string } */ (style || "default");
 
-    // TODO, this does not yet work between layer time changes because we do not get
-    // updated variables from OL layer due to usage of tileurlfunction
+    log.debug("WMTS Layer from capabilities added", linkId);
 
-    if (wmtsLink.href.includes("marine.copernicus")) {
-      log.debug(
-        "Warning: WMTS Layer from capabilities added, function needs to be updated",
-        linkId,
-      );
-      json = {
-        type: "Tile",
-        properties: {
-          id: linkId,
-          title: title || item.id,
-          layerDatetime,
-          layerConfig: returnedLayerConfig.layerConfig,
-        },
-        source: {
-          type: "WMTS",
-          // TODO: Hard coding url as the current one set is for capabilities
-          url: "https://wmts.marine.copernicus.eu/teroWmts",
-          layer: wmtsLink["wmts:layer"],
-          style: extractedStyle,
-          // TODO: Hard coding matrixSet until we find solution to wmts creation from capabilities
-          matrixSet: "EPSG:3857",
-          projection: projectionCode,
-          tileGrid: {
-            tileSize: [128, 128],
-          },
-          ...(wmtsLink.attribution
-            ? { attributions: wmtsLink.attribution }
-            : {}),
-          dimensions: dimensionsWithoutStyle,
-        },
-      };
-    } else {
-      log.debug("WMTS Layer from capabilities added", linkId);
-
-      json = {
-        type: "Tile",
-        properties: {
-          id: linkId,
-          title: wmtsLink.title || title || item.id,
-          layerDatetime,
-          layerConfig: returnedLayerConfig.layerConfig,
-        },
-        source: {
-          type: "WMTSCapabilities",
-          url: buildCapabilitiesUrl(wmtsLink.href),
-          layer: wmtsLink["wmts:layer"],
-          style: extractedStyle,
-          ...(matrixSet ? { matrixSet } : {}),
-          ...(wmtsLink.attribution
-            ? { attributions: wmtsLink.attribution }
-            : {}),
-          dimensions: dimensionsWithoutStyle,
-        },
-      };
-    }
+    json = {
+      type: "Tile",
+      properties: {
+        id: linkId,
+        title: wmtsLink.title || title || item.id,
+        layerDatetime,
+        layerConfig: returnedLayerConfig.layerConfig,
+      },
+      source: {
+        type: "WMTSCapabilities",
+        url: buildCapabilitiesUrl(wmtsLink.href),
+        layer: wmtsLink["wmts:layer"],
+        projection: linkProjectionCode,
+        style: extractedStyle,
+        ...(matrixSet ? { matrixSet } : {}),
+        ...(wmtsLink.attribution ? { attributions: wmtsLink.attribution } : {}),
+        dimensions: dimensionsWithoutStyle,
+      },
+    };
     extractRoles(json.properties, wmtsLink);
     if (extraProperties !== null) {
       json.properties = {
@@ -743,10 +707,24 @@ export const createLayersFromLinks = async (
         ...(xyzLink.attribution ? { attributions: xyzLink.attribution } : {}),
       },
     };
-    if (upscaling) {
-      // @ts-expect-error tileGrid is added here and supported in eox-map layer definition
+
+    const store = useSTAcStore();
+    const tms = resolveTmsByProjection(
+      projectionCode,
+      store.tileMatrixSetRegistry,
+    );
+    const tileSize = upscaling ? 512 : 256;
+    // @ts-expect-error tileGrid supported in eox-map
+    json.source.tileGrid = {
+      tileSize: [tileSize, tileSize],
+    };
+    if (tms) {
+      const tmsOptions = tmsToTileGridOptions(tms, [tileSize, tileSize]);
+      // @ts-expect-error tileGrid supported in eox-map
       json.source.tileGrid = {
-        tileSize: upscaling.tileSize,
+        // @ts-expect-error tileGrid supported in eox-map
+        ...json.source.tileGrid,
+        ...tmsOptions,
       };
     }
     if (
@@ -1074,12 +1052,22 @@ export const createLayerFromRender = async (
   };
 
   const layers = [];
+  const store = useSTAcStore();
+
   for (const key in renders) {
     const title = renders[key].title;
 
     const expression =
       renders[key].expression ??
       getRenderAssetProperty(renders[key], "expression");
+
+    const projection =
+      renders[key].projection ??
+      getRenderAssetProperty(renders[key], "projection") ??
+      "EPSG:3857";
+
+    const projectionCode = getProjectionCode(projection);
+    await registerProjection(projection);
 
     const paramsObject = {
       // TiTiler treats assets and expression as mutually exclusive band selection
@@ -1106,8 +1094,13 @@ export const createLayerFromRender = async (
       bidx: renders[key].bidx,
       tilesize: renders[key].tilesize,
     };
+    const tms = resolveTmsByProjection(
+      projectionCode,
+      store.tileMatrixSetRegistry,
+    );
+    const tmsId = tms?.id || "WebMercatorQuad";
     const paramsStr = encodeURLObject(paramsObject);
-    const url = `${rasterURL}/collections/${collection.id}/items/${item.id}/tiles/WebMercatorQuad/{z}/{x}/{y}?${paramsStr}`;
+    const url = `${rasterURL}/collections/${collection.id}/items/${item.id}/tiles/${tmsId}/{z}/{x}/{y}?${paramsStr}`;
     const json = {
       /** @type {"Tile"} */
       type: "Tile",
@@ -1116,7 +1109,7 @@ export const createLayerFromRender = async (
           collection.id,
           item.id,
           { id: item.id, href: "", title, rel: "" },
-          "EPSG:3857",
+          projectionCode,
         ),
         title,
         roles: item.roles,
@@ -1129,13 +1122,18 @@ export const createLayerFromRender = async (
         /** @type {"XYZ"} */
         type: "XYZ",
         url,
-        projection: "EPSG:3857",
+        projection: projectionCode,
       },
     };
-    if (renders[key].tilesize) {
+    const tilesize = renders[key].tilesize || 512;
+    if (tms) {
+      const tmsOptions = tmsToTileGridOptions(tms, [tilesize, tilesize]);
+      // @ts-expect-error tileGrid supported in eox-map
+      json.source.tileGrid = tmsOptions;
+    } else if (renders[key].tilesize) {
       // @ts-expect-error tileGrid is added here and supported in eox-map layer definition
       json.source.tileGrid = {
-        tileSize: [renders[key].tilesize, renders[key].tilesize],
+        tileSize: renders[key].tilesize,
       };
     }
     applyRasterFormValue(json, collection.id, map);

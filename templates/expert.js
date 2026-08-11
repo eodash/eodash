@@ -25,7 +25,7 @@ export default {
       name: "EodashMap",
       properties: {
         baseLayers: [
-          {
+          /** @type {any} */ ({
             type: "Tile",
             properties: {
               id: "terrain-light;:;EPSG:3857",
@@ -43,7 +43,7 @@ export default {
                 '{ OSM: Data &copy; <a href="http://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors and <a href="https://maps.eox.at/#data" target="_blank">others</a>, Rendering &copy; <a href="http://eox.at" target="_blank">EOX</a> }',
             },
             preload: Infinity,
-          },
+          }),
         ],
         enableCompare: true,
         zoomToExtent: true,

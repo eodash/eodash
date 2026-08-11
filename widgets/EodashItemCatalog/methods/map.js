@@ -38,8 +38,8 @@ export function renderItemsFeatures(
     };
     assignLayers(currentMap, [...currentMap.layers, analysisLayers]);
   }
-  /** @type {import("@eox/map/src/layers").EOxLayerType<"Vector","Vector">} */
-  const stacItemsLayer = {
+  /** @type {import("@eox/map").EoxLayer} */
+  const stacItemsLayer = /** @type {any} */ ({
     type: "Vector",
     properties: {
       id: "stac-items",
@@ -87,7 +87,7 @@ export function renderItemsFeatures(
         },
       },
     ],
-  };
+  });
   const exists = analysisLayers.layers.some(
     (l) => l.properties?.id === stacItemsLayer.properties?.id,
   );

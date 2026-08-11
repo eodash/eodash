@@ -30,6 +30,9 @@ Alternatively, an object can be passed to configure a STAC API endpoint and dedi
 - `api` - set to `true` when `endpoint` is a STAC API rather than a static catalog.
 - `rasterEndpoint` - base URL of a raster TiTiler service.
 - `supportedUpscalingEndpoints` - host substrings whose XYZ tiles may be upscaled.
+- `colormapRegistry` - JSON mapping of colormap names to an array of legend color hex codes or url to such file
+- `tileMatrixSetRegistry` - JSON mapping of OGC Two Dimensional Tile Matrix Set identifiers to their definitions or url to such file
+
 ```js
 {
   stacEndpoint: {
@@ -37,8 +40,8 @@ Alternatively, an object can be passed to configure a STAC API endpoint and dedi
     api: true,
     rasterEndpoint: "https://api.explorer.eopf.copernicus.eu/raster",
     supportedUpscalingEndpoints: [
-      { url: "https://api.explorer.eopf.copernicus.eu/raster", titilerVersion: 1 },
-      { url: "https://api.explorer.eopf.copernicus.eu/rstaging", titilerVersion: 2 },
+      { url: "https://api.explorer.eopf.copernicus.eu/raster", titilerVersion: 1, scaleFactor: 2 },
+      { url: "https://api.explorer.eopf.copernicus.eu/rstaging", titilerVersion: 2, scaleFactor: 4 },
     ],
   },
 }
