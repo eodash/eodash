@@ -503,6 +503,121 @@ describe("EodashCollection.buildJsonArray", () => {
     });
   });
 
+  describe("base layers and overlays", () => {
+    const rasterform = { jsonform: { type: "object", properties: {} } };
+
+    // one link per tileUrl loop, each carrying a rasterform so that a
+    // layerConfig would be built if the layer was not a base layer / overlay
+    const RASTER_FORM_LINKS = {
+      wms: { rel: "wms", href: "https://wms", title: "WMS", "wms:layers": "L" },
+      wmts: {
+        rel: "wmts",
+        href: "https://wmts",
+        title: "WMTS",
+        "wmts:layer": "lyr",
+      },
+      xyz: { rel: "xyz", href: "https://xyz/{z}/{x}/{y}", title: "XYZ" },
+      tilejson: { rel: "tilejson", href: "https://tj.json", title: "TJ" },
+    };
+    const rels = Object.keys(RASTER_FORM_LINKS);
+
+    /**
+     * @param {string} rel
+     * @param {Record<string, any>} [over]
+     */
+    const buildLink = (rel, over = {}) =>
+      build(
+        makeItem({
+          links: [
+            {
+              .../** @type {Record<string, any>} */ (RASTER_FORM_LINKS)[rel],
+              "eodash:rasterform": rasterform,
+              ...over,
+            },
+          ],
+        }),
+        { extras: { "https://tj.json": { tiles: ["https://t/{z}/{x}/{y}"] } } },
+      );
+
+    test.each(rels)("attaches a layerConfig to a data %s link", async (rel) => {
+      const [layer] = await buildLink(rel);
+
+      expect(layer.properties.layerConfig).toBeDefined();
+    });
+
+    test.each(rels)(
+      "omits the layerConfig of a %s baselayer link",
+      async (rel) => {
+        const [layer] = await buildLink(rel, { roles: ["baselayer"] });
+
+        expect(layer.properties.group).toBe("baselayer");
+        expect(layer.properties).not.toHaveProperty("layerConfig");
+      },
+    );
+
+    test("omits the layerConfig of an overlay link", async () => {
+      const [layer] = await buildLink("xyz", { roles: ["overlay"] });
+
+      expect(layer.properties.group).toBe("overlay");
+      expect(layer.properties).not.toHaveProperty("layerConfig");
+    });
+
+    test.each(["wms", "xyz"])("preloads a %s baselayer", async (rel) => {
+      const [layer] = await buildLink(rel, { roles: ["baselayer"] });
+
+      expect(layer.preload).toBe(Infinity);
+    });
+
+    test("skips the rasterform request of a baselayer link", async () => {
+      const [layer] = await build(
+        makeItem({
+          links: [
+            {
+              ...RASTER_FORM_LINKS.xyz,
+              roles: ["baselayer"],
+              "eodash:rasterform": "https://form.json",
+            },
+          ],
+        }),
+        { extras: { "https://form.json": rasterform } },
+      );
+
+      expect(layer.properties).not.toHaveProperty("layerConfig");
+      expect(axiosMock.get).not.toHaveBeenCalledWith("https://form.json");
+    });
+
+    test("omits the layerConfig of a baselayer asset", async () => {
+      serveUrls(axiosMock, {
+        "https://style.json": { jsonform: { type: "object" } },
+      });
+
+      const [layer] = await EodashCollection.getIndicatorLayers(
+        /** @type {any} */ ({
+          id: "ind",
+          links: [
+            {
+              rel: "style",
+              href: "https://style.json",
+              "asset:keys": ["base"],
+            },
+          ],
+          assets: {
+            base: {
+              type: "image/tiff",
+              href: "https://base.tif",
+              roles: ["baselayer"],
+            },
+          },
+        }),
+      );
+
+      expect(layer.properties.group).toBe("baselayer");
+      // the jsonform style resolved, it just did not end up as a layerConfig
+      expect(axiosMock.get).toHaveBeenCalledWith("https://style.json");
+      expect(layer.properties).not.toHaveProperty("layerConfig");
+    });
+  });
+
   describe("STAC fallback", () => {
     test("falls back to a STAC layer when nothing is supported", async () => {
       const item = makeItem({ links: [{ rel: "self", href: "https://self" }] });
