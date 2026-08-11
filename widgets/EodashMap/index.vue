@@ -158,23 +158,6 @@ const props = defineProps({
     type: Boolean,
     default: true,
   },
-  /** Show a geolocation control. */
-  enableGeolocation: {
-    type: Boolean,
-    default: true,
-  },
-  /** Options for the geolocation control. */
-  geolocationOptions: {
-    type: Object,
-    default: () => ({
-      style: {
-        "circle-radius": 12,
-        "circle-fill-color": "red",
-        "circle-stroke-color": "white",
-        "circle-stroke-width": 3,
-      },
-    }),
-  },
   /** Grid position of the floating button toolbar. `x` accepts responsive `"mobile/tablet/desktop"` column notation. */
   btnsPosition: {
     type: /** @type {import("vue").PropType<{ x: string | number; y: number; gap: number }>} */ (
@@ -314,13 +297,12 @@ const controls = computed(() => {
     };
   }
 
-  if (props.enableGeolocation || btnsProps.value.enableGeolocation) {
+  if (btnsProps.value.enableGeolocation) {
     const geoOptions = {
       tracking: true,
       trackHeading: true,
       highAccuracy: true,
       trackAccuracy: true,
-      ...props.geolocationOptions,
       ...btnsProps.value.geolocationOptions,
       target: geoTarget.value || undefined,
     };
@@ -372,10 +354,6 @@ const centerOnPosition = () => {
     control.centerOnPosition();
   }
 };
-
-defineExpose({
-  centerOnPosition,
-});
 
 const { selectedCompareStac } = storeToRefs(useSTAcStore());
 const showCompare = computed(() =>

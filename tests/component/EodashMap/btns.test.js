@@ -129,7 +129,7 @@ describe("EodashMapBtns", () => {
     });
 
     test("shows the geolocation button when enableGeolocation is true", async () => {
-      await mountBtns({ props: { enableGeolocation: true } });
+      await mountBtns({ props: { btns: { enableGeolocation: true } } });
 
       expect(btnByTooltip("Show your location")).toBeTruthy();
     });

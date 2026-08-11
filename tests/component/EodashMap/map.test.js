@@ -130,7 +130,7 @@ describe("EodashMap", () => {
 
     test("binds Geolocation control onto eox-map when enabled", async () => {
       await mountAsyncComponent(EodashMap, {
-        props: { enableGeolocation: true },
+        props: { btns: { enableGeolocation: true } },
       });
 
       await expect.poll(() => mainMap()?.controls?.Geolocation).toBeTruthy();
