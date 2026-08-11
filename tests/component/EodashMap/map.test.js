@@ -55,7 +55,6 @@ vi.mock("^/EodashMap/EodashMapBtns.vue", () => ({
       "enableGlobe",
       "enableFeedback",
       "enableGeolocation",
-      "onGeolocationClick",
       "searchParams",
     ],
     setup(/** @type {any} */ props) {

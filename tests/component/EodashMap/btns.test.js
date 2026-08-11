@@ -40,6 +40,7 @@ const btns = vi.hoisted(() => ({
   onCompareClick: vi.fn(),
   onSelectCompareIndicator: vi.fn(),
   switchGlobe: vi.fn(),
+  onGeolocationClick: vi.fn(),
   showCompareIndicators: { value: false },
 }));
 vi.mock("^/EodashMap/methods/btns", () => btns);
@@ -106,6 +107,7 @@ describe("EodashMapBtns", () => {
       btns.onMapZoomOut,
       btns.onCompareClick,
       btns.switchGlobe,
+      btns.onGeolocationClick,
       loadPOiIndicator,
       actions.changeMapProjection,
     ]) {
@@ -225,12 +227,11 @@ describe("EodashMapBtns", () => {
     });
 
     test("geolocation delegates to onGeolocationClick", async () => {
-      const onGeolocationClick = vi.fn();
       await mountBtns({
-        props: { enableGeolocation: true, onGeolocationClick },
+        props: { enableGeolocation: true },
       });
       btnByTooltip("Show your location")?.click();
-      expect(onGeolocationClick).toHaveBeenCalled();
+      expect(btns.onGeolocationClick).toHaveBeenCalled();
     });
   });
 
