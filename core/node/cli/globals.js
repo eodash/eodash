@@ -3,20 +3,11 @@
 import { existsSync, readFileSync } from "fs";
 import path from "path";
 import { createLogger } from "vite";
-import { Command } from "commander";
 import { fileURLToPath } from "url";
-
-const cli = new Command("eodash");
 
 /** eodash root path */
 export const appPath = searchForPackageRoot();
 
-/** Root path to the host application */
-export const rootPath = searchForPackageRoot(process.cwd());
-
-/** host application  package.json */
-export const rootPkgJSON =
-  JSON.parse(readFileSync(path.join(rootPath, "package.json"), "utf-8")) ?? {};
 /** eodash package.json */
 export const appPkgJSON =
   JSON.parse(readFileSync(path.join(appPath, "package.json"), "utf-8")) ?? {};
@@ -51,99 +42,98 @@ export const clientModules = Object.keys(appPkgJSON?.dependencies).filter(
  * @property {boolean} lib
  */
 
-cli.version(appPkgJSON.version, "-v, --version", "output the current version");
-
-cli
-  .allowExcessArguments()
-  .option("--publicDir <path>", "path to statically served assets folder")
-  .option("--no-publicDir", "stop serving static assets")
-  .option("--outDir <path>", "minified output folder")
-  .option("-e, --entryPoint <path>", "file exporting `createEodash`")
-  .option(
-    "-w, --widgets <path>",
-    "folder that contains vue components as internal widgets",
-  )
-  .option("--cacheDir <path>", "cache folder")
-  .option("-r, --runtime <path>", "file exporting eodash client runtime config")
-  .option("-b, --base <path>", "base public path")
-  .option("-p, --port <port>", "serving  port")
-  .option("-o, --open", "open default browser when the server starts")
-  .option(
-    "-c, --config <path>",
-    "path to eodash server and build configuration file",
-  )
-  .option(
-    "--host [IP address]",
-    "specify which IP addresses the server should listen on",
-  )
-  .option("-l, --lib", "builds eodash as a web component library")
-  .option("--no-lib", "builds eodash as an SPA")
-  .option("--no-host", "do not expose server to the network")
-  .parse(process.argv);
-
-export const userConfig = await getUserConfig(cli.opts(), process.argv?.[2]);
-
-export const publicPath = userConfig.publicDir
-    ? path.resolve(rootPath, userConfig.publicDir)
-    : path.join(rootPath, "./public"),
-  srcPath = path.join(rootPath, "/src"),
-  runtimeConfigPath = userConfig.runtime
-    ? path.resolve(rootPath, userConfig.runtime)
-    : path.join(srcPath, "./runtime.js"),
-  entryPath =
-    userConfig.entryPoint === "false"
-      ? false
-      : userConfig.entryPoint
-        ? path.resolve(rootPath, userConfig.entryPoint)
-        : path.join(srcPath, "/main.js"),
-  internalWidgetsPath = userConfig.widgets
-    ? path.resolve(rootPath, userConfig.widgets)
-    : path.join(srcPath, "widgets"),
-  dotEodashPath = path.join(rootPath, "/.eodash"),
-  buildTargetPath = userConfig.outDir
-    ? path.resolve(rootPath, userConfig.outDir)
-    : path.join(dotEodashPath, "/dist"),
-  cachePath = userConfig.cacheDir
-    ? path.resolve(rootPath, userConfig.cacheDir)
-    : path.join(dotEodashPath, "cache");
-
-export const logger = createLogger(undefined, { prefix: "[eodash]" });
+/**
+ * Everything the CLI commands and the vite config need, derived from a
+ * resolved user config.
+ *
+ * @typedef {ReturnType<typeof resolveEodashContext>} EodashContext
+ */
 
 /**
- * @param {Options} options
- * @param {string | undefined} command
+ * Derives every path the CLI and the vite config need. Pure: same config and
+ * root in, same paths out, so it can be exercised without spawning a process.
+ *
+ * @param {Awaited<ReturnType<typeof getUserConfig>>} config
+ * @param {string} [root] - host application root
  */
-async function getUserConfig(options, command) {
-  let eodashCLiConfigFile = options.config
-    ? path.resolve(rootPath, options.config)
-    : path.join(rootPath, "eodash.config.js");
+export function resolveEodashContext(
+  config,
+  root = searchForPackageRoot(process.cwd()),
+) {
+  const srcPath = path.join(root, "/src");
+  const dotEodashPath = path.join(root, "/.eodash");
+
+  /** @type {string | false} */
+  const entryPath =
+    config.entryPoint === "false" || config.entryPoint === false
+      ? false
+      : config.entryPoint
+        ? path.resolve(root, config.entryPoint)
+        : path.join(srcPath, "/main.js");
+
+  return {
+    userConfig: config,
+    rootPath: root,
+    logger: createLogger(undefined, { prefix: "[eodash]" }),
+    srcPath,
+    dotEodashPath,
+    publicPath: config.publicDir
+      ? path.resolve(root, config.publicDir)
+      : path.join(root, "./public"),
+    runtimeConfigPath: config.runtime
+      ? path.resolve(root, config.runtime)
+      : path.join(srcPath, "./runtime.js"),
+    entryPath,
+    internalWidgetsPath: config.widgets
+      ? path.resolve(root, config.widgets)
+      : path.join(srcPath, "widgets"),
+    buildTargetPath: config.outDir
+      ? path.resolve(root, config.outDir)
+      : path.join(dotEodashPath, "/dist"),
+    cachePath: config.cacheDir
+      ? path.resolve(root, config.cacheDir)
+      : path.join(dotEodashPath, "cache"),
+  };
+}
+
+/**
+ * Reads `eodash.config.js` when present and merges CLI flags over it.
+ *
+ * @param {Partial<Options>} [options] - parsed CLI flags
+ * @param {"dev" | "preview" | string} [command]
+ * @param {string} [root] - host application root
+ */
+export async function getUserConfig(
+  options = {},
+  command = "",
+  root = searchForPackageRoot(process.cwd()),
+) {
+  const configFile = options.config
+    ? path.resolve(root, options.config)
+    : path.join(root, "eodash.config.js");
+
   /** @type {import("../types").EodashConfig} */
   let config = {};
-  if (existsSync(eodashCLiConfigFile)) {
-    config = await import(eodashCLiConfigFile)
-      .then((userConfig) => {
-        if (userConfig.default instanceof Function) {
-          return userConfig.default();
-        } else {
-          return userConfig.default;
-        }
-      })
+  if (existsSync(configFile)) {
+    config = await import(configFile)
+      .then((userConfig) =>
+        userConfig.default instanceof Function
+          ? userConfig.default()
+          : userConfig.default,
+      )
       .catch((err) => {
         console.error(err);
+        return null;
       });
-  } else {
-    eodashCLiConfigFile = null;
   }
+
+  const forCommand = config?.[/** @type {"dev" | "preview"} */ (command)];
 
   return {
     base: options.base ?? config?.base,
-    port: Number(options.port ?? config?.[command]?.port),
-    host:
-      options.host ??
-      config?.[/** @type {"dev" | "preview"} */ (command)]?.host,
-    open:
-      options.open ??
-      config?.[/** @type {"dev" | "preview"} */ (command)]?.open,
+    port: Number(options.port ?? forCommand?.port),
+    host: options.host ?? forCommand?.host,
+    open: options.open ?? forCommand?.open,
     cacheDir: options.cacheDir ?? config?.cacheDir,
     entryPoint: options.entryPoint ?? config?.entryPoint,
     outDir: options.outDir ?? config?.outDir,
@@ -151,12 +141,12 @@ async function getUserConfig(options, command) {
     runtime: options.runtime ?? config?.runtime,
     widgets: options.widgets ?? config?.widgets,
     lib: options.lib ?? config?.lib,
-    vite: config.vite,
+    vite: config?.vite,
   };
 }
 
 /** @param {string} [from] */
-function searchForPackageRoot(
+export function searchForPackageRoot(
   from = import.meta.dirname ?? path.dirname(fileURLToPath(import.meta.url)),
 ) {
   if (from?.split("/").length) {
@@ -169,7 +159,8 @@ function searchForPackageRoot(
   }
 }
 
-export const indexHtml = /* html */ `
+/** @param {boolean} lib - render the web component entry instead of the SPA one */
+export const renderIndexHtml = (lib) => /* html */ `
 <!DOCTYPE html>
 <html lang="en" style="overflow: hidden">
 
@@ -191,7 +182,7 @@ export const indexHtml = /* html */ `
 
 <body>
 ${
-  userConfig.lib
+  lib
     ? /* html */ `<eo-dash style="height:100%;"/>
 <script type="module" src="${path.resolve(`/@fs/${appPath}`, `core/client/asWebComponent.js`)}"></script>
 `
