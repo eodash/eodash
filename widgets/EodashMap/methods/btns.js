@@ -1,4 +1,4 @@
-import { getLayers, setActiveTemplate } from "@/store/actions";
+import { assignLayers, getLayers, setActiveTemplate } from "@/store/actions";
 import { useSTAcStore } from "@/store/stac";
 import { activeTemplate, isGlobe, mapEl } from "@/store/states";
 import { easeOut } from "ol/easing.js";
@@ -24,7 +24,7 @@ export const switchGlobe = () => {
         }
         return layer;
       });
-    mapEl.value.layers = layers;
+    assignLayers(mapEl.value, layers);
   }
   mapEl.value.projection = isGlobe.value ? "EPSG:3857" : "globe";
   if (isGlobe.value) {
@@ -185,4 +185,18 @@ export const onCompareClick = (compareIndicators) => {
   resetSelectedCompareSTAC();
   setActiveTemplate(fallbackTemplate);
   triggerRef(selectedStac);
+};
+
+export const onGeolocationClick = () => {
+  const map = mapEl.value?.map;
+  if (!map) return;
+  const control = /** @type {any} */ (
+    map
+      .getControls()
+      .getArray()
+      .find((c) => !!(/** @type {any} */ (c).centerOnPosition))
+  );
+  if (control) {
+    control.centerOnPosition();
+  }
 };

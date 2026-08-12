@@ -41,42 +41,40 @@ export async function pollProcessStatus({
   }, 500);
 
   while (retries < maxRetries && isPolling.value) {
-    try {
-      // Fetch the process JSON report
-      const cacheBuster = new Date().getTime(); // Add a timestamp for cache busting
-      const response = await axios.get(`${processUrl}?t=${cacheBuster}`);
-      const processReport = response.data;
+    // Fetch the process JSON report
+    const cacheBuster = new Date().getTime(); // Add a timestamp for cache busting
+    const processReport = await axios
+      .get(`${processUrl}?t=${cacheBuster}`)
+      .then((resp) => resp.data)
+      .catch((error) => {
+        console.error("Error while polling process status:", error);
+        return null;
+      });
 
-      // Check if the status is "successful"
-      if (processReport.status === "successful") {
-        console.log("Process completed successfully. Fetching result item...");
+    if (processReport?.status === "failed") {
+      isPolling.value = false;
+      throw new Error("Process failed.", { cause: processReport });
+    }
 
-        // Extract the result item URL
-        const resultsUrl = processReport.links[1].href;
-        if (!resultsUrl) {
-          throw new Error(`Result links not found in the process report.`);
-        }
+    // Check if the status is "successful"
+    if (processReport?.status === "successful") {
+      console.log("Process completed successfully. Fetching result item...");
 
-        // Fetch the result item
-        const resultResponse = await axios.get(resultsUrl);
-        console.log("Result file fetched successfully:", resultResponse.data);
-        return resultResponse.data; // Return the json result list
+      // Extract the result item URL
+      const resultsUrl = processReport.links[1]?.href;
+      if (!resultsUrl) {
+        throw new Error(`Result links not found in the process report.`);
       }
-      if (processReport.status === "failed") {
-        isPolling.value = false;
-        throw new Error("Process failed.", processReport);
-      }
 
+      // Fetch the result item
+      return await axios.get(resultsUrl).then((resp) => resp.data);
+    }
+
+    if (processReport) {
       // Log the current status if not successful
       console.log(
         `Status: ${processReport.status}. Retrying in ${pollInterval / 1000} seconds...`,
       );
-    } catch (error) {
-      if (error instanceof Error) {
-        console.error("Error while polling process status:", error.message);
-      } else {
-        console.error("Unknown error occurred:", error);
-      }
     }
 
     // Wait for the next poll

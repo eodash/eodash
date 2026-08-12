@@ -1,5 +1,6 @@
 import { parquetRead } from "hyparquet";
 import log from "loglevel";
+import axios from "@/plugins/axios";
 
 /**
  * @param {string} url
@@ -7,17 +8,14 @@ import log from "loglevel";
 export const readParquetItems = async (url) => {
   /** @type {import("stac-ts").StacItem[]} */
   let items = [];
-  const response = await fetch(url, {
-    method: "GET",
-    headers: {
-      Accept: "application/octet-stream",
-    },
+  const response = await axios.get(url, {
+    responseType: "arraybuffer",
+    headers: { Accept: "application/octet-stream" },
   });
 
-  if (!response.ok) {
-    throw new Error(`Fetch failed: ${response.status} ${response.statusText}`);
-  }
-  const contentType = response.headers.get("Content-Type") || "";
+  const contentType = /** @type {string} */ (
+    response.headers["content-type"] ?? ""
+  );
   if (
     !contentType.includes("application") &&
     !contentType.includes("octet-stream") &&
@@ -28,7 +26,8 @@ export const readParquetItems = async (url) => {
       contentType,
     );
   }
-  const arrayBuffer = await response.arrayBuffer();
+  /** @type {ArrayBuffer} */
+  const arrayBuffer = response.data;
   if (arrayBuffer.byteLength < 8) {
     throw new Error(
       "Downloaded buffer is too small to be a valid Parquet file.",

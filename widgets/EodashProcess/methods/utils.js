@@ -6,7 +6,7 @@ import {
   extractLayerLegend,
 } from "@/eodashSTAC/helpers";
 import axios from "@/plugins/axios";
-import { getCompareLayers, getLayers } from "@/store/actions";
+import { assignLayers, getCompareLayers, getLayers } from "@/store/actions";
 import { isMulti } from "@eox/jsonform/src/custom-inputs/spatial/utils";
 
 /**
@@ -555,6 +555,6 @@ export const applyProcessLayersToMap = (mapElement, processLayers) => {
         ? "compareProcess:updated"
         : "process:updated";
     useEmitLayersUpdate(evtKey, mapElement, layers);
-    mapElement.layers = layers;
+    assignLayers(mapElement, layers);
   }
 };

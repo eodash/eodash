@@ -18,6 +18,7 @@ import {
   S_LARGE,
   S_SCALAR,
 } from "./fixtures";
+import axios from "@/plugins/axios";
 
 const outputs = vi.hoisted(() => ({
   processCharts: vi.fn(),
@@ -35,13 +36,11 @@ vi.mock("^/EodashProcess/methods/utils", async (orig) => ({
   applyProcessLayersToMap: outputs.applyProcessLayersToMap,
 }));
 
-// Runs in the browser project: DOM/localStorage/eox chain resolve for real, so only `fetch` is stubbed.
+// Runs in the browser project: DOM/localStorage/eox chain resolve for real, so only the request is stubbed.
 
 /** @param {any} schema */
 const mockFetch = (schema) =>
-  vi
-    .spyOn(globalThis, "fetch")
-    .mockResolvedValue(/** @type {any} */ ({ json: async () => schema }));
+  vi.spyOn(axios, "get").mockResolvedValue({ data: schema });
 
 /** A non-Vector layer stub — waitForLayerRender resolves for it immediately. */
 const layerStub = {
