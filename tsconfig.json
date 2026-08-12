@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "baseUrl": ".",
+    "rootDir": ".",
     "outDir": "dist/types",
     "target": "esnext",
     "allowJs": true,
@@ -9,7 +9,7 @@
     "useDefineForClassFields": true,
     "allowSyntheticDefaultImports": true,
     "module": "esnext",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "strict": true,
     "jsx": "preserve",
     "sourceMap": false,
@@ -18,8 +18,8 @@
     "lib": ["esnext", "dom", "DOM.Iterable"],
     "types": ["node", "vuetify"],
     "paths": {
-      "@/*": ["core/client/*"],
-      "^/*": ["widgets/*"]
+      "@/*": ["./core/client/*"],
+      "^/*": ["./widgets/*"]
     }
   },
   "references": [

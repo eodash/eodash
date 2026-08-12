@@ -282,9 +282,7 @@ export interface FunctionalWidget {
  * @group Eodash
  */
 export type StaticWidget =
-  | WebComponentWidget
-  | InternalComponentWidget
-  | IFrameWidget;
+  WebComponentWidget | InternalComponentWidget | IFrameWidget;
 /**
  * Widgets can be defined in 2 forms:
  *
@@ -599,11 +597,7 @@ export interface AggregationCollection {
 
 /** Itemfilter filter kind emitted in filter events. */
 export type ItemFilterFilterType =
-  | "range"
-  | "multiselect"
-  | "select"
-  | "text"
-  | "spatial";
+  "range" | "multiselect" | "select" | "text" | "spatial";
 
 export interface ItemFilterBase {
   key: string;
@@ -846,3 +840,12 @@ export interface DatePickerControlValue {
   color?: string;
   timeControlValues: { date: string }[];
 }
+
+/**
+ * Recursively optional variant of `T`, for config objects that are deep-merged
+ * onto a complete base.
+ * @ignore
+ */
+export type DeepPartial<T> = {
+  [K in keyof T]?: T[K] extends object ? DeepPartial<T[K]> : T[K];
+};

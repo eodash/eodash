@@ -63,7 +63,7 @@ export function extractGeometries(jsonformValue, jsonformSchema) {
  * @param {import("stac-ts").StacLink} link
  * @param {string} layerId
  * @param {string[]} urls
- * @param {import("openlayers").ProjectionLike} projection
+ * @param {import("ol/proj").ProjectionLike} projection
  * @param {string} processId
  */
 export async function createTiffLayerDefinition(

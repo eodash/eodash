@@ -167,23 +167,24 @@ const props = defineProps({
   },
   /** Toolbar feature flags; set any flag to `false` to hide the corresponding button. */
   btns: {
-    type: /**
-     * @type {import("vue").PropType<{
-     * enableExportMap?: boolean;
-     * enableChangeProjection?: boolean;
-     * enableBackToPOIs?: boolean;
-     * enableSearch?: boolean;
-     * searchParams?: object;
-     * enableZoom?: boolean;
-     * enableGlobe?: boolean;
-     * enableMosaic?: boolean;
-     * enableFeedback?: boolean;
-     * enableCompareIndicators?: boolean | {
-     *   compareTemplate?:string;
-     *   fallbackTemplate?:string;
-     *   itemFilterConfig?:InstanceType<import("../EodashItemFilter.vue").default>["$props"]
-     * };
-     * }> } */ (Object),
+    type:
+      /**
+       * @type {import("vue").PropType<{
+       * enableExportMap?: boolean;
+       * enableChangeProjection?: boolean;
+       * enableBackToPOIs?: boolean;
+       * enableSearch?: boolean;
+       * searchParams?: object;
+       * enableZoom?: boolean;
+       * enableGlobe?: boolean;
+       * enableMosaic?: boolean;
+       * enableFeedback?: boolean;
+       * enableCompareIndicators?: boolean | {
+       *   compareTemplate?:string;
+       *   fallbackTemplate?:string;
+       *   itemFilterConfig?:InstanceType<import("../EodashItemFilter.vue").default>["$props"]
+       * };
+       * }> } */ (Object),
     default: () => ({
       enableExportMap: true,
       enableChangeProjection: true,
@@ -302,10 +303,14 @@ const animationOptions = ref({
   easing: inAndOut,
 });
 
-/** @type {import("vue").Ref<import("@eox/map").EOxMap | null>} */
-const eoxMap = useTemplateRef("eoxMap");
-/** @type {import("vue").Ref<import("@eox/map").EOxMap | null>} */
-const compareMap = useTemplateRef("compareMap");
+const eoxMap =
+  /** @type {import("vue").TemplateRef<import("@eox/map").EOxMap>} */ (
+    useTemplateRef("eoxMap")
+  );
+const compareMap =
+  /** @type {import("vue").TemplateRef<import("@eox/map").EOxMap>} */ (
+    useTemplateRef("compareMap")
+  );
 
 const { selectedCompareStac } = storeToRefs(useSTAcStore());
 const showCompare = computed(() =>

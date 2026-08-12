@@ -84,7 +84,7 @@ const baseConfig = {
 const deepmerge = deepmergeCustom({ mergeArrays: false });
 
 /**
- * @param {import("vega-lite").DeepPartial<import("@/types").Eodash>} config
+ * @param {import("@/types").DeepPartial<import("@/types").Eodash>} config
  * @returns {import("@/types").Eodash}
  */
 export const getBaseConfig = (config) => {
