@@ -22,6 +22,7 @@ import {
   normalizeNodata,
   resolveRenders,
   applyRasterFormValue,
+  isBaseLayerOrOverlay,
 } from "./helpers";
 import { handleAuthenticationOfLink } from "./auth";
 import log from "loglevel";
@@ -196,10 +197,8 @@ export async function createLayersFromAssets(
         stacObject.id,
         geoTIFFIdx[i],
       );
-      if (
-        assets[assetName]?.roles?.includes("overlay") ||
-        assets[assetName]?.roles?.includes("baselayer")
-      ) {
+      const isBaseOrOverlay = isBaseLayerOrOverlay(assets[assetName]);
+      if (isBaseOrOverlay) {
         // to prevent them being removed by date change on main dataset
         assetLayerId = assetName;
       }
@@ -220,7 +219,7 @@ export async function createLayersFromAssets(
         properties: {
           id: assetLayerId,
           title: assets[assetName]?.title || title,
-          layerConfig,
+          ...(!isBaseOrOverlay && { layerConfig }),
           layerDatetime,
         },
         style,
@@ -257,10 +256,8 @@ export async function createLayersFromAssets(
       )?.default ?? ["b04", "b03", "b02"];
 
       let assetLayerId = createAssetID(collectionId, stacObject.id, zarrIdx[i]);
-      if (
-        assets[assetName]?.roles?.includes("overlay") ||
-        assets[assetName]?.roles?.includes("baselayer")
-      ) {
+      const isBaseOrOverlay = isBaseLayerOrOverlay(assets[assetName]);
+      if (isBaseOrOverlay) {
         assetLayerId = assetName;
       }
 
@@ -271,7 +268,7 @@ export async function createLayersFromAssets(
         properties: {
           id: assetLayerId,
           title: assets[assetName]?.title || title,
-          layerConfig,
+          ...(!isBaseOrOverlay && { layerConfig }),
           layerDatetime,
         },
         source: {
@@ -312,10 +309,8 @@ export async function createLayersFromAssets(
         stacObject.id,
         geoJsonIdx[i],
       );
-      if (
-        assets[assetName]?.roles?.includes("overlay") ||
-        assets[assetName]?.roles?.includes("baselayer")
-      ) {
+      const isBaseOrOverlay = isBaseLayerOrOverlay(assets[assetName]);
+      if (isBaseOrOverlay) {
         // to prevent them being removed by date change on main dataset
         assetLayerId = assetName;
       }
@@ -348,12 +343,13 @@ export async function createLayersFromAssets(
           id: assetLayerId,
           title: assets[assetName]?.title || title,
           layerDatetime,
-          ...(layerConfig && {
-            layerConfig: {
-              ...layerConfig,
-              style,
-            },
-          }),
+          ...(layerConfig &&
+            !isBaseOrOverlay && {
+              layerConfig: {
+                ...layerConfig,
+                style,
+              },
+            }),
         },
         ...(!style?.variables && { style }),
         interactions: [],
@@ -385,10 +381,8 @@ export async function createLayersFromAssets(
         map,
       );
       let assetLayerId = createAssetID(collectionId, stacObject.id, fgbIdx[i]);
-      if (
-        assets[assetName]?.roles?.includes("overlay") ||
-        assets[assetName]?.roles?.includes("baselayer")
-      ) {
+      const isBaseOrOverlay = isBaseLayerOrOverlay(assets[assetName]);
+      if (isBaseOrOverlay) {
         // to prevent them being removed by date change on main dataset
         assetLayerId = assetName;
       }
@@ -422,12 +416,13 @@ export async function createLayersFromAssets(
           id: assetLayerId,
           title: assets[assetName]?.title || title,
           layerDatetime,
-          ...(layerConfig && {
-            layerConfig: {
-              ...layerConfig,
-              style,
-            },
-          }),
+          ...(layerConfig &&
+            !isBaseOrOverlay && {
+              layerConfig: {
+                ...layerConfig,
+                style,
+              },
+            }),
         },
         ...(!style?.variables && { style }),
         interactions: [],
@@ -498,14 +493,18 @@ export const createLayersFromLinks = async (
       wmsLink,
       viewProjectionCode,
     );
-    const rasterForm = await fetchRasterForm(
-      /** @type {string|object|undefined} */ (
-        wmsLink?.["eodash:rasterform"] ||
-          item?.["eodash:rasterform"] ||
-          collection?.["eodash:rasterform"]
-      ),
-      item,
-    );
+    // base layers and overlays are built without a layerConfig
+    const isBaseOrOverlay = isBaseLayerOrOverlay(wmsLink);
+    const rasterForm = isBaseOrOverlay
+      ? undefined
+      : await fetchRasterForm(
+          /** @type {string|object|undefined} */ (
+            wmsLink?.["eodash:rasterform"] ||
+              item?.["eodash:rasterform"] ||
+              collection?.["eodash:rasterform"]
+          ),
+          item,
+        );
     let { layerConfig } = extractLayerConfig(
       collectionId,
       {},
@@ -542,12 +541,7 @@ export const createLayersFromLinks = async (
         },
       },
     };
-    if (
-      // @ts-expect-error missing type definition, can be accessed like this
-      wmsLink.roles?.includes("baselayer") ||
-      // @ts-expect-error missing type definition, can be accessed like this
-      wmsLink.roles?.includes("overlay")
-    ) {
+    if (isBaseOrOverlay) {
       // @ts-expect-error no type for eox-map
       json.preload = Infinity;
     }
@@ -584,15 +578,18 @@ export const createLayersFromLinks = async (
 
     await registerProjection(wmtsLinkProjection);
 
-    const rasterForm = await fetchRasterForm(
-      /** @type {string|object|undefined} */ (
-        wmtsLink?.["eodash:rasterform"] ||
-          item?.["eodash:rasterform"] ||
-          collection?.["eodash:rasterform"]
-      ),
-      item,
-    );
-    const returnedLayerConfig = extractLayerConfig(
+    // base layers and overlays are built without a layerConfig
+    const rasterForm = isBaseLayerOrOverlay(wmtsLink)
+      ? undefined
+      : await fetchRasterForm(
+          /** @type {string|object|undefined} */ (
+            wmtsLink?.["eodash:rasterform"] ||
+              item?.["eodash:rasterform"] ||
+              collection?.["eodash:rasterform"]
+          ),
+          item,
+        );
+    const { layerConfig } = extractLayerConfig(
       collectionId,
       {},
       rasterForm,
@@ -623,7 +620,7 @@ export const createLayersFromLinks = async (
         id: linkId,
         title: wmtsLink.title || title || item.id,
         layerDatetime,
-        layerConfig: returnedLayerConfig.layerConfig,
+        ...(layerConfig && { layerConfig }),
       },
       source: {
         type: "WMTSCapabilities",
@@ -652,14 +649,18 @@ export const createLayersFromLinks = async (
     const xyzLinkProjection =
       /** @type {number | string | {name: string, def: string} | undefined} */
       (xyzLink?.["proj:epsg"] || xyzLink?.["eodash:proj4_def"]);
-    const rasterForm = await fetchRasterForm(
-      /** @type {string|object|undefined} */ (
-        xyzLink?.["eodash:rasterform"] ||
-          item?.["eodash:rasterform"] ||
-          collection?.["eodash:rasterform"]
-      ),
-      item,
-    );
+    // base layers and overlays are built without a layerConfig
+    const isBaseOrOverlay = isBaseLayerOrOverlay(xyzLink);
+    const rasterForm = isBaseOrOverlay
+      ? undefined
+      : await fetchRasterForm(
+          /** @type {string|object|undefined} */ (
+            xyzLink?.["eodash:rasterform"] ||
+              item?.["eodash:rasterform"] ||
+              collection?.["eodash:rasterform"]
+          ),
+          item,
+        );
     let { layerConfig } = extractLayerConfig(
       collectionId,
       {},
@@ -698,7 +699,7 @@ export const createLayersFromLinks = async (
         title: xyzLink.title || title || item.id,
         roles: xyzLink.roles,
         layerDatetime,
-        layerConfig,
+        ...(layerConfig && { layerConfig }),
       },
       source: {
         type: "XYZ",
@@ -727,12 +728,7 @@ export const createLayersFromLinks = async (
         ...tmsOptions,
       };
     }
-    if (
-      // @ts-expect-error missing type definition, can be accessed like this
-      xyzLink.roles?.includes("baselayer") ||
-      // @ts-expect-error missing type definition, can be accessed like this
-      xyzLink.roles?.includes("overlay")
-    ) {
+    if (isBaseOrOverlay) {
       // @ts-expect-error no type for eox-map
       json.preload = Infinity;
     }
@@ -780,14 +776,17 @@ export const createLayersFromLinks = async (
       (tilejsonLink?.["proj:epsg"] || tilejsonLink?.["eodash:proj4_def"]);
     await registerProjection(tilejsonProjection);
     const projectionCode = getProjectionCode(tilejsonProjection || "EPSG:3857");
-    const rasterForm = await fetchRasterForm(
-      /** @type {string|object|undefined} */ (
-        tilejsonLink?.["eodash:rasterform"] ||
-          item?.["eodash:rasterform"] ||
-          collection?.["eodash:rasterform"]
-      ),
-      item,
-    );
+    // base layers and overlays are built without a layerConfig
+    const rasterForm = isBaseLayerOrOverlay(tilejsonLink)
+      ? undefined
+      : await fetchRasterForm(
+          /** @type {string|object|undefined} */ (
+            tilejsonLink?.["eodash:rasterform"] ||
+              item?.["eodash:rasterform"] ||
+              collection?.["eodash:rasterform"]
+          ),
+          item,
+        );
     const { layerConfig } = extractLayerConfig(
       collectionId,
       {},
@@ -811,7 +810,7 @@ export const createLayersFromLinks = async (
         title: tilejsonLink.title || title || item.id,
         roles: tilejsonLink.roles,
         layerDatetime,
-        layerConfig,
+        ...(layerConfig && { layerConfig }),
       },
       source: {
         type: "XYZ",
@@ -888,12 +887,13 @@ export const createLayersFromLinks = async (
         title: vectorTileLink.title || title || item.id,
         roles: vectorTileLink.roles,
         layerDatetime,
-        ...(layerConfig && {
-          layerConfig: {
-            ...layerConfig,
-            style,
-          },
-        }),
+        ...(layerConfig &&
+          !isBaseLayerOrOverlay(vectorTileLink) && {
+            layerConfig: {
+              ...layerConfig,
+              style,
+            },
+          }),
       },
       source: {
         type: "VectorTile",

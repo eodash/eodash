@@ -546,6 +546,16 @@ export const extractRoles = (properties, linkOrAsset) => {
 };
 
 /**
+ * Whether a STAC link or asset is rendered as a baselayer or an overlay
+ * @param {import("stac-ts").StacLink | import("stac-ts").StacAsset | undefined} linkOrAsset
+ * @returns {boolean}
+ * */
+export const isBaseLayerOrOverlay = (linkOrAsset) => {
+  const roles = /** @type {string[] | undefined} */ (linkOrAsset?.roles);
+  return !!roles?.some((role) => role === "baselayer" || role === "overlay");
+};
+
+/**
  * Extracts a single non-link style JSON from a STAC Item optionally for a selected key mapping
  * @param { import("stac-ts").StacItem | import("stac-ts").StacCollection | null | undefined} stacObject
  * @param {string | undefined} linkKey
@@ -884,10 +894,7 @@ export const createLayerID = (collectionId, itemId, link, projectionCode) => {
   let lId = `${collectionId ?? ""};:;${itemId ?? ""};:;${linkId ?? ""};:;${projectionCode ?? ""}`;
   // If we are looking at base layers and overlays we remove the collection and item part
   // as we want to make sure tiles are not reloaded when switching layers
-  if (
-    /** @type {string[]} */
-    (link.roles)?.find((r) => ["baselayer", "overlay"].includes(r))
-  ) {
+  if (isBaseLayerOrOverlay(link)) {
     lId = `${linkId ?? ""};:;${projectionCode ?? ""}`;
   }
   log.debug("Generated Layer ID", lId);

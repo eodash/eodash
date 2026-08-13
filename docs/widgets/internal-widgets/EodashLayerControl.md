@@ -36,7 +36,7 @@ widget: {
 
 ## Layer Configuration Forms
 
-Layers can expose configuration forms in the panel, defined through [eodash Flat Styles](/STAC#eodash-flat-styles) or [`eodash:rasterform`](/STAC#eodash-raster-form) in the STAC metadata.
+Layers can expose configuration forms in the panel, defined through [eodash Flat Styles](/STAC#eodash-flat-styles) or [`eodash:rasterform`](/STAC#eodash-raster-form) in the STAC metadata. Only data layers get a form, base layers and overlays are built without the form.
 
 ### State persistence
 
