@@ -31,15 +31,19 @@
   },
   "exports": {
     ".": {
+      "types": "./dist/types/core/client/types.d.ts",
       "default": "./core/client/main.js"
     },
     "./webcomponent": {
+      "types": "./dist/types/core/client/asWebComponent.d.ts",
       "default": "./dist/client/eo-dash.js"
     },
     "./templates": {
+      "types": "./dist/types/templates/index.d.ts",
       "default": "./dist/client/templates.js"
     },
     "./config": {
+      "types": "./dist/node/types.d.ts",
       "default": "./dist/node/main.js"
     }
   },
