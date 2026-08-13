@@ -16,6 +16,7 @@ import {
   extractLayerLegend,
   extractLayerTimeValues,
   replaceLayer,
+  isBaseLayerOrOverlay,
 } from "./helpers";
 import { getLayers, registerProjection } from "@/store/actions";
 import {
@@ -539,11 +540,9 @@ export class EodashCollection {
   static async getIndicatorLayers(indicator) {
     const indicatorAssets = Object.keys(indicator?.assets ?? {}).reduce(
       (assets, ast) => {
-        if (
-          indicator.assets?.[ast].roles?.includes("baselayer") ||
-          indicator.assets?.[ast].roles?.includes("overlay")
-        ) {
-          assets[ast] = indicator.assets[ast];
+        const asset = indicator.assets?.[ast];
+        if (asset && isBaseLayerOrOverlay(asset)) {
+          assets[ast] = asset;
         }
         return assets;
       },
