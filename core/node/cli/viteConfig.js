@@ -82,7 +82,12 @@ export const createEodashViteConfig = (ctx) =>
         server: {
           allowedHosts: true,
           warmup: {
-            clientFiles: [path.join(appPath, "core/client/**"), entryPath],
+            clientFiles: [
+              path.join(appPath, "core/client/**"),
+              path.join(appPath, "widgets/**"),
+              path.join(appPath, "templates/**"),
+              ...(entryPath ? [entryPath] : []),
+            ],
           },
           port: userConfig.port ?? 3000,
           open: userConfig.open,
@@ -149,11 +154,10 @@ export const createEodashViteConfig = (ctx) =>
                     source.includes("vuetify") ||
                     source.endsWith(".css") ||
                     source.endsWith("styles");
-                  const isClientDep = clientModules.some((m) =>
-                    source.startsWith(m),
+                  const isClientDep = clientModules.some(
+                    (m) => source === m || source.startsWith(m + "/"),
                   );
-                  // "user:config" will be removed by treeshaking in this case, but it checks whether it's
-                  // a valid import prior to that
+                  // treeshaking drops "user:config", but the import must still resolve
                   const isUserConfig = source === "user:config" && !entryPath;
                   return (!isCssOrVuetify && isClientDep) || isUserConfig;
                 },
@@ -174,7 +178,7 @@ export const createEodashViteConfig = (ctx) =>
   );
 
 /**
- * eodash's vite config with the host application's `vite` overrides merged in.
+ * Merges the host app's `vite` overrides over eodash's config.
  *
  * @param {import("./globals.js").EodashContext} ctx
  */
@@ -270,8 +274,7 @@ function createConfigureServer(ctx) {
 }
 
 /**
- * Prefixed env vars, ready to be spread into vite's `define`. Reads `.env`
- * files from the host application, not from eodash itself.
+ * Loads environment variables
  *
  * @param {string[]} prefix
  * @param {string} envDir - host application root

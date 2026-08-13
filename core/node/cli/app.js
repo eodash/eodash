@@ -43,14 +43,13 @@ export const buildApp = async (ctx) => {
   }
 
   const htmlPath = path.join(appPath, "/index.html");
-  await writeFile(htmlPath, renderIndexHtml(!!userConfig.lib)).then(
-    async () => {
-      await build();
-      await rm(htmlPath).catch(() => {
+  await writeFile(htmlPath, renderIndexHtml(!!userConfig.lib))
+    .then(build)
+    .finally(() =>
+      rm(htmlPath).catch(() => {
         console.error("failed to remove index.html");
-      });
-    },
-  );
+      }),
+    );
 };
 
 /** @param {import("./globals.js").EodashContext} ctx */

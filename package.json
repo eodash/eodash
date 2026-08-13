@@ -124,6 +124,7 @@
     "@vue/devtools-api": "^8.1.5",
     "pkg-pr-new": "^0.0.87",
     "prettier": "^3.9.6",
+    "rolldown": "^1.2.3",
     "terminate": "^2.8.0",
     "tsc-alias": "^1.9.1",
     "typedoc": "^0.28.20",

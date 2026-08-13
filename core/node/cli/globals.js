@@ -17,8 +17,6 @@ export const nodeModules = [
   "vite",
   "@vitejs/plugin-vue",
   "vite-plugin-vuetify",
-  "axios",
-  "dotenv",
 ];
 export const clientModules = Object.keys(appPkgJSON?.dependencies).filter(
   (m) => !nodeModules.includes(m),
@@ -43,17 +41,21 @@ export const clientModules = Object.keys(appPkgJSON?.dependencies).filter(
  */
 
 /**
- * Everything the CLI commands and the vite config need, derived from a
- * resolved user config.
+ * Context inputs for CLI commands and Vite
  *
  * @typedef {ReturnType<typeof resolveEodashContext>} EodashContext
  */
 
 /**
- * Derives every path the CLI and the vite config need. Pure: same config and
- * root in, same paths out, so it can be exercised without spawning a process.
+ * CLI flags merged over `eodash.config.js`
  *
- * @param {Awaited<ReturnType<typeof getUserConfig>>} config
+ * @typedef {Awaited<ReturnType<typeof getUserConfig>>} ResolvedUserConfig
+ */
+
+/**
+ * Derives every path from the host application root.
+ *
+ * @param {ResolvedUserConfig} config
  * @param {string} [root] - host application root
  */
 export function resolveEodashContext(
@@ -115,16 +117,11 @@ export async function getUserConfig(
   /** @type {import("../types").EodashConfig} */
   let config = {};
   if (existsSync(configFile)) {
-    config = await import(configFile)
-      .then((userConfig) =>
-        userConfig.default instanceof Function
-          ? userConfig.default()
-          : userConfig.default,
-      )
-      .catch((err) => {
-        console.error(err);
-        return null;
-      });
+    config = await import(configFile).then((userConfig) =>
+      userConfig.default instanceof Function
+        ? userConfig.default()
+        : userConfig.default,
+    );
   }
 
   const forCommand = config?.[/** @type {"dev" | "preview"} */ (command)];
