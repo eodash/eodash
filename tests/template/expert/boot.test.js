@@ -100,7 +100,7 @@ describe("expert template", () => {
     const before = getZ();
 
     // Wheel zoom -> moveend -> url z. Direction-agnostic.
-    await userEvent.wheel(ctx.query("eox-map"), { delta: { x: 0, y: 200 } });
+    await userEvent.wheel(ctx.query("eox-map"), { delta: { x: 0, y: -200 } });
 
     await expect
       .poll(

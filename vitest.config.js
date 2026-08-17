@@ -10,8 +10,13 @@ import {
   serveResponses,
   stopServingFiles,
 } from "./tests/support/commands.js";
+import { config as performanceReport } from "./tests/performance/report-config.js";
+import { PerformanceReporter } from "./tests/performance/reporter/index.js";
 
 const pkg = createRequire(import.meta.url)("./package.json");
+
+/** The measured run: template tests plus settle waits, reported on. */
+const isPerformanceRun = Boolean(process.env.VITE_PERF);
 
 const nodeOnlyDeps = [
   "commander",
@@ -38,6 +43,17 @@ const alias = {
 
 export default defineConfig({
   test: {
+    ...(isPerformanceRun && {
+      maxWorkers: 2,
+      minWorkers: 2,
+      reporters: [
+        "default",
+        new PerformanceReporter({
+          outputFile: "tests/performance/report.json",
+          report: performanceReport,
+        }),
+      ],
+    }),
     projects: [
       {
         resolve: { alias },
@@ -73,12 +89,17 @@ export default defineConfig({
             "tests/component/**/*.test.js",
             "tests/template/**/*.test.js",
           ],
+          // Registers measurement hooks only when VITE_PERF is set.
+          setupFiles: ["./tests/support/performance-setup.js"],
           testTimeout: 60 * 1000,
           // Template boots (app + real STAC fetches) run in beforeAll hooks.
           hookTimeout: 60 * 1000,
           browser: {
             enabled: true,
-            provider: playwright(),
+            // Pinned: how many tiles a map asks for depends on the viewport and
+            // scale factor, so measurements are only comparable while both stay
+            // fixed.
+            provider: playwright({ contextOptions: { deviceScaleFactor: 1 } }),
             headless: true,
             viewport: { width: 1440, height: 900 },
             instances: [{ browser: "chromium" }],
