@@ -117,6 +117,7 @@ export default defineConfig({
           ],
           // Registers measurement hooks only when VITE_PERF is set.
           setupFiles: ["./tests/support/performance-setup.js"],
+          ...(isPerformanceRun && { maxWorkers: 4, minWorkers: 4 }),
           testTimeout: 60 * 1000,
           // Template boots (app + real STAC fetches) run in beforeAll hooks.
           hookTimeout: 60 * 1000,

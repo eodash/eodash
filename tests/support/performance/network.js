@@ -41,7 +41,8 @@ const repeatedIn = (requests) => {
   const seen = new Map();
   for (const request of requests.filter(({ state }) => state === "ok")) {
     const key = `${request.method} ${request.url} ${request.range}`;
-    const entry = seen.get(key) ?? { ...request, times: 0 };
+    const entry = seen.get(key) ?? { ...request, times: 0, cachedRepeats: 0 };
+    if (entry.times && request.cached) entry.cachedRepeats += 1;
     entry.times += 1;
     seen.set(key, entry);
   }
