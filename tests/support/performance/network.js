@@ -20,6 +20,7 @@ import { callerLabel, frameLabel, stackTrace } from "./frames";
  * @property {number} bytes transferred
  * @property {number} status
  * @property {RequestState} state
+ * @property {boolean} cached served from a cache rather than the network
  */
 
 /** @param {string} url */
@@ -40,7 +41,8 @@ const repeatedIn = (requests) => {
   const seen = new Map();
   for (const request of requests.filter(({ state }) => state === "ok")) {
     const key = `${request.method} ${request.url} ${request.range}`;
-    const entry = seen.get(key) ?? { ...request, times: 0 };
+    const entry = seen.get(key) ?? { ...request, times: 0, cachedRepeats: 0 };
+    if (entry.times && request.cached) entry.cachedRepeats += 1;
     entry.times += 1;
     seen.set(key, entry);
   }
@@ -59,14 +61,9 @@ export const observeNetwork = async (session, clock) => {
   /** @type {Map<string, Request>} */
   const byId = new Map();
   let inFlight = 0;
-  // Protocol timestamps are seconds on their own epoch; the clock is
-  // `performance.now()` milliseconds, so anchor to the first event seen.
-  let epoch = 0;
+
   /** @param {number} seconds */
-  const at = (seconds) => {
-    epoch ||= seconds * 1000 - performance.now();
-    return seconds * 1000 - epoch;
-  };
+  const at = (seconds) => seconds * 1000;
 
   /** @param {any} event */
   const onSent = (event) => {
@@ -90,6 +87,7 @@ export const observeNetwork = async (session, clock) => {
       bytes: 0,
       status: 0,
       state: "pending",
+      cached: false,
     });
     inFlight++;
     clock.touch();
@@ -100,7 +98,15 @@ export const observeNetwork = async (session, clock) => {
   /** @param {any} event */
   const onResponse = (event) => {
     const request = byId.get(event.requestId);
-    if (request) request.status = event.response?.status ?? 0;
+    if (!request) return;
+    request.status = event.response?.status ?? 0;
+    request.cached ||= Boolean(event.response?.fromDiskCache);
+  };
+
+  /** @param {any} event */
+  const onCached = (event) => {
+    const request = byId.get(event.requestId);
+    if (request) request.cached = true;
   };
 
   /** @param {any} event @param {RequestState} state */
@@ -128,6 +134,7 @@ export const observeNetwork = async (session, clock) => {
 
   session.on("Network.requestWillBeSent", onSent);
   session.on("Network.responseReceived", onResponse);
+  session.on("Network.requestServedFromCache", onCached);
   session.on("Network.loadingFinished", onDone);
   session.on("Network.loadingFailed", onFailed);
   await session.send("Network.enable");
@@ -155,7 +162,6 @@ export const observeNetwork = async (session, clock) => {
         canceledRequests: counted("canceled"),
         bytes: requests.reduce((total, { bytes }) => total + bytes, 0),
         repeatedRequests: repeated,
-        wastedRequests: repeated.reduce((n, { times }) => n + times - 1, 0),
         networkMs: unionMs(spans),
         hosts: [...byHost]
           .map(([host, group]) => ({
@@ -171,6 +177,7 @@ export const observeNetwork = async (session, clock) => {
     dispose: async () => {
       session.off("Network.requestWillBeSent", onSent);
       session.off("Network.responseReceived", onResponse);
+      session.off("Network.requestServedFromCache", onCached);
       session.off("Network.loadingFinished", onDone);
       session.off("Network.loadingFailed", onFailed);
       await session.send("Network.disable");

@@ -30,7 +30,6 @@ export const createClock = () => {
   };
 
   return {
-    startedAt,
     touch: () => (lastActivityAt = performance.now()),
     /**
      * The whole window, including the quiet check at the end. Collectors report

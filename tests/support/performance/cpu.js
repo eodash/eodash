@@ -21,20 +21,44 @@ export const observeCpu = async (session) => {
       const { profile } = await session.send("Profiler.stop");
       //@ts-expect-error todo
       const nodes = new Map(profile.nodes.map((node) => [node.id, node]));
-      /** @type {Map<string, {ms: number, url: string}>} */
+      /** @type {Map<number, number>} */
+      const parentOf = new Map();
+      //@ts-expect-error todo
+      for (const node of profile.nodes)
+        for (const child of node.children ?? []) parentOf.set(child, node.id);
+
+      /** The path back to the root, so a native frame names its caller. */
+      const ancestry = (/** @type {number} */ id) => {
+        const trace = [];
+        for (let at = id; at && trace.length < 6; at = parentOf.get(at)) {
+          const label = frameLabel(nodes.get(at)?.callFrame);
+          if (label) trace.push(label);
+        }
+        return trace;
+      };
+
+      /** @param {number} node */
+      const hits = (node) => nodes.get(node)?.hitCount ?? 0;
+
+      /** @type {Map<string, {ms: number, hottest: number}>} */
       const self = new Map();
       //@ts-expect-error todo
       profile.samples.forEach((id, index) => {
         const frame = nodes.get(id)?.callFrame;
         if (!frame) return;
         const key = frameLabel(frame) || frame.functionName;
-        const entry = self.get(key) ?? { ms: 0, url: frame.url ?? "" };
+        const entry = self.get(key) ?? { ms: 0, hottest: id };
+        if (hits(id) > hits(entry.hottest)) entry.hottest = id;
         entry.ms += (profile.timeDeltas[index] ?? 0) / 1000;
         self.set(key, entry);
       });
 
       const frames = [...self]
-        .map(([label, { ms, url }]) => ({ label, url, ms: Math.round(ms) }))
+        .map(([label, { ms, hottest }]) => ({
+          label,
+          ms: Math.round(ms),
+          trace: ancestry(hottest),
+        }))
         .sort((a, b) => b.ms - a.ms);
       /** @param {string} name */
       const synthetic = (name) =>

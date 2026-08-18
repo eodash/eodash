@@ -24,18 +24,19 @@ export const instrument = async () => {
 
   /** @type {Collector[]} */
   const collectors = [
+    ...(mapEl?.map ? [observeMap(mapEl, clock)] : []),
     await observeMetrics(session),
     await observeNetwork(session, clock),
     await observeCpu(session),
-    ...(mapEl?.map ? [observeMap(mapEl, clock)] : []),
   ];
   const busy = collectors.flatMap((c) => c.busy ?? []);
 
   return {
     collect: async () => {
       const settled = await clock.settle(busy);
+      const wallMs = clock.wallMs();
       const parts = await Promise.all(collectors.map((c) => c.collect()));
-      return Object.assign({ settled, wallMs: clock.wallMs() }, ...parts);
+      return Object.assign({ settled, wallMs }, ...parts);
     },
     dispose: () => Promise.all(collectors.map((c) => c.dispose())),
   };

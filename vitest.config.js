@@ -44,8 +44,6 @@ const alias = {
 export default defineConfig({
   test: {
     ...(isPerformanceRun && {
-      maxWorkers: 2,
-      minWorkers: 2,
       reporters: [
         "default",
         new PerformanceReporter({
@@ -91,6 +89,7 @@ export default defineConfig({
           ],
           // Registers measurement hooks only when VITE_PERF is set.
           setupFiles: ["./tests/support/performance-setup.js"],
+          ...(isPerformanceRun && { maxWorkers: 4, minWorkers: 4 }),
           testTimeout: 60 * 1000,
           // Template boots (app + real STAC fetches) run in beforeAll hooks.
           hookTimeout: 60 * 1000,

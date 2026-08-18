@@ -15,12 +15,15 @@ export const time = (ms) => {
 };
 
 /** Rounded for the same reason as {@link time}. @param {number} [bytes] */
-export const size = (bytes) =>
-  !bytes
-    ? "0"
-    : bytes >= 1e6
-      ? `${Math.round(bytes / 1e6)} MB`
-      : `${Math.round(bytes / 1e3)} KB`;
+export const size = (bytes) => {
+  if (!bytes) return "0";
+  const magnitude = Math.abs(bytes);
+  const rounded =
+    magnitude >= 1e6
+      ? `${Math.round(magnitude / 1e6)} MB`
+      : `${Math.round(magnitude / 1e3)} KB`;
+  return bytes < 0 ? `-${rounded}` : rounded;
+};
 
 /** Folded away under a note, since only one line of a trace is ever the answer.
  * @param {string[]} [lines] */
