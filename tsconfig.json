@@ -41,6 +41,8 @@
     "templates/**/*.js",
     "templates/**/*.ts",
     "templates/**/*.d.ts",
-    "core/node/**/*.d.ts"
+    "core/node/**/*.d.ts",
+    "packages/*/src/**/*.js",
+    "packages/*/src/**/*.ts"
   ]
 }
