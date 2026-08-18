@@ -1,0 +1,19 @@
+{
+  "name": "@eodash/stac",
+  "version": "0.0.0",
+  "type": "module",
+  "main": "./src/index.js",
+  "types": "./src/types.ts",
+  "files": [
+    "src"
+  ],
+  "devDependencies": {
+    "@eox/map": "^2.7.1",
+    "stac-ts": "^1.0.5"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/eodash/eodash.git",
+    "directory": "packages/stac"
+  }
+}
