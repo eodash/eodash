@@ -7,6 +7,12 @@
   "files": [
     "src"
   ],
+  "dependencies": {
+    "axios": "^1.17.0",
+    "hyparquet": "^1.26.0",
+    "loglevel": "^1.9.2",
+    "mustache": "^4.2.0"
+  },
   "devDependencies": {
     "@eox/map": "^2.7.1",
     "stac-ts": "^1.0.5"
