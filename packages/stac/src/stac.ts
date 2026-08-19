@@ -21,13 +21,15 @@ type Declared<T> = {
       : K]: T[K];
 };
 
-export interface EodashItem
-  extends
-    Omit<Declared<StacItem>, "stac_version" | "links" | "assets">,
-    AuthSchemes {
+export interface EodashItem extends Omit<
+  Declared<StacItem>,
+  "stac_version" | "links" | "assets"
+> {
   stac_version: string;
   links: EodashLink[];
-  assets: Record<string, RenderableAsset | StacAsset>;
+  assets: Record<string, EodashAsset>;
+  /** The schemes this item's links and assets reference by `auth:refs`. */
+  "auth:schemes"?: Record<string, AuthScheme>;
   "proj:epsg"?: number;
   "eodash:proj4_def"?: Projection;
   renders?: Record<string, Render>;
@@ -36,13 +38,13 @@ export interface EodashItem
   "eodash:mapProjection"?: Projection;
 }
 
-export interface EodashCollection
-  extends
-    Omit<Declared<StacCollection>, "stac_version" | "links" | "assets">,
-    AuthSchemes {
+export interface EodashCollection extends Omit<
+  Declared<StacCollection>,
+  "stac_version" | "links" | "assets"
+> {
   stac_version: string;
   links: EodashLink[];
-  assets?: Record<string, RenderableAsset | StacAsset>;
+  assets?: Record<string, EodashAsset>;
   renders?: Record<string, Render>;
   /** Point locations are carried by `child` links rather than `item` links. */
   locations?: boolean;
@@ -59,6 +61,23 @@ export interface EodashCollection
   "eox:colorlegend"?: ColorLegend;
 }
 
+/** A STAC API item search as a GET query. */
+export interface SearchParams {
+  collections?: string;
+  /** Comma separated: the repeated form a GET would send is ignored. */
+  bbox?: string;
+  /** An instant, or an interval as `../end`, `start/..` or `start/end`. */
+  datetime?: string;
+  limit?: number;
+  /** A property name, prefixed `-` to sort descending. */
+  sortby?: string;
+  /** The properties to return, prefixed `-` to leave one out. */
+  fields?: string;
+  /** A CQL2-text expression. */
+  filter?: string;
+  "filter-lang"?: "cql2-text";
+}
+
 /** STAC API item search response. */
 export interface ItemCollection {
   type: "FeatureCollection";
@@ -69,7 +88,7 @@ export interface ItemCollection {
 }
 
 /** A legend whose domain and range are named layer properties. */
-type BoundLegend =
+export type BoundLegend =
   import("@eox/layercontrol/src/components/layer-config.js").EOxLayerControlLayerConfig["layerConfig"]["legend"];
 /** A legend whose domain and range are stated literally. */
 type ColorLegend =
@@ -87,26 +106,30 @@ export type Projection =
   | number
   | { name: string; def: string; extent?: number[] };
 
-export interface AuthScheme {
-  type: LiteralUnion<
-    "apiKey" | "http" | "s3" | "signedUrl" | "oauth2" | "openIdConnect"
-  >;
+/** A scheme carrying the key in the request itself. */
+export interface ApiKeyAuthScheme {
+  type: "apiKey";
   description?: string;
-  /** For `apiKey`, the parameter name; its value comes from `EODASH_<name>`. */
-  name?: string;
-  in?: LiteralUnion<"query" | "header" | "cookie">;
+  /** The parameter the key is sent as. */
+  name: string;
+  in: "query" | "header" | "cookie";
 }
 
-/** STAC Authentication Extension, item side. */
-export interface AuthSchemes {
-  "auth:schemes"?: Record<string, AuthScheme>;
+export interface OtherAuthScheme {
+  type: "http" | "s3" | "signedUrl" | "oauth2" | "openIdConnect";
+  description?: string;
 }
+
+export type AuthScheme = ApiKeyAuthScheme | OtherAuthScheme;
 
 /** STAC Authentication Extension, link and asset side. */
 export interface AuthRefs {
   /** Names of `auth:schemes` entries on the owning item. */
   "auth:refs"?: string[];
 }
+
+/** A link reached through one of the owning item's `auth:schemes`. */
+export interface AuthLink extends StacLink, AuthRefs {}
 
 interface WebMapLink extends StacLink, AuthRefs {
   roles?: string[];
@@ -167,6 +190,9 @@ export interface StyleLink extends StacLink {
 export interface ChildLink extends StacLink {
   rel: "child";
   id?: string;
+  datetime?: string;
+  start_datetime?: string;
+  end_datetime?: string;
   /** `"lat,lon"`, on collections rendered as observation points. */
   latlng?: string;
 }
@@ -203,6 +229,25 @@ export interface PreAggregationLink extends StacLink {
   "aggregation:interval"?: LiteralUnion<"daily">;
 }
 
+/** How many items fall in one interval. */
+export interface AggregationBucket {
+  /** The datetime the interval starts at. */
+  key: string;
+  value: number;
+}
+
+export interface Aggregation {
+  key: LiteralUnion<"datetime_daily">;
+  interval?: LiteralUnion<"daily">;
+  buckets: AggregationBucket[];
+}
+
+/** The document behind a `pre-aggregation` link. */
+export interface AggregationCollection {
+  type: "AggregationCollection";
+  aggregations: Aggregation[];
+}
+
 export type EodashLink =
   | XYZLink
   | WMSLink
@@ -237,40 +282,44 @@ export interface Render {
   tilesize?: number;
 }
 
-interface BaseRenderableAsset extends StacAsset, AuthRefs {
+interface BaseEodashAsset extends StacAsset, AuthRefs {
   attribution?: string;
+  /** Projection extension: the EPSG code, null where the projection has none. */
+  "proj:epsg"?: number | null;
   "eodash:proj4_def"?: Projection;
   "eox:flatstyle"?: FlatStyle;
 }
 
-export interface GeoJSONAsset extends BaseRenderableAsset {
+export interface GeoJSONAsset extends BaseEodashAsset {
   type: `${string}application/geo+json${string}`;
 }
 
-export interface FlatGeobufAsset extends BaseRenderableAsset {
+export interface FlatGeobufAsset extends BaseEodashAsset {
   type: `${string}application/vnd.flatgeobuf${string}`;
 }
 
 /** A zarr store holding a multiscale pyramid; without the profile it is a single array. */
-export interface GeoZarrAsset extends BaseRenderableAsset {
+export interface GeoZarrAsset extends BaseEodashAsset {
   type: "application/vnd.zarr; version=3; profile=multiscales";
 }
 
-export interface GeoTIFFAsset extends BaseRenderableAsset {
+export interface GeoTIFFAsset extends BaseEodashAsset {
   type: `${string}image/tiff${string}`;
 }
 
-export interface GeoDBAsset extends BaseRenderableAsset {
+export interface GeoDBAsset extends BaseEodashAsset {
   type: `${string}application/geodb+json${string}`;
 }
 
 /** An asset eodash renders as a layer. */
-export type RenderableAsset =
+export type EodashAsset =
   | GeoJSONAsset
   | FlatGeobufAsset
   | GeoZarrAsset
   | GeoTIFFAsset
-  | GeoDBAsset;
+  | GeoDBAsset
+  /** Anything else eodash carries but does not render itself. */
+  | BaseEodashAsset;
 
 export interface TileJSON {
   tiles: string[];
