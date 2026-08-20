@@ -28,8 +28,9 @@ const FOOTER_BYTES = 1 << 15;
  * @param {object} context
  * @param {string} context.url
  * @param {import("../types").EodashCollection} context.stac
+ * @param {import("../http.js").HttpClient} context.http what a build reads through; the mirror itself is read by range
  */
-export const createParquetCollection = ({ url, stac }) => {
+export const createParquetCollection = ({ url, stac, http }) => {
   const mirror = findParquetMirror(stac);
   const href = mirror ? toAbsolute(mirror.href, url) : undefined;
 
@@ -183,7 +184,7 @@ export const createParquetCollection = ({ url, stac }) => {
   };
 
   return {
-    ...createCollectionBase({ stac, getDates, getItem }),
+    ...createCollectionBase({ stac, http, getDates, getItem }),
     getItems,
     getDates,
     getItem,
@@ -203,6 +204,8 @@ export const createParquetCollection = ({ url, stac }) => {
  */
 async function fetchByteLength(href) {
   const response = await fetch(href, { headers: { Range: "bytes=0-0" } });
-  const total = Number(response.headers.get("content-range")?.split("/").at(-1));
+  const total = Number(
+    response.headers.get("content-range")?.split("/").at(-1),
+  );
   return total ? total : undefined;
 }

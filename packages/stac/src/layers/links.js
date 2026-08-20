@@ -1,7 +1,7 @@
-import axios from "axios";
 import log from "loglevel";
 import { extractRoles, isBaseLayerOrOverlay } from "../helpers/assets.js";
 import { handleAuthenticationOfLink } from "../helpers/auth.js";
+import { createHTTPInstance } from "../http.js";
 import {
   extractLayerConfig,
   applyRasterFormValue,
@@ -32,6 +32,7 @@ import {
  * @param {string} [options.viewProjection] - the map view's projection, which the compare map follows
  * @param {Record<string, any> | null} [options.tileMatrixSets] - tile matrix set definitions keyed by id
  * @param {Array<string | { url: string; titilerVersion?: 1 | 2; scaleFactor?: number }>} [options.upscalingEndpoints] - titiler endpoints that serve upscaled tiles
+ * @param {import("../http.js").HttpClient} [options.http] reads every url this needs
  * @returns {Promise<{ layers: import("../types").EoxLayer[], projections: import("../types").Projection[] }>} the projections come back with the layers, for the caller to register before they are assigned
  */
 export const createLayersFromLinks = async (
@@ -48,6 +49,7 @@ export const createLayersFromLinks = async (
     viewProjection,
     tileMatrixSets = null,
     upscalingEndpoints = [],
+    http = createHTTPInstance(),
   } = options;
   log.debug("Creating layers from links");
   /** @type {Record<string,any>[]} */
@@ -97,6 +99,7 @@ export const createLayersFromLinks = async (
               item?.["eodash:rasterform"] ||
               collection?.["eodash:rasterform"]
           ),
+          http,
           item,
         );
     let { layerConfig } = extractLayerConfig(
@@ -185,6 +188,7 @@ export const createLayersFromLinks = async (
               item?.["eodash:rasterform"] ||
               collection?.["eodash:rasterform"]
           ),
+          http,
           item,
         );
     const { layerConfig } = extractLayerConfig(
@@ -259,6 +263,7 @@ export const createLayersFromLinks = async (
               item?.["eodash:rasterform"] ||
               collection?.["eodash:rasterform"]
           ),
+          http,
           item,
         );
     let { layerConfig } = extractLayerConfig(
@@ -344,13 +349,10 @@ export const createLayersFromLinks = async (
   for (const tilejsonLink of tilejsonArray) {
     // The tilejson href is a complete URL with the render params baked in by the
     // STAC producer; fetch it and use its `tiles[0]` template as an XYZ source.
-    const tileJSON = await axios
-      .get(tilejsonLink.href)
-      .then((res) => res.data)
-      .catch((err) => {
-        console.error("[eodash] Failed to fetch item TileJSON", err);
-        return null;
-      });
+    const tileJSON = await http.get(tilejsonLink.href).catch((err) => {
+      console.error("[eodash] Failed to fetch item TileJSON", err);
+      return null;
+    });
     if (!tileJSON?.tiles?.[0]) {
       console.warn(
         "[eodash] No tile URL in item TileJSON response",
@@ -382,6 +384,7 @@ export const createLayersFromLinks = async (
               item?.["eodash:rasterform"] ||
               collection?.["eodash:rasterform"]
           ),
+          http,
           item,
         );
     const { layerConfig } = extractLayerConfig(
@@ -461,7 +464,7 @@ export const createLayersFromLinks = async (
     const key =
       /** @type {string | undefined} */ (vectorTileLink["key"]) || undefined;
     // fetch styles and separate them by their mapping between links and assets
-    const styles = await resolveStyle(item, collection, key);
+    const styles = await resolveStyle(item, collection, http, key);
     // get the correct style which is not attached to a link
     let { layerConfig, style } = extractLayerConfig(
       collectionId,

@@ -1,4 +1,3 @@
-import axios from "axios";
 import { findClosestIndex, getDatetimeProperty } from "../helpers/datetime.js";
 import { toAbsolute } from "../helpers/url.js";
 import { createCollectionBase } from "./base.js";
@@ -9,8 +8,9 @@ import { createCollectionBase } from "./base.js";
  * @param {object} context
  * @param {string} context.url
  * @param {import("../types").EodashCollection} context.stac
+ * @param {import("../http.js").HttpClient} context.http
  */
-export const createStaticCollection = ({ url, stac }) => {
+export const createStaticCollection = ({ url, stac, http }) => {
   /**
    * The `item` links the document carries, oldest first.
    *
@@ -57,11 +57,11 @@ export const createStaticCollection = ({ url, stac }) => {
     if (!closest) {
       return undefined;
     }
-    return axios.get(toAbsolute(closest.href, url)).then((r) => r.data);
+    return http.get(toAbsolute(closest.href, url));
   };
 
   return {
-    ...createCollectionBase({ stac, getDates, getItem }),
+    ...createCollectionBase({ stac, http, getDates, getItem }),
     getItems,
     getDates,
     getItem,

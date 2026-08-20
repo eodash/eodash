@@ -1,4 +1,3 @@
-import axios from "axios";
 import log from "loglevel";
 import mustache from "mustache";
 import { applyValuesToUrl } from "./url.js";
@@ -268,16 +267,17 @@ export function applyRasterFormValue(layer, collectionId, map = "main") {
  * placeholders are rendered against `item` when provided.
  *
  * @param {string|object|undefined} rasterform - The rasterform property from the STAC object.
+ * @param {import("../http.js").HttpClient} http
  * @param {import("../types").EodashItem} [item] - Item the form is rendered against.
  * @returns {Promise<import("../types").EodashRasterJSONForm|undefined>}
  */
-export async function fetchRasterForm(rasterform, item) {
+export async function fetchRasterForm(rasterform, http, item) {
   /** @type {import("../types").EodashRasterJSONForm | undefined} */
   let form = undefined;
   if (typeof rasterform === "object" && rasterform) {
     form = /** @type {import("../types").EodashRasterJSONForm} */ (rasterform);
   } else if (typeof rasterform === "string" && rasterform) {
-    form = await axios.get(rasterform).then((resp) => resp.data);
+    form = await http.get(rasterform);
   }
   if (!form || !item) {
     return form;
