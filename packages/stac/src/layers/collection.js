@@ -67,9 +67,8 @@ export const getObservationPointsLayer = (
   collections,
   { themes = OBSERVATION_POINT_THEMES, currentLayers = [] } = {},
 ) => {
-  const features = collections
-    .filter(isObservationPoints)
-    .flatMap((collection) =>
+  const features = collections.filter(isObservationPoints)
+  .flatMap((collection) =>
       generateFeatures(
         collection.links,
         {
@@ -79,7 +78,7 @@ export const getObservationPointsLayer = (
         },
         collection.locations ? "child" : "item",
       ).features,
-    );
+  );
 
   if (!features.length) {
     return null;
