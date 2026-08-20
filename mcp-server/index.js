@@ -533,12 +533,9 @@ function generateLandingPage(widgets, _arch) {
 }
 
 async function startServer() {
-  const isStdio =
-    process.argv.includes("--stdio") ||
-    (!process.argv.includes("--http") &&
-      !process.argv.some((arg) => arg.startsWith("--port=")));
+  const isStdio = process.argv.includes("--stdio");
 
-  if (isStdio && !process.argv.includes("--http")) {
+  if (isStdio) {
     const server = createMcpServer();
     const transport = new StdioServerTransport();
     await server.connect(transport);
