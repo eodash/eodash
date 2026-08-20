@@ -42,6 +42,15 @@ export type EodashRasterJSONForm = {
   legend?: BoundLegend;
 };
 
+/**
+ * The layer config helpers bound to one collection's form values. A reader owns
+ * one, so changing the datetime keeps what the user set while switching
+ * collection starts empty.
+ */
+export type LayerConfigHelpers = ReturnType<
+  typeof import("./helpers/layer-config.js").createLayerConfigHelpers
+>;
+
 /** Attached to a built layer, for eox-layercontrol to render the config editor. */
 export type EodashLayerConfig = {
   schema: Record<string, any>;
