@@ -93,4 +93,7 @@ export const getTooltipProperties = async (item, { client } = {}) => {
   ];
 };
 
-export { getIndicatorLayers, getObservationPointsLayer } from "./layers/collection.js";
+export {
+  getIndicatorLayers,
+  getObservationPointsLayer,
+} from "./layers/collection.js";

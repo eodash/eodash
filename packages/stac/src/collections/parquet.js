@@ -106,7 +106,8 @@ export const createParquetCollection = ({ url, stac, http }) => {
     if (!column) {
       return [];
     }
-    return (await readParquet({ columns: [column] })).map((entry, row) => ({
+    return (await readParquet({ columns: [column] }))
+      .map((entry, row) => ({
         row,
         time: new Date(entry[column] ?? NaN).getTime(),
       }))
