@@ -1,4 +1,9 @@
 import { createLayerConfigHelpers } from "../helpers/layer-config.js";
+import {
+  findLayer,
+  findLayersByLayerPrefix,
+  replaceLayer,
+} from "../helpers/layers.js";
 import { buildLayers } from "../layers/index.js";
 
 /**
@@ -15,6 +20,20 @@ export const createCollectionBase = ({ stac, http, getDates, getItem }) => {
   // the reader outlives a datetime rebuild but not a collection switch, which is
   // exactly how long the config editors' values should survive
   const layerConfigHelpers = createLayerConfigHelpers();
+
+  /**
+   * What the caller asked for, plus what only the reader can supply.
+   *
+   * @param {import("../layers/index.js").BuildContext} buildCtx
+   * @returns {Parameters<typeof buildLayers>[1]}
+   */
+  const getBuildContext = (buildCtx) => ({
+    ...buildCtx,
+    http: buildCtx.http ?? http,
+    layerConfigHelpers: buildCtx.layerConfigHelpers ?? layerConfigHelpers,
+    stac,
+    getDates: (datetime) => getDates(datetime, buildCtx.bbox),
+  });
 
   return {
     id: stac.id,
@@ -38,13 +57,7 @@ export const createCollectionBase = ({ stac, http, getDates, getItem }) => {
      * @param {import("../layers/index.js").BuildContext} [context]
      */
     buildLayers: (item, context = {}) =>
-      buildLayers(item, {
-        ...context,
-        http: context.http ?? http,
-        layerConfigHelpers: context.layerConfigHelpers ?? layerConfigHelpers,
-        stac,
-        getDates: (datetime) => getDates(datetime, context.bbox),
-      }),
+      buildLayers(item, getBuildContext(context)),
 
     /**
      * The layer config for the item nearest `datetime`, fetching that item first.
@@ -60,13 +73,46 @@ export const createCollectionBase = ({ stac, http, getDates, getItem }) => {
         );
         return { layers: [], projections: [] };
       }
-      return buildLayers(item, {
-        ...context,
-        http: context.http ?? http,
-        layerConfigHelpers: context.layerConfigHelpers ?? layerConfigHelpers,
-        stac,
-        getDates: (datetime) => getDates(datetime, context.bbox),
-      });
+      return buildLayers(item, getBuildContext(context));
+    },
+
+    /**
+     * The layer tree with every layer this collection put in it replaced by the
+     * layers of the item nearest `datetime`. Levels that did not change come
+     * back by reference, so an unchanged branch is not re-rendered.
+     *
+     * @param {import("../types").Datetime} datetime
+     * @param {string} layerId - any layer this collection built
+     * @param {import("../types").EoxLayer[]} currentLayers - the tree as it stands
+     * @param {import("../layers/index.js").BuildContext} [context]
+     * @returns {Promise<import("../types").BuiltLayers | undefined>} nothing when there is no item, or nothing of this collection in the tree
+     */
+    updateLayers: async (datetime, layerId, currentLayers, context = {}) => {
+      const item = await getItem(datetime, context.bbox);
+      if (!item) {
+        console.warn("[eodash] the collection has no item at", datetime);
+        return undefined;
+      }
+
+      const oldLayer = findLayer(currentLayers, layerId);
+      const toBeReplaced = findLayersByLayerPrefix(currentLayers, oldLayer);
+      if (!toBeReplaced.length) {
+        console.warn("[eodash] no layer of this collection to update", layerId);
+        return undefined;
+      }
+
+      const { layers, projections } = await buildLayers(
+        item,
+        getBuildContext(context),
+      );
+      return {
+        layers: replaceLayer(
+          currentLayers,
+          toBeReplaced.map((layer) => layer.properties?.id ?? ""),
+          layers,
+        ),
+        projections,
+      };
     },
 
     /**
