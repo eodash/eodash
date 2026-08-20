@@ -4,6 +4,12 @@
 
 export * from "./stac";
 
+/**
+ * Reads a collection and returns the reader that resolves its items.
+ */
+export { createEodashCollection } from "./index.js";
+export type { ApiReader, CollectionReader } from "./index.js";
+
 import type { SpatialExtent as BBox } from "stac-ts";
 import type {
   BoundLegend,
@@ -57,29 +63,6 @@ export type ObservationPointsThemes = Record<
   string,
   { color: string; icon: string }
 >;
-
-/**
- * What the entry point returns. Static, api and parquet collections differ only
- * in how they resolve items, so they share this surface.
- */
-export interface CollectionReader {
-  readonly id: string;
-  /** The collection document. */
-  readonly stac: EodashCollection;
-  /**
-   * Every datetime the collection has an item for, oldest first. `bbox` narrows
-   * an api search; a catalog has no geometry to narrow by and ignores it.
-   */
-  getDates(bbox?: BBox): Promise<Date[]>;
-  getTemporalExtent(): Promise<TemporalExtent | undefined>;
-  /** The collection's items, oldest first: links for a catalog, items for an api. */
-  getItems(bbox?: BBox): Promise<ItemLink[] | EodashItem[]>;
-  /** The item closest to `datetime`, or the most recent one when it is missing. */
-  getItem(datetime?: Datetime, bbox?: BBox): Promise<EodashItem | undefined>;
-  /** For an item the caller already holds, so nothing is refetched. */
-  buildLayers(item: EodashItem, context?: BuildContext): Promise<BuiltLayers>;
-  getLayers(datetime?: Datetime, context?: BuildContext): Promise<BuiltLayers>;
-}
 
 /** What the app supplies for a build; see `layers/index.js`. */
 export type BuildContext = import("./layers/index.js").BuildContext;
