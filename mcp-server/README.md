@@ -14,19 +14,34 @@ Provides intelligent assistance, introspection, type-safe widget definitions, la
 
 ### 1. Build Metadata
 
-Generate widget metadata from the codebase:
+Generate widget and architecture metadata from the codebase:
 
 ```bash
 npm run mcp:generate
 ```
 
-### 2. Run with stdio (Coding Agents / Claude Desktop / Pi)
+### 2. Run Server (HTTP / Streamable HTTP)
 
 ```bash
-npm run mcp:stdio
-# or
-node mcp-server/index.js --stdio
+npm run mcp:start
+# or custom port:
+node mcp-server/index.js --port 3001
 ```
+
+- Open `http://localhost:3001` in your browser to view the interactive server landing page and tool catalog.
+- Health check endpoint: `http://localhost:3001/health`.
+
+### 3. MCP Client Configuration
+
+Connect your MCP client (Claude Desktop, cursor, inspector, or agents) via Streamable HTTP:
+
+#### MCP Inspector
+
+```bash
+npx @modelcontextprotocol/inspector
+```
+
+Connect to `http://localhost:3001` via Streamable HTTP / SSE transport.
 
 #### Claude Desktop Configuration (`claude_desktop_config.json`)
 
@@ -34,20 +49,11 @@ node mcp-server/index.js --stdio
 {
   "mcpServers": {
     "eodash": {
-      "command": "node",
-      "args": ["/path/to/eodash/mcp-server/index.js", "--stdio"]
+      "url": "http://localhost:3001"
     }
   }
 }
 ```
-
-### 3. Run with HTTP / Streamable HTTP Server
-
-```bash
-node mcp-server/index.js --port 3001
-```
-
-Open `http://localhost:3001` in your browser to view the interactive server landing page and registered tool inventory.
 
 ## Registered Tools
 

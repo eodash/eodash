@@ -14,8 +14,7 @@
   },
   "scripts": {
     "generate": "node generate-metadata.js",
-    "start": "node index.js",
-    "start:stdio": "node index.js --stdio"
+    "start": "node index.js"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",

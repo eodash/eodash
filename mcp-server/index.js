@@ -8,7 +8,6 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { isInitializeRequest } from "@modelcontextprotocol/sdk/types.js";
 import { buildMetadata } from "./generate-metadata.js";
@@ -540,15 +539,6 @@ function generateLandingPage(widgets, _arch) {
 }
 
 async function startServer() {
-  const isStdio = process.argv.includes("--stdio");
-
-  if (isStdio) {
-    const server = createMcpServer();
-    const transport = new StdioServerTransport();
-    await server.connect(transport);
-    return;
-  }
-
   // HTTP Server mode
   const app = express();
   let port = 3001;
