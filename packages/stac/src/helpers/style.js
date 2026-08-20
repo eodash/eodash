@@ -142,7 +142,10 @@ export const addTooltipInteraction = (layer, style) => {
       {
         type: "select",
         options: {
-          id: (Math.random() * 10000).toFixed() + "_selectInteraction",
+          id: `${layer.properties.id}_selectInteraction`,
+          // eox-map's update path calls setActive(options.active), and undefined
+          // would switch the tooltip off without saying so
+          active: true,
           condition: "pointermove",
           style: {
             "stroke-color": "#335267",

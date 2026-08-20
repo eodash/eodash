@@ -30,6 +30,8 @@ export interface EodashItem extends Omit<
   assets: Record<string, EodashAsset>;
   /** The schemes this item's links and assets reference by `auth:refs`. */
   "auth:schemes"?: Record<string, AuthScheme>;
+  "proj:code"?: string;
+  /** @deprecated superseded by `proj:code` in projection extension v1.2. */
   "proj:epsg"?: number;
   "eodash:proj4_def"?: Projection;
   renders?: Record<string, Render>;
@@ -135,6 +137,8 @@ export interface AuthLink extends StacLink, AuthRefs {}
 export interface WebMapLink extends StacLink, AuthRefs {
   roles?: string[];
   attribution?: string;
+  "proj:code"?: string;
+  /** @deprecated superseded by `proj:code` in projection extension v1.2. */
   "proj:epsg"?: number;
   "eodash:proj4_def"?: Projection;
   "eodash:rasterform"?: string | RasterForm;
@@ -285,7 +289,12 @@ export interface Render {
 
 interface BaseEodashAsset extends StacAsset, AuthRefs {
   attribution?: string;
-  /** Projection extension: the EPSG code, null where the projection has none. */
+  /** Projection extension: the code, e.g. `EPSG:3035`. */
+  "proj:code"?: string;
+  /**
+   * Projection extension: the EPSG code, null where the projection has none.
+   * @deprecated superseded by `proj:code` in v1.2.
+   */
   "proj:epsg"?: number | null;
   "eodash:proj4_def"?: Projection;
   "eox:flatstyle"?: FlatStyle;

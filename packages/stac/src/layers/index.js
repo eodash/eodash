@@ -5,6 +5,7 @@ import {
   createLayerConfigHelpers,
   renderConfigTemplate,
 } from "../helpers/layer-config.js";
+import { getProjection } from "../helpers/projection.js";
 import { extractLayerLegend, fetchStyle } from "../helpers/style.js";
 import { createHTTPInstance } from "../http.js";
 import { createLayersFromAssets } from "./assets.js";
@@ -76,7 +77,7 @@ export const buildLayers = async (item, context) => {
   /** @type {import("../types").Projection[]} */
   const projections = [];
   // the item's own projection, which the app registers before assigning
-  const indicatorProjection = item["proj:epsg"] || item["eodash:proj4_def"];
+  const indicatorProjection = getProjection(item);
   if (indicatorProjection) {
     projections.push(indicatorProjection);
   }

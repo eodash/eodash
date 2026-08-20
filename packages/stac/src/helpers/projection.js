@@ -21,6 +21,20 @@ export const getProjectionCode = (projection) => {
 };
 
 /**
+ * The projection an item, link or asset states, however it spells it.
+ * `proj:code` is what the projection extension reads since v1.2, where
+ * `proj:epsg` was deprecated; v2.0 dropped it.
+ *
+ * @param {{ "proj:code"?: string, "proj:epsg"?: number | null, "eodash:proj4_def"?: import("../types").Projection } | undefined | null} source
+ * @returns {import("../types").Projection | undefined}
+ */
+export const getProjection = (source) =>
+  source?.["proj:code"] ||
+  source?.["proj:epsg"] ||
+  source?.["eodash:proj4_def"] ||
+  undefined;
+
+/**
  * Assigns projection code to the layer ID
  * @param {import("../types").EodashItem} item
  * @param {import("../types").EodashLink | import("../types").EodashAsset} linkOrAsset

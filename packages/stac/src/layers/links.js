@@ -8,6 +8,7 @@ import {
 } from "../helpers/layer-config.js";
 import { createLayerID } from "../helpers/layers.js";
 import {
+  getProjection,
   getProjectionCode,
   resolveTmsByProjection,
   tmsToTileGridOptions,
@@ -94,8 +95,7 @@ export const createLayersFromLinks = async (
 
   for (const wmsLink of wmsArray ?? []) {
     // Registering setting sub wms link projection
-    const wmsLinkProjection =
-      wmsLink?.["proj:epsg"] || wmsLink?.["eodash:proj4_def"];
+    const wmsLinkProjection = getProjection(wmsLink);
 
     if (wmsLinkProjection) {
       projections.push(wmsLinkProjection);
@@ -180,8 +180,7 @@ export const createLayersFromLinks = async (
   for (const wmtsLink of wmtsArray ?? []) {
     // Registering setting sub wmts link projection
 
-    const wmtsLinkProjection =
-      wmtsLink?.["proj:epsg"] || wmtsLink?.["eodash:proj4_def"];
+    const wmtsLinkProjection = getProjection(wmtsLink);
 
     if (wmtsLinkProjection) {
       projections.push(wmtsLinkProjection);
@@ -245,8 +244,7 @@ export const createLayersFromLinks = async (
   }
 
   for (const xyzLink of xyzArray ?? []) {
-    const xyzLinkProjection =
-      xyzLink?.["proj:epsg"] || xyzLink?.["eodash:proj4_def"];
+    const xyzLinkProjection = getProjection(xyzLink);
     // base layers and overlays are built without a layerConfig
     const isBaseOrOverlay = isBaseLayerOrOverlay(xyzLink);
     const rasterForm = isBaseOrOverlay
@@ -295,13 +293,13 @@ export const createLayersFromLinks = async (
     };
 
     const tms = resolveTmsByProjection(projectionCode, tileMatrixSets);
-    const tileSize = upscaling ? 512 : 256;
+    const tileSize = upscaling?.tileSize ?? [256, 256];
     // @ts-expect-error tileGrid supported in eox-map
     json.source.tileGrid = {
-      tileSize: [tileSize, tileSize],
+      tileSize,
     };
     if (tms) {
-      const tmsOptions = tmsToTileGridOptions(tms, [tileSize, tileSize]);
+      const tmsOptions = tmsToTileGridOptions(tms, tileSize);
       // @ts-expect-error tileGrid supported in eox-map
       json.source.tileGrid = {
         // @ts-expect-error tileGrid supported in eox-map
@@ -349,8 +347,7 @@ export const createLayersFromLinks = async (
       continue;
     }
 
-    const tilejsonProjection =
-      tilejsonLink?.["proj:epsg"] || tilejsonLink?.["eodash:proj4_def"];
+    const tilejsonProjection = getProjection(tilejsonLink);
     if (tilejsonProjection) {
       projections.push(tilejsonProjection);
     }
@@ -411,8 +408,7 @@ export const createLayersFromLinks = async (
   }
 
   for (const vectorTileLink of vectorTileArray ?? []) {
-    const vectorTileLinkProjection =
-      vectorTileLink?.["proj:epsg"] || vectorTileLink?.["eodash:proj4_def"];
+    const vectorTileLinkProjection = getProjection(vectorTileLink);
 
     if (vectorTileLinkProjection) {
       projections.push(vectorTileLinkProjection);
@@ -491,9 +487,9 @@ export const createLayersFromLinks = async (
   }
 
   for (const mapboxStyleDocumentLink of mapboxStyleDocumentArray ?? []) {
-    const mapboxStyleDocumentLinkProjection =
-      mapboxStyleDocumentLink?.["proj:epsg"] ||
-      mapboxStyleDocumentLink?.["eodash:proj4_def"];
+    const mapboxStyleDocumentLinkProjection = getProjection(
+      mapboxStyleDocumentLink,
+    );
 
     if (mapboxStyleDocumentLinkProjection) {
       projections.push(mapboxStyleDocumentLinkProjection);
