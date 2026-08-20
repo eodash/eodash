@@ -1,6 +1,5 @@
 import {
-  applyRasterFormValue,
-  extractLayerConfig,
+  createLayerConfigHelpers,
   fetchRasterForm,
 } from "../helpers/layer-config.js";
 import { createLayerID } from "../helpers/layers.js";
@@ -26,11 +25,11 @@ import { createHTTPInstance } from "../http.js";
  * @param {import("../types").EodashCollection | undefined | null} collection
  * @param {import("../types").EodashItem | undefined | null} item
  * @param {Record<string, any>} [extraProperties]
- * @param {string} [map] - which map the layers are built for
  * @param {object} [options]
  * @param {Record<string, Record<string, import("../types").Render>>} [options.renders] - renders the app config states, keyed by collection id, which win over the collection's own
  * @param {Record<string, any> | null} [options.tileMatrixSets] - tile matrix set definitions keyed by id
  * @param {import("../http.js").HttpClient} [options.http] reads every url this needs
+ * @param {import("../types").LayerConfigHelpers} [options.layerConfigHelpers] restores what the collection's config editors held onto the rebuilt layers
  * @returns {Promise<{ layers: import("../types").EoxLayer[], projections: import("../types").Projection[] }>}
  */
 export const createLayerFromRender = async (
@@ -38,14 +37,15 @@ export const createLayerFromRender = async (
   collection,
   item,
   extraProperties,
-  map = "main",
   options = {},
 ) => {
   const {
     renders: configRenders,
     tileMatrixSets = null,
     http = createHTTPInstance(),
+    layerConfigHelpers = createLayerConfigHelpers(),
   } = options;
+  const { extractLayerConfig, applyRasterFormValue } = layerConfigHelpers;
   /** @type {import("../types").Projection[]} */
   const projections = [];
 
@@ -70,13 +70,7 @@ export const createLayerFromRender = async (
     http,
     item,
   );
-  let { layerConfig } = extractLayerConfig(
-    collection.id,
-    {},
-    rasterForm,
-    undefined,
-    map,
-  );
+  let { layerConfig } = extractLayerConfig({}, rasterForm);
 
   /**
    * Resolves the first defined value of a property across a render's assets,
@@ -176,7 +170,7 @@ export const createLayerFromRender = async (
         tileSize: renders[key].tilesize,
       };
     }
-    applyRasterFormValue(json, collection.id, map);
+    applyRasterFormValue(json);
     layers.push(json);
   }
 

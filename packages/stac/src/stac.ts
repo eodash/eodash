@@ -131,7 +131,8 @@ export interface AuthRefs {
 /** A link reached through one of the owning item's `auth:schemes`. */
 export interface AuthLink extends StacLink, AuthRefs {}
 
-interface WebMapLink extends StacLink, AuthRefs {
+/** A link to a raster or vector service, whatever protocol serves it. */
+export interface WebMapLink extends StacLink, AuthRefs {
   roles?: string[];
   attribution?: string;
   "proj:epsg"?: number;
