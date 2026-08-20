@@ -1,4 +1,8 @@
-import { DEFAULT_STAC_ENDPOINT, DEFAULT_BRAND_NAME } from "../helpers.js";
+import {
+  DEFAULT_STAC_ENDPOINT,
+  DEFAULT_BRAND_NAME,
+  getEodashVersion,
+} from "../helpers.js";
 
 /**
  * Scaffold eodash dashboard projects: SPA, VitePress Narratives, or Web Component.
@@ -12,6 +16,7 @@ export function scaffoldDashboard({
   brandColor = "#002742",
 } = {}) {
   const files = {};
+  const eodashVersion = getEodashVersion();
 
   const gitignore = `node_modules
 dist
@@ -59,7 +64,7 @@ CMD ["nginx", "-g", "daemon off;"]
           preview: "eodash preview",
         },
         dependencies: {
-          "@eodash/eodash": "^5.8.0",
+          "@eodash/eodash": eodashVersion,
         },
       },
       null,
@@ -140,7 +145,7 @@ npm run preview
           "docs:preview": "vitepress preview docs",
         },
         dependencies: {
-          "@eodash/eodash": "^5.8.0",
+          "@eodash/eodash": eodashVersion,
           "@eox/storytelling": "^1.13.0",
         },
         devDependencies: {
@@ -276,7 +281,7 @@ npm run docs:dev
           preview: "vite preview",
         },
         devDependencies: {
-          "@eodash/eodash": "^5.8.0",
+          "@eodash/eodash": eodashVersion,
           vite: "^7.0.0",
         },
       },

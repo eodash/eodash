@@ -7,13 +7,20 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const REPO_ROOT = path.resolve(__dirname, "..");
 
-const pkg = JSON.parse(
-  fs.readFileSync(path.join(__dirname, "package.json"), "utf8"),
+const rootPkg = JSON.parse(
+  fs.readFileSync(path.join(REPO_ROOT, "package.json"), "utf8"),
 );
 
 export const DEFAULT_STAC_ENDPOINT =
   "https://eoxhub-workspaces.github.io/eoxhub-test-catalog/catalog/catalog.json";
 export const DEFAULT_BRAND_NAME = "EOxHub Demo Dashboard";
+
+/**
+ * Gets the current @eodash/eodash version from the root package.json
+ */
+export function getEodashVersion() {
+  return `^${rootPkg.version}`;
+}
 
 /**
  * Loads cached metadata or rebuilds on-the-fly
@@ -222,7 +229,7 @@ export function generateLandingPage(widgets, _arch) {
       <div class="flex items-center space-x-3">
         <div class="bg-blue-600 text-white font-bold px-2.5 py-1 rounded">eo</div>
         <span class="font-bold text-slate-900 text-lg">eodash MCP Server</span>
-        <span class="text-xs font-mono bg-slate-100 text-slate-600 px-2 py-0.5 rounded">v${pkg.version || "1.0.0"}</span>
+        <span class="text-xs font-mono bg-slate-100 text-slate-600 px-2 py-0.5 rounded">v${rootPkg.version}</span>
       </div>
       <div class="flex items-center space-x-2">
         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
