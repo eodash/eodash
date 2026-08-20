@@ -25,13 +25,8 @@ export function getDatetimeProperty(linksOrItems) {
   ]);
   if (checkProperties) {
     for (const prop of datetimeProperties) {
-      const propExists = linksOrItems.some(
-        (l) =>
-          //@ts-expect-error TODO
-          l["properties"]?.[prop] &&
-          //@ts-expect-error TODO
-          typeof l["properties"]?.[prop] === "string",
-      );
+      //@ts-expect-error TODO
+      const propExists = linksOrItems.some((l) => isDatetime(l.properties?.[prop]));
       if (!propExists) {
         continue;
       }
@@ -39,15 +34,24 @@ export function getDatetimeProperty(linksOrItems) {
     }
   }
   for (const prop of datetimeProperties) {
-    const propExists = linksOrItems.some(
-      //@ts-expect-error todo
-      (l) => l[prop] && typeof l[prop] === "string",
-    );
+    //@ts-expect-error todo
+    const propExists = linksOrItems.some((l) => isDatetime(l[prop]));
     if (!propExists) {
       continue;
     }
     return prop;
   }
+}
+
+/**
+ * Whether a value states a datetime. A catalog and an api give RFC 3339
+ * strings; a parquet mirror gives `Date`s, since that is what a timestamp
+ * column decodes to.
+ *
+ * @param {unknown} value
+ */
+function isDatetime(value) {
+  return typeof value === "string" || value instanceof Date;
 }
 
 /**

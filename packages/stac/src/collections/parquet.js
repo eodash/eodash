@@ -42,7 +42,10 @@ export const createParquetCollection = ({ url, stac }) => {
       return undefined;
     }
     return (opened ??= (async () => {
-      const file = await asyncBufferFromUrl({ url: href });
+      const file = await asyncBufferFromUrl({
+        url: href,
+        byteLength: await fetchByteLength(href),
+      });
       const metadata = await parquetMetadataAsync(file, {
         initialFetchSize: FOOTER_BYTES,
       });
@@ -53,11 +56,9 @@ export const createParquetCollection = ({ url, stac }) => {
   /**
    * @param {object} [selection]
    * @param {string[]} [selection.columns] every column when omitted
-   * @param {number} [selection.rowStart] inclusive
-   * @param {number} [selection.rowEnd] exclusive
    * @returns {Promise<Record<string, any>[]>}
    */
-  const readParquet = async ({ columns, rowStart, rowEnd } = {}) => {
+  const readParquet = async ({ columns } = {}) => {
     const source = await openMirror();
     if (!source) {
       return [];
@@ -67,8 +68,6 @@ export const createParquetCollection = ({ url, stac }) => {
     await hyParquetRead({
       ...source,
       columns,
-      rowStart,
-      rowEnd,
       rowFormat: "object",
       // utf8 off so the wkb geometry is not decoded into a string
       utf8: false,
@@ -121,20 +120,33 @@ export const createParquetCollection = ({ url, stac }) => {
         .sort((a, b) => a.time - b.time);
     })());
 
+  /** @type {Promise<import("../types").EodashItem[]> | undefined} */
+  let items;
+
   /**
-   * The items the mirror holds, oldest first. Every column of every row is
-   * transferred, so reach for `getDates` or `getItem` where they answer.
+   * Every item, in row order, read once. A mirror is written as one row group,
+   * so a column chunk spans every row and one item costs as much as all of them.
+   *
+   * @returns {Promise<import("../types").EodashItem[]>}
+   */
+  const readItems = () =>
+    (items ??= readParquet().then((rows) => adjustParquetItems(rows)));
+
+  /**
+   * The items the mirror holds, oldest first. This transfers every column, so
+   * reach for `getDates` where it answers.
    *
    * @returns {Promise<import("../types").EodashItem[]>}
    */
   const getItems = async () => {
-    const items = adjustParquetItems(await readParquet());
-    const datetimeProperty = getDatetimeProperty(items);
+    const read = await readItems();
+    const datetimeProperty = getDatetimeProperty(read);
     if (!datetimeProperty) {
-      return items;
+      return read;
     }
+    // sorted on a copy, so the kept items stay in the order `getItem` indexes by
     // RFC 3339 datetimes sort lexicographically
-    return items.sort((a, b) =>
+    return [...read].sort((a, b) =>
       (a.properties[datetimeProperty] ?? "") <
       (b.properties[datetimeProperty] ?? "")
         ? -1
@@ -152,7 +164,7 @@ export const createParquetCollection = ({ url, stac }) => {
 
   /**
    * The item closest to `datetime`, or the most recent one when omitted.
-   * Equidistant items resolve to the earlier. Its row is the only one read.
+   * Equidistant items resolve to the earlier.
    *
    * @param {import("../types").Datetime} [datetime]
    * @returns {Promise<import("../types").EodashItem | undefined>}
@@ -167,11 +179,7 @@ export const createParquetCollection = ({ url, stac }) => {
     if (!closest) {
       return undefined;
     }
-    const rows = await readParquet({
-      rowStart: closest.row,
-      rowEnd: closest.row + 1,
-    });
-    return adjustParquetItems(rows).at(0);
+    return (await readItems())[closest.row];
   };
 
   return {
@@ -181,3 +189,20 @@ export const createParquetCollection = ({ url, stac }) => {
     getItem,
   };
 };
+
+/**
+ * The mirror's size, asked for as a range so the answer describes the file the
+ * byte offsets belong to. A HEAD will not do: a host that gzips reports the
+ * compressed length there — GitHub Pages serves a 313kB mirror as 139kB — and
+ * the footer would then be read from the middle of the file.
+ *
+ * Uses `fetch` because that is what hyparquet reads the mirror with.
+ *
+ * @param {string} href
+ * @returns {Promise<number | undefined>} nothing when the host ignores ranges
+ */
+async function fetchByteLength(href) {
+  const response = await fetch(href, { headers: { Range: "bytes=0-0" } });
+  const total = Number(response.headers.get("content-range")?.split("/").at(-1));
+  return total ? total : undefined;
+}
