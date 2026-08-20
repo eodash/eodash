@@ -11,6 +11,8 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { isInitializeRequest } from "@modelcontextprotocol/sdk/types.js";
 import { buildMetadata } from "./generate-metadata.js";
+import { scaffoldDashboard } from "./generators/dashboard.js";
+import { generateEodashConfig } from "./generators/config.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -405,6 +407,151 @@ if (store) {
     },
   );
 
+  // Tool 5: scaffold_dashboard
+  server.registerTool(
+    "scaffold_dashboard",
+    {
+      description:
+        "Scaffold complete project boilerplate for an eodash dashboard: standalone SPA, VitePress narrative documentation, or embedded web component. Returns ready-to-write file dictionary including package.json, eodash.config.js, index.html, Dockerfile, and README.",
+      inputSchema: z.object({
+        name: z
+          .string()
+          .optional()
+          .default("my-eo-dashboard")
+          .describe("Project folder / package name."),
+        projectType: z
+          .enum(["standalone-spa", "vitepress-narratives", "web-component"])
+          .optional()
+          .default("standalone-spa")
+          .describe(
+            "Project architecture type: 'standalone-spa' (Vite + eodash SPA), 'vitepress-narratives' (VitePress docs with <eo-dash> stories), or 'web-component' (minimal custom element integration).",
+          ),
+        stacEndpoint: z
+          .string()
+          .optional()
+          .default(
+            "https://esa-eodashboards.github.io/eodashboard-catalog/trilateral/catalog.json",
+          )
+          .describe("Default STAC catalog or STAC API endpoint URL."),
+        template: z
+          .enum(["explore", "lite", "expert", "compare"])
+          .optional()
+          .default("explore")
+          .describe("Default eodash layout template."),
+        brandName: z
+          .string()
+          .optional()
+          .default("EO Dashboard")
+          .describe("Brand title / display header."),
+        brandColor: z
+          .string()
+          .optional()
+          .default("#002742")
+          .describe("Primary brand theme color hex code."),
+      }),
+    },
+    async (params) => {
+      const scaffold = scaffoldDashboard(params);
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(scaffold, null, 2),
+          },
+        ],
+      };
+    },
+  );
+
+  // Tool 6: generate_eodash_config
+  server.registerTool(
+    "generate_eodash_config",
+    {
+      description:
+        "Generate a complete, type-safe eodash configuration (eodash.config.js / baseConfig.js) with STAC endpoint, brand styling, template selection (explore/lite/expert/compare), custom widget placements, and runtime options.",
+      inputSchema: z.object({
+        id: z
+          .string()
+          .optional()
+          .default("demo-dashboard")
+          .describe("Unique dashboard identifier."),
+        stacEndpoint: z
+          .union([z.string(), z.record(z.any())])
+          .optional()
+          .default(
+            "https://esa-eodashboards.github.io/eodashboard-catalog/trilateral/catalog.json",
+          )
+          .describe(
+            "STAC endpoint URL string or structured endpoint configuration object.",
+          ),
+        template: z
+          .enum(["explore", "lite", "expert", "compare", "custom"])
+          .optional()
+          .default("explore")
+          .describe("Template layout preset or 'custom'."),
+        brand: z
+          .object({
+            name: z.string().optional(),
+            footerText: z.string().optional(),
+            font: z
+              .object({
+                headers: z
+                  .object({
+                    family: z.string(),
+                    link: z.string(),
+                  })
+                  .optional(),
+                body: z
+                  .object({
+                    family: z.string(),
+                    link: z.string(),
+                  })
+                  .optional(),
+              })
+              .optional(),
+            theme: z
+              .object({
+                colors: z
+                  .object({
+                    primary: z.string().optional(),
+                    secondary: z.string().optional(),
+                    surface: z.string().optional(),
+                  })
+                  .optional(),
+                variables: z.record(z.any()).optional(),
+                collectionsPalette: z.array(z.string()).optional(),
+              })
+              .optional(),
+          })
+          .optional()
+          .describe("Brand metadata, web fonts, and color palettes."),
+        customWidgets: z
+          .array(z.record(z.any()))
+          .optional()
+          .default([])
+          .describe(
+            "Array of custom widget definitions with layout coordinates and properties.",
+          ),
+        options: z
+          .record(z.any())
+          .optional()
+          .default({})
+          .describe("Runtime options (e.g. useSubCode)."),
+      }),
+    },
+    async (params) => {
+      const generated = generateEodashConfig(params);
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(generated, null, 2),
+          },
+        ],
+      };
+    },
+  );
+
   return server;
 }
 
@@ -499,8 +646,8 @@ function generateLandingPage(widgets, _arch) {
 
     <!-- Supported Tools -->
     <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
-      <h2 class="text-lg font-semibold text-slate-950 mb-4">Supported MCP Tools</h2>
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <h2 class="text-lg font-semibold text-slate-950 mb-4">Supported MCP Tools (6)</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <div class="border border-slate-100 bg-slate-50/50 rounded-lg p-4">
           <span class="font-mono text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded">list_widgets</span>
           <p class="text-xs text-slate-600 mt-2">List all built-in eodash widgets with category and store interactions.</p>
@@ -516,6 +663,14 @@ function generateLandingPage(widgets, _arch) {
         <div class="border border-slate-100 bg-slate-50/50 rounded-lg p-4">
           <span class="font-mono text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded">get_eodash_architecture</span>
           <p class="text-xs text-slate-600 mt-2">Comprehensive architecture docs: layout grid, templates, store states, and deployment.</p>
+        </div>
+        <div class="border border-slate-100 bg-slate-50/50 rounded-lg p-4">
+          <span class="font-mono text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded">scaffold_dashboard</span>
+          <p class="text-xs text-slate-600 mt-2">Bootstrap complete SPA, VitePress narrative docs, or Web Component boilerplate.</p>
+        </div>
+        <div class="border border-slate-100 bg-slate-50/50 rounded-lg p-4">
+          <span class="font-mono text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded">generate_eodash_config</span>
+          <p class="text-xs text-slate-600 mt-2">Create valid, type-safe eodash configuration files with brand theme and templates.</p>
         </div>
       </div>
     </div>
