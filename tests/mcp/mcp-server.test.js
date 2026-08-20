@@ -1,7 +1,9 @@
-import { describe, it, expect } from "vitest";
-import { createMcpServer } from "../../mcp-server/index.js";
+import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import http from "node:http";
+import { createMcpServer, createExpressApp } from "../../mcp-server/index.js";
+import { buildMetadata } from "../../mcp-server/generate-metadata.js";
 
-describe("eodash MCP Server", () => {
+describe("eodash MCP Server - Core Tools", () => {
   it("initializes MCP server and registers tools", () => {
     const server = createMcpServer();
     expect(server).toBeDefined();
@@ -9,7 +11,6 @@ describe("eodash MCP Server", () => {
 
   it("list_widgets tool returns all widgets and supports filtering by category", async () => {
     const server = createMcpServer();
-    // In @modelcontextprotocol/sdk, tools are registered in server._registeredTools or called via internal handler
     const listWidgetsTool = server._registeredTools?.["list_widgets"];
     expect(listWidgetsTool).toBeDefined();
 
@@ -31,7 +32,7 @@ describe("eodash MCP Server", () => {
     ).toBe(true);
   });
 
-  it("get_widget_details tool returns full props, store interactions and example", async () => {
+  it("get_widget_details returns full props and bindings for EodashMap", async () => {
     const server = createMcpServer();
     const tool = server._registeredTools?.["get_widget_details"];
     expect(tool).toBeDefined();
@@ -48,6 +49,25 @@ describe("eodash MCP Server", () => {
     expect(details.storeInteractions.writes).toContain("mapEl");
     expect(details.stacExtensions).toContain("eox:flatstyle");
     expect(details.example.widget.name).toBe("EodashMap");
+  });
+
+  it("get_widget_details verifies props and bindings for EodashItemCatalog and EodashProcess", async () => {
+    const server = createMcpServer();
+    const tool = server._registeredTools?.["get_widget_details"];
+
+    // Catalog widget
+    const catalogRes = await tool.handler({ widgetName: "EodashItemCatalog" });
+    const catalog = JSON.parse(catalogRes.content[0].text);
+    expect(catalog.name).toBe("EodashItemCatalog");
+    expect(catalog.props.some((p) => p.name === "filters")).toBe(true);
+    expect(catalog.storeInteractions.writes).toContain("selectedItem");
+
+    // Process widget
+    const processRes = await tool.handler({ widgetName: "EodashProcess" });
+    const proc = JSON.parse(processRes.content[0].text);
+    expect(proc.name).toBe("EodashProcess");
+    expect(proc.props.some((p) => p.name === "enableCompare")).toBe(true);
+    expect(proc.props.some((p) => p.name === "vegaEmbedOptions")).toBe(true);
   });
 
   it("get_widget_details handles unknown widget gracefully", async () => {
@@ -100,5 +120,90 @@ describe("eodash MCP Server", () => {
     expect(
       arch.reactiveStore.actions.find((a) => a.name === "getLayers"),
     ).toBeDefined();
+
+    // Partial topic filtering
+    const gridRes = await tool.handler({ topic: "grid-layout" });
+    const gridArch = JSON.parse(gridRes.content[0].text);
+    expect(gridArch.gridSystem).toBeDefined();
+    expect(gridArch.templateSystem).toBeUndefined();
+  });
+});
+
+describe("eodash MCP Server - Metadata Generator", () => {
+  it("buildMetadata extracts full schema, props, and store items consistently", () => {
+    const { widgetsMetadata, architectureMetadata } = buildMetadata();
+
+    const widgetNames = Object.keys(widgetsMetadata);
+    expect(widgetNames.length).toBeGreaterThanOrEqual(10);
+
+    for (const name of widgetNames) {
+      const widget = widgetsMetadata[name];
+      expect(widget.name).toBe(name);
+      expect(widget.category).toBeDefined();
+      expect(widget.summary).toBeTruthy();
+      expect(Array.isArray(widget.props)).toBe(true);
+      expect(widget.props.length).toBeGreaterThan(0);
+      expect(Array.isArray(widget.storeInteractions.reads)).toBe(true);
+      expect(Array.isArray(widget.storeInteractions.writes)).toBe(true);
+      expect(widget.example).toBeDefined();
+    }
+
+    expect(architectureMetadata.reactiveStore.states.length).toBeGreaterThan(0);
+    expect(architectureMetadata.reactiveStore.stacStore.length).toBeGreaterThan(
+      0,
+    );
+    expect(architectureMetadata.reactiveStore.actions.length).toBeGreaterThan(
+      0,
+    );
+  });
+});
+
+describe("eodash MCP Server - HTTP Endpoints", () => {
+  let server;
+  let baseUrl;
+
+  beforeAll(async () => {
+    const app = createExpressApp();
+    await new Promise((resolve) => {
+      server = http.createServer(app).listen(0, () => {
+        const port = server.address().port;
+        baseUrl = `http://127.0.0.1:${port}`;
+        resolve();
+      });
+    });
+  });
+
+  afterAll(async () => {
+    if (server) {
+      await new Promise((resolve) => server.close(resolve));
+    }
+  });
+
+  it("GET /health returns 200 and running status", async () => {
+    const res = await fetch(`${baseUrl}/health`);
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.message).toBe("eodash MCP Server is running");
+  });
+
+  it("GET / returns 200 HTML landing page with widget overview", async () => {
+    const res = await fetch(`${baseUrl}/`);
+    expect(res.status).toBe(200);
+    expect(res.headers.get("content-type")).toContain("text/html");
+    const html = await res.text();
+    expect(html).toContain("eodash MCP Server");
+    expect(html).toContain("Available Widgets");
+    expect(html).toContain("EodashMap");
+  });
+
+  it("POST / without valid session or init request returns 400", async () => {
+    const res = await fetch(`${baseUrl}/`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ jsonrpc: "2.0", method: "invalid", id: 1 }),
+    });
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.error).toBe("No session found");
   });
 });

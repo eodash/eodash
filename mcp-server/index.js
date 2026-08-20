@@ -538,15 +538,8 @@ function generateLandingPage(widgets, _arch) {
 </html>`;
 }
 
-async function startServer() {
-  // HTTP Server mode
+export function createExpressApp() {
   const app = express();
-  let port = 3001;
-
-  const portArgIndex = process.argv.indexOf("--port");
-  if (portArgIndex > -1 && process.argv[portArgIndex + 1]) {
-    port = parseInt(process.argv[portArgIndex + 1], 10);
-  }
 
   app.use(
     cors({
@@ -622,6 +615,18 @@ async function startServer() {
     }
     await transport.handleRequest(req, res);
   });
+
+  return app;
+}
+
+async function startServer() {
+  const app = createExpressApp();
+  let port = 3001;
+
+  const portArgIndex = process.argv.indexOf("--port");
+  if (portArgIndex > -1 && process.argv[portArgIndex + 1]) {
+    port = parseInt(process.argv[portArgIndex + 1], 10);
+  }
 
   app.listen(port, () => {
     console.log(`eodash MCP Server running at http://localhost:${port}`);
