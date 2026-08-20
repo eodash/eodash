@@ -1,5 +1,6 @@
 import { createHTTPInstance } from "./http.js";
 import { findParquetMirror } from "./helpers/assets.js";
+import { fetchAllStyles } from "./helpers/style.js";
 import { createAPICollection } from "./collections/api.js";
 import { createParquetCollection } from "./collections/parquet.js";
 import { createStaticCollection } from "./collections/static.js";
@@ -71,3 +72,25 @@ export const createEodashCollection = async (url, options = {}) => {
 
   return createStaticCollection(context);
 };
+
+/**
+ * The tooltip fields an item's styles declare, deduplicated by id: several
+ * styles may name the same field, and the layer shows each one once.
+ *
+ * @param {import("./types").EodashItem} item
+ * @param {object} [options]
+ * @param {import("axios").AxiosInstance} [options.client] reads the style documents; `fetch` when left out
+ * @returns {Promise<NonNullable<import("./types").EodashStyleJson["tooltip"]>>}
+ */
+export const getTooltipProperties = async (item, { client } = {}) => {
+  const styles = await fetchAllStyles(item, createHTTPInstance({ client }));
+  return [
+    ...new Map(
+      styles
+        .flatMap((style) => style.tooltip ?? [])
+        .map((entry) => [entry.id, entry]),
+    ).values(),
+  ];
+};
+
+export { getIndicatorLayers, getObservationPointsLayer } from "./layers/collection.js";
