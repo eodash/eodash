@@ -62,6 +62,14 @@ export default defineConfig({
           testTimeout: 3 * 60 * 1000,
         },
       },
+      {
+        resolve: { alias },
+        test: {
+          name: "stac",
+          include: ["packages/stac/tests/**/*.test.js"],
+          environment: "node",
+        },
+      },
       // One project for all browser tiers: a project launches its own browser,
       // so per-tier projects would open one window each in headed mode. Tiers
       // are scoped by path filters instead (`vitest run tests/unit`).
