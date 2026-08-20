@@ -106,8 +106,10 @@ export const createParquetCollection = ({ url, stac, http }) => {
     if (!column) {
       return [];
     }
-    return (await readParquet({ columns: [column] }))
-      .map((entry, row) => ({ row, time: new Date(entry[column]).getTime() }))
+    return (await readParquet({ columns: [column] })).map((entry, row) => ({
+        row,
+        time: new Date(entry[column] ?? NaN).getTime(),
+      }))
       .filter(({ time }) => !isNaN(time))
       .sort((a, b) => a.time - b.time);
   });
