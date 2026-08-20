@@ -6,10 +6,11 @@ import { buildLayers } from "../layers/index.js";
  *
  * @param {object} parts
  * @param {import("../types").EodashCollection} parts.stac
- * @param {(bbox?: import("../types").BBox) => Promise<Date[]>} parts.getDates
+ * @param {import("../http.js").HttpClient} parts.http what the reader reads through, which a build reads through too
+ * @param {(datetime?: import("../types").Datetime, bbox?: import("../types").BBox) => Promise<Date[]>} parts.getDates
  * @param {(datetime?: import("../types").Datetime, bbox?: import("../types").BBox) => Promise<import("../types").EodashItem | undefined>} parts.getItem
  */
-export const createCollectionBase = ({ stac, getDates, getItem }) => ({
+export const createCollectionBase = ({ stac, http, getDates, getItem }) => ({
   id: stac.id,
   stac,
 
@@ -27,8 +28,9 @@ export const createCollectionBase = ({ stac, getDates, getItem }) => ({
   buildLayers: (item, context = {}) =>
     buildLayers(item, {
       ...context,
+      http: context.http ?? http,
       stac,
-      getDates: () => getDates(context.bbox),
+      getDates: (datetime) => getDates(datetime, context.bbox),
     }),
 
   /**
@@ -45,8 +47,9 @@ export const createCollectionBase = ({ stac, getDates, getItem }) => ({
     }
     return buildLayers(item, {
       ...context,
+      http: context.http ?? http,
       stac,
-      getDates: () => getDates(context.bbox),
+      getDates: (datetime) => getDates(datetime, context.bbox),
     });
   },
 

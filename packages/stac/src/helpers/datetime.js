@@ -25,8 +25,9 @@ export function getDatetimeProperty(linksOrItems) {
   ]);
   if (checkProperties) {
     for (const prop of datetimeProperties) {
-      //@ts-expect-error TODO
-      const propExists = linksOrItems.some((l) => isDatetime(l.properties?.[prop]));
+      const propExists = linksOrItems.some(
+        (l) => isSTACItem(l) && isDatetime(l.properties?.[prop]),
+      );
       if (!propExists) {
         continue;
       }

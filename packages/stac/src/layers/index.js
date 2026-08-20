@@ -6,6 +6,7 @@ import {
   renderConfigTemplate,
 } from "../helpers/layer-config.js";
 import { extractLayerLegend, fetchStyle } from "../helpers/style.js";
+import { createHTTPInstance } from "../http.js";
 import { createLayersFromAssets } from "./assets.js";
 import { createLayersFromLinks } from "./links.js";
 import { createLayerFromRender } from "./renders.js";
@@ -25,6 +26,7 @@ import { createLayerFromRender } from "./renders.js";
  * @property {Record<string, any> | null} [tileMatrixSets] - tile matrix set definitions keyed by id
  * @property {Array<string | { url: string; titilerVersion?: 1 | 2; scaleFactor?: number }>} [upscalingEndpoints]
  * @property {Record<string, Record<string, import("../types").Render>>} [renders] - renders the app config states, keyed by collection id
+ * @property {import("../http.js").HttpClient} [http] - reads every url a build needs; `fetch` when left out
  */
 
 /** The link rels the builders know how to render. */
@@ -42,7 +44,7 @@ const RENDERABLE_RELS = [
  * extension. Nothing is fetched for the item itself; the caller already holds it.
  *
  * @param {import("../types").EodashItem} item
- * @param {BuildContext & { stac: import("../types").EodashCollection, getDates: () => Promise<Date[]> }} context
+ * @param {BuildContext & { stac: import("../types").EodashCollection, getDates: (datetime?: import("../types").Datetime) => Promise<Date[]> }} context
  * @returns {Promise<{ layers: import("../types").EoxLayer[], projections: import("../types").Projection[] }>}
  */
 export const buildLayers = async (item, context) => {
@@ -58,12 +60,14 @@ export const buildLayers = async (item, context) => {
     tileMatrixSets,
     upscalingEndpoints,
     renders,
+    http = createHTTPInstance(),
   } = context;
   const options = {
     viewProjection,
     tileMatrixSets,
     upscalingEndpoints,
     renders,
+    http,
   };
 
   log.debug("Building layers", item, title, itemDatetime);
@@ -79,7 +83,7 @@ export const buildLayers = async (item, context) => {
   const itemDate =
     item.properties?.datetime ?? item.properties.start_datetime ?? itemDatetime;
   const { layerDatetime, timeControlValues } = extractLayerTimeValues(
-    await getDates(),
+    await getDates(itemDate ?? undefined),
     itemDate,
   );
 
@@ -96,7 +100,7 @@ export const buildLayers = async (item, context) => {
 
   if (!isSupported) {
     return {
-      layers: [await buildStacLayer(item, collection, title, map)],
+      layers: [await buildStacLayer(item, collection, title, map, http)],
       projections,
     };
   }
@@ -135,6 +139,7 @@ export const buildLayers = async (item, context) => {
       extraProperties,
       collection,
       map,
+      http,
     ),
     ...(rasterEndpoint
       ? [
@@ -167,10 +172,11 @@ export const buildLayers = async (item, context) => {
  * @param {import("../types").EodashCollection} collection
  * @param {string} title
  * @param {string} map
+ * @param {import("../http.js").HttpClient} http
  * @returns {Promise<import("../types").EoxLayer>}
  */
-async function buildStacLayer(item, collection, title, map) {
-  const styles = renderConfigTemplate(await fetchStyle(item), item);
+async function buildStacLayer(item, collection, title, map, http) {
+  const styles = renderConfigTemplate(await fetchStyle(item, http), item);
   const { layerConfig, style } = extractLayerConfig(
     collection.id,
     styles,

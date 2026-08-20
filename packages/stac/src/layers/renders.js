@@ -15,6 +15,7 @@ import {
   resolveRenders,
 } from "../helpers/renders.js";
 import { encodeURLObject } from "../helpers/url.js";
+import { createHTTPInstance } from "../http.js";
 
 /**
  * Implementation of a function that creates a layer from the render extention.
@@ -29,6 +30,7 @@ import { encodeURLObject } from "../helpers/url.js";
  * @param {object} [options]
  * @param {Record<string, Record<string, import("../types").Render>>} [options.renders] - renders the app config states, keyed by collection id, which win over the collection's own
  * @param {Record<string, any> | null} [options.tileMatrixSets] - tile matrix set definitions keyed by id
+ * @param {import("../http.js").HttpClient} [options.http] reads every url this needs
  * @returns {Promise<{ layers: import("../types").EoxLayer[], projections: import("../types").Projection[] }>}
  */
 export const createLayerFromRender = async (
@@ -39,7 +41,11 @@ export const createLayerFromRender = async (
   map = "main",
   options = {},
 ) => {
-  const { renders: configRenders, tileMatrixSets = null } = options;
+  const {
+    renders: configRenders,
+    tileMatrixSets = null,
+    http = createHTTPInstance(),
+  } = options;
   /** @type {import("../types").Projection[]} */
   const projections = [];
 
@@ -61,6 +67,7 @@ export const createLayerFromRender = async (
 
   const rasterForm = await fetchRasterForm(
     item?.["eodash:rasterform"] || collection?.["eodash:rasterform"],
+    http,
     item,
   );
   let { layerConfig } = extractLayerConfig(
