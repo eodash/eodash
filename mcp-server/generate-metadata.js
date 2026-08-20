@@ -48,7 +48,10 @@ const STAC_EXTENSIONS_MAP = {
   EodashTimeSlider: ["cube:dimensions", "extent.temporal", "datetime"],
   EodashDatePicker: ["extent.temporal", "datetime"],
   EodashProcess: ["eodash:jsonform", "links (rel=service)"],
-  EodashChart: ["links (rel=service, type=application/json|text/csv)", "eodash:vegadefinition"],
+  EodashChart: [
+    "links (rel=service, type=application/json|text/csv)",
+    "eodash:vegadefinition",
+  ],
   EodashStacInfo: ["sci:citation", "sci:doi", "sci:publication", "providers"],
 };
 
@@ -119,7 +122,9 @@ function cleanDoc(comment) {
 
   for (const line of lines) {
     const typeMatch = line.match(/^@type\s+\{([^}]+)\}/);
-    const paramMatch = line.match(/^@param\s+\{([^}]+)\}\s+(\[?\w+\]?)(\s+.*)?/);
+    const paramMatch = line.match(
+      /^@param\s+\{([^}]+)\}\s+(\[?\w+\]?)(\s+.*)?/,
+    );
     const returnMatch = line.match(/^@returns?\s+\{([^}]+)\}(\s+.*)?/);
 
     if (typeMatch) {
@@ -575,7 +580,10 @@ function parseTypedocWidgets(repoRoot) {
         type: stringifyType(p.type),
         defaultValue: p.defaultValue ?? null,
         description:
-          p.comment?.summary?.map((s) => s.text).join("").trim() || "",
+          p.comment?.summary
+            ?.map((s) => s.text)
+            .join("")
+            .trim() || "",
         required: !p.flags?.isOptional && p.defaultValue === undefined,
       }));
       widgetMap[w.name] = {

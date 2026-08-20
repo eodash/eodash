@@ -40,7 +40,10 @@ export function getMetadata() {
 
   // Dynamic on-the-fly generation fallback
   const { widgetsMetadata, architectureMetadata } = buildMetadata(REPO_ROOT);
-  return { widgetsData: widgetsMetadata, architectureData: architectureMetadata };
+  return {
+    widgetsData: widgetsMetadata,
+    architectureData: architectureMetadata,
+  };
 }
 
 /**
@@ -84,9 +87,7 @@ export function createMcpServer() {
       let list = Object.values(widgetsData);
       if (category) {
         const catLower = category.toLowerCase();
-        list = list.filter((w) =>
-          w.category?.toLowerCase().includes(catLower),
-        );
+        list = list.filter((w) => w.category?.toLowerCase().includes(catLower));
       }
 
       const summaryList = list.map((w) => ({
@@ -158,7 +159,13 @@ export function createMcpServer() {
         "Get comprehensive guide and code templates for creating and plugging custom widgets into eodash (web-component widgets, functional widgets, iframe widgets, reactive store integration, and EOxElements playground workflow).",
       inputSchema: z.object({
         type: z
-          .enum(["web-component", "functional", "iframe", "eox-elements", "all"])
+          .enum([
+            "web-component",
+            "functional",
+            "iframe",
+            "eox-elements",
+            "all",
+          ])
           .optional()
           .default("all")
           .describe(

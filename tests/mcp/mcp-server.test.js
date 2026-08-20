@@ -26,7 +26,9 @@ describe("eodash MCP Server", () => {
     });
     const filteredWidgets = JSON.parse(filteredRes.content[0].text);
     expect(filteredWidgets.length).toBeGreaterThanOrEqual(2);
-    expect(filteredWidgets.every((w) => w.category.includes("Visualization"))).toBe(true);
+    expect(
+      filteredWidgets.every((w) => w.category.includes("Visualization")),
+    ).toBe(true);
   });
 
   it("get_widget_details tool returns full props, store interactions and example", async () => {
@@ -53,7 +55,9 @@ describe("eodash MCP Server", () => {
     const tool = server._registeredTools?.["get_widget_details"];
     const res = await tool.handler({ widgetName: "NonExistentWidget" });
     expect(res.isError).toBe(true);
-    expect(res.content[0].text).toContain("Widget 'NonExistentWidget' not found");
+    expect(res.content[0].text).toContain(
+      "Widget 'NonExistentWidget' not found",
+    );
   });
 
   it("get_custom_widget_guide returns complete templates for custom widgets", async () => {
@@ -87,8 +91,14 @@ describe("eodash MCP Server", () => {
       "expert",
       "compare",
     ]);
-    expect(arch.reactiveStore.states.find((s) => s.name === "currentUrl")).toBeDefined();
-    expect(arch.reactiveStore.stacStore.find((s) => s.name === "stacEndpoint")).toBeDefined();
-    expect(arch.reactiveStore.actions.find((a) => a.name === "getLayers")).toBeDefined();
+    expect(
+      arch.reactiveStore.states.find((s) => s.name === "currentUrl"),
+    ).toBeDefined();
+    expect(
+      arch.reactiveStore.stacStore.find((s) => s.name === "stacEndpoint"),
+    ).toBeDefined();
+    expect(
+      arch.reactiveStore.actions.find((a) => a.name === "getLayers"),
+    ).toBeDefined();
   });
 });
