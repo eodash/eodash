@@ -34,3 +34,6 @@ docs/**/*.timestamp-*.mjs
 # tests
 **/**/__screenshots__/
 .vitest-attachments
+
+# mcp generated data
+mcp-server/data
