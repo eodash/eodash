@@ -3,7 +3,7 @@ import { extractRoles, isBaseLayerOrOverlay } from "../helpers/assets.js";
 import { createHTTPInstance } from "../http.js";
 import { mergeGeojsons } from "../helpers/geojson.js";
 import {
-  extractLayerConfig,
+  createLayerConfigHelpers,
   getBandsProperty,
 } from "../helpers/layer-config.js";
 import { createAssetID } from "../helpers/layers.js";
@@ -18,8 +18,9 @@ import { addTooltipInteraction, resolveStyle } from "../helpers/style.js";
  * @param {Record<string, unknown>} [layerDatetime]
  * @param {object | null} [extraProperties]
  * @param {import("../types").EodashCollection | null} [collection] - Used to fall back to a collection-level style link.
- * @param {string} [map] - which map the layers are built for
- * @param {import("../http.js").HttpClient} [http] reads every url this needs
+ * @param {object} [options]
+ * @param {import("../http.js").HttpClient} [options.http] reads every url this needs
+ * @param {import("../types").LayerConfigHelpers} [options.layerConfigHelpers] restores what the collection's config editors held onto the rebuilt layers
  * @returns {Promise<{ layers: import("../types").EoxLayer[], projections: import("../types").Projection[] }>} the projections come back with the layers, for the caller to register before they are assigned
  **/
 export async function createLayersFromAssets(
@@ -30,9 +31,13 @@ export async function createLayersFromAssets(
   layerDatetime,
   extraProperties,
   collection,
-  map = "main",
-  http = createHTTPInstance(),
+  options = {},
 ) {
+  const {
+    http = createHTTPInstance(),
+    layerConfigHelpers = createLayerConfigHelpers(),
+  } = options;
+  const { extractLayerConfig } = layerConfigHelpers;
   log.debug("Creating layers from assets");
   /** @type {import("../types").EoxLayer[]} */
   const jsonArray = [];
@@ -154,13 +159,7 @@ export async function createLayersFromAssets(
         assetName,
       );
       // get the correct style which is not attached to a link
-      let { layerConfig, style } = extractLayerConfig(
-        collectionId,
-        styles,
-        undefined,
-        undefined,
-        map,
-      );
+      let { layerConfig, style } = extractLayerConfig(styles);
       let assetLayerId = createAssetID(
         collectionId,
         stacObject.id,
@@ -214,13 +213,7 @@ export async function createLayersFromAssets(
         undefined,
         assetName,
       );
-      const { layerConfig, style } = extractLayerConfig(
-        collectionId,
-        fetchedStyle,
-        undefined,
-        undefined,
-        map,
-      );
+      const { layerConfig, style } = extractLayerConfig(fetchedStyle);
       const bandsPath = getBandsProperty(layerConfig?.schema);
       const defaultBands = bandsPath?.reduce(
         (node, key) => node?.[key],
@@ -272,13 +265,7 @@ export async function createLayersFromAssets(
         assetName,
       );
       // get the correct style which is not attached to a link
-      let { layerConfig, style } = extractLayerConfig(
-        collectionId,
-        styles,
-        undefined,
-        undefined,
-        map,
-      );
+      let { layerConfig, style } = extractLayerConfig(styles);
       let assetLayerId = createAssetID(
         collectionId,
         stacObject.id,
@@ -355,13 +342,7 @@ export async function createLayersFromAssets(
         assetName,
       );
       // get the correct style which is not attached to a link
-      let { layerConfig, style } = extractLayerConfig(
-        collectionId,
-        styles,
-        undefined,
-        undefined,
-        map,
-      );
+      let { layerConfig, style } = extractLayerConfig(styles);
       let assetLayerId = createAssetID(collectionId, stacObject.id, fgbIdx[i]);
       const isBaseOrOverlay = isBaseLayerOrOverlay(assets[assetName]);
       if (isBaseOrOverlay) {
