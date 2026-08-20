@@ -20,7 +20,8 @@ const DATE_FIELDS =
  * @param {number} [context.maxItems] most items one search returns
  */
 export const createAPICollection = ({ url, stac, http, maxItems = 1000 }) => {
-  const searchUrl = url.split("/").slice(0, -2).join("/") + "/search";
+  const searchUrl =
+    url.replace(/\/+$/, "").split("/").slice(0, -2).join("/") + "/search";
 
   /**
    * @param {import("../types").SearchParams} params

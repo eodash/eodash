@@ -7,7 +7,7 @@ import {
   getBandsProperty,
 } from "../helpers/layer-config.js";
 import { createAssetID } from "../helpers/layers.js";
-import { getProjectionCode } from "../helpers/projection.js";
+import { getProjection, getProjectionCode } from "../helpers/projection.js";
 import { addTooltipInteraction, resolveStyle } from "../helpers/style.js";
 
 /**
@@ -279,9 +279,7 @@ export async function createLayersFromAssets(
 
       log.debug(`Creating Vector layer from GeoJsons`, assetLayerId);
       // register projection if exists
-      const assetProjection =
-        assets[assetName]?.["proj:epsg"] ||
-        assets[assetName]?.["eodash:proj4_def"];
+      const assetProjection = getProjection(assets[assetName]);
       if (assetProjection) {
         projections.push(assetProjection);
       }
@@ -351,9 +349,7 @@ export async function createLayersFromAssets(
       }
       log.debug(`Creating Vector layer from FlatGeoBuf`, assetLayerId);
       // register projection if exists
-      const assetProjection =
-        assets[assetName]?.["proj:epsg"] ||
-        assets[assetName]?.["eodash:proj4_def"];
+      const assetProjection = getProjection(assets[assetName]);
       if (assetProjection) {
         projections.push(assetProjection);
       }

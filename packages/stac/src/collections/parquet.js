@@ -4,7 +4,7 @@ import {
   parquetRead as hyParquetRead,
 } from "hyparquet";
 import { findParquetMirror } from "../helpers/assets.js";
-import { findClosestIndex, getDatetimeProperty } from "../helpers/datetime.js";
+import { findClosestIndex } from "../helpers/datetime.js";
 import { adjustParquetItems } from "../helpers/parquet.js";
 import { toAbsolute } from "../helpers/url.js";
 import { createCollectionBase } from "./base.js";
@@ -34,25 +34,20 @@ export const createParquetCollection = ({ url, stac, http }) => {
   const mirror = findParquetMirror(stac);
   const href = mirror ? toAbsolute(mirror.href, url) : undefined;
 
-  /** @type {Promise<{ file: import("hyparquet").AsyncBuffer; metadata: import("hyparquet").FileMetaData }> | undefined} */
-  let opened;
-
-  /** The mirror's footer, read once, or nothing when the collection has none. */
-  const openMirror = () => {
+  /** The mirror's footer, or nothing when the collection has none. */
+  const openMirror = cachedRead(async () => {
     if (!href) {
       return undefined;
     }
-    return (opened ??= (async () => {
-      const file = await asyncBufferFromUrl({
-        url: href,
-        byteLength: await fetchByteLength(href),
-      });
-      const metadata = await parquetMetadataAsync(file, {
-        initialFetchSize: FOOTER_BYTES,
-      });
-      return { file, metadata };
-    })());
-  };
+    const file = await asyncBufferFromUrl({
+      url: href,
+      byteLength: await fetchByteLength(href),
+    });
+    const metadata = await parquetMetadataAsync(file, {
+      initialFetchSize: FOOTER_BYTES,
+    });
+    return { file, metadata };
+  });
 
   /**
    * @param {object} [selection]
@@ -100,38 +95,32 @@ export const createParquetCollection = ({ url, stac, http }) => {
     );
   };
 
-  /** @type {Promise<DatetimeEntry[]> | undefined} */
-  let datetimes;
-
   /**
    * Every item's datetime with the row it sits on, oldest first. That one
-   * column is the only thing transferred, and only once.
+   * column is the only thing transferred.
    *
    * @returns {Promise<DatetimeEntry[]>}
    */
-  const readDatetimes = () =>
-    (datetimes ??= (async () => {
-      const column = await datetimeColumn();
-      if (!column) {
-        return [];
-      }
-      return (await readParquet({ columns: [column] }))
-        .map((entry, row) => ({ row, time: new Date(entry[column]).getTime() }))
-        .filter(({ time }) => !isNaN(time))
-        .sort((a, b) => a.time - b.time);
-    })());
-
-  /** @type {Promise<import("../types").EodashItem[]> | undefined} */
-  let items;
+  const readDatetimes = cachedRead(async () => {
+    const column = await datetimeColumn();
+    if (!column) {
+      return [];
+    }
+    return (await readParquet({ columns: [column] }))
+      .map((entry, row) => ({ row, time: new Date(entry[column]).getTime() }))
+      .filter(({ time }) => !isNaN(time))
+      .sort((a, b) => a.time - b.time);
+  });
 
   /**
-   * Every item, in row order, read once. A mirror is written as one row group,
-   * so a column chunk spans every row and one item costs as much as all of them.
+   * Every item, in row order. A mirror is written as one row group, so a column
+   * chunk spans every row and one item costs as much as all of them.
    *
    * @returns {Promise<import("../types").EodashItem[]>}
    */
-  const readItems = () =>
-    (items ??= readParquet().then((rows) => adjustParquetItems(rows)));
+  const readItems = cachedRead(async () =>
+    adjustParquetItems(await readParquet()),
+  );
 
   /**
    * The items the mirror holds, oldest first. This transfers every column, so
@@ -140,19 +129,13 @@ export const createParquetCollection = ({ url, stac, http }) => {
    * @returns {Promise<import("../types").EodashItem[]>}
    */
   const getItems = async () => {
-    const read = await readItems();
-    const datetimeProperty = getDatetimeProperty(read);
-    if (!datetimeProperty) {
-      return read;
-    }
-    // sorted on a copy, so the kept items stay in the order `getItem` indexes by
-    // RFC 3339 datetimes sort lexicographically
-    return [...read].sort((a, b) =>
-      (a.properties[datetimeProperty] ?? "") <
-      (b.properties[datetimeProperty] ?? "")
-        ? -1
-        : 1,
-    );
+    const items = await readItems();
+    const dates = await readDatetimes();
+    const rows = new Set(dates.map(({ row }) => row));
+    return [
+      ...dates.map(({ row }) => items[row]),
+      ...items.filter((_, row) => !rows.has(row)),
+    ];
   };
 
   /**
@@ -208,4 +191,23 @@ async function fetchByteLength(href) {
     response.headers.get("content-range")?.split("/").at(-1),
   );
   return total ? total : undefined;
+}
+
+/**
+ * Remembers what a read resolved to, so it happens once however many callers
+ * ask. A failure is not remembered, since one transient error would otherwise
+ * leave the reader unable to read anything ever again.
+ *
+ * @template T
+ * @param {() => Promise<T>} read
+ * @returns {() => Promise<T>}
+ */
+function cachedRead(read) {
+  /** @type {Promise<T> | undefined} */
+  let pending;
+  return () =>
+    (pending ??= read().catch((error) => {
+      pending = undefined;
+      throw error;
+    }));
 }
