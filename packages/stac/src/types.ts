@@ -10,14 +10,7 @@ export * from "./stac";
 export { createEodashCollection } from "./index.js";
 export type { ApiReader, CollectionReader } from "./index.js";
 
-import type { SpatialExtent as BBox } from "stac-ts";
-import type {
-  BoundLegend,
-  EodashCollection,
-  EodashItem,
-  ItemLink,
-  Projection,
-} from "./stac";
+import type { BoundLegend, EodashItem, Projection } from "./stac";
 
 export type { SpatialExtent as BBox } from "stac-ts";
 
