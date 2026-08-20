@@ -24,6 +24,8 @@ export const createAPICollection = ({ url, stac, http, maxItems = 1000 }) => {
     url.replace(/\/+$/, "").split("/").slice(0, -2).join("/") + "/search";
 
   /**
+   * search STAC API based on GET params. `collections` is set to this collection by default.
+   *
    * @param {import("../types").SearchParams} params
    * @returns {Promise<import("../types").ItemCollection>}
    */
@@ -163,6 +165,7 @@ export const createAPICollection = ({ url, stac, http, maxItems = 1000 }) => {
 
   return {
     ...createCollectionBase({ stac, http, getDates, getItem }),
+    search,
     getItems,
     getDates,
     getItem,

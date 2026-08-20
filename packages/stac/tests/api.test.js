@@ -56,6 +56,36 @@ describe("api collection", () => {
     client.get.mockReset();
   });
 
+  describe("search", () => {
+    test("passes the caller's params through, defaulting collections", async () => {
+      serve({ onSearch: () => ({ features: [stacItem({ id: "a" })] }) });
+      const col = await apiCollection();
+
+      const { features } = await col.search({
+        filter: "eo:cloud_cover < 10",
+        "filter-lang": "cql2-text",
+        limit: 5,
+      });
+
+      expect(features.map((item) => item.id)).toEqual(["a"]);
+      expect(searchCalls()[0]).toEqual({
+        collections: "coll",
+        filter: "eo:cloud_cover < 10",
+        "filter-lang": "cql2-text",
+        limit: 5,
+      });
+    });
+
+    test("lets the caller search across other collections", async () => {
+      serve({ onSearch: () => ({ features: [] }) });
+      const col = await apiCollection();
+
+      await col.search({ collections: "other,coll" });
+
+      expect(searchCalls()[0].collections).toBe("other,coll");
+    });
+  });
+
   test("derives /search from a collection url that ends in a slash", async () => {
     client.get.mockImplementation((/** @type {string} */ url) => {
       if (url === `${COLLECTION_URL}/`) {
