@@ -74,6 +74,7 @@
     "test:template": "vitest run tests/template",
     "bench": "vitest bench --run tests/bench",
     "bench:baseline": "npm run bench && mkdir -p .bench-baseline && cp .bench-results/*.json .bench-baseline/",
+    "test:stac": "vitest run --project stac",
     "test:cli": "vitest run --project cli",
     "test:coverage": "vitest run --coverage",
     "docs:dev": "test -d docs/api || npm run docs:generate && vitepress dev docs --port 3333",

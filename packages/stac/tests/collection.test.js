@@ -178,7 +178,11 @@ describe("getObservationPointsLayer", () => {
 
     const layer = getObservationPointsLayer([points({})], {
       currentLayers: /** @type {any} */ ([
-        { type: "Vector", properties: { id: "geodb-collection" }, interactions: [interaction] },
+        {
+          type: "Vector",
+          properties: { id: "geodb-collection" },
+          interactions: [interaction],
+        },
       ]),
     });
 
