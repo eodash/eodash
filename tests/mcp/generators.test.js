@@ -32,10 +32,18 @@ describe("eodash Generators - scaffoldDashboard", () => {
     });
 
     expect(res.projectType).toBe("vitepress-narratives");
+    expect(res.files["package.json"]).toContain("@eox/storytelling");
     expect(res.files["docs/.vitepress/config.js"]).toContain("Climate Stories");
+    expect(res.files["docs/.vitepress/config.js"]).toContain("isCustomElement");
+    expect(res.files["docs/.vitepress/theme/index.js"]).toContain("enhanceApp");
+    expect(res.files["docs/.vitepress/theme/index.js"]).toContain(
+      "import.meta.env.SSR",
+    );
     expect(res.files["docs/index.md"]).toContain("Climate Stories");
     expect(res.files["docs/dashboard.md"]).toContain("<eo-dash");
-    expect(res.files["docs/narratives/story-1.md"]).toContain("<eo-dash");
+    expect(res.files["docs/narratives/story-1.md"]).toContain(
+      "<eox-storytelling",
+    );
   });
 
   it("generates web-component integration boilerplate", () => {

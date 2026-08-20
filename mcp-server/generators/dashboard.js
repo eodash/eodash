@@ -1,12 +1,14 @@
+import { DEFAULT_STAC_ENDPOINT, DEFAULT_BRAND_NAME } from "../helpers.js";
+
 /**
  * Scaffold eodash dashboard projects: SPA, VitePress Narratives, or Web Component.
  */
 export function scaffoldDashboard({
   name = "my-eo-dashboard",
   projectType = "standalone-spa",
-  stacEndpoint = "https://esa-eodashboards.github.io/eodashboard-catalog/trilateral/catalog.json",
+  stacEndpoint = DEFAULT_STAC_ENDPOINT,
   template = "explore",
-  brandName = "EO Dashboard",
+  brandName = DEFAULT_BRAND_NAME,
   brandColor = "#002742",
 } = {}) {
   const files = {};
@@ -137,10 +139,12 @@ npm run preview
           "docs:build": "vitepress build docs",
           "docs:preview": "vitepress preview docs",
         },
-        devDependencies: {
+        dependencies: {
           "@eodash/eodash": "^5.8.0",
+          "@eox/storytelling": "^1.13.0",
+        },
+        devDependencies: {
           vitepress: "^1.5.0",
-          vue: "^3.5.0",
         },
       },
       null,
@@ -153,6 +157,13 @@ npm run preview
 export default defineConfig({
   title: "${brandName}",
   description: "Narratives and Earth Observation Dashboard",
+  vue: {
+    template: {
+      compilerOptions: {
+        isCustomElement: (el) => el.includes("-"),
+      },
+    },
+  },
   themeConfig: {
     nav: [
       { text: "Dashboard", link: "/dashboard" },
@@ -170,6 +181,21 @@ export default defineConfig({
     },
   },
 });
+`;
+
+    files["docs/.vitepress/theme/index.js"] =
+      `import DefaultTheme from "vitepress/theme";
+
+/** @type {import('vitepress').Theme} */
+export default {
+  ...DefaultTheme,
+  async enhanceApp({ app, router, siteData }) {
+    if (!import.meta.env.SSR) {
+      await import("@eodash/eodash/webcomponent");
+      await import("@eox/storytelling");
+    }
+  },
+};
 `;
 
     files["docs/index.md"] = `---
@@ -205,18 +231,30 @@ layout: page
 
     files["docs/narratives/story-1.md"] = `# Environmental Monitoring Narrative
 
-Interactive indicators and story narrative.
+Interactive indicators and story narrative combining markdown narratives and live map widgets.
+
+<client-only>
+  <eox-storytelling
+    show-nav
+    markdown-url="./story-content.md"
+  ></eox-storytelling>
+</client-only>
 
 <eo-dash
   stac-endpoint="${stacEndpoint}"
   template="lite"
-  style="width: 100%; height: 500px; display: block;"
+  style="width: 100%; height: 500px; display: block; margin-top: 2rem;"
 ></eo-dash>
 `;
 
     files["README.md"] = `# ${brandName} (VitePress Narratives)
 
-Dashboard and narrative documentation built with VitePress and [@eodash/eodash](https://github.com/eodash/eodash).
+Dashboard and narrative documentation built with VitePress, [@eox/storytelling](https://github.com/EOX-A/EOxElements), and [@eodash/eodash](https://github.com/eodash/eodash).
+
+## Features
+- **Client-Side Rendering Guard**: SSR-safe loading of custom elements via \`.vitepress/theme/index.js\`.
+- **Custom Element Compiler**: VitePress configured with \`isCustomElement: (el) => el.includes('-')\`.
+- **Interactive Storytelling**: Narrative articles embedded with \`<eox-storytelling>\` and \`<eo-dash>\`.
 
 ## Quick Start
 

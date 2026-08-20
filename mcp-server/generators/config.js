@@ -1,16 +1,18 @@
+import { DEFAULT_STAC_ENDPOINT, DEFAULT_BRAND_NAME } from "../helpers.js";
+
 /**
  * Generate eodash.config.js / baseConfig.js conforming to eodash types and conventions.
  */
 export function generateEodashConfig({
   id = "demo-dashboard",
-  stacEndpoint = "https://esa-eodashboards.github.io/eodashboard-catalog/trilateral/catalog.json",
+  stacEndpoint = DEFAULT_STAC_ENDPOINT,
   template = "explore",
   brand = {},
   customWidgets = [],
   options = {},
 } = {}) {
   const brandConfig = {
-    name: brand.name || "EO Dashboard",
+    name: brand.name || DEFAULT_BRAND_NAME,
     font: brand.font || {
       headers: {
         family: "Open Sans",
