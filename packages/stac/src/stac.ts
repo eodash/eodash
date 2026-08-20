@@ -237,9 +237,9 @@ export interface AggregationBucket {
 }
 
 export interface Aggregation {
-  key: LiteralUnion<"datetime_daily">;
+  key?: LiteralUnion<"datetime_daily">;
   interval?: LiteralUnion<"daily">;
-  buckets: AggregationBucket[];
+  buckets?: AggregationBucket[];
 }
 
 /** The document behind a `pre-aggregation` link. */

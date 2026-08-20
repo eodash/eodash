@@ -176,8 +176,10 @@ export const createAssetID = (collectionId, itemId, index) => {
 /**
  * Extracts the STAC collection which the layer was created from.
  *
- * @param {import("../types").CollectionReader[]} indicators
+ * @template {{ stac?: import("../types").EodashCollection }} Reader
+ * @param {Reader[]} indicators any reader, since only its collection is read
  * @param {import('ol/layer').Layer} layer
+ * @returns {Promise<Reader | undefined>}
  */
 export const getColFromLayer = async (indicators, layer) => {
   const [collectionId, ..._other] = layer.get("id").split(";:;");

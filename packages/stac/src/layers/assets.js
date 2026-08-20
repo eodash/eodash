@@ -1,6 +1,6 @@
-import axios from "axios";
 import log from "loglevel";
 import { extractRoles, isBaseLayerOrOverlay } from "../helpers/assets.js";
+import { createHTTPInstance } from "../http.js";
 import { mergeGeojsons } from "../helpers/geojson.js";
 import {
   extractLayerConfig,
@@ -19,6 +19,7 @@ import { addTooltipInteraction, resolveStyle } from "../helpers/style.js";
  * @param {object | null} [extraProperties]
  * @param {import("../types").EodashCollection | null} [collection] - Used to fall back to a collection-level style link.
  * @param {string} [map] - which map the layers are built for
+ * @param {import("../http.js").HttpClient} [http] reads every url this needs
  * @returns {Promise<{ layers: import("../types").EoxLayer[], projections: import("../types").Projection[] }>} the projections come back with the layers, for the caller to register before they are assigned
  **/
 export async function createLayersFromAssets(
@@ -30,6 +31,7 @@ export async function createLayersFromAssets(
   extraProperties,
   collection,
   map = "main",
+  http = createHTTPInstance(),
 ) {
   log.debug("Creating layers from assets");
   /** @type {import("../types").EoxLayer[]} */
@@ -81,9 +83,7 @@ export async function createLayersFromAssets(
           : {}),
       });
     } else if (assets[assetId]?.type?.includes("application/geodb+json")) {
-      const responseData = await axios
-        .get(assets[assetId].href)
-        .then((resp) => resp.data);
+      const responseData = await http.get(assets[assetId].href);
       geoJsonIdx.push(idx);
       if (
         !responseData ||
@@ -149,6 +149,7 @@ export async function createLayersFromAssets(
       const styles = await resolveStyle(
         stacObject,
         collection,
+        http,
         undefined,
         assetName,
       );
@@ -209,6 +210,7 @@ export async function createLayersFromAssets(
       const fetchedStyle = await resolveStyle(
         stacObject,
         collection,
+        http,
         undefined,
         assetName,
       );
@@ -265,6 +267,7 @@ export async function createLayersFromAssets(
       const styles = await resolveStyle(
         stacObject,
         collection,
+        http,
         undefined,
         assetName,
       );
@@ -299,7 +302,7 @@ export async function createLayersFromAssets(
       const geoJSONURL =
         stacObject?.["eodash:merge_assets"] === false
           ? geoJsonSource
-          : await mergeGeojsons(geoJsonSources);
+          : await mergeGeojsons(geoJsonSources, http);
 
       const layer = {
         /** @type {"Vector"} */
@@ -347,6 +350,7 @@ export async function createLayersFromAssets(
       const styles = await resolveStyle(
         stacObject,
         collection,
+        http,
         undefined,
         assetName,
       );

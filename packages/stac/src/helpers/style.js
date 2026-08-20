@@ -1,16 +1,17 @@
-import axios from "axios";
 import log from "loglevel";
 import { renderConfigTemplate } from "./layer-config.js";
 
 /**
  * Extracts a single non-link style JSON from a STAC Item optionally for a selected key mapping
  * @param { import("../types").EodashItem | import("../types").EodashCollection | null | undefined} stacObject
+ * @param {import("../http.js").HttpClient} http
  * @param {string | undefined} linkKey
  * @param {string | undefined} assetKey
  * @returns
  **/
 export const fetchStyle = async (
   stacObject,
+  http,
   linkKey = undefined,
   assetKey = undefined,
 ) => {
@@ -39,7 +40,7 @@ export const fetchStyle = async (
   }
   if (styleLink) {
     /** @type {import("../types").EodashStyleJson} */
-    const styleJson = await axios.get(styleLink.href).then((resp) => resp.data);
+    const styleJson = await http.get(styleLink.href);
 
     log.debug("fetched styles JSON", JSON.parse(JSON.stringify(styleJson)));
     return { ...styleJson };
@@ -53,14 +54,21 @@ export const fetchStyle = async (
  *
  * @param {import("../types").EodashItem | import("../types").EodashCollection} item
  * @param {import("../types").EodashCollection | null | undefined} collection
+ * @param {import("../http.js").HttpClient} http
  * @param {string} [linkKey]
  * @param {string} [assetKey]
  * @returns {Promise<import("../types").EodashStyleJson | undefined>}
  */
-export const resolveStyle = async (item, collection, linkKey, assetKey) => {
+export const resolveStyle = async (
+  item,
+  collection,
+  http,
+  linkKey,
+  assetKey,
+) => {
   const style =
-    (await fetchStyle(item, linkKey, assetKey)) ??
-    (await fetchStyle(collection, linkKey, assetKey));
+    (await fetchStyle(item, http, linkKey, assetKey)) ??
+    (await fetchStyle(collection, http, linkKey, assetKey));
   if (!style || !item) {
     return style;
   }
@@ -70,15 +78,16 @@ export const resolveStyle = async (item, collection, linkKey, assetKey) => {
 /**
  * Fetches all style JSONs from a STAC Item and returns an array with style objects
  * @param {import("../types").EodashItem | import("../types").EodashCollection} stacObject
+ * @param {import("../http.js").HttpClient} http
  * @returns { Promise <Array<import("../types").EodashStyleJson>>}
  **/
-export const fetchAllStyles = async (stacObject) => {
+export const fetchAllStyles = async (stacObject, http) => {
   const styleLinks = stacObject.links.filter((link) =>
     link.rel.includes("style"),
   );
   const fetchPromises = styleLinks.map(async (link) => {
     /** @type {import("../types").EodashStyleJson} */
-    const styleJson = await axios.get(link.href).then((resp) => resp.data);
+    const styleJson = await http.get(link.href);
     log.debug("fetched styles JSON", JSON.parse(JSON.stringify(styleJson)));
     return styleJson;
   });
