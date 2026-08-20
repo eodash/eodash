@@ -118,7 +118,10 @@
     "@babel/types": "^7.29.7",
     "@eox/eslint-config": "^2.2.0",
     "@eox/pages-theme-eox": "^1.9.0",
+    "@modelcontextprotocol/sdk": "^1.30.0",
     "@pinia/testing": "^1.0.3",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
     "@types/json-schema": "^7.0.15",
     "@types/mustache": "^4.2.6",
     "@types/node": "^25.9.1",
@@ -128,6 +131,8 @@
     "@vitest/browser": "^4.1.10",
     "@vitest/browser-playwright": "^4.1.10",
     "@vitest/ui": "^4.1.10",
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
     "pkg-pr-new": "^0.0.75",
     "prettier": "^3.8.3",
     "rollup": "^4.61.1",
@@ -140,7 +145,8 @@
     "typescript": "^5.9.3",
     "vitest": "^4.1.8",
     "vitest-browser-vue": "^2.1.0",
-    "vue-tsc": "3.3.3"
+    "vue-tsc": "3.3.3",
+    "zod": "^4.4.3"
   },
   "engines": {
     "node": ">=20.15.1"
