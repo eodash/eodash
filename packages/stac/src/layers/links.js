@@ -3,8 +3,7 @@ import { extractRoles, isBaseLayerOrOverlay } from "../helpers/assets.js";
 import { handleAuthenticationOfLink } from "../helpers/auth.js";
 import { createHTTPInstance } from "../http.js";
 import {
-  extractLayerConfig,
-  applyRasterFormValue,
+  createLayerConfigHelpers,
   fetchRasterForm,
 } from "../helpers/layer-config.js";
 import { createLayerID } from "../helpers/layers.js";
@@ -27,12 +26,12 @@ import {
  * @param {Record<string,any>} [layerDatetime]
  * @param {object | null} [extraProperties]
  * @param {import("../types").EodashCollection} [collection]
- * @param {string} [map] - which map the layers are built for
  * @param {object} [options]
  * @param {string} [options.viewProjection] - the map view's projection, which the compare map follows
  * @param {Record<string, any> | null} [options.tileMatrixSets] - tile matrix set definitions keyed by id
  * @param {Array<string | { url: string; titilerVersion?: 1 | 2; scaleFactor?: number }>} [options.upscalingEndpoints] - titiler endpoints that serve upscaled tiles
  * @param {import("../http.js").HttpClient} [options.http] reads every url this needs
+ * @param {import("../types").LayerConfigHelpers} [options.layerConfigHelpers] restores what the collection's config editors held onto the rebuilt layers
  * @returns {Promise<{ layers: import("../types").EoxLayer[], projections: import("../types").Projection[] }>} the projections come back with the layers, for the caller to register before they are assigned
  */
 export const createLayersFromLinks = async (
@@ -42,7 +41,6 @@ export const createLayersFromLinks = async (
   layerDatetime,
   extraProperties,
   collection,
-  map = "main",
   options = {},
 ) => {
   const {
@@ -50,9 +48,10 @@ export const createLayersFromLinks = async (
     tileMatrixSets = null,
     upscalingEndpoints = [],
     http = createHTTPInstance(),
+    layerConfigHelpers = createLayerConfigHelpers(),
   } = options;
+  const { extractLayerConfig, applyRasterFormValue } = layerConfigHelpers;
   log.debug("Creating layers from links");
-  /** @type {Record<string,any>[]} */
   /** @type {import("../types").EoxLayer[]} */
   const jsonArray = [];
   /** @type {import("../types").Projection[]} */
@@ -69,6 +68,29 @@ export const createLayersFromLinks = async (
   // Taking projection code from main map view, as main view defines
   // projection for comparison map
   const viewProjectionCode = viewProjection || "EPSG:3857";
+
+  /**
+   * Forms already read, keyed by whatever stated them.
+   *
+   * @type {Map<string | import("../types").RasterForm | undefined, Promise<import("../types").EodashRasterJSONForm | undefined>>}
+   */
+  const rasterForms = new Map();
+  /**
+   * The form a link's config editor is built from: its own when it states one,
+   * else the item's, else the collection's. Links resolving to the same source
+   * share one read.
+   *
+   * @param {import("../types").WebMapLink} link
+   */
+  const resolveRasterForm = (link) => {
+    const source =
+      link["eodash:rasterform"] ||
+      item?.["eodash:rasterform"] ||
+      collection?.["eodash:rasterform"];
+    const form = rasterForms.get(source) ?? fetchRasterForm(source, http, item);
+    rasterForms.set(source, form);
+    return form;
+  };
 
   for (const wmsLink of wmsArray ?? []) {
     // Registering setting sub wms link projection
@@ -93,22 +115,8 @@ export const createLayersFromLinks = async (
     const isBaseOrOverlay = isBaseLayerOrOverlay(wmsLink);
     const rasterForm = isBaseOrOverlay
       ? undefined
-      : await fetchRasterForm(
-          /** @type {string|object|undefined} */ (
-            wmsLink?.["eodash:rasterform"] ||
-              item?.["eodash:rasterform"] ||
-              collection?.["eodash:rasterform"]
-          ),
-          http,
-          item,
-        );
-    let { layerConfig } = extractLayerConfig(
-      collectionId,
-      {},
-      rasterForm,
-      "tileUrl",
-      map,
-    );
+      : await resolveRasterForm(wmsLink);
+    let { layerConfig } = extractLayerConfig({}, rasterForm, "tileUrl");
 
     log.debug("WMS Layer added", linkId);
     const tileSize = /** @type {number[]} */ (
@@ -164,7 +172,7 @@ export const createLayersFromLinks = async (
         ...extractEoxLegendLink(wmsLink),
       };
     }
-    applyRasterFormValue(json, collectionId, map);
+    applyRasterFormValue(json);
     // @ts-expect-error eox-map converts a plain tileGrid, ol's types want an instance
     jsonArray.push(json);
   }
@@ -182,22 +190,8 @@ export const createLayersFromLinks = async (
     // base layers and overlays are built without a layerConfig
     const rasterForm = isBaseLayerOrOverlay(wmtsLink)
       ? undefined
-      : await fetchRasterForm(
-          /** @type {string|object|undefined} */ (
-            wmtsLink?.["eodash:rasterform"] ||
-              item?.["eodash:rasterform"] ||
-              collection?.["eodash:rasterform"]
-          ),
-          http,
-          item,
-        );
-    const { layerConfig } = extractLayerConfig(
-      collectionId,
-      {},
-      rasterForm,
-      "tileUrl",
-      map,
-    );
+      : await resolveRasterForm(wmtsLink);
+    const { layerConfig } = extractLayerConfig({}, rasterForm, "tileUrl");
     const linkProjectionCode = getProjectionCode(
       wmtsLinkProjection || "EPSG:3857",
     );
@@ -246,7 +240,7 @@ export const createLayersFromLinks = async (
         ...extractEoxLegendLink(wmtsLink),
       };
     }
-    applyRasterFormValue(json, collectionId, map);
+    applyRasterFormValue(json);
     jsonArray.push(json);
   }
 
@@ -257,22 +251,8 @@ export const createLayersFromLinks = async (
     const isBaseOrOverlay = isBaseLayerOrOverlay(xyzLink);
     const rasterForm = isBaseOrOverlay
       ? undefined
-      : await fetchRasterForm(
-          /** @type {string|object|undefined} */ (
-            xyzLink?.["eodash:rasterform"] ||
-              item?.["eodash:rasterform"] ||
-              collection?.["eodash:rasterform"]
-          ),
-          http,
-          item,
-        );
-    let { layerConfig } = extractLayerConfig(
-      collectionId,
-      {},
-      rasterForm,
-      "tileUrl",
-      map,
-    );
+      : await resolveRasterForm(xyzLink);
+    let { layerConfig } = extractLayerConfig({}, rasterForm, "tileUrl");
     if (xyzLinkProjection) {
       projections.push(xyzLinkProjection);
     }
@@ -342,7 +322,7 @@ export const createLayersFromLinks = async (
         ...extractEoxLegendLink(xyzLink),
       };
     }
-    applyRasterFormValue(json, collectionId, map);
+    applyRasterFormValue(json);
     jsonArray.push(json);
   }
 
@@ -378,22 +358,8 @@ export const createLayersFromLinks = async (
     // base layers and overlays are built without a layerConfig
     const rasterForm = isBaseLayerOrOverlay(tilejsonLink)
       ? undefined
-      : await fetchRasterForm(
-          /** @type {string|object|undefined} */ (
-            tilejsonLink?.["eodash:rasterform"] ||
-              item?.["eodash:rasterform"] ||
-              collection?.["eodash:rasterform"]
-          ),
-          http,
-          item,
-        );
-    const { layerConfig } = extractLayerConfig(
-      collectionId,
-      {},
-      rasterForm,
-      "tileUrl",
-      map,
-    );
+      : await resolveRasterForm(tilejsonLink);
+    const { layerConfig } = extractLayerConfig({}, rasterForm, "tileUrl");
     const linkId = createLayerID(
       collectionId,
       item.id,
@@ -439,7 +405,7 @@ export const createLayersFromLinks = async (
         ...extractEoxLegendLink(tilejsonLink),
       };
     }
-    applyRasterFormValue(json, collectionId, map);
+    applyRasterFormValue(json);
     // @ts-expect-error json is a Record so minZoom/maxZoom can be assigned onto it
     jsonArray.push(json);
   }
@@ -466,13 +432,7 @@ export const createLayersFromLinks = async (
     // fetch styles and separate them by their mapping between links and assets
     const styles = await resolveStyle(item, collection, http, key);
     // get the correct style which is not attached to a link
-    let { layerConfig, style } = extractLayerConfig(
-      collectionId,
-      styles,
-      undefined,
-      undefined,
-      map,
-    );
+    let { layerConfig, style } = extractLayerConfig(styles);
 
     let href = vectorTileLink.href;
     if ("auth:schemes" in item && "auth:refs" in vectorTileLink) {

@@ -2,7 +2,7 @@ import log from "loglevel";
 import { extractRoles } from "../helpers/assets.js";
 import { extractLayerTimeValues } from "../helpers/datetime.js";
 import {
-  extractLayerConfig,
+  createLayerConfigHelpers,
   renderConfigTemplate,
 } from "../helpers/layer-config.js";
 import { extractLayerLegend, fetchStyle } from "../helpers/style.js";
@@ -21,12 +21,12 @@ import { createLayerFromRender } from "./renders.js";
  * @property {string} [itemDatetime] - stands in where the item states no datetime
  * @property {string} [color] - the colour the collection is drawn in
  * @property {string} [rasterEndpoint] - titiler, without which the render extension is not built
- * @property {string} [map] - which map the layers are built for
  * @property {string} [viewProjection] - the map view's projection, which the compare map follows
  * @property {Record<string, any> | null} [tileMatrixSets] - tile matrix set definitions keyed by id
  * @property {Array<string | { url: string; titilerVersion?: 1 | 2; scaleFactor?: number }>} [upscalingEndpoints]
  * @property {Record<string, Record<string, import("../types").Render>>} [renders] - renders the app config states, keyed by collection id
  * @property {import("../http.js").HttpClient} [http] - reads every url a build needs; `fetch` when left out
+ * @property {import("../types").LayerConfigHelpers} [layerConfigHelpers] - restores what the collection's config editors held onto the rebuilt layers
  */
 
 /** The link rels the builders know how to render. */
@@ -55,12 +55,12 @@ export const buildLayers = async (item, context) => {
     itemDatetime,
     color,
     rasterEndpoint,
-    map = "main",
     viewProjection,
     tileMatrixSets,
     upscalingEndpoints,
     renders,
     http = createHTTPInstance(),
+    layerConfigHelpers = createLayerConfigHelpers(),
   } = context;
   const options = {
     viewProjection,
@@ -68,6 +68,7 @@ export const buildLayers = async (item, context) => {
     upscalingEndpoints,
     renders,
     http,
+    layerConfigHelpers,
   };
 
   log.debug("Building layers", item, title, itemDatetime);
@@ -100,7 +101,9 @@ export const buildLayers = async (item, context) => {
 
   if (!isSupported) {
     return {
-      layers: [await buildStacLayer(item, collection, title, map, http)],
+      layers: [
+        await buildStacLayer(item, collection, title, http, layerConfigHelpers),
+      ],
       projections,
     };
   }
@@ -127,7 +130,6 @@ export const buildLayers = async (item, context) => {
       layerDatetime,
       extraProperties,
       collection,
-      map,
       options,
     ),
     createLayersFromAssets(
@@ -138,8 +140,7 @@ export const buildLayers = async (item, context) => {
       layerDatetime,
       extraProperties,
       collection,
-      map,
-      http,
+      options,
     ),
     ...(rasterEndpoint
       ? [
@@ -148,7 +149,6 @@ export const buildLayers = async (item, context) => {
             collection,
             item,
             { ...extraProperties, ...(layerDatetime && { layerDatetime }) },
-            map,
             options,
           ),
         ]
@@ -171,19 +171,19 @@ export const buildLayers = async (item, context) => {
  * @param {import("../types").EodashItem} item
  * @param {import("../types").EodashCollection} collection
  * @param {string} title
- * @param {string} map
  * @param {import("../http.js").HttpClient} http
+ * @param {import("../types").LayerConfigHelpers} layerConfigHelpers
  * @returns {Promise<import("../types").EoxLayer>}
  */
-async function buildStacLayer(item, collection, title, map, http) {
+async function buildStacLayer(
+  item,
+  collection,
+  title,
+  http,
+  layerConfigHelpers,
+) {
   const styles = renderConfigTemplate(await fetchStyle(item, http), item);
-  const { layerConfig, style } = extractLayerConfig(
-    collection.id,
-    styles,
-    undefined,
-    undefined,
-    map,
-  );
+  const { layerConfig, style } = layerConfigHelpers.extractLayerConfig(styles);
   const json = {
     /** @type {"STAC"} */
     type: "STAC",

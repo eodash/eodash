@@ -1,24 +1,38 @@
 import log from "loglevel";
 import mustache from "mustache";
 import { applyValuesToUrl } from "./url.js";
-import { layerConfigFormState } from "./state.js";
 
 /**
- * Spearates and extracts layerConfig (jsonform schema & legend) from a style json
+ * What one collection's layer config editors hold, keyed by editor type.
  *
- * @param {string} collectionId
- * @param { import("../types").EodashStyleJson} [style]
+ * @typedef {Partial<Record<"style" | "tileUrl", Record<string, any>>>} FormValues
+ */
+
+/**
+ * Binds the layer config helpers to one collection's form values, so a rebuild
+ * restores what the user set without those values being passed through every
+ * call. `createCollectionBase` decides how long they live.
+ */
+export const createLayerConfigHelpers = () => {
+  /** @type {FormValues} */
+  const values = {};
+  return {
+    extractLayerConfig: extractLayerConfig.bind(null, values),
+    applyRasterFormValue: applyRasterFormValue.bind(null, values),
+    persistLayerConfig: persistLayerConfig.bind(null, values),
+  };
+};
+
+/**
+ * Separates the layerConfig (jsonform schema & legend) out of a style json,
+ * seeding the collection's remembered form values back into it.
+ *
+ * @param {FormValues} state
+ * @param {import("../types").EodashStyleJson} [style]
  * @param {Record<string,any>} [rasterJsonform]
  * @param {"style" | "tileUrl"} [layerConfigType]
- * @param {string} [map]
  **/
-export function extractLayerConfig(
-  collectionId,
-  style,
-  rasterJsonform,
-  layerConfigType,
-  map = "main",
-) {
+function extractLayerConfig(state, style, rasterJsonform, layerConfigType) {
   if (!style && !rasterJsonform) {
     return { layerConfig: undefined, style: undefined };
   }
@@ -28,7 +42,7 @@ export function extractLayerConfig(
 
   if (style?.variables) {
     // render the saved rescale/gamma from the first frame
-    style.variables = applyStyleVariables(collectionId, style.variables, map);
+    style.variables = applyStyleVariables(state, style.variables);
   }
 
   if (rasterJsonform) {
@@ -36,9 +50,8 @@ export function extractLayerConfig(
       layerConfig: {
         schema: restorePersistedSchema(
           rasterJsonform.jsonform,
-          collectionId,
+          state,
           "tileUrl",
-          map,
         ),
         legend: rasterJsonform.legend,
         type: "tileUrl",
@@ -54,7 +67,7 @@ export function extractLayerConfig(
     // this explicitly sets legend only if jsonform is configured
     const type = layerConfigType || "style";
     layerConfig = {
-      schema: restorePersistedSchema(style.jsonform, collectionId, type, map),
+      schema: restorePersistedSchema(style.jsonform, state, type),
       type,
     };
     delete style.jsonform;
@@ -81,7 +94,7 @@ export function extractLayerConfig(
  * @param {Record<string, any>} values - Flat map of property name -> persisted value.
  * @returns {Record<string, any>}
  */
-export function seedSchemaDefaults(schema, values) {
+function seedSchemaDefaults(schema, values) {
   if (!schema || typeof schema !== "object" || !values) return schema;
   const cloned = JSON.parse(JSON.stringify(schema));
 
@@ -147,7 +160,7 @@ function resolveLocalRef(ref, rootSchema) {
  * @param {Record<string, any>} obj
  * @returns {Record<string, any>}
  */
-export function flattenFormValues(obj) {
+function flattenFormValues(obj) {
   /** @type {Record<string, any>} */
   const result = {};
   for (const key in obj) {
@@ -165,32 +178,27 @@ export function flattenFormValues(obj) {
 }
 
 /**
- * @param {string} collectionId
+ * @param {FormValues} state
  * @param {"style" | "tileUrl"} type
- * @param {string} map
  * @returns {Record<string, any> | undefined}
  */
-function getCachedConfig(collectionId, type, map) {
-  return layerConfigFormState.value[map]?.[collectionId]?.[type];
+function getCachedConfig(state, type) {
+  return state[type];
 }
 
 /**
- * Remembers a layer config editor's current value (see {@link layerConfigFormState})
- * so it can be restored after a time/item rebuild. Call from the `layerConfig:change`
- * handler.
- * @param {import("ol/layer/Layer").default} olLayer - layer from the change event
+ * Remembers what a layer config editor now holds, for the next build to restore.
+ *
+ * @param {FormValues} state
+ * @param {import("../types").EodashLayerConfig} layerConfig - the config the edited layer was built with
  * @param {Record<string, any>} value - current jsonform value
- * @param {string} [map] - which map the edit belongs to
  */
-export function persistLayerConfigState(olLayer, value, map = "main") {
-  const layerConfig = olLayer.get("_jsonDefinition")?.properties?.layerConfig;
+function persistLayerConfig(state, layerConfig, value) {
   const type = layerConfig?.type;
-  const [collectionId] = (olLayer.get("id") ?? "").split(";:;");
-  if (!collectionId || (type !== "style" && type !== "tileUrl")) return;
+  if (type !== "style" && type !== "tileUrl") return;
   // form opted out of persistence (top level schema option)
-  if (layerConfig?.schema?.options?.persist_state === false) return;
-  const byCollection = (layerConfigFormState.value[map] ??= {});
-  (byCollection[collectionId] ??= {})[type] = value;
+  if (layerConfig.schema?.options?.persist_state === false) return;
+  state[type] = value;
 }
 
 /**
@@ -198,20 +206,14 @@ export function persistLayerConfigState(olLayer, value, map = "main") {
  * defaults — the channel the range/minmax and bands editors honor on a fresh
  * mount (they ignore startval).
  * @param {Record<string, any>} schema
- * @param {string} collectionId
+ * @param {FormValues} state
  * @param {"style" | "tileUrl"} type
- * @param {string} [map]
  * @returns {Record<string, any>} seeded schema (original untouched)
  */
-export function restorePersistedSchema(
-  schema,
-  collectionId,
-  type,
-  map = "main",
-) {
+function restorePersistedSchema(schema, state, type) {
   // form opted out of persistence
   if (schema?.options?.persist_state === false) return schema;
-  const cached = getCachedConfig(collectionId, type, map);
+  const cached = getCachedConfig(state, type);
   if (!cached || !Object.keys(cached).length) return schema;
   return seedSchemaDefaults(schema, flattenFormValues(cached));
 }
@@ -219,13 +221,12 @@ export function restorePersistedSchema(
 /**
  * Mirrors the remembered style variables onto a rebuilt style so the layer
  * renders the saved rescale/gamma from the first frame.
- * @param {string} collectionId
+ * @param {FormValues} state
  * @param {Record<string, any>} [variables]
- * @param {string} [map]
  * @returns {Record<string, any> | undefined}
  */
-export function applyStyleVariables(collectionId, variables, map = "main") {
-  const cached = getCachedConfig(collectionId, "style", map);
+function applyStyleVariables(state, variables) {
+  const cached = getCachedConfig(state, "style");
   if (!cached || !variables) return variables;
   const values = flattenFormValues(cached);
   const merged = { ...variables };
@@ -239,13 +240,12 @@ export function applyStyleVariables(collectionId, variables, map = "main") {
  * Writes the remembered tileUrl selection into a rebuilt layer's source (WMS
  * params or the tile URL) so eox reads it back as the form's start values
  * (`getStartVals`). Mutates in place.
+ * @param {FormValues} state
  * @param {Record<string, any>} layer - built layer json
- * @param {string} collectionId
- * @param {string} [map]
  */
-export function applyRasterFormValue(layer, collectionId, map = "main") {
+function applyRasterFormValue(state, layer) {
   if (layer?.properties?.layerConfig?.type !== "tileUrl") return;
-  const value = getCachedConfig(collectionId, "tileUrl", map);
+  const value = getCachedConfig(state, "tileUrl");
   const source = layer.source;
   if (!source || !value || !Object.keys(value).length) return;
   if (source.params) {
