@@ -83,4 +83,6 @@ export type BuildContext = import("./layers/index.js").BuildContext;
 export interface BuiltLayers {
   layers: EoxLayer[];
   projections: Projection[];
+  /** The item the layers were built from */
+  item?: EodashItem;
 }

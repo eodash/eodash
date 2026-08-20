@@ -73,7 +73,7 @@ export const createCollectionBase = ({ stac, http, getDates, getItem }) => {
         );
         return { layers: [], projections: [] };
       }
-      return buildLayers(item, getBuildContext(context));
+      return { ...(await buildLayers(item, getBuildContext(context))), item };
     },
 
     /**
@@ -112,6 +112,7 @@ export const createCollectionBase = ({ stac, http, getDates, getItem }) => {
           layers,
         ),
         projections,
+        item,
       };
     },
 
