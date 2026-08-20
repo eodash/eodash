@@ -54,7 +54,7 @@ describe("eodash Generators - scaffoldDashboard", () => {
 
     expect(res.projectType).toBe("web-component");
     expect(res.files["index.html"]).toContain("<eo-dash");
-    expect(res.files["index.html"]).toContain("@eodash/eodash/web-component");
+    expect(res.files["index.html"]).toContain("@eodash/eodash/webcomponent");
   });
 });
 

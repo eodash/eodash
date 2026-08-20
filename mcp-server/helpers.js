@@ -16,6 +16,25 @@ export const DEFAULT_STAC_ENDPOINT =
 export const DEFAULT_BRAND_NAME = "EOxHub Demo Dashboard";
 
 /**
+ * Dynamically discovers available built-in templates from templates/*.js
+ */
+export function getAvailableTemplates() {
+  const templatesDir = path.join(REPO_ROOT, "templates");
+  if (!fs.existsSync(templatesDir)) {
+    return ["explore", "lite", "expert", "compare"];
+  }
+  const files = fs.readdirSync(templatesDir);
+  const discovered = files
+    .filter(
+      (f) => f.endsWith(".js") && f !== "index.js" && f !== "baseConfig.js",
+    )
+    .map((f) => path.basename(f, ".js"));
+  return discovered.length > 0
+    ? discovered
+    : ["explore", "lite", "expert", "compare"];
+}
+
+/**
  * Gets the current @eodash/eodash version from the root package.json
  */
 export function getEodashVersion() {

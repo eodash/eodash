@@ -18,6 +18,7 @@ import {
   CUSTOM_WIDGET_GUIDES,
   DEFAULT_STAC_ENDPOINT,
   DEFAULT_BRAND_NAME,
+  getAvailableTemplates,
 } from "./helpers.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -34,6 +35,13 @@ export { getMetadata };
  */
 export function createMcpServer() {
   const { widgetsData, architectureData } = getMetadata();
+  const availableTemplates = getAvailableTemplates();
+  const templateEnum =
+    availableTemplates.length >= 2 ? z.enum(availableTemplates) : z.string();
+  const configTemplateEnum =
+    availableTemplates.length >= 1
+      ? z.enum([...availableTemplates, "custom"])
+      : z.string();
 
   const server = new McpServer(
     {
@@ -242,11 +250,12 @@ export function createMcpServer() {
           .optional()
           .default(DEFAULT_STAC_ENDPOINT)
           .describe("Default STAC catalog or STAC API endpoint URL."),
-        template: z
-          .enum(["explore", "lite", "expert", "compare"])
+        template: templateEnum
           .optional()
           .default("explore")
-          .describe("Default eodash layout template."),
+          .describe(
+            `Default eodash layout template (${availableTemplates.join(", ")}).`,
+          ),
         brandName: z
           .string()
           .optional()
@@ -291,11 +300,12 @@ export function createMcpServer() {
           .describe(
             "STAC endpoint URL string or structured endpoint configuration object.",
           ),
-        template: z
-          .enum(["explore", "lite", "expert", "compare", "custom"])
+        template: configTemplateEnum
           .optional()
           .default("explore")
-          .describe("Template layout preset or 'custom'."),
+          .describe(
+            `Template layout preset (${availableTemplates.join(", ")}) or 'custom'.`,
+          ),
         brand: z
           .object({
             name: z.string().optional(),

@@ -300,7 +300,7 @@ npm run docs:dev
       eo-dash { width: 100vw; height: 100vh; display: block; }
     </style>
     <script type="module">
-      import "@eodash/eodash/web-component";
+      import "@eodash/eodash/webcomponent";
     </script>
   </head>
   <body>
