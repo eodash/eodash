@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import { createMcpServer } from "../../mcp-server/index.js";
 import { scaffoldDashboard } from "../../mcp-server/generators/dashboard.js";
 import { generateEodashConfig } from "../../mcp-server/generators/config.js";
+import { getAvailableTemplates } from "../../mcp-server/helpers.js";
 
 describe("eodash Generators - scaffoldDashboard", () => {
   it("generates standalone SPA boilerplate", () => {
@@ -82,6 +83,22 @@ describe("eodash Generators - generateEodashConfig", () => {
     );
     expect(res.configCode).toContain("template: explore");
     expect(res.configCode).toContain('"primary": "#003366"');
+  });
+
+  it("supports all dynamically discovered templates", () => {
+    const availableTemplates = getAvailableTemplates();
+    expect(availableTemplates).toEqual(
+      expect.arrayContaining(["explore", "lite", "expert", "compare"]),
+    );
+
+    for (const template of availableTemplates) {
+      const res = generateEodashConfig({
+        id: `test-${template}`,
+        template,
+      });
+      expect(res.template).toBe(template);
+      expect(res.configCode).toContain(`template: ${template}`);
+    }
   });
 
   it("generates custom widget layout config", () => {

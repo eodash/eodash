@@ -687,6 +687,26 @@ export function buildMetadata(repoRoot = DEFAULT_REPO_ROOT) {
     };
   }
 
+  const templatesDir = path.join(repoRoot, "templates");
+  const discoveredTemplateFiles = fs.existsSync(templatesDir)
+    ? fs
+        .readdirSync(templatesDir)
+        .filter(
+          (f) => f.endsWith(".js") && f !== "index.js" && f !== "baseConfig.js",
+        )
+        .map((f) => path.basename(f, ".js"))
+    : ["lite", "explore", "expert", "compare"];
+
+  const knownTemplateDescriptions = {
+    lite: "Streamlined view for public dissemination with minimal controls (Map, Header Tools, Layers, StacInfo, DatePicker).",
+    explore:
+      "Feature-rich discovery layout featuring ItemFilter, Catalog explorer, Map, LayerControl, TimeSlider, StacInfo, and Process analysis.",
+    expert:
+      "Power-user dashboard with comprehensive layer manipulation and full analysis tooling.",
+    compare:
+      "Dual-map side-by-side or split comparison mode with synchronized or independent layer sets and charts.",
+  };
+
   const architectureMetadata = {
     overview:
       "eodash is a modular earth observation dashboard builder designed to visualize STAC catalogs, time-series data, vector/raster layers, and OGC API Processes. It can run as a standalone Single Page App (SPA) or be embedded as a Web Component (<eo-dash>).",
@@ -704,30 +724,13 @@ export function buildMetadata(repoRoot = DEFAULT_REPO_ROOT) {
       ],
     },
     templateSystem: {
-      description:
-        "Templates compose dashboard layouts. eodash provides 4 standard built-in templates: 'lite', 'explore', 'expert', and 'compare'. Custom templates can define static widgets, background widgets, loading animations, and dynamic functional widgets.",
-      builtInTemplates: [
-        {
-          name: "lite",
-          description:
-            "Streamlined view for public dissemination with minimal controls (Map, Header Tools, Layers, StacInfo, DatePicker).",
-        },
-        {
-          name: "explore",
-          description:
-            "Feature-rich discovery layout featuring ItemFilter, Catalog explorer, Map, LayerControl, TimeSlider, StacInfo, and Process analysis.",
-        },
-        {
-          name: "expert",
-          description:
-            "Power-user dashboard with comprehensive layer manipulation and full analysis tooling.",
-        },
-        {
-          name: "compare",
-          description:
-            "Dual-map side-by-side or split comparison mode with synchronized or independent layer sets and charts.",
-        },
-      ],
+      description: `Templates compose dashboard layouts. eodash provides standard built-in templates: ${discoveredTemplateFiles.map((t) => `'${t}'`).join(", ")}. Custom templates can define static widgets, background widgets, loading animations, and dynamic functional widgets.`,
+      builtInTemplates: discoveredTemplateFiles.map((name) => ({
+        name,
+        description:
+          knownTemplateDescriptions[name] ||
+          `${name} dashboard template layout.`,
+      })),
     },
     customWidgetSystem: {
       description:
