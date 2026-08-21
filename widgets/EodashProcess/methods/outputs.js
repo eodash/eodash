@@ -98,7 +98,7 @@ export async function processCharts({
           // assign to spec datasets, assuming spec.data is InlineData
           // Always assign values as an object with string keys
           if (spec.data) {
-            /** @type {import("vega-lite/build/src/data").InlineData} */
+            /** @type {import("vega-lite/types_unstable/data.js").InlineData} */
             (spec.data).values = {
               ...(spec.data &&
               "values" in spec.data &&
@@ -196,13 +196,13 @@ async function injectVegaInlineData(
           dataValues.push(await axios.get(dataUrl).then((resp) => resp.data));
         }
       }
-      /** @type {import("vega-lite/build/src/data").InlineData} */
+      /** @type {import("vega-lite/types_unstable/data.js").InlineData} */
       (spec.data).values = aggregateInlineResponses(dataValues);
       return spec;
     }
     // if no array matches, we can just do a single request
     const dataUrl = await renderDataUrl(url, jsonformValue, flatstyleUrl);
-    /** @type {import("vega-lite/build/src/data").InlineData} */
+    /** @type {import("vega-lite/types_unstable/data.js").InlineData} */
     (spec.data).values = await axios.get(dataUrl).then((resp) => {
       return resp.data;
     });
@@ -226,7 +226,7 @@ async function injectVegaInlineData(
       jsonformSchema?.options?.multiQuery &&
       multiQueryMatches.length === 0
     ) {
-      /** @type {import("vega-lite/build/src/data").InlineData} */
+      /** @type {import("vega-lite/types_unstable/data.js").InlineData} */
       (spec.data).values = [];
       return spec;
     }
@@ -256,7 +256,7 @@ async function injectVegaInlineData(
           responses.push(await axios.post(url, body).then((resp) => resp.data));
         }
       }
-      /** @type {import("vega-lite/build/src/data").InlineData} */
+      /** @type {import("vega-lite/types_unstable/data.js").InlineData} */
       (spec.data).values = aggregateInlineResponses(responses);
       return spec;
     }
@@ -264,7 +264,7 @@ async function injectVegaInlineData(
     const body = renderJsonBodyTemplate(bodyTemplate, {
       ...(jsonformValue ?? {}),
     });
-    /** @type {import("vega-lite/build/src/data").InlineData} */
+    /** @type {import("vega-lite/types_unstable/data.js").InlineData} */
     (spec.data).values = await axios.post(url, body).then((resp) => {
       return resp.data;
     });

@@ -140,26 +140,24 @@ export default {
           },
         },
     },
-    // {
-    //   defineWidget: (selectedSTAC) => {
-    //     return selectedSTAC
-    //       ? {
-    //           id: "expert-Datepicker",
-    //           type: "internal",
-    //           layout: { x: 4, y: 7, w: 4, h: 5 },
-    //           title: "Date",
-    //           widget: {
-    //             name: "EodashDatePicker",
-    //             properties: {
-    //               hintText: `<b>Hint:</b> closest available date is displayed <br />
-    //                             on map (see Analysis Layers)`,
-    //               toggleCalendar: true,
-    //             },
-    //           },
-    //         }
-    //       : null;
-    //   },
-    // },
+    {
+      defineWidget: (selectedSTAC) => {
+        return selectedSTAC
+          ? {
+              id: "expert-Datepicker",
+              type: "internal",
+              layout: { x: 3, y: 7, w: 5, h: 5 },
+              title: "Date",
+              widget: {
+                name: "EodashDatePicker",
+                properties: {
+                  toggleCalendar: true,
+                },
+              },
+            }
+          : null;
+      },
+    },
     {
       defineWidget: () =>
         shouldShowChartWidget() && {
@@ -187,37 +185,37 @@ export default {
           },
         },
     },
-    {
-      defineWidget: (selectedSTAC) => {
-        return selectedSTAC
-          ? {
-              id: "expert-datetime",
-              type: "internal",
-              layout: { x: 1, y: 8, w: 8, h: 3 },
-              title: "Time Slider",
-              widget: {
-                name: "EodashTimeSlider",
-                properties: {
-                  filters: [
-                    {
-                      key: "eo:cloud_cover",
-                      title: "Cloud Coverage %",
-                      type: "range",
-                      expanded: true,
-                      min: 0,
-                      max: 100,
-                      step: 5,
-                      state: {
-                        min: 0,
-                        max: 100,
-                      },
-                    },
-                  ],
-                },
-              },
-            }
-          : null;
-      },
-    },
+    // {
+    //   defineWidget: (selectedSTAC) => {
+    //     return selectedSTAC
+    //       ? {
+    //           id: "expert-datetime",
+    //           type: "internal",
+    //           layout: { x: 1, y: 8, w: 8, h: 3 },
+    //           title: "Time Slider",
+    //           widget: {
+    //             name: "EodashTimeSlider",
+    //             properties: {
+    //               filters: [
+    //                 {
+    //                   key: "eo:cloud_cover",
+    //                   title: "Cloud Coverage %",
+    //                   type: "range",
+    //                   expanded: true,
+    //                   min: 0,
+    //                   max: 100,
+    //                   step: 5,
+    //                   state: {
+    //                     min: 0,
+    //                     max: 100,
+    //                   },
+    //                 },
+    //               ],
+    //             },
+    //           },
+    //         }
+    //       : null;
+    //   },
+    // },
   ],
 };

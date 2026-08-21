@@ -13,7 +13,7 @@ const baseConfig = {
   stacEndpoint: {
     endpoint:
       "https://esa-eodashboards.github.io/eodashboard-catalog/trilateral/catalog.json",
-    // "https://GTIF-Austria.github.io/public-catalog/pr-preview/pr-119/GTIF-Austria/catalog.json",
+    // "https://GTIF-Austria.github.io/public-catalog/GTIF-Austria/catalog.json",
     // "https://api.explorer.eopf.copernicus.eu/stac",
     // api: true,
     supportedUpscalingEndpoints: [
@@ -84,7 +84,7 @@ const baseConfig = {
 const deepmerge = deepmergeCustom({ mergeArrays: false });
 
 /**
- * @param {import("vega-lite").DeepPartial<import("@/types").Eodash>} config
+ * @param {import("@/types").DeepPartial<import("@/types").Eodash>} config
  * @returns {import("@/types").Eodash}
  */
 export const getBaseConfig = (config) => {

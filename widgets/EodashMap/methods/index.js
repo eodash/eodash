@@ -25,9 +25,9 @@ let viewHolder = null;
  * @param {import("vue").Ref<(number | undefined)[]>} mapPosition
  */
 export const useHandleMapMoveEnd = (mapElement, mapPosition) => {
-  /** @type {import("openlayers").EventsListenerFunctionType} */
+  /** @type {import("ol/events").ListenerFunction} */
   const handleMoveEnd = (evt) => {
-    const map = /** @type {import("openlayers").Map | undefined} */ (
+    const map = /** @type {import("ol").Map | undefined} */ (
       /** @type {any} */ (evt).map
     );
     const lonlat = mapElement.value?.lonLatCenter;
