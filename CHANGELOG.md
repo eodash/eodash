@@ -1,6 +1,28 @@
 # Changelog
 
 
+## [5.9.0](https://github.com/eodash/eodash/compare/eodash-v5.8.0...eodash-v5.9.0) (2026-08-13)
+
+
+### Features
+
+* geolocation support ([#441](https://github.com/eodash/eodash/issues/441)) ([ba48dda](https://github.com/eodash/eodash/commit/ba48ddaa4bbbe5c571e639676e15a9c0df74031a))
+* handling of different tilesets for xyz ([#435](https://github.com/eodash/eodash/issues/435)) ([3a92c56](https://github.com/eodash/eodash/commit/3a92c56bf6035e0fda47fd017a0334c39c29af79))
+* improve error communication ([#402](https://github.com/eodash/eodash/issues/402)) ([4abb1f8](https://github.com/eodash/eodash/commit/4abb1f8b5329c5c014719164a49481136e746136))
+* Introduce TiTiler upscaling factor ([#430](https://github.com/eodash/eodash/issues/430)) ([43e7ce2](https://github.com/eodash/eodash/commit/43e7ce273c1bfba6b73c5509775ebd81bdeebabd))
+* Persist rasterform state ([#418](https://github.com/eodash/eodash/issues/418)) ([ac4bb9c](https://github.com/eodash/eodash/commit/ac4bb9c5099374d4595f289e959a13a32f95c68d))
+* Support "item" URL search parameter ([#419](https://github.com/eodash/eodash/issues/419)) ([8ced5be](https://github.com/eodash/eodash/commit/8ced5be65355dfc81c763a4cdf86bbcad2cca931))
+* Support EodashStyle & Rasterform `${}` templating ([#424](https://github.com/eodash/eodash/issues/424)) ([26c466e](https://github.com/eodash/eodash/commit/26c466ef3d204c1eeaa8a1b8ea7a58bf1958928c))
+
+
+### Bug Fixes
+
+* Adapt Item Catalog props and filters based on selected collections  ([#414](https://github.com/eodash/eodash/issues/414)) ([a1a9abe](https://github.com/eodash/eodash/commit/a1a9abec16bd9ee7cb1754182df47c274259500b))
+* Explicit item deselect ([#416](https://github.com/eodash/eodash/issues/416)) ([077a1e8](https://github.com/eodash/eodash/commit/077a1e82c6f4d3e78668fd97655516a78f0a87dc))
+* Refactor and enhance bands editor ([#426](https://github.com/eodash/eodash/issues/426)) ([08af85a](https://github.com/eodash/eodash/commit/08af85a2883a09dae07bccad3dc4a1d89925d8ab))
+* Remove `layerConfig` from base layers and overlays ([#443](https://github.com/eodash/eodash/issues/443)) ([921d8fc](https://github.com/eodash/eodash/commit/921d8fc60f089ccee9e35008d5213183fc948f07))
+* remove legacy direct wmts handler for marine copernicus ([#433](https://github.com/eodash/eodash/issues/433)) ([726d018](https://github.com/eodash/eodash/commit/726d018e9b4b39de4a04d380a5f2e67a5a438be1))
+
 ## [5.8.0](https://github.com/eodash/eodash/compare/eodash-v5.7.1...eodash-v5.8.0) (2026-07-13)
 
 
