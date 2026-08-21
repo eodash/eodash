@@ -6,59 +6,57 @@ import { createParquetCollection } from "./collections/parquet.js";
 import { createStaticCollection } from "./collections/static.js";
 
 /**
- * A collection whose items are all stated, by `item` links or by a mirror. Both
- * kinds answer the same way, so which one was built does not reach the caller.
+ * A static STAC collection reader (backed by item links or a GeoParquet mirror).
  *
  * @typedef {ReturnType<typeof createStaticCollection>
  *   | ReturnType<typeof createParquetCollection>} CollectionReader
  */
 
 /**
- * A collection served by a STAC API, where a lookup carries what narrows it.
+ * A STAC API search collection reader.
  *
  * @typedef {ReturnType<typeof createAPICollection>} ApiReader
  */
 
 /**
- * Reads a collection served by a STAC API, whose items are found by searching.
+ * Reads a STAC API collection endpoint.
  *
  * @overload
  * @param {string} url
- * @param {{ api: true, maxItems?: number, client?: import("axios").AxiosInstance }} options
+ * @param {{ api: true, maxItems?: number, client?: import("./http.js").AxiosInstance }} options
  * @returns {Promise<ApiReader>}
  */
 /**
- * Reads a collection that states its own items, as `item` links or as a mirror.
+ * Reads a static STAC collection or GeoParquet mirror collection.
  *
  * @overload
  * @param {string} url
- * @param {{ api?: false, maxItems?: number, client?: import("axios").AxiosInstance }} [options]
+ * @param {{ api?: false, maxItems?: number, client?: import("./http.js").AxiosInstance }} [options]
  * @returns {Promise<CollectionReader>}
  */
 /**
- * Reads a collection whose kind is only known at runtime, leaving the caller to
- * narrow what it gets back.
+ * Reads a STAC collection with dynamic API flag resolution.
  *
  * @overload
  * @param {string} url
- * @param {{ api?: boolean, maxItems?: number, client?: import("axios").AxiosInstance }} options
+ * @param {{ api?: boolean, maxItems?: number, client?: import("./http.js").AxiosInstance }} options
  * @returns {Promise<ApiReader | CollectionReader>}
  */
 /**
- * Reads a collection and returns the reader that resolves its items. `api` says
- * which one: a document cannot state that it is served by a search endpoint.
+ * Creates a collection reader for date lookups and layer creation.
+ * Static collections use item links or a GeoParquet mirror asset. STAC APIs require `options.api = true`.
  *
- * @param {string} url collection url
+ * @param {string} url - Collection JSON URL or API search endpoint
  * @param {object} [options]
- * @param {boolean} [options.api] the catalog is served by a STAC API, which the collection document cannot state
- * @param {number} [options.maxItems] most items one api search returns
- * @param {import("axios").AxiosInstance} [options.client] reads every url the reader needs; `fetch` when left out
+ * @param {boolean} [options.api=false] - Set to true if queried via STAC API search
+ * @param {number} [options.maxItems] - Max items returned per search query
+ * @param {import("./http.js").AxiosInstance} [options.client] - Custom HTTP client
  * @returns {Promise<ApiReader | CollectionReader>}
  */
 export const createEodashCollection = async (url, options = {}) => {
   const { api = false, maxItems, client } = options;
   const http = createHTTPInstance({ client });
-  /** @type {import("./types").EodashCollection} */
+  /** @type {import("./types").STACCollection} */
   const stac = await http.get(url);
   const context = { url, stac, http };
 
@@ -74,12 +72,11 @@ export const createEodashCollection = async (url, options = {}) => {
 };
 
 /**
- * The tooltip fields an item's styles declare, deduplicated by id: several
- * styles may name the same field, and the layer shows each one once.
+ * Extracts and deduplicates tooltip definitions from an item's linked style documents.
  *
- * @param {import("./types").EodashItem} item
+ * @param {import("./types").STACItem} item - The STAC Item containing style links
  * @param {object} [options]
- * @param {import("axios").AxiosInstance} [options.client] reads the style documents; `fetch` when left out
+ * @param {import("./http.js").AxiosInstance} [options.client] - Custom HTTP client for fetching styles
  * @returns {Promise<NonNullable<import("./types").EodashStyleJson["tooltip"]>>}
  */
 export const getTooltipProperties = async (item, { client } = {}) => {
