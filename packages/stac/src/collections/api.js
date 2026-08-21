@@ -10,21 +10,21 @@ const DATE_FIELDS =
   "properties.datetime,properties.start_datetime,properties.end_datetime,-assets,-geometry,-links,-bbox";
 
 /**
- * A collection served by a STAC API, whose items are found by searching rather
- * than by following links.
+ * Instantiates a STAC collection backed by an API `/search` endpoint.
  *
  * @param {object} context
  * @param {string} context.url
- * @param {import("../types").EodashCollection} context.stac
+ * @param {import("../types").STACCollection} context.stac
  * @param {import("../http.js").HttpClient} context.http
- * @param {number} [context.maxItems] most items one search returns
+ * @param {number} [context.maxItems=1000] - The maximum number of items returned per search query.
  */
 export const createAPICollection = ({ url, stac, http, maxItems = 1000 }) => {
   const searchUrl =
     url.replace(/\/+$/, "").split("/").slice(0, -2).join("/") + "/search";
 
   /**
-   * search STAC API based on GET params. `collections` is set to this collection by default.
+   * Searches the API's `/search` endpoint. `collections` defaults to this
+   * collection.
    *
    * @param {import("../types").SearchParams} params
    * @returns {Promise<import("../types").ItemCollection>}
@@ -33,12 +33,10 @@ export const createAPICollection = ({ url, stac, http, maxItems = 1000 }) => {
     http.get(searchUrl, { collections: stac.id, ...params });
 
   /**
-   * The items covering `bbox`, oldest first. `bbox` is comma separated because
-   * the repeated form a GET would otherwise send is ignored, leaving the search
-   * unfiltered.
+   * The items covering `bbox`, oldest first.
    *
    * @param {import("../types").BBox} [bbox]
-   * @returns {Promise<import("../types").EodashItem[]>}
+   * @returns {Promise<import("../types").STACItem[]>}
    */
   const getItems = async (bbox) => {
     const { features, numberMatched } = await search({
@@ -56,12 +54,9 @@ export const createAPICollection = ({ url, stac, http, maxItems = 1000 }) => {
 
   /**
    * Every datetime the collection has an item for, oldest first. A daily
-   * `pre-aggregation` link answers for the whole archive in one request; scoped
-   * to a bbox that answer no longer holds, so the items are enumerated instead.
-   *
-   * More items than one search returns leaves `datetime` deciding which of them
-   * are worth having: the oldest `maxItems` would put the whole window decades
-   * away from the date being shown.
+   * `pre-aggregation` link answers for the whole archive in one request;
+   * under a `bbox` the items are enumerated instead. When more items exist
+   * than one search returns, the dates window centres on `datetime`.
    *
    * @param {import("../types").Datetime} [datetime] the date the window centres on
    * @param {import("../types").BBox} [bbox]
@@ -127,7 +122,7 @@ export const createAPICollection = ({ url, stac, http, maxItems = 1000 }) => {
    *
    * @param {import("../types").Datetime} [datetime]
    * @param {import("../types").BBox} [bbox]
-   * @returns {Promise<import("../types").EodashItem | undefined>}
+   * @returns {Promise<import("../types").STACItem | undefined>}
    */
   const getItem = async (datetime, bbox) => {
     const scope = bbox ? { bbox: bbox.join(",") } : {};
@@ -177,7 +172,7 @@ export const createAPICollection = ({ url, stac, http, maxItems = 1000 }) => {
  * two-sided search answers newest-first on one side, so the order is restored
  * here rather than assumed from the server.
  *
- * @param {import("../types").EodashItem[]} items
+ * @param {import("../types").STACItem[]} items
  * @returns {Date[]}
  */
 function getItemDates(items) {
@@ -203,7 +198,7 @@ function sortDates(values) {
  * The collection's precomputed daily item counts, or nothing when it has none
  * or the document cannot be read.
  *
- * @param {import("../types").EodashCollection} stac
+ * @param {import("../types").STACCollection} stac
  * @param {string} url base for resolving the link when the collection carries no `self`
  * @param {import("../http.js").HttpClient} http
  * @returns {Promise<import("../types").Aggregation | undefined>}
@@ -228,7 +223,7 @@ async function fetchDailyAggregation(stac, url, http) {
 }
 
 /**
- * @param {import("../types").EodashLink} link
+ * @param {import("../types").STACLink} link
  * @returns {link is import("../types").PreAggregationLink}
  */
 function isDailyPreAggregation(link) {

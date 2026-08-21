@@ -7,14 +7,14 @@ import {
 import { buildLayers } from "../layers/index.js";
 
 /**
- * What every collection kind shares. The parts that differ per kind are passed
- * in rather than overridden.
+ * Common functionality shared across all STAC collection types.
+ * Collection-specific behavior is injected via parameters.
  *
  * @param {object} parts
- * @param {import("../types").EodashCollection} parts.stac
- * @param {import("../http.js").HttpClient} parts.http what the reader reads through, which a build reads through too
+ * @param {import("../types").STACCollection} parts.stac
+ * @param {import("../http.js").HttpClient} parts.http
  * @param {(datetime?: import("../types").Datetime, bbox?: import("../types").BBox) => Promise<Date[]>} parts.getDates
- * @param {(datetime?: import("../types").Datetime, bbox?: import("../types").BBox) => Promise<import("../types").EodashItem | undefined>} parts.getItem
+ * @param {(datetime?: import("../types").Datetime, bbox?: import("../types").BBox) => Promise<import("../types").STACItem | undefined>} parts.getItem
  */
 export const createCollectionBase = ({ stac, http, getDates, getItem }) => {
   // the reader outlives a datetime rebuild but not a collection switch, which is
@@ -22,7 +22,7 @@ export const createCollectionBase = ({ stac, http, getDates, getItem }) => {
   const layerConfigHelpers = createLayerConfigHelpers();
 
   /**
-   * What the caller asked for, plus what only the reader can supply.
+   * Prepares the build context combining explicit options with reader defaults.
    *
    * @param {import("../layers/index.js").BuildContext} buildCtx
    * @returns {Parameters<typeof buildLayers>[1]}
@@ -40,27 +40,24 @@ export const createCollectionBase = ({ stac, http, getDates, getItem }) => {
     stac,
 
     /**
-     * Remembers what a layer config editor now holds, so the next build restores
-     * it. Call from the `layerConfig:change` handler.
+     * Persists the current layer configuration editor state.
+     * Use this in the `layerConfig:change` handler to restore config across layer rebuilds.
      */
     persistLayerConfig: layerConfigHelpers.persistLayerConfig,
 
     /**
-     * The layer config for an item the caller already holds, so nothing about the
-     * item is refetched. The projections it settled on come back alongside, for
-     * the caller to register before assigning the layers.
+     * Builds layers from an existing STAC item without fetching data.
+     * Includes any needed map projections alongside the layers.
+     * Observation-point collections are excluded from this build process.
      *
-     * Observation-point collections are the app's to render: their layers read
-     * live map state and app theming, which this package has no access to.
-     *
-     * @param {import("../types").EodashItem} item
+     * @param {import("../types").STACItem} item
      * @param {import("../layers/index.js").BuildContext} [context]
      */
     buildLayers: (item, context = {}) =>
       buildLayers(item, getBuildContext(context)),
 
     /**
-     * The layer config for the item nearest `datetime`, fetching that item first.
+     * Builds layers for the item nearest to the specified datetime.
      *
      * @param {import("../types").Datetime} [datetime]
      * @param {import("../layers/index.js").BuildContext} [context]
@@ -77,15 +74,15 @@ export const createCollectionBase = ({ stac, http, getDates, getItem }) => {
     },
 
     /**
-     * The layer tree with every layer this collection put in it replaced by the
-     * layers of the item nearest `datetime`. Levels that did not change come
-     * back by reference, so an unchanged branch is not re-rendered.
+     * Updates an existing layer tree by replacing the specified layer
+     * with one built from the item nearest to the specified datetime.
+     * Retains unchanged layers by reference to prevent unnecessary re-rendering.
      *
      * @param {import("../types").Datetime} datetime
      * @param {string} layerId - any layer this collection built
      * @param {import("../types").EoxLayer[]} currentLayers - the tree as it stands
      * @param {import("../layers/index.js").BuildContext} [context]
-     * @returns {Promise<import("../types").BuiltLayers | undefined>} nothing when there is no item, or nothing of this collection in the tree
+     * @returns {Promise<import("../types").BuiltLayers | undefined>}
      */
     updateLayers: async (datetime, layerId, currentLayers, context = {}) => {
       const item = await getItem(datetime, context.bbox);
@@ -117,8 +114,8 @@ export const createCollectionBase = ({ stac, http, getDates, getItem }) => {
     },
 
     /**
-     * The collection's overall period, which the spec puts in the first
-     * interval. An open side is filled from the items.
+     * Resolves the temporal extent of the collection.
+     * Uses collection-level metadata if available; otherwise extrapolates from items.
      *
      * @returns {Promise<import("../types").TemporalExtent | undefined>}
      */

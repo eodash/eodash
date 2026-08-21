@@ -1,8 +1,8 @@
 /**
- * Picks the render presets for a collection, preferring client-provided config
- * (`options.renders[collectionId]`) and falling back to the collection's own STAC
- * `renders` extension when no config entry exists.
- * @param {import("../types").EodashCollection | null | undefined} collection
+ * Resolves the render presets for a collection.
+ * Prefers client-provided configurations over the collection's native STAC `renders` extension.
+ *
+ * @param {import("../types").STACCollection | null | undefined} collection
  * @param {Record<string, Record<string, import("../types").Render>> | undefined} [configRenders]
  * @returns {Record<string, import("../types").Render> | undefined}
  */
@@ -15,10 +15,11 @@ export function resolveRenders(collection, configRenders) {
 }
 
 /**
- * TiTiler expects rescale as [min,max] pairs; chunks a flat numeric list
- * into pairs (e.g. [0,0.4,0,0.1] -> [[0,0.4],[0,0.1]]). Nested input passes through.
- * @param {number[]|number[][]|undefined} rescale - flat or nested rescale values
- * @returns {number[][]|undefined} rescale as [min,max] pairs
+ * Normalizes TiTiler rescale arrays into `[min, max]` pairs.
+ * Unnested numeric lists are chunked (e.g., `[0,0.4,0,0.1]` -> `[[0,0.4],[0,0.1]]`).
+ *
+ * @param {number[]|number[][]|undefined} rescale - Flat or nested rescale values.
+ * @returns {number[][]|undefined} Rescale as `[min, max]` pairs.
  */
 export function normalizeRescale(rescale) {
   if (!rescale?.length || Array.isArray(rescale[0])) {
@@ -32,10 +33,11 @@ export function normalizeRescale(rescale) {
 }
 
 /**
- * Drops NaN nodata values; NaN is already the implicit fill for float data,
- * so forwarding `nodata=nan` to TiTiler is redundant.
- * @param {string|number|undefined} nodata - nodata value from render/asset metadata
- * @returns {string|number|undefined} nodata, or undefined when it is NaN
+ * Normalizes nodata values by stripping out redundant `NaN` strings or numbers.
+ * `NaN` is the implicit fill for float data in TiTiler.
+ *
+ * @param {string|number|undefined} nodata - Nodata value from render or asset metadata.
+ * @returns {string|number|undefined}
  */
 export function normalizeNodata(nodata) {
   if (typeof nodata === "number" && Number.isNaN(nodata)) return undefined;
@@ -45,16 +47,12 @@ export function normalizeNodata(nodata) {
 }
 
 /**
- * Applies titiler upscaling to an XYZ tile URL based on the matched endpoint config.
- * - titiler v1: appends `@2x` to the `{y}` tile coordinate
- * - titiler v2: adds `tilesize=512` query parameter (v2 removed the `@2x` suffix)
- * Plain strings in the config default to v1 behavior for backward compatibility.
- * - scaleFactor, if larger than 2, multiplies the default size of 512px tile requested from server by the value at the expense of larger data transfers
- * for v1, the value is rounded to nearest integer, for titiler v2 it can be a decimal
+ * Adapts an XYZ tile URL to use TiTiler's upscaling mechanism.
+ * Depending on the titiler version configured, it modifies either the `{y}` coordinate or appends a `tilesize` query parameter.
  *
- * @param {string} url - The XYZ tile URL template
+ * @param {string} url - The XYZ tile URL template.
  * @param {Array<string | { url: string; titilerVersion?: 1 | 2, scaleFactor?: number }>} upscalingEndpoints
- * @returns {{ url: string; tileSize: [number, number] } | null} null if no endpoint matches
+ * @returns {{ url: string; tileSize: [number, number] } | null} Returns null if no endpoint matches.
  */
 export function applyTitilerUpscaling(url, upscalingEndpoints) {
   const match = upscalingEndpoints.find((entry) => {

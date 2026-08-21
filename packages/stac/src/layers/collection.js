@@ -9,11 +9,11 @@ import { createLayersFromLinks } from "./links.js";
 const OBSERVATION_POINTS_ID = "geodb-collection";
 
 /**
- * The base layers and overlays a collection states, built from the collection
- * itself rather than from any of its items.
+ * Generates @eox/map base layers and overlays declared at the STAC Collection level
+ * rather than at the Item level. Used for indicator-wide background layers.
  *
- * @param {import("../types").EodashCollection} collection
- * @param {Parameters<typeof createLayersFromLinks>[6]} [options]
+ * @param {import("../types").STACCollection} collection - The STAC Collection
+ * @param {Parameters<typeof createLayersFromLinks>[6]} [options] - Build context and configurations
  * @returns {Promise<import("../types").BuiltLayers>}
  */
 export const getIndicatorLayers = async (collection, options = {}) => {
@@ -54,21 +54,21 @@ export const getIndicatorLayers = async (collection, options = {}) => {
 };
 
 /**
- * One layer holding every observation point across `collections`, which are the
- * collections whose items are places rather than times.
+ * Consolidates spatial observation points across multiple collections into a single @eox/map layer.
+ * Applies theming and retains existing layer interactions.
  *
- * @param {import("../types").EodashCollection[]} collections
+ * @param {import("../types").STACCollection[]} collections - Array of STAC Collections
  * @param {object} [options]
- * @param {import("../types").ObservationPointsThemes} [options.themes] marker colour and icon per theme; eodash's own when left out
- * @param {import("../types").EoxLayer[]} [options.currentLayers] the tree as it stands, so the layer keeps the interactions already on it
- * @returns {import("../types").EoxLayer | null} nothing when no collection holds points
+ * @param {import("../types").ObservationPointsThemes} [options.themes] - Custom marker colors and SVG icons keyed by theme
+ * @param {import("../types").EoxLayer[]} [options.currentLayers] - The existing layer tree to preserve bound interactions
+ * @returns {import("../types").EoxLayer | null} A single vector layer, or null if no observation points exist
  */
 export const getObservationPointsLayer = (
   collections,
   { themes = OBSERVATION_POINT_THEMES, currentLayers = [] } = {},
 ) => {
-  const features = collections.filter(isObservationPoints)
-  .flatMap((collection) =>
+  const features = collections.filter(isObservationPoints).flatMap(
+    (collection) =>
       generateFeatures(
         collection.links,
         {
@@ -113,7 +113,7 @@ export const getObservationPointsLayer = (
  * Whether a collection's items are places: a geoDB endpoint, or one stating
  * that its children are locations.
  *
- * @param {import("../types").EodashCollection} collection
+ * @param {import("../types").STACCollection} collection
  */
 function isObservationPoints(collection) {
   return collection.endpointtype === "GeoDB" || !!collection.locations;

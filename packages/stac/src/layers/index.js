@@ -13,24 +13,23 @@ import { createLayersFromLinks } from "./links.js";
 import { createLayerFromRender } from "./renders.js";
 
 /**
- * What the app supplies for a build: everything the builders need that the
- * collection document does not state.
+ * Context provided by the caller to build layers. Includes HTTP configuration, map state, and external overrides.
  *
  * @typedef {object} BuildContext
- * @property {import("../types").BBox} [bbox] - narrows an api's date search to the viewport
+ * @property {import("../types").BBox} [bbox]
  * @property {string} [title]
- * @property {string} [itemDatetime] - stands in where the item states no datetime
- * @property {string} [color] - the colour the collection is drawn in
- * @property {string} [rasterEndpoint] - titiler, without which the render extension is not built
- * @property {string} [viewProjection] - the map view's projection, which the compare map follows
- * @property {Record<string, any> | null} [tileMatrixSets] - tile matrix set definitions keyed by id
+ * @property {string} [itemDatetime]
+ * @property {string} [color]
+ * @property {string} [rasterEndpoint]
+ * @property {string} [viewProjection]
+ * @property {Record<string, any> | null} [tileMatrixSets]
  * @property {Array<string | { url: string; titilerVersion?: 1 | 2; scaleFactor?: number }>} [upscalingEndpoints]
- * @property {Record<string, Record<string, import("../types").Render>>} [renders] - renders the app config states, keyed by collection id
- * @property {import("../http.js").HttpClient} [http] - reads every url a build needs; `fetch` when left out
- * @property {import("../types").LayerConfigHelpers} [layerConfigHelpers] - restores what the collection's config editors held onto the rebuilt layers
+ * @property {Record<string, Record<string, import("../types").Render>>} [renders]
+ * @property {import("../http.js").HttpClient} [http]
+ * @property {import("../types").LayerConfigHelpers} [layerConfigHelpers]
  */
 
-/** The link rels the builders know how to render. */
+/** Link relations supported for layer rendering. */
 const RENDERABLE_RELS = [
   "wms",
   "xyz",
@@ -41,12 +40,13 @@ const RENDERABLE_RELS = [
 ];
 
 /**
- * The layer config for one item, from its links, its data assets and the render
- * extension. Nothing is fetched for the item itself; the caller already holds it.
+ * Generates @eox/map layer definitions and projection definitions for a single STAC Item.
+ * Evaluates web service links (WMS, WMTS, XYZ, VectorTile), data assets (COG, GeoTIFF, GeoJSON, Zarr),
+ * and STAC Render extensions.
  *
- * @param {import("../types").EodashItem} item
- * @param {BuildContext & { stac: import("../types").EodashCollection, getDates: (datetime?: import("../types").Datetime) => Promise<Date[]> }} context
- * @returns {Promise<{ layers: import("../types").EoxLayer[], projections: import("../types").Projection[] }>}
+ * @param {import("../types").STACItem} item - Target STAC Item containing data links/assets
+ * @param {BuildContext & { stac: import("../types").STACCollection, getDates: (datetime?: import("../types").Datetime) => Promise<Date[]> }} context - Context dependencies (HTTP client, STAC collection, state config)
+ * @returns {Promise<{ layers: import("../types").EoxLayer[], projections: import("../types").Projection[] }>} Layer array for @eox/map and required projections
  */
 export const buildLayers = async (item, context) => {
   const {
@@ -82,8 +82,7 @@ export const buildLayers = async (item, context) => {
     projections.push(indicatorProjection);
   }
 
-  const itemDate =
-    item.properties?.datetime ?? item.properties.start_datetime ?? itemDatetime;
+  const itemDate = item.properties?.datetime ?? item.properties?.start_datetime ?? itemDatetime;
   const { layerDatetime, timeControlValues } = extractLayerTimeValues(
     await getDates(itemDate ?? undefined),
     itemDate,
@@ -94,7 +93,7 @@ export const buildLayers = async (item, context) => {
       data[ast] = item.assets[ast];
     }
     return data;
-  }, /** @type {import("../types").EodashItem["assets"]} */ ({}));
+  }, /** @type {import("../types").STACItem["assets"]} */ ({}));
 
   const isSupported =
     item.links.some((link) => RENDERABLE_RELS.includes(link.rel)) ||
@@ -166,11 +165,11 @@ export const buildLayers = async (item, context) => {
 };
 
 /**
- * The fallback for an item nothing else knows how to render: hand it to eox-map
- * as a STAC layer and let it extract what it supports.
+ * Fallback layer builder for items that cannot be explicitly matched to a supported rendering strategy.
+ * Defers to the @eox/map STAC layer type to attempt extraction.
  *
- * @param {import("../types").EodashItem} item
- * @param {import("../types").EodashCollection} collection
+ * @param {import("../types").STACItem} item
+ * @param {import("../types").STACCollection} collection
  * @param {string} title
  * @param {import("../http.js").HttpClient} http
  * @param {import("../types").LayerConfigHelpers} layerConfigHelpers
@@ -205,3 +204,7 @@ async function buildStacLayer(
   );
   return json;
 }
+
+export * from "./assets.js";
+export * from "./links.js";
+export * from "./renders.js";

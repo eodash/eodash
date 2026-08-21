@@ -1,15 +1,16 @@
 /**
- * Normalize raw geoparquet rows into STAC items: non-STAC columns move under
- * `properties`, BigInts become numbers, and the bbox object becomes an array.
+ * Normalizes raw GeoParquet rows into standard STAC Items.
+ * Migrates non-STAC columns under `properties`, converts BigInts to numbers, and formats the bbox object as an array.
  *
- * @param {Record<string, any>[]} items - raw rows as decoded by hyparquet
+ * @param {Record<string, any>[]} items - Raw rows decoded by hyparquet.
+ * @returns {import("../types").STACItem[]}
  */
 export const adjustParquetItems = (items) => {
   return items.map((item) => {
     item = moveItemProperties(item);
     item = adjustItemsBigInts(item);
 
-    return /** @type {import("../types").EodashItem} */ ({
+    return /** @type {import("../types").STACItem} */ ({
       ...item,
 
       assets: ((assets) => {

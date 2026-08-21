@@ -1,10 +1,10 @@
 import { isSTACItem } from "./items.js";
 
 /**
- * Which of `datetime`, `start_datetime` or `end_datetime` the given records
- * carry, in that order of preference. Parquet rows qualify as well as links.
+ * Identifies the preferred datetime property available in a given set of STAC links or items.
+ * Checks for `datetime`, `start_datetime`, or `end_datetime`, in that order of preference.
  *
- * @param {import("../types").EodashLink[] | import("../types").EodashItem[] | undefined | null} [linksOrItems]
+ * @param {import("../types").STACLink[] | import("../types").STACItem[] | undefined | null} [linksOrItems]
  */
 export function getDatetimeProperty(linksOrItems) {
   if (!linksOrItems?.length) {
@@ -35,7 +35,6 @@ export function getDatetimeProperty(linksOrItems) {
     }
   }
   for (const prop of datetimeProperties) {
-    //@ts-expect-error todo
     const propExists = linksOrItems.some((l) => isDatetime(l[prop]));
     if (!propExists) {
       continue;
@@ -56,11 +55,11 @@ function isDatetime(value) {
 }
 
 /**
- * Which of `times` sits nearest `datetime`, or -1 when there is nothing to
- * compare against. Equidistant candidates resolve to the earlier one.
+ * Finds the index of the time value closest to the target datetime.
+ * Equidistant candidates resolve to the earlier one. Returns -1 if no match is found.
  *
- * @param {number[]} times epoch milliseconds, oldest first
- * @param {import("../types").Datetime} [datetime]
+ * @param {number[]} times - Array of epoch milliseconds, ordered oldest to newest.
+ * @param {import("../types").Datetime} [datetime] - Target datetime to compare against.
  */
 export function findClosestIndex(times, datetime) {
   const target = datetime ? new Date(datetime).getTime() : NaN;
@@ -75,10 +74,11 @@ export function findClosestIndex(times, datetime) {
 }
 
 /**
- * Builds layercontrol LayerDatetime + timeControlValues from a list of dates.
+ * Builds layer control parameters (`layerDatetime` and `timeControlValues`) from a list of dates.
+ * Snaps the `currentStep` to the nearest available date if not exactly matched.
  *
  * @param {Date[] | undefined} dates
- * @param {string | null} [currentStep] - target datetime; snapped to the closest available date
+ * @param {string | null} [currentStep] - Target datetime; snapped to the closest available date.
  * @returns {{ layerDatetime: Record<string, any> | undefined, timeControlValues: { date: string }[] | undefined }}
  */
 export const extractLayerTimeValues = (dates, currentStep) => {

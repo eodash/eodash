@@ -1,27 +1,29 @@
 /**
- * Query values as they go on the wire. An array is joined by the caller, since
- * the repeated form a client would otherwise send is ignored by STAC APIs.
+ * Query values for HTTP requests.
  *
  * @typedef {Record<string, string | number | undefined>} SearchQuery
  */
 
 /**
- * What the readers and builders read through. `get` takes the shape it is read
- * into, so annotating the variable it lands in checks the read rather than
- * trusting it.
+ * HTTP client interface for internal library reads and builders.
  *
  * @typedef {object} HttpClient
  * @property {<T = any>(url: string, params?: SearchQuery) => Promise<T>} get reads json
  */
 
 /**
- * The client every request goes through. eodash passes its own axios instance,
- * whose interceptors give the package its cache, loading state and error
- * reporting; with none, this falls back to `fetch`, so the package carries no
- * http dependency of its own.
+ * An Axios-compatible instance interface.
+ *
+ * @typedef {object} AxiosInstance
+ * @property {(url: string, config?: { params?: SearchQuery }) => Promise<{ data: any }>} get
+ */
+
+/**
+ * Creates an HTTP client for making API requests.
+ * Uses the provided client or defaults to native `fetch`.
  *
  * @param {object} [context]
- * @param {import("axios").AxiosInstance} [context.client]
+ * @param {AxiosInstance} [context.client]
  * @returns {HttpClient}
  */
 export const createHTTPInstance = ({ client } = {}) => ({

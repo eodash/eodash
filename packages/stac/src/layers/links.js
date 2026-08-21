@@ -21,19 +21,21 @@ import {
 } from "../helpers/style.js";
 
 /**
+ * Generates map layers from STAC web service links (WMS, WMTS, XYZ, VectorTile, MapboxStyle).
+ *
  * @param {string} collectionId
  * @param {string} title
- * @param {import("../types").EodashItem} item
+ * @param {import("../types").STACItem} item
  * @param {Record<string,any>} [layerDatetime]
  * @param {object | null} [extraProperties]
- * @param {import("../types").EodashCollection} [collection]
+ * @param {import("../types").STACCollection} [collection]
  * @param {object} [options]
- * @param {string} [options.viewProjection] - the map view's projection, which the compare map follows
- * @param {Record<string, any> | null} [options.tileMatrixSets] - tile matrix set definitions keyed by id
- * @param {Array<string | { url: string; titilerVersion?: 1 | 2; scaleFactor?: number }>} [options.upscalingEndpoints] - titiler endpoints that serve upscaled tiles
- * @param {import("../http.js").HttpClient} [options.http] reads every url this needs
- * @param {import("../types").LayerConfigHelpers} [options.layerConfigHelpers] restores what the collection's config editors held onto the rebuilt layers
- * @returns {Promise<{ layers: import("../types").EoxLayer[], projections: import("../types").Projection[] }>} the projections come back with the layers, for the caller to register before they are assigned
+ * @param {string} [options.viewProjection]
+ * @param {Record<string, any> | null} [options.tileMatrixSets]
+ * @param {Array<string | { url: string; titilerVersion?: 1 | 2; scaleFactor?: number }>} [options.upscalingEndpoints]
+ * @param {import("../http.js").HttpClient} [options.http]
+ * @param {import("../types").LayerConfigHelpers} [options.layerConfigHelpers]
+ * @returns {Promise<{ layers: import("../types").EoxLayer[], projections: import("../types").Projection[] }>}
  */
 export const createLayersFromLinks = async (
   collectionId,
@@ -73,7 +75,7 @@ export const createLayersFromLinks = async (
   /**
    * Forms already read, keyed by whatever stated them.
    *
-   * @type {Map<string | import("../types").RasterForm | undefined, Promise<import("../types").EodashRasterJSONForm | undefined>>}
+   * @type {Map<string | import("../types").RasterForm | undefined, Promise<import("../types").RasterForm | undefined>>}
    */
   const rasterForms = new Map();
   /**
@@ -565,7 +567,7 @@ function buildCapabilitiesUrl(href) {
 }
 
 /**
- * @param {import("../types").EodashLink} link
+ * @param {import("../types").STACLink} link
  * @returns {link is import("../types").WMSLink}
  */
 function isWMSLink(link) {
@@ -573,7 +575,7 @@ function isWMSLink(link) {
 }
 
 /**
- * @param {import("../types").EodashLink} link
+ * @param {import("../types").STACLink} link
  * @returns {link is import("../types").WMTSLink}
  */
 function isWMTSLink(link) {
@@ -581,7 +583,7 @@ function isWMTSLink(link) {
 }
 
 /**
- * @param {import("../types").EodashLink} link
+ * @param {import("../types").STACLink} link
  * @returns {link is import("../types").XYZLink}
  */
 function isXYZLink(link) {
@@ -589,7 +591,7 @@ function isXYZLink(link) {
 }
 
 /**
- * @param {import("../types").EodashLink} link
+ * @param {import("../types").STACLink} link
  * @returns {link is import("../types").TileJSONLink}
  */
 function isTileJSONLink(link) {
@@ -597,7 +599,7 @@ function isTileJSONLink(link) {
 }
 
 /**
- * @param {import("../types").EodashLink} link
+ * @param {import("../types").STACLink} link
  * @returns {link is import("../types").VectorTileLink}
  */
 function isVectorTileLink(link) {
@@ -605,7 +607,7 @@ function isVectorTileLink(link) {
 }
 
 /**
- * @param {import("../types").EodashLink} link
+ * @param {import("../types").STACLink} link
  * @returns {link is import("../types").MapboxStyleDocumentLink}
  */
 function isMapboxStyleDocumentLink(link) {
