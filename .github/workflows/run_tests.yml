@@ -38,17 +38,17 @@ jobs:
         run: npm ci --prefer-offline --no-audit
       # the cli project runs in node, so it needs no browser
       - name: Cache Playwright browser 🎭
-        if: matrix.project != 'cli'
+        if: matrix.project != 'cli' && matrix.project != 'mcp'
         id: playwright-cache
         uses: actions/cache@v4
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
       - name: Install Playwright browser 🎭
-        if: matrix.project != 'cli' && steps.playwright-cache.outputs.cache-hit != 'true'
+        if: matrix.project != 'cli' && steps.playwright-cache.outputs.cache-hit != 'true' && matrix.project != 'mcp'
         run: npx playwright install chromium
       - name: Install Playwright system deps 🎭
-        if: matrix.project != 'cli'
+        if: matrix.project != 'cli' && matrix.project != 'mcp'
         run: npx playwright install-deps chromium
       - name: Run ${{ matrix.project }} tests 👀
         run: npm run test:${{ matrix.project }}
