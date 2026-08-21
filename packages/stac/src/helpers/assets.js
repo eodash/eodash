@@ -1,18 +1,21 @@
 /**
- * Whether a STAC link or asset is rendered as a baselayer or an overlay
- * @param {import("../types").EodashLink | import("../types").EodashAsset | undefined} linkOrAsset
+ * Determines if a STAC link or asset acts as a base layer or an overlay based on its roles.
+ *
+ * @param {import("../types").STACLink | import("../types").STACAsset | undefined} linkOrAsset
  * @returns {boolean}
- * */
+ */
 export const isBaseLayerOrOverlay = (linkOrAsset) => {
   const roles = /** @type {string[] | undefined} */ (linkOrAsset?.roles);
   return !!roles?.some((role) => role === "baselayer" || role === "overlay");
 };
 
 /**
- * Assign extracted roles to layer properties
+ * Translates STAC roles ("visible", "invisible", "overlay", "baselayer") into properties.
+ * Modifies the properties object in-place and returns it.
+ *
  * @param {Record<string,any>} properties
- * @param {import("../types").EodashLink | import("../types").EodashAsset} linkOrAsset
- * */
+ * @param {import("../types").STACLink | import("../types").STACAsset} linkOrAsset
+ */
 export const extractRoles = (properties, linkOrAsset) => {
   const roles = /** @type {string[]} */ (linkOrAsset.roles);
   roles?.forEach((role) => {
@@ -29,9 +32,10 @@ export const extractRoles = (properties, linkOrAsset) => {
 };
 
 /**
- * A collection asset holding every item, standing in for `item` links.
+ * Finds a GeoParquet collection mirror asset (`application/vnd.apache.parquet`).
  *
- * @param {import("../types").EodashCollection} collection
+ * @param {import("../types").STACCollection} collection
+ * @returns {import("../types").STACAsset | undefined}
  */
 export const findParquetMirror = (collection) =>
   Object.values(collection.assets ?? {}).find(

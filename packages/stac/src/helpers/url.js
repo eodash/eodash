@@ -12,6 +12,7 @@ export const toAbsolute = (href, baseUrl) =>
 /**
  * Recursively extracts URL keys from a JSON Schema.
  * Maps schema property names to their defined `url_key`.
+ *
  * @param {Record<string, any> | null | undefined} schema
  * @returns {Record<string, string>}
  */
@@ -43,10 +44,9 @@ export function extractUrlKeys(schema) {
 }
 
 /**
- * Serializes an object into a TiTiler query string. Arrays repeat the key per
- * element (TiTiler list params, e.g. `assets=a&assets=b`); nested elements
- * comma-join (`rescale: [[0,1],[0,2]]` -> `rescale=0,1&rescale=0,2`); objects
- * are JSON-encoded. Shared by the render-extension and mosaic paths.
+ * Serializes an object into a query string compatible with TiTiler.
+ * Arrays repeat the key per element, nested elements comma-join, and objects are JSON-encoded.
+ *
  * @param {Record<string,any>} obj
  * @returns {string}
  */
@@ -85,13 +85,11 @@ export function encodeURLObject(obj) {
 }
 
 /**
- * Function to extract collection urls from an indicator
- * @param {import("stac-ts").StacCatalog
- *   | import("../types").EodashCollection
- *   | import("../types").EodashItem
- *   | null
- * } stacObject
+ * Extracts absolute collection URLs from a STAC indicator or catalog.
+ *
+ * @param {import("../types").STACCatalog | import("../types").STACCollection | import("../types").STACItem | null} stacObject
  * @param {string} basepath
+ * @returns {string[]}
  */
 export function extractCollectionUrls(stacObject, basepath) {
   /** @type {string[]} */
@@ -118,9 +116,8 @@ export function extractCollectionUrls(stacObject, basepath) {
 }
 
 /**
- * Injects jsonform values into a tile URL.
- * Nested objects are spread into their sub-keys, arrays become repeated params.
- * Keeps parity so a baked URL matches what a live jsonform edit would produce.
+ * Injects jsonform values into a tile URL's search parameters.
+ * Nested objects spread into sub-keys, and arrays become repeated parameters.
  *
  * @param {string} url
  * @param {Record<string, any>} values

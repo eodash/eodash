@@ -3,11 +3,11 @@ import { toAbsolute } from "../helpers/url.js";
 import { createCollectionBase } from "./base.js";
 
 /**
- * A collection whose items are `item` links in its own document.
+ * Instantiates a static STAC collection, discovering items through native STAC links.
  *
  * @param {object} context
  * @param {string} context.url
- * @param {import("../types").EodashCollection} context.stac
+ * @param {import("../types").STACCollection} context.stac
  * @param {import("../http.js").HttpClient} context.http
  */
 export const createStaticCollection = ({ url, stac, http }) => {
@@ -49,7 +49,7 @@ export const createStaticCollection = ({ url, stac, http }) => {
    * Equidistant items resolve to the earlier.
    *
    * @param {import("../types").Datetime} [datetime]
-   * @returns {Promise<import("../types").EodashItem | undefined>}
+   * @returns {Promise<import("../types").STACItem | undefined>}
    */
   const getItem = async (datetime) => {
     const items = await getItems();
@@ -69,7 +69,7 @@ export const createStaticCollection = ({ url, stac, http }) => {
 };
 
 /**
- * @param {import("../types").EodashLink} link
+ * @param {import("../types").STACLink} link
  * @returns {link is import("../types").ItemLink}
  */
 function isItemLink(link) {

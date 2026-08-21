@@ -11,17 +11,19 @@ import { getProjection, getProjectionCode } from "../helpers/projection.js";
 import { addTooltipInteraction, resolveStyle } from "../helpers/style.js";
 
 /**
+ * Generates map layers from STAC asset data (GeoTIFF, GeoJSON, FlatGeoBuf, Zarr).
+ *
  * @param {string} collectionId
  * @param {string} title
- * @param {Record<string,import("../types").EodashAsset>} assets
- * @param {import("../types").EodashItem | import("../types").EodashCollection} stacObject
+ * @param {Record<string,import("../types").STACAsset>} assets
+ * @param {import("../types").STACItem | import("../types").STACCollection} stacObject
  * @param {Record<string, unknown>} [layerDatetime]
  * @param {object | null} [extraProperties]
- * @param {import("../types").EodashCollection | null} [collection] - Used to fall back to a collection-level style link.
+ * @param {import("../types").STACCollection | null} [collection]
  * @param {object} [options]
- * @param {import("../http.js").HttpClient} [options.http] reads every url this needs
- * @param {import("../types").LayerConfigHelpers} [options.layerConfigHelpers] restores what the collection's config editors held onto the rebuilt layers
- * @returns {Promise<{ layers: import("../types").EoxLayer[], projections: import("../types").Projection[] }>} the projections come back with the layers, for the caller to register before they are assigned
+ * @param {import("../http.js").HttpClient} [options.http]
+ * @param {import("../types").LayerConfigHelpers} [options.layerConfigHelpers]
+ * @returns {Promise<{ layers: import("../types").EoxLayer[], projections: import("../types").Projection[] }>}
  **/
 export async function createLayersFromAssets(
   collectionId,

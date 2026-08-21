@@ -90,13 +90,12 @@ export const removeLayers = (layers, layerIds) => {
 };
 
 /**
- * Removes one or more layers (by id) from a layer/group structure and inserts
- * new layers in place of the first removed one.
- * Returns a new array reference at every level that changed (immutable).
+ * Replaces target layers in an @eox/map layer array tree immutably, preserving unchanged array references.
+ * Essential for updating specific layers (e.g. on timestamp change) without forcing @eox/map to remount the entire map.
  *
- * @param {import("@eox/map").EoxLayer[]} layers - Current layer array.
- * @param {string | string[]} toRemove - Id(s) of layers to remove.
- * @param {import("@eox/map").EoxLayer[]} toInsert - Layers to insert in place of the first removed one.
+ * @param {import("@eox/map").EoxLayer[]} layers - Existing layer tree array.
+ * @param {string | string[]} toRemove - ID(s) of layers to remove.
+ * @param {import("@eox/map").EoxLayer[]} toInsert - New layers to insert in place of the first removed layer.
  * @returns {import("@eox/map").EoxLayer[]}
  */
 export const replaceLayer = (layers, toRemove, toInsert) => {
@@ -139,11 +138,11 @@ export const replaceLayer = (layers, toRemove, toInsert) => {
 
 /**
  * Generates layer specific ID from STAC Links
- * related functions are: {@link assignProjID} & {@link createAssetID}
+ * related function is: {@link createAssetID}
  *
  * @param {string} collectionId
  * @param {string} itemId
- * @param {import("../types").EodashLink} link
+ * @param {import("../types").STACLink} link
  * @param {string | import("ol/proj").ProjectionLike} projectionCode
  *
  */
@@ -160,7 +159,7 @@ export const createLayerID = (collectionId, itemId, link, projectionCode) => {
 };
 
 /**
- * Generates layer specific ID from STAC assets, related functions are: {@link assignProjID} & {@link createLayerID}
+ * Generates layer specific ID from STAC assets, related function is: {@link createLayerID}
  *
  * @param {string} collectionId
  * @param {string} itemId
@@ -176,7 +175,7 @@ export const createAssetID = (collectionId, itemId, index) => {
 /**
  * Extracts the STAC collection which the layer was created from.
  *
- * @template {{ stac?: import("../types").EodashCollection }} Reader
+ * @template {{ stac?: import("../types").STACCollection }} Reader
  * @param {Reader[]} indicators any reader, since only its collection is read
  * @param {import('ol/layer').Layer} layer
  * @returns {Promise<Reader | undefined>}

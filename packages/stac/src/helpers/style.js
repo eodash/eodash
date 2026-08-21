@@ -3,7 +3,7 @@ import { renderConfigTemplate } from "./layer-config.js";
 
 /**
  * Extracts a single non-link style JSON from a STAC Item optionally for a selected key mapping
- * @param { import("../types").EodashItem | import("../types").EodashCollection | null | undefined} stacObject
+ * @param { import("../types").STACItem | import("../types").STACCollection | null | undefined} stacObject
  * @param {import("../http.js").HttpClient} http
  * @param {string | undefined} linkKey
  * @param {string | undefined} assetKey
@@ -52,8 +52,8 @@ export const fetchStyle = async (
  * to the collection's. Takes the same key arguments as `fetchStyle`. `${...}`
  * placeholders are rendered against `item` (see {@link renderConfigTemplate}).
  *
- * @param {import("../types").EodashItem | import("../types").EodashCollection} item
- * @param {import("../types").EodashCollection | null | undefined} collection
+ * @param {import("../types").STACItem | import("../types").STACCollection} item
+ * @param {import("../types").STACCollection | null | undefined} collection
  * @param {import("../http.js").HttpClient} http
  * @param {string} [linkKey]
  * @param {string} [assetKey]
@@ -77,7 +77,7 @@ export const resolveStyle = async (
 
 /**
  * Fetches all style JSONs from a STAC Item and returns an array with style objects
- * @param {import("../types").EodashItem | import("../types").EodashCollection} stacObject
+ * @param {import("../types").STACItem | import("../types").STACCollection} stacObject
  * @param {import("../http.js").HttpClient} http
  * @returns { Promise <Array<import("../types").EodashStyleJson>>}
  **/
@@ -96,7 +96,7 @@ export const fetchAllStyles = async (stacObject, http) => {
 };
 
 /**
- * @param {import("../types").EodashCollection | undefined | null} collection
+ * @param {import("../types").STACCollection | undefined | null} collection
  * @returns {object}
  */
 export function extractLayerLegend(collection) {
@@ -118,7 +118,7 @@ export function extractLayerLegend(collection) {
 }
 
 /**
- * @param { import("../types").EodashLink } link
+ * @param { import("../types").STACLink } link
  * @returns {object}
  */
 export function extractEoxLegendLink(link) {

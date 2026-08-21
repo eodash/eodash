@@ -1,7 +1,8 @@
 /**
+ * Checks if a given object qualifies as a valid STAC Item.
  *
  * @param {*} stacObject
- * @returns {stacObject is import("../types").EodashItem}
+ * @returns {stacObject is import("../types").STACItem}
  */
 export function isSTACItem(stacObject) {
   return (
@@ -15,13 +16,15 @@ export function isSTACItem(stacObject) {
 }
 
 /**
- *  @param {import("../types").EodashLink[]} [links]
- *  @param {Record<string,any>} [extraProperties]
+ * Generates a GeoJSON FeatureCollection from a list of STAC Links that contain a `latlng` property.
+ *
+ * @param {import("../types").STACLink[]} [links]
+ * @param {Record<string,any>} [extraProperties]
  * @param {string} [rel = "item"]
- **/
+ */
 export function generateFeatures(links, extraProperties = {}, rel = "item") {
   /**
-   * @type {import("geojson").Feature[]}
+   * @type {import("../types").GeoJSONFeature[]}
    */
   const features = [];
   links?.forEach((element) => {
