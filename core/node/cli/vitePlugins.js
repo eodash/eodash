@@ -6,13 +6,10 @@ import path from "path";
  * @param {string} [options.stylePlaceHolder = '__VUE_CE_STYLES__'] the placeholder for styles in the custom element file, will be automatically injected
  * @returns {import("vite").Plugin}
  */
-export function vueCustomElementStyleInjector(
-  options = {
-    customElementFileName: "asWebComponent.js",
-    stylePlaceHolder: "__VUE_CE_STYLES__",
-  },
-) {
-  const { customElementFileName, stylePlaceHolder } = options;
+export function vueCustomElementStyleInjector({
+  customElementFileName = "asWebComponent.js",
+  stylePlaceHolder = "__VUE_CE_STYLES__",
+} = {}) {
   return {
     name: "vite-plugin-vue-custom-element-style-injector",
     enforce: "post",
@@ -51,6 +48,10 @@ export function vueCustomElementStyleInjector(
           entryPoint = chunkName;
           break;
         }
+      }
+
+      if (!entryPoint) {
+        return;
       }
       for (const chunkName in bundle) {
         const chunk = bundle[chunkName];
