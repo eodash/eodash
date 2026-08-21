@@ -25,7 +25,7 @@ jobs:
         # templates/) instead of importing the built package, so that a change
         # to the app runs its suite too. Leave empty when none do.
         env:
-          RUN_ON_APP_CHANGE: ""
+          RUN_ON_APP_CHANGE: "mcp"
         run: node core/node/scripts/changedPackages.js ${{ github.event.pull_request.base.sha }}
 
   app:
@@ -46,8 +46,6 @@ jobs:
             blocking: true
           - project: template
             blocking: false
-          - project: mcp
-            blocking: true
     steps:
       - name: Checkout 🛎
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6

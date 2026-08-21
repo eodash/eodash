@@ -14,7 +14,7 @@ import { buildMetadata } from "./generate-metadata.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const REPO_ROOT = path.resolve(__dirname, "..");
+const REPO_ROOT = path.resolve(__dirname, "../..");
 
 const pkg = JSON.parse(
   fs.readFileSync(path.join(__dirname, "package.json"), "utf8"),

@@ -43,7 +43,7 @@ export default defineConfig({
         resolve: { alias },
         test: {
           name: "mcp",
-          include: ["tests/mcp/**/*.test.js", "mcp-server/**/*.test.js"],
+          include: ["packages/mcp/tests/**/*.test.js"],
           environment: "node",
           testTimeout: 60 * 1000,
         },
