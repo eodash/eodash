@@ -1,5 +1,9 @@
 {
   "extends": "./tsconfig.json",
-  "include": ["dist/**/*.d.ts", "core/node/typedoc/widgets.ts"],
+  "include": [
+    "dist/**/*.d.ts",
+    "packages/*/dist/**/*.d.ts",
+    "core/node/typedoc/widgets.ts"
+  ],
   "exclude": ["node_modules"]
 }
