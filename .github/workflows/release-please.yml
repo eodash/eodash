@@ -28,9 +28,14 @@ jobs:
           cache: "npm"
       - name: Install dependencies 👨🏻‍💻
         run: npm ci --prefer-offline --no-audit
-      - name: Publish package on NPM 📦
-        run: npm publish
-        if: ${{ steps.release.outputs.release_created }}
+      - name: Publish released packages on NPM 📦
+        run: |
+          set -euo pipefail
+          for path in $(jq -r '.[]' <<< '${{ steps.release.outputs.paths_released }}'); do
+            echo "publishing $path"
+            (cd "$path" && npm publish)
+          done
+        if: ${{ steps.release.outputs.releases_created == 'true' }}
       - name: Build and publish package 🚀
         run: |
           npx pkg-pr-new publish --comment=update

@@ -2,6 +2,9 @@
   "name": "@eodash/eodash",
   "version": "5.9.0",
   "type": "module",
+  "workspaces": [
+    "packages/*"
+  ],
   "types": "./dist/types/core/client/types.d.ts",
   "files": [
     "core/client",
