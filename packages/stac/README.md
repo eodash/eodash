@@ -23,4 +23,4 @@ const { layers, projections } = await collection.getLayers(dates.at(-1));
 
 Where the items come from is determined by the document: the `item` links it lists, or an asset with the `collection-mirror` role holding a GeoParquet mirror of them. A STAC API is declared by `{ api: true }`.
 
-Documentation lives at [eodash.github.io/eodash](https://eodash.github.io/eodash/).
+Documentation lives at [eodash.github.io/eodash/packages/stac](https://eodash.github.io/eodash/packages/stac/).
