@@ -3,14 +3,96 @@ import { userEvent } from "vitest/browser";
 import EodashDatePicker from "^/EodashDatePicker.vue";
 import { datetime } from "@/store/states";
 import { eodashCollections, eodashCompareCollections } from "@/utils/states";
-import { mountComponent } from "../support/mount";
+import { mountComponent, stubCustomElement } from "../support/mount";
+
+// Keep the web-component tags (isCustomElement) so property bindings still work.
+vi.mock("@eox/timecontrol", () => ({}));
+
+/** @type {[string, string][]} Ranges the widget pushed into the calendar. */
+const dateChanges = [];
+
+stubCustomElement(
+  "eox-timecontrol",
+  class extends HTMLElement {
+    /** @param {[string, string]} range */
+    dateChange = (range) => dateChanges.push(range);
+    getTimeControlPicker() {
+      return this.querySelector("eox-timecontrol-picker");
+    }
+  },
+);
+
+stubCustomElement(
+  "eox-timecontrol-date",
+  class extends HTMLElement {
+    connectedCallback() {
+      if (!this.shadowRoot) {
+        this.attachShadow({ mode: "open" }).innerHTML =
+          '<button style="height:40px;width:40px"></button>' +
+          "<input readonly />" +
+          '<button style="height:40px;width:40px"></button>';
+      }
+    }
+  },
+);
+
+const calls = { show: 0, hide: 0 };
 
 /**
- * @param {string} selector CSS selector for the date input.
- * @returns {HTMLInputElement | null} The matched input, if present.
+ * Give the stubbed picker a calendar to open.
+ * @returns {HTMLElement} The stand-in popup.
  */
-const input = (selector) =>
-  /** @type {HTMLInputElement | null} */ (document.querySelector(selector));
+const stubCalendar = () => {
+  const mainElement = document.createElement("div");
+  document.body.append(mainElement);
+  const el = picker();
+  if (el) {
+    el.cal = {
+      show: () => calls.show++,
+      hide: () => calls.hide++,
+      context: { mainElement },
+    };
+  }
+  return mainElement;
+};
+
+/**
+ * @param {number} x
+ * @param {number} y
+ */
+const moveTo = (x, y) =>
+  dateField()?.dispatchEvent(
+    new MouseEvent("mousemove", { clientX: x, clientY: y, bubbles: true }),
+  );
+
+/** @returns {DOMRect} The date field's box, which drives the hover check. */
+const fieldBox = () => {
+  const box = dateField()
+    ?.shadowRoot?.querySelector("input")
+    ?.getBoundingClientRect();
+  if (!box) throw new Error("date field not rendered");
+  return box;
+};
+
+/** @returns {(Element & Record<string, any>) | null} The eox-timecontrol element. */
+const timecontrol = () => document.querySelector("eox-timecontrol");
+
+/** @returns {(Element & Record<string, any>) | null} The calendar element. */
+const picker = () => document.querySelector("eox-timecontrol-picker");
+
+/** @returns {(Element & Record<string, any>) | null} The date field. */
+const dateField = () => document.querySelector("eox-timecontrol-date");
+
+/**
+ * Dispatch the `select` event eox fires once a date is picked.
+ * @param {string} iso
+ */
+const selectDate = (iso) =>
+  timecontrol()?.dispatchEvent(
+    new CustomEvent("select", {
+      detail: { date: [new Date(iso), new Date(iso)] },
+    }),
+  );
 
 const TIMEOUT = 1000 * 15;
 
@@ -34,46 +116,47 @@ describe("EodashDatePicker", () => {
     datetime.value = "";
     eodashCollections.splice(0, eodashCollections.length);
     eodashCompareCollections.splice(0, eodashCompareCollections.length);
+    dateChanges.length = 0;
+    calls.show = 0;
+    calls.hide = 0;
   });
 
   test("renders the calendar", async () => {
     await mountComponent(EodashDatePicker);
 
-    await expect
-      .poll(() => document.querySelector(".vc-container"))
-      .toBeTruthy();
+    await expect.poll(() => picker()).toBeTruthy();
   });
 
-  test("reflects the global datetime in the input", async () => {
-    // Midday UTC so the local-timezone formatDate stays on the same day.
+  test("reflects the global datetime in the date field", async () => {
     datetime.value = "2024-06-15T12:00:00.000Z";
     await mountComponent(EodashDatePicker);
 
     await expect
-      .poll(() => input(".datePicker input")?.value)
-      .toBe("2024-06-15");
+      .poll(() => timecontrol()?.initDate)
+      .toEqual(["2024-06-15T12:00:00.000Z"]);
   });
 
-  test("writes a valid typed date to the global datetime", async () => {
+  test("passes no initDate while the datetime is empty", async () => {
+    await mountComponent(EodashDatePicker);
+
+    // An empty datetime reaches the date field as a literal "Invalid Date".
+    await expect.poll(() => timecontrol()?.initDate).toBeNull();
+  });
+
+  test("writes a valid selected date to the global datetime", async () => {
     datetime.value = "2024-06-15T12:00:00.000Z";
     await mountComponent(EodashDatePicker);
 
-    const field = input(".datePicker input");
-    if (!field) throw new Error("date input not rendered");
-    field.value = "2024-03-10";
-    field.dispatchEvent(new Event("change", { bubbles: true }));
+    selectDate("2024-03-10T00:00:00.000Z");
 
     await expect.poll(() => datetime.value).toMatch(/^2024-03-10/);
   });
 
-  test("ignores an unparseable typed date", async () => {
+  test("ignores an unparseable selected date", async () => {
     datetime.value = "2024-06-15T12:00:00.000Z";
     await mountComponent(EodashDatePicker);
 
-    const field = input(".datePicker input");
-    if (!field) throw new Error("date input not rendered");
-    field.value = "not-a-date";
-    field.dispatchEvent(new Event("change", { bubbles: true }));
+    selectDate("not-a-date");
 
     // The customRef setter validates and no-ops on NaN, so datetime is unchanged.
     expect(datetime.value).toBe("2024-06-15T12:00:00.000Z");
@@ -82,10 +165,8 @@ describe("EodashDatePicker", () => {
   test("hides the input field when hideInputField is set", async () => {
     await mountComponent(EodashDatePicker, { props: { hideInputField: true } });
 
-    await expect
-      .poll(() => document.querySelector(".vc-container"))
-      .toBeTruthy();
-    expect(input(".datePicker input")).toBeNull();
+    await expect.poll(() => picker()).toBeTruthy();
+    expect(dateField()).toBeNull();
   });
 
   test("renders the two jump-date arrow buttons by default", async () => {
@@ -99,19 +180,125 @@ describe("EodashDatePicker", () => {
   test("hides the arrow buttons when hideArrows is set", async () => {
     await mountComponent(EodashDatePicker, { props: { hideArrows: true } });
 
-    await expect
-      .poll(() => document.querySelector(".vc-container"))
-      .toBeTruthy();
+    await expect.poll(() => picker()).toBeTruthy();
     expect(document.querySelectorAll(".datePicker .v-btn")).toHaveLength(0);
+    // The same flag turns off eox's own prev/next stepper.
+    expect(dateField()?.navigation).toBe(false);
   });
 
-  test("reflects the datetime in toggleCalendar (default-slot) mode", async () => {
+  test("reflects the datetime in toggleCalendar (popup) mode", async () => {
     datetime.value = "2024-06-15T12:00:00.000Z";
     await mountComponent(EodashDatePicker, { props: { toggleCalendar: true } });
 
-    await expect
-      .poll(() => input(".datePicker input")?.value)
-      .toBe("2024-06-15");
+    await expect.poll(() => picker()?.popup).toBe(true);
+    expect(timecontrol()?.initDate).toEqual(["2024-06-15T12:00:00.000Z"]);
+  });
+
+  describe("datetime sync", () => {
+    test("pushes a datetime change made elsewhere into the calendar", async () => {
+      datetime.value = "2024-06-15T12:00:00.000Z";
+      await mountComponent(EodashDatePicker);
+      await expect.poll(() => timecontrol()).toBeTruthy();
+
+      datetime.value = "2024-08-01T09:00:00.000Z";
+
+      await expect
+        .poll(() => dateChanges.at(-1))
+        .toEqual(["2024-08-01T09:00:00.000Z", "2024-08-01T09:00:00.000Z"]);
+    });
+
+    test("does not echo a selection back into the calendar", async () => {
+      datetime.value = "2024-06-15T12:00:00.000Z";
+      await mountComponent(EodashDatePicker);
+      await expect.poll(() => timecontrol()).toBeTruthy();
+
+      selectDate("2024-03-10T00:00:00.000Z");
+
+      await expect.poll(() => datetime.value).toBe("2024-03-10T00:00:00.000Z");
+      expect(dateChanges).toEqual([]);
+    });
+
+    test("skips the push when the datetime stays on the same UTC day", async () => {
+      datetime.value = "2024-03-10T00:00:00.000Z";
+      await mountComponent(EodashDatePicker);
+      await expect.poll(() => timecontrol()).toBeTruthy();
+      selectDate("2024-03-10T00:00:00.000Z");
+
+      datetime.value = "2024-03-10T18:30:00.000Z";
+
+      await expect.poll(() => dateChanges).toEqual([]);
+    });
+  });
+
+  describe("hover", () => {
+    /** Mount in popup mode with a calendar ready to open. */
+    const mountHoverable = async () => {
+      await mountComponent(EodashDatePicker, {
+        props: { toggleCalendar: true },
+      });
+      await expect.poll(() => picker()).toBeTruthy();
+      return stubCalendar();
+    };
+
+    test("opens the calendar when the pointer is over the field", async () => {
+      await mountHoverable();
+      const box = fieldBox();
+
+      moveTo(box.left + box.width / 2, box.top + box.height / 2);
+
+      expect(calls.show).toBeGreaterThan(0);
+    });
+
+    test("stays closed when the pointer is beside the field", async () => {
+      await mountHoverable();
+      const box = fieldBox();
+
+      // Where the arrows sit: inside the row, outside the field's own column.
+      moveTo(box.right + 20, box.top + box.height / 2);
+
+      expect(calls.show).toBe(0);
+    });
+
+    test("opens across the full height of the field's column", async () => {
+      await mountHoverable();
+      const box = fieldBox();
+
+      // The field's own top edge would otherwise leave a dead strip.
+      moveTo(box.left + box.width / 2, box.top - 3);
+
+      expect(calls.show).toBeGreaterThan(0);
+    });
+
+    test("does not open the calendar outside popup mode", async () => {
+      await mountComponent(EodashDatePicker);
+      await expect.poll(() => picker()).toBeTruthy();
+      stubCalendar();
+      const box = fieldBox();
+
+      moveTo(box.left + box.width / 2, box.top + box.height / 2);
+
+      expect(calls.show).toBe(0);
+    });
+
+    test("closes when the pointer leaves for neither the field nor the popup", async () => {
+      await mountHoverable();
+
+      dateField()?.dispatchEvent(
+        new MouseEvent("mouseleave", { relatedTarget: document.body }),
+      );
+
+      expect(calls.hide).toBe(1);
+    });
+
+    test("stays open when the pointer moves onto the popup", async () => {
+      const popup = await mountHoverable();
+
+      dateField()?.dispatchEvent(
+        new MouseEvent("mouseleave", { relatedTarget: popup }),
+      );
+
+      expect(calls.hide).toBe(0);
+    });
   });
 
   describe("jump-date arrows", () => {
@@ -135,7 +322,7 @@ describe("EodashDatePicker", () => {
     test("jumps to the latest available date from the collection", async () => {
       const { ec, latest } = await mountWithDates();
 
-      // Attributes build async from getDates(); retry the idempotent click.
+      // Control values build async from getDates(); retry the idempotent click.
       await vi.waitFor(
         async () => {
           await userEvent.click(latest);

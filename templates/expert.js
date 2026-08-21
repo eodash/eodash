@@ -125,13 +125,11 @@ export default {
           ? {
               id: "expert-datepicker",
               type: "internal",
-              layout: { x: 4, y: 3, w: 4, h: 9 },
+              layout: { x: 3, y: 3, w: 5, h: 9 },
               title: "Date",
               widget: {
                 name: "EodashDatePicker",
                 properties: {
-                  hintText: `<b>Hint:</b> closest available date is displayed <br />
-                            on map (see Analysis Layers)`,
                   toggleCalendar: true,
                 },
               },

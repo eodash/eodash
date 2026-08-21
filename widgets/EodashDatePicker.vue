@@ -1,141 +1,96 @@
 <template>
   <div ref="rootRef" class="datePicker">
-    <VCDatePicker
-      ref="datePicker"
-      v-model.number="currentDate"
-      :attributes="attributes"
-      :masks="masks"
-      expanded
-      class="overflow-auto"
-      style="background-color: transparent; max-width: 100%"
+    <eox-timecontrol
+      :key="revision"
+      ref="timecontrolRef"
+      show-utc
+      layer-id-key="title"
+      .controlValues="controlValues"
+      .initDate="!!datetime ? [datetime] : null"
+      @select="onSelect"
     >
-      <template v-if="toggleCalendar" #default="{ inputValue, inputEvents }">
-        <div
-          class="d-flex flex-row align-center justify-center pb-1"
-          style="overflow: hidden; width: 100%"
-        >
+      <div class="d-flex flex-column-reverse">
+        <div class="d-flex flex-row align-center justify-center pb-1">
           <v-btn
             v-if="!hideArrows"
             v-tooltip:bottom="'Set date to oldest available dataset'"
-            density="compact"
-            :size="lgAndDown ? 'x-small' : 'large'"
+            icon
+            size="small"
             variant="text"
-            class="py-2"
-            style="flex-shrink: 1; padding: 0"
+            color="primary"
             @click="jumpDate(true)"
           >
-            <v-icon :icon="[mdiRayEndArrow]" />
+            <v-icon :icon="[mdiPageFirst]" />
           </v-btn>
-          <div
-            class="flex rounded-lg border border-gray-300 dark:border-gray-600"
-            style="margin: 2px; min-width: 0"
-          >
-            <input
-              v-if="!hideInputField"
-              :value="inputValue"
-              class="flex-grow px-1 py-1 dark:bg-gray-700"
-              style="
-                margin: 1px;
-                width: 100%;
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
-              "
-              v-on="inputEvents"
-            />
-          </div>
+          <eox-timecontrol-date
+            v-if="!hideInputField || toggleCalendar"
+            ref="dateRef"
+            class="d-flex align-center"
+            .navigation="!hideArrows"
+            @mousemove="showCalendar"
+            @mouseleave="hideCalendar"
+          ></eox-timecontrol-date>
           <v-btn
             v-if="!hideArrows"
             v-tooltip:bottom="'Set date to latest available dataset'"
-            density="compact"
-            :size="lgAndDown ? 'x-small' : 'large'"
+            icon
+            size="small"
             variant="text"
-            class="py-2"
-            style="flex-shrink: 1; padding: 0"
+            color="primary"
             @click="jumpDate(false)"
           >
-            <v-icon :icon="[mdiRayStartArrow]" />
+            <v-icon :icon="[mdiPageLast]" />
           </v-btn>
         </div>
-      </template>
-      <template v-else #footer>
-        <div
-          class="d-flex flex-row align-center justify-center pb-1"
-          style="overflow: hidden; width: 100%"
-        >
-          <v-btn
-            v-if="!hideArrows"
-            v-tooltip:bottom="'Set date to oldest available dataset'"
-            density="compact"
-            :size="lgAndDown ? 'x-small' : 'large'"
-            variant="text"
-            class="py-2"
-            style="flex-shrink: 1"
-            @click="jumpDate(true)"
-          >
-            <v-icon :icon="[mdiRayEndArrow]" />
-          </v-btn>
-          <div
-            class="flex rounded-lg border border-gray-300 dark:border-gray-600"
-            style="margin: 2px; min-width: 0"
-          >
-            <input
-              v-if="!hideInputField"
-              :value="maskedCurrentDate"
-              class="flex-grow px-1 py-1 dark:bg-gray-700"
-              style="
-                margin: 1px;
-                width: 100%;
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
-              "
-              @change="onInputChange"
-            />
-          </div>
-          <v-btn
-            v-if="!hideArrows"
-            v-tooltip:bottom="'Set date to latest available dataset'"
-            density="compact"
-            :size="lgAndDown ? 'x-small' : 'large'"
-            variant="text"
-            class="py-2"
-            style="flex-shrink: 1"
-            @click="jumpDate(false)"
-          >
-            <v-icon :icon="[mdiRayStartArrow]" />
-          </v-btn>
-        </div>
-      </template>
-    </VCDatePicker>
+        <eox-timecontrol-picker
+          ref="pickerRef"
+          .showDots="true"
+          .showItems="showItems"
+          .popup="toggleCalendar"
+        ></eox-timecontrol-picker>
+      </div>
+    </eox-timecontrol>
   </div>
 </template>
 <script setup>
-import { DatePicker as VCDatePicker } from "v-calendar";
-import { useDisplay } from "vuetify";
-import "v-calendar/style.css";
-import {
-  watch,
-  reactive,
-  ref,
-  customRef,
-  onMounted,
-  computed,
-  useTemplateRef,
-} from "vue";
+import "@eox/timecontrol";
+import { watch, ref, customRef, onUnmounted, useTemplateRef } from "vue";
 import { useSTAcStore } from "@/store/stac";
 import { datetime } from "@/store/states";
-import { mdiRayStartArrow, mdiRayEndArrow } from "@mdi/js";
+import { mdiPageFirst, mdiPageLast } from "@mdi/js";
 import { eodashCollections, eodashCompareCollections } from "@/utils/states";
 import log from "loglevel";
 import { useTransparentPanel } from "@/composables";
 import { storeToRefs } from "pinia";
 
-const { lgAndDown } = useDisplay();
+const props = defineProps({
+  hideArrows: {
+    type: Boolean,
+    default: false,
+  },
+  hideInputField: {
+    type: Boolean,
+    default: false,
+  },
+  toggleCalendar: {
+    type: Boolean,
+    default: false,
+  },
+  showItems: {
+    type: Boolean,
+    default: true,
+  },
+});
 
 const rootEl = useTemplateRef("rootRef");
 
-const datePickerEl = useTemplateRef("datePicker");
+const dateEl = useTemplateRef("dateRef");
+
+/** @type {import("vue").ShallowRef<HTMLElement | null>} */
+const pickerEl = useTemplateRef("pickerRef");
+
+/** @type {import("vue").ShallowRef<import("@eox/timecontrol").EOxTimeControl | null>} */
+const timecontrolEl = useTemplateRef("timecontrolRef");
 
 // holds the number value of the datetime
 const currentDate = customRef((track, trigger) => ({
@@ -156,83 +111,56 @@ const currentDate = customRef((track, trigger) => ({
     }
 
     datetime.value = date.toISOString();
-    //@ts-expect-error supports move method https://vcalendar.io/datepicker/basics.html#basics
-    datePickerEl.value?.move({
-      month: date.getMonth() + 1,
-      year: date.getFullYear(),
-    });
   },
 }));
 
-const masks = ref({
-  input: "YYYY-MM-DD",
-});
+// Guards the datetime <-> calendar echo, at the calendar's own day resolution.
+let calendarDay = "";
 
 /** @param {Date} date */
-const formatDate = (date) => {
-  const years = date.getFullYear();
-  const month = date.getMonth() + 1;
-  const day = date.getDate();
-  return `${years}-${month < 10 ? "0" + month : month}-${
-    day < 10 ? "0" + day : day
-  }`;
-};
-/**
- *
- * @param e {Event}
- */
-const onInputChange = (e) => {
-  currentDate.value = new Date(
-    /** @type {HTMLInputElement} */ (e.target)?.value,
-  ).getTime();
-};
-const maskedCurrentDate = computed(() =>
-  formatDate(new Date(currentDate.value)),
-);
+const utcDay = (date) =>
+  isNaN(date.getTime()) ? "" : date.toISOString().slice(0, 10);
 
-defineProps({
-  hintText: {
-    type: String,
-    default: null,
-  },
-  hideArrows: {
-    type: Boolean,
-    default: false,
-  },
-  hideInputField: {
-    type: Boolean,
-    default: false,
-  },
-  toggleCalendar: {
-    type: Boolean,
-    default: false,
-  },
+/** @param {CustomEvent<{date: [Date, Date]}>} e */
+const onSelect = (e) => {
+  const [selected] = e.detail.date;
+  calendarDay = utcDay(selected);
+  currentDate.value = selected.getTime();
+};
+
+watch(datetime, (iso) => {
+  const el = timecontrolEl.value;
+  const date = new Date(iso);
+  if (!el || utcDay(date) === calendarDay) {
+    return;
+  }
+  calendarDay = utcDay(date);
+  el.dateChange([iso, iso], el);
 });
 
-/**
- * Attributes displayed on datepicker
- *
- * @type {import("vue").Reactive<Array<Partial<import("v-calendar/dist/types/src/utils/attribute").AttributeConfig> | undefined>>}
- */
-const attributes = reactive([]);
+/** @type {import("vue").Ref<import("@/types").DatePickerControlValue[]>} */
+const controlValues = ref([]);
+
+// eox only derives its items in `firstUpdated`, so a change needs a remount.
+const revision = ref(0);
 
 const { selectedCompareStac, selectedStac } = storeToRefs(useSTAcStore());
 
 watch(
   [selectedStac, selectedCompareStac],
   async ([updatedStac, updatedCompareStac]) => {
-    attributes.splice(0, attributes.length);
     if (!updatedStac && !updatedCompareStac) {
-      log.debug("No STAC selected, clearing datepicker attributes");
+      log.debug("No STAC selected, clearing datepicker dates");
+      controlValues.value = [];
+      revision.value++;
       return;
     }
 
-    const attrs =
-      /** @type {Partial<import("v-calendar/dist/types/src/utils/attribute").AttributeConfig>[]} */ ([
-        ...(await fetchCollectionsAttributes(eodashCollections)),
-        ...(await fetchCollectionsAttributes(eodashCompareCollections)),
-      ]);
-    attributes.push(...attrs);
+    controlValues.value = [
+      ...(await fetchCollectionsDates(eodashCollections)),
+      ...(await fetchCollectionsDates(eodashCompareCollections, " (compare)")),
+    ];
+    revision.value++;
   },
   { immediate: true },
 );
@@ -240,100 +168,133 @@ watch(
 /**
  *
  * @param {import("@/eodashSTAC/EodashCollection").EodashCollection[]} eodashCollections
+ * @param {string} [suffix] Keeps compare ids distinct.
+ * @returns {Promise<import("@/types").DatePickerControlValue[]>}
  */
-async function fetchCollectionsAttributes(eodashCollections) {
-  if (!eodashCollections || !eodashCollections.length) {
-    return [];
-  }
+async function fetchCollectionsDates(eodashCollections, suffix = "") {
+  const values = await Promise.all(
+    eodashCollections.map(async (ec) => {
+      await ec.fetchCollection();
+      const dates = await ec.getDates();
+      if (!dates?.length) {
+        return null;
+      }
 
-  return await Promise.all(
-    eodashCollections.map((ec, idx) => {
-      return ec.fetchCollection().then(async () => {
-        const dates = await ec.getDates();
-        if (!dates || !dates.length) {
-          log.debug(
-            `Collection ${ec.collectionStac?.id} has no dates, skipping datepicker attribute`,
-          );
-          return undefined;
-        }
-
-        return {
-          key: "id-" + idx.toString() + Math.random().toString(16).slice(2),
-          dot: {
-            style: {
-              backgroundColor: ec.color,
-            },
-          },
-          dates,
-          content: {
-            style: {
-              color: "#000000",
-              "font-weight": "bold",
-            },
-          },
-        };
-      });
+      return {
+        id: `${ec.collectionStac?.id ?? ""}${suffix}`,
+        title: ec.collectionStac?.title ?? ec.collectionStac?.id ?? "",
+        color: ec.color,
+        timeControlValues: dates.map((date) => ({ date: date.toISOString() })),
+      };
     }),
-  );
+  ).catch((e) => {
+    console.error("[eodash] Datepicker failed to read collection dates", e);
+    return /** @type {import("@/types").DatePickerControlValue[]} **/ ([]);
+  });
+
+  return values.filter((value) => !!value);
 }
+
+/** Number of `--dot-color-*` slots eox declares. */
+const DOT_COLOR_SLOTS = 11;
+
+/**
+ * sets a color for each layer
+ *
+ * @param {import("@/types").DatePickerControlValue[]} values
+ */
+const applyDotColors = (values) => {
+  // The popup reads them off body, the inline calendar off the host.
+  for (const el of [document.body, pickerEl.value]) {
+    if (!el) {
+      continue;
+    }
+    for (let idx = 0; idx < DOT_COLOR_SLOTS; idx++) {
+      const color = values[idx]?.color;
+      if (color) {
+        el.style.setProperty(`--dot-color-${idx + 1}`, color);
+      } else {
+        el.style.removeProperty(`--dot-color-${idx + 1}`);
+      }
+    }
+  }
+};
+
+// `post` so the remounted picker exists by the time it is written to.
+watch(controlValues, applyDotColors, { immediate: true, flush: "post" });
+onUnmounted(() => applyDotColors([]));
+
+/** `cal` is only assigned inside initCalendar's setTimeout. */
+const calendar = () =>
+  /** @type {import("@eox/timecontrol/src/components/timecontrol-picker").EOxTimeControlPicker | null} */ (
+    timecontrolEl.value?.getTimeControlPicker() ?? null
+  )?.cal;
+
+const popupEl = () =>
+  /** @type {HTMLElement | undefined} */ (calendar()?.context?.mainElement);
+
+/**
+ * The popup opens on click by default; the old picker opened on hover.
+ *
+ * @param {MouseEvent} e
+ */
+const showCalendar = (e) => {
+  if (!props.toggleCalendar || !isOverField(e)) {
+    return;
+  }
+  calendar()?.show();
+  popupEl()?.addEventListener("mouseleave", hideCalendar);
+};
+
+/**
+ * Whether the pointer is over the date field, matched by geometry
+ *
+ * @param {MouseEvent} e
+ */
+const isOverField = (e) => {
+  const field = dateEl.value?.shadowRoot
+    ?.querySelector("input")
+    ?.getBoundingClientRect();
+  const row = dateEl.value?.getBoundingClientRect();
+
+  return (
+    !!field &&
+    !!row &&
+    e.clientX >= field.left &&
+    e.clientX <= field.right &&
+    e.clientY >= row.top &&
+    e.clientY <= row.bottom
+  );
+};
+
+/** @param {MouseEvent} e */
+const hideCalendar = (e) => {
+  const enteredEl = /** @type {Node | null} */ (e.relatedTarget);
+  // Moving between the field and the popup must not close it.
+  if (dateEl.value?.contains(enteredEl) || popupEl()?.contains(enteredEl)) {
+    return;
+  }
+  calendar()?.hide();
+};
+
 /**
  * @param {boolean} reverse
  */
 function jumpDate(reverse) {
-  if (attributes.length) {
-    let latestDateMS = reverse ? Infinity : -Infinity;
-    attributes.forEach((coll) => {
-      if (coll?.dates) {
-        coll.dates.forEach((d) => {
-          // TODO: we need to handle time ranges and other options here
-          if (d instanceof Date) {
-            const mathFun = reverse ? "min" : "max";
-            latestDateMS = Math[mathFun](latestDateMS, d.getTime());
-          }
-        });
-      }
-    });
-    currentDate.value =
-      latestDateMS === -Infinity
-        ? Date.now()
-        : latestDateMS === Infinity
-          ? 0
-          : latestDateMS;
+  // TODO: we need to handle time ranges and other options here
+  const times = controlValues.value.flatMap((coll) =>
+    coll.timeControlValues.map(({ date }) => new Date(date).getTime()),
+  );
+  if (times.length) {
+    currentDate.value = times.reduce((a, b) =>
+      reverse ? Math.min(a, b) : Math.max(a, b),
+    );
   }
 }
-
-// fixes calendar dispalcement on lib mode
-const transform = ref("");
-onMounted(() => {
-  // keeping the reactive translate just in case,
-  // but seems like static css would work as well
-  // because the visual is same both in lib and in app mode
-  transform.value = document.querySelector("eo-dash")
-    ? "translate3d(30px,-50px,0)"
-    : "translate3d(30px,-50px,0)";
-});
 
 useTransparentPanel(rootEl);
 </script>
 <style>
-.vc-popover-content {
-  --vc-nav-hover-bg: rgba(var(--v-theme-on-surface), 0.1);
-  --vc-nav-item-active-color: rgb(var(--v-theme-on-secondary));
-  --vc-nav-item-active-bg: rgba(var(--v-theme-secondary), 0.8);
-  --vc-focus-ring: 0 0 0 2px rgba(var(--v-theme-secondary), 0.5);
-}
-.vc-container {
-  --vc-day-content-hover-bg: rgba(var(--v-theme-on-surface), 0.2);
-  --vc-focus-ring: 0 0 0 2px rgba(var(--v-theme-secondary), 0.4);
-  --vc-header-arrow-hover-bg: rgba(var(--v-theme-secondary), 0.1);
-}
-.vc-attr {
-  --vc-accent-600: rgba(var(--v-theme-secondary), 0.8);
-}
-.datePicker {
-  --vc-day-content-hover-bg: red;
-}
-
 @media (min-width: 960px) {
   .datePicker {
     position: absolute;
@@ -344,20 +305,7 @@ useTransparentPanel(rootEl);
     width: fit-content;
   }
 }
-.vc-day-content {
-  color: #5e5e5e;
-  font-weight: normal;
-}
 
-.vc-highlight-content-solid {
-  color: white !important;
-}
-
-.vc-popover-content-wrapper {
-  transform: v-bind("transform") !important;
-}
-
-.vc-date-picker-content,
 .datePicker {
   backdrop-filter: blur(10px) !important;
   border-radius: 8px;
@@ -372,11 +320,27 @@ useTransparentPanel(rootEl);
   ) !important;
 }
 
-.vc-popover-caret.direction-top.align-left {
-  clip-path: polygon(0% 0%, 100% 0%, 0% 100%, 0% 100%);
+.datePicker eox-timecontrol-date::part(previous),
+.datePicker eox-timecontrol-date::part(next) {
+  width: 40px;
+  height: 40px;
 }
 
-.vc-bordered {
-  border: none;
+.datePicker eox-timecontrol-picker,
+.datePicker eox-timecontrol-date,
+body > .vc {
+  --primary: rgb(var(--v-theme-primary));
+  --on-primary: rgb(var(--v-theme-on-primary));
+  --on-surface: rgb(var(--v-theme-on-surface));
+  --surface-container-lowest: transparent;
+}
+
+body > .vc {
+  --surface-container-lowest: rgba(
+    var(--v-theme-surface),
+    var(--v-surface-opacity, 0.8)
+  );
+  backdrop-filter: blur(10px);
+  border-radius: 8px;
 }
 </style>

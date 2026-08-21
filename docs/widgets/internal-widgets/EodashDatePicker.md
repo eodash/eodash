@@ -1,6 +1,8 @@
 # EodashDatePicker
 
-A calendar-based date selector. It renders a `v-calendar` date picker populated with colored dots for each date that has available data in the currently selected collection(s). Selecting a date updates the global [`datetime`](/eodash-store) state used by map layers. Arrow buttons jump to the oldest or latest available date. On desktop the widget is positioned as a floating overlay anchored to the bottom of the map.
+A calendar for picking the global date, built on [`eox-timecontrol`](https://eox-a.github.io/EOxElements/?path=/docs/elements-eox-timecontrol--docs). Every date with data gets a dot, coloured per collection, compare side included. Picking a date updates the global [`datetime`](/eodash-store) that map layers follow.
+
+The date field steps through available dates one at a time. The buttons on either side jump straight to the oldest or latest.
 
 ## Example
 
@@ -19,15 +21,13 @@ Default usage:
 }
 ```
 
-Compact input-only mode with no full calendar grid:
+In compact mode the calendar stays closed until you hover or click the date field:
 
 ```js
 widget: {
   name: "EodashDatePicker",
   properties: {
     toggleCalendar: true,
-    hideArrows: false,
-    hideInputField: false,
   },
 }
 ```

@@ -833,3 +833,16 @@ export interface StacAuthLink extends StacLink {
 export interface StacAuthAsset extends StacAsset {
   "auth:refs": [string];
 }
+
+/**
+ * `eox-timecontrol` layer entry
+ * @ignore
+ */
+export interface DatePickerControlValue {
+  /** Groups items in the timecontrol dataset, so it has to be unique. */
+  id: string;
+  title: string;
+  /** Drives the calendar dot via `--dot-color-*`, eox default when unset. */
+  color?: string;
+  timeControlValues: { date: string }[];
+}
