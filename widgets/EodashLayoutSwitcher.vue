@@ -18,7 +18,7 @@ import { activeTemplate } from "@/store/states";
 import { mdiViewDashboard } from "@mdi/js";
 import { useTransparentPanel } from "@/composables";
 import { ref } from "vue";
-import { useDisplay } from "vuetify/lib/composables/display";
+import { useDisplay } from "vuetify";
 
 const { mobile } = useDisplay();
 defineProps({
