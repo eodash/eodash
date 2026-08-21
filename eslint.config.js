@@ -3,7 +3,7 @@ import eox from "@eox/eslint-config";
 export default [
   ...eox.filter((c) => !c?.name?.includes("cypress")),
   {
-    ignores: ["public/", "dist/", ".eodash/", "docs/"],
+    ignores: ["public/", "**/dist/", ".eodash/", "docs/"],
   },
   {
     files: ["core/client/**/*.vue", "widgets/**/*.vue"],
