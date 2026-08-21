@@ -1,31 +1,31 @@
 #!/usr/bin/env node
 
 import { build as viteBuild, createServer, preview } from "vite";
-import {
-  rootPath,
-  appPath,
-  buildTargetPath,
-  userConfig,
-  runtimeConfigPath,
-  indexHtml,
-} from "./globals.js";
+import { appPath, renderIndexHtml } from "./globals.js";
 import { writeFile, rm, cp } from "fs/promises";
-import { viteConfig } from "./viteConfig.js";
+import { createViteConfig } from "./viteConfig.js";
 import path from "path";
 import { existsSync } from "fs";
 
-export const createDevServer = async () => {
+/** @param {import("./globals.js").EodashContext} ctx */
+export const createDevServer = async (ctx) => {
   const server = await createServer(
-    await viteConfig({ mode: "development", command: "serve" }),
+    await createViteConfig(ctx)({ mode: "development", command: "serve" }),
   );
   await server.listen();
   server.printUrls();
   server.bindCLIShortcuts({ print: true });
 };
 
-export const buildApp = async () => {
+/** @param {import("./globals.js").EodashContext} ctx */
+export const buildApp = async (ctx) => {
+  const { userConfig, runtimeConfigPath, buildTargetPath } = ctx;
+
   const build = async () => {
-    const config = await viteConfig({ mode: "production", command: "build" });
+    const config = await createViteConfig(ctx)({
+      mode: "production",
+      command: "build",
+    });
     await viteBuild(config);
 
     if (existsSync(runtimeConfigPath)) {
@@ -36,20 +36,25 @@ export const buildApp = async () => {
       });
     }
   };
+
   if (userConfig.lib) {
     await build();
-  } else {
-    const htmlPath = path.join(appPath, "/index.html");
-    await writeFile(htmlPath, indexHtml).then(async () => {
-      await build();
-      await rm(htmlPath).catch(() => {
-        console.error("failed to remove index.html");
-      });
-    });
+    return;
   }
+
+  const htmlPath = path.join(appPath, "/index.html");
+  await writeFile(htmlPath, renderIndexHtml(!!userConfig.lib))
+    .then(build)
+    .finally(() =>
+      rm(htmlPath).catch(() => {
+        console.error("failed to remove index.html");
+      }),
+    );
 };
 
-export async function previewApp() {
+/** @param {import("./globals.js").EodashContext} ctx */
+export async function previewApp(ctx) {
+  const { userConfig, rootPath, buildTargetPath } = ctx;
   const previewServer = await preview({
     root: rootPath,
     base: userConfig.base ?? "",
