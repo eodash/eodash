@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { createMcpServer } from "../../mcp-server/index.js";
-import { scaffoldDashboard } from "../../mcp-server/generators/dashboard.js";
-import { generateEodashConfig } from "../../mcp-server/generators/config.js";
-import { getAvailableTemplates } from "../../mcp-server/helpers.js";
+import { createMcpServer } from "../index.js";
+import { scaffoldDashboard } from "../generators/dashboard.js";
+import { generateEodashConfig } from "../generators/config.js";
+import { getAvailableTemplates } from "../helpers.js";
 
 describe("eodash Generators - scaffoldDashboard", () => {
   it("generates standalone SPA boilerplate", () => {

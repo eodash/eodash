@@ -2,9 +2,9 @@ import { execSync } from "child_process";
 
 const PRERELEASE_TYPE = "beta";
 
-// latest tag from git
+// latest tag from git, matched by the app's tag
 const latestTag = execSync(
-  "git describe --tags `git rev-list --tags --max-count=1`",
+  "git describe --tags --abbrev=0 --match 'eodash-v*'",
   { encoding: "utf-8" },
 )
   .toString()

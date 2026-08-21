@@ -7,7 +7,7 @@ import { parse as parseVueSFC } from "@vue/compiler-sfc";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const DEFAULT_REPO_ROOT = path.resolve(__dirname, "..");
+const DEFAULT_REPO_ROOT = path.resolve(__dirname, "../..");
 
 const EXCLUDED_WIDGETS = new Set(["ExportState", "PopUp"]);
 
@@ -782,6 +782,6 @@ if (
   );
 
   console.log(
-    `Auto-generated metadata for ${Object.keys(widgetsMetadata).length} widgets and reactiveStore (${architectureMetadata.reactiveStore.states.length} states, ${architectureMetadata.reactiveStore.stacStore.length} STAC store items, ${architectureMetadata.reactiveStore.actions.length} actions) in mcp-server/data/`,
+    `Auto-generated metadata for ${Object.keys(widgetsMetadata).length} widgets and reactiveStore (${architectureMetadata.reactiveStore.states.length} states, ${architectureMetadata.reactiveStore.stacStore.length} STAC store items, ${architectureMetadata.reactiveStore.actions.length} actions) in packages/mcp/data/`,
   );
 }

@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import http from "node:http";
-import { createMcpServer, createExpressApp } from "../../mcp-server/index.js";
-import { buildMetadata } from "../../mcp-server/generate-metadata.js";
+import { createMcpServer, createExpressApp } from "../index.js";
+import { buildMetadata } from "../generate-metadata.js";
 
 describe("eodash MCP Server - Core Tools", () => {
   it("initializes MCP server and registers tools", () => {

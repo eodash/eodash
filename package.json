@@ -2,6 +2,9 @@
   "name": "@eodash/eodash",
   "version": "5.9.0",
   "type": "module",
+  "workspaces": [
+    "packages/*"
+  ],
   "types": "./dist/types/core/client/types.d.ts",
   "files": [
     "core/client",
@@ -58,7 +61,7 @@
     "build:lib": "npx eodash build --entryPoint false --lib --outDir dist/client",
     "build:cli": "rolldown -c",
     "build:types": "vue-tsc --declaration  --emitDeclarationOnly && tsc-alias",
-    "check": "vue-tsc --noEmit --skipLibCheck && eslint .",
+    "check": "vue-tsc --noEmit --skipLibCheck && eslint . && npm run check --workspaces --if-present",
     "format": "prettier . --write --ignore-unknown",
     "preview": "npx eodash preview",
     "lint": "eslint . --fix",
@@ -71,12 +74,12 @@
     "test:template": "vitest run tests/template",
     "test:cli": "vitest run --project cli",
     "test:mcp": "vitest run --project mcp",
-    "mcp:generate": "node mcp-server/generate-metadata.js",
-    "mcp:start": "node mcp-server/index.js",
+    "mcp:generate": "node packages/mcp/generate-metadata.js",
+    "mcp:start": "node packages/mcp/index.js",
     "docs:dev": "test -d docs/api || npm run docs:generate && vitepress dev docs --port 3333",
     "docs:build": "npm run docs:generate && vitepress build docs",
     "docs:preview": "vitepress preview docs",
-    "docs:generate": "npm run build:cli && npm run build:types && typedoc --options typedoc.config.json && npm run mcp:generate"
+    "docs:generate": "npm run build:cli && npm run build:types && typedoc --options typedoc.config.json && npm run build:types --workspaces --if-present"
   },
   "dependencies": {
     "@eox/chart": "^1.2.0",
