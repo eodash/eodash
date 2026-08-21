@@ -1,7 +1,7 @@
-import log from "loglevel";
-
 /**
- * Return projection code which is to be registered in `eox-map`
+ * Standardizes a projection input into a string identifier.
+ * Supports EPSG numbers, raw strings, or projection objects.
+ *
  * @param {string|number|{name: string, def: string}} [projection]
  * @returns {string}
  */
@@ -21,9 +21,8 @@ export const getProjectionCode = (projection) => {
 };
 
 /**
- * The projection an item, link or asset states, however it spells it.
- * `proj:code` is what the projection extension reads since v1.2, where
- * `proj:epsg` was deprecated; v2.0 dropped it.
+ * Extracts the projection code from a STAC item, link, or asset.
+ * Checks modern `proj:code` first, falling back to `proj:epsg` or `eodash:proj4_def`.
  *
  * @param {{ "proj:code"?: string, "proj:epsg"?: number | null, "eodash:proj4_def"?: import("../types").Projection } | undefined | null} source
  * @returns {import("../types").Projection | undefined}
@@ -33,34 +32,6 @@ export const getProjection = (source) =>
   source?.["proj:epsg"] ||
   source?.["eodash:proj4_def"] ||
   undefined;
-
-/**
- * Assigns projection code to the layer ID
- * @param {import("../types").EodashItem} item
- * @param {import("../types").EodashLink | import("../types").EodashAsset} linkOrAsset
- * @param {string} id - {@link createLayerID} & {@link extractRoles}
- * @param {{ properties:{id:string}  & Record<string, any> }& Record<string,any>} layer
- * @returns
- */
-export function assignProjID(item, linkOrAsset, id, layer) {
-  const indicatorProjection =
-    /** @type { string | undefined} */
-    (item?.["proj:epsg"]) ||
-    /** @type { {name?: string} | undefined} */
-    (item?.["eodash:mapProjection"])?.name ||
-    "EPSG:3857";
-
-  const idArr = id.split(";:;");
-
-  idArr.pop();
-  idArr.push(indicatorProjection);
-  const updatedID = idArr.join(";:;");
-  layer.properties.id = updatedID;
-
-  log.debug("Updating layer id", updatedID);
-
-  return updatedID;
-}
 
 /**
  * Resolves a TileMatrixSet definition by projection code.
@@ -89,12 +60,6 @@ export function resolveTmsByProjection(projectionCode, customRegistry) {
   return undefined;
 }
 
-/**
- * Converts a OGC TileMatrixSet definition to OpenLayers TileGrid options.
- * @param {Record<string, any>} tms - The TileMatrixSet JSON definition
- * @param {[number, number]} [targetTileSize] - Optional target tile size for upscaling
- * @returns {Record<string, any>}
- */
 /**
  * Converts a OGC TileMatrixSet definition to OpenLayers TileGrid options.
  * @param {Record<string, any>} tms - The TileMatrixSet JSON definition

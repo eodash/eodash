@@ -9,9 +9,9 @@ import { applyValuesToUrl } from "./url.js";
  */
 
 /**
- * Binds the layer config helpers to one collection's form values, so a rebuild
- * restores what the user set without those values being passed through every
- * call. `createCollectionBase` decides how long they live.
+ * Binds layer config helpers to one collection's form values.
+ * Allows UI form states (e.g. band selections, color scales) to survive a layer rebuild
+ * without passing the state through every layer creation call.
  */
 export const createLayerConfigHelpers = () => {
   /** @type {FormValues} */
@@ -263,19 +263,19 @@ function applyRasterFormValue(state, layer) {
 
 /**
  * Fetches or extracts the raster form configuration for a STAC object.
- * Supports direct JSON objects, data URIs, and URL strings. `${...}`
- * placeholders are rendered against `item` when provided.
+ * Supports direct JSON objects, data URIs, and URL strings.
+ * Renders placeholders against the provided item context.
  *
- * @param {string|object|undefined} rasterform - The rasterform property from the STAC object.
+ * @param {import("../types").RasterForm|string|undefined} rasterform - The rasterform property from the STAC object.
  * @param {import("../http.js").HttpClient} http
- * @param {import("../types").EodashItem} [item] - Item the form is rendered against.
- * @returns {Promise<import("../types").EodashRasterJSONForm|undefined>}
+ * @param {import("../types").STACItem} [item] - Item the form is rendered against.
+ * @returns {Promise<import("../types").RasterForm|undefined>}
  */
 export async function fetchRasterForm(rasterform, http, item) {
-  /** @type {import("../types").EodashRasterJSONForm | undefined} */
+  /** @type {import("../types").RasterForm | undefined} */
   let form = undefined;
   if (typeof rasterform === "object" && rasterform) {
-    form = /** @type {import("../types").EodashRasterJSONForm} */ (rasterform);
+    form = /** @type {import("../types").RasterForm} */ (rasterform);
   } else if (typeof rasterform === "string" && rasterform) {
     form = await http.get(rasterform);
   }
@@ -314,10 +314,8 @@ export function renderConfigTemplate(json, view) {
 }
 
 /**
- * Locate the first sub-schema whose `format` matches by walking `properties`
- * and the `oneOf` / `allOf` / `anyOf` combinators. Returns the schema path
- * (array of keys/indices) from the root schema to the matched node, or
- * undefined if not found. Empty array means the input schema itself matched.
+ * Locates the first sub-schema matching a specific format by walking properties and combinators.
+ * Returns the schema path from the root as an array of keys/indices, or undefined if not found.
  *
  * @param {Record<string, any> | null | undefined} schema
  * @param {string} [format="bands"]

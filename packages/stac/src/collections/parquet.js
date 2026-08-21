@@ -22,13 +22,13 @@ const FOOTER_BYTES = 1 << 15;
  */
 
 /**
- * A collection whose items live in a parquet asset rather than in `item` links.
- * Columns are read on demand, so asking about time never transfers the assets.
+ * Instantiates a STAC collection backed by a GeoParquet mirror asset.
+ * Defers reading columns until requested, avoiding full asset transfers when only dates are needed.
  *
  * @param {object} context
  * @param {string} context.url
- * @param {import("../types").EodashCollection} context.stac
- * @param {import("../http.js").HttpClient} context.http what a build reads through; the mirror itself is read by range
+ * @param {import("../types").STACCollection} context.stac
+ * @param {import("../http.js").HttpClient} context.http
  */
 export const createParquetCollection = ({ url, stac, http }) => {
   const mirror = findParquetMirror(stac);
@@ -119,7 +119,7 @@ export const createParquetCollection = ({ url, stac, http }) => {
    * Every item, in row order. A mirror is written as one row group, so a column
    * chunk spans every row and one item costs as much as all of them.
    *
-   * @returns {Promise<import("../types").EodashItem[]>}
+   * @returns {Promise<import("../types").STACItem[]>}
    */
   const readItems = cachedRead(async () =>
     adjustParquetItems(await readParquet()),
@@ -129,7 +129,7 @@ export const createParquetCollection = ({ url, stac, http }) => {
    * The items the mirror holds, oldest first. This transfers every column, so
    * reach for `getDates` where it answers.
    *
-   * @returns {Promise<import("../types").EodashItem[]>}
+   * @returns {Promise<import("../types").STACItem[]>}
    */
   const getItems = async () => {
     const items = await readItems();
@@ -154,7 +154,7 @@ export const createParquetCollection = ({ url, stac, http }) => {
    * Equidistant items resolve to the earlier.
    *
    * @param {import("../types").Datetime} [datetime]
-   * @returns {Promise<import("../types").EodashItem | undefined>}
+   * @returns {Promise<import("../types").STACItem | undefined>}
    */
   const getItem = async (datetime) => {
     const entries = await readDatetimes();

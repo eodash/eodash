@@ -14,7 +14,7 @@ const COLLECTION_URL = "https://cat/collections/coll";
 /**
  * A bare item, since what is under test is only what a test puts on it.
  * @param {Record<string, any>} [over]
- * @returns {import("../src/types").EodashItem}
+ * @returns {import("../src/types").STACItem}
  */
 const makeItem = (over = {}) =>
   /** @type {any} */ ({
@@ -26,7 +26,7 @@ const makeItem = (over = {}) =>
   });
 
 /**
- * @param {import("../src/types").EodashItem} item
+ * @param {import("../src/types").STACItem} item
  * @param {{ extras?: Record<string, any>, collection?: Record<string, any> } & import("../src/layers/index.js").BuildContext} [options]
  * @returns {Promise<any[]>}
  */
@@ -43,7 +43,7 @@ const buildAll = async (
 };
 
 /**
- * @param {import("../src/types").EodashItem} item
+ * @param {import("../src/types").STACItem} item
  * @param {Parameters<typeof buildAll>[1]} [options]
  * @returns {Promise<any[]>}
  */

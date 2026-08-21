@@ -13,7 +13,7 @@ const COLLECTION_URL = "https://cat/collections/coll";
 /**
  * A bare item, since what is under test is only what a test puts on it.
  * @param {Record<string, any>} [over]
- * @returns {import("../src/types").EodashItem}
+ * @returns {import("../src/types").STACItem}
  */
 const makeItem = (over = {}) =>
   /** @type {any} */ ({
@@ -31,7 +31,7 @@ const makeItem = (over = {}) =>
 const dataAsset = (asset) => ({ roles: ["data"], ...asset });
 
 /**
- * @param {import("../src/types").EodashItem} item
+ * @param {import("../src/types").STACItem} item
  * @param {Record<string, any>} [extras] url -> data the build reads (geojson bodies)
  * @returns {Promise<any[]>}
  */

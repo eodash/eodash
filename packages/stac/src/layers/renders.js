@@ -17,19 +17,18 @@ import { encodeURLObject } from "../helpers/url.js";
 import { createHTTPInstance } from "../http.js";
 
 /**
- * Implementation of a function that creates a layer from the render extention.
- * The projections it settled on come back with the layers, for the caller to
- * register before the layers are assigned.
+ * Creates map layers based on the STAC render extension configuration.
+ * Resolves properties from the item, collection, or explicit overrides.
  *
  * @param {string} rasterURL
- * @param {import("../types").EodashCollection | undefined | null} collection
- * @param {import("../types").EodashItem | undefined | null} item
+ * @param {import("../types").STACCollection | undefined | null} collection
+ * @param {import("../types").STACItem | undefined | null} item
  * @param {Record<string, any>} [extraProperties]
  * @param {object} [options]
- * @param {Record<string, Record<string, import("../types").Render>>} [options.renders] - renders the app config states, keyed by collection id, which win over the collection's own
- * @param {Record<string, any> | null} [options.tileMatrixSets] - tile matrix set definitions keyed by id
- * @param {import("../http.js").HttpClient} [options.http] reads every url this needs
- * @param {import("../types").LayerConfigHelpers} [options.layerConfigHelpers] restores what the collection's config editors held onto the rebuilt layers
+ * @param {Record<string, Record<string, import("../types").Render>>} [options.renders]
+ * @param {Record<string, any> | null} [options.tileMatrixSets]
+ * @param {import("../http.js").HttpClient} [options.http]
+ * @param {import("../types").LayerConfigHelpers} [options.layerConfigHelpers]
  * @returns {Promise<{ layers: import("../types").EoxLayer[], projections: import("../types").Projection[] }>}
  */
 export const createLayerFromRender = async (
