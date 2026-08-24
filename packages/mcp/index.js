@@ -109,7 +109,7 @@ export function createMcpServer() {
     "get_widget_details",
     {
       description:
-        "Get comprehensive details for a specific eodash widget: full TypeScript props (types, defaults, descriptions), store interactions, supported STAC extensions, copy-pasteable example config, and markdown guide.",
+        "Get details for a specific eodash widget: full TypeScript props (types, defaults, descriptions), store interactions, supported STAC extensions, copy-pasteable example config, and markdown guide.",
       inputSchema: z.object({
         widgetName: z
           .string()
@@ -148,7 +148,7 @@ export function createMcpServer() {
     "get_custom_widget_guide",
     {
       description:
-        "Get comprehensive guide and code templates for creating and plugging custom widgets into eodash (web-component widgets, functional widgets, iframe widgets, reactive store integration, and EOxElements playground workflow).",
+        "Get guide and code templates for creating and plugging custom widgets into eodash (web-component widgets, functional widgets, iframe widgets, reactive store integration, and EOxElements playground workflow).",
       inputSchema: z.object({
         type: z
           .enum([
@@ -186,7 +186,7 @@ export function createMcpServer() {
     "get_eodash_architecture",
     {
       description:
-        "Get comprehensive architecture documentation of @eodash/eodash: grid system (12-column, breakpoints 'x/y/w/h'), built-in templates ('lite', 'explore', 'expert', 'compare'), reactive Pinia store states, and deployment modes (SPA vs <eo-dash> web component).",
+        "Get architecture documentation of @eodash/eodash: grid system (12-column, breakpoints 'x/y/w/h'), built-in templates ('lite', 'explore', 'expert', 'compare'), reactive Pinia store states, and deployment modes (SPA vs <eo-dash> web component).",
       inputSchema: z.object({
         topic: z
           .enum([
