@@ -72,10 +72,7 @@ CMD ["nginx", "-g", "daemon off;"]
     );
 
     files["eodash.config.js"] = `import { deepmergeCustom } from "deepmerge-ts";
-import explore from "@eodash/eodash/templates/explore";
-import lite from "@eodash/eodash/templates/lite";
-import expert from "@eodash/eodash/templates/expert";
-import compare from "@eodash/eodash/templates/compare";
+import { explore, lite, expert, compare } from "@eodash/eodash/templates";
 
 const selectedTemplate = ${template};
 

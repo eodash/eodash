@@ -53,9 +53,9 @@ export function generateEodashConfig({
 
   let imports = `import { deepmergeCustom } from "deepmerge-ts";\n`;
   if (!isCustomTemplate) {
-    imports += `import ${template} from "@eodash/eodash/templates/${template}";\n`;
+    imports += `import { ${template} } from "@eodash/eodash/templates";\n`;
   } else {
-    imports += `import explore from "@eodash/eodash/templates/explore";\n`;
+    imports += `import { explore } from "@eodash/eodash/templates";\n`;
   }
 
   let templateSection = "";
