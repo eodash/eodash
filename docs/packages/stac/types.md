@@ -1,33 +1,33 @@
 # Types
 
-`@eodash/stac` ships its own types, generated into the [type reference](/api/packages/stac/src/types/). They cover two things: the STAC documents the package reads, and the shapes it hands back.
+`@eodash/stac` includes full TypeScript definitions. See the [type reference](/api/@eodash/stac/) for auto-generated API details.
 
-## STAC Documents
+## STAC documents
 
-Every STAC extension and custom property eodash understands is typed. The [STAC](/STAC) page describes them from the catalog author's side; the table maps each concept to the type that describes it.
+Every STAC extension and custom property supported by eodash is typed. For catalog structuring details, see [STAC Concepts](/STAC).
 
 | Concept | Types |
 |---|---|
-| Items and collections with the eodash fields | [`STACItem`](/api/packages/stac/src/types/type-aliases/STACItem), [`STACCollection`](/api/packages/stac/src/types/type-aliases/STACCollection) |
-| The eodash fields themselves | [`ItemExtensions`](/api/packages/stac/src/types/interfaces/ItemExtensions), [`CollectionExtensions`](/api/packages/stac/src/types/interfaces/CollectionExtensions) |
-| Web map links | [`WMSLink`](/api/packages/stac/src/types/interfaces/WMSLink), [`WMTSLink`](/api/packages/stac/src/types/interfaces/WMTSLink), [`XYZLink`](/api/packages/stac/src/types/interfaces/XYZLink), [`TileJSONLink`](/api/packages/stac/src/types/interfaces/TileJSONLink), [`VectorTileLink`](/api/packages/stac/src/types/interfaces/VectorTileLink), [`MapboxStyleDocumentLink`](/api/packages/stac/src/types/interfaces/MapboxStyleDocumentLink) |
-| Data assets | [`GeoTIFFAsset`](/api/packages/stac/src/types/interfaces/GeoTIFFAsset), [`GeoJSONAsset`](/api/packages/stac/src/types/interfaces/GeoJSONAsset), [`FlatGeobufAsset`](/api/packages/stac/src/types/interfaces/FlatGeobufAsset), [`GeoZarrAsset`](/api/packages/stac/src/types/interfaces/GeoZarrAsset), [`GeoDBAsset`](/api/packages/stac/src/types/interfaces/GeoDBAsset) |
-| Projections | [`Projection`](/api/packages/stac/src/types/type-aliases/Projection) |
-| Render extension | [`Render`](/api/packages/stac/src/types/interfaces/Render) |
-| Authentication | [`AuthScheme`](/api/packages/stac/src/types/type-aliases/AuthScheme), [`AuthRefs`](/api/packages/stac/src/types/interfaces/AuthRefs) |
-| Pre-aggregated dates | [`PreAggregationLink`](/api/packages/stac/src/types/interfaces/PreAggregationLink), [`AggregationCollection`](/api/packages/stac/src/types/interfaces/AggregationCollection) |
-| Raster form | [`RasterForm`](/api/packages/stac/src/types/interfaces/RasterForm) |
-| Flat styles | [`EodashStyleJson`](/api/packages/stac/src/types/type-aliases/EodashStyleJson) |
+| Items and collections with eodash fields | [`STACItem`](/api/@eodash/stac/type-aliases/STACItem), [`STACCollection`](/api/@eodash/stac/type-aliases/STACCollection) |
+| Eodash extension fields | [`ItemExtensions`](/api/@eodash/stac/interfaces/ItemExtensions), [`CollectionExtensions`](/api/@eodash/stac/interfaces/CollectionExtensions) |
+| Web map links | [`WMSLink`](/api/@eodash/stac/interfaces/WMSLink), [`WMTSLink`](/api/@eodash/stac/interfaces/WMTSLink), [`XYZLink`](/api/@eodash/stac/interfaces/XYZLink), [`TileJSONLink`](/api/@eodash/stac/interfaces/TileJSONLink), [`VectorTileLink`](/api/@eodash/stac/interfaces/VectorTileLink), [`MapboxStyleDocumentLink`](/api/@eodash/stac/interfaces/MapboxStyleDocumentLink) |
+| Data assets | [`GeoTIFFAsset`](/api/@eodash/stac/interfaces/GeoTIFFAsset), [`GeoJSONAsset`](/api/@eodash/stac/interfaces/GeoJSONAsset), [`FlatGeobufAsset`](/api/@eodash/stac/interfaces/FlatGeobufAsset), [`GeoZarrAsset`](/api/@eodash/stac/interfaces/GeoZarrAsset), [`GeoDBAsset`](/api/@eodash/stac/interfaces/GeoDBAsset) |
+| Projections | [`Projection`](/api/@eodash/stac/type-aliases/Projection) |
+| Render extension | [`Render`](/api/@eodash/stac/interfaces/Render) |
+| Authentication | [`AuthScheme`](/api/@eodash/stac/type-aliases/AuthScheme), [`AuthRefs`](/api/@eodash/stac/interfaces/AuthRefs) |
+| Pre-aggregated dates | [`PreAggregationLink`](/api/@eodash/stac/interfaces/PreAggregationLink), [`AggregationCollection`](/api/@eodash/stac/interfaces/AggregationCollection) |
+| Raster forms | [`RasterForm`](/api/@eodash/stac/interfaces/RasterForm) |
+| Flat styles | [`EodashStyleJson`](/api/@eodash/stac/type-aliases/EodashStyleJson) |
 
-## Extending the Baseline
+## Extending the baseline
 
-`STACItem` and `STACCollection` are not written out field by field. They are the STAC baseline with the eodash fields applied to it:
+`STACItem` and `STACCollection` combine standard STAC specifications with eodash-supported extensions:
 
 ```ts
 type STACItem = BaseItem<ItemExtensions, STACLink, STACAsset>;
 ```
 
-[`BaseItem`](/api/packages/stac/src/types/type-aliases/BaseItem), [`BaseCollection`](/api/packages/stac/src/types/type-aliases/BaseCollection) and [`BaseAsset`](/api/packages/stac/src/types/type-aliases/BaseAsset) each take the extensions the entity carries as a parameter, along with the link and asset types it holds. A catalog carrying its own properties describes them the same way, without redeclaring STAC:
+[`BaseItem`](/api/@eodash/stac/type-aliases/BaseItem), [`BaseCollection`](/api/@eodash/stac/type-aliases/BaseCollection), and [`BaseAsset`](/api/@eodash/stac/type-aliases/BaseAsset) accept extension interfaces as generic parameters. If your catalog includes custom metadata fields, you can type them without redeclaring base STAC properties:
 
 ```ts
 import type { BaseItem } from "@eodash/stac";
@@ -39,4 +39,4 @@ interface MyExtensions {
 type MyItem = BaseItem<MyExtensions>;
 ```
 
-The baseline itself is adapted from [stac-ts](https://github.com/gadomski/stac-ts), with `stac_version` widened to a string because catalogs are on 1.1.0.
+Base STAC types are adapted from [stac-ts](https://github.com/gadomski/stac-ts).

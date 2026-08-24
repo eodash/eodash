@@ -10,8 +10,15 @@ import { createCollectionBase } from "./base.js";
  * @param {import("../types").STACCollection} context.stac
  * @param {import("../http.js").HttpClient} context.http
  * @param {string} [context.color]
+ * @param {import("../types").BuildContext} [context.rasterOptions]
  */
-export const createStaticCollection = ({ url, stac, http, color }) => {
+export const createStaticCollection = ({
+  url,
+  stac,
+  http,
+  color,
+  rasterOptions,
+}) => {
   /**
    * The `item` links the document carries, oldest first.
    *
@@ -62,7 +69,14 @@ export const createStaticCollection = ({ url, stac, http, color }) => {
   };
 
   return {
-    ...createCollectionBase({ stac, http, getDates, getItem, color }),
+    ...createCollectionBase({
+      stac,
+      http,
+      getDates,
+      getItem,
+      color,
+      rasterOptions,
+    }),
     /** @type {"static"} */
     kind: "static",
     getItems,

@@ -17,6 +17,7 @@ const DATE_FIELDS =
  * @param {import("../types").STACCollection} context.stac
  * @param {import("../http.js").HttpClient} context.http
  * @param {string} [context.color]
+ * @param {import("../types").BuildContext} [context.rasterOptions]
  * @param {number} [context.maxItems=1000] - The maximum number of items returned per search query.
  */
 export const createAPICollection = ({
@@ -24,6 +25,7 @@ export const createAPICollection = ({
   stac,
   http,
   color,
+  rasterOptions,
   maxItems = 1000,
 }) => {
   const searchUrl =
@@ -166,7 +168,14 @@ export const createAPICollection = ({
   };
 
   return {
-    ...createCollectionBase({ stac, http, getDates, getItem, color }),
+    ...createCollectionBase({
+      stac,
+      http,
+      getDates,
+      getItem,
+      color,
+      rasterOptions,
+    }),
     /** @type {"api"} */
     kind: "api",
     search,

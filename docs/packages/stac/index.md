@@ -1,6 +1,6 @@
 # @eodash/stac
 
-`@eodash/stac` turns STAC collections into [eox-map](https://eox-a.github.io/EOxElements/?path=/docs/elements-eox-map--docs) layer definitions. It reads a collection document, resolves the item that covers a given datetime, and returns the layer configuration for that item. The package runs in Node and in the browser, and does not depend on the rest of eodash. Its types ship with it.
+`@eodash/stac` turns STAC collections into [eox-map](https://eox-a.github.io/EOxElements/?path=/docs/elements-eox-map--docs) layer definitions. It reads a collection document, resolves the item that covers a given datetime, and returns the layer configuration for that item. The package runs in Node.js and in the browser without depending on the rest of eodash, and includes TypeScript types.
 
 ## Installation
 
@@ -8,9 +8,9 @@
 npm install @eodash/stac
 ```
 
-## Reading a Collection
+## Reading a collection
 
-[`createEodashCollection`](/api/packages/stac/src/types/functions/createEodashCollection) fetches the collection document and returns a reader for it:
+[`createEodashCollection`](/api/@eodash/stac/functions/createEodashCollection) fetches the collection document and returns a reader for it:
 
 ```js
 import { createEodashCollection } from "@eodash/stac";
@@ -23,41 +23,50 @@ const dates = await collection.getDates();
 const { layers, projections } = await collection.getLayers(dates.at(-1));
 ```
 
-The document decides where the items come from:
+The collection document determines how items are resolved:
 
-- **`item` links**: the collection lists its items as links, each carrying a `datetime` (or `start_datetime`/`end_datetime`).
-- **GeoParquet mirror**: the collection carries an asset with the `collection-mirror` role, a GeoParquet file holding every item. The mirror is read column by column through HTTP range requests, so asking for dates transfers only the datetime column.
-- **STAC API**: the items are found by searching a `/search` endpoint. A collection document cannot state that it is served by an API, so the caller declares it with `{ api: true }`.
+- **`item` links**: The collection lists its items in its `links` array with `rel: "item"`, each carrying a `datetime` (or `start_datetime`/`end_datetime`).
+- **GeoParquet mirror**: The collection includes an asset with the `collection-mirror` role pointing to a GeoParquet file. The reader queries it column by column using HTTP range requests, downloading only the datetime column when checking available dates.
+- **STAC API**: Items are queried through a `/search` endpoint by passing `{ api: true }` in the options.
 
-The first two are detected from the document itself, and both kinds of reader answer the same way, so the caller does not need to know which one was built.
+Static links and GeoParquet mirrors are detected automatically from the document, and all readers expose a consistent API.
 
-Requests go through `fetch` unless the `client` option supplies something else, such as a caching or authenticating [axios](https://axios-http.com) instance.
+Network requests use global `fetch` by default. You can supply a custom HTTP client (such as an [axios](https://axios-http.com) instance with authentication or interceptors) through the `client` option.
 
-## The Reader
+You can also configure rendering defaults when initializing the reader:
 
-Every reader answers the same questions: which items and datetimes the collection has ([`getItems`](/api/packages/stac/src/types/type-aliases/CollectionReader), `getDates`, `getItem`, `getTemporalExtent`), and what to draw for one of them (`getLayers`, `buildLayers`, `updateLayers`). A reader for an API collection additionally exposes `search`, a raw item search with `collections` preset, and takes a `bbox` to narrow its lookups spatially.
+```js
+const collection = await createEodashCollection(url, {
+  color: "#ff5722",
+  rasterEndpoint: "https://titiler.example.org",
+  upscalingEndpoints: ["https://titiler-upscale.example.org"],
+});
+```
 
-The full surface is [`CollectionReader`](/api/packages/stac/src/types/type-aliases/CollectionReader) and [`ApiReader`](/api/packages/stac/src/types/type-aliases/ApiReader).
+- `color`: Hex color applied to vector layers or layer metadata to distinguish collections rendered together.
+- `rasterEndpoint`: Base URL for a TiTiler instance. Without this endpoint, STAC Render extension entries do not produce raster layers.
+- `upscalingEndpoints`: TiTiler endpoints used when an item requests upscaled tiles.
+- `tileMatrixSets`: Custom TileMatrixSet definitions used for projection lookups.
 
-Two things about it are worth knowing before reading the reference.
+## The Reader API
 
-`getItems` answers with what the collection holds: a static collection with its `item` links, a mirror or an API with the items themselves.
+Every reader provides methods to inspect available items and datetimes (`getItems`, `getDates`, `getItem`, `getTemporalExtent`) and generate map layer configurations (`getLayers`, `buildLayers`, `updateLayers`). Readers for STAC API collections also provide `search` (with the collection ID pre-applied) and accept an optional `bbox` to narrow spatial queries.
 
-`updateLayers` is for datetime changes on a map that already has layers. It takes the current layer tree and the id of any layer this collection built, and returns the tree with that collection's layers swapped for the new item's. Branches that did not change are returned by reference, so a diffing renderer leaves them alone.
+See [`Reader`](/api/@eodash/stac/type-aliases/Reader) for the complete interface. The `kind` property indicates whether the collection resolved to `"static"`, `"parquet"`, or `"api"`.
 
 ## Building Layers
 
-`getLayers`, `buildLayers` and `updateLayers` resolve to [`BuiltLayers`](/api/packages/stac/src/types/interfaces/BuiltLayers), and all take a [`BuildContext`](/api/packages/stac/src/types/type-aliases/BuildContext) carrying what the collection document cannot state, such as the map's view projection or a titiler endpoint.
+`getLayers`, `buildLayers`, and `updateLayers` resolve to [`BuiltLayers`](/api/@eodash/stac/interfaces/BuiltLayers). Each function accepts an optional [`BuildContext`](/api/@eodash/stac/type-aliases/BuildContext) to override settings per call (such as the map's current view projection or custom raster endpoints).
 
 ```js
 const { layers, projections, item } = await collection.getLayers(datetime);
 ```
 
-`layers` are built from the item's [web map links](https://github.com/stac-extensions/web-map-links), its `data` assets and the [render extension](https://github.com/stac-extensions/render). An item none of those cover comes back as a single STAC layer that eox-map resolves itself. A collection with no item at that datetime answers with empty `layers` and `projections`, and no `item`.
+Layers are generated from the item's [web map links](https://github.com/stac-extensions/web-map-links), `data` assets, and [render extension](https://github.com/stac-extensions/render) definitions. An item matching none of these formats falls back to a single STAC layer that eox-map resolves directly. If no item exists at the requested datetime, the call returns empty `layers` and `projections` arrays, with `item` as `undefined`.
 
-### Projections Are Returned, Not Registered
+### Registering Projections
 
-A build returns the projections its layers reference instead of registering them with the map library as a side effect. If registration happened inside the build, a cached or memoized build would skip it, and a second map created later would be left without the projection. The caller registers each entry before assigning the layers:
+`getLayers` returns referenced projection definitions alongside layers rather than registering them globally. Register each entry with your map instance before assigning the layers:
 
 ```js
 const { layers, projections } = await collection.getLayers(datetime);
@@ -76,38 +85,44 @@ for (const projection of projections) {
 map.layers = layers;
 ```
 
-### Layer Config Form Values
+### Layer Config Forms
 
-Layers built from a style with a `jsonform` or from an `eodash:rasterform` carry a `layerConfig` that [eox-layercontrol](https://eox-a.github.io/EOxElements/?path=/docs/elements-eox-layercontrol--docs) renders as a configuration form. When the user edits the form, the caller reports the new value back through `persistLayerConfig`, typically from eox-layercontrol's `layerConfig:change` event handler.
+Layers built from a style with a `jsonform` or an `eodash:rasterform` include a `layerConfig` object that [eox-layercontrol](https://eox-a.github.io/EOxElements/?path=/docs/elements-eox-layercontrol--docs) renders as an interactive configuration form.
 
-The remembered values live on the reader. A datetime change rebuilds the layers through the same reader, so the user's settings survive it; a different collection means a different reader, so its forms start empty.
+When a user edits the form, report the new value back using `persistLayerConfig` (typically from eox-layercontrol's `layerConfig:change` event handler). The reader retains these values so user configurations persist across datetime changes.
 
 ## Authentication
 
-A link or asset can name an authentication scheme through the [authentication extension](https://github.com/stac-extensions/authentication), and the package applies it when building the layer. The supported scheme is an API key sent as a query parameter; the key itself never comes from the catalog, but from an environment variable named after the scheme, so a scheme named `token` is answered by `EODASH_token`.
+Links or assets that define an authentication scheme via the [STAC authentication extension](https://github.com/stac-extensions/authentication) are authenticated when building layers.
 
-In Node the variable is read from the environment as it is. In the browser it comes from the bundler, which needs to be told to expose it: [Vite](https://vite.dev) only passes `VITE_`-prefixed variables through by default, so unprefixed ones need the prefix added.
+The package supports query parameter API keys. The key value is read from an environment variable named after the scheme (`EODASH_<scheme_name>`). For example, a scheme named `token` looks for `EODASH_token`.
+
+In Node.js, the variable is read from `process.env`. In browser builds, ensure your bundler exposes variables with the `EODASH_` prefix. In Vite, add the prefix to `envPrefix`:
 
 ```js
 // vite.config.js
-export default defineConfig({ envPrefix: ["VITE_","EODASH_"] });
+export default defineConfig({
+  envPrefix: ["VITE_", "EODASH_"],
+});
 ```
 
+## Standalone functions
 
-## Standalone Exports
+The package also exports standalone functions that do not require a reader:
 
-Three functions work without a reader:
+- [`getTooltipProperties`](/api/@eodash/stac/functions/getTooltipProperties): Extracts tooltip fields declared in item styles.
+- [`getIndicatorLayers`](/api/@eodash/stac/functions/getIndicatorLayers): Builds base layers and overlays defined directly on the collection document.
+- [`getObservationPointsLayer`](/api/@eodash/stac/functions/getObservationPointsLayer): Builds a single vector layer containing point locations for collections with `locations: true` or `endpointtype: "GeoDB"`.
 
-- [`getTooltipProperties`](/api/packages/stac/src/types/functions/getTooltipProperties) — the tooltip fields an item's styles declare.
-- [`getIndicatorLayers`](/api/packages/stac/src/types/functions/getIndicatorLayers) — the base layers and overlays a collection states, built from the collection itself rather than from any of its items.
-- [`getObservationPointsLayer`](/api/packages/stac/src/types/functions/getObservationPointsLayer) — one vector layer holding every observation point across the given collections.
+## Subpath exports
 
-Observation points are collections whose entries are places rather than times, marked by `locations: true` or `endpointtype: "GeoDB"`. They are the one thing `buildLayers` does not cover; see [Observation Points](/STAC#observation-points) for the catalog side.
+You can import specific subsystems directly if you are assembling a custom pipeline:
 
-## Subpath Exports
+- `@eodash/stac/collections`: Reader factory functions (`createStaticCollection`, `createParquetCollection`, `createAPICollection`).
+- `@eodash/stac/layers`: Layer builder functions.
+- `@eodash/stac/helpers`: Utility functions for STAC assets, links, styles, and dates.
 
-The main entry carries the reader and the standalone functions. Callers assembling their own pipeline rather than using a reader can reach the pieces directly: `@eodash/stac/collections` for the reader factories, `@eodash/stac/layers` for the layer builders, and `@eodash/stac/helpers` for what those are made of.
+## Further reading
 
-## Further Reading
-
-[Types](./types) covers the STAC types the package ships and how a catalog with its own properties extends them. The [STAC](/STAC) page describes the same documents from the catalog author's side.
+- [Types](./types): TypeScript definitions and extension patterns.
+- [STAC Concepts](/STAC): Guide to structuring eodash-compatible STAC catalogs.

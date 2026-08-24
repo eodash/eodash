@@ -1,6 +1,8 @@
 /**
  * The package's own types. STAC input types live in `./stac`, the baseline they
  * extend in `./stac-base`.
+ *
+ * @module @eodash/stac
  */
 
 export * from "./stac";
@@ -12,7 +14,6 @@ export {
   getIndicatorLayers,
   getObservationPointsLayer,
 } from "../index.js";
-export type { ApiReader, CollectionReader } from "../index.js";
 
 import type { BoundLegend, STACItem, Projection } from "./stac";
 

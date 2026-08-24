@@ -63,6 +63,22 @@ describe("layers from the render extension", () => {
     expect(layer.source.url.split("?")[1]).toBe("assets=b04&rescale=0,100&");
   });
 
+  test("takes the raster endpoint from the reader", async () => {
+    serveUrls(client, {
+      [COLLECTION_URL]: stacCollection({
+        renders: { ndvi: { assets: ["b04"] } },
+      }),
+    });
+    const col = await createEodashCollection(COLLECTION_URL, {
+      client,
+      rasterEndpoint: RASTER_ENDPOINT,
+    });
+
+    const { layers } = await col.buildLayers(RASTER_ITEM);
+
+    expect(renderLayer(layers).source.url).toContain(RASTER_ENDPOINT);
+  });
+
   test("gives each render key its own layer id, so two renders on one item do not collide", async () => {
     const layers = await build({
       renders: {
