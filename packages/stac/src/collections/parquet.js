@@ -29,8 +29,9 @@ const FOOTER_BYTES = 1 << 15;
  * @param {string} context.url
  * @param {import("../types").STACCollection} context.stac
  * @param {import("../http.js").HttpClient} context.http
+ * @param {string} [context.color]
  */
-export const createParquetCollection = ({ url, stac, http }) => {
+export const createParquetCollection = ({ url, stac, http, color }) => {
   const mirror = findParquetMirror(stac);
   const href = mirror ? toAbsolute(mirror.href, url) : undefined;
 
@@ -170,7 +171,7 @@ export const createParquetCollection = ({ url, stac, http }) => {
   };
 
   return {
-    ...createCollectionBase({ stac, http, getDates, getItem }),
+    ...createCollectionBase({ stac, http, getDates, getItem, color }),
     /** @type {"parquet"} */
     kind: "parquet",
     getItems,

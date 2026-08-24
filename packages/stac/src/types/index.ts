@@ -65,6 +65,11 @@ export type ObservationPointsThemes = Record<
 /** What the caller supplies for a build; see `layers/index.js`. */
 export type BuildContext = import("../layers/index.js").BuildContext;
 
+/** Any collection reader. Narrow it with `reader.kind` where the three differ. */
+export type Reader = Awaited<
+  ReturnType<typeof import("../index.js").createEodashCollection>
+>;
+
 /** The built layers with the projections they reference. */
 export interface BuiltLayers {
   layers: EoxLayer[];
