@@ -115,7 +115,7 @@ export const getObservationPointsLayer = (
  *
  * @param {import("../types").STACCollection} collection
  */
-function isObservationPoints(collection) {
+export function isObservationPoints(collection) {
   return collection.endpointtype === "GeoDB" || !!collection.locations;
 }
 

@@ -255,6 +255,28 @@ describe("layers from assets", () => {
     expect(geojson.features[0].properties).toEqual({ name: "x" });
   });
 
+  test("a geodb response it cannot read does not shift the assets after it", async () => {
+    const layers = await build(
+      makeItem({
+        assets: {
+          db: dataAsset({ type: "application/geodb+json", href: "https://db" }),
+          gj: dataAsset({
+            type: "application/geo+json",
+            href: "https://gj.geojson",
+          }),
+        },
+      }),
+      {
+        "https://db": { rows: [] },
+        "https://gj.geojson": { type: "FeatureCollection", features: [] },
+      },
+    );
+
+    // the surviving layer is gj's, so it carries gj's index and not db's
+    expect(layers).toHaveLength(1);
+    expect(layers[0].properties.id).toBe("coll;:;item;:;1");
+  });
+
   test("builds a Vector/FlatGeoBuf layer from a flatgeobuf data asset", async () => {
     const [layer] = await build(
       makeItem({
