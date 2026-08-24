@@ -9,7 +9,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const DEFAULT_REPO_ROOT = path.resolve(__dirname, "../..");
 
-const EXCLUDED_WIDGETS = new Set(["ExportState", "PopUp"]);
+const EXCLUDED_WIDGETS = new Set(["ExportState", "PopUp", "WidgetsContainer"]);
 
 // Known widget fallback categories & STAC extensions if not documented elsewhere
 const CATEGORY_MAP = {
@@ -24,7 +24,6 @@ const CATEGORY_MAP = {
   EodashStacInfo: "Branding & Metadata",
   EodashTools: "Layout & Orchestration",
   EodashLayoutSwitcher: "Layout & Orchestration",
-  WidgetsContainer: "Layout & Orchestration",
 };
 
 const STAC_EXTENSIONS_MAP = {

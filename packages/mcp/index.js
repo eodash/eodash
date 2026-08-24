@@ -114,7 +114,7 @@ export function createMcpServer() {
         widgetName: z
           .string()
           .describe(
-            "The name of the widget (e.g. 'EodashMap', 'EodashItemCatalog', 'EodashItemFilter', 'EodashLayerControl', 'EodashTimeSlider', 'EodashProcess', 'EodashChart', 'EodashStacInfo', 'EodashTools', 'EodashDatePicker', 'EodashLayoutSwitcher', 'WidgetsContainer').",
+            "The name of the widget (e.g. 'EodashMap', 'EodashItemCatalog', 'EodashItemFilter', 'EodashLayerControl', 'EodashTimeSlider', 'EodashProcess', 'EodashChart', 'EodashStacInfo', 'EodashTools', 'EodashDatePicker', 'EodashLayoutSwitcher').",
           ),
       }),
     },
