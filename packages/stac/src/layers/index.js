@@ -9,6 +9,7 @@ import { getProjection } from "../helpers/projection.js";
 import { extractLayerLegend, fetchStyle } from "../helpers/style.js";
 import { createHTTPInstance } from "../http.js";
 import { createLayersFromAssets } from "./assets.js";
+import { isObservationPoints } from "./collection.js";
 import { createLayersFromLinks } from "./links.js";
 import { createLayerFromRender } from "./renders.js";
 
@@ -82,7 +83,14 @@ export const buildLayers = async (item, context) => {
     projections.push(indicatorProjection);
   }
 
-  const itemDate = item.properties?.datetime ?? item.properties?.start_datetime ?? itemDatetime;
+  if (isObservationPoints(collection)) {
+    return { layers: [], projections };
+  }
+
+  const itemDate =
+    item.properties?.datetime ??
+    item.properties?.start_datetime ??
+    itemDatetime;
   const { layerDatetime, timeControlValues } = extractLayerTimeValues(
     await getDates(itemDate ?? undefined),
     itemDate,

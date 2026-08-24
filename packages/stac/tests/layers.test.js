@@ -480,4 +480,33 @@ describe("building layers", () => {
       expect(layers[0].type).toBe("STAC");
     });
   });
+
+  describe("collections whose items are places", () => {
+    /** @param {Record<string, any>} over */
+    const place = (over) => ({
+      id: "item",
+      properties: {},
+      assets: {},
+      links: [],
+      ...over,
+    });
+
+    test("builds nothing for a geoDB collection, but still reports the item's projection", async () => {
+      serve({ links: [], collection: { endpointtype: "GeoDB" } });
+      const col = await reader();
+
+      const built = await col.buildLayers(
+        /** @type {any} */ (place({ "proj:epsg": 3035 })),
+      );
+
+      expect(built.layers).toEqual([]);
+      expect(built.projections).toEqual([3035]);
+    });
+
+    test("builds nothing for a collection whose children are locations", async () => {
+      serve({ links: [], collection: { locations: true } });
+
+      expect(await buildFrom(place({}))).toEqual([]);
+    });
+  });
 });

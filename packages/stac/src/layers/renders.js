@@ -142,7 +142,7 @@ export const createLayerFromRender = async (
         id: createLayerID(
           collection.id,
           item.id,
-          { id: item.id, href: "", title, rel: "" },
+          { id: key, href: "", title, rel: "" },
           projectionCode,
         ),
         title,
