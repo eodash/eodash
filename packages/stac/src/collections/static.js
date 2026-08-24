@@ -62,6 +62,8 @@ export const createStaticCollection = ({ url, stac, http }) => {
 
   return {
     ...createCollectionBase({ stac, http, getDates, getItem }),
+    /** @type {"static"} */
+    kind: "static",
     getItems,
     getDates,
     getItem,
