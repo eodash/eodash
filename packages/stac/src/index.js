@@ -51,14 +51,15 @@ import { createStaticCollection } from "./collections/static.js";
  * @param {boolean} [options.api=false] - Set to true if queried via STAC API search
  * @param {number} [options.maxItems] - Max items returned per search query
  * @param {import("./http.js").AxiosInstance} [options.client] - Custom HTTP client
+ * @param {string} [options.color] - Tints this collection's layers, so several rendered together stay tellable apart
  * @returns {Promise<ApiReader | CollectionReader>}
  */
 export const createEodashCollection = async (url, options = {}) => {
-  const { api = false, maxItems, client } = options;
+  const { api = false, maxItems, client, color } = options;
   const http = createHTTPInstance({ client });
   /** @type {import("./types").STACCollection} */
   const stac = await http.get(url);
-  const context = { url, stac, http };
+  const context = { url, stac, http, color };
 
   if (api) {
     return createAPICollection({ ...context, maxItems });

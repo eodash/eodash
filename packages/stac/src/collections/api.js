@@ -16,9 +16,16 @@ const DATE_FIELDS =
  * @param {string} context.url
  * @param {import("../types").STACCollection} context.stac
  * @param {import("../http.js").HttpClient} context.http
+ * @param {string} [context.color]
  * @param {number} [context.maxItems=1000] - The maximum number of items returned per search query.
  */
-export const createAPICollection = ({ url, stac, http, maxItems = 1000 }) => {
+export const createAPICollection = ({
+  url,
+  stac,
+  http,
+  color,
+  maxItems = 1000,
+}) => {
   const searchUrl =
     url.replace(/\/+$/, "").split("/").slice(0, -2).join("/") + "/search";
 
@@ -159,7 +166,7 @@ export const createAPICollection = ({ url, stac, http, maxItems = 1000 }) => {
   };
 
   return {
-    ...createCollectionBase({ stac, http, getDates, getItem }),
+    ...createCollectionBase({ stac, http, getDates, getItem, color }),
     /** @type {"api"} */
     kind: "api",
     search,
