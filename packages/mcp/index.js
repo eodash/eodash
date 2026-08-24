@@ -252,9 +252,9 @@ export function createMcpServer() {
           .describe("Default STAC catalog or STAC API endpoint URL."),
         template: templateEnum
           .optional()
-          .default("explore")
+          .default("lite")
           .describe(
-            `Default eodash layout template (${availableTemplates.join(", ")}).`,
+            `Default eodash layout template (${availableTemplates.join(", ")}). Use 'lite' (default) for static STAC Catalogs, or 'explore' for dynamic STAC APIs.`,
           ),
         brandName: z
           .string()
@@ -286,7 +286,7 @@ export function createMcpServer() {
     "generate_eodash_config",
     {
       description:
-        "Generate a complete, type-safe eodash configuration (eodash.config.js / baseConfig.js) with STAC endpoint, brand styling, template selection (explore/lite/expert/compare), custom widget placements, and runtime options.",
+        "Generate a complete, type-safe eodash configuration (eodash.config.js / baseConfig.js) with STAC endpoint, brand styling, template selection (lite/explore/expert/compare), custom widget placements, and runtime options.",
       inputSchema: z.object({
         id: z
           .string()
@@ -302,9 +302,9 @@ export function createMcpServer() {
           ),
         template: configTemplateEnum
           .optional()
-          .default("explore")
+          .default("lite")
           .describe(
-            `Template layout preset (${availableTemplates.join(", ")}) or 'custom'.`,
+            `Template layout preset (${availableTemplates.join(", ")}) or 'custom'. Use 'lite' (default) for static STAC Catalogs, or 'explore' for dynamic STAC APIs.`,
           ),
         brand: z
           .object({
