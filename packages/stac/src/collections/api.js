@@ -160,6 +160,8 @@ export const createAPICollection = ({ url, stac, http, maxItems = 1000 }) => {
 
   return {
     ...createCollectionBase({ stac, http, getDates, getItem }),
+    /** @type {"api"} */
+    kind: "api",
     search,
     getItems,
     getDates,

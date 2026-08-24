@@ -57,6 +57,7 @@ describe("static collection", () => {
       serve();
       const col = await staticCollection();
 
+      expect(col.kind).toBe("static");
       expect((await col.getItems()).map((item) => item.id)).toEqual([
         "i1",
         "i2",

@@ -137,6 +137,10 @@ describe("parquet collection", () => {
     expect(await col.getDates()).toHaveLength(3);
   });
 
+  test("is dispatched to by the mirror asset alone, with no flag from the caller", async () => {
+    expect((await mirrorCollection()).kind).toBe("parquet");
+  });
+
   test("getDates returns every item's datetime, oldest first", async () => {
     const col = await mirrorCollection();
 

@@ -171,6 +171,8 @@ export const createParquetCollection = ({ url, stac, http }) => {
 
   return {
     ...createCollectionBase({ stac, http, getDates, getItem }),
+    /** @type {"parquet"} */
+    kind: "parquet",
     getItems,
     getDates,
     getItem,
