@@ -30,8 +30,15 @@ const FOOTER_BYTES = 1 << 15;
  * @param {import("../types").STACCollection} context.stac
  * @param {import("../http.js").HttpClient} context.http
  * @param {string} [context.color]
+ * @param {import("../types").BuildContext} [context.rasterOptions]
  */
-export const createParquetCollection = ({ url, stac, http, color }) => {
+export const createParquetCollection = ({
+  url,
+  stac,
+  http,
+  color,
+  rasterOptions,
+}) => {
   const mirror = findParquetMirror(stac);
   const href = mirror ? toAbsolute(mirror.href, url) : undefined;
 
@@ -171,7 +178,14 @@ export const createParquetCollection = ({ url, stac, http, color }) => {
   };
 
   return {
-    ...createCollectionBase({ stac, http, getDates, getItem, color }),
+    ...createCollectionBase({
+      stac,
+      http,
+      getDates,
+      getItem,
+      color,
+      rasterOptions,
+    }),
     /** @type {"parquet"} */
     kind: "parquet",
     getItems,

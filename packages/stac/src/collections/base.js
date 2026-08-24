@@ -16,6 +16,7 @@ import { buildLayers } from "../layers/index.js";
  * @param {(datetime?: import("../types").Datetime, bbox?: import("../types").BBox) => Promise<Date[]>} parts.getDates
  * @param {(datetime?: import("../types").Datetime, bbox?: import("../types").BBox) => Promise<import("../types").STACItem | undefined>} parts.getItem
  * @param {string} [parts.color]
+ * @param {import("../types").BuildContext} [parts.rasterOptions] - Raster serving config every build starts from, until a caller overrides a field per call
  */
 export const createCollectionBase = ({
   stac,
@@ -23,6 +24,7 @@ export const createCollectionBase = ({
   getDates,
   getItem,
   color,
+  rasterOptions,
 }) => {
   // the reader outlives a datetime rebuild but not a collection switch, which is
   // exactly how long the config editors' values should survive
@@ -35,6 +37,7 @@ export const createCollectionBase = ({
    * @returns {Parameters<typeof buildLayers>[1]}
    */
   const getBuildContext = (buildCtx) => ({
+    ...rasterOptions,
     ...buildCtx,
     http: buildCtx.http ?? http,
     layerConfigHelpers: buildCtx.layerConfigHelpers ?? layerConfigHelpers,
