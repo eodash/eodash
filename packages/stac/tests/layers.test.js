@@ -446,6 +446,18 @@ describe("building layers", () => {
       expect(layer.properties.layerControlExclusive).toBe(true);
       expect(layer.properties.layerControlExpand).toBe(false);
     });
+
+    test("tints layers with the reader's colour, without the caller repeating it per build", async () => {
+      serve({ links: [] });
+      const col = await createEodashCollection(COLLECTION_URL, {
+        client,
+        color: "#123456",
+      });
+
+      const { layers } = await col.buildLayers(/** @type {any} */ (xyzItem()));
+
+      expect(layers[0].properties.color).toBe("#123456");
+    });
   });
 
   describe("the STAC fallback", () => {

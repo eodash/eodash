@@ -15,8 +15,15 @@ import { buildLayers } from "../layers/index.js";
  * @param {import("../http.js").HttpClient} parts.http
  * @param {(datetime?: import("../types").Datetime, bbox?: import("../types").BBox) => Promise<Date[]>} parts.getDates
  * @param {(datetime?: import("../types").Datetime, bbox?: import("../types").BBox) => Promise<import("../types").STACItem | undefined>} parts.getItem
+ * @param {string} [parts.color]
  */
-export const createCollectionBase = ({ stac, http, getDates, getItem }) => {
+export const createCollectionBase = ({
+  stac,
+  http,
+  getDates,
+  getItem,
+  color,
+}) => {
   // the reader outlives a datetime rebuild but not a collection switch, which is
   // exactly how long the config editors' values should survive
   const layerConfigHelpers = createLayerConfigHelpers();
@@ -31,6 +38,7 @@ export const createCollectionBase = ({ stac, http, getDates, getItem }) => {
     ...buildCtx,
     http: buildCtx.http ?? http,
     layerConfigHelpers: buildCtx.layerConfigHelpers ?? layerConfigHelpers,
+    color: buildCtx.color ?? color,
     stac,
     getDates: (datetime) => getDates(datetime, buildCtx.bbox),
   });
@@ -38,6 +46,7 @@ export const createCollectionBase = ({ stac, http, getDates, getItem }) => {
   return {
     id: stac.id,
     stac,
+    color,
 
     /**
      * Persists the current layer configuration editor state.
