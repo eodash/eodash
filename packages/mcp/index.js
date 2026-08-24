@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 import { z } from "zod";
-import { randomUUID } from "crypto";
 import express from "express";
 import cors from "cors";
 import fs from "node:fs";
@@ -9,7 +8,6 @@ import { fileURLToPath } from "node:url";
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
-import { isInitializeRequest } from "@modelcontextprotocol/sdk/types.js";
 import { scaffoldDashboard } from "./generators/dashboard.js";
 import { generateEodashConfig } from "./generators/config.js";
 import {
@@ -375,79 +373,38 @@ export function createMcpServer() {
 export function createExpressApp() {
   const app = express();
 
-  app.use(
-    cors({
-      origin: "*",
-      exposedHeaders: ["mcp-session-id", "Mcp-Session-Id"],
-    }),
-  );
+  app.use(cors({ origin: "*" }));
   app.use(express.json());
 
   app.get("/health", (req, res) => {
     res.json({ message: "eodash MCP Server is running" });
   });
 
-  const transports = {};
-
   app.post("/", async (req, res) => {
-    const sessionId = req.headers["mcp-session-id"];
-    let transport = transports[sessionId];
-
-    if (!transport) {
-      if (isInitializeRequest(req.body)) {
-        transport = new StreamableHTTPServerTransport({
-          sessionIdGenerator: () => randomUUID(),
-          onsessioninitialized: (newSessionId) => {
-            transports[newSessionId] = transport;
-            transport.onclose = () => {
-              delete transports[newSessionId];
-            };
-          },
-        });
-        const server = createMcpServer();
-        await server.connect(transport);
-        await transport.handleRequest(req, res, req.body);
-        return;
-      } else {
-        res.status(400).json({ error: "No session found" });
-        return;
+    try {
+      const transport = new StreamableHTTPServerTransport({
+        sessionIdGenerator: undefined,
+        enableJsonResponse: true,
+      });
+      const server = createMcpServer();
+      await server.connect(transport);
+      await transport.handleRequest(req, res, req.body);
+    } catch (err) {
+      console.error("Error handling MCP request:", err);
+      if (!res.headersSent) {
+        res.status(500).json({ error: err.message || "Internal server error" });
       }
     }
-    await transport.handleRequest(req, res, req.body);
   });
 
   app.get("/", async (req, res) => {
-    const sessionId = req.headers["mcp-session-id"];
-    const transport = transports[sessionId];
-    if (!transport) {
-      const accept = req.headers.accept || "";
-      if (accept.includes("text/event-stream")) {
-        res.writeHead(200, {
-          "Content-Type": "text/event-stream",
-          "Cache-Control": "no-cache",
-          Connection: "keep-alive",
-        });
-        res.write(": welcome\n\n");
-        res.end();
-        return;
-      }
-
-      const { widgetsData, architectureData } = getMetadata();
-      res.setHeader("Content-Type", "text/html");
-      res.send(generateLandingPage(widgetsData, architectureData));
-      return;
-    }
-    await transport.handleRequest(req, res);
+    const { widgetsData, architectureData } = getMetadata();
+    res.setHeader("Content-Type", "text/html");
+    res.send(generateLandingPage(widgetsData, architectureData));
   });
 
-  app.delete("/", async (req, res) => {
-    const sessionId = req.headers["mcp-session-id"];
-    const transport = transports[sessionId];
-    if (!transport) {
-      res.status(400).send("No session found");
-      return;
-    }
-    await transport.handleRequest(req, res);
+  app.delete("/", (req, res) => {
+    res.status(200).json({ message: "Stateless session closed" });
   });
 
   return app;
