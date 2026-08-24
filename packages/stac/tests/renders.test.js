@@ -63,6 +63,24 @@ describe("layers from the render extension", () => {
     expect(layer.source.url.split("?")[1]).toBe("assets=b04&rescale=0,100&");
   });
 
+  test("gives each render key its own layer id, so two renders on one item do not collide", async () => {
+    const layers = await build({
+      renders: {
+        ndvi: { assets: ["b04"] },
+        ndwi: { assets: ["b03"] },
+      },
+    });
+
+    const ids = layers
+      .filter((layer) => layer.source?.url?.includes("/tiles/"))
+      .map((layer) => layer.properties.id);
+
+    expect(ids).toEqual([
+      "coll;:;item;:;ndvi;:;EPSG:3857",
+      "coll;:;item;:;ndwi;:;EPSG:3857",
+    ]);
+  });
+
   test("an expression replaces the assets, which TiTiler treats as exclusive", async () => {
     const layers = await build({
       renders: { ndvi: { assets: ["b04", "b08"], expression: "b08-b04" } },

@@ -6,7 +6,5 @@
     "core/node/typedoc/widgets.ts",
     "packages/*/src/**/*.ts"
   ],
-  "exclude": [
-    "node_modules"
-  ]
+  "exclude": ["node_modules"]
 }

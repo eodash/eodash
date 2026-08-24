@@ -91,7 +91,6 @@ export async function createLayersFromAssets(
       });
     } else if (assets[assetId]?.type?.includes("application/geodb+json")) {
       const responseData = await http.get(assets[assetId].href);
-      geoJsonIdx.push(idx);
       if (
         !responseData ||
         !Array.isArray(responseData) ||
@@ -147,6 +146,7 @@ export async function createLayersFromAssets(
           "data:application/json;charset=utf-8," + JSON.stringify(geojson),
         ),
       );
+      geoJsonIdx.push(idx);
     }
   }
 
