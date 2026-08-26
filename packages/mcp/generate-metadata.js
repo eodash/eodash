@@ -101,49 +101,90 @@ function collectFiles(dir) {
   return results;
 }
 
-/**
- * Clean and parse JSDoc comments attached to AST nodes
- */
-function cleanDoc(comment) {
-  if (!comment)
-    return { description: "", type: null, params: [], returns: null };
-  const lines = comment
-    .replace(/^\/\*\*?/, "")
-    .replace(/\*\/$/, "")
+function cleanMultilineType(typeStr) {
+  if (!typeStr) return null;
+  return typeStr
     .split("\n")
-    .map((l) => l.replace(/^\s*\*\s?/, "").trim())
-    .filter(Boolean);
+    .map((line) => line.replace(/^\s*\*\s?/, "").trim())
+    .filter(Boolean)
+    .join(" ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
 
-  let type = null;
-  let returns = null;
+function unwrapPropType(typeStr) {
+  if (!typeStr) return "unknown";
+  const cleaned = cleanMultilineType(typeStr);
+  const match = cleaned.match(
+    /^(?:import\(["']vue["']\)\.)?PropType<([\s\S]+)>$/,
+  );
+  if (match) return match[1].trim();
+  return cleaned;
+}
+
+/**
+ * Clean and parse JSDoc comments attached to AST nodes using TypeScript compiler API
+ */
+function getJsDocFromNode(node, sf) {
+  const tsType = ts.getJSDocType(node);
+  let type = tsType ? tsType.getText(sf) : null;
+  let description = "";
   const params = [];
-  const descLines = [];
+  let returns = null;
 
-  for (const line of lines) {
-    const typeMatch = line.match(/^@type\s+\{([^}]+)\}/);
-    const paramMatch = line.match(
-      /^@param\s+\{([^}]+)\}\s+(\[?\w+\]?)(\s+.*)?/,
-    );
-    const returnMatch = line.match(/^@returns?\s+\{([^}]+)\}(\s+.*)?/);
-
-    if (typeMatch) {
-      type = typeMatch[1];
-    } else if (paramMatch) {
-      params.push({
-        name: paramMatch[2].replace(/^\[|\]$/g, ""),
-        type: paramMatch[1],
-        description: (paramMatch[3] || "").trim(),
-      });
-    } else if (returnMatch) {
-      returns = {
-        type: returnMatch[1],
-        description: (returnMatch[2] || "").trim(),
-      };
-    } else if (!line.startsWith("@")) {
-      descLines.push(line);
+  if (node.jsDoc) {
+    for (const doc of node.jsDoc) {
+      if (doc.comment) {
+        description =
+          typeof doc.comment === "string"
+            ? doc.comment
+            : doc.comment
+                .map((c) => (typeof c === "string" ? c : c.text || ""))
+                .join("");
+      }
+      for (const tag of doc.tags || []) {
+        if (ts.isJSDocTypeTag(tag) && tag.typeExpression?.type) {
+          type = tag.typeExpression.type.getText(sf);
+        } else if (ts.isJSDocParameterTag(tag)) {
+          const pComment = tag.comment
+            ? typeof tag.comment === "string"
+              ? tag.comment
+              : tag.comment
+                  .map((c) => (typeof c === "string" ? c : c.text || ""))
+                  .join("")
+            : "";
+          params.push({
+            name: tag.name?.getText(sf) || "",
+            type:
+              cleanMultilineType(tag.typeExpression?.type?.getText(sf)) ||
+              "any",
+            description: pComment.trim(),
+          });
+        } else if (ts.isJSDocReturnTag(tag)) {
+          const rComment = tag.comment
+            ? typeof tag.comment === "string"
+              ? tag.comment
+              : tag.comment
+                  .map((c) => (typeof c === "string" ? c : c.text || ""))
+                  .join("")
+            : "";
+          returns = {
+            type:
+              cleanMultilineType(tag.typeExpression?.type?.getText(sf)) ||
+              "any",
+            description: rComment.trim(),
+          };
+        }
+      }
     }
   }
-  return { description: descLines.join(" "), type, params, returns };
+
+  return {
+    description: description.trim(),
+    type: cleanMultilineType(type),
+    params,
+    returns,
+  };
 }
 
 /**
@@ -337,7 +378,7 @@ function extractExamplesFromTemplates(repoRoot) {
 /**
  * 4. AST-based reactive store inference from core/client/store/*.js
  */
-function parseStoreFileAst(filePath) {
+function parseTopLevelStoreAst(filePath) {
   if (!fs.existsSync(filePath)) return [];
   const content = fs.readFileSync(filePath, "utf8");
   const sf = ts.createSourceFile(
@@ -348,27 +389,31 @@ function parseStoreFileAst(filePath) {
   );
   const items = [];
 
-  function visit(node) {
-    // Variable statements: export const currentUrl = ref("");
-    if (ts.isVariableStatement(node)) {
-      const commentRanges = ts.getLeadingCommentRanges(content, node.pos);
-      const rawComment = commentRanges
-        ? commentRanges.map((r) => content.slice(r.pos, r.end)).join("\n")
-        : "";
-      const doc = cleanDoc(rawComment);
+  for (const stmt of sf.statements) {
+    if (ts.isVariableStatement(stmt)) {
+      const isExported = stmt.modifiers?.some(
+        (m) => m.kind === ts.SyntaxKind.ExportKeyword,
+      );
+      if (!isExported) continue;
 
-      for (const decl of node.declarationList.declarations) {
+      const doc = getJsDocFromNode(stmt, sf);
+
+      for (const decl of stmt.declarationList.declarations) {
         const name = decl.name.getText(sf);
-        let kind = "ref";
+        let kind = "value";
         let isFn = false;
 
         if (decl.initializer) {
-          const initText = decl.initializer.getText(sf);
-          if (initText.startsWith("shallowRef")) kind = "shallowRef";
-          else if (initText.startsWith("reactive")) kind = "reactive";
-          else if (
+          if (ts.isCallExpression(decl.initializer)) {
+            const callee = decl.initializer.expression.getText(sf);
+            if (
+              ["ref", "shallowRef", "reactive", "computed"].includes(callee)
+            ) {
+              kind = callee;
+            }
+          } else if (
             ts.isArrowFunction(decl.initializer) ||
-            initText.includes("=>")
+            ts.isFunctionExpression(decl.initializer)
           ) {
             isFn = true;
           }
@@ -379,7 +424,9 @@ function parseStoreFileAst(filePath) {
           if (isFn) inferredType = "Function";
           else if (kind === "shallowRef") inferredType = "ShallowRef<any>";
           else if (kind === "reactive") inferredType = "Reactive<object>";
-          else inferredType = "Ref<any>";
+          else if (kind === "computed") inferredType = "ComputedRef<any>";
+          else if (kind === "ref") inferredType = "Ref<any>";
+          else inferredType = "any";
         }
 
         items.push({
@@ -395,29 +442,157 @@ function parseStoreFileAst(filePath) {
       }
     }
 
-    // Function declarations: export async function registerProjection(...)
-    if (ts.isFunctionDeclaration(node) && node.name) {
-      const name = node.name.getText(sf);
-      const commentRanges = ts.getLeadingCommentRanges(content, node.pos);
-      const rawComment = commentRanges
-        ? commentRanges.map((r) => content.slice(r.pos, r.end)).join("\n")
-        : "";
-      const doc = cleanDoc(rawComment);
+    if (ts.isFunctionDeclaration(stmt) && stmt.name) {
+      const isExported = stmt.modifiers?.some(
+        (m) => m.kind === ts.SyntaxKind.ExportKeyword,
+      );
+      if (!isExported) continue;
+
+      const name = stmt.name.getText(sf);
+      const doc = getJsDocFromNode(stmt, sf);
 
       items.push({
         name,
         category: "action",
-        type: "Function",
+        type: doc.type || "Function",
         description: doc.description || `Action ${name}`,
         ...(doc.params.length > 0 ? { params: doc.params } : {}),
         ...(doc.returns ? { returns: doc.returns } : {}),
       });
     }
-
-    ts.forEachChild(node, visit);
   }
 
-  visit(sf);
+  return items;
+}
+
+function parsePiniaStoreAst(filePath) {
+  if (!fs.existsSync(filePath)) return [];
+  const content = fs.readFileSync(filePath, "utf8");
+  const sf = ts.createSourceFile(
+    filePath,
+    content,
+    ts.ScriptTarget.Latest,
+    true,
+  );
+  const items = [];
+
+  for (const stmt of sf.statements) {
+    if (ts.isVariableStatement(stmt)) {
+      for (const decl of stmt.declarationList.declarations) {
+        if (decl.initializer && ts.isCallExpression(decl.initializer)) {
+          const callee = decl.initializer.expression.getText(sf);
+          if (callee === "defineStore") {
+            const setupFn = decl.initializer.arguments[1];
+            if (
+              setupFn &&
+              (ts.isArrowFunction(setupFn) ||
+                ts.isFunctionExpression(setupFn)) &&
+              ts.isBlock(setupFn.body)
+            ) {
+              const scopeDecls = new Map();
+              let returnStmt = null;
+
+              for (const bodyStmt of setupFn.body.statements) {
+                if (ts.isVariableStatement(bodyStmt)) {
+                  const doc = getJsDocFromNode(bodyStmt, sf);
+                  for (const d of bodyStmt.declarationList.declarations) {
+                    const dName = d.name.getText(sf);
+                    let kind = "value";
+                    let isFn = false;
+
+                    if (d.initializer) {
+                      if (ts.isCallExpression(d.initializer)) {
+                        const cName = d.initializer.expression.getText(sf);
+                        if (
+                          [
+                            "ref",
+                            "shallowRef",
+                            "reactive",
+                            "computed",
+                          ].includes(cName)
+                        ) {
+                          kind = cName;
+                        }
+                      } else if (
+                        ts.isArrowFunction(d.initializer) ||
+                        ts.isFunctionExpression(d.initializer)
+                      ) {
+                        isFn = true;
+                      }
+                    }
+                    scopeDecls.set(dName, {
+                      name: dName,
+                      isFn,
+                      kind,
+                      doc,
+                    });
+                  }
+                } else if (
+                  ts.isFunctionDeclaration(bodyStmt) &&
+                  bodyStmt.name
+                ) {
+                  const fName = bodyStmt.name.getText(sf);
+                  const doc = getJsDocFromNode(bodyStmt, sf);
+                  scopeDecls.set(fName, {
+                    name: fName,
+                    isFn: true,
+                    kind: "function",
+                    doc,
+                  });
+                } else if (ts.isReturnStatement(bodyStmt)) {
+                  returnStmt = bodyStmt;
+                }
+              }
+
+              if (
+                returnStmt &&
+                returnStmt.expression &&
+                ts.isObjectLiteralExpression(returnStmt.expression)
+              ) {
+                for (const prop of returnStmt.expression.properties) {
+                  const pName = prop.name?.getText(sf);
+                  if (!pName) continue;
+                  const info = scopeDecls.get(pName);
+                  if (info) {
+                    let inferredType = info.doc.type;
+                    if (!inferredType) {
+                      if (info.isFn) inferredType = "Function";
+                      else if (info.kind === "shallowRef")
+                        inferredType = "ShallowRef<any>";
+                      else if (info.kind === "reactive")
+                        inferredType = "Reactive<object>";
+                      else if (info.kind === "computed")
+                        inferredType = "ComputedRef<any>";
+                      else if (info.kind === "ref") inferredType = "Ref<any>";
+                      else inferredType = "any";
+                    }
+
+                    items.push({
+                      name: pName,
+                      category: info.isFn ? "action" : "state",
+                      type: inferredType,
+                      description:
+                        info.doc.description ||
+                        (info.isFn
+                          ? `Action ${pName}`
+                          : `Reactive ${pName} state`),
+                      ...(info.doc.params.length > 0
+                        ? { params: info.doc.params }
+                        : {}),
+                      ...(info.doc.returns
+                        ? { returns: info.doc.returns }
+                        : {}),
+                    });
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
   return items;
 }
 
@@ -429,9 +604,9 @@ function inferReactiveStoreMetadata(repoRoot) {
   return {
     description:
       "Global reactive store and Pinia store managing STAC endpoint, active collection, selected item, datetime, map instances, and chart states. Accessible via window.eodashStore or `import { store } from '@eodash/eodash'`.",
-    states: parseStoreFileAst(statesFile),
-    stacStore: parseStoreFileAst(stacFile),
-    actions: parseStoreFileAst(actionsFile),
+    states: parseTopLevelStoreAst(statesFile),
+    stacStore: parsePiniaStoreAst(stacFile),
+    actions: parseTopLevelStoreAst(actionsFile),
   };
 }
 
@@ -469,43 +644,53 @@ function extractPropsFromVueSfc(vueFilePath) {
           for (const prop of arg.properties) {
             if (ts.isPropertyAssignment(prop)) {
               const name = prop.name.getText(sf);
-              const commentRanges = ts.getLeadingCommentRanges(
-                scriptContent,
-                prop.pos,
-              );
-              const comment = commentRanges
-                ? commentRanges
-                    .map((r) => scriptContent.slice(r.pos, r.end))
-                    .join("\n")
-                : "";
-              const doc = cleanDoc(comment);
-
+              const doc = getJsDocFromNode(prop, sf);
+              let propType = doc.type ? unwrapPropType(doc.type) : "unknown";
               let defaultValue = null;
-              let propType = doc.type || "unknown";
+              let required = false;
 
               if (ts.isObjectLiteralExpression(prop.initializer)) {
                 for (const subProp of prop.initializer.properties) {
+                  const subDoc = getJsDocFromNode(subProp, sf);
                   if (ts.isPropertyAssignment(subProp)) {
                     const subName = subProp.name.getText(sf);
+                    if (subName === "required") {
+                      required =
+                        subProp.initializer.kind === ts.SyntaxKind.TrueKeyword;
+                    }
                     if (subName === "default") {
                       defaultValue = subProp.initializer.getText(sf);
                     }
-                    if (subName === "type" && propType === "unknown") {
-                      const typeComments = ts.getLeadingCommentRanges(
-                        scriptContent,
-                        subProp.pos,
+                    if (subName === "type") {
+                      if (subDoc.type) {
+                        propType = unwrapPropType(subDoc.type);
+                      } else {
+                        const innerDoc = getJsDocFromNode(
+                          subProp.initializer,
+                          sf,
+                        );
+                        if (innerDoc.type) {
+                          propType = unwrapPropType(innerDoc.type);
+                        } else if (propType === "unknown") {
+                          propType = subProp.initializer.getText(sf);
+                        }
+                      }
+                    }
+                  } else if (ts.isMethodDeclaration(subProp)) {
+                    const subName = subProp.name.getText(sf);
+                    if (subName === "default") {
+                      const ret = subProp.body?.statements.find((s) =>
+                        ts.isReturnStatement(s),
                       );
-                      const typeDoc = cleanDoc(
-                        typeComments
-                          ? typeComments
-                              .map((r) => scriptContent.slice(r.pos, r.end))
-                              .join("\n")
-                          : "",
-                      );
-                      if (typeDoc.type) propType = typeDoc.type;
-                      else propType = subProp.initializer.getText(sf);
+                      defaultValue = ret?.expression
+                        ? ret.expression.getText(sf)
+                        : subProp.getText(sf);
                     }
                   }
+                }
+              } else if (ts.isIdentifier(prop.initializer)) {
+                if (propType === "unknown") {
+                  propType = prop.initializer.getText(sf);
                 }
               }
 
@@ -514,7 +699,7 @@ function extractPropsFromVueSfc(vueFilePath) {
                 type: propType,
                 defaultValue,
                 description: doc.description,
-                required: defaultValue === null,
+                required,
               });
             }
           }

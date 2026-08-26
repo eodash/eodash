@@ -158,6 +158,29 @@ describe("eodash MCP Server - Metadata Generator", () => {
     expect(architectureMetadata.reactiveStore.actions.length).toBeGreaterThan(
       0,
     );
+
+    // Verify JSDoc types are not truncated at nested curly braces
+    const mapElState = architectureMetadata.reactiveStore.states.find(
+      (s) => s.name === "mapEl",
+    );
+    expect(mapElState).toBeDefined();
+    expect(mapElState.type).toContain("mapUpdateId?: number");
+
+    const tooltipAdapterState =
+      architectureMetadata.reactiveStore.states.find(
+        (s) => s.name === "tooltipAdapter",
+      );
+    expect(tooltipAdapterState).toBeDefined();
+    expect(tooltipAdapterState.type).toContain("param: {key: string, value: any}");
+
+    // Verify no function locals leaked into stacStore
+    const stacMemberNames = architectureMetadata.reactiveStore.stacStore.map(
+      (s) => s.name,
+    );
+    expect(stacMemberNames).toContain("stacEndpoint");
+    expect(stacMemberNames).toContain("init");
+    expect(stacMemberNames).not.toContain("isPOI");
+    expect(stacMemberNames).not.toContain("resp");
   });
 });
 

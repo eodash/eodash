@@ -424,11 +424,19 @@ async function startServer() {
   });
 }
 
+function isDirectExecution() {
+  if (!process.argv[1]) return false;
+  try {
+    const realArgv1 = fs.realpathSync(path.resolve(process.argv[1]));
+    const realFilename = fs.realpathSync(__filename);
+    return realArgv1 === realFilename;
+  } catch {
+    return path.resolve(process.argv[1]) === path.resolve(__filename);
+  }
+}
+
 // Auto start if executed directly
-if (
-  process.argv[1] &&
-  path.resolve(process.argv[1]) === path.resolve(__filename)
-) {
+if (isDirectExecution()) {
   startServer().catch((err) => {
     console.error("Failed to start server:", err);
     process.exit(1);
