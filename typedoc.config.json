@@ -8,6 +8,7 @@
   "sortEntryPoints": false,
   "docsRoot": "./docs",
   "out": "docs/api",
+  "json": "dist/typedoc.json",
   "tsconfig": "tsconfig.typedoc.json",
   "plugin": [
     "typedoc-plugin-vue",

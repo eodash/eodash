@@ -128,7 +128,14 @@ describe("eodash MCP Server - Core Tools", () => {
     const gridRes = await tool.handler({ topic: "grid-layout" });
     const gridArch = JSON.parse(gridRes.content[0].text);
     expect(gridArch.gridSystem).toBeDefined();
+    expect(gridArch.gridSystem.notation).toContain("0–11");
     expect(gridArch.templateSystem).toBeUndefined();
+
+    // Custom widget types
+    const widgetTypeRes = await tool.handler({ topic: "custom-widgets" });
+    const widgetTypeArch = JSON.parse(widgetTypeRes.content[0].text);
+    const types = widgetTypeArch.customWidgetSystem.types.map((t) => t.type);
+    expect(types).toEqual(["web-component", "internal", "iframe"]);
   });
 });
 
@@ -166,12 +173,13 @@ describe("eodash MCP Server - Metadata Generator", () => {
     expect(mapElState).toBeDefined();
     expect(mapElState.type).toContain("mapUpdateId?: number");
 
-    const tooltipAdapterState =
-      architectureMetadata.reactiveStore.states.find(
-        (s) => s.name === "tooltipAdapter",
-      );
+    const tooltipAdapterState = architectureMetadata.reactiveStore.states.find(
+      (s) => s.name === "tooltipAdapter",
+    );
     expect(tooltipAdapterState).toBeDefined();
-    expect(tooltipAdapterState.type).toContain("param: {key: string, value: any}");
+    expect(tooltipAdapterState.type).toContain(
+      "param: {key: string, value: any}",
+    );
 
     // Verify no function locals leaked into stacStore
     const stacMemberNames = architectureMetadata.reactiveStore.stacStore.map(
@@ -181,6 +189,12 @@ describe("eodash MCP Server - Metadata Generator", () => {
     expect(stacMemberNames).toContain("init");
     expect(stacMemberNames).not.toContain("isPOI");
     expect(stacMemberNames).not.toContain("resp");
+
+    // Verify store reads do not count useSTAcStore or function imports as reads
+    for (const name of widgetNames) {
+      const widget = widgetsMetadata[name];
+      expect(widget.storeInteractions.reads).not.toContain("useSTAcStore");
+    }
   });
 });
 

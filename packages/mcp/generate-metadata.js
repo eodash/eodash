@@ -44,7 +44,7 @@ const STAC_EXTENSIONS_MAP = {
   ],
   EodashItemCatalog: ["eo:cloud_cover", "datetime", "assets.thumbnail"],
   EodashItemFilter: ["themes", "tags"],
-  EodashTimeSlider: ["cube:dimensions", "extent.temporal", "datetime"],
+  EodashTimeSlider: ["extent.temporal", "datetime"],
   EodashDatePicker: ["extent.temporal", "datetime"],
   EodashProcess: ["eodash:jsonform", "links (rel=service)"],
   EodashChart: [
@@ -209,6 +209,7 @@ function analyzeStoreInteractions(widgetName, repoRoot) {
 
   for (const file of filesToScan) {
     let scriptContent = "";
+    let templateContent = "";
     if (file.endsWith(".vue")) {
       const vueContent = fs.readFileSync(file, "utf8");
       try {
@@ -217,6 +218,7 @@ function analyzeStoreInteractions(widgetName, repoRoot) {
           (parsed.descriptor.scriptSetup?.content || "") +
           "\n" +
           (parsed.descriptor.script?.content || "");
+        templateContent = parsed.descriptor.template?.content || "";
       } catch {
         scriptContent = vueContent;
       }
@@ -231,38 +233,77 @@ function analyzeStoreInteractions(widgetName, repoRoot) {
       true,
     );
     const importedStoreVars = new Set();
+    const piniaStoreInstances = new Set();
 
     function visit(node) {
       // 1. Identify store imports
       if (ts.isImportDeclaration(node)) {
         const spec = node.moduleSpecifier.text;
-        if (spec.includes("store/states") || spec.includes("store")) {
+        if (
+          spec.includes("store/states") ||
+          spec.includes("store/actions") ||
+          spec.includes("@/store/states") ||
+          spec.includes("@/utils/states") ||
+          spec === "@/store" ||
+          spec === "@eodash/eodash"
+        ) {
           if (
             node.importClause?.namedBindings &&
             ts.isNamedImports(node.importClause.namedBindings)
           ) {
             for (const el of node.importClause.namedBindings.elements) {
-              importedStoreVars.add(el.name.text);
+              const varName = el.name.text;
+              if (varName !== "useSTAcStore" && varName !== "store") {
+                importedStoreVars.add(varName);
+              }
             }
           }
         }
       }
 
-      // 2. Detect store.<prop> or states.<prop> accesses
+      // 2. Identify pinia store instance or destructuring: const { selectedStac } = toRefs(useSTAcStore())
+      if (ts.isVariableDeclaration(node)) {
+        if (node.initializer && ts.isCallExpression(node.initializer)) {
+          const fnText = node.initializer.expression.getText(sf);
+          if (fnText === "useSTAcStore") {
+            if (ts.isIdentifier(node.name)) {
+              piniaStoreInstances.add(node.name.text);
+            }
+          } else if (fnText === "toRefs" || fnText === "storeToRefs") {
+            const innerArg = node.initializer.arguments[0];
+            if (innerArg && innerArg.getText(sf).includes("useSTAcStore")) {
+              if (ts.isObjectBindingPattern(node.name)) {
+                for (const el of node.name.elements) {
+                  if (ts.isIdentifier(el.name)) {
+                    importedStoreVars.add(el.name.text);
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+
+      // 3. Detect store.<prop>, states.<prop>, or piniaInstance.<prop> accesses
       if (ts.isPropertyAccessExpression(node)) {
         const propName = node.name.text;
         const target = node.expression.getText(sf);
         if (
           target === "store" ||
           target === "store.states" ||
-          target === "states"
+          target === "states" ||
+          piniaStoreInstances.has(target)
         ) {
           if (
             ![
               "init",
+              "loadSTAC",
               "loadSelectedSTAC",
               "loadSelectedCompareSTAC",
               "resetSelectedCompareSTAC",
+              "$reset",
+              "$patch",
+              "$subscribe",
             ].includes(propName)
           ) {
             if (
@@ -278,7 +319,7 @@ function analyzeStoreInteractions(widgetName, repoRoot) {
         }
       }
 
-      // 3. Detect importedStoreVar.value = ... (mutations)
+      // 4. Detect importedStoreVar.value = ... (mutations)
       if (
         ts.isBinaryExpression(node) &&
         node.operatorToken.kind === ts.SyntaxKind.EqualsToken
@@ -294,11 +335,44 @@ function analyzeStoreInteractions(widgetName, repoRoot) {
         }
       }
 
-      // 4. Detect importedStoreVar reads
+      // 5. Detect importedStoreVar reads (ignoring imports, definitions, callee positions, write targets)
       if (ts.isIdentifier(node)) {
-        if (importedStoreVars.has(node.text)) {
-          if (!writes.has(node.text)) {
-            reads.add(node.text);
+        const varName = node.text;
+        if (importedStoreVars.has(varName)) {
+          // Ignore if part of import specifier
+          let isImport = false;
+          let p = node.parent;
+          while (p) {
+            if (ts.isImportDeclaration(p) || ts.isImportSpecifier(p)) {
+              isImport = true;
+              break;
+            }
+            p = p.parent;
+          }
+
+          // Ignore if in callee position: varName(...)
+          const isCallee =
+            ts.isCallExpression(node.parent) && node.parent.expression === node;
+
+          // Ignore if property name in object literal without shorthand
+          const isObjectKey =
+            ts.isPropertyAssignment(node.parent) && node.parent.name === node;
+
+          // Ignore if LHS of assignment
+          const isLhsAssignment =
+            (ts.isBinaryExpression(node.parent) &&
+              node.parent.left === node &&
+              node.parent.operatorToken.kind === ts.SyntaxKind.EqualsToken) ||
+            (ts.isPropertyAccessExpression(node.parent) &&
+              node.parent.expression === node &&
+              node.parent.name.text === "value" &&
+              ts.isBinaryExpression(node.parent.parent) &&
+              node.parent.parent.left === node.parent &&
+              node.parent.parent.operatorToken.kind ===
+                ts.SyntaxKind.EqualsToken);
+
+          if (!isImport && !isCallee && !isObjectKey && !isLhsAssignment) {
+            reads.add(varName);
           }
         }
       }
@@ -307,6 +381,15 @@ function analyzeStoreInteractions(widgetName, repoRoot) {
     }
 
     visit(sf);
+
+    if (templateContent) {
+      for (const varName of importedStoreVars) {
+        const regex = new RegExp(`\\b${varName}\\b`);
+        if (regex.test(templateContent)) {
+          reads.add(varName);
+        }
+      }
+    }
   }
 
   return {
@@ -897,7 +980,7 @@ export function buildMetadata(repoRoot = DEFAULT_REPO_ROOT) {
     gridSystem: {
       columns: 12,
       notation:
-        "x/y/w/h where coordinates can be numbers (1-12) or breakpoint strings 'mobile/tablet/desktop' (e.g. '12/9/10').",
+        "x is 0-indexed column (0–11), y is 0-indexed unbounded row, w is column span (1–12), h is row span. Coordinates and spans accept numbers or responsive breakpoint strings 'mobile/tablet/desktop' (e.g. '12/9/10').",
       examples: [
         { label: "Full width sidebar", layout: { x: 0, y: 0, w: 3, h: 12 } },
         {
@@ -918,17 +1001,16 @@ export function buildMetadata(repoRoot = DEFAULT_REPO_ROOT) {
     },
     customWidgetSystem: {
       description:
-        "eodash supports 3 types of custom widgets: 'web-component' (dynamic import or CDN URL), 'functional' (Vue component / render function), and 'iframe' (embedded HTML / notebook).",
+        "eodash supports 3 types of widgets: 'internal' (built-in eodash widgets), 'web-component' (custom elements via dynamic import or CDN URL), and 'iframe' (embedded external web app / notebook). In addition, 'functional' is a dynamic wrapper (defineWidget: (selectedSTAC) => Widget | null) executed reactively when selected STAC indicator changes.",
       types: [
         {
           type: "web-component",
           description:
-            "Loads any standard Custom Element via ESM dynamic import function or CDN URL. Provides lifecycle hooks onMounted(el, store) and onUnmounted(el, store).",
+            "Loads standard Custom Element via ESM dynamic import function or CDN URL. Provides lifecycle hooks onMounted(el, store) and onUnmounted(el, store).",
         },
         {
-          type: "functional",
-          description:
-            "Dynamic function `defineWidget: (selectedSTAC) => Widget | null` executed reactively when selected STAC indicator changes.",
+          type: "internal",
+          description: "Built-in eodash widget component registered by name.",
         },
         {
           type: "iframe",
