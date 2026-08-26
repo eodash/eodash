@@ -169,7 +169,7 @@ const parseResponseData = (data) => {
     try {
       const parsed = JSON.parse(data.contents);
       return parsed;
-    } catch (e) {
+    } catch (_e) {
       return data;
     }
   }
