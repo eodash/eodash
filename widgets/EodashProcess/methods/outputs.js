@@ -94,7 +94,7 @@ export async function processCharts({
                 ...(jsonformValue ?? {}),
               }),
             )
-            .then((resp) => resp.data);
+            .then((resp) => parseResponseData(resp.data));
           // assign to spec datasets, assuming spec.data is InlineData
           // Always assign values as an object with string keys
           if (spec.data) {
@@ -160,6 +160,23 @@ export async function processCharts({
 }
 
 /**
+ * Checks if the response has a `contents` property that is a valid JSON string. Such structure is provided by CORS workaround from Whatever-Origin API.
+ * If so, parses and returns it. Otherwise returns the original data.
+ * @param {any} data
+ */
+const parseResponseData = (data) => {
+  if (data && typeof data.contents === "string") {
+    try {
+      const parsed = JSON.parse(data.contents);
+      return parsed;
+    } catch (e) {
+      return data;
+    }
+  }
+  return data;
+};
+
+/**
  *
  * @param {import("vega-lite").TopLevelSpec} spec
  * @param {object} injectables
@@ -193,7 +210,11 @@ async function injectVegaInlineData(
             { ...jsonformValue, [match]: value },
             flatstyleUrl,
           );
-          dataValues.push(await axios.get(dataUrl).then((resp) => resp.data));
+          dataValues.push(
+            await axios
+              .get(dataUrl)
+              .then((resp) => parseResponseData(resp.data)),
+          );
         }
       }
       /** @type {import("vega-lite/types_unstable/data.js").InlineData} */
@@ -204,7 +225,7 @@ async function injectVegaInlineData(
     const dataUrl = await renderDataUrl(url, jsonformValue, flatstyleUrl);
     /** @type {import("vega-lite/types_unstable/data.js").InlineData} */
     (spec.data).values = await axios.get(dataUrl).then((resp) => {
-      return resp.data;
+      return parseResponseData(resp.data);
     });
   } else if (link.method == "POST") {
     // get body template to be used in POST request, check first if available
@@ -253,7 +274,11 @@ async function injectVegaInlineData(
             index,
           );
           const body = renderJsonBodyTemplate(bodyTemplate, requestContext);
-          responses.push(await axios.post(url, body).then((resp) => resp.data));
+          responses.push(
+            await axios
+              .post(url, body)
+              .then((resp) => parseResponseData(resp.data)),
+          );
         }
       }
       /** @type {import("vega-lite/types_unstable/data.js").InlineData} */
@@ -266,7 +291,7 @@ async function injectVegaInlineData(
     });
     /** @type {import("vega-lite/types_unstable/data.js").InlineData} */
     (spec.data).values = await axios.post(url, body).then((resp) => {
-      return resp.data;
+      return parseResponseData(resp.data);
     });
   }
   return spec;
