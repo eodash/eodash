@@ -4,6 +4,8 @@
     "moduleResolution": "bundler",
     "target": "ESNext",
     "allowJs": true,
+    "checkJs": false,
+    "maxNodeModuleJsDepth": 0,
     "skipLibCheck": true,
     "resolveJsonModule": true,
     "noEmit": true,

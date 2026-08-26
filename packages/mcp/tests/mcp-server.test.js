@@ -1,3 +1,6 @@
+import fs from "node:fs";
+import path from "node:path";
+import ts from "typescript";
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import http from "node:http";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
@@ -258,6 +261,43 @@ describe("eodash MCP Server - Metadata Generator", () => {
       "datetime",
     );
     expect(widgetsMetadata.EodashTimeSlider.stacExtensions).toHaveLength(0);
+  });
+
+  it("prevents drift between template widgets and metadata catalog", () => {
+    const { widgetsMetadata } = buildMetadata();
+    const knownWidgets = new Set(Object.keys(widgetsMetadata));
+    const templatesDir = path.resolve(__dirname, "../../../templates");
+
+    const templateFiles = fs
+      .readdirSync(templatesDir)
+      .filter((f) => f.endsWith(".js") && f !== "index.js" && f !== "baseConfig.js");
+
+    expect(templateFiles.length).toBeGreaterThanOrEqual(4);
+
+    for (const file of templateFiles) {
+      const content = fs.readFileSync(path.join(templatesDir, file), "utf8");
+      const sf = ts.createSourceFile(file, content, ts.ScriptTarget.Latest, true);
+
+      function traverse(node) {
+        if (
+          ts.isPropertyAssignment(node) &&
+          ts.isIdentifier(node.name) &&
+          node.name.text === "name" &&
+          ts.isStringLiteral(node.initializer)
+        ) {
+          const val = node.initializer.text;
+          if (val.startsWith("Eodash")) {
+            expect(
+              knownWidgets.has(val),
+              `Template ${file} references widget '${val}', but it is missing from metadata catalog.`,
+            ).toBe(true);
+          }
+        }
+        ts.forEachChild(node, traverse);
+      }
+
+      traverse(sf);
+    }
   });
 });
 

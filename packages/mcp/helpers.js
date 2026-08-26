@@ -32,20 +32,36 @@ let cachedMetadata = null;
 export function getAvailableTemplates() {
   if (cachedTemplates) return cachedTemplates;
   const templatesDir = path.join(REPO_ROOT, "templates");
-  if (!fs.existsSync(templatesDir)) {
-    cachedTemplates = ["explore", "lite", "expert", "compare"];
-    return cachedTemplates;
+  if (fs.existsSync(templatesDir)) {
+    const files = fs.readdirSync(templatesDir);
+    const discovered = files
+      .filter(
+        (f) => f.endsWith(".js") && f !== "index.js" && f !== "baseConfig.js",
+      )
+      .map((f) => path.basename(f, ".js"));
+    if (discovered.length > 0) {
+      cachedTemplates = discovered;
+      return cachedTemplates;
+    }
   }
-  const files = fs.readdirSync(templatesDir);
-  const discovered = files
-    .filter(
-      (f) => f.endsWith(".js") && f !== "index.js" && f !== "baseConfig.js",
-    )
-    .map((f) => path.basename(f, ".js"));
-  cachedTemplates =
-    discovered.length > 0
-      ? discovered
-      : ["explore", "lite", "expert", "compare"];
+
+  // Standalone package fallback: read from pre-built architecture metadata if present
+  const archFile = path.join(__dirname, "data/architecture-metadata.json");
+  if (fs.existsSync(archFile)) {
+    try {
+      const arch = JSON.parse(fs.readFileSync(archFile, "utf8"));
+      if (arch.templateSystem?.builtInTemplates?.length) {
+        cachedTemplates = arch.templateSystem.builtInTemplates.map(
+          (t) => t.name,
+        );
+        return cachedTemplates;
+      }
+    } catch {
+      // fallback
+    }
+  }
+
+  cachedTemplates = ["explore", "lite", "expert", "compare"];
   return cachedTemplates;
 }
 
