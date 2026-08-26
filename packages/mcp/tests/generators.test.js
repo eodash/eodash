@@ -45,7 +45,11 @@ describe("eodash Generators - scaffoldDashboard", () => {
       "import.meta.env.SSR",
     );
     expect(res.files["docs/index.md"]).toContain("Climate Stories");
-    expect(res.files["docs/dashboard.md"]).toContain("<eo-dash");
+    expect(res.files["docs/dashboard.md"]).toContain('config="/config.js"');
+    expect(res.files["docs/public/config.js"]).toBeDefined();
+    expect(res.files["docs/public/story-content.md"]).toBeDefined();
+    expect(res.files["Dockerfile"]).toContain("npm run docs:build");
+    expect(res.files["Dockerfile"]).toContain("docs/.vitepress/dist");
     expect(res.files["docs/narratives/story-1.md"]).toContain(
       "<eox-storytelling",
     );
@@ -59,6 +63,8 @@ describe("eodash Generators - scaffoldDashboard", () => {
 
     expect(res.projectType).toBe("web-component");
     expect(res.files["index.html"]).toContain("<eo-dash");
+    expect(res.files["index.html"]).toContain('config="/config.js"');
+    expect(res.files["config.js"]).toBeDefined();
     expect(res.files["index.html"]).toContain("@eodash/eodash/webcomponent");
   });
 });
@@ -139,6 +145,19 @@ describe("eodash Generators - generateEodashConfig", () => {
     expect(res.configCode).toContain("custom-map");
     expect(res.configCode).toContain("catalog-panel");
     expect(res.configCode).toContain("EodashMap");
+
+    // Merging custom widgets with a base template
+    const resMerged = generateEodashConfig({
+      id: "extended-lite",
+      template: "lite",
+      customWidgets,
+    });
+    expect(resMerged.template).toBe("custom");
+    expect(resMerged.configCode).toContain(
+      'import { lite } from "@eodash/eodash/templates";',
+    );
+    expect(resMerged.configCode).toContain("...lite,");
+    expect(resMerged.configCode).toContain("custom-map");
   });
 });
 

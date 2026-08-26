@@ -952,7 +952,7 @@ export function buildMetadata(repoRoot = DEFAULT_REPO_ROOT) {
   const knownTemplateDescriptions = {
     lite: "Streamlined layout for static STAC Catalogs & public dissemination with minimal controls (Map, Header Tools, Layers, StacInfo, DatePicker). Recommended default for static catalogs.",
     explore:
-      "Feature-rich discovery layout for dynamic STAC APIs (ItemFilter, ItemCatalog explorer, Map, LayerControl, TimeSlider, StacInfo, and Process analysis). Recommended for searchable STAC APIs.",
+      "Discovery layout for dynamic STAC APIs featuring an interactive background Map, LayerControl, and an ItemCatalog explorer drawer.",
     expert:
       "Power-user dashboard with comprehensive layer manipulation and full analysis tooling.",
     compare:

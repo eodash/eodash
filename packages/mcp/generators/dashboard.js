@@ -2,6 +2,7 @@ import {
   DEFAULT_STAC_ENDPOINT,
   DEFAULT_BRAND_NAME,
   getEodashVersion,
+  getAvailableTemplates,
 } from "../helpers.js";
 
 /**
@@ -17,6 +18,8 @@ export function scaffoldDashboard({
 } = {}) {
   const files = {};
   const eodashVersion = getEodashVersion();
+  const availableTemplates = getAvailableTemplates();
+  const templateImportList = availableTemplates.join(", ");
 
   const gitignore = `node_modules
 dist
@@ -26,7 +29,7 @@ dist
 *.local
 `;
 
-  const dockerfile = `FROM node:20-alpine AS builder
+  const dockerfileSpa = `FROM node:24-alpine AS builder
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci
@@ -35,6 +38,20 @@ RUN npm run build
 
 FROM nginx:alpine
 COPY --from=builder /app/dist /usr/share/nginx/html
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]
+`;
+
+  const dockerfileVitePress = `FROM node:24-alpine AS builder
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci
+COPY . .
+RUN npm run docs:build
+
+FROM nginx:alpine
+COPY --from=builder /app/docs/.vitepress/dist /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]
@@ -83,7 +100,7 @@ export default defineConfig({
 `;
 
     files["src/main.js"] = `import { createEodash } from "@eodash/eodash";
-import { explore, lite, expert, compare } from "@eodash/eodash/templates";
+import { ${templateImportList} } from "@eodash/eodash/templates";
 
 const selectedTemplate = ${template};
 
@@ -210,6 +227,31 @@ export default {
 };
 `;
 
+    files["docs/public/config.js"] = `export default {
+  id: "${name}",
+  stacEndpoint: "${stacEndpoint}",
+  brand: {
+    name: "${brandName}",
+    theme: {
+      colors: {
+        primary: "${brandColor}",
+      },
+    },
+    footerText: "${brandName} - Powered by eodash",
+  },
+  template: "${template}",
+};
+`;
+
+    files["docs/public/story-content.md"] = `# ${brandName} Story
+
+Welcome to the interactive narrative. This markdown content is rendered dynamically by \`<eox-storytelling>\`.
+
+## Key Indicators
+- **STAC Catalog**: [${stacEndpoint}](${stacEndpoint})
+- **Template Layout**: ${template}
+`;
+
     files["docs/index.md"] = `---
 layout: home
 hero:
@@ -234,8 +276,7 @@ layout: page
 
 <client-only>
   <eo-dash
-    stac-endpoint="${stacEndpoint}"
-    template="${template}"
+    config="/config.js"
     style="width: 100%; height: 800px; display: block;"
   ></eo-dash>
 </client-only>
@@ -248,15 +289,16 @@ Interactive indicators and story narrative combining markdown narratives and liv
 <client-only>
   <eox-storytelling
     show-nav
-    markdown-url="./story-content.md"
+    markdown-url="/story-content.md"
   ></eox-storytelling>
 </client-only>
 
-<eo-dash
-  stac-endpoint="${stacEndpoint}"
-  template="lite"
-  style="width: 100%; height: 500px; display: block; margin-top: 2rem;"
-></eo-dash>
+<client-only>
+  <eo-dash
+    config="/config.js"
+    style="width: 100%; height: 500px; display: block; margin-top: 2rem;"
+  ></eo-dash>
+</client-only>
 `;
 
     files["README.md"] = `# ${brandName} (VitePress Narratives)
@@ -296,6 +338,22 @@ npm run docs:dev
       2,
     );
 
+    files["config.js"] = `export default {
+  id: "${name}",
+  stacEndpoint: "${stacEndpoint}",
+  brand: {
+    name: "${brandName}",
+    theme: {
+      colors: {
+        primary: "${brandColor}",
+      },
+    },
+    footerText: "${brandName} - Powered by eodash",
+  },
+  template: "${template}",
+};
+`;
+
     files["index.html"] = `<!DOCTYPE html>
 <html lang="en">
   <head>
@@ -313,8 +371,7 @@ npm run docs:dev
   <body>
     <eo-dash
       id="${name}"
-      stac-endpoint="${stacEndpoint}"
-      template="${template}"
+      config="/config.js"
     ></eo-dash>
   </body>
 </html>
@@ -332,7 +389,10 @@ npm run dev
   }
 
   files[".gitignore"] = gitignore;
-  files["Dockerfile"] = dockerfile;
+  files["Dockerfile"] =
+    projectType === "vitepress-narratives"
+      ? dockerfileVitePress
+      : dockerfileSpa;
   files["nginx.conf"] = nginxConf;
 
   return {
