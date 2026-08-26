@@ -191,6 +191,7 @@ export function createMcpServer() {
             "overview",
             "grid-layout",
             "templates",
+            "custom-widgets",
             "reactive-store",
             "all",
           ])
@@ -209,6 +210,8 @@ export function createMcpServer() {
         result = { gridSystem: architectureData.gridSystem };
       } else if (topic === "templates") {
         result = { templateSystem: architectureData.templateSystem };
+      } else if (topic === "custom-widgets") {
+        result = { customWidgetSystem: architectureData.customWidgetSystem };
       } else if (topic === "reactive-store") {
         result = { reactiveStore: architectureData.reactiveStore };
       }

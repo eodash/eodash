@@ -133,8 +133,6 @@ export default createEodash({
   template: {
     widgets: [
       {
-        id: "dynamic-panel",
-        layout: { x: 9, y: 0, w: 3, h: 8 },
         defineWidget: (selectedSTAC) => {
           if (!selectedSTAC) return null;
 
@@ -205,7 +203,8 @@ const store = window.eodashStore;
 if (store) {
   // Read states
   console.log("Current STAC collection:", store.states.currentUrl.value);
-  console.log("Active OpenLayers map instance:", store.states.mapEl.value);
+  console.log("EOxMap custom element DOM node:", store.states.mapEl.value);
+  console.log("Underlying OpenLayers map instance:", store.states.mapEl.value?.map);
 
   // Hook into tooltip property formatting
   store.states.tooltipAdapter.value = ({ key, value }, mapId) => {

@@ -1,8 +1,25 @@
 import { describe, it, expect } from "vitest";
+import { Client } from "@modelcontextprotocol/sdk/client/index.js";
+import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { createMcpServer } from "../index.js";
 import { scaffoldDashboard } from "../generators/dashboard.js";
 import { generateEodashConfig } from "../generators/config.js";
 import { getAvailableTemplates } from "../helpers.js";
+
+async function createTestClientServer() {
+  const server = createMcpServer();
+  const [clientTransport, serverTransport] =
+    InMemoryTransport.createLinkedPair();
+  const client = new Client(
+    { name: "test-client", version: "1.0.0" },
+    { capabilities: {} },
+  );
+  await Promise.all([
+    server.connect(serverTransport),
+    client.connect(clientTransport),
+  ]);
+  return { server, client };
+}
 
 describe("eodash Generators - scaffoldDashboard", () => {
   it("generates standalone SPA boilerplate", () => {
@@ -162,15 +179,16 @@ describe("eodash Generators - generateEodashConfig", () => {
 });
 
 describe("eodash MCP Server - Generator Tool Execution", () => {
-  it("executes scaffold_dashboard MCP tool", async () => {
-    const server = createMcpServer();
-    const tool = server._registeredTools?.["scaffold_dashboard"];
-    expect(tool).toBeDefined();
+  it("executes scaffold_dashboard MCP tool via protocol", async () => {
+    const { client } = await createTestClientServer();
 
-    const res = await tool.handler({
-      name: "mcp-test-dash",
-      projectType: "standalone-spa",
-      template: "lite",
+    const res = await client.callTool({
+      name: "scaffold_dashboard",
+      arguments: {
+        name: "mcp-test-dash",
+        projectType: "standalone-spa",
+        template: "lite",
+      },
     });
 
     const body = JSON.parse(res.content[0].text);
@@ -178,15 +196,16 @@ describe("eodash MCP Server - Generator Tool Execution", () => {
     expect(body.files["src/main.js"]).toContain("lite");
   });
 
-  it("executes generate_eodash_config MCP tool", async () => {
-    const server = createMcpServer();
-    const tool = server._registeredTools?.["generate_eodash_config"];
-    expect(tool).toBeDefined();
+  it("executes generate_eodash_config MCP tool via protocol", async () => {
+    const { client } = await createTestClientServer();
 
-    const res = await tool.handler({
-      id: "test-generated-config",
-      template: "expert",
-      brand: { name: "Test Generator" },
+    const res = await client.callTool({
+      name: "generate_eodash_config",
+      arguments: {
+        id: "test-generated-config",
+        template: "expert",
+        brand: { name: "Test Generator" },
+      },
     });
 
     const body = JSON.parse(res.content[0].text);
