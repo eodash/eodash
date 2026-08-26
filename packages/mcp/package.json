@@ -12,8 +12,20 @@
   "bin": {
     "eodash-mcp-server": "./index.js"
   },
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "index.js",
+    "helpers.js",
+    "generate-metadata.js",
+    "generators",
+    "data"
+  ],
   "scripts": {
     "generate": "node generate-metadata.js",
+    "prepack": "node generate-metadata.js",
+    "check": "tsc --noEmit",
     "start": "node index.js"
   },
   "dependencies": {

@@ -4,12 +4,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import ts from "typescript";
 import { parse as parseVueSFC } from "@vue/compiler-sfc";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const DEFAULT_REPO_ROOT = path.resolve(__dirname, "../..");
-
-const EXCLUDED_WIDGETS = new Set(["ExportState", "PopUp", "WidgetsContainer"]);
+import { discoverWidgetNames } from "../../core/node/widgets.js";
 
 // Known widget fallback categories & STAC extensions if not documented elsewhere
 const CATEGORY_MAP = {
@@ -42,42 +37,30 @@ const STAC_EXTENSIONS_MAP = {
     "eodash:merge_assets",
     "eodash:layerExclusive",
   ],
-  EodashItemCatalog: ["eo:cloud_cover", "datetime", "assets.thumbnail"],
-  EodashItemFilter: ["themes", "tags"],
-  EodashTimeSlider: ["extent.temporal", "datetime"],
-  EodashDatePicker: ["extent.temporal", "datetime"],
-  EodashProcess: ["eodash:jsonform", "links (rel=service)"],
-  EodashChart: [
-    "links (rel=service, type=application/json|text/csv)",
-    "eodash:vegadefinition",
-  ],
-  EodashStacInfo: ["sci:citation", "sci:doi", "sci:publication", "providers"],
+  EodashItemCatalog: ["eo:cloud_cover"],
+  EodashItemFilter: [],
+  EodashTimeSlider: [],
+  EodashDatePicker: [],
+  EodashProcess: ["eodash:jsonform"],
+  EodashChart: ["eodash:vegadefinition"],
+  EodashStacInfo: ["sci:citation", "sci:doi", "sci:publication"],
 };
 
-/**
- * 1. Dynamically discover widget names in widgets/
- */
-function discoverWidgetNames(repoRoot) {
-  const widgetsDir = path.join(repoRoot, "widgets");
-  if (!fs.existsSync(widgetsDir)) return [];
+const STAC_CORE_FIELDS_MAP = {
+  EodashMap: [],
+  EodashLayerControl: [],
+  EodashItemCatalog: ["datetime", "assets.thumbnail"],
+  EodashItemFilter: ["themes", "tags", "summaries"],
+  EodashTimeSlider: ["extent.temporal", "datetime"],
+  EodashDatePicker: ["extent.temporal", "datetime"],
+  EodashProcess: ["links (rel=service)"],
+  EodashChart: ["links (rel=service, type=application/json|text/csv)"],
+  EodashStacInfo: ["providers", "description", "title"],
+};
 
-  const entries = fs.readdirSync(widgetsDir, { withFileTypes: true });
-  const names = new Set();
-
-  for (const entry of entries) {
-    if (entry.isFile() && entry.name.endsWith(".vue")) {
-      const name = entry.name.replace(/\.vue$/, "");
-      if (!EXCLUDED_WIDGETS.has(name)) names.add(name);
-    } else if (entry.isDirectory()) {
-      const indexPath = path.join(widgetsDir, entry.name, "index.vue");
-      if (fs.existsSync(indexPath) && !EXCLUDED_WIDGETS.has(entry.name)) {
-        names.add(entry.name);
-      }
-    }
-  }
-
-  return Array.from(names).sort();
-}
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const DEFAULT_REPO_ROOT = path.resolve(__dirname, "../..");
 
 /**
  * Recursively collect all files in a directory
@@ -906,6 +889,7 @@ export function buildMetadata(repoRoot = DEFAULT_REPO_ROOT) {
     const storeInteractions = analyzeStoreInteractions(name, repoRoot);
     const category = CATEGORY_MAP[name] || "General";
     const stacExtensions = STAC_EXTENSIONS_MAP[name] || [];
+    const stacCoreFields = STAC_CORE_FIELDS_MAP[name] || [];
     const isBackground = name === "EodashMap";
 
     // Extract first summary paragraph from markdown guide if available
@@ -948,6 +932,7 @@ export function buildMetadata(repoRoot = DEFAULT_REPO_ROOT) {
       props: props || [],
       storeInteractions,
       stacExtensions,
+      stacCoreFields,
       example,
       templateExample: templateExamples[name] || null,
       markdownGuide: guide,

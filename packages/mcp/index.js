@@ -45,10 +45,10 @@ export function createMcpServer() {
     {
       name: pkg.name || "@eodash/mcp-server",
       version: pkg.version || "1.0.0",
-      instructions:
-        "This MCP server provides tools to inspect, configure, and scaffold @eodash/eodash instances, widgets, layouts, and STAC integrations.",
     },
     {
+      instructions:
+        "This MCP server provides tools to inspect, configure, and scaffold @eodash/eodash instances, widgets, layouts, and STAC integrations.",
       capabilities: {
         tools: {
           call: {},

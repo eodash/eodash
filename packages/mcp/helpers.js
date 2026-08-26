@@ -7,9 +7,17 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const REPO_ROOT = path.resolve(__dirname, "../..");
 
-const rootPkg = JSON.parse(
-  fs.readFileSync(path.join(REPO_ROOT, "package.json"), "utf8"),
-);
+function getRootPackage() {
+  try {
+    const pkgPath = path.join(REPO_ROOT, "package.json");
+    if (fs.existsSync(pkgPath)) {
+      return JSON.parse(fs.readFileSync(pkgPath, "utf8"));
+    }
+  } catch {
+    // fallback when root package.json is unreachable
+  }
+  return { version: "5.9.0" };
+}
 
 export const DEFAULT_STAC_ENDPOINT =
   "https://eoxhub-workspaces.github.io/eoxhub-test-catalog/catalog/catalog.json";
@@ -38,7 +46,8 @@ export function getAvailableTemplates() {
  * Gets the current @eodash/eodash version from the root package.json
  */
 export function getEodashVersion() {
-  return `^${rootPkg.version}`;
+  const rootPkg = getRootPackage();
+  return rootPkg.version ? `^${rootPkg.version}` : "^5.9.0";
 }
 
 /**
@@ -89,9 +98,9 @@ export default createEodash({
         type: "web-component",
         layout: { x: 0, y: 6, w: 6, h: 6 },
         widget: {
-          name: "my-custom-chart",
+          tagName: "my-custom-chart",
           // ESM import function or direct CDN bundle URL:
-          import: () => import("./src/widgets/MyCustomChart.js"),
+          link: () => import("./src/widgets/MyCustomChart.js"),
           properties: {
             theme: "dark",
             unit: "celsius",
@@ -248,7 +257,7 @@ export function generateLandingPage(widgets, _arch) {
       <div class="flex items-center space-x-3">
         <div class="bg-blue-600 text-white font-bold px-2.5 py-1 rounded">eo</div>
         <span class="font-bold text-slate-900 text-lg">eodash MCP Server</span>
-        <span class="text-xs font-mono bg-slate-100 text-slate-600 px-2 py-0.5 rounded">v${rootPkg.version}</span>
+        <span class="text-xs font-mono bg-slate-100 text-slate-600 px-2 py-0.5 rounded">v${getRootPackage().version}</span>
       </div>
       <div class="flex items-center space-x-2">
         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">

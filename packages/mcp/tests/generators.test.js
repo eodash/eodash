@@ -21,6 +21,9 @@ describe("eodash Generators - scaffoldDashboard", () => {
     expect(res.files["src/main.js"]).toContain("https://example.com/stac");
     expect(res.files["src/main.js"]).toContain("Alpine Monitor");
     expect(res.files["eodash.config.js"]).toContain("entryPoint");
+    expect(res.files["eodash.config.js"]).toContain(
+      'import { defineConfig } from "@eodash/eodash/config"',
+    );
     expect(res.files["index.html"]).toBeDefined();
     expect(res.files["Dockerfile"]).toBeDefined();
     expect(res.files[".gitignore"]).toBeDefined();

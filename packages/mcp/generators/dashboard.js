@@ -71,7 +71,8 @@ CMD ["nginx", "-g", "daemon off;"]
       2,
     );
 
-    files["eodash.config.js"] = `import { defineConfig } from "@eodash/eodash";
+    files["eodash.config.js"] =
+      `import { defineConfig } from "@eodash/eodash/config";
 
 export default defineConfig({
   entryPoint: "src/main.js",

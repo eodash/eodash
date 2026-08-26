@@ -95,6 +95,15 @@ describe("eodash MCP Server - Core Tools", () => {
     const resWc = await tool.handler({ type: "web-component" });
     const wcGuide = JSON.parse(resWc.content[0].text);
     expect(wcGuide["web-component"].lifecycleHooks.onMounted).toBeDefined();
+    expect(wcGuide["web-component"].example).toContain("tagName:");
+    expect(wcGuide["web-component"].example).toContain("link:");
+  });
+
+  it("server initialization passes instructions and capabilities in options", () => {
+    const server = createMcpServer();
+    expect(server.server._instructions).toBeTruthy();
+    expect(server.server._instructions).toContain("eodash");
+    expect(server.server._serverInfo.name).toBe("@eodash/mcp-server");
   });
 
   it("get_eodash_architecture returns grid layout, templates and reactive store details", async () => {
@@ -195,6 +204,22 @@ describe("eodash MCP Server - Metadata Generator", () => {
       const widget = widgetsMetadata[name];
       expect(widget.storeInteractions.reads).not.toContain("useSTAcStore");
     }
+
+    // Verify STAC extensions vs core fields split
+    expect(widgetsMetadata.EodashMap.stacExtensions).toContain("eox:flatstyle");
+    expect(widgetsMetadata.EodashItemCatalog.stacExtensions).toContain(
+      "eo:cloud_cover",
+    );
+    expect(widgetsMetadata.EodashItemCatalog.stacCoreFields).toContain(
+      "datetime",
+    );
+    expect(widgetsMetadata.EodashItemCatalog.stacExtensions).not.toContain(
+      "datetime",
+    );
+    expect(widgetsMetadata.EodashTimeSlider.stacCoreFields).toContain(
+      "datetime",
+    );
+    expect(widgetsMetadata.EodashTimeSlider.stacExtensions).toHaveLength(0);
   });
 });
 
