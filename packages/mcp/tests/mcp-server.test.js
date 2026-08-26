@@ -289,14 +289,37 @@ describe("eodash MCP Server - HTTP Endpoints", () => {
     expect(body.message).toBe("eodash MCP Server is running");
   });
 
-  it("GET / returns 200 HTML landing page with widget overview", async () => {
+  it("GET / returns 405 Method Not Allowed per MCP Streamable HTTP spec", async () => {
     const res = await fetch(`${baseUrl}/`);
+    expect(res.status).toBe(405);
+    expect(res.headers.get("allow")).toBe("POST");
+    const body = await res.json();
+    expect(body.error.code).toBe(-32600);
+  });
+
+  it("GET /ui returns 200 HTML landing page with widget overview", async () => {
+    const res = await fetch(`${baseUrl}/ui`);
     expect(res.status).toBe(200);
     expect(res.headers.get("content-type")).toContain("text/html");
     const html = await res.text();
     expect(html).toContain("eodash MCP Server");
     expect(html).toContain("Available Widgets");
     expect(html).toContain("EodashMap");
+  });
+
+  it("POST / with malformed JSON body returns 400 with standard JSON-RPC parse error", async () => {
+    const res = await fetch(`${baseUrl}/`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json, text/event-stream",
+      },
+      body: "{ malformed json: true",
+    });
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.error.code).toBe(-32700);
+    expect(body.error.message).toContain("Parse error");
   });
 
   it("DELETE / returns 200 stateless status", async () => {

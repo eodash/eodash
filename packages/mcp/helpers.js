@@ -23,13 +23,18 @@ export const DEFAULT_STAC_ENDPOINT =
   "https://eoxhub-workspaces.github.io/eoxhub-test-catalog/catalog/catalog.json";
 export const DEFAULT_BRAND_NAME = "EOxHub Demo Dashboard";
 
+let cachedTemplates = null;
+let cachedMetadata = null;
+
 /**
  * Dynamically discovers available built-in templates from templates/*.js
  */
 export function getAvailableTemplates() {
+  if (cachedTemplates) return cachedTemplates;
   const templatesDir = path.join(REPO_ROOT, "templates");
   if (!fs.existsSync(templatesDir)) {
-    return ["explore", "lite", "expert", "compare"];
+    cachedTemplates = ["explore", "lite", "expert", "compare"];
+    return cachedTemplates;
   }
   const files = fs.readdirSync(templatesDir);
   const discovered = files
@@ -37,9 +42,11 @@ export function getAvailableTemplates() {
       (f) => f.endsWith(".js") && f !== "index.js" && f !== "baseConfig.js",
     )
     .map((f) => path.basename(f, ".js"));
-  return discovered.length > 0
-    ? discovered
-    : ["explore", "lite", "expert", "compare"];
+  cachedTemplates =
+    discovered.length > 0
+      ? discovered
+      : ["explore", "lite", "expert", "compare"];
+  return cachedTemplates;
 }
 
 /**
@@ -54,6 +61,7 @@ export function getEodashVersion() {
  * Loads cached metadata or rebuilds on-the-fly
  */
 export function getMetadata() {
+  if (cachedMetadata) return cachedMetadata;
   const widgetsFile = path.join(__dirname, "data/widgets-metadata.json");
   const archFile = path.join(__dirname, "data/architecture-metadata.json");
 
@@ -61,7 +69,8 @@ export function getMetadata() {
     try {
       const widgetsData = JSON.parse(fs.readFileSync(widgetsFile, "utf8"));
       const architectureData = JSON.parse(fs.readFileSync(archFile, "utf8"));
-      return { widgetsData, architectureData };
+      cachedMetadata = { widgetsData, architectureData };
+      return cachedMetadata;
     } catch (err) {
       console.warn("Could not read cached metadata, rebuilding:", err.message);
     }
@@ -69,10 +78,11 @@ export function getMetadata() {
 
   // Dynamic on-the-fly generation fallback
   const { widgetsMetadata, architectureMetadata } = buildMetadata(REPO_ROOT);
-  return {
+  cachedMetadata = {
     widgetsData: widgetsMetadata,
     architectureData: architectureMetadata,
   };
+  return cachedMetadata;
 }
 
 /**
