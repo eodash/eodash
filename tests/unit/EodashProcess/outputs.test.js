@@ -277,15 +277,11 @@ describe("processCharts", () => {
   });
 
   test("unwraps data from the 'contents' property if it's a valid JSON string", async () => {
-    const wrappedData = {
-      contents: JSON.stringify([{ x: 1, y: 2 }]),
-      status: { url: "...", http_code: 200 },
-    };
     axiosMock.get.mockImplementation((/** @type {string} */ url) =>
       Promise.resolve(
         url.includes("spec")
           ? { data: { mark: "line", data: { values: [] } } }
-          : { data: wrappedData },
+          : { data: [{ x: 1, y: 2 }] },
       ),
     );
 
