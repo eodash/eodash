@@ -28,6 +28,7 @@ import { createLayerFromRender } from "./renders.js";
  * @property {Record<string, Record<string, import("../types").Render>>} [renders]
  * @property {import("../http.js").HttpClient} [http]
  * @property {import("../types").LayerConfigHelpers} [layerConfigHelpers]
+ * @property {boolean} [stateful] - whether the built item becomes the reader's `item`. Default `true`.
  */
 
 /** Link relations supported for layer rendering. */
@@ -47,7 +48,7 @@ const RENDERABLE_RELS = [
  *
  * @param {import("../types").STACItem} item - Target STAC Item containing data links/assets
  * @param {BuildContext & { stac: import("../types").STACCollection, getDates: (datetime?: import("../types").Datetime) => Promise<Date[]> }} context - Context dependencies (HTTP client, STAC collection, state config)
- * @returns {Promise<{ layers: import("../types").EoxLayer[], projections: import("../types").Projection[] }>} Layer array for @eox/map and required projections
+ * @returns {Promise<{ layers: import("@eox/map").EoxLayer[], projections: import("../types").Projection[] }>} Layer array for @eox/map and required projections
  */
 export const buildLayers = async (item, context) => {
   const {
@@ -181,7 +182,7 @@ export const buildLayers = async (item, context) => {
  * @param {string} title
  * @param {import("../http.js").HttpClient} http
  * @param {import("../types").LayerConfigHelpers} layerConfigHelpers
- * @returns {Promise<import("../types").EoxLayer>}
+ * @returns {Promise<import("@eox/map").EoxLayer>}
  */
 async function buildStacLayer(
   item,

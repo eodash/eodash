@@ -44,11 +44,10 @@ export function getDatetimeProperty(linksOrItems) {
 }
 
 /**
- * Whether a value states a datetime. A catalog and an api give RFC 3339
- * strings; a parquet mirror gives `Date`s, since that is what a timestamp
- * column decodes to.
+ * Checks whether a value is a valid string or Date representation of a datetime.
  *
  * @param {unknown} value
+ * @returns {boolean}
  */
 function isDatetime(value) {
   return typeof value === "string" || value instanceof Date;

@@ -8,7 +8,6 @@
  * @returns {{url: string, optionsObject: Record<string, unknown> | undefined}}
  */
 export function handleAuthenticationOfLink(item, linkOrAsset, optionsObject) {
-  // browse through all authentication refs on a link to find a first one we support
   for (const authRef of linkOrAsset["auth:refs"] || []) {
     const scheme = item["auth:schemes"]?.[authRef];
     if (scheme) {
@@ -16,13 +15,6 @@ export function handleAuthenticationOfLink(item, linkOrAsset, optionsObject) {
         case "apiKey": {
           return handleApiKeyBasedAuth(scheme, linkOrAsset.href, optionsObject);
         }
-        // case "signedUrl":
-        // case "s3":
-        // case "http":
-        // case "openIdConnect":
-        // case "apiKey":
-        // case "oauth2":
-        // todo add more handlers when needed
         default:
           console.error(
             `eodash does not support referenced authentication scheme ${authRef}`,
@@ -40,7 +32,6 @@ export function handleAuthenticationOfLink(item, linkOrAsset, optionsObject) {
  * @returns { {url: string, optionsObject: Record<string, unknown> | undefined} }
  */
 function handleApiKeyBasedAuth(schemeDef, href, optionsObject) {
-  // add token to query parameters of href
   let url = href;
   switch (schemeDef.in) {
     case "query": {
@@ -75,22 +66,16 @@ function handleApiKeyBasedAuth(schemeDef, href, optionsObject) {
  * @returns {string} - Updated URL string
  */
 function setQueryParam(url, key, value) {
-  // Split off any fragment (#something)
   const [base, hash] = url.split("#", 2);
-
-  // Regex to detect existing key, respecting ? or &
   const pattern = new RegExp(`([?&])${key}=[^&#]*`, "i");
 
   if (pattern.test(base)) {
-    // Replace existing key=value
     url = base.replace(pattern, `$1${key}=${value}`);
   } else {
-    // Append as new key=value
     const joiner = base.includes("?") ? "&" : "?";
     url = `${base}${joiner}${key}=${value}`;
   }
 
-  // Reattach fragment if present
   if (hash) url += "#" + hash;
 
   return url;
