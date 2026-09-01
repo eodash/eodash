@@ -35,7 +35,7 @@ import {
  * @param {Array<string | { url: string; titilerVersion?: 1 | 2; scaleFactor?: number }>} [options.upscalingEndpoints]
  * @param {import("../http.js").HttpClient} [options.http]
  * @param {import("../types").LayerConfigHelpers} [options.layerConfigHelpers]
- * @returns {Promise<{ layers: import("../types").EoxLayer[], projections: import("../types").Projection[] }>}
+ * @returns {Promise<{ layers: import("@eox/map").EoxLayer[], projections: import("../types").Projection[] }>}
  */
 export const createLayersFromLinks = async (
   collectionId,
@@ -55,7 +55,7 @@ export const createLayersFromLinks = async (
   } = options;
   const { extractLayerConfig, applyRasterFormValue } = layerConfigHelpers;
   log.debug("Creating layers from links");
-  /** @type {import("../types").EoxLayer[]} */
+  /** @type {import("@eox/map").EoxLayer[]} */
   const jsonArray = [];
   /** @type {import("../types").Projection[]} */
   const projections = [];
@@ -68,22 +68,20 @@ export const createLayersFromLinks = async (
   const tilejsonArray = xyzArray.length
     ? []
     : item.links.filter(isTileJSONLink);
-  // Taking projection code from main map view, as main view defines
-  // projection for comparison map
+  // Taking projection code from main map view
   const viewProjectionCode = viewProjection || "EPSG:3857";
 
   /**
-   * Forms already read, keyed by whatever stated them.
+   * Cache of fetched raster forms keyed by source identifier or definition.
    *
    * @type {Map<string | import("../types").RasterForm | undefined, Promise<import("../types").RasterForm | undefined>>}
    */
   const rasterForms = new Map();
   /**
-   * The form a link's config editor is built from: its own when it states one,
-   * else the item's, else the collection's. Links resolving to the same source
-   * share one read.
+   * Resolves the raster form configuration for a link from the link, item, or collection level.
    *
    * @param {import("../types").WebMapLink} link
+   * @returns {Promise<import("../types").RasterForm | undefined>}
    */
   const resolveRasterForm = (link) => {
     const source =
@@ -96,7 +94,6 @@ export const createLayersFromLinks = async (
   };
 
   for (const wmsLink of wmsArray ?? []) {
-    // Registering setting sub wms link projection
     const wmsLinkProjection = getProjection(wmsLink);
 
     if (wmsLinkProjection) {
@@ -105,15 +102,12 @@ export const createLayersFromLinks = async (
 
     const linkProjectionCode =
       getProjectionCode(wmsLinkProjection) || "EPSG:4326";
-    // Projection code need to be based on map view projection to make sure
-    // tiles are reloaded when changing projection
     const linkId = createLayerID(
       collectionId,
       item.id,
       wmsLink,
       viewProjectionCode,
     );
-    // base layers and overlays are built without a layerConfig
     const isBaseOrOverlay = isBaseLayerOrOverlay(wmsLink);
     const rasterForm = isBaseOrOverlay
       ? undefined
@@ -160,7 +154,6 @@ export const createLayersFromLinks = async (
     }
     extractRoles(json.properties, wmsLink);
     if ("wms:dimensions" in wmsLink) {
-      // Expand all dimensions into the params attribute
       Object.assign(json.source.params, wmsLink["wms:dimensions"]);
     }
     if ("wms:styles" in wmsLink) {
@@ -180,15 +173,12 @@ export const createLayersFromLinks = async (
   }
 
   for (const wmtsLink of wmtsArray ?? []) {
-    // Registering setting sub wmts link projection
-
     const wmtsLinkProjection = getProjection(wmtsLink);
 
     if (wmtsLinkProjection) {
       projections.push(wmtsLinkProjection);
     }
 
-    // base layers and overlays are built without a layerConfig
     const rasterForm = isBaseLayerOrOverlay(wmtsLink)
       ? undefined
       : await resolveRasterForm(wmtsLink);
@@ -327,8 +317,7 @@ export const createLayersFromLinks = async (
   }
 
   for (const tilejsonLink of tilejsonArray) {
-    // The tilejson href is a complete URL with the render params baked in by the
-    // STAC producer; fetch it and use its `tiles[0]` template as an XYZ source.
+    // Fetch TileJSON specification and use the first tile URL template as an XYZ source
     const tileJSON = await http.get(tilejsonLink.href).catch((err) => {
       console.error("[eodash] Failed to fetch item TileJSON", err);
       return null;
@@ -385,7 +374,7 @@ export const createLayersFromLinks = async (
           ? { urls: tileJSON.tiles }
           : { url: tileJSON.tiles[0] }),
         projection: projectionCode,
-        // Link attribution wins; the TileJSON document's own is the fallback.
+        // Prefer link attribution over TileJSON document attribution
         ...(tilejsonLink.attribution || tileJSON.attribution
           ? {
               attributions: tilejsonLink.attribution || tileJSON.attribution,
@@ -427,9 +416,7 @@ export const createLayersFromLinks = async (
     log.debug("Vector Tile Layer added", linkId);
     const key =
       /** @type {string | undefined} */ (vectorTileLink["key"]) || undefined;
-    // fetch styles and separate them by their mapping between links and assets
     const styles = await resolveStyle(item, collection, http, key);
-    // get the correct style which is not attached to a link
     let { layerConfig, style } = extractLayerConfig(styles);
 
     let href = vectorTileLink.href;
