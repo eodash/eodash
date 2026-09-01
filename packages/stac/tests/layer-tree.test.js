@@ -140,23 +140,16 @@ describe("layer tree", () => {
   });
 
   describe("getColFromLayer", () => {
-    /** @param {string} id */
-    const olLayer = (id) => /** @type {any} */ ({ get: () => id });
-
-    test("matches the reader whose collection the layer was built from", async () => {
+    test("matches the reader whose collection the layer was built from", () => {
       const readers = [{ stac: { id: "a" } }, { stac: { id: "b" } }];
 
-      expect(await getColFromLayer(readers, olLayer(B_NESTED))).toBe(
-        readers[1],
-      );
+      expect(getColFromLayer(readers, B_NESTED)).toBe(readers[1]);
     });
 
-    test("returns nothing when no reader owns it", async () => {
+    test("returns nothing when no reader owns it", () => {
       const readers = [{ stac: { id: "a" } }];
 
-      expect(
-        await getColFromLayer(readers, olLayer("c;:;i;:;l;:;EPSG:3857")),
-      ).toBeUndefined();
+      expect(getColFromLayer(readers, "c;:;i;:;l;:;EPSG:3857")).toBeUndefined();
     });
   });
 });

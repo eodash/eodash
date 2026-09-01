@@ -2,29 +2,28 @@ import { findClosestIndex, getDatetimeProperty } from "../helpers/datetime.js";
 import { toAbsolute } from "../helpers/url.js";
 import { createCollectionBase } from "./base.js";
 
-/**
- * All a date list needs. The range fields are asked for too, because a
- * collection whose items only state a range would otherwise come back empty.
- */
+/** Field selection parameter including timestamp properties and excluding heavy payloads. */
 const DATE_FIELDS =
   "properties.datetime,properties.start_datetime,properties.end_datetime,-assets,-geometry,-links,-bbox";
 
 /**
- * Instantiates a STAC collection backed by an API `/search` endpoint.
+ * Creates a STAC collection reader backed by a STAC API `/search` endpoint.
  *
  * @param {object} context
- * @param {string} context.url
- * @param {import("../types").STACCollection} context.stac
- * @param {import("../http.js").HttpClient} context.http
- * @param {string} [context.color]
- * @param {import("../types").BuildContext} [context.rasterOptions]
- * @param {number} [context.maxItems=1000] - The maximum number of items returned per search query.
+ * @param {string} context.url - Collection URL
+ * @param {import("../types").STACCollection} context.stac - Collection metadata
+ * @param {import("../http.js").HttpClient} context.http - HTTP client instance
+ * @param {string} [context.color] - Collection layer tint color
+ * @param {string} [context.viewProjection] - Map view projection
+ * @param {import("../types").BuildContext} [context.rasterOptions] - Raster rendering options
+ * @param {number} [context.maxItems=1000] - Maximum items returned per search query
  */
 export const createAPICollection = ({
   url,
   stac,
   http,
   color,
+  viewProjection,
   rasterOptions,
   maxItems = 1000,
 }) => {
@@ -167,22 +166,25 @@ export const createAPICollection = ({
     return items[findClosestIndex(times, target)] ?? items[0];
   };
 
-  return {
-    ...createCollectionBase({
+  return Object.assign(
+    createCollectionBase({
       stac,
       http,
       getDates,
       getItem,
       color,
+      viewProjection,
       rasterOptions,
     }),
-    /** @type {"api"} */
-    kind: "api",
-    search,
-    getItems,
-    getDates,
-    getItem,
-  };
+    {
+      /** @type {"api"} */
+      kind: "api",
+      search,
+      getItems,
+      getDates,
+      getItem,
+    },
+  );
 };
 
 /**

@@ -207,7 +207,7 @@ describe("building layers", () => {
         osm,
       ]);
 
-      expect(updated).toBeUndefined();
+      expect(updated.layers).toEqual([]);
       expect(warn).toHaveBeenCalledWith(
         expect.stringContaining("no layer of this collection"),
         LAYER_ID,
@@ -225,7 +225,7 @@ describe("building layers", () => {
         currentTree().layers,
       );
 
-      expect(updated).toBeUndefined();
+      expect(updated.layers).toEqual([]);
       expect(warn).toHaveBeenCalledWith(
         expect.stringContaining("no item at"),
         "2023-01-10T00:00:00Z",

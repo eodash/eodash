@@ -23,7 +23,7 @@ import { addTooltipInteraction, resolveStyle } from "../helpers/style.js";
  * @param {object} [options]
  * @param {import("../http.js").HttpClient} [options.http]
  * @param {import("../types").LayerConfigHelpers} [options.layerConfigHelpers]
- * @returns {Promise<{ layers: import("../types").EoxLayer[], projections: import("../types").Projection[] }>}
+ * @returns {Promise<{ layers: import("@eox/map").EoxLayer[], projections: import("../types").Projection[] }>}
  **/
 export async function createLayersFromAssets(
   collectionId,
@@ -41,7 +41,7 @@ export async function createLayersFromAssets(
   } = options;
   const { extractLayerConfig } = layerConfigHelpers;
   log.debug("Creating layers from assets");
-  /** @type {import("../types").EoxLayer[]} */
+  /** @type {import("@eox/map").EoxLayer[]} */
   const jsonArray = [];
   /** @type {import("../types").Projection[]} */
   const projections = [];
@@ -142,9 +142,8 @@ export async function createLayersFromAssets(
         features: features,
       };
       geoJsonSources.push(
-        encodeURI(
-          "data:application/json;charset=utf-8," + JSON.stringify(geojson),
-        ),
+        "data:application/json;charset=utf-8," +
+          encodeURIComponent(JSON.stringify(geojson)),
       );
       geoJsonIdx.push(idx);
     }
@@ -160,7 +159,6 @@ export async function createLayersFromAssets(
         undefined,
         assetName,
       );
-      // get the correct style which is not attached to a link
       let { layerConfig, style } = extractLayerConfig(styles);
       let assetLayerId = createAssetID(
         collectionId,
@@ -169,7 +167,6 @@ export async function createLayersFromAssets(
       );
       const isBaseOrOverlay = isBaseLayerOrOverlay(assets[assetName]);
       if (isBaseOrOverlay) {
-        // to prevent them being removed by date change on main dataset
         assetLayerId = assetName;
       }
       log.debug("Creating WebGLTile layer from GeoTIFF", assetLayerId);
@@ -187,6 +184,8 @@ export async function createLayersFromAssets(
           normalize: !style,
           interpolate: false,
           sources,
+          // geotiff.js requires blockSize to enable byte-range caching across requests
+          sourceOptions: { blockSize: 65536 },
         },
         properties: {
           id: assetLayerId,
@@ -257,7 +256,6 @@ export async function createLayersFromAssets(
 
   if (geoJsonSources.length) {
     for (const [i, geoJsonSource] of geoJsonSources.entries()) {
-      // fetch styles and separate them by their mapping between links and assets
       const assetName = assetIds[geoJsonIdx[i]];
       const styles = await resolveStyle(
         stacObject,
@@ -266,7 +264,6 @@ export async function createLayersFromAssets(
         undefined,
         assetName,
       );
-      // get the correct style which is not attached to a link
       let { layerConfig, style } = extractLayerConfig(styles);
       let assetLayerId = createAssetID(
         collectionId,
@@ -275,12 +272,10 @@ export async function createLayersFromAssets(
       );
       const isBaseOrOverlay = isBaseLayerOrOverlay(assets[assetName]);
       if (isBaseOrOverlay) {
-        // to prevent them being removed by date change on main dataset
         assetLayerId = assetName;
       }
 
       log.debug(`Creating Vector layer from GeoJsons`, assetLayerId);
-      // register projection if exists
       const assetProjection = getProjection(assets[assetName]);
       if (assetProjection) {
         projections.push(assetProjection);
@@ -326,13 +321,11 @@ export async function createLayersFromAssets(
       extractRoles(layer.properties, assets[assetName]);
       addTooltipInteraction(layer, style);
       jsonArray.push(layer);
-      // if we merged assets (default yes), then we can break from this loop
       if (stacObject?.["eodash:merge_assets"] !== false) break;
     }
   }
   if (fgbSources.length) {
     for (const [i, fgbSource] of fgbSources.entries()) {
-      // fetch styles and separate them by their mapping between links and assets
       const assetName = assetIds[fgbIdx[i]];
       const styles = await resolveStyle(
         stacObject,
@@ -341,22 +334,18 @@ export async function createLayersFromAssets(
         undefined,
         assetName,
       );
-      // get the correct style which is not attached to a link
       let { layerConfig, style } = extractLayerConfig(styles);
       let assetLayerId = createAssetID(collectionId, stacObject.id, fgbIdx[i]);
       const isBaseOrOverlay = isBaseLayerOrOverlay(assets[assetName]);
       if (isBaseOrOverlay) {
-        // to prevent them being removed by date change on main dataset
         assetLayerId = assetName;
       }
       log.debug(`Creating Vector layer from FlatGeoBuf`, assetLayerId);
-      // register projection if exists
       const assetProjection = getProjection(assets[assetName]);
       if (assetProjection) {
         projections.push(assetProjection);
       }
       const projection = getProjectionCode(assetProjection) || "EPSG:4326";
-      // in case we merge them, we pass urls, else just single url
       const urlsObject = {
         url:
           stacObject?.["eodash:merge_assets"] === false
@@ -394,7 +383,6 @@ export async function createLayersFromAssets(
       extractRoles(layer.properties, assets[assetName]);
       addTooltipInteraction(layer, style);
       jsonArray.push(layer);
-      // if we merged assets (default yes), then we can break from this loop
       if (stacObject?.["eodash:merge_assets"] !== false) break;
     }
   }

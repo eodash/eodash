@@ -17,8 +17,6 @@ export {
 
 import type { BoundLegend, STACItem, Projection } from "./stac";
 
-export type EoxLayer = import("@eox/map").EoxLayer;
-
 /** A style document, extended by what the layer config editor reads off it. */
 export type EodashStyleJson = import("ol/style/flat").FlatStyleLike & {
   variables?: Record<string, string | number>;
@@ -66,14 +64,32 @@ export type ObservationPointsThemes = Record<
 /** What the caller supplies for a build; see `layers/index.js`. */
 export type BuildContext = import("../layers/index.js").BuildContext;
 
-/** Any collection reader. Narrow it with `reader.kind` where the three differ. */
-export type Reader = Awaited<
-  ReturnType<typeof import("../index.js").createEodashCollection>
+/** Base methods and properties shared across all collection readers. */
+export type CollectionBase = ReturnType<
+  typeof import("../collections/base.js").createCollectionBase
 >;
+
+/** Collection reader backed by a STAC API endpoint. */
+export type APICollection = ReturnType<
+  typeof import("../collections/api.js").createAPICollection
+>;
+
+/** Collection reader backed by a GeoParquet mirror. */
+export type ParquetCollection = ReturnType<
+  typeof import("../collections/parquet.js").createParquetCollection
+>;
+
+/** Collection reader backed by static STAC links. */
+export type StaticCollection = ReturnType<
+  typeof import("../collections/static.js").createStaticCollection
+>;
+
+/** Any collection reader. Narrow it with `reader.kind` where the three differ. */
+export type Reader = APICollection | ParquetCollection | StaticCollection;
 
 /** The built layers with the projections they reference. */
 export interface BuiltLayers {
-  layers: EoxLayer[];
+  layers: import("@eox/map").EoxLayer[];
   /** For the caller to register before assigning the layers. */
   projections: Projection[];
   /** The item the layers were built from. */

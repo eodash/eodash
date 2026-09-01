@@ -242,9 +242,11 @@ describe("layers from assets", () => {
     );
 
     const geojson = JSON.parse(
-      decodeURI(layers[0].source.url).replace(
-        "data:application/json;charset=utf-8,",
-        "",
+      decodeURIComponent(
+        layers[0].source.url.replace(
+          "data:application/json;charset=utf-8,",
+          "",
+        ),
       ),
     );
     // eox-map draws one geometry per feature, and geodb answers with the rows
