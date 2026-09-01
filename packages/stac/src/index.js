@@ -6,19 +6,21 @@ import { createParquetCollection } from "./collections/parquet.js";
 import { createStaticCollection } from "./collections/static.js";
 
 /**
- * Creates a collection reader for date lookups and layer creation.
- * Static collections use item links or a GeoParquet mirror asset. STAC APIs require `options.api = true`.
+ * Creates a collection reader for querying dates and generating map layers.
+ * Selects an API, GeoParquet, or static collection reader based on the options and collection metadata.
  *
- * @param {string} url - Collection JSON URL or API search endpoint
+ * @param {string} url - Collection URL or API search endpoint
  * @param {object} [options]
- * @param {boolean} [options.api=false] - Set to true if queried via STAC API search
- * @param {number} [options.maxItems] - Max items returned per search query
- * @param {import("./http.js").AxiosInstance} [options.client] - Custom HTTP client
- * @param {string} [options.color] - Tints this collection's layers, so several rendered together stay tellable apart
- * @param {string} [options.rasterEndpoint] - TiTiler base url the render extension builds tile urls against; without it no render layer is produced
- * @param {Array<string | { url: string; titilerVersion?: 1 | 2; scaleFactor?: number }>} [options.upscalingEndpoints] - Endpoints a tile url is rewritten onto when the item asks to be upscaled
- * @param {Record<string, any> | null} [options.tileMatrixSets] - Tile matrix set definitions, resolved by projection code
- * @param {Record<string, Record<string, import("./types").Render>>} [options.renders] - Render definitions by collection id, taking precedence over the collection's own
+ * @param {boolean} [options.api=false] - Whether the collection uses a STAC API endpoint
+ * @param {number} [options.maxItems] - Maximum items to retrieve per search query
+ * @param {import("./http.js").AxiosInstance} [options.client] - Custom HTTP client instance
+ * @param {string} [options.color] - Color assigned to layers generated from this collection
+ * @param {string} [options.viewProjection] - Map view projection code used to namespace layer identifiers
+ * @param {string} [options.rasterEndpoint] - Base URL for raster tile rendering
+ * @param {Array<string | { url: string; titilerVersion?: 1 | 2; scaleFactor?: number }>} [options.upscalingEndpoints] - Tile endpoints for high-resolution rendering
+ * @param {Record<string, any> | null} [options.tileMatrixSets] - TileMatrixSet configurations keyed by projection
+ * @param {Record<string, Record<string, import("./types").Render>>} [options.renders] - Render configurations mapped by collection ID
+ * @returns {Promise<import("./types").Reader>}
  */
 export const createEodashCollection = async (url, options = {}) => {
   const {
@@ -26,6 +28,7 @@ export const createEodashCollection = async (url, options = {}) => {
     maxItems,
     client,
     color,
+    viewProjection,
     rasterEndpoint,
     upscalingEndpoints,
     tileMatrixSets,
@@ -40,7 +43,7 @@ export const createEodashCollection = async (url, options = {}) => {
     tileMatrixSets,
     renders,
   };
-  const context = { url, stac, http, color, rasterOptions };
+  const context = { url, stac, http, color, viewProjection, rasterOptions };
 
   if (api) {
     return createAPICollection({ ...context, maxItems });

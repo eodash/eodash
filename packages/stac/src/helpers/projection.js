@@ -24,10 +24,11 @@ export const getProjectionCode = (projection) => {
  * Extracts the projection code from a STAC item, link, or asset.
  * Checks modern `proj:code` first, falling back to `proj:epsg` or `eodash:proj4_def`.
  *
- * @param {{ "proj:code"?: string, "proj:epsg"?: number | null, "eodash:proj4_def"?: import("../types").Projection } | undefined | null} source
+ * @param {import("../types").STACCollection | import("../types").STACItem | import("../types").STACAsset | import("../types").STACLink | { "proj:code"?: string, "proj:epsg"?: number | null, "eodash:proj4_def"?: import("../types").Projection, "eodash:mapProjection"?: import("../types").Projection } | Record<string, any> | undefined | null} [source]
  * @returns {import("../types").Projection | undefined}
  */
 export const getProjection = (source) =>
+  source?.["eodash:mapProjection"] ||
   source?.["proj:code"] ||
   source?.["proj:epsg"] ||
   source?.["eodash:proj4_def"] ||
@@ -45,7 +46,6 @@ export function resolveTmsByProjection(projectionCode, customRegistry) {
 
   const tmsEntries = Object.values(customRegistry);
 
-  // Find first TMS that matches this projection
   for (const tms of tmsEntries) {
     const crs = tms.crs || "";
     if (
@@ -77,7 +77,6 @@ export function tmsToTileGridOptions(tms, targetTileSize = [512, 512]) {
   const originalTileWidth = firstMatrix.tileWidth;
   const originalTileHeight = firstMatrix.tileHeight;
 
-  // Handle axis order
   const isNE = ["N", "Lat", "Y"].includes(tms.orderedAxes?.[0]);
   if (isNE) {
     // Swap origin to [E, N] for OpenLayers
@@ -92,13 +91,11 @@ export function tmsToTileGridOptions(tms, targetTileSize = [512, 512]) {
     tileSize = targetTileSize;
   }
 
-  // Calculate extent based on Level 0 grid dimensions
   const sizeX =
     firstMatrix.matrixWidth * originalTileWidth * firstMatrix.cellSize;
   const sizeY =
     firstMatrix.matrixHeight * originalTileHeight * firstMatrix.cellSize;
 
-  // extent = [minX, minY, maxX, maxY]
   // Assumes topLeft origin and Y increases upwards
   const extent = [origin[0], origin[1] - sizeY, origin[0] + sizeX, origin[1]];
 
@@ -110,23 +107,3 @@ export function tmsToTileGridOptions(tms, targetTileSize = [512, 512]) {
     extent,
   };
 }
-
-/**
- *
- * @param {number[]} bbox
- * @returns
- */
-export const sanitizeBbox = (bbox) => {
-  if (!bbox || !bbox.length || bbox.length !== 4) {
-    return [0, 0, 0, 0];
-  }
-  let [minX, minY, maxX, maxY] = bbox;
-  // Normalize longitudes to be within -180 to 180
-  minX = Math.max(((minX + 180) % 360) - 180, -180);
-  maxX = Math.min(((maxX - 180) % 360) + 180, 180);
-  // Normalize latitudes to be within -90 to 90
-  minY = Math.max(((minY + 90) % 180) - 90, -90);
-  maxY = Math.min(((maxY - 90) % 180) + 90, 90);
-
-  return [minX, minY, maxX, maxY];
-};
