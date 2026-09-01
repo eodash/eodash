@@ -1,10 +1,37 @@
 import { describe, it, expect } from "vitest";
+import ts from "typescript";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { createMcpServer } from "../index.js";
 import { scaffoldDashboard } from "../generators/dashboard.js";
 import { generateEodashConfig } from "../generators/config.js";
 import { getAvailableTemplates } from "../helpers.js";
+
+function assertValidJavaScript(filename, code) {
+  const sf = ts.createSourceFile(
+    filename,
+    code,
+    ts.ScriptTarget.Latest,
+    true,
+    ts.ScriptKind.JS,
+  );
+  // TypeScript parser attaches syntax errors directly to source file parse diagnostics
+  const diagnostics = sf.parseDiagnostics || [];
+  if (diagnostics.length > 0) {
+    const errMessages = diagnostics
+      .map((d) => `${d.messageText} at pos ${d.start}`)
+      .join("; ");
+    throw new Error(`Syntax error in generated file '${filename}': ${errMessages}\n\nCode:\n${code}`);
+  }
+}
+
+function assertValidJson(filename, content) {
+  try {
+    JSON.parse(content);
+  } catch (err) {
+    throw new Error(`Invalid JSON in generated file '${filename}': ${err.message}\n\nContent:\n${content}`);
+  }
+}
 
 async function createTestClientServer() {
   const server = createMcpServer();
@@ -175,6 +202,54 @@ describe("eodash Generators - generateEodashConfig", () => {
     );
     expect(resMerged.configCode).toContain("...lite,");
     expect(resMerged.configCode).toContain("custom-map");
+  });
+
+  it("verifies all scaffolded files parse as valid JS/JSON across all project types", () => {
+    const projectTypes = [
+      "standalone-spa",
+      "vitepress-narratives",
+      "web-component",
+    ];
+
+    for (const projectType of projectTypes) {
+      const scaffold = scaffoldDashboard({
+        name: `test-${projectType}`,
+        projectType,
+        template: "explore",
+      });
+
+      for (const [filename, content] of Object.entries(scaffold.files)) {
+        if (filename.endsWith(".js")) {
+          assertValidJavaScript(filename, content);
+        } else if (filename.endsWith(".json")) {
+          assertValidJson(filename, content);
+        }
+      }
+    }
+  });
+
+  it("verifies all generated config outputs parse as valid JavaScript AST", () => {
+    const templates = ["lite", "explore", "expert", "compare", "custom"];
+    for (const tpl of templates) {
+      const config = generateEodashConfig({
+        id: `test-config-${tpl}`,
+        template: tpl,
+        brand: { name: `Brand ${tpl}` },
+        customWidgets:
+          tpl === "custom"
+            ? [
+                {
+                  id: "custom-map",
+                  title: "Custom Map",
+                  layout: { x: 0, y: 0, w: 12, h: 6 },
+                  widget: { name: "EodashMap" },
+                },
+              ]
+            : [],
+      });
+
+      assertValidJavaScript("eodash.config.js", config.configCode);
+    }
   });
 });
 
