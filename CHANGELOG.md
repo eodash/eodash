@@ -1,6 +1,14 @@
 # Changelog
 
 
+## [5.10.0](https://github.com/eodash/eodash/compare/eodash-v5.9.0...eodash-v5.10.0) (2026-09-01)
+
+
+### Features
+
+* Migrate datepicker to `eox-timecontrol-picker` ([#439](https://github.com/eodash/eodash/issues/439)) ([b79a9a1](https://github.com/eodash/eodash/commit/b79a9a1802867ce92a995f175dcf7f318a4eedee))
+* Migrate to Vite 8 and Commander 15 ([#446](https://github.com/eodash/eodash/issues/446)) ([930af5c](https://github.com/eodash/eodash/commit/930af5cec8d5a8c5e1bc71905a65f164ea21df7e))
+
 ## [5.9.0](https://github.com/eodash/eodash/compare/eodash-v5.8.0...eodash-v5.9.0) (2026-08-13)
 
 
