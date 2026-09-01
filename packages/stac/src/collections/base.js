@@ -54,6 +54,11 @@ export const createCollectionBase = ({
     stac,
     color,
 
+    /** The STAC item used to build the current layers. */
+    get item() {
+      return builtItem;
+    },
+
     /**
      * The STAC item this collection's layers were last built from.
      */
