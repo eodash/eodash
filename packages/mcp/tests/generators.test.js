@@ -17,9 +17,10 @@ describe("eodash Generators - scaffoldDashboard", () => {
     expect(res.projectType).toBe("standalone-spa");
     expect(res.name).toBe("alpine-monitor");
     expect(res.files["package.json"]).toBeDefined();
-    expect(res.files["eodash.config.js"]).toContain("alpine-monitor");
-    expect(res.files["eodash.config.js"]).toContain("https://example.com/stac");
-    expect(res.files["eodash.config.js"]).toContain("Alpine Monitor");
+    expect(res.files["src/main.js"]).toContain("alpine-monitor");
+    expect(res.files["src/main.js"]).toContain("https://example.com/stac");
+    expect(res.files["src/main.js"]).toContain("Alpine Monitor");
+    expect(res.files["eodash.config.js"]).toContain("entryPoint");
     expect(res.files["index.html"]).toBeDefined();
     expect(res.files["Dockerfile"]).toBeDefined();
     expect(res.files[".gitignore"]).toBeDefined();
@@ -152,7 +153,7 @@ describe("eodash MCP Server - Generator Tool Execution", () => {
 
     const body = JSON.parse(res.content[0].text);
     expect(body.name).toBe("mcp-test-dash");
-    expect(body.files["eodash.config.js"]).toContain("lite");
+    expect(body.files["src/main.js"]).toContain("lite");
   });
 
   it("executes generate_eodash_config MCP tool", async () => {

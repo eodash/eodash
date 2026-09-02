@@ -199,14 +199,61 @@ describe("eodash MCP Server - HTTP Endpoints", () => {
     expect(html).toContain("EodashMap");
   });
 
-  it("POST / without valid session or init request returns 400", async () => {
+  it("DELETE / returns 200 stateless status", async () => {
+    const res = await fetch(`${baseUrl}/`, { method: "DELETE" });
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.message).toContain("Stateless");
+  });
+
+  it("POST / without required Accept header returns 406", async () => {
     const res = await fetch(`${baseUrl}/`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ jsonrpc: "2.0", method: "invalid", id: 1 }),
+      body: JSON.stringify({ jsonrpc: "2.0", method: "tools/list", id: 1 }),
     });
-    expect(res.status).toBe(400);
-    const body = await res.json();
-    expect(body.error).toBe("No session found");
+    expect(res.status).toBe(406);
+  });
+
+  it("POST / executes JSON-RPC tools/list and tools/call statelessly without session header", async () => {
+    const headers = {
+      "Content-Type": "application/json",
+      Accept: "application/json, text/event-stream",
+    };
+
+    // 1. tools/list direct call
+    const listRes = await fetch(`${baseUrl}/`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        jsonrpc: "2.0",
+        id: 1,
+        method: "tools/list",
+        params: {},
+      }),
+    });
+    expect(listRes.status).toBe(200);
+    const listBody = await listRes.json();
+    expect(listBody.result?.tools?.length).toBeGreaterThanOrEqual(6);
+
+    // 2. tools/call direct call
+    const callRes = await fetch(`${baseUrl}/`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        jsonrpc: "2.0",
+        id: 2,
+        method: "tools/call",
+        params: {
+          name: "list_widgets",
+          arguments: {},
+        },
+      }),
+    });
+    expect(callRes.status).toBe(200);
+    const callBody = await callRes.json();
+    expect(callBody.result?.content?.[0]?.type).toBe("text");
+    const widgets = JSON.parse(callBody.result.content[0].text);
+    expect(widgets.length).toBeGreaterThanOrEqual(10);
   });
 });

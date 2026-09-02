@@ -6,7 +6,7 @@ import { DEFAULT_STAC_ENDPOINT, DEFAULT_BRAND_NAME } from "../helpers.js";
 export function generateEodashConfig({
   id = "demo-dashboard",
   stacEndpoint = DEFAULT_STAC_ENDPOINT,
-  template = "explore",
+  template = "lite",
   brand = {},
   customWidgets = [],
   options = {},
