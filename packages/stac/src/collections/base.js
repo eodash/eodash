@@ -54,9 +54,23 @@ export const createCollectionBase = ({
     stac,
     color,
 
-    /** The STAC item used to build the current layers. */
+    /**
+     * The STAC item this collection's layers were last built from.
+     */
     get item() {
       return builtItem;
+    },
+    /**
+     * Allows clearing the item only
+     */
+    set item(item) {
+      if (item !== undefined) {
+        console.warn(
+          "[eodash/stac] a collection's item follows its build, only `undefined` can be assigned",
+        );
+        return;
+      }
+      builtItem = undefined;
     },
 
     /**
