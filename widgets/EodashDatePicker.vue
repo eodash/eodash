@@ -58,7 +58,8 @@ import { watch, ref, customRef, onUnmounted, useTemplateRef } from "vue";
 import { useSTAcStore } from "@/store/stac";
 import { datetime } from "@/store/states";
 import { mdiPageFirst, mdiPageLast } from "@mdi/js";
-import { eodashCollections, eodashCompareCollections } from "@/utils/states";
+import { eodashCollections, eodashCompareCollections } from "@/store/stac";
+import { setDatetime } from "@/store/actions";
 import log from "loglevel";
 import { useTransparentPanel } from "@/composables";
 import { storeToRefs } from "pinia";
@@ -92,7 +93,6 @@ const pickerEl = useTemplateRef("pickerRef");
 /** @type {import("vue").ShallowRef<import("@eox/timecontrol").EOxTimeControl | null>} */
 const timecontrolEl = useTemplateRef("timecontrolRef");
 
-// holds the number value of the datetime
 const currentDate = customRef((track, trigger) => ({
   get() {
     track();
@@ -104,7 +104,6 @@ const currentDate = customRef((track, trigger) => ({
     log.debug("Datepicker setting currentDate", datetime.value);
     const date = new Date(num);
 
-    // Validate the date before setting
     if (isNaN(date.getTime())) {
       log.warn("Invalid date value provided to datepicker:", num);
       return;
@@ -122,19 +121,24 @@ const utcDay = (date) =>
   isNaN(date.getTime()) ? "" : date.toISOString().slice(0, 10);
 
 /** @param {CustomEvent<{date: [Date, Date]}>} e */
-const onSelect = (e) => {
+const onSelect = async (e) => {
   const [selected] = e.detail.date;
   calendarDay = utcDay(selected);
+
+  if (selected.getTime() === new Date(datetime.value).getTime()) {
+    return;
+  }
   currentDate.value = selected.getTime();
+  await setDatetime(datetime.value);
 };
 
 watch(datetime, (iso) => {
   const el = timecontrolEl.value;
-  const date = new Date(iso);
-  if (!el || utcDay(date) === calendarDay) {
+  const day = utcDay(new Date(iso));
+  if (!el || !day || day === calendarDay) {
     return;
   }
-  calendarDay = utcDay(date);
+  calendarDay = day;
   el.dateChange([iso, iso], el);
 });
 
@@ -167,22 +171,21 @@ watch(
 
 /**
  *
- * @param {import("@/eodashSTAC/EodashCollection").EodashCollection[]} eodashCollections
+ * @param {import("@eodash/stac").Reader[]} eodashCollections
  * @param {string} [suffix] Keeps compare ids distinct.
  * @returns {Promise<import("@/types").DatePickerControlValue[]>}
  */
 async function fetchCollectionsDates(eodashCollections, suffix = "") {
   const values = await Promise.all(
     eodashCollections.map(async (ec) => {
-      await ec.fetchCollection();
       const dates = await ec.getDates();
       if (!dates?.length) {
         return null;
       }
 
       return {
-        id: `${ec.collectionStac?.id ?? ""}${suffix}`,
-        title: ec.collectionStac?.title ?? ec.collectionStac?.id ?? "",
+        id: `${ec.stac?.id ?? ""}${suffix}`,
+        title: ec.stac?.title ?? ec.stac?.id ?? "",
         color: ec.color,
         timeControlValues: dates.map((date) => ({ date: date.toISOString() })),
       };
@@ -280,16 +283,22 @@ const hideCalendar = (e) => {
 /**
  * @param {boolean} reverse
  */
-function jumpDate(reverse) {
+async function jumpDate(reverse) {
   // TODO: we need to handle time ranges and other options here
   const times = controlValues.value.flatMap((coll) =>
     coll.timeControlValues.map(({ date }) => new Date(date).getTime()),
   );
-  if (times.length) {
-    currentDate.value = times.reduce((a, b) =>
-      reverse ? Math.min(a, b) : Math.max(a, b),
-    );
+  if (!times.length) {
+    return;
   }
+  const target = times.reduce((a, b) =>
+    reverse ? Math.min(a, b) : Math.max(a, b),
+  );
+  if (target === currentDate.value) {
+    return;
+  }
+  currentDate.value = target;
+  await setDatetime(datetime.value);
 }
 
 useTransparentPanel(rootEl);

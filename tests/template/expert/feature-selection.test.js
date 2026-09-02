@@ -26,6 +26,9 @@ const FEATURES = 1793;
 describe("expert template - feature selection in large geojsons", () => {
   /** @type {Awaited<ReturnType<typeof bootExpert>>} */
   let ctx;
+  // `eox-map` dispatches `layerschanged` once per `set layers`, so this counts
+  // how many times the app wrote the map.
+  let mapWrites = 0;
 
   const layerId = () => dataLayerId(ctx.query("eox-map"));
 
@@ -46,6 +49,7 @@ describe("expert template - feature selection in large geojsons", () => {
   beforeAll(async () => {
     await commands.serveFiles(MIRRORS);
     ctx = await bootExpert({ endpoint: STAC_ENDPOINT });
+    ctx.query("eox-map").addEventListener("layerschanged", () => mapWrites++);
     await selectIndicator(ctx.store, INDICATOR_ID);
   });
 
@@ -97,6 +101,7 @@ describe("expert template - feature selection in large geojsons", () => {
 
     // The handler is debounced and drops the event while the app is still
     // settling, so redispatch on each attempt, slower than that debounce.
+    mapWrites = 0;
     await vi.waitFor(
       () => {
         const id = layerId();
@@ -116,6 +121,10 @@ describe("expert template - feature selection in large geojsons", () => {
     const rebuiltId = layerId();
     if (!rebuiltId) throw new Error("no data layer after rebuild");
     expectSelectable(rebuiltId);
+
+    // the render lands after the store settles
+    await expect.poll(() => mapWrites, { timeout: TIMEOUT }).toBeGreaterThan(0);
+    expect(mapWrites).toBe(1);
   });
 
   test("clicking a feature selects it", async () => {
@@ -129,6 +138,7 @@ describe("expert template - feature selection in large geojsons", () => {
     mapEl.map.getView().setCenter(coordinate);
     mapEl.map.getView().setZoom(10);
     await new Promise((resolve) => mapEl.map.once("rendercomplete", resolve));
+    mapWrites = 0;
     await userEvent.click(mapEl);
 
     // The geojson features carry no id, so eox-map identifies them by ol uid.
@@ -138,5 +148,8 @@ describe("expert template - feature selection in large geojsons", () => {
       })
       .toContain(feature.ol_uid);
     expect(ctx.query(".v-alert")).toBeNull();
+
+    // selecting a feature is an interaction, not a rebuild
+    expect(mapWrites).toBe(0);
   });
 });

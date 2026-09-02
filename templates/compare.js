@@ -27,24 +27,15 @@ export default {
         enableCompare: true,
         baseLayers: [
           {
-            type: "Group",
+            type: "Tile",
             properties: {
-              id: "BaseLayersGroup",
-              title: "Base Layers",
+              id: "terrain-light;:;EPSG:3857",
+              title: "Terrain Light",
             },
-            layers: [
-              /** @type {any} */ ({
-                type: "Tile",
-                properties: {
-                  id: "terrain-light;:;EPSG:3857",
-                  title: "Terrain Light",
-                },
-                source: {
-                  type: "XYZ",
-                  url: "https://s2maps-tiles.eu/wmts/1.0.0/terrain-light_3857/default/g/{z}/{y}/{x}.jpeg",
-                },
-              }),
-            ],
+            source: {
+              type: "XYZ",
+              url: "https://s2maps-tiles.eu/wmts/1.0.0/terrain-light_3857/default/g/{z}/{y}/{x}.jpeg",
+            },
           },
         ],
       },
@@ -70,7 +61,6 @@ export default {
         },
       },
     },
-    // compare indicators
     {
       id: "CompareTools",
       type: "internal",

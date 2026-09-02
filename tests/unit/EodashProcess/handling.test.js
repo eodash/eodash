@@ -1,12 +1,17 @@
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import { ref } from "vue";
-import { handleProcesses, initProcess } from "^/EodashProcess/methods/handling";
+import {
+  handleProcesses,
+  initProcess,
+  onChartClick,
+} from "^/EodashProcess/methods/handling";
 import {
   chartData,
   chartSpec,
   compareChartData,
   compareChartSpec,
   comparePoi,
+  datetime,
   mapCompareEl,
   mapEl,
   poi,
@@ -19,12 +24,21 @@ import {
   S_SCALAR,
 } from "./fixtures";
 import axios from "@/plugins/axios";
+import { useSTAcStore } from "@/store/stac";
 
 const outputs = vi.hoisted(() => ({
   processCharts: vi.fn(),
   processLayers: vi.fn(),
   processSTAC: vi.fn(),
   applyProcessLayersToMap: vi.fn(),
+  assignDataLayers: vi.fn(),
+}));
+// stubbed whole: spreading the original cycles back through `@/store/stac`
+vi.mock("@/eodashSTAC/layers", () => ({
+  assignDataLayers: outputs.assignDataLayers,
+  updateIndicatorLayers: vi.fn(),
+  assignGroupLayers: vi.fn(),
+  PROCESS_GROUP: "ProcessGroup",
 }));
 vi.mock("^/EodashProcess/methods/outputs", () => ({
   processCharts: outputs.processCharts,
@@ -327,5 +341,91 @@ describe("handleProcesses", () => {
 
     await expect(handleProcesses(p)).rejects.toThrow("boom");
     expect(p.loading.value).toBe(false);
+  });
+});
+
+describe("onChartClick", () => {
+  const UNCHANGED = "2020-01-01T00:00:00.000Z";
+  const CLICKED = "2023-05-04T10:23:00.000Z";
+  const TEMPORAL_SPEC = { encoding: { x: { type: "temporal", field: "t" } } };
+  const MAIN_MAP = /** @type {any} */ ({ id: "main" });
+  const COMPARE_MAP = /** @type {any} */ ({ id: "compare" });
+
+  /** @param {any} [datum] - a vega item's datum, as eox-chart reports it */
+  const clickOn = (datum) =>
+    /** @type {any} */ ({
+      target: { spec: TEMPORAL_SPEC },
+      detail: { item: { datum } },
+    });
+
+  beforeEach(() => {
+    datetime.value = UNCHANGED;
+    mapEl.value = MAIN_MAP;
+    mapCompareEl.value = COMPARE_MAP;
+    const store = useSTAcStore();
+    store.selectedStac = /** @type {any} */ ({ id: "main-collection" });
+    store.selectedCompareStac = null;
+    outputs.assignDataLayers.mockReset();
+  });
+
+  test("renders the clicked time on the main map", async () => {
+    await onChartClick(clickOn({ t: "2023-05-04T10:23:00Z" }));
+
+    expect(datetime.value).toBe(CLICKED);
+    expect(outputs.assignDataLayers).toHaveBeenCalledTimes(1);
+    expect(outputs.assignDataLayers).toHaveBeenCalledWith(
+      MAIN_MAP,
+      expect.objectContaining({ timeOrItem: CLICKED, event: "time:updated" }),
+    );
+  });
+
+  // the datetime is global, so a click on either chart has to move both panes
+  test("also renders the compare map while comparing", async () => {
+    useSTAcStore().selectedCompareStac = /** @type {any} */ ({
+      id: "compare-collection",
+    });
+
+    await onChartClick(clickOn({ t: "2023-05-04T10:23:00Z" }));
+
+    expect(outputs.assignDataLayers).toHaveBeenCalledTimes(2);
+    expect(outputs.assignDataLayers).toHaveBeenLastCalledWith(
+      COMPARE_MAP,
+      expect.objectContaining({
+        timeOrItem: CLICKED,
+        event: "compareTime:updated",
+      }),
+    );
+  });
+
+  test("leaves the compare map alone when nothing is being compared", async () => {
+    await onChartClick(clickOn({ t: "2023-05-04T10:23:00Z" }));
+
+    expect(outputs.assignDataLayers).not.toHaveBeenCalledWith(
+      COMPARE_MAP,
+      expect.anything(),
+    );
+  });
+
+  test("reads the date from a nested datum", async () => {
+    await onChartClick(clickOn({ datum: { t: "2022-03-01T00:00:00Z" } }));
+
+    expect(datetime.value).toBe("2022-03-01T00:00:00.000Z");
+  });
+
+  // clicking past the marks reports an item without a datum, which used to throw
+  test("renders nothing when the item carries no datum", async () => {
+    await onChartClick(clickOn(undefined));
+
+    expect(datetime.value).toBe(UNCHANGED);
+    expect(outputs.assignDataLayers).not.toHaveBeenCalled();
+  });
+
+  test("renders nothing when the date cannot be parsed", async () => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    await onChartClick(clickOn({ t: "not a date" }));
+
+    expect(datetime.value).toBe(UNCHANGED);
+    expect(outputs.assignDataLayers).not.toHaveBeenCalled();
   });
 });

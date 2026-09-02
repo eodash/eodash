@@ -13,6 +13,7 @@ const baseConfig = {
   stacEndpoint: {
     endpoint:
       "https://esa-eodashboards.github.io/eodashboard-catalog/trilateral/catalog.json",
+    // "https://esa-eodashboards.github.io/RACE-catalog/RACE/catalog.json",
     // "https://GTIF-Austria.github.io/public-catalog/GTIF-Austria/catalog.json",
     // "https://api.explorer.eopf.copernicus.eu/stac",
     // api: true,

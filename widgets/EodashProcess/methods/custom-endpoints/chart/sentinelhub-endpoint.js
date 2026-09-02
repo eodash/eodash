@@ -1,7 +1,6 @@
 import axios from "@/plugins/axios";
-import { currentUrl, currentCompareUrl } from "@/store/states";
+import { eodashCollections, eodashCompareCollections } from "@/store/stac";
 import { generateTimePairs, getBboxProperty } from "../../utils";
-import { extractCollectionUrls } from "@/eodashSTAC/helpers";
 
 /**
  *
@@ -21,10 +20,7 @@ export async function handleSentinelHubProcess({
   if (!sentinelHubLink) {
     return;
   }
-  const evalScriptLink = await getEvalScriptLink(
-    selectedStac,
-    enableCompare ? currentCompareUrl.value : currentUrl.value,
-  );
+  const evalScriptLink = getEvalScriptLink(selectedStac, enableCompare);
   if (!evalScriptLink) {
     console.error(
       "[eodash] evalscript link for sentinel hub not found in indicator",
@@ -142,7 +138,7 @@ async function retrieveSentinelHubToken(clientId, clientSecret) {
  * @param {string} param0.from - start date of the time range
  * @param {string} param0.to - end date of the time range
  * @param {number} [param0.timeout = 20000] - timeout for the request
- * @param {import("stac-ts").StacLink} param0.exampleLink - example link containing evalscript to use for the request
+ * @param {import("@eodash/stac").STACLink} param0.exampleLink - example link containing evalscript to use for the request
  * @returns
  */
 async function fetchSentinelHubData({
@@ -252,28 +248,23 @@ async function fetchSentinelHubData({
     });
 }
 /**
- * @param {import("stac-ts").StacCollection} selectedStac
- * @param {string} absoluteUrl
+ * @param {import("@eodash/stac").STACCollection} selectedStac
+ * @param {boolean} enableCompare
  */
-async function getEvalScriptLink(selectedStac, absoluteUrl) {
+function getEvalScriptLink(selectedStac, enableCompare) {
   const evalScriptLink = selectedStac.links.find(
     (link) => link.rel === "example" && link.title === "evalscript",
   );
   if (evalScriptLink) {
     return evalScriptLink;
   }
-  // retrieve the first example link from the indicator children
-  for (const link of extractCollectionUrls(selectedStac, absoluteUrl)) {
-    const scriptLink = axios
-      .get(link)
-      .then((resp) =>
-        /** @type {import("stac-ts").StacCollection} */ (resp.data).links.find(
-          (link) => link.rel === "example" && link.title === "evalscript",
-        ),
-      );
-
-    if (scriptLink) {
-      return scriptLink;
-    }
-  }
+  // the readers already hold every child collection this indicator is made of
+  const readers = enableCompare ? eodashCompareCollections : eodashCollections;
+  return readers
+    .map((ec) =>
+      ec.stac?.links.find(
+        (link) => link.rel === "example" && link.title === "evalscript",
+      ),
+    )
+    .find(Boolean);
 }

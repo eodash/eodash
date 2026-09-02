@@ -1,5 +1,5 @@
 import mustache from "mustache";
-import { extractLayerConfig } from "@/eodashSTAC/helpers";
+import { createLayerConfigHelpers } from "@eodash/stac/helpers";
 import axios from "@/plugins/axios";
 import { createTiffLayerDefinition, separateEndpointLinks } from "./utils";
 import { useSTAcStore } from "@/store/stac";
@@ -13,16 +13,18 @@ import {
   renderJsonBodyTemplate,
 } from "./template-helpers";
 
+const { extractLayerConfig } = createLayerConfigHelpers();
+
 ////// --- CHARTS --- //////
 /**
  * @param {object} options
- * @param {import("stac-ts").StacLink[] | undefined} options.links
+ * @param {import("@eodash/stac").STACLink[] | undefined} options.links
  * @param {Record<string,any> | undefined} options.jsonformValue
  * @param {Record<string,any> | undefined} [options.rawJsonformValue]
  * @param {string} options.specUrl
  * @param {(input:import("^/EodashProcess/types").CustomEnpointInput)=>Promise<Record<string,any>[] | undefined | null>} [options.customEndpointsHandler]
  * @param {import("vue").Ref<boolean>} options.isPolling
- * @param {import("stac-ts").StacCollection} options.selectedStac
+ * @param {import("@eodash/stac").STACCollection} options.selectedStac
  * @param {Record<string,any>} options.jsonformSchema
  * @param {import("vue").Ref<import("../types").AsyncJob[]>} options.jobs
  * @param {boolean} [options.enableCompare=false] - Whether to enable compare mode
@@ -166,8 +168,8 @@ export async function processCharts({
  * @param {string} injectables.url
  * @param {Record<string,any>} [injectables.jsonformValue]
  * @param {Record<string,any>} [injectables.rawJsonformValue]
- * @param {import("stac-ts").StacLink} injectables.link
- * @param {url} [injectables.flatstyleUrl]
+ * @param {import("@eodash/stac").STACLink} injectables.link
+ * @param {string} [injectables.flatstyleUrl]
  * @param {import("json-schema").JSONSchema7} [injectables.jsonformSchema]
  */
 async function injectVegaInlineData(
@@ -216,7 +218,7 @@ async function injectVegaInlineData(
     }
     /** @type {string} */
     const bodyTemplate = await axios
-      // @ts-expect-error we assume link.body to be a string, not defined in stac-ts
+      // @ts-expect-error we assume link.body to be a string, not defined
       .get(link.body, { responseType: "text" })
       .then((resp) => {
         return resp.data;
@@ -279,7 +281,7 @@ async function injectVegaInlineData(
  * @param {object} injectables
  * @param {string} injectables.url
  * @param {Record<string,any>} [injectables.jsonformValue]
- * @param {url} [injectables.flatstyleUrl]
+ * @param {string} [injectables.flatstyleUrl]
  */
 async function injectVegaUrlData(spec, { url, jsonformValue, flatstyleUrl }) {
   if (!spec.data) {
@@ -312,7 +314,7 @@ async function renderDataUrl(url, jsonformValue, flatstyleUrl) {
 
 /**
  * @param {object} options
- * @param {import("stac-ts").StacLink[] | undefined} options.links
+ * @param {import("@eodash/stac").STACLink[] | undefined} options.links
  * @param {Record<string,any> | undefined} options.jsonformValue
  * @param {string} options.layerId
  * @param {string} [options.projection]
@@ -354,7 +356,7 @@ export async function processGeoTiff({
 }
 
 /**
- * @param {import("stac-ts").StacLink[] | undefined} links
+ * @param {import("@eodash/stac").STACLink[] | undefined} links
  * @param {Record<string,any>|undefined} jsonformValue
  * @param {number[]} origBbox
  */
@@ -385,7 +387,7 @@ export function processImage(links, jsonformValue, origBbox) {
 }
 
 /**
- * @param {import("stac-ts").StacLink[] | undefined} links
+ * @param {import("@eodash/stac").STACLink[] | undefined} links
  * @param {Record<string,any> | undefined} jsonformValue
  * @param {string} layerId
  */
@@ -412,7 +414,7 @@ export async function processVector(links, jsonformValue, layerId) {
     /** @type {Record<string,any>|undefined} */
     let style;
     if (flatStyleJSON) {
-      const extracted = extractLayerConfig(layerId ?? "", flatStyleJSON);
+      const extracted = extractLayerConfig(flatStyleJSON);
       layerConfig = extracted.layerConfig;
       style = extracted.style;
     }
@@ -441,13 +443,13 @@ export async function processVector(links, jsonformValue, layerId) {
 /**
  * Unified wrapper for processing map layer types (Vector, Image, GeoTiff)
  * @param {object} options
- * @param {import("stac-ts").StacLink[] | undefined} options.links
+ * @param {import("@eodash/stac").STACLink[] | undefined} options.links
  * @param {Record<string,any> | undefined} options.jsonformValue
  * @param {string} options.layerId
  * @param {string} [options.projection] - Required for GeoTiff layers
  * @param {number[]} options.origBbox - Required for Image layers
  * @param {import("vue").Ref<boolean>} options.isPolling
- * @param {import("stac-ts").StacCollection} options.selectedStac
+ * @param {import("@eodash/stac").STACCollection} options.selectedStac
  * @param {import("json-schema").JSONSchema7} options.jsonformSchema
  * @param {import("vue").Ref<import("../types").AsyncJob[]>} options.jobs
  * @param {(input:import("../types").CustomEnpointInput)=>Promise<import("@eox/map").EoxLayer[]>} options.customLayersHandler
@@ -522,11 +524,11 @@ export async function processLayers({
 
 ////// STAC PROCESSING /////
 /**
- * This function loads a STAC collection as a processing output.
- * Currently, it only supports POI STAC collections
+ * Loads a STAC collection as a processing output (currently supports POI STAC collections).
  *
- * @param {import("stac-ts").StacLink[]} links
+ * @param {import("@eodash/stac").STACLink[]} links
  * @param {Record<string,any>} jsonformValue
+ * @param {boolean} [enableCompare=false]
  */
 export async function processSTAC(links, jsonformValue, enableCompare = false) {
   const stacLink = links.find(

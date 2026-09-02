@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, test, vi } from "vitest";
 import { userEvent } from "vitest/browser";
 import EodashDatePicker from "^/EodashDatePicker.vue";
 import { datetime } from "@/store/states";
-import { eodashCollections, eodashCompareCollections } from "@/utils/states";
+import { eodashCollections, eodashCompareCollections } from "@/store/stac";
 import { mountComponent, stubCustomElement } from "../support/mount";
 
 // Keep the web-component tags (isCustomElement) so property bindings still work.
@@ -97,16 +97,17 @@ const selectDate = (iso) =>
 const TIMEOUT = 1000 * 15;
 
 /**
- * Stand-in EodashCollection exposing only what the datepicker reads.
+ * Stand-in reader exposing what the datepicker reads, plus `getLayers` — moving
+ * the time renders, so a jump reaches the reader.
  * @param {Date[]} dates
  */
 const mockCollection = (dates) =>
-  /** @type {import("@/eodashSTAC/EodashCollection").EodashCollection} */ (
+  /** @type {import("@eodash/stac").Reader} */ (
     /** @type {unknown} */ ({
       color: "#ff0000",
-      collectionStac: { id: "coll" },
-      fetchCollection: vi.fn().mockResolvedValue(undefined),
+      stac: { id: "coll" },
       getDates: vi.fn().mockResolvedValue(dates),
+      getLayers: vi.fn().mockResolvedValue({ layers: [], projections: [] }),
     })
   );
 

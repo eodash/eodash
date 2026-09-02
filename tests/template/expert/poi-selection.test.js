@@ -27,6 +27,11 @@ describe("expert template - POI selection (STAC output)", () => {
   let ctx;
   /** @type {string[]} */
   let locationIds = [];
+  // `eox-map` dispatches `layerschanged` once per `set layers`, so this counts
+  // how many times the app wrote the map.
+  let mapWrites = 0;
+  // The view while a single location is open, which going back has to widen.
+  let zoomOnPoi = 0;
 
   /** The map button whose tooltip text matches (icon buttons have no name). */
   /** @param {string} text */
@@ -35,8 +40,11 @@ describe("expert template - POI selection (STAC output)", () => {
       b.textContent?.includes(text),
     );
 
+  const mapZoom = () => ctx.query("eox-map").map.getView().getZoom();
+
   beforeAll(async () => {
     ctx = await bootExpert({ endpoint: STAC_ENDPOINT });
+    ctx.query("eox-map").addEventListener("layerschanged", () => mapWrites++);
     /** @type {any} */
     const locations = await fetch(LOCATIONS_URL).then((r) => r.json());
     locationIds = locations.links
@@ -68,6 +76,7 @@ describe("expert template - POI selection (STAC output)", () => {
     const selectedId = targetFeatures(ctx.container)[0].get("id");
     expect(locationIds).toContain(selectedId);
 
+    mapWrites = 0;
     selectFeature(ctx.container, 0);
 
     await vi.waitFor(
@@ -96,6 +105,17 @@ describe("expert template - POI selection (STAC output)", () => {
       },
       { timeout: TIMEOUT },
     );
+
+    // the write that drops the points layer lands after the store settles
+    await vi.waitFor(
+      () => {
+        if (ctx.query("eox-map").getLayerById("geodb-collection")) {
+          throw new Error("points layer still present");
+        }
+      },
+      { timeout: TIMEOUT },
+    );
+    expect(mapWrites).toBe(1);
   });
 
   test("the app leaves observation-points mode once a POI is loaded", async () => {
@@ -111,9 +131,11 @@ describe("expert template - POI selection (STAC output)", () => {
   });
 
   test("the back button restores the indicator and its points", async () => {
+    zoomOnPoi = mapZoom();
     const btn = btnByTooltip("Back to POIs");
     if (!btn) throw new Error("back to POIs button not shown");
 
+    mapWrites = 0;
     await userEvent.click(btn);
 
     await vi.waitFor(
@@ -129,6 +151,14 @@ describe("expert template - POI selection (STAC output)", () => {
     );
 
     expect(indicator.value).toBe(INDICATOR_ID);
+    // the render lands after the store settles
+    await expect.poll(() => mapWrites, { timeout: TIMEOUT }).toBeGreaterThan(0);
+    expect(mapWrites).toBe(1);
+  });
+
+  test("the map widens back to the whole collection", async () => {
+    // one location covers less ground than the collection holding it
+    await expect.poll(mapZoom, { timeout: TIMEOUT }).toBeLessThan(zoomOnPoi);
   });
 
   test("a location is selectable again after going back", async () => {
