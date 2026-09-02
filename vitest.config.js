@@ -119,6 +119,7 @@ export default defineConfig({
             benchReference,
             ...(isBenchRun ? await loadFixtures() : {}),
           },
+          setupFiles: ["./tests/support/pinia-setup.js"],
           testTimeout: 60 * 1000,
           // Template boots (app + real STAC fetches) run in beforeAll hooks.
           hookTimeout: 60 * 1000,

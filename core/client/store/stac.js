@@ -1,20 +1,48 @@
 import { defineStore } from "pinia";
-import { ref } from "vue";
+import { ref, shallowReactive } from "vue";
 import axios from "@/plugins/axios";
 import {
   useAbsoluteUrl,
   useCompareAbsoluteUrl,
   useGetSubCodeId,
 } from "@/composables/index";
-import { compareIndicator, comparePoi, indicator, poi } from "@/store/states";
 import {
-  eodashCollections,
-  eodashCompareCollections,
-  collectionsPalette,
-} from "@/utils/states";
+  compareIndicator,
+  comparePoi,
+  datetime,
+  indicator,
+  mapCompareEl,
+  mapEl,
+  poi,
+} from "@/store/states";
+import { getLatestDatetime } from "@/eodashSTAC/triggers";
+import { updateIndicatorLayers } from "@/eodashSTAC/layers";
+import { collectionsPalette } from "@/utils/states";
 import log from "loglevel";
-import { toAbsolute } from "stac-js/src/http.js";
+import {
+  toAbsolute,
+  getProjectionCode,
+  getProjection,
+} from "@eodash/stac/helpers";
 import { updateEodashCollections } from "@/utils";
+import { setMapProjFromCol } from "@/eodashSTAC/triggers";
+import { availableMapProjection } from "@/store/states";
+
+/**
+ * Collection readers for the active indicator.
+ * Rebuilt by {@link loadSelectedSTAC}.
+ *
+ * @type {import("@eodash/stac").Reader[]}
+ */
+export const eodashCollections = shallowReactive([]);
+
+/**
+ * Collection readers for the active compare indicator.
+ * Rebuilt by {@link loadSelectedCompareSTAC}.
+ *
+ * @type {import("@eodash/stac").Reader[]}
+ */
+export const eodashCompareCollections = shallowReactive([]);
 
 export const useSTAcStore = defineStore("stac", () => {
   /**
@@ -39,6 +67,14 @@ export const useSTAcStore = defineStore("stac", () => {
   const supportedUpscalingEndpoints = ref([]);
 
   /**
+   * TiTiler render presets from the eodash configuration, keyed by collection
+   * id then render name. Take precedence over a collection's own `renders`.
+   *
+   * @type {Record<string, Record<string, import("@eodash/stac").Render>>}
+   */
+  const configRenders = {};
+
+  /**
    * Registry of colormap ranges
    * @type {import("vue").Ref<Record<string, string[]> | null>}
    */
@@ -47,31 +83,31 @@ export const useSTAcStore = defineStore("stac", () => {
   /**
    * Links of the root STAC catalog
    *
-   * @type {import("vue").Ref<import("stac-ts").StacLink[] | null>}
+   * @type {import("vue").Ref<import("@eodash/stac").STACLink[] | null>}
    */
   const stac = ref(null);
 
   /**
    * Selected STAC object.
    *
-   * @type {import("vue").Ref<import("stac-ts").StacCollection | null>}
+   * @type {import("vue").Ref<import("@eodash/stac").STACCollection | null>}
    */
   const selectedStac = ref(null);
 
   /**
-   * Selected STAC object.
+   * Selected compare STAC object.
    *
-   * @type {import("vue").Ref<import("stac-ts").StacCollection | null>}
+   * @type {import("vue").Ref<import("@eodash/stac").STACCollection | null>}
    */
   const selectedCompareStac = ref(null);
   /**
    * Currently selected item
-   * @type {import("vue").Ref<import("stac-ts").StacLink | import("stac-ts").StacItem | null | undefined>}
+   * @type {import("vue").Ref<import("@eodash/stac").STACItem | null | undefined>}
    */
   const selectedItem = ref(undefined);
   /**
    * Currently selected compare item
-   * @type {import("vue").Ref<import("stac-ts").StacLink | import("stac-ts").StacItem | null | undefined>}
+   * @type {import("vue").Ref<import("@eodash/stac").STACItem | null | undefined>}
    */
   const selectedCompareItem = ref(undefined);
 
@@ -84,11 +120,13 @@ export const useSTAcStore = defineStore("stac", () => {
   /**
    * Initializes the store by assigning the STAC endpoint.
    * @param {import("@/types").StacEndpoint} endpoint
+   * @param {Record<string, Record<string, import("@eodash/stac").Render>>} [renders] - `options.renders` from the eodash configuration
    */
-  function init(endpoint) {
+  function init(endpoint, renders) {
     if (!endpoint) {
       throw new Error("STAC endpoint is not defined");
     }
+    Object.assign(configRenders, renders);
 
     if (typeof endpoint === "string") {
       stacEndpoint.value = endpoint;
@@ -181,11 +219,11 @@ export const useSTAcStore = defineStore("stac", () => {
   }
 
   /**
-   * Fetches selected stac object and assign it to `selectedStac`
+   * Fetches the selected STAC object and assigns it to `selectedStac`.
    *
-   * @param {string} relativePath - Stac link href
+   * @param {string} [relativePath=""] - STAC link href
    * @param {boolean} [isPoi=false] - If true, the STAC is loaded for a point of interest
-   * @param {object} [stacItem] - The STAC item to load
+   * @param {import("@eodash/stac").STACItem} [stacItem] - The STAC item to load
    * @returns {Promise<void>}
    * @see {@link selectedStac}
    */
@@ -200,13 +238,22 @@ export const useSTAcStore = defineStore("stac", () => {
     }
 
     await axios.get(absoluteUrl.value).then(async (resp) => {
+      // set the view projection
+      await setMapProjFromCol(resp.data);
       await updateEodashCollections(
         eodashCollections,
         resp.data,
         absoluteUrl.value,
         collectionsPalette,
         isApi.value,
-        rasterEndpoint.value,
+        {
+          rasterEndpoint: rasterEndpoint.value ?? undefined,
+          upscalingEndpoints: supportedUpscalingEndpoints.value,
+          tileMatrixSets: tileMatrixSetRegistry.value,
+          renders: configRenders,
+          viewProjection:
+            getProjectionCode(getProjection(resp.data)) || "EPSG:3857",
+        },
       );
       selectedItem.value = /** @type {any} */ (stacItem) ?? undefined;
       selectedStac.value = resp.data;
@@ -215,14 +262,27 @@ export const useSTAcStore = defineStore("stac", () => {
         ? indicator.value
         : useGetSubCodeId(selectedStac.value);
       poi.value = isPoi ? (selectedStac.value?.id ?? "") : "";
+
+      // no time of its own means the collection's most recent data. Selecting
+      // an indicator clears `datetime` so that it lands here.
+      if (!datetime.value) {
+        datetime.value = getLatestDatetime(resp.data).toISOString();
+      }
+
+      await updateIndicatorLayers(mapEl.value, {
+        readers: eodashCollections,
+        stac: resp.data,
+        timeOrItem: /** @type {any} */ (stacItem) ?? datetime.value,
+        event: "layers:updated",
+      });
     });
   }
   /**
-   * Fetches selected stac object and assign it to `selectedCompareStac`
+   * Fetches the selected STAC object and assigns it to `selectedCompareStac`.
    *
-   * @param {string} relativePath - Stac link href
+   * @param {string} [relativePath=""] - STAC link href
    * @param {boolean} [isPOI=false] - If true, the STAC is loaded for a point of interest
-   * @param {object} [stacItem] - The STAC item to load
+   * @param {import("@eodash/stac").STACItem} [stacItem] - The STAC item to load
    * @returns {Promise<void>}
    * @see {@link selectedCompareStac}
    */
@@ -248,8 +308,14 @@ export const useSTAcStore = defineStore("stac", () => {
         absoluteUrl.value,
         [...collectionsPalette].reverse(),
         isApi.value,
-        rasterEndpoint.value,
-        "compare",
+        {
+          rasterEndpoint: rasterEndpoint.value ?? undefined,
+          upscalingEndpoints: supportedUpscalingEndpoints.value,
+          tileMatrixSets: tileMatrixSetRegistry.value,
+          renders: configRenders,
+          // the main map's view defines the compare map's projection too
+          viewProjection: availableMapProjection.value || "EPSG:3857",
+        },
       );
       selectedCompareItem.value = /** @type {any} */ (stacItem) ?? undefined;
       selectedCompareStac.value = resp.data;
@@ -257,6 +323,17 @@ export const useSTAcStore = defineStore("stac", () => {
         ? compareIndicator.value
         : useGetSubCodeId(selectedCompareStac.value);
       comparePoi.value = isPOI ? (selectedCompareStac.value?.id ?? "") : "";
+
+      if (!datetime.value) {
+        datetime.value = getLatestDatetime(resp.data).toISOString();
+      }
+
+      await updateIndicatorLayers(mapCompareEl.value, {
+        readers: eodashCompareCollections,
+        stac: resp.data,
+        timeOrItem: /** @type {any} */ (stacItem) ?? datetime.value,
+        event: "compareLayers:updated",
+      });
     });
   }
 
@@ -290,6 +367,7 @@ export const useSTAcStore = defineStore("stac", () => {
   return {
     stacEndpoint,
     rasterEndpoint,
+    configRenders,
     isApi,
     stac,
     init,

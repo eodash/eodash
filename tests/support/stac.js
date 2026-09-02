@@ -54,11 +54,11 @@ export const serveUrls = (axiosMock, responses) => {
  * A STAC item shaped after a real `/search` feature; deep-merges `over` onto the
  * base. Geometry derives from `over.bbox` unless an explicit geometry is given.
  * @param {Record<string, any>} [over]
- * @returns {import("stac-ts").StacItem}
+ * @returns {import("@eodash/stac").STACItem}
  */
 export const stacItem = (over = {}) => {
   const bbox = over.bbox ?? [10, 47, 11, 48];
-  return /** @type {import("stac-ts").StacItem} */ (
+  return /** @type {import("@eodash/stac").STACItem} */ (
     /** @type {unknown} */ (
       deepmerge(
         {

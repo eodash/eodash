@@ -6,7 +6,6 @@ vi.mock("@/store/actions", () => ({
   shouldShowChartWidget: vi.fn(),
 }));
 
-// Import after the mock is registered.
 const { getBaseConfig } = await import("../../templates/baseConfig.js");
 
 describe("getBaseConfig - array replacement semantics", () => {

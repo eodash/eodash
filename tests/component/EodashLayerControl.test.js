@@ -2,9 +2,8 @@ import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { useEventBus } from "@vueuse/core";
 import EodashLayerControl from "^/EodashLayerControl.vue";
 import { mapCompareEl, mapEl } from "@/store/states";
+import { eodashCollections, eodashCompareCollections } from "@/store/stac";
 import {
-  eodashCollections,
-  eodashCompareCollections,
   layerControlFormValue,
   layerControlFormValueCompare,
 } from "@/utils/states";
@@ -73,16 +72,16 @@ const analysisResult = () => {
 
 /**
  * Register a fake eodash collection that getColFromLayer resolves by id.
- * @param {Record<string, any>[] | undefined} updatedLayers updateLayerJson result.
+ * @param {Record<string, any>[] | undefined} updatedLayers updateLayers result.
  * @param {any[]} [collections] Singleton to seed (main or compare).
- * @returns {import("vitest").Mock} The updateLayerJson spy.
+ * @returns {import("vitest").Mock} The updateLayers spy.
  */
 const seedCollection = (updatedLayers, collections = eodashCollections) => {
-  const updateLayerJson = vi.fn().mockResolvedValue(updatedLayers);
-  collections.push(
-    /** @type {any} */ ({ collectionStac: { id: "coll" }, updateLayerJson }),
-  );
-  return updateLayerJson;
+  const updateLayers = vi
+    .fn()
+    .mockResolvedValue({ layers: updatedLayers, projections: [] });
+  collections.push({ stac: { id: "coll" }, updateLayers });
+  return updateLayers;
 };
 
 /**

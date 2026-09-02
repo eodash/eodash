@@ -1,22 +1,13 @@
-import { createLayersConfig } from "./create-layers-config";
-import { setMapProjFromCol } from "@/eodashSTAC/triggers";
 import { onMounted, onUnmounted, watch } from "vue";
+import { getTooltipProperties } from "@eodash/stac";
+import axios from "@/plugins/axios";
 import log from "loglevel";
-import { useSTAcStore } from "@/store/stac";
-import { storeToRefs } from "pinia";
-import { isFirstLoad } from "@/utils/states";
-import { useEmitLayersUpdate, useOnLayersUpdate } from "@/composables";
-export { useEmitLayersUpdate, useOnLayersUpdate };
-import { isGlobe, mapPosition } from "@/store/states";
-import { sanitizeBbox } from "@/eodashSTAC/helpers";
+import { useOnLayersUpdate } from "@/composables";
+import { isGlobe } from "@/store/states";
+import { sanitizeBbox } from "@eodash/stac/helpers";
 import { transformExtent } from "@eox/map";
 
 export { useMapLoading } from "./use-map-loading";
-/**
- * Holder for previous compare map view as it is overwritten by sync
- * @type { import("ol").View | null} mapElement
- */
-let viewHolder = null;
 
 /**
  * Handles updating {@link mapPosition} on movement on the map
@@ -92,229 +83,34 @@ export const useHandleMapMoveEnd = (mapElement, mapPosition) => {
 };
 
 /**
- * Initializes the map and updates it based on changes in the selected indicator and datetime,
+ * Moves the main map to a newly selected collection's extent.
  *
- * @param {import("vue").Ref<import("@eox/map").EOxMap| null>} mapElement
- * @param {import("vue").Ref<import("stac-ts").StacCollection | null>} selectedIndicator
- * @param {import("@/eodashSTAC/EodashCollection").EodashCollection[]} eodashCols
- * @param {import("vue").Ref<string>} datetime
- * @param {import("vue").Ref<Record<string,any>[]>} mapLayers
- * @param {import("vue").Ref<import("@eox/map").EOxMap| null>} partnerMap
- * @param {boolean} zoomToExtent
- * @param {import("vue").Ref<import("stac-ts").StacItem | import("stac-ts").StacLink | null | undefined>} [selectedItem]
- * @param {Record<string, any>[]} [defaultBaseLayers]
+ * Callers decide whether a zoom is wanted at all: restoring from a URL
+ * positions the map itself, and selecting an item is a deferred feature.
+ *
+ * @param {import("@eox/map").EOxMap | null} map
+ * @param {import("@eodash/stac").STACCollection | null} [collection]
  */
-export const useInitMap = (
-  mapElement,
-  selectedIndicator,
-  eodashCols,
-  datetime,
-  mapLayers,
-  partnerMap,
-  zoomToExtent,
-  selectedItem,
-  defaultBaseLayers,
-) => {
-  log.debug(
-    "InitMap",
-    mapElement.value,
-    selectedIndicator.value,
-    eodashCols.values,
-    datetime.value,
+export const zoomToCollection = (map, collection) => {
+  if (map?.id !== "main") {
+    return;
+  }
+
+  const bbox = collection?.extent?.spatial?.bbox?.[0];
+  if (!bbox) {
+    return;
+  }
+
+  map.zoomExtent = transformExtent(
+    sanitizeBbox([...bbox]),
+    "EPSG:4326",
+    map.map?.getView().getProjection(),
   );
-  // watch selectedItem if provided
-  const watching = selectedItem
-    ? [selectedIndicator, datetime, selectedItem]
-    : [selectedIndicator, datetime];
-  // Tags datetime values we set ourselves so the watcher skips its own echo.
-  /** @type {string | null} */
-  let internalDatetime = null;
-
-  const stopIndicatorWatcher = watch(
-    watching,
-    async (updated, previous) => {
-      const [updatedStac, updatedTime, updatedItem] =
-        /** @type {[import("stac-ts").StacCollection, string, import("stac-ts").StacItem | null | undefined]} */ (
-          selectedItem ? updated : [updated[0], updated[1], undefined]
-        );
-      const [previousStac, previousTime, previousItem] =
-        /** @type {[import("stac-ts").StacCollection, string, import("stac-ts").StacItem]} */ (
-          selectedItem ? previous : [previous[0], previous[1], undefined]
-        );
-
-      if (updatedStac) {
-        const isSameStac = updatedStac?.id === previousStac?.id;
-        const isSameItem = updatedItem?.id === previousItem?.id;
-        // `null` = item explicitly cleared (render no data layers);
-        // `undefined` = no explicit choice, fall back to default/latest.
-        const isItemCleared = updatedItem === null;
-
-        // Re-fire from our own datetime.value write, skip and clear
-        const isOwnDatetimeUpdate =
-          internalDatetime !== null &&
-          updatedTime === internalDatetime &&
-          isSameStac &&
-          isSameItem;
-        if (isOwnDatetimeUpdate) {
-          internalDatetime = null;
-          return;
-        }
-
-        log.debug(
-          "Selected Indicator watch triggered",
-          updatedStac,
-          updatedTime,
-        );
-
-        if (mapElement?.value?.id === "main") {
-          // Making sure main map gets the viewer that seems to be
-          // removed when the second map is no longer rendered
-          if (viewHolder !== null) {
-            // Set view to previous compare view
-            mapElement?.value?.map.setView(viewHolder);
-            viewHolder = null;
-          }
-        }
-        let layersCollection = [];
-
-        const onlyTimeChanged =
-          updatedStac?.id === previousStac?.id &&
-          (updatedTime !== previousTime ||
-            (updatedItem && updatedItem?.id !== previousItem?.id));
-
-        const { selectedCompareStac } = storeToRefs(useSTAcStore());
-        if (mapElement?.value?.id === "main") {
-          // Main map being initialized
-          // Set projection based on indicator level information for both maps
-          await setMapProjFromCol(updatedStac);
-        } else {
-          // Compare map being initialized
-          if (selectedCompareStac.value !== null) {
-            // save view of compare map
-            viewHolder = mapElement?.value?.map.getView() ?? null;
-            /** @type {any} */
-            (mapElement.value).sync = partnerMap.value;
-          }
-        }
-
-        // We re-create the configuration if time changed
-        if (onlyTimeChanged) {
-          layersCollection = await createLayersConfig(
-            updatedStac,
-            eodashCols,
-            updatedItem ?? updatedTime,
-            defaultBaseLayers,
-          );
-
-          log.debug(
-            "Assigned layers after changing time only",
-            JSON.parse(JSON.stringify(layersCollection)),
-          );
-          mapLayers.value = layersCollection;
-          useEmitLayersUpdate(
-            mapElement.value?.id === "compare"
-              ? "compareTime:updated"
-              : "time:updated",
-            mapElement.value,
-            layersCollection,
-          );
-          return;
-        }
-
-        // We try to set the current time selection to latest extent date
-        let endInterval = null;
-        const interval = updatedStac?.extent?.temporal?.interval;
-        if (interval && interval.length > 0 && interval[0].length > 1) {
-          // @ts-expect-error this is the defined STAC structure
-          endInterval = new Date(interval[0][1]);
-          // If end interval is in the future, set to now,
-          // for item fetching based on search endpoint
-          if (endInterval.getTime() > Date.now()) {
-            endInterval = new Date();
-          }
-          log.debug(
-            "Indicator load: found stac extent, setting time to latest value",
-            endInterval,
-          );
-        }
-        let resolvedTime = updatedItem ?? updatedTime;
-        if (
-          !isItemCleared &&
-          !updatedItem &&
-          endInterval !== null &&
-          endInterval.toISOString() !== datetime.value &&
-          !isFirstLoad.value
-        ) {
-          resolvedTime = endInterval.toISOString();
-          internalDatetime = resolvedTime;
-          datetime.value = resolvedTime;
-        } else if (isFirstLoad.value && !datetime.value && endInterval) {
-          resolvedTime = endInterval.toISOString();
-          internalDatetime = resolvedTime;
-          datetime.value = resolvedTime;
-        }
-
-        /** @type {Record<string,any>[]} */
-        layersCollection = await createLayersConfig(
-          updatedStac,
-          eodashCols,
-          isItemCleared ? null : (updatedItem ?? resolvedTime),
-          defaultBaseLayers,
-        );
-
-        if (zoomToExtent) {
-          // Try to move map view to extent only when main
-          // indicator and map changes
-          if (
-            !isItemCleared &&
-            !updatedItem &&
-            mapElement?.value?.id === "main" &&
-            updatedStac.extent?.spatial.bbox &&
-            !(
-              isFirstLoad.value &&
-              mapPosition.value?.[0] &&
-              mapPosition.value?.[1]
-            )
-          ) {
-            // Sanitize extent,
-            const b = updatedStac.extent?.spatial.bbox[0];
-            const sanitizedExtent = sanitizeBbox([...b]);
-
-            const reprojExtent = transformExtent(
-              sanitizedExtent,
-              "EPSG:4326",
-              mapElement.value?.map?.getView().getProjection(),
-            );
-            /** @type {import("@eox/map").EOxMap} */
-            (mapElement.value).zoomExtent = reprojExtent;
-          }
-        }
-
-        log.debug(
-          "Assigned layers",
-          JSON.parse(JSON.stringify(layersCollection)),
-        );
-        mapLayers.value = layersCollection;
-        // Emit event to update layers
-        await useEmitLayersUpdate(
-          mapElement.value?.id === "compare"
-            ? "compareLayers:updated"
-            : "layers:updated",
-          mapElement.value,
-          mapLayers.value,
-        );
-      }
-    },
-    { immediate: true },
-  );
-
-  onUnmounted(() => {
-    stopIndicatorWatcher();
-  });
 };
+
 /**
  *
- * @param {import("@/eodashSTAC/EodashCollection").EodashCollection[]} eodashCols
+ * @param {import("@eodash/stac").Reader[]} eodashCols
  * @param {import("vue").Ref<Exclude<import("@/types").EodashStyleJson["tooltip"],undefined>>} tooltipProperties
  * @param {boolean} enableCompare
  */
@@ -336,7 +132,13 @@ export const useUpdateTooltipProperties = (
 
     const tooltips = [];
     for (const ec of eodashCols) {
-      tooltips.push(...(await ec.getToolTipProperties()));
+      if (!ec.item) {
+        continue;
+      }
+      // the app's cached client, or every event refetches the styles
+      tooltips.push(
+        ...(await getTooltipProperties(ec.item, { client: axios })),
+      );
     }
     tooltipProperties.value = tooltips;
     log.debug("Updated tooltip properties", tooltipProperties.value);

@@ -8,7 +8,6 @@ import {
 import {
   compareIndicator,
   comparePoi,
-  datetime,
   indicator,
   poi,
   chartData,
@@ -20,16 +19,17 @@ import { processCharts, processLayers, processSTAC } from "./outputs";
 import { handleLayersCustomEndpoints } from "./custom-endpoints/layers";
 import { handleChartCustomEndpoints } from "./custom-endpoints/chart";
 import { useSTAcStore } from "@/store/stac";
+import { LAYER_ID_SEPARATOR } from "@eodash/stac/helpers";
 import axios from "@/plugins/axios";
 import { useGetSubCodeId } from "@/composables";
-import { getLayers, getCompareLayers } from "@/store/actions";
+import { getLayers, getCompareLayers, setDatetime } from "@/store/actions";
 
 /**
  * Fetch and set the jsonform schema to initialize the process
  *
  * @async
  * @param {object} params
- * @param {import("vue").Ref<import("stac-ts").StacCollection | null>} params.selectedStac
+ * @param {import("vue").Ref<import("@eodash/stac").STACCollection | null>} params.selectedStac
  * @param {import("vue").Ref<Record<string,any> | null>} params.jsonformSchema
  * @param {import("vue").Ref<any[]>} params.processResults
  * @param {import("vue").Ref<boolean>} params.isProcessed
@@ -52,7 +52,6 @@ export async function initProcess({
   let updatedJsonform = null;
   if (selectedStac.value?.["eodash:jsonform"]) {
     updatedJsonform = await axios
-      //@ts-expect-error eodash extention
       .get(selectedStac.value["eodash:jsonform"])
       .then((resp) => resp.data);
   }
@@ -156,6 +155,8 @@ export async function updateJsonformIdentifier({
 
   const form = JSON.parse(JSON.stringify(jsonformSchema));
   const drawToolsProperties = getDrawToolsProperties(form);
+  if (drawToolsProperties.length && !mapElement) return null;
+
   /** @type {Promise<void>[]} */
   const renderPromises = [];
 
@@ -173,7 +174,7 @@ export async function updateJsonformIdentifier({
     if (drawtoolsOptions.layerId) {
       let layer = mapElement?.getLayerById(drawtoolsOptions.layerId);
       if (!layer) {
-        const prefix = drawtoolsOptions.layerId.split(";:;")[0];
+        const prefix = drawtoolsOptions.layerId.split(LAYER_ID_SEPARATOR)[0];
         const resolvedId = findLayerIdByPrefix(newLayers, prefix);
         if (!resolvedId) {
           console.warn(
@@ -199,7 +200,7 @@ export async function updateJsonformIdentifier({
  *
  * @param {object} params
  * @param {import("vue").Ref<boolean>} params.loading
- * @param {import("vue").Ref<import("stac-ts").StacCollection | null>} params.selectedStac
+ * @param {import("vue").Ref<import("@eodash/stac").STACCollection | null>} params.selectedStac
  * @param {import("vue").Ref<import("@eox/jsonform").EOxJSONForm | null>} params.jsonformEl
  * @param {import("vue").Ref<Record<string,any>|null>} params.jsonformSchema
  * @param {import("vue").Ref<boolean>} params.isPolling
@@ -353,7 +354,7 @@ export function resetProcess({
 }
 
 /**
- * Handles the click event on a chart to extract temporal information and update the global datetime value.
+ * Handles the click event on a chart to extract temporal information, update the global datetime value and render it.
  *
  * @param {object} evt - The click event object.
  * @param {object} evt.target - The target of the event, expected to have a Vega-Lite specification (`spec`).
@@ -362,12 +363,9 @@ export function resetProcess({
  * @param {object} evt.detail - The detail of the event, containing information about the clicked item.
  * @param {import("vega").Item} evt.detail.item - The Vega item that was clicked.
  */
-export const onChartClick = (evt) => {
+export const onChartClick = async (evt) => {
   const chartSpec = evt.target?.spec;
-  if (
-    !chartSpec ||
-    (!evt.detail?.item?.datum && !evt.detail?.item?.datum.datum)
-  ) {
+  if (!chartSpec || !evt.detail?.item?.datum) {
     return;
   }
   const encodingKey = Object.keys(chartSpec.encoding ?? {}).find(
@@ -381,6 +379,7 @@ export const onChartClick = (evt) => {
     return;
   }
 
+  let selected = "";
   try {
     const vegaItem = evt.detail.item;
     let datestring = "";
@@ -392,14 +391,16 @@ export const onChartClick = (evt) => {
       // Otherwise, we use the top-level datum
       datestring = vegaItem.datum[temporalKey];
     }
-    const temporalValue = new Date(datestring);
-    datetime.value = temporalValue.toISOString();
+    selected = new Date(datestring).toISOString();
   } catch (error) {
     console.warn(
       "[eodash] Error while setting datetime from eox-chart:",
       error,
     );
+    return;
   }
+
+  await setDatetime(selected);
 };
 
 /**

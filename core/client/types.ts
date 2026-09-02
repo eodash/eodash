@@ -205,12 +205,6 @@ export interface TWidgetsContainer {
     typeof import("^/WidgetsContainer.vue").default
   >["$props"];
 }
-export interface TEodashLayoutSwitcher {
-  name: "EodashLayoutSwitcher";
-  properties?: InstanceType<
-    typeof import("^/EodashLayoutSwitcher.vue").default
-  >["$props"];
-}
 
 /**
  * Internal Vue Components inside the
@@ -232,7 +226,6 @@ export type ComponentWidget =
   | TExportState
   | TPopUp
   | TWidgetsContainer
-  | TEodashLayoutSwitcher
   | TEodashTimeSlider;
 /**
  * Widget type: `internal` API. Internal widgets are Vue components provided by
@@ -272,8 +265,8 @@ export interface FunctionalWidget {
    * @param selectedSTAC - Currently selected STAC object
    */
   defineWidget: (
-    selectedSTAC: import("stac-ts").StacCollection | null,
-    selectedCompareSTAC?: import("stac-ts").StacCollection | null,
+    selectedSTAC: import("@eodash/stac").STACCollection | null,
+    selectedCompareSTAC?: import("@eodash/stac").STACCollection | null,
   ) => StaticWidget | undefined | null | false;
 }
 /**
@@ -513,40 +506,13 @@ export { createEodash } from "./main.js";
  * @group STAC
  * @see [eodash Flat Styles](/STAC#eodash-flat-styles)
  */
-export type EodashStyleJson = import("ol/style/flat").FlatStyleLike & {
-  variables?: Record<string, string | number | boolean | null | undefined>;
-  legend?: import("@eox/layercontrol/src/components/layer-config.js").EOxLayerControlLayerConfig["layerConfig"]["legend"];
-  jsonform?: import("json-schema").JSONSchema7;
-  tooltip?: {
-    id: string;
-    title?: string;
-    appendix?: string;
-    decimals?: number;
-  }[];
-};
-/**
- * @ignore
- */
-export type EodashRasterJSONForm = {
-  jsonform: Record<string, any>;
-  legend?: import("@eox/layercontrol/src/components/layer-config.js").EOxLayerControlLayerConfig["layerConfig"]["legend"];
-};
+export type EodashStyleJson = import("@eodash/stac").EodashStyleJson;
 /**
  * Which map a layer/config belongs to: "main" map, "compare"
  * map.
  * @ignore
  */
 export type MapKey = "main" | "compare";
-/**
- * layerConfig attached to a built layer, consumed by eox-layercontrol to render
- * the config editor. Produced by `extractLayerConfig`.
- * @ignore
- */
-export type EodashLayerConfig = {
-  schema: Record<string, any>;
-  type: "style" | "tileUrl";
-  legend?: import("@eox/layercontrol/src/components/layer-config.js").EOxLayerControlLayerConfig["layerConfig"]["legend"];
-};
 
 /** @ignore */
 export type LayersEventBusKeys =
@@ -574,13 +540,6 @@ export interface SearchParams {
   };
   /** Maximum number of results to return */
   limit?: number;
-}
-/**
- * @ignore
- */
-export interface StacItemsAPIResponse {
-  type: "FeatureCollection";
-  features: import("stac-ts").StacItem[];
 }
 
 export interface AggregationCollection {
@@ -650,73 +609,7 @@ export type ItemFilterFilter =
 export type ItemFilterFilters = Record<string, ItemFilterFilter>;
 
 /** @ignore */
-export interface Render {
-  /** REQUIRED. Array of asset keys referencing the assets that are used to make the rendering */
-  assets: string[];
-  /** Optional title of the rendering */
-  title?: string;
-  /** 2 dimensions array of delimited Min,Max range per band. If not provided, the data will not be rescaled. */
-  rescale?: number[][];
-  /** Nodata value to use for the referenced assets. */
-  nodata?: number | string;
-  /** Color map identifier that must be applied for a raster band */
-  colormap_name?: string;
-  /** Color map JSON definition that must be applied for a raster band */
-  colormap?: Record<string, unknown>;
-  /** Color formula that must be applied for a raster band */
-  color_formula?: string;
-  /** Resampling algorithm to apply to the referenced assets. See GDAL resampling algorithm for some examples. */
-  resampling?: string;
-  /** Band arithmetic formula to apply to the referenced assets. */
-  expression?: string;
-  /** Zoom levels range applicable for the visualization */
-  minmax_zoom?: number[];
-  /** Band indexes to apply the rendering to. */
-  bidx?: number[];
-  /** Tile size to request from the tile server. */
-  tilesize?: number;
-  /** Used for custom Proj4 projection definitions. */
-  projection?: Record<string, unknown>;
-}
-/** @ignore */
-export interface TitilerSTACParameters {
-  /** STAC Item URL. Required */
-  url: string;
-  /** asset names. */
-  assets?: string[];
-  /** rio-tiler's math expression with asset names (e.g Asset1_b1/Asset2_b1). */
-  expression?: string;
-  /** tell rio-tiler that each asset is a 1 band dataset, so expression Asset1/Asset2 can be passed. */
-  asset_as_band?: boolean;
-  /** Per asset band math expression (e.g Asset1|1,2,3). */
-  asset_bidx?: string[];
-  /** Overwrite internal Nodata value. */
-  nodata?: string | number;
-  /** Apply dataset internal Scale/Offset. */
-  unscale?: boolean;
-  /** RasterIO resampling algorithm. Defaults to nearest. */
-  resampling?: string;
-  /** WarpKernel resampling algorithm (only used when doing re-projection). Defaults to nearest. */
-  reproject?: string;
-  /** Comma (',') delimited Min,Max range (e.g rescale=0,1000, rescale=0,1000&rescale=0,3000&rescale=0,2000). */
-  rescale?: string[];
-  /** rio-color formula. */
-  color_formula?: string;
-  /** JSON encoded custom Colormap. */
-  colormap?: string;
-  /** rio-tiler color map name. */
-  colormap_name?: string;
-  /** Add mask to the output data. Default is True. */
-  return_mask?: boolean;
-  /** Buffer on each side of the given tile. It must be a multiple of 0.5. Output tilesize will be expanded to tilesize + 2 * buffer (e.g 0.5 = 257x257, 1.0 = 258x258). */
-  buffer?: number;
-  /** Padding to apply to each tile edge. Helps reduce resampling artefacts along edges. Defaults to 0. */
-  padding?: number;
-  /** Custom algorithm name (e.g hillshade). */
-  algorithm?: string;
-  /** JSON encoded algorithm parameters. */
-  algorithm_params?: string;
-}
+export type Render = import("@eodash/stac").Render;
 /**
  * Generic GeoJSON Feature interface that can hold additional properties.
  * @ignore
@@ -726,106 +619,6 @@ export interface GeoJsonFeature<T = Record<string, any>, G = GeoJSON.Geometry> {
   geometry: G;
   properties: T & Record<string, any>;
   id?: string | number;
-}
-
-/**
- * Generic GeoJSON FeatureCollection interface that can hold additional properties.
- * @ignore
- */
-export interface GeoJsonFeatureCollection<
-  T = Record<string, any>,
-  G = GeoJSON.Geometry,
-> {
-  type: "FeatureCollection";
-  features: Array<GeoJsonFeature<T, G>>;
-  properties?: T & Record<string, any>;
-}
-/**
- * Partial STAC Authentication Extension v1.1.0
- * Generated from https://stac-extensions.github.io/authentication/v1.1.0/schema.json
- * @ignore
- */
-export interface AuthScheme {
-  /** Scheme keyword, e.g. http, s3, signedUrl, oauth2, apiKey, openIdConnect */
-  type:
-    | "http"
-    | "s3"
-    | "signedUrl"
-    | "oauth2"
-    | "apiKey"
-    | "openIdConnect"
-    | string;
-
-  description?: string;
-
-  name?: string;
-  in?: string;
-
-  scheme?: string;
-
-  flows?: Record<string, OAuth2Flow | SignedUrlFlow>;
-
-  openIdConnectUrl?: string;
-}
-
-/**
- * @ignore
- */
-export interface OAuth2Flow {
-  authorizationUrl?: string;
-  tokenUrl?: string;
-  refreshUrl?: string;
-  scopes: Record<string, string>;
-}
-
-/**
- * Signed URL flow configuration
- * @ignore
- */
-export interface SignedUrlFlow {
-  authorizationApi: string;
-  method: string;
-  responseField?: string;
-  parameters?: Record<
-    string,
-    {
-      in: "query" | "header" | "body" | string;
-      required: boolean;
-      description?: string;
-      schema?: object;
-    }
-  >;
-}
-
-/**
- * @ignore
- */
-export interface ApiKeyAuthScheme extends AuthScheme {
-  type: "apiKey";
-  name: string;
-  in: string;
-}
-
-import { StacItem, StacLink, StacAsset } from "stac-ts";
-/**
- * @ignore
- */
-export interface StacAuthItem extends StacItem {
-  "auth:schemes": {
-    [key: string]: AuthScheme;
-  };
-}
-/**
- * @ignore
- */
-export interface StacAuthLink extends StacLink {
-  "auth:refs": [string];
-}
-/**
- * @ignore
- */
-export interface StacAuthAsset extends StacAsset {
-  "auth:refs": [string];
 }
 
 /**

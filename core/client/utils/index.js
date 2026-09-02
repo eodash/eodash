@@ -1,13 +1,8 @@
 import log from "loglevel";
 import { collectionsPalette } from "./states";
-import {
-  extractCollectionUrls,
-  generateLinksFromItems,
-  revokeCollectionBlobUrls,
-} from "@/eodashSTAC/helpers";
-import { EodashCollection } from "@/eodashSTAC/EodashCollection";
-import { toAbsolute } from "stac-js/src/http.js";
-import { readParquetItems } from "@/eodashSTAC/parquet";
+import { createEodashCollection } from "@eodash/stac";
+import { extractCollectionUrls } from "@eodash/stac/helpers";
+import { axios } from "@/plugins/axios";
 import WebFontLoader from "webfontloader";
 
 /**
@@ -155,18 +150,19 @@ export const setCollectionsPalette = (colors) => {
 };
 
 /**
- * Updates the eodash collections by fetching and processing collection data from specified URLs
- * @param {import('@/eodashSTAC/EodashCollection').EodashCollection[]} eodashCollections  - The array of existing eodash collections to be updated
- * @param {import("stac-ts").StacCollection} selectedStac - The indicator object
- * @param {string} absoluteUrl - The absolute indicator URL
- * @param {string[]} colorPalette - The color palette to assign to each collection
- * @param {boolean} isAPI - Flag indicating if the collection is fetched from an API
- * @param {string | null} rasterEndpoint - Optional raster endpoint URL
- * @param {import("@/types").MapKey} [map] - which map these collections belong to
- * @async
- * @description This function extracts collection URLs from the indicator, fetches collection data,
- * processes parquet items if available, and updates the eodashCollections array with new collection data.
- * Each collection is assigned a color from a predefined palette.
+ * Fetches indicator collections and populates the reactive reader array.
+ *
+ * @param {import("@eodash/stac").Reader[]} eodashCollections - Reactive array to receive the initialized collection readers
+ * @param {import("@eodash/stac").STACCollection} selectedStac - Indicator collection metadata
+ * @param {string} absoluteUrl - Indicator URL used as the base for relative collection links
+ * @param {string[]} colorPalette - Color palette assigned cyclically across collections
+ * @param {boolean} isAPI - Whether collections are backed by a STAC API endpoint
+ * @param {object} [rasterOptions] - Default options applied when building layers
+ * @param {string} [rasterOptions.rasterEndpoint]
+ * @param {import("@eodash/stac").BuildContext["upscalingEndpoints"]} [rasterOptions.upscalingEndpoints]
+ * @param {Record<string, any> | null} [rasterOptions.tileMatrixSets]
+ * @param {import("@eodash/stac").BuildContext["renders"]} [rasterOptions.renders]
+ * @param {string} [rasterOptions.viewProjection]
  */
 export const updateEodashCollections = async (
   eodashCollections,
@@ -174,47 +170,23 @@ export const updateEodashCollections = async (
   absoluteUrl,
   colorPalette,
   isAPI,
-  rasterEndpoint = null,
-  map = "main",
+  rasterOptions = {},
 ) => {
   // init eodash collections
   const collectionUrls = extractCollectionUrls(selectedStac, absoluteUrl);
 
-  await Promise.all(
-    collectionUrls.map((cu, idx) => {
-      const ec = new EodashCollection(cu, isAPI, rasterEndpoint);
-      ec.map = map;
-      return ec.fetchCollection().then((col) => {
-        // assign color from the palette
-        ec.color = colorPalette[idx % colorPalette.length];
-        const parquetAsset = Object.values(col.assets ?? {}).find(
-          (asset) =>
-            asset.type === "application/vnd.apache.parquet" &&
-            asset.roles?.includes("collection-mirror"),
-        );
+  const collections = await Promise.all(
+    collectionUrls.map((cu, idx) =>
+      createEodashCollection(cu, {
+        api: isAPI,
+        client: axios,
+        color: colorPalette[idx % colorPalette.length],
+        ...rasterOptions,
+      }),
+    ),
+  );
 
-        if (!parquetAsset) {
-          return ec;
-        }
-
-        return readParquetItems(toAbsolute(parquetAsset.href, cu)).then(
-          (items) => {
-            col.links.push(...generateLinksFromItems(items));
-            return ec;
-          },
-        );
-      });
-    }),
-  ).then(async (collections) => {
-    // revoke old blob urls in the previous collections. see generateLinksFromItems in "../eodashSTAC/helpers.js"
-    eodashCollections.forEach((ec) => {
-      revokeCollectionBlobUrls(ec);
-    });
-    // empty array from old collections
-    eodashCollections.splice(0, eodashCollections.length);
-    // update eodashCollections
-    eodashCollections.push(...collections);
-  });
+  eodashCollections.splice(0, eodashCollections.length, ...collections);
 };
 /**
  *
