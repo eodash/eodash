@@ -2,6 +2,13 @@ import log from "loglevel";
 import { isBaseLayerOrOverlay } from "./assets.js";
 
 /**
+ * Divides the parts of a layer id, which reads
+ * `collection;:;item;:;link;:;projection`. Consumers split ids on it to
+ * recognise the collection or link a layer came from.
+ */
+export const LAYER_ID_SEPARATOR = ";:;";
+
+/**
  * Finds a layer by its ID in a layer tree.
  *
  * @param {import("@eox/map").EoxLayer[]} layers
@@ -36,11 +43,13 @@ export const findLayersByLayerPrefix = (layers, referenceLayer) => {
   }
   const refId = referenceLayer?.properties?.id;
 
-  if (typeof refId !== "string" || !refId.includes(";:;")) {
-    throw new Error("Reference layer ID must contain a ';:;' separator.");
+  if (typeof refId !== "string" || !refId.includes(LAYER_ID_SEPARATOR)) {
+    throw new Error(
+      `Reference layer ID must contain a '${LAYER_ID_SEPARATOR}' separator.`,
+    );
   }
 
-  const prefix = refId.split(";:;")[0];
+  const prefix = refId.split(LAYER_ID_SEPARATOR)[0];
   const matches = [];
 
   for (const layer of layers) {
@@ -48,7 +57,10 @@ export const findLayersByLayerPrefix = (layers, referenceLayer) => {
       matches.push(...findLayersByLayerPrefix(layer.layers, referenceLayer));
     } else {
       const id = layer?.properties?.id;
-      if (typeof id === "string" && id.split(";:;")[0] === prefix) {
+      if (
+        typeof id === "string" &&
+        id.split(LAYER_ID_SEPARATOR)[0] === prefix
+      ) {
         matches.push(layer);
       }
     }
@@ -144,11 +156,16 @@ export const replaceLayer = (layers, toRemove, toInsert) => {
  */
 export const createLayerID = (collectionId, itemId, link, projectionCode) => {
   const linkId = link.id || link.title || link.href;
-  let lId = `${collectionId ?? ""};:;${itemId ?? ""};:;${linkId ?? ""};:;${projectionCode ?? ""}`;
+  let lId = [
+    collectionId ?? "",
+    itemId ?? "",
+    linkId ?? "",
+    projectionCode ?? "",
+  ].join(LAYER_ID_SEPARATOR);
   // If we are looking at base layers and overlays we remove the collection and item part
   // as we want to make sure tiles are not reloaded when switching layers
   if (isBaseLayerOrOverlay(link)) {
-    lId = `${linkId ?? ""};:;${projectionCode ?? ""}`;
+    lId = [linkId ?? "", projectionCode ?? ""].join(LAYER_ID_SEPARATOR);
   }
   log.debug("Generated Layer ID", lId);
   return lId;
@@ -163,7 +180,9 @@ export const createLayerID = (collectionId, itemId, link, projectionCode) => {
  * @returns {string}
  */
 export const createAssetID = (collectionId, itemId, index) => {
-  let lId = `${collectionId ?? ""};:;${itemId ?? ""};:;${index ?? ""}`;
+  let lId = [collectionId ?? "", itemId ?? "", index ?? ""].join(
+    LAYER_ID_SEPARATOR,
+  );
   log.debug("Generated Asset ID", lId);
   return lId;
 };
@@ -180,6 +199,6 @@ export const getColFromLayer = (readers, layerId) => {
   if (!layerId) {
     return undefined;
   }
-  const [collectionId] = layerId.split(";:;");
+  const [collectionId] = layerId.split(LAYER_ID_SEPARATOR);
   return readers.find((reader) => reader.stac?.id === collectionId);
 };
