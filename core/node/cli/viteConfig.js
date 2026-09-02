@@ -2,7 +2,12 @@
 
 import vue from "@vitejs/plugin-vue";
 import vuetify, { transformAssetUrls } from "vite-plugin-vuetify";
-import { appPath, renderIndexHtml, clientModules } from "./globals.js";
+import {
+  appPath,
+  renderIndexHtml,
+  clientModules,
+  stacSourceAlias,
+} from "./globals.js";
 import { readFile } from "fs/promises";
 import {
   defineConfig,
@@ -73,6 +78,7 @@ export const createEodashViteConfig = (ctx) =>
             "@": path.join(appPath, "core/client"),
             "^": path.join(appPath, "widgets"),
             "user:widgets": internalWidgetsPath,
+            ...(await stacSourceAlias()),
             ...(entryPath && {
               "user:config": entryPath,
             }),

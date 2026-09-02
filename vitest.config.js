@@ -1,6 +1,5 @@
 import { defineConfig } from "vitest/config";
 import { fileURLToPath, URL } from "node:url";
-import { createRequire } from "node:module";
 import { existsSync, readdirSync } from "node:fs";
 import { playwright } from "@vitest/browser-playwright";
 import vue from "@vitejs/plugin-vue";
@@ -15,8 +14,7 @@ import {
 } from "./tests/support/commands.js";
 import { BenchReporter } from "./tests/support/bench-reporter.js";
 import { loadFixtures } from "./tests/support/load-fixtures.js";
-
-const pkg = createRequire(import.meta.url)("./package.json");
+import { stacSourceAlias } from "./core/node/cli/globals.js";
 
 /** `reporters` is root-only, so this is the only place to keep it off the tests. */
 const isBenchRun = process.argv.includes("bench");
@@ -34,21 +32,9 @@ const benchReference = {
     : [],
 };
 
-const nodeOnlyDeps = [
-  "commander",
-  "vite",
-  "@vitejs/plugin-vue",
-  "vite-plugin-vuetify",
-  "dotenv",
-  "stac-ts",
-];
-
-const clientDeps = Object.keys(pkg.dependencies ?? {}).filter(
-  (m) => !nodeOnlyDeps.includes(m) && m !== "vuetify",
-);
-
 /** Shared source aliases (mirror the CLI's viteConfig aliases). */
 const alias = {
+  ...(await stacSourceAlias()),
   "@": fileURLToPath(new URL("./core/client", import.meta.url)),
   "^": fileURLToPath(new URL("./widgets", import.meta.url)),
   "user:widgets": fileURLToPath(new URL("./widgets", import.meta.url)),
@@ -113,7 +99,14 @@ export default defineConfig({
         ],
         resolve: { alias },
         define: { "process.env": {} },
-        optimizeDeps: { include: clientDeps, exclude: ["vuetify"] },
+        optimizeDeps: {
+          entries: [
+            "core/client/render.js",
+            "templates/*.js",
+            "tests/**/*.test.js",
+          ],
+          exclude: ["vuetify"],
+        },
         test: {
           name: "browser",
           include: [
