@@ -27,13 +27,13 @@ The package exports four templates, each a [`Template`](/api/Configuration/inter
 | Template  | Recommended For | Layout | Source |
 | --------- | --------------- | ------ | ------ |
 | `lite`    | **Static STAC Catalogs** | Compact layout for non-experts: map with date picker, layer control, STAC info, and tools. | [lite.js](https://github.com/eodash/eodash/blob/main/templates/lite.js) |
-| `explore` | **Dynamic STAC APIs** | Catalog-driven layout pairing the item catalog and item filters with the map and layer control. | [explore.js](https://github.com/eodash/eodash/blob/main/templates/explore.js) |
+| `explore` | **Dynamic STAC APIs** | Catalog-driven layout pairing the item catalog and layer control with an interactive map. | [explore.js](https://github.com/eodash/eodash/blob/main/templates/explore.js) |
 | `expert`  | Advanced Analysis | The `lite` layout extended with charts and a processing widget. | [expert.js](https://github.com/eodash/eodash/blob/main/templates/expert.js) |
 | `compare` | Multi-dataset Comparison | Layout for comparing datasets, with charts, processing, and tools. | [compare.js](https://github.com/eodash/eodash/blob/main/templates/compare.js) |
 
 ::: tip Template Selection Rule of Thumb
 - For **Static STAC Catalogs** (hierarchical `catalog.json` without search API), use **`lite`** (default). Static catalogs do not need item query filters or full-text item discovery catalogs.
-- For **Dynamic STAC APIs** (`api: true` / searchable item endpoints), use **`explore`** to leverage `EodashItemCatalog` and `EodashItemFilter`.
+- For **Dynamic STAC APIs** (`api: true` / searchable item endpoints), use **`explore`** to leverage `EodashItemCatalog` and dynamic item discovery.
 :::
 
 Import a template and assign it to `template`:
