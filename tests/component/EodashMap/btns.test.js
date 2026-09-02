@@ -25,6 +25,7 @@ stubCustomElement("eox-feedback");
 const actions = vi.hoisted(() => ({
   getLayers: vi.fn(() => []),
   getCompareLayers: vi.fn(() => []),
+  assignLayers: vi.fn(),
   registerProjection: vi.fn(),
   changeMapProjection: vi.fn(),
   setActiveTemplate: vi.fn(),

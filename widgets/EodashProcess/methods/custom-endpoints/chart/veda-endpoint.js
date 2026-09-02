@@ -1,12 +1,7 @@
 import axios from "@/plugins/axios";
 import { getBboxProperty } from "../../utils";
-import { toAbsolute } from "stac-js/src/http.js";
-import { currentCompareUrl, currentUrl } from "@/store/states";
-import {
-  getDatetimeProperty,
-  generateLinksFromItems,
-} from "@/eodashSTAC/helpers";
-import { readParquetItems } from "@/eodashSTAC/parquet";
+import { eodashCollections, eodashCompareCollections } from "@/store/stac";
+import { getDatetimeProperty, isSTACItem } from "@eodash/stac/helpers";
 
 /**
  * @param {import("^/EodashProcess/types").CustomEnpointInput} inputs
@@ -15,7 +10,6 @@ export async function handleVedaEndpoint({
   links,
   jsonformSchema,
   jsonformValue,
-  selectedStac,
   enableCompare = false,
 }) {
   const vedaLink = links.find(
@@ -31,11 +25,7 @@ export async function handleVedaEndpoint({
   // this should be type geojson
   const bboxGeoJSON = JSON.parse(jsonformValue[bboxProperty]);
 
-  const configs = await fetchVedaCOGsConfig(
-    selectedStac,
-    enableCompare ? currentCompareUrl.value : currentUrl.value,
-    vedaLink,
-  );
+  const configs = await fetchVedaCOGsConfig(enableCompare, vedaLink);
   // TODO: convert jsonform bbox type to geojson in the schema to avoid the conversion here
   const results = await Promise.all(
     configs.map(({ endpoint, datetime }) => {
@@ -70,73 +60,42 @@ export async function handleVedaEndpoint({
 }
 
 /**
- * Fetches the COGs endpoints from the STAC collections
- * @param {import("stac-ts").StacCollection} selectedStac
- * @param {string} absoluteUrl
- * @param {import("stac-ts").StacLink} vedaLink
+ * The COG endpoint and datetime of every item the indicator's collections hold,
+ * sampled down to what the chart can show.
+ * @param {boolean} enableCompare
+ * @param {import("@eodash/stac").STACLink} vedaLink
  */
-async function fetchVedaCOGsConfig(selectedStac, absoluteUrl, vedaLink) {
-  // retrieve the collections from the indicator
-  const collectionLinks = selectedStac.links.filter(
-    (link) => link.rel == "child",
-  );
-  /** @type {import("stac-ts").StacCollection[]} */
-  const collections = [];
-  if (!collectionLinks.length) {
-    collections.push(selectedStac);
-  } else {
-    collections.push(
-      ...(await Promise.all(
-        collectionLinks.map((link) =>
-          axios
-            .get(toAbsolute(link.href, absoluteUrl))
-            .then((resp) => resp.data)
-            .then(async (collection) => {
-              // items in geoparquet handling specially to get item links
-              const parquetAsset = Object.values(collection.assets ?? {}).find(
-                (asset) =>
-                  asset.type === "application/vnd.apache.parquet" &&
-                  asset.roles?.includes("collection-mirror"),
-              );
-              if (parquetAsset) {
-                const parquetAbsoluteUrl = toAbsolute(
-                  parquetAsset.href,
-                  toAbsolute(link.href, absoluteUrl),
-                );
-                await readParquetItems(parquetAbsoluteUrl).then((items) => {
-                  collection.links.push(...generateLinksFromItems(items));
-                });
-              }
-              return collection;
-            }),
-        ),
-      )),
-    );
-  }
+async function fetchVedaCOGsConfig(enableCompare, vedaLink) {
+  const readers = enableCompare ? eodashCompareCollections : eodashCollections;
   /** @type {{endpoint:string; datetime:string}[]} */
   const configs = [];
-  for (const collection of collections) {
-    const datetimeProperty = /** @type {string} */ (
-      getDatetimeProperty(collection.links)
-    );
-    const itemLinks = collection.links.filter((link) => link.rel == "item");
-    configs.push(
-      ...itemLinks.map((link) => {
-        const endpoint = /** @type {string} */ (
-          vedaLink.endpoint === "veda_stac" ? link.id : link["cog_href"]
-        );
-        return {
-          endpoint,
-          datetime: /** @type {string} */ (link[datetimeProperty]),
-        };
-      }),
-    );
-  }
 
-  // Sort by date ascending
-  configs.sort(
-    (a, b) => new Date(a.datetime).getTime() - new Date(b.datetime).getTime(),
-  );
+  for (const reader of readers) {
+    /** @type {import("@eodash/stac").STACItem[] | import("@eodash/stac").ItemLink[]} */
+    const items = await reader.getItems();
+    const datetimeProperty = getDatetimeProperty(items);
+    if (!datetimeProperty) {
+      continue;
+    }
+    for (const item of items) {
+      // an item keeps its datetime under `properties`, an item link at the top
+      const datetime = isSTACItem(item)
+        ? item.properties[datetimeProperty]
+        : item[datetimeProperty];
+      // an item link carries the cog already, an item has it on its assets
+      const cogHref =
+        item["cog_href"] ??
+        Object.values(item.assets ?? {}).find(
+          (asset) =>
+            asset.href.startsWith("s3://veda-data-store") &&
+            asset.type === "image/tiff; application=geotiff",
+        )?.href;
+      const endpoint = vedaLink.endpoint === "veda_stac" ? item.id : cogHref;
+      if (endpoint && typeof datetime === "string") {
+        configs.push({ endpoint, datetime });
+      }
+    }
+  }
 
   const maxConfigs = 50;
   if (configs.length <= maxConfigs) {

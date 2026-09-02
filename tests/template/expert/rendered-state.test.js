@@ -12,6 +12,9 @@ const COLOR_LEGEND_ID = "N2_CO2_mean";
 describe("expert template - rendered state", () => {
   /** @type {Awaited<ReturnType<typeof bootExpert>>} */
   let ctx;
+  // `eox-map` dispatches `layerschanged` once per `set layers`, so this counts
+  // how many times the app wrote the map.
+  let mapWrites = 0;
 
   /** Select an indicator and wait for its layers to replace the previous. */
   const select = async (/** @type {string} */ id) => {
@@ -35,11 +38,13 @@ describe("expert template - rendered state", () => {
 
   beforeAll(async () => {
     ctx = await bootExpert({ endpoint: STAC_ENDPOINT });
+    ctx.query("eox-map").addEventListener("layerschanged", () => mapWrites++);
   });
 
   afterAll(() => ctx?.app.unmount());
 
   test("stac info shows the title and description", async () => {
+    mapWrites = 0;
     await select(IMAGE_LEGEND_ID);
     const title = ctx.store.selectedStac?.title ?? "";
     const description = ctx.store.selectedStac?.description ?? "";
@@ -49,6 +54,8 @@ describe("expert template - rendered state", () => {
     const body = description.replace(/^#+ .*(\n|$)/, "");
     const probe = (body.match(/[A-Za-z][A-Za-z ]{18,}/) ?? [""])[0].trim();
     await expect.element(page.getByText(probe).first()).toBeInTheDocument();
+
+    expect(mapWrites).toBe(1);
   });
 
   test("the analysis group is expanded", () => {
@@ -71,6 +78,7 @@ describe("expert template - rendered state", () => {
   });
 
   test("a colour-legend layer carries layerLegend", async () => {
+    mapWrites = 0;
     await select(COLOR_LEGEND_ID);
     const properties = dataLayerProperties();
     expect(properties.layerLegend).toBeTruthy(); // eox:colorlegend scale
@@ -78,5 +86,7 @@ describe("expert template - rendered state", () => {
     expect(properties.timeControlProperty).toBe("TIME");
     expect(properties.layerControlExpand).toBe(true);
     expect(properties.layerControlToolsExpand).toBe(true);
+
+    expect(mapWrites).toBe(1);
   });
 });

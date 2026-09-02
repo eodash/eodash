@@ -17,13 +17,13 @@ import { useSTAcStore } from "@/store/stac";
 import log from "loglevel";
 import { eodashKey, eoxLayersKey } from "@/utils/keys";
 import { useEventBus, useMutationObserver } from "@vueuse/core";
-import { isFirstLoad } from "@/utils/states";
+import { hasRestoredView, isFirstLoad } from "@/utils/states";
 import { setCollectionsPalette } from "@/utils";
 import mustache from "mustache";
-import { toAbsolute } from "stac-js/src/http.js";
+import { toAbsolute } from "@eodash/stac/helpers";
 import axios from "@/plugins/axios";
 import { storeToRefs } from "pinia";
-import { bboxToCenterZoom, sanitizeBbox } from "@/eodashSTAC/helpers";
+import { bboxToCenterZoom, sanitizeBbox } from "@eodash/stac/helpers";
 /**
 /** @type {import('@/types').Eodash | null}*/
 
@@ -157,14 +157,26 @@ export const useURLSearchParametersSync = () => {
       const searchParams = new URLSearchParams(window.location.search);
       const store = useSTAcStore();
 
-      /** @type {number | undefined} */
-      let x,
-        /** @type {number | undefined} */
-        y,
-        /** @type {number | undefined} */
-        z;
       /** @type {number[] | undefined} - restored item extent; wins over x/y/z */
       let itemBbox;
+
+      const x = Number(searchParams.get("x"));
+      const y = Number(searchParams.get("y"));
+      const z = Number(searchParams.get("z"));
+      // recorded before the indicator load below awaits: the map watches
+      // `selectedStac` and would otherwise zoom to the collection
+      hasRestoredView.value =
+        !!(x && y && z) || (store.isApi && searchParams.has("item"));
+
+      const urlDatetime = searchParams.get("datetime");
+      if (urlDatetime) {
+        try {
+          datetime.value = new Date(urlDatetime).toISOString();
+        } catch {
+          datetime.value = new Date().toISOString();
+        }
+      }
+
       for (const [key, value] of searchParams) {
         switch (key) {
           case "template": {
@@ -184,7 +196,7 @@ export const useURLSearchParametersSync = () => {
                   store.stacEndpoint ?? "",
                 );
                 // fetch indicator stac collection without rendering it
-                /** @type {import("stac-ts").StacCollection} */
+                /** @type {import("@eodash/stac").STACCollection} */
                 const indicatorStac = await axios
                   .get(indicatorUrl)
                   .then((resp) => resp.data);
@@ -221,7 +233,7 @@ export const useURLSearchParametersSync = () => {
                 // Restore a specific catalog item within the collection
                 const itemId = searchParams.get("item");
                 const itemUrl = `${store.stacEndpoint}/collections/${match.id}/items/${itemId}`;
-                /** @type {import("stac-ts").StacItem | null} */
+                /** @type {import("@eodash/stac").STACItem | null} */
                 const item = await axios
                   .get(itemUrl)
                   .then((resp) => resp.data)
@@ -240,28 +252,6 @@ export const useURLSearchParametersSync = () => {
             }
             break;
           }
-
-          case "x":
-            x = Number(value);
-            break;
-
-          case "y":
-            y = Number(value);
-            break;
-
-          case "z":
-            z = Number(value);
-            break;
-
-          case "datetime":
-            try {
-              const datetimeiso = new Date(value).toISOString();
-              log.debug("Valid datetime found", datetimeiso);
-              datetime.value = datetimeiso;
-            } catch {
-              datetime.value = new Date().toISOString();
-            }
-            break;
 
           default:
             break;
@@ -286,6 +276,8 @@ export const useURLSearchParametersSync = () => {
           mapEl.value.center = [x, y];
           mapEl.value.zoom = z;
         }
+      } else {
+        hasRestoredView.value = false;
       }
 
       if (!isFirstLoad.value) {
@@ -407,6 +399,7 @@ export const useEmitLayersUpdate = async (event, mapEl, layers) => {
       });
     });
 
+  // Use layer ID literal to prevent circular module dependencies
   const dl = /** @type {import("ol/layer").Group} */ (
     mapEl.getLayerById("AnalysisGroup")
   );
@@ -427,7 +420,7 @@ export const useEmitLayersUpdate = async (event, mapEl, layers) => {
 };
 
 /**
- * @param {import("stac-ts").StacCollection | import("stac-ts").StacLink | import("stac-ts").StacItem | null} collection
+ * @param {import("@eodash/stac").STACCollection | import("@eodash/stac").STACLink | import("@eodash/stac").STACItem | null} collection
  * @returns {string} - Returns the collection id or subcode if `useSubCode` is enabled
  */
 export const useGetSubCodeId = (collection) => {

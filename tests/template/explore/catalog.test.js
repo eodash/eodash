@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, test, vi } from "vitest";
-import { bboxToCenterZoom } from "@/eodashSTAC/helpers";
+import { bboxToCenterZoom } from "@eodash/stac/helpers";
 import { tooltipAdapter } from "@/store/states";
 import { serveByPath, stacCollection, stacItem } from "../../support/fixtures";
 import { bootTemplate, TIMEOUT } from "../../support/template";
@@ -86,6 +86,10 @@ describe("explore template - catalog", () => {
 
   const scopedRoutes = { ...routes };
 
+  // `eox-map` dispatches `layerschanged` once per `set layers`, so this counts
+  // how many times the app wrote the map.
+  let mapWrites = 0;
+
   beforeAll(async () => {
     served = serveByPath(axiosMock, scopedRoutes);
     ctx = await bootTemplate({
@@ -93,6 +97,7 @@ describe("explore template - catalog", () => {
       endpoint: ENDPOINT,
       api: true,
     });
+    ctx.query("eox-map").addEventListener("layerschanged", () => mapWrites++);
   });
 
   afterAll(() => ctx?.app.unmount());
@@ -162,6 +167,7 @@ describe("explore template - catalog", () => {
 
   test("selecting a result selects the item and fits the map to its bbox", async () => {
     const item = ITEMS[2];
+    mapWrites = 0;
     ctx
       .query("eox-itemfilter")
       .dispatchEvent(new CustomEvent("select", { detail: item }));
@@ -180,6 +186,8 @@ describe("explore template - catalog", () => {
         { timeout: TIMEOUT },
       )
       .toBe(true);
+
+    expect(mapWrites).toBe(1);
   });
 
   test("clicking a footprint on the map selects its item and syncs the url", async () => {
@@ -196,6 +204,7 @@ describe("explore template - catalog", () => {
     };
     await expect.poll(findFeature, { timeout: TIMEOUT }).toBeTruthy();
 
+    mapWrites = 0;
     ctx.query("eox-map").dispatchEvent(
       new CustomEvent("select", {
         detail: { originalEvent: { type: "click" }, feature: findFeature() },
@@ -210,6 +219,10 @@ describe("explore template - catalog", () => {
         timeout: TIMEOUT,
       })
       .toBe("item-a");
+
+    // the render lands after the store and the url settle
+    await expect.poll(() => mapWrites, { timeout: TIMEOUT }).toBeGreaterThan(0);
+    expect(mapWrites).toBe(1);
   });
 
   test("a new search re-renders the list and the footprints", async () => {
@@ -220,10 +233,11 @@ describe("explore template - catalog", () => {
       type: "FeatureCollection",
       features: [ITEMS[1]],
     };
+    mapWrites = 0;
     ctx.query("eox-itemfilter").search();
 
     const resultIds = () => {
-      /** @type {import("stac-ts").StacItem[]} */
+      /** @type {import("@eodash/stac").STACItem[]} */
       const results = ctx.query("eox-itemfilter")?.results ?? [];
       return results.map((r) => r.id);
     };
@@ -240,6 +254,9 @@ describe("explore template - catalog", () => {
     await expect
       .poll(() => settled(footprintIds()), { timeout: TIMEOUT })
       .toBe(true);
+
+    // the layer is already on the map, so the search updates its source in place
+    expect(mapWrites).toBe(0);
   });
 });
 

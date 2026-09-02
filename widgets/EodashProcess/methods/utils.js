@@ -1,13 +1,13 @@
-import { useEmitLayersUpdate } from "@/composables";
 import {
-  extractLayerConfig,
-  mergeGeojsons,
-  replaceLayer,
+  createLayerConfigHelpers,
   extractLayerLegend,
-} from "@/eodashSTAC/helpers";
+  mergeGeojsons,
+} from "@eodash/stac/helpers";
 import axios from "@/plugins/axios";
-import { assignLayers, getCompareLayers, getLayers } from "@/store/actions";
+import { PROCESS_GROUP, assignGroupLayers } from "@/eodashSTAC/layers";
 import { isMulti } from "@eox/jsonform/src/custom-inputs/spatial/utils";
+
+const { extractLayerConfig } = createLayerConfigHelpers();
 
 /**
  * @param {Record<string,any> |null} [jsonformSchema]
@@ -60,7 +60,7 @@ export function extractGeometries(jsonformValue, jsonformSchema) {
 
 /**
  *
- * @param {import("stac-ts").StacLink} link
+ * @param {import("@eodash/stac").STACLink} link
  * @param {string} layerId
  * @param {string[]} urls
  * @param {import("ol/proj").ProjectionLike} projection
@@ -83,7 +83,7 @@ export async function createTiffLayerDefinition(
   let layerConfig;
   let style;
   if (flatStyleJSON) {
-    const extracted = extractLayerConfig(layerId ?? "", flatStyleJSON);
+    const extracted = extractLayerConfig(flatStyleJSON);
     layerConfig = extracted.layerConfig;
     style = extracted.style;
   }
@@ -142,8 +142,8 @@ export const download = (fileName, content) => {
 
 /**
  * Generate time pairs from a temporal extent
- * @param {import("stac-ts").TemporalExtent} stacExtent - [start, end]
- * @param {import("stac-ts").TemporalExtent} [userExtent] -[start, end]
+ * @param {import("@eodash/stac").TemporalInterval} stacExtent - [start, end]
+ * @param {[string, string]} [userExtent] -[start, end]
  * @param {string} [distribution] - daily, weekly, monthly, or yearly
  */
 export function generateTimePairs(stacExtent, userExtent, distribution) {
@@ -156,11 +156,10 @@ export function generateTimePairs(stacExtent, userExtent, distribution) {
 
   /** @type {string|Date} */
   let to = "";
-  [from, to] = /** @type {[string, string]} */ (userExtent ?? ["", ""]);
+  [from, to] = userExtent ?? ["", ""];
 
-  const [stacFrom, stacTo] = /** @type {[string, string]} */ (
-    stacExtent ?? ["", ""]
-  );
+  // an open end reads as no end, which the date checks below reject
+  const [stacFrom, stacTo] = (stacExtent ?? ["", ""]).map((end) => end ?? "");
 
   try {
     if (from && to) {
@@ -241,10 +240,10 @@ export function generateTimePairs(stacExtent, userExtent, distribution) {
 
 /**
  * Filter links to separate those with and without endpoint property
- * @param {import("stac-ts").StacLink[] | undefined} links
+ * @param {import("@eodash/stac").STACLink[] | undefined} links
  * @param {string} [relType] - Optional relationship type
  * @param {string} [contentType] - Optional content type
- * @returns {[import("stac-ts").StacLink[], import("stac-ts").StacLink[]]}
+ * @returns {[import("@eodash/stac").STACLink[], import("@eodash/stac").STACLink[]]}
  */
 export function separateEndpointLinks(links, relType, contentType) {
   if (!links) return [[], []];
@@ -272,8 +271,8 @@ export function separateEndpointLinks(links, relType, contentType) {
  * Generates layer definitions for asynchronous process results.
  * using AsyncProcessResults data structure.
  * @param {import("^/EodashProcess/types").AsyncProcessResults} processResults
- * @param {import("stac-ts").StacLink} endpointLink
- * @param {import("stac-ts").StacCollection|null} selectedStac
+ * @param {import("@eodash/stac").STACLink} endpointLink
+ * @param {import("@eodash/stac").STACCollection|null} selectedStac
  * @param {string} [postfixId=""] - Optional layers id postfix
  * @returns
  */
@@ -294,10 +293,7 @@ export async function creatAsyncProcessLayerDefinitions(
     /** @type {Record<string, unknown> | undefined}  */
     let layerConfig;
     if (flatStyleJSON) {
-      const extracted = extractLayerConfig(
-        selectedStac?.id ?? "",
-        flatStyleJSON,
-      );
+      const extracted = extractLayerConfig(flatStyleJSON);
       layerConfig = extracted.layerConfig;
       style = extracted.style;
     }
@@ -402,7 +398,7 @@ export async function creatAsyncProcessLayerDefinitions(
 }
 
 /**
- * @param {import("stac-ts").StacLink} endpointLink
+ * @param {import("@eodash/stac").STACLink} endpointLink
  * @returns
  */
 async function fetchProcessStyles(endpointLink) {
@@ -522,39 +518,29 @@ export const applyProcessLayersToMap = (mapElement, processLayers) => {
   if (!processLayers.length || !mapElement) {
     return;
   }
-  const getMapLayers =
-    mapElement.id === "compare" ? getCompareLayers : getLayers;
-  const currentLayers = [...getMapLayers()];
 
-  let analysisGroup =
-    /*** @type {import("@eox/map/src/layers").EOxLayerTypeGroup | undefined} */ (
-      currentLayers.find((l) => l.properties?.id.includes("AnalysisGroup"))
+  // a run adds to what earlier runs and restored jobs already put there
+  const current =
+    /** @type {import("@eox/map/src/layers").EOxLayerTypeGroup | undefined} */ (
+      mapElement.layers?.find((l) => l.properties?.id === PROCESS_GROUP)
     );
-  if (!analysisGroup) {
-    return;
-  }
+  const layers = [...(current?.layers ?? [])];
 
   for (const layer of processLayers) {
-    const exists = analysisGroup.layers.find(
+    const index = layers.findIndex(
       (l) => l.properties?.id === layer.properties?.id,
     );
-    if (!exists) {
-      analysisGroup.layers.push(layer);
-    } else {
-      analysisGroup.layers = replaceLayer(
-        analysisGroup.layers,
-        layer.properties?.id ?? "",
-        [layer],
-      );
+    if (index === -1) {
+      layers.push(layer);
+      continue;
     }
+    layers[index] = layer;
   }
-  if (mapElement) {
-    const layers = [...currentLayers];
-    const evtKey =
-      mapElement.id === "compare"
-        ? "compareProcess:updated"
-        : "process:updated";
-    useEmitLayersUpdate(evtKey, mapElement, layers);
-    assignLayers(mapElement, layers);
-  }
+
+  return assignGroupLayers(
+    mapElement,
+    PROCESS_GROUP,
+    layers,
+    mapElement.id === "compare" ? "compareProcess:updated" : "process:updated",
+  );
 };

@@ -109,7 +109,10 @@ export default defineConfig({
             "tests/template/**/*.test.js",
           ],
           // Registers measurement hooks only when VITE_PERF is set.
-          setupFiles: ["./tests/support/performance-setup.js"],
+          setupFiles: [
+            "./tests/support/pinia-setup.js",
+            "./tests/support/performance-setup.js",
+          ],
           testTimeout: 60 * 1000,
           // Template boots (app + real STAC fetches) run in beforeAll hooks.
           hookTimeout: 60 * 1000,
