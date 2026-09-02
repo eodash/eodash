@@ -1,31 +1,6 @@
-import { beforeEach, describe, expect, test, vi } from "vitest";
-import {
-  extractUrlKeys,
-  updateGeoZarrBands,
-  updateLayerUrl,
-} from "@/eodashSTAC/helpers";
+import { describe, expect, test, vi } from "vitest";
+import { updateGeoZarrBands, updateLayerUrl } from "@/eodashSTAC/helpers";
 import { mockOlLayer, VT_SCHEMA, vtDefinition } from "../../support/fixtures";
-
-describe("extractUrlKeys", () => {
-  test("collects url_key through nested properties and combinators", () => {
-    const keys = extractUrlKeys({
-      properties: {
-        a: { url_key: "ka", properties: { b: { url_key: "kb" } } },
-        noKey: {},
-      },
-      oneOf: [{ properties: { c: { url_key: "kc" } } }],
-      allOf: [{ properties: { d: { url_key: "kd" } } }],
-      anyOf: [{ properties: { e: { url_key: "ke" } } }],
-    });
-
-    expect(keys).toEqual({ a: "ka", b: "kb", c: "kc", d: "kd", e: "ke" });
-  });
-
-  test("returns an empty map for non-object schemas", () => {
-    expect(extractUrlKeys(null)).toEqual({});
-    expect(extractUrlKeys(/** @type {any} */ ("nope"))).toEqual({});
-  });
-});
 
 describe("updateLayerUrl", () => {
   test("injects the url_key values as query params and updates the source", () => {
@@ -116,70 +91,93 @@ describe("updateLayerUrl", () => {
 });
 
 describe("updateGeoZarrBands", () => {
-  class GeoZarrStub {
-    /** @param {Record<string, any>} source */
-    constructor(source) {
-      this.source = source;
-    }
-  }
-
   /** @param {string[]} bands */
   const gzDefinition = (bands) => ({
     type: "WebGLTile",
+    properties: { id: "gz" },
     source: { type: "GeoZarr", url: "https://z", bands },
   });
 
-  beforeEach(() => {
-    vi.unstubAllGlobals();
-  });
+  /**
+   * A map holding one layer, standing in for eox-map: `assignLayers` only ever
+   * writes `.layers`, and eox-map rebuilds the source off what it is given.
+   * @param {Record<string, any>} definition
+   */
+  const mapWith = (definition) => ({ layers: [definition] });
 
-  test("rebuilds the source when the bands change", () => {
-    vi.stubGlobal("eoxMapAdvancedOlSources", { GeoZarr: GeoZarrStub });
+  test("assigns a tree carrying the new bands", () => {
     const jsonDefinition = gzDefinition(["b04", "b03", "b02"]);
-    const layer = mockOlLayer({ jsonDefinition });
+    const layer = mockOlLayer({ id: "gz", jsonDefinition });
+    const map = mapWith(jsonDefinition);
     const bands = ["b08", "b04", "b03"];
 
-    const updated = updateGeoZarrBands(/** @type {any} */ (layer), { bands });
+    updateGeoZarrBands(
+      /** @type {any} */ (layer),
+      { bands },
+      /** @type {any} */ (map),
+    );
 
-    expect(updated).toBe(true);
-    expect(layer.setSource).toHaveBeenCalledWith(expect.any(GeoZarrStub));
-    expect(jsonDefinition.source.bands).toEqual(bands);
+    expect(map.layers[0].source.bands).toEqual(bands);
+    expect(layer.setSource).not.toHaveBeenCalled();
+    // The definition eox-map still holds keeps the old bands on purpose: its
+    // own `serialize(source)` diff is what triggers the source rebuild.
+    expect(jsonDefinition.source.bands).toEqual(["b04", "b03", "b02"]);
     // Copied, not aliased — a later mutation of the form value must not make
     // the next comparison a false equality (the bands-switching bug).
-    expect(jsonDefinition.source.bands).not.toBe(bands);
+    expect(map.layers[0].source.bands).not.toBe(bands);
   });
 
-  test("skips JSON-equal bands without touching the source", () => {
-    vi.stubGlobal("eoxMapAdvancedOlSources", { GeoZarr: GeoZarrStub });
-    const layer = mockOlLayer({ jsonDefinition: gzDefinition(["b04", "b03"]) });
+  test("skips JSON-equal bands without assigning", () => {
+    const jsonDefinition = gzDefinition(["b04", "b03"]);
+    const layer = mockOlLayer({ id: "gz", jsonDefinition });
+    const map = mapWith(jsonDefinition);
+    const before = map.layers;
 
-    const updated = updateGeoZarrBands(/** @type {any} */ (layer), {
-      bands: ["b04", "b03"],
-    });
+    updateGeoZarrBands(
+      /** @type {any} */ (layer),
+      { bands: ["b04", "b03"] },
+      /** @type {any} */ (map),
+    );
 
-    expect(updated).toBe(false);
-    expect(layer.setSource).not.toHaveBeenCalled();
+    expect(map.layers).toBe(before);
+  });
+
+  // The old implementation built the source itself from
+  // `window.eoxMapAdvancedOlSources.GeoZarr` and threw when the map widget had
+  // not loaded it; eox-map now builds it from the assigned definition.
+  test("assigns without the advanced-sources global", () => {
+    const jsonDefinition = gzDefinition(["b04"]);
+    const layer = mockOlLayer({ id: "gz", jsonDefinition });
+    const map = mapWith(jsonDefinition);
+
+    expect(() =>
+      updateGeoZarrBands(
+        /** @type {any} */ (layer),
+        { bands: ["b08"] },
+        /** @type {any} */ (map),
+      ),
+    ).not.toThrow();
+    expect(map.layers[0].source.bands).toEqual(["b08"]);
   });
 
   test("ignores non-GeoZarr layers and missing bands", () => {
-    const xyz = mockOlLayer({
-      jsonDefinition: { type: "WebGLTile", source: { type: "XYZ" } },
-    });
-    expect(updateGeoZarrBands(/** @type {any} */ (xyz), { bands: ["b"] })).toBe(
-      false,
+    const xyz = { type: "WebGLTile", source: { type: "XYZ" } };
+    const xyzMap = mapWith(xyz);
+    updateGeoZarrBands(
+      /** @type {any} */ (mockOlLayer({ id: "gz", jsonDefinition: xyz })),
+      { bands: ["b"] },
+      /** @type {any} */ (xyzMap),
     );
 
-    const gz = mockOlLayer({ jsonDefinition: gzDefinition(["b04"]) });
-    expect(updateGeoZarrBands(/** @type {any} */ (gz), {})).toBe(false);
-  });
+    const gzDef = gzDefinition(["b04"]);
+    const gzMap = mapWith(gzDef);
+    updateGeoZarrBands(
+      /** @type {any} */ (mockOlLayer({ id: "gz", jsonDefinition: gzDef })),
+      {},
+      /** @type {any} */ (gzMap),
+    );
 
-  test("currently throws when the advanced-sources global is missing", () => {
-    // Characterization (layercontrol.md): no guard around
-    // window.eoxMapAdvancedOlSources — decide fix vs keep before refactor.
-    const layer = mockOlLayer({ jsonDefinition: gzDefinition(["b04"]) });
-
-    expect(() =>
-      updateGeoZarrBands(/** @type {any} */ (layer), { bands: ["b08"] }),
-    ).toThrow();
+    expect(xyzMap.layers[0]).toBe(xyz);
+    expect(gzMap.layers[0]).toBe(gzDef);
   });
 });

@@ -1,12 +1,13 @@
-import type { StacLink, StacCollection } from "stac-ts";
+import type { STACLink } from "@eodash/stac";
+import type { STACCollection } from "@eodash/stac";
 import type { Ref } from "vue";
 
 export interface CustomEnpointInput {
-  links: StacLink[];
+  links: STACLink[];
   jsonformSchema: Record<string, any>;
   jsonformValue: Record<string, any>;
   rawJsonformValue?: Record<string, any>;
-  selectedStac: StacCollection;
+  selectedStac: STACCollection;
   isPolling?: Ref<boolean>;
   enableCompare?: boolean;
   jobs: Ref<AsyncJob[]>;
@@ -26,7 +27,7 @@ export interface AsyncJob {
   /** ISO datetime string */
   job_end_datetime: string;
   /** typically contains links to differen types of the results */
-  links: StacLink[];
+  links: STACLink[];
 }
 
 export type EOxHubProcessResults =

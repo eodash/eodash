@@ -15,6 +15,9 @@ const COMPARE_TITLE = "Carbon Dioxide from OMI (daily)";
 describe("expert template - compare mode", () => {
   /** @type {Awaited<ReturnType<typeof bootExpert>>} */
   let ctx;
+  // `eox-map` dispatches `layerschanged` once per `set layers`, so this counts
+  // how many times the app wrote the map.
+  let mapWrites = 0;
 
   /** The map button whose tooltip text matches (icon buttons have no name). */
   const btnByTooltip = (/** @type {string} */ text) =>
@@ -26,6 +29,7 @@ describe("expert template - compare mode", () => {
 
   beforeAll(async () => {
     ctx = await bootExpert({ endpoint: STAC_ENDPOINT });
+    ctx.query("eox-map").addEventListener("layerschanged", () => mapWrites++);
   });
 
   afterAll(() => ctx?.app.unmount());
@@ -44,6 +48,7 @@ describe("expert template - compare mode", () => {
         timeout: TIMEOUT,
       })
       .toBeTruthy();
+    mapWrites = 0;
     await userEvent.click(page.getByText(MAIN_TITLE, { exact: true }));
 
     await expect
@@ -52,6 +57,10 @@ describe("expert template - compare mode", () => {
     await expect
       .poll(() => btnByTooltip("Compare mode"), { timeout: TIMEOUT })
       .toBeTruthy();
+
+    // the render lands after the store settles
+    await expect.poll(() => mapWrites, { timeout: TIMEOUT }).toBeGreaterThan(0);
+    expect(mapWrites).toBe(1);
   });
 
   test("the Compare button opens the picker and loads a second indicator", async () => {
@@ -72,6 +81,7 @@ describe("expert template - compare mode", () => {
         timeout: TIMEOUT,
       })
       .toBe(1);
+    mapWrites = 0;
     await userEvent.click(page.getByText(COMPARE_TITLE, { exact: true }));
 
     await vi.waitFor(
@@ -86,6 +96,8 @@ describe("expert template - compare mode", () => {
     expect(activeTemplate.value).toBe("compare");
     expect(compareIndicator.value).toBeTruthy();
     expect(ctx.store.selectedStac?.id).toBe(MAIN_ID);
+
+    expect(mapWrites).toBe(1);
   });
 
   test("the compare pane renders the second indicator's layer and control", async () => {

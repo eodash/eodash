@@ -4,34 +4,47 @@ import {
   mapCompareEl,
   registeredProjections,
   activeTemplate,
+  datetime,
   poi,
   comparePoi,
   areChartsSeparateLayout,
   chartData,
   compareChartData,
 } from "@/store/states";
-import { getProjectionCode } from "@/eodashSTAC/helpers";
+import {
+  eodashCollections,
+  eodashCompareCollections,
+  useSTAcStore,
+} from "@/store/stac";
+import { assignDataLayers } from "@/eodashSTAC/layers";
+import { getProjectionCode } from "@eodash/stac/helpers";
+import registerProjectionDefinition from "@eox/map/src/helpers/register-projection";
+import registerProjectionFromCode from "@eox/map/src/helpers/register-projection-from-code";
+import { useEmitLayersUpdate } from "@/composables";
 import log from "loglevel";
 
 /**
- * Returns the current layers of {@link mapEl}
+ * Returns the current layers of {@link mapEl}.
+ *
  * @returns {import("@eox/map").EoxLayer[]}
  */
 export const getLayers = () => mapEl.value?.layers ?? [];
 
 /**
- * Returns the current layers of {@link mapCompareEl}
+ * Returns the current layers of {@link mapCompareEl}.
+ *
  * @returns {import("@eox/map").EoxLayer[]}
  */
 export const getCompareLayers = () => mapCompareEl.value?.layers ?? [];
 
 /**
- * Assigns layers to an `eox-map`
+ * Assigns layers to an EOxMap instance and emits an update event when provided.
  *
- * @param {(import("@eox/map").EOxMap) | null} [map]
- * @param {Record<string, any>[]} [layers]
+ * @param {(import("@eox/map").EOxMap) | null} [map] - Map instance
+ * @param {Record<string, any>[]} [layers] - Layers to assign
+ * @param {import("@/types").LayersEventBusKeys} [event] - Optional event to emit
  */
-export const assignLayers = (map, layers) => {
+export const assignLayers = async (map, layers, event) => {
   if (!map || !layers) {
     return;
   }
@@ -43,41 +56,36 @@ export const assignLayers = (map, layers) => {
       details: `${error}`,
       severity: "warning",
     };
+    return;
+  }
+  if (event) {
+    useEmitLayersUpdate(event, map, layers);
   }
 };
 
 /**
- * Register EPSG projection in `eox-map`
- * @param {string|number|{name: string, def: string, extent?:number[]}} [projection]*/
+ * Registers a spatial projection definition globally in proj4 and OpenLayers.
+ *
+ * @param {string | number | { name: string, def: string, extent?: number[] }} [projection] - Projection code or definition object
+ */
 export const registerProjection = async (projection) => {
-  let code = getProjectionCode(projection);
+  const code = getProjectionCode(projection);
   if (!code || registeredProjections.includes(code)) {
     return;
   }
   log.debug("Unregistered projection found, registering it", code);
-  registeredProjections.push(code);
   if (typeof projection === "object") {
-    // registering whole projection definition
-    await mapEl.value?.registerProjection(
-      code,
-      projection.def,
-      projection.extent,
-    );
-    // also registering for comparison map
-    await mapCompareEl.value?.registerProjection(
-      code,
-      projection.def,
-      projection.extent,
-    );
+    registerProjectionDefinition(code, projection.def, projection.extent);
   } else {
-    await mapEl.value?.registerProjectionFromCode(code);
-    // also registering for comparison map
-    await mapCompareEl.value?.registerProjectionFromCode(code);
+    await registerProjectionFromCode(code);
   }
+  registeredProjections.push(code);
 };
 /**
- * Change `eox-map` projection from an `EPSG` projection
- *  @param {string|number|{name: string, def: string}} [projection]*/
+ * Changes `eox-map` projection to an EPSG projection.
+ *
+ * @param {string | number | { name: string, def: string }} [projection]
+ */
 export const changeMapProjection = async (projection) => {
   let code = getProjectionCode(projection);
 
@@ -97,6 +105,33 @@ export const changeMapProjection = async (projection) => {
 };
 
 /**
+ * Sets the datetime the dashboard shows and rebuilds the data layers to match.
+ * An open compare pane follows the same datetime.
+ *
+ * @param {string} value - ISO datetime
+ */
+export const setDatetime = async (value) => {
+  datetime.value = value;
+  const { selectedStac, selectedCompareStac } = useSTAcStore();
+
+  await assignDataLayers(mapEl.value, {
+    readers: eodashCollections,
+    stac: selectedStac,
+    timeOrItem: value,
+    event: "time:updated",
+  });
+
+  if (selectedCompareStac) {
+    await assignDataLayers(mapCompareEl.value, {
+      readers: eodashCompareCollections,
+      stac: selectedCompareStac,
+      timeOrItem: value,
+      event: "compareTime:updated",
+    });
+  }
+};
+
+/**
  *
  * @param {string} template
  */
@@ -106,10 +141,11 @@ export const setActiveTemplate = (template) => {
 };
 
 /**
- * Check whether the collection needs an EodashProcess Widget
- * @param {import("stac-ts").StacCollection | null | undefined} collection
- * @param {boolean} [compare=false] - Whether to check for compare collection
- * @returns
+ * Checks whether the collection requires an EodashProcess widget.
+ *
+ * @param {import("@eodash/stac").STACCollection | null | undefined} collection
+ * @param {boolean} [compare=false] - Whether to check for the compare collection
+ * @returns {boolean}
  */
 export const includesProcess = (collection, compare = false) => {
   const isPoiAlive = compare ? !!comparePoi.value : !!poi.value;
@@ -120,13 +156,14 @@ export const includesProcess = (collection, compare = false) => {
 };
 
 /**
- * Check whether main or compare chart have data to show
- * @param {boolean} [compare=false] - Whether to check for compare collection
- * @returns
+ * Checks whether the main or compare chart has data to display.
+ *
+ * @param {boolean} [compare=false] - Whether to check for the compare collection
+ * @returns {boolean}
  */
 export const shouldShowChartWidget = (compare = false) => {
   return (
-    areChartsSeparateLayout.value &&
-    (compare ? compareChartData.value : chartData.value)
+    !!areChartsSeparateLayout.value &&
+    !!(compare ? compareChartData.value : chartData.value)
   );
 };

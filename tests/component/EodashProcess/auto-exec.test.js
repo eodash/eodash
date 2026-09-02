@@ -100,11 +100,15 @@ describe("EodashProcess auto-exec option", () => {
     // autoExec true -> the Execute button is never rendered.
     await expect.poll(() => execButton()).toBeFalsy();
 
-    // Retry the dispatch until the change listener attaches (nextTick).
+    // Retry the dispatch until the change listener attaches (nextTick), spaced
+    // past the listener's debounce so a retry cannot keep resetting it.
     primeForm();
-    await vi.waitFor(() => {
-      jsonformEl()?.dispatchEvent(new Event("change"));
-      expect(spies.handleProcesses).toHaveBeenCalled();
-    });
+    await vi.waitFor(
+      () => {
+        jsonformEl()?.dispatchEvent(new Event("change"));
+        expect(spies.handleProcesses).toHaveBeenCalled();
+      },
+      { interval: 400, timeout: 5000 },
+    );
   });
 });

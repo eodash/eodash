@@ -78,7 +78,7 @@ import {
   ref,
   toRaw,
   useTemplateRef,
-  watchPostEffect,
+  watch,
 } from "vue";
 import {
   datetime,
@@ -91,27 +91,40 @@ import {
   isGlobe,
   tooltipAdapter,
 } from "@/store/states";
-import { assignLayers } from "@/store/actions";
 import { storeToRefs } from "pinia";
-import { useSTAcStore } from "@/store/stac";
-import { useDisplay, useLayout } from "vuetify";
 import {
   eodashCollections,
   eodashCompareCollections,
+  useSTAcStore,
+} from "@/store/stac";
+import { useDisplay, useLayout } from "vuetify";
+import {
+  defaultBaseLayers,
+  hasRestoredView,
   layerControlFormValue,
   layerControlFormValueCompare,
 } from "@/utils/states";
 import {
+  BASE_LAYERS_GROUP,
+  assignGroupLayers,
+  updateIndicatorLayers,
+} from "@/eodashSTAC/layers";
+import {
   useHandleMapMoveEnd,
-  useInitMap,
   useMapLoading,
   useUpdateTooltipProperties,
+  zoomToCollection,
 } from "^/EodashMap/methods";
 import { inAndOut } from "ol/easing.js";
 import mustache from "mustache";
 import EodashMapBtns from "^/EodashMap/EodashMapBtns.vue";
 
 const props = defineProps({
+  /**
+   * Default base layers of the map, expects a layer array that will be injected to the BaseLayers group.
+   * A collection that declares its own base layers replaces these;
+   * The state `defaultBaseLayers` keeps them as the fallback for collections that do not declare it
+   */
   baseLayers: {
     /** @type {import("vue").PropType<import("@eox/map").EoxLayer[]>} */
     type: Array,
@@ -321,18 +334,6 @@ const controls = computed(() => {
 
 const initialCenter = toRaw(props.center);
 const initialZoom = toRaw(mapPosition.value?.[2] ?? props.zoom);
-/** @type {import("vue").Ref<Record<string,any>[]>} */
-const eoxMapLayers = ref(
-  /** @type {Record<string,any>[]} */ (
-    structuredClone(toRaw(props.baseLayers))
-  ),
-);
-
-const eoxMapCompareLayers = ref(
-  /** @type {Record<string,any>[]} */ (
-    structuredClone(toRaw(props.baseLayers))
-  ),
-);
 
 const animationOptions = ref({
   duration: 0, // Initially set to 0 for an instant "jump"
@@ -348,25 +349,34 @@ const compareMap =
     useTemplateRef("compareMap")
   );
 
-watchPostEffect(() => assignLayers(eoxMap.value, eoxMapLayers.value));
-watchPostEffect(() =>
-  assignLayers(compareMap.value, eoxMapCompareLayers.value),
-);
-
 const { selectedCompareStac } = storeToRefs(useSTAcStore());
 const showCompare = computed(() =>
   props.enableCompare && !!selectedCompareStac.value ? "" : "first",
 );
 
+/**
+ * `sync` hands the compare map the main map's own View instance, which the main
+ * map then loses when the compare map is removed. Held here so it can be given
+ * back.
+ * @type {import("ol").View | null}
+ */
+let viewHolder = null;
+
+watch(selectedCompareStac, (compare) => {
+  if (compare && compareMap.value) {
+    viewHolder = compareMap.value.map.getView();
+    /** @type {any} */ (compareMap.value).sync = eoxMap.value;
+    return;
+  }
+  if (viewHolder) {
+    eoxMap.value?.map.setView(viewHolder);
+    viewHolder = null;
+  }
+});
+
 useHandleMapMoveEnd(eoxMap, mapPosition);
 
-onMounted(() => {
-  const {
-    selectedCompareStac,
-    selectedStac,
-    selectedItem,
-    selectedCompareItem,
-  } = storeToRefs(useSTAcStore());
+onMounted(async () => {
   if (!eoxMap.value) {
     console.error("EOxMap reference is not available on mounted.");
     return;
@@ -375,46 +385,58 @@ onMounted(() => {
   mapEl.value = eoxMap.value;
   // enable terrain
   mapEl.value.globeConfig.terrain = true;
+  defaultBaseLayers.value = structuredClone(toRaw(props.baseLayers));
 
   if (props.enableCompare) {
     mapCompareEl.value = compareMap.value;
-  }
-
-  if (props.enableCompare) {
-    useInitMap(
-      compareMap,
-      selectedCompareStac,
-      eodashCompareCollections,
-      datetime,
-      eoxMapCompareLayers,
-      eoxMap,
-      false,
-      selectedCompareItem,
-      props.baseLayers,
-    );
-
+    // a compare collection is only ever chosen after this, so the compare map
+    // opens on the configured background
+    assignGroupLayers(compareMap.value, BASE_LAYERS_GROUP, props.baseLayers);
     useUpdateTooltipProperties(
-      eodashCollections,
+      eodashCompareCollections,
       compareTooltipProperties,
       true,
     );
   }
 
-  useInitMap(
-    eoxMap,
-    selectedStac,
-    eodashCollections,
-    datetime,
-    eoxMapLayers,
-    compareMap,
-    props.zoomToExtent,
-    selectedItem,
-    props.baseLayers,
-  );
   // After the initial mount and "jump", set the animation duration for subsequent flyTo calls
   nextTick(() => {
     animationOptions.value.duration = 1200;
   });
+
+  // the URL restore can resolve either side of this mount, so the map renders
+  // what is already selected and watches for a selection that lands later
+  const store = useSTAcStore();
+
+  // a link that carried its own position keeps it, over the collection's
+  // extent, but only for the collection it named
+  /** @param {import("@eodash/stac").STACCollection | null} collection */
+  const zoomUnlessRestored = (collection) => {
+    if (!props.zoomToExtent || store.selectedItem) {
+      return;
+    }
+    if (hasRestoredView.value) {
+      hasRestoredView.value = false;
+      return;
+    }
+    zoomToCollection(eoxMap.value, collection);
+  };
+
+  watch(() => store.selectedStac, zoomUnlessRestored);
+
+  if (!store.selectedStac) {
+    assignGroupLayers(eoxMap.value, BASE_LAYERS_GROUP, props.baseLayers);
+    return;
+  }
+
+  await updateIndicatorLayers(eoxMap.value, {
+    readers: eodashCollections,
+    stac: store.selectedStac,
+    timeOrItem: store.selectedItem ?? datetime.value,
+    event: "layers:updated",
+  });
+
+  zoomUnlessRestored(store.selectedStac);
 });
 
 // sync map loading with the global loading state
