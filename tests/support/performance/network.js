@@ -41,8 +41,7 @@ const repeatedIn = (requests) => {
   const seen = new Map();
   for (const request of requests.filter(({ state }) => state === "ok")) {
     const key = `${request.method} ${request.url} ${request.range}`;
-    const entry = seen.get(key) ?? { ...request, times: 0, cachedRepeats: 0 };
-    if (entry.times && request.cached) entry.cachedRepeats += 1;
+    const entry = seen.get(key) ?? { ...request, times: 0 };
     entry.times += 1;
     seen.set(key, entry);
   }
@@ -140,6 +139,7 @@ export const observeNetwork = async (session, clock) => {
   await session.send("Network.enable");
 
   return {
+    name: "requests",
     busy: () => inFlight > 0,
     collect: () => {
       const requests = [...byId.values()].filter(({ url }) => isExternal(url));

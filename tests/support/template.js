@@ -6,6 +6,33 @@ import { mountApp } from "./app";
 
 export const TIMEOUT = 1000 * 15;
 
+/** A 1x1 png vite serves from the repo. Same origin, so the measurement ignores it. */
+const LOCAL_TILE = "/tests/support/assets/tile.png";
+
+/**
+ * Point the basemaps at that tile for the measured run. Basemaps are not what
+ * these tests exercise, and live the s2maps shards fail over half their
+ * requests, each failure taking as long as the network needs to give up. Done
+ * by substituting the url string wherever a template holds one, rather than
+ * routing the browser: playwright turns the http cache off for a whole context
+ * while a route is registered, which would change every other request too.
+ *
+ * @param {any} node
+ * @returns {number} urls replaced
+ */
+const useLocalBasemaps = (node) => {
+  let replaced = 0;
+  for (const [key, value] of Object.entries(node)) {
+    if (typeof value === "string" && value.includes("s2maps-tiles.eu")) {
+      node[key] = LOCAL_TILE;
+      replaced += 1;
+    } else if (value && typeof value === "object") {
+      replaced += useLocalBasemaps(value);
+    }
+  }
+  return replaced;
+};
+
 /**
  * Boot a template against a STAC endpoint (or a full deep link) and wait until
  * the map and the root catalog are ready.
@@ -22,12 +49,19 @@ export async function bootTemplate({
   const app = mountApp({
     ...(initialUrl ? { initialUrl } : { template }),
     // No remote fonts: the loader throws when a stylesheet cannot be reached.
-    config: () =>
-      getBaseConfig({
+    config: () => {
+      const config = getBaseConfig({
         stacEndpoint: { endpoint, api },
         //@ts-expect-error workaround to not fallback
         brand: { font: null },
-      }),
+      });
+      if (import.meta.env.VITE_PERF && !useLocalBasemaps(config)) {
+        throw new Error(
+          "no s2maps url left to replace: the measured run would go to the live network",
+        );
+      }
+      return config;
+    },
   });
   /** @param {string} sel @returns {any} */
   const query = (sel) => app.container.querySelector(sel);

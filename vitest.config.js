@@ -98,6 +98,16 @@ export default defineConfig({
         resolve: { alias },
         define: { "process.env": {} },
         optimizeDeps: { include: clientDeps, exclude: ["vuetify"] },
+        ...(isPerformanceRun && {
+          server: {
+            warmup: {
+              clientFiles: [
+                "./core/client/render.js",
+                "./core/client/asWebComponent.js",
+              ],
+            },
+          },
+        }),
         test: {
           name: "browser",
           include: [
