@@ -74,25 +74,6 @@ export const createCollectionBase = ({
     },
 
     /**
-     * The STAC item this collection's layers were last built from.
-     */
-    get item() {
-      return builtItem;
-    },
-    /**
-     * Allows clearing the item only
-     */
-    set item(item) {
-      if (item !== undefined) {
-        console.warn(
-          "[eodash/stac] a collection's item follows its build, only `undefined` can be assigned",
-        );
-        return;
-      }
-      builtItem = undefined;
-    },
-
-    /**
      * Persists the current layer configuration editor state.
      */
     persistLayerConfig: layerConfigHelpers.persistLayerConfig,
