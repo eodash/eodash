@@ -18,7 +18,7 @@ describe("Header", () => {
 
     eodash.brand.name = "Changed";
 
-    // Header reads brand.name into a non-reactive const at setup (.agents/12-branding-theming.md).
+    // Header reads brand.name into a non-reactive const at setup.
     await expect.element(screen.getByText("Original")).toBeInTheDocument();
   });
 });

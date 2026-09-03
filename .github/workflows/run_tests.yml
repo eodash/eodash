@@ -1,6 +1,9 @@
 name: Run Tests
 on:
   pull_request:
+  push:
+    branches:
+      - "main"
   workflow_dispatch:
 
 jobs:
@@ -30,6 +33,10 @@ jobs:
     needs: scope
     if: needs.scope.outputs.app == 'true'
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      actions: read
+      pull-requests: write
     # continue-on-error: ${{ !matrix.blocking }}
     strategy:
       fail-fast: false
@@ -58,7 +65,7 @@ jobs:
       - name: Cache Playwright browser 🎭
         if: matrix.project != 'cli'
         id: playwright-cache
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
@@ -68,8 +75,48 @@ jobs:
       - name: Install Playwright system deps 🎭
         if: matrix.project != 'cli'
         run: npx playwright install-deps chromium
+      - name: Find main's performance report 🔍
+        id: baseline
+        if: matrix.project == 'template' && github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          run=$(gh run list --workflow=run_tests.yml --branch=refactor-performance-report \
+            --event=push --status=success --limit=1 --json databaseId --jq '.[0].databaseId // empty')
+          echo "comparing against run ${run:-none}"
+          echo "run-id=$run" >> "$GITHUB_OUTPUT"
+      - name: Fetch the performance report 📥
+        if: matrix.project == 'template' && steps.baseline.outputs.run-id != ''
+        continue-on-error: true
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: performance-report
+          path: tests/performance
+          run-id: ${{ steps.baseline.outputs.run-id }}
+          github-token: ${{ github.token }}
       - name: Run ${{ matrix.project }} tests 👀
+        env:
+          VITE_PERF: ${{ matrix.project == 'template' && '1' || '' }}
         run: npm run test:${{ matrix.project }}
+      - name: Publish the performance report 📝
+        if: matrix.project == 'template' && hashFiles('tests/performance/report.md') != ''
+        run: cat tests/performance/report.md >> "$GITHUB_STEP_SUMMARY"
+      - name: Comment performance summary 💬
+        if: matrix.project == 'template' && github.event_name == 'pull_request' && hashFiles('tests/performance/summary.md') != ''
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh pr comment ${{ github.event.pull_request.number }} \
+            --body-file tests/performance/summary.md --edit-last --create-if-none
+      - name: Upload the performance report 📎
+        if: matrix.project == 'template' && github.event_name == 'push'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: performance-report
+          path: |
+            tests/performance/report.md
+            tests/performance/report.json
 
   # One job for every workspace package, so adding `packages/<name>` with a
   # matching `test:<name>` script is the whole registration.

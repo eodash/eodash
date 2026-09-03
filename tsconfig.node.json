@@ -17,6 +17,7 @@
     "tests/cli/**/*.spec.js",
     "tests/cli/**/*.test.js",
     "rolldown.config.js",
+    "tests/support/**/*.js",
     "vitest.config.js"
   ]
 }

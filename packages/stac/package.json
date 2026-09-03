@@ -1,0 +1,52 @@
+{
+  "name": "@eodash/stac",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/types/types/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/types/types/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./collections": {
+      "types": "./dist/types/collections/index.d.ts",
+      "default": "./dist/collections.js"
+    },
+    "./helpers": {
+      "types": "./dist/types/helpers/index.d.ts",
+      "default": "./dist/helpers.js"
+    },
+    "./layers": {
+      "types": "./dist/types/layers/index.d.ts",
+      "default": "./dist/layers.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "vite build && npm run build:types",
+    "build:types": "tsc",
+    "check": "tsc --noEmit",
+    "prepack": "npm run build"
+  },
+  "dependencies": {
+    "hyparquet": "^1.26.0",
+    "loglevel": "^1.9.2",
+    "mustache": "^4.2.0"
+  },
+  "devDependencies": {
+    "@eox/layercontrol": "^1.8.2",
+    "@eox/map": "^2.7.1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/eodash/eodash.git",
+    "directory": "packages/stac"
+  }
+}

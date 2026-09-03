@@ -1,0 +1,158 @@
+import log from "loglevel";
+import { renderConfigTemplate } from "./layer-config.js";
+
+/**
+ * Extracts a single non-link style JSON from a STAC Item optionally for a selected key mapping
+ * @param { import("../types").STACItem | import("../types").STACCollection | null | undefined} stacObject
+ * @param {import("../http.js").HttpClient} http
+ * @param {string | undefined} linkKey
+ * @param {string | undefined} assetKey
+ * @returns
+ **/
+export const fetchStyle = async (
+  stacObject,
+  http,
+  linkKey = undefined,
+  assetKey = undefined,
+) => {
+  if (!stacObject) return undefined;
+  let styleLink = null;
+  if (linkKey) {
+    styleLink = stacObject.links.find(
+      (link) =>
+        link.rel.includes("style") &&
+        link["links:keys"] &&
+        /** @type {Array<string>} */ (link["links:keys"]).includes(linkKey),
+    );
+  } else if (assetKey) {
+    styleLink = stacObject.links.find(
+      (link) =>
+        link.rel.includes("style") &&
+        link["asset:keys"] &&
+        /** @type {Array<string>} */ (link["asset:keys"]).includes(assetKey),
+    );
+  } else {
+    log.debug(
+      "Neither link key, nor asset key input, can not match any style to layer.",
+      stacObject.id,
+    );
+    return {};
+  }
+  if (styleLink) {
+    /** @type {import("../types").EodashStyleJson} */
+    const styleJson = await http.get(styleLink.href);
+
+    log.debug("fetched styles JSON", JSON.parse(JSON.stringify(styleJson)));
+    return { ...styleJson };
+  }
+};
+
+/**
+ * Resolves a style by preferring the item's own `style` link and falling back
+ * to the collection's. Takes the same key arguments as `fetchStyle`. `${...}`
+ * placeholders are rendered against `item` (see {@link renderConfigTemplate}).
+ *
+ * @param {import("../types").STACItem | import("../types").STACCollection} item
+ * @param {import("../types").STACCollection | null | undefined} collection
+ * @param {import("../http.js").HttpClient} http
+ * @param {string} [linkKey]
+ * @param {string} [assetKey]
+ * @returns {Promise<import("../types").EodashStyleJson | undefined>}
+ */
+export const resolveStyle = async (
+  item,
+  collection,
+  http,
+  linkKey,
+  assetKey,
+) => {
+  const style =
+    (await fetchStyle(item, http, linkKey, assetKey)) ??
+    (await fetchStyle(collection, http, linkKey, assetKey));
+  if (!style || !item) {
+    return style;
+  }
+  return renderConfigTemplate(style, item);
+};
+
+/**
+ * Fetches all style JSONs from a STAC Item and returns an array with style objects
+ * @param {import("../types").STACItem | import("../types").STACCollection} stacObject
+ * @param {import("../http.js").HttpClient} http
+ * @returns { Promise <Array<import("../types").EodashStyleJson>>}
+ **/
+export const fetchAllStyles = async (stacObject, http) => {
+  const styleLinks = stacObject.links.filter((link) =>
+    link.rel.includes("style"),
+  );
+  const fetchPromises = styleLinks.map(async (link) => {
+    /** @type {import("../types").EodashStyleJson} */
+    const styleJson = await http.get(link.href);
+    log.debug("fetched styles JSON", JSON.parse(JSON.stringify(styleJson)));
+    return styleJson;
+  });
+  const results = await Promise.all(fetchPromises);
+  return results;
+};
+
+/**
+ * @param {import("../types").STACCollection | undefined | null} collection
+ * @returns {object}
+ */
+export function extractLayerLegend(collection) {
+  let extraProperties = {};
+  if (collection?.assets?.legend?.href) {
+    extraProperties = {
+      description: `<div style="width: 100%">
+          <img src="${collection.assets.legend.href}" style="max-height:70px; margin-top:-15px; margin-bottom:-20px;" />
+        </div>`,
+    };
+  }
+  // Check if collection has eox:colorlegend definition, if yes overwrite legend description
+  if (collection && collection["eox:colorlegend"]) {
+    extraProperties = {
+      layerLegend: collection["eox:colorlegend"],
+    };
+  }
+  return extraProperties;
+}
+
+/**
+ * @param { import("../types").STACLink } link
+ * @returns {object}
+ */
+export function extractEoxLegendLink(link) {
+  let extraProperties = {};
+  if (link["eox:colorlegend"]) {
+    extraProperties = {
+      layerLegend: link["eox:colorlegend"],
+    };
+  }
+  return extraProperties;
+}
+
+/**
+ * adds tooltip to the layer if the style has tooltip property
+ * @param {Record<string,any>} layer
+ * @param {import("../types").EodashStyleJson} [style]
+ */
+export const addTooltipInteraction = (layer, style) => {
+  if (style?.tooltip) {
+    layer.interactions = [
+      {
+        type: "select",
+        options: {
+          id: `${layer.properties.id}_selectInteraction`,
+          // eox-map's update path calls setActive(options.active), and undefined
+          // would switch the tooltip off without saying so
+          active: true,
+          condition: "pointermove",
+          style: {
+            "stroke-color": "#335267",
+            "stroke-width": 4,
+          },
+        },
+      },
+    ];
+  }
+};

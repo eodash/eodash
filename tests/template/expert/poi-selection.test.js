@@ -1,4 +1,5 @@
 import { afterAll, beforeAll, describe, expect, test, vi } from "vitest";
+import { userEvent } from "vitest/browser";
 import { datetime, indicator, poi } from "@/store/states";
 import {
   bootExpert,
@@ -27,6 +28,13 @@ describe("expert template - POI selection (STAC output)", () => {
   /** @type {string[]} */
   let locationIds = [];
 
+  /** The map button whose tooltip text matches (icon buttons have no name). */
+  /** @param {string} text */
+  const btnByTooltip = (text) =>
+    [...document.querySelectorAll(".map-buttons button")].find((b) =>
+      b.textContent?.includes(text),
+    );
+
   beforeAll(async () => {
     ctx = await bootExpert({ endpoint: STAC_ENDPOINT });
     /** @type {any} */
@@ -34,7 +42,9 @@ describe("expert template - POI selection (STAC output)", () => {
     locationIds = locations.links
       .filter((/** @type {any} */ l) => l.rel === "child" && "latlng" in l)
       .map((/** @type {any} */ l) => l.id);
-    if (!locationIds.length) throw new Error("no locations in collection");
+    // going back and picking a second location needs two of them
+    if (locationIds.length < 2)
+      throw new Error("collection less than 2 locations");
 
     await selectIndicator(ctx.store, INDICATOR_ID);
     // Ready once drawtools synced to the points layer and every location loaded.
@@ -98,5 +108,61 @@ describe("expert template - POI selection (STAC output)", () => {
       { timeout: TIMEOUT },
     );
     expect(ctx.query(".v-alert")).toBeNull();
+  });
+
+  test("the back button restores the indicator and its points", async () => {
+    const btn = btnByTooltip("Back to POIs");
+    if (!btn) throw new Error("back to POIs button not shown");
+
+    await userEvent.click(btn);
+
+    await vi.waitFor(
+      () => {
+        if (poi.value !== "") {
+          throw new Error("poi not cleared");
+        }
+        if (!ctx.query("eox-map").getLayerById("geodb-collection")) {
+          throw new Error("points layer did not come back");
+        }
+      },
+      { timeout: TIMEOUT },
+    );
+
+    expect(indicator.value).toBe(INDICATOR_ID);
+  });
+
+  test("a location is selectable again after going back", async () => {
+    // the rebuilt points layer has to carry the selection drawtools reads, and
+    // the form has to be the indicator's again rather than the location's
+    await vi.waitFor(
+      () => {
+        if (drawtoolsLayerId(ctx.container) !== "geodb-collection") {
+          throw new Error("drawtools not synced to the points layer");
+        }
+        if (targetFeatures(ctx.container).length !== locationIds.length) {
+          throw new Error("location features not loaded");
+        }
+      },
+      { timeout: TIMEOUT },
+    );
+
+    // selectFeature dispatches the event the interaction would, so the binding
+    // a real click needs is asserted rather than exercised
+    expect(
+      ctx.query("eox-map").selectInteractions?.["SelectLayerClickInteraction"],
+    ).toBeTruthy();
+
+    const selectedId = targetFeatures(ctx.container)[1].get("id");
+    selectFeature(ctx.container, 1);
+
+    await vi.waitFor(
+      () => {
+        if (ctx.store.selectedStac?.id !== selectedId) {
+          throw new Error("second location collection not loaded");
+        }
+      },
+      { timeout: TIMEOUT },
+    );
+    expect(poi.value).toBe(selectedId);
   });
 });

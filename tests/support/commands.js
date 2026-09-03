@@ -25,6 +25,9 @@ const addRoutes = async (ctx, routes, handler) => {
  * CORS header the browser needs. Routing the playwright context covers every
  * transport, including the `XMLHttpRequest` OpenLayers loads features over.
  *
+ * Playwright turns the browser cache off for a context while any route is
+ * registered, so serve only what a test needs and stop again afterwards.
+ *
  * @type {import("vitest/node").BrowserCommand<[Record<string, string>]>}
  */
 export const serveFiles = async (ctx, routes) =>

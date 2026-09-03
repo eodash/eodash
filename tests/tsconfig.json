@@ -17,6 +17,7 @@
     "fixtures/**/*.js",
     "fixtures/**/*.ts",
     "unit/**/*.js",
-    "unit/**/*.ts"
+    "unit/**/*.ts",
+    "performance/**/*.js"
   ]
 }

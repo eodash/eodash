@@ -34,3 +34,7 @@ docs/**/*.timestamp-*.mjs
 # tests
 **/**/__screenshots__/
 .vitest-attachments
+coverage
+tests/performance/report.json
+tests/performance/report.md
+tests/performance/summary.md
