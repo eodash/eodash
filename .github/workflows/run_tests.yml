@@ -81,7 +81,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           run=$(gh run list --workflow=run_tests.yml --branch=refactor-performance-report \
-            --status=success --limit=1 --json databaseId --jq '.[0].databaseId // empty')
+            --event=push --status=success --limit=1 --json databaseId --jq '.[0].databaseId // empty')
           echo "comparing against run ${run:-none}"
           echo "run-id=$run" >> "$GITHUB_OUTPUT"
       - name: Fetch the performance report 📥
