@@ -1,0 +1,903 @@
+[
+  {
+    "id": "vector-flatstyle-ice-charts-categorical",
+    "title": "Categorical Ice Charts Polygon FlatStyle with Legend",
+    "category": "vector-flatstyle",
+    "dataType": "vector",
+    "geometryType": "polygon",
+    "features": ["legend", "categorical-match", "tooltip"],
+    "tags": [
+      "ice-charts",
+      "categorical",
+      "match-expression",
+      "legend",
+      "cerulean",
+      "deside",
+      "vector-tiles"
+    ],
+    "description": "Polygon OpenLayers FlatStyle for sea ice classification charts with categorical 'match' expressions, WMO concentration colors, and custom tooltips. Valid for GeoJSON, FlatGeobuf, and Vector Tiles.",
+    "targetContext": "Host as JSON file on assets endpoint, reference in STAC Item link with 'eox:flatstyle' or in catalog collection 'Style'.",
+    "code": {
+      "fill-color": [
+        "match",
+        ["get", "POLY_TYPE"],
+        "I",
+        [
+          "match",
+          ["get", "CT"],
+          "92",
+          "rgba(149, 2, 140, 1.0)",
+          "91",
+          "rgba(224, 150, 224, 1.0)",
+          "89",
+          "rgba(255, 0, 0, 1.0)",
+          "81",
+          "rgba(255, 125, 7, 1.0)",
+          "70",
+          "rgba(255, 255, 0, 1.0)",
+          "40",
+          "rgba(140, 255, 159, 1.0)",
+          "10",
+          "rgba(125, 175, 224, 1.0)",
+          "02",
+          "rgba(0, 100, 255, 1.0)",
+          "rgba(0, 0, 0, 0.0)"
+        ],
+        "rgba(0, 0, 0, 0.0)"
+      ],
+      "stroke-color": "rgba(50, 50, 50, 0.4)",
+      "stroke-width": 0.5,
+      "legend": [
+        {
+          "title": "WMO Sea Ice Total Concentration",
+          "scaleType": "categorical",
+          "markType": "square",
+          "domain": [
+            "Fast Ice (92)",
+            "Consolidated (91)",
+            "Very Close (89)",
+            "Close (81)",
+            "Open (70)",
+            "Very Open (40)",
+            "Open Water (10)",
+            "Ice Free (02)"
+          ],
+          "range": [
+            "rgba(149, 2, 140, 1.0)",
+            "rgba(224, 150, 224, 1.0)",
+            "rgba(255, 0, 0, 1.0)",
+            "rgba(255, 125, 7, 1.0)",
+            "rgba(255, 255, 0, 1.0)",
+            "rgba(140, 255, 159, 1.0)",
+            "rgba(125, 175, 224, 1.0)",
+            "rgba(0, 100, 255, 1.0)"
+          ]
+        }
+      ],
+      "tooltip": [
+        { "id": "CT", "title": "Total Concentration", "appendix": "/10" },
+        { "id": "CA", "title": "Partial Conc. A" },
+        { "id": "SA", "title": "Stage of Development A" }
+      ]
+    }
+  },
+  {
+    "id": "vector-flatstyle-station-points-interactive",
+    "title": "In Situ Air Quality Monitoring Stations with Dynamic Size and Tooltips",
+    "category": "vector-flatstyle",
+    "dataType": "point",
+    "geometryType": "point",
+    "features": ["circle-style", "dynamic-variables", "jsonform", "tooltip"],
+    "tags": [
+      "air-quality",
+      "stations",
+      "points",
+      "jsonform-slider",
+      "tooltip",
+      "ukif",
+      "austria"
+    ],
+    "description": "Point feature FlatStyle for air quality and sensor stations with variable circle radius controlled by a layer control JSONForm slider, dynamic stroke, and rich tooltip formatting.",
+    "targetContext": "Host as JSON file on assets endpoint, reference in STAC Item link with 'eox:flatstyle' or in catalog collection 'Resources[].Style'.",
+    "code": {
+      "variables": {
+        "pointRadius": 6,
+        "strokeWidth": 1.5
+      },
+      "circle-radius": ["var", "pointRadius"],
+      "circle-fill-color": [
+        "case",
+        [">", ["get", "pm25"], 50],
+        "#bc0106",
+        [">", ["get", "pm25"], 25],
+        "#e36c09",
+        [">", ["get", "pm25"], 10],
+        "#fcfb01",
+        "#3e9655"
+      ],
+      "circle-stroke-color": "#ffffff",
+      "circle-stroke-width": ["var", "strokeWidth"],
+      "legend": {
+        "title": "PM2.5 Air Quality Index (µg/m³)",
+        "scaleType": "categorical",
+        "markType": "circle",
+        "domain": [
+          "Good (<10)",
+          "Moderate (10-25)",
+          "Unhealthy (25-50)",
+          "Hazardous (>50)"
+        ],
+        "range": ["#3e9655", "#fcfb01", "#e36c09", "#bc0106"]
+      },
+      "jsonform": {
+        "type": "object",
+        "title": "Station Display Configuration",
+        "properties": {
+          "pointRadius": {
+            "title": "Point Size",
+            "type": "number",
+            "minimum": 3,
+            "maximum": 20,
+            "default": 6,
+            "format": "range"
+          }
+        }
+      },
+      "tooltip": [
+        { "id": "station_name", "title": "Station" },
+        { "id": "pm25", "title": "PM2.5", "appendix": " µg/m³", "decimals": 1 },
+        { "id": "time", "title": "Recorded At" }
+      ]
+    }
+  },
+  {
+    "id": "vector-flatstyle-threshold-filter-polygons",
+    "title": "Dynamic Threshold Filter FlatStyle with JSONForm Slider",
+    "category": "vector-flatstyle",
+    "dataType": "vector",
+    "geometryType": "polygon",
+    "features": [
+      "dynamic-variables",
+      "jsonform",
+      "threshold-filter",
+      "case-expression"
+    ],
+    "tags": [
+      "polygons",
+      "threshold",
+      "case-expression",
+      "jsonform",
+      "harshness",
+      "cerulean"
+    ],
+    "description": "Polygon FlatStyle filtering displayed polygons dynamically using a threshold variable connected to a JSONForm slider.",
+    "targetContext": "Host as JSON file on assets endpoint, reference in STAC Item link with 'eox:flatstyle' or in catalog collection 'Resources[].Style'.",
+    "code": {
+      "variables": {
+        "threshold": 3
+      },
+      "fill-color": [
+        "case",
+        [">=", ["get", "severity_index"], ["var", "threshold"]],
+        [
+          "interpolate",
+          ["linear"],
+          ["get", "severity_index"],
+          1,
+          "rgba(50, 136, 189, 0.6)",
+          3,
+          "rgba(254, 224, 139, 0.6)",
+          5,
+          "rgba(213, 62, 79, 0.8)"
+        ],
+        "rgba(0, 0, 0, 0)"
+      ],
+      "stroke-color": "#333333",
+      "stroke-width": 1,
+      "legend": {
+        "title": "Severity Risk Index",
+        "scaleType": "continuous",
+        "domainProperties": ["threshold", "maxThreshold"],
+        "range": [
+          "rgba(50, 136, 189, 0.6)",
+          "rgba(254, 224, 139, 0.6)",
+          "rgba(213, 62, 79, 0.8)"
+        ]
+      },
+      "jsonform": {
+        "type": "object",
+        "title": "Risk Filter",
+        "properties": {
+          "threshold": {
+            "title": "Minimum Severity Level",
+            "type": "number",
+            "minimum": 1,
+            "maximum": 5,
+            "step": 0.5,
+            "default": 3,
+            "format": "range"
+          }
+        }
+      },
+      "tooltip": [
+        { "id": "zone_id", "title": "Risk Zone" },
+        { "id": "severity_index", "title": "Severity Level", "decimals": 2 }
+      ]
+    }
+  },
+  {
+    "id": "raster-webgl-cog-single-band-normalized",
+    "title": "Single-Band COG Normalized WebGLTile FlatStyle with Min/Max Sliders",
+    "category": "raster-webgl-flatstyle",
+    "dataType": "cog",
+    "geometryType": "raster",
+    "features": [
+      "webgl-shader",
+      "interpolate-color",
+      "dynamic-variables",
+      "jsonform",
+      "legend-domainProperties"
+    ],
+    "tags": [
+      "cog",
+      "geotiff",
+      "webgl",
+      "sar",
+      "rcm",
+      "radar",
+      "polartep",
+      "cerulean"
+    ],
+    "description": "OpenLayers WebGLTile FlatStyle for single-band GeoTIFF / COG (e.g. SAR Sigma0, DEM Elevation, Temperature) with client-side GPU normalization, colormap interpolation, and reactive min/max sliders.",
+    "targetContext": "Host as JSON file on assets endpoint, reference in STAC Item link with 'eox:flatstyle' or in catalog collection 'Resources[].Style'.",
+    "code": {
+      "legend": {
+        "title": "Sigma0 Backscatter",
+        "range": [
+          "rgba(0, 0, 0, 1)",
+          "rgba(0, 113, 194, 1)",
+          "rgba(255, 255, 255, 1)"
+        ],
+        "domainProperties": ["vmin", "vmax"]
+      },
+      "variables": {
+        "vmin": 0,
+        "vmax": 1
+      },
+      "color": [
+        "case",
+        ["!=", ["band", 1], 0],
+        [
+          "interpolate",
+          ["linear"],
+          [
+            "/",
+            ["-", ["band", 1], ["var", "vmin"]],
+            ["-", ["var", "vmax"], ["var", "vmin"]]
+          ],
+          0,
+          [0, 0, 0, 1],
+          0.5,
+          [0, 113, 194, 1],
+          1,
+          [255, 255, 255, 1]
+        ],
+        ["color", 0, 0, 0, 0]
+      ],
+      "jsonform": {
+        "type": "object",
+        "title": "Backscatter Contrast",
+        "properties": {
+          "vminmax": {
+            "title": "Sigma0 Range",
+            "type": "object",
+            "properties": {
+              "vmin": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 5,
+                "format": "range",
+                "default": 0
+              },
+              "vmax": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 5,
+                "format": "range",
+                "default": 1
+              }
+            },
+            "format": "minmax"
+          }
+        }
+      }
+    }
+  },
+  {
+    "id": "raster-webgl-cog-rgb-composite",
+    "title": "Sentinel-2 True Color RGB COG WebGLTile FlatStyle",
+    "category": "raster-webgl-flatstyle",
+    "dataType": "cog",
+    "geometryType": "raster",
+    "features": ["webgl-shader", "rgb-composite", "divisor-variable"],
+    "tags": [
+      "cog",
+      "sentinel-2",
+      "rgb",
+      "true-color",
+      "webgl",
+      "crop-circles",
+      "style-editor"
+    ],
+    "description": "WebGLTile FlatStyle combining Bands 4 (Red), 3 (Green), and 2 (Blue) into a true-color satellite image composite with brightness divisor variables.",
+    "targetContext": "Host as JSON file on assets endpoint, reference in STAC Item link with 'eox:flatstyle' or in catalog collection 'Resources[].Style'.",
+    "code": {
+      "variables": {
+        "band1Divisor": 3000.0,
+        "band2Divisor": 3000.0,
+        "band3Divisor": 3000.0
+      },
+      "color": [
+        "case",
+        [">", ["band", 1], 0],
+        [
+          "array",
+          ["/", ["band", 1], ["var", "band1Divisor"]],
+          ["/", ["band", 2], ["var", "band2Divisor"]],
+          ["/", ["band", 3], ["var", "band3Divisor"]],
+          1
+        ],
+        ["color", 0, 0, 0, 0]
+      ]
+    }
+  },
+  {
+    "id": "raster-webgl-cog-ndvi-index-math",
+    "title": "On-the-Fly NDVI Band Math COG WebGLTile FlatStyle",
+    "category": "raster-webgl-flatstyle",
+    "dataType": "cog",
+    "geometryType": "raster",
+    "features": ["webgl-shader", "band-math", "ndvi", "interpolate-color"],
+    "tags": ["cog", "ndvi", "band-math", "sentinel-2", "eopf", "eodash-assets"],
+    "description": "Calculates Normalized Difference Vegetation Index (B8 - B4)/(B8 + B4) in GPU shader with continuous color interpolation from soil to dense vegetation.",
+    "targetContext": "Host as JSON file on assets endpoint, reference in STAC Item link with 'eox:flatstyle'.",
+    "code": {
+      "color": [
+        "case",
+        ["!=", ["+", ["band", 8], ["band", 4]], 0],
+        [
+          "interpolate",
+          ["linear"],
+          [
+            "/",
+            ["-", ["band", 8], ["band", 4]],
+            ["+", ["band", 8], ["band", 4]]
+          ],
+          -0.2,
+          [165, 0, 38, 1],
+          0.0,
+          [254, 224, 139, 1],
+          0.2,
+          [217, 239, 139, 1],
+          0.5,
+          [102, 189, 99, 1],
+          0.8,
+          [0, 104, 55, 1]
+        ],
+        ["color", 0, 0, 0, 0]
+      ],
+      "legend": {
+        "title": "Normalized Difference Vegetation Index (NDVI)",
+        "scaleType": "continuous",
+        "domain": [-0.2, 0.8],
+        "range": [
+          "rgba(165, 0, 38, 1)",
+          "rgba(254, 224, 139, 1)",
+          "rgba(217, 239, 139, 1)",
+          "rgba(102, 189, 99, 1)",
+          "rgba(0, 104, 55, 1)"
+        ]
+      }
+    }
+  },
+  {
+    "id": "rasterform-titiler-rescale-colormap",
+    "title": "TiTiler Dynamic Rescale & Colormap RasterForm with RemoveProperties",
+    "category": "rasterform",
+    "dataType": "xyz",
+    "geometryType": "raster",
+    "features": [
+      "rasterform",
+      "titiler",
+      "removeProperties",
+      "template-watch",
+      "legend-rangeProperty"
+    ],
+    "tags": [
+      "titiler",
+      "rasterform",
+      "rescale",
+      "colormap",
+      "xyz",
+      "cerulean",
+      "eodashboard"
+    ],
+    "description": "eodash:rasterform configuration for TiTiler XYZ tile layer. Uses 'removeProperties: [\"vminmax\"]' and template/watch to generate rescale URL parameter without polluting queries.",
+    "targetContext": "Define inside STAC link as 'eodash:rasterform' object, or reference as URL string.",
+    "code": {
+      "legend": {
+        "rangeProperty": "colormap_name",
+        "domainProperties": ["vmin", "vmax"]
+      },
+      "jsonform": {
+        "type": "object",
+        "title": "Tile Display Settings",
+        "options": {
+          "removeProperties": ["vminmax"]
+        },
+        "properties": {
+          "colormap_name": {
+            "title": "Colormap",
+            "type": "string",
+            "enum": [
+              "viridis",
+              "magma",
+              "plasma",
+              "inferno",
+              "cividis",
+              "rainbow",
+              "spectral"
+            ],
+            "default": "viridis"
+          },
+          "vminmax": {
+            "title": "Value Range",
+            "type": "object",
+            "properties": {
+              "vmin": {
+                "type": "number",
+                "format": "range",
+                "minimum": 0,
+                "maximum": 5000,
+                "default": 0
+              },
+              "vmax": {
+                "type": "number",
+                "format": "range",
+                "minimum": 0,
+                "maximum": 5000,
+                "default": 3000
+              }
+            },
+            "format": "minmax"
+          },
+          "rescale": {
+            "type": "string",
+            "template": "{{vminmax.vmin}},{{vminmax.vmax}}",
+            "watch": { "vminmax": "vminmax" },
+            "options": { "hidden": true }
+          }
+        }
+      }
+    }
+  },
+  {
+    "id": "rasterform-branching-multi-asset",
+    "title": "TiTiler Multi-Asset Branching RasterForm with keep_oneof_values: false",
+    "category": "rasterform",
+    "dataType": "xyz",
+    "geometryType": "raster",
+    "features": [
+      "rasterform",
+      "branching-oneof",
+      "keep_oneof_values_false",
+      "titiler"
+    ],
+    "tags": [
+      "branching",
+      "oneOf",
+      "keep_oneof_values",
+      "titiler",
+      "multi-asset",
+      "sentinel-2"
+    ],
+    "description": "Multi-asset branching form allowing users to toggle between True Color (RGB) and NDVI layers with distinct slider ranges, enforcing 'keep_oneof_values: false' to prevent state pollution.",
+    "targetContext": "Define inside STAC link as 'eodash:rasterform' object, or reference as URL string.",
+    "code": {
+      "legend": {
+        "rangeProperty": "colormap_name",
+        "domainProperties": ["vmin", "vmax"]
+      },
+      "jsonform": {
+        "type": "object",
+        "title": "Product Mode",
+        "options": {
+          "keep_oneof_values": false,
+          "removeProperties": ["vminmax"]
+        },
+        "oneOf": [
+          {
+            "title": "True Color (RGB)",
+            "properties": {
+              "assets": {
+                "type": "string",
+                "default": "visual",
+                "options": { "hidden": true }
+              }
+            }
+          },
+          {
+            "title": "NDVI (Vegetation)",
+            "properties": {
+              "assets": {
+                "type": "string",
+                "default": "ndvi",
+                "options": { "hidden": true }
+              },
+              "colormap_name": {
+                "title": "Color Ramp",
+                "type": "string",
+                "enum": ["viridis", "rdylgn", "spectral"],
+                "default": "rdylgn"
+              },
+              "vminmax": {
+                "title": "NDVI Range",
+                "type": "object",
+                "properties": {
+                  "vmin": {
+                    "type": "number",
+                    "format": "range",
+                    "minimum": -0.5,
+                    "maximum": 1,
+                    "default": 0,
+                    "step": 0.05
+                  },
+                  "vmax": {
+                    "type": "number",
+                    "format": "range",
+                    "minimum": -0.5,
+                    "maximum": 1,
+                    "default": 0.8,
+                    "step": 0.05
+                  }
+                },
+                "format": "minmax"
+              },
+              "rescale": {
+                "type": "string",
+                "template": "{{vminmax.vmin}},{{vminmax.vmax}}",
+                "watch": { "vminmax": "vminmax" },
+                "options": { "hidden": true }
+              }
+            }
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "jsonform-bbox-drawtools-selector",
+    "title": "Interactive Bounding Box Map Drawing Form for Processes",
+    "category": "jsonform",
+    "dataType": "vector",
+    "geometryType": "polygon",
+    "features": ["bounding-box", "drawtools", "map-interaction"],
+    "tags": [
+      "jsonform",
+      "bounding-box",
+      "drawtools",
+      "eox-map",
+      "process-input",
+      "cerulean",
+      "ukif"
+    ],
+    "description": "JSONForm schema with interactive map bounding-box drawer linked to 'eox-map#main' in EPSG:4326 for OGC API Processes inputs.",
+    "targetContext": "Host as JSON file on assets endpoint, reference in catalog collection 'Process.JsonForm'.",
+    "code": {
+      "type": "object",
+      "properties": {
+        "bbox": {
+          "type": "array",
+          "title": "Select Area of Interest on Map",
+          "options": {
+            "autoStartSelection": false,
+            "drawtools": {
+              "for": "eox-map#main",
+              "projection": "EPSG:4326"
+            }
+          },
+          "format": "bounding-box"
+        },
+        "date_start": {
+          "title": "Start Date",
+          "type": "date",
+          "format": "date",
+          "default": "2025-01-01"
+        },
+        "date_end": {
+          "title": "End Date",
+          "type": "date",
+          "format": "date",
+          "default": "2026-03-01"
+        }
+      }
+    }
+  },
+  {
+    "id": "catalog-collection-cmems-wmts-timeseries",
+    "title": "CMEMS WMTS Time-Series Collection with OGC Process & Vega Chart",
+    "category": "catalog-collection",
+    "dataType": "wmts",
+    "geometryType": "raster",
+    "features": ["wmts", "time-series", "ogc-process", "vega-chart"],
+    "tags": [
+      "cmems",
+      "wmts",
+      "process",
+      "vega",
+      "oceanography",
+      "cerulean",
+      "deside"
+    ],
+    "description": "Complete eodash collection configuration for Copernicus Marine WMTS service with temporal query extent, dimensions, OGC process execution, and Vega timeseries chart.",
+    "targetContext": "Place in catalog 'collections/<collection-name>.json' for 'eodash_catalog' build.",
+    "code": {
+      "Name": "DIATO_diatoms",
+      "Title": "Mass concentration of diatoms in sea water",
+      "Description": "Copernicus Marine BGC monthly plankton concentration.",
+      "Themes": ["Aquaculture", "Marine Biology"],
+      "CollectionGroup": "F. Water Biology",
+      "Agency": ["Copernicus Marine", "ACRI-ST"],
+      "Resources": [
+        {
+          "EndPoint": "https://wmts.marine.copernicus.eu/teroWmts/OCEANCOLOUR_GLO_BGC_L4_NRT_009_102/cmems_obs-oc_glo_bgc-plankton_nrt_l4-multi-4km_P1M_202411",
+          "Type": "WMTSCapabilities",
+          "Name": "marinedatastore",
+          "LayerId": "OCEANCOLOUR_GLO_BGC_L4_NRT_009_102/cmems_obs-oc_glo_bgc-plankton_nrt_l4-multi-4km_P1M_202411/DIATO",
+          "Query": {
+            "Start": "2021-01-01T00:00:00Z",
+            "End": "2030-01-01T00:00:00Z"
+          },
+          "Dimensions": {
+            "style": "cmap:algae"
+          },
+          "Unit": "mg/m^3"
+        }
+      ],
+      "Process": {
+        "Name": "process_cmems",
+        "JsonForm": "https://raw.githubusercontent.com/gtif-cerulean/assets/main/jsonforms/cmems_jsonform.json",
+        "VegaDefinition": "https://raw.githubusercontent.com/gtif-cerulean/assets/main/chartdefs/DIATO.json",
+        "EndPoints": [
+          {
+            "Identifier": "process_cmems",
+            "Url": "https://cmems.gtif.eox.at/cmems?dataset_id=cmems_obs-oc_glo_bgc-plankton_nrt_l4-multi-4km_P1M&variables=DIATO&start_datetime={{date_start}}&end_datetime={{date_end}}&minimum_longitude={{bbox.0}}&minimum_latitude={{bbox.1}}&maximum_longitude={{bbox.2}}&maximum_latitude={{bbox.3}}&minimum_depth={{depth}}&maximum_depth={{depth}}",
+            "Type": "application/json"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "catalog-collection-vector-stations-timeseries",
+    "title": "Vector In Situ GeoJSON Stations Collection with TimeSeries Endpoint",
+    "category": "catalog-collection",
+    "dataType": "vector",
+    "geometryType": "point",
+    "features": [
+      "geojson",
+      "time-entries",
+      "process",
+      "vega-chart",
+      "style-url"
+    ],
+    "tags": ["vector", "geojson", "in-situ", "air-quality", "ukif", "austria"],
+    "description": "eodash collection configuration for in situ point station GeoJSON files with static bbox, hosted style URL, and feature-level timeseries process.",
+    "targetContext": "Place in catalog 'collections/<collection-name>.json' for 'eodash_catalog' build.",
+    "code": {
+      "Name": "GMIF-air-quality-stations",
+      "Title": "GMif Air Pollution Stations",
+      "CollectionGroup": "Air Quality",
+      "Themes": ["Atmosphere", "Mobility"],
+      "Tags": ["Air Quality", "PM2.5"],
+      "Description": "Consolidated GMif PM2.5 in situ station GeoJSON layer.",
+      "Agency": ["ESA", "UK Space Agency"],
+      "Resources": [
+        {
+          "Name": "GeoJSON source",
+          "Style": "https://raw.githubusercontent.com/gtif-ukif/gtif-ukif-assets/main/collections/GMIF-air-quality/style.json",
+          "Bbox": [-9.7, 41.9, 9.5, 57.2],
+          "TimeEntries": [
+            {
+              "Time": "20250101",
+              "Assets": [
+                {
+                  "Identifier": "gmif_air_pollution_stations",
+                  "File": "https://workspace-ui-public.gtif-ukif.hub-otc.eox.at/api/public/share/public-share/stations.geojson"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "Process": {
+        "Name": "Station Time Series",
+        "JsonForm": "https://raw.githubusercontent.com/gtif-ukif/gtif-ukif-assets/main/defaults/gmif_air_quality_station_form.json",
+        "VegaDefinition": "https://raw.githubusercontent.com/gtif-ukif/gtif-ukif-assets/main/defaults/gmif_air_quality_station_vega.json",
+        "EndPoints": [
+          {
+            "Identifier": "timeseries",
+            "Url": "https://workspace-ui-public.gtif-ukif.hub-otc.eox.at/api/public/share/public-share/timeseries/{{feature}}.json",
+            "Method": "GET",
+            "Type": "application/json"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "catalog-collection-post-process-cog-output",
+    "title": "POST Process Execution Collection Returning GeoTIFF Layer Styled with Flatstyle",
+    "category": "catalog-collection",
+    "dataType": "cog",
+    "geometryType": "raster",
+    "features": [
+      "post-process",
+      "eoxhub-workspaces",
+      "image-tiff",
+      "flatstyle-output"
+    ],
+    "tags": [
+      "post-process",
+      "ogc-processes",
+      "geotiff",
+      "harshness",
+      "cerulean"
+    ],
+    "description": "Collection triggering an asynchronous or on-demand WPS / OGC Process returning an image/tiff COG layer rendered dynamically with an OpenLayers FlatStyle.",
+    "targetContext": "Place in catalog 'collections/<collection-name>.json' for 'eodash_catalog' build.",
+    "code": {
+      "Name": "harshness_calculation",
+      "Title": "Arctic Harshness Index Calculation",
+      "CollectionGroup": "A. Algorithms",
+      "Description": "On-demand execution of harshness navigation risk algorithm.",
+      "Themes": ["Shipping", "Navigation"],
+      "Agency": ["C-CORE"],
+      "Resources": [
+        {
+          "Name": "Collection-only",
+          "OverwriteBBox": [-179, 55, 179, 89]
+        }
+      ],
+      "Process": {
+        "Name": "harshness",
+        "JsonForm": "https://raw.githubusercontent.com/gtif-cerulean/assets/main/jsonforms/harshness.json",
+        "EndPoints": [
+          {
+            "Identifier": "harshnesscollection",
+            "Url": "https://harshness-map.gtif.eox.at/processes/execute-create-harshness/execution",
+            "Method": "POST",
+            "EndPoint": "eoxhub_workspaces",
+            "Body": "https://raw.githubusercontent.com/gtif-cerulean/assets/main/body/harshness.json",
+            "Type": "image/tiff",
+            "Flatstyle": "https://raw.githubusercontent.com/gtif-cerulean/assets/main/styles/harshness.json"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "catalog-indicator-multi-collection",
+    "title": "Indicator Definition Grouping Multiple Collections with Filter Metadata",
+    "category": "catalog-indicator",
+    "dataType": "timeseries",
+    "geometryType": "raster",
+    "features": ["indicator", "subcodes", "themes", "eox-itemfilter-tags"],
+    "tags": [
+      "indicator",
+      "catalog",
+      "themes",
+      "subcode",
+      "eox-itemfilter",
+      "cerulean",
+      "race"
+    ],
+    "description": "Indicator grouping several STAC collections with rich filter metadata (subcodes, themes, satellites, sensors, tags) used by EOxItemFilter.",
+    "targetContext": "Place in catalog 'indicators/<indicator-name>.json' for 'eodash_catalog' build.",
+    "code": {
+      "Name": "shipping_traffic_and_routes",
+      "Title": "Maritime Shipping Traffic & Navigation Routes",
+      "Description": "Synthesizes vessel AIS density, optimal route corridors, and ice conditions.",
+      "CollectionGroup": "Navigation",
+      "Themes": ["Maritime", "Economy"],
+      "Tags": ["AIS", "Vessels", "Routes"],
+      "Satellite": ["Sentinel-1", "RADARSAT-Constellation"],
+      "Sensor": ["SAR"],
+      "Thumbnail": "https://assets.example.com/thumbnails/shipping.png",
+      "SubCode": "SHIPPING_ROUTES",
+      "Collections": [
+        "vessel_density_all",
+        "antarctica_ship_route",
+        "route_optimization"
+      ]
+    }
+  },
+  {
+    "id": "stac-item-web-map-links-roles",
+    "title": "STAC Item with Web Map Links, Roles (baselayer/overlay/data), and Projections",
+    "category": "stac-item",
+    "dataType": "xyz",
+    "geometryType": "raster",
+    "features": ["web-map-links", "roles", "baselayer", "proj-epsg"],
+    "tags": [
+      "stac-item",
+      "web-map-links",
+      "roles",
+      "baselayer",
+      "overlay",
+      "stac-api"
+    ],
+    "description": "Standard STAC Item link structure following web-map-links extension with 'roles' controlling layer group ('baselayer', 'overlay', 'data') and initial visibility ('visible').",
+    "targetContext": "Returned by STAC API /collections/{collectionId}/items endpoint or static catalog Item JSON.",
+    "code": {
+      "type": "Feature",
+      "stac_version": "1.0.0",
+      "id": "sentinel-2-mosaic-2025",
+      "properties": {
+        "datetime": "2025-06-01T00:00:00Z",
+        "proj:epsg": 3857
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [-180, -85],
+            [180, -85],
+            [180, 85],
+            [-180, 85],
+            [-180, -85]
+          ]
+        ]
+      },
+      "links": [
+        {
+          "rel": "xyz",
+          "href": "https://s2maps-tiles.eu/wmts/1.0.0/osm_3857/default/g/{z}/{y}/{x}.jpeg",
+          "type": "image/jpeg",
+          "title": "OSM Background",
+          "roles": ["baselayer", "visible"]
+        },
+        {
+          "rel": "xyz",
+          "href": "https://tiles.example.com/{z}/{x}/{y}.png?rescale={{rescale}}&colormap_name={{colormap_name}}",
+          "type": "image/png",
+          "title": "Sentinel-2 NDVI Mosaic",
+          "roles": ["data", "visible"],
+          "eodash:rasterform": {
+            "legend": {
+              "rangeProperty": "colormap_name",
+              "domainProperties": ["vmin", "vmax"]
+            },
+            "jsonform": {
+              "type": "object",
+              "properties": {
+                "colormap_name": {
+                  "type": "string",
+                  "enum": ["viridis", "rdylgn"],
+                  "default": "rdylgn"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "assets": {
+        "thumbnail": {
+          "href": "https://assets.example.com/thumbnails/mosaic.jpg",
+          "type": "image/jpeg",
+          "roles": ["thumbnail"]
+        }
+      }
+    }
+  }
+]
