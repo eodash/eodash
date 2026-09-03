@@ -43,6 +43,16 @@ const alias = {
 
 export default defineConfig({
   test: {
+    coverage: {
+      include: [
+        "core/client/**/*.{js,vue}",
+        "widgets/**/*.{js,vue}",
+        "packages/*/src/**/*.js",
+      ],
+      exclude: ["**/*.d.ts", "**/types/**"],
+      reporter: ["text-summary", "html"],
+      reportOnFailure: true,
+    },
     ...(isPerformanceRun && {
       reporters: [
         "default",
