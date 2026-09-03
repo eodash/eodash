@@ -44,6 +44,26 @@ export const filesInScope = (root, scope) => {
 };
 
 /**
+ * Each sample paired with its predecessor, keeping only those that have one and
+ * that the config is willing to compare. Both the report and its summary read
+ * this, so neither can claim a comparison the other did not make.
+ *
+ * @param {import("./index.js").Sample[]} samples
+ * @param {Map<string, any>} previous
+ * @param {((sample: import("./index.js").Sample) => string | null) | undefined} invalidReason
+ * @returns {Map<string, any>}
+ */
+export const comparableTo = (samples, previous, invalidReason) => {
+  /** @type {Map<string, any>} */
+  const comparable = new Map();
+  for (const sample of samples) {
+    const before = previous.get(sample.key);
+    if (before && !invalidReason?.(sample)) comparable.set(sample.key, before);
+  }
+  return comparable;
+};
+
+/**
  * Samples out of the report the last run left behind. Missing or unreadable
  * means a first run, not an error. Samples the config would refuse to compare
  * are dropped here too: being old does not make an unusable sample usable.
