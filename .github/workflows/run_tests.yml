@@ -80,7 +80,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          echo "run-id=$(gh run list --workflow=run_tests.yml --branch=main \
+          echo "run-id=$(gh run list --workflow=run_tests.yml --branch=refactor-performance-report \
             --status=success --limit=1 --json databaseId --jq '.[0].databaseId // empty')" \
             >> "$GITHUB_OUTPUT"
       - name: Fetch the performance report 📥
