@@ -108,7 +108,6 @@ export default defineConfig({
             "tests/component/**/*.test.js",
             "tests/template/**/*.test.js",
           ],
-          // Registers measurement hooks only when VITE_PERF is set.
           setupFiles: [
             "./tests/support/pinia-setup.js",
             "./tests/support/performance-setup.js",
@@ -118,9 +117,6 @@ export default defineConfig({
           hookTimeout: 60 * 1000,
           browser: {
             enabled: true,
-            // Pinned: how many tiles a map asks for depends on the viewport and
-            // scale factor, so measurements are only comparable while both stay
-            // fixed.
             provider: playwright({ contextOptions: { deviceScaleFactor: 1 } }),
             headless: true,
             viewport: { width: 1440, height: 900 },
