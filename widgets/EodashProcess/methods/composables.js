@@ -1,4 +1,5 @@
 import { initProcess, updateJsonformIdentifier } from "./handling";
+import { useDebounceFn } from "@vueuse/core";
 import { nextTick, onMounted, onUnmounted, watch } from "vue";
 import { useOnLayersUpdate } from "@/composables";
 import { getCompareLayers, getLayers } from "@/store/actions";
@@ -7,7 +8,7 @@ import { getCompareLayers, getLayers } from "@/store/actions";
  *
  * @async
  * @param {object} params
- * @param {import("vue").Ref<import("stac-ts").StacCollection | null>} params.selectedStac
+ * @param {import("vue").Ref<import("@eodash/stac").STACCollection | null>} params.selectedStac
  * @param {import("vue").Ref<Record<string,any> | null>} params.jsonformSchema
  * @param {import("vue").Ref<any[]>} params.processResults
  * @param {import("vue").Ref<boolean>} params.isProcessed
@@ -105,12 +106,7 @@ export function useAutoExec(
   jsonformSchema,
   startProcess,
 ) {
-  /**
-   * @param {any} _e
-   **/
-  const onJsonFormChange = async (_e) => {
-    await startProcess();
-  };
+  const onJsonFormChange = useDebounceFn(() => startProcess(), 200);
 
   watch(jsonformSchema, (updatedSchema) => {
     autoExec.value = updatedSchema?.options?.["execute"] || false;

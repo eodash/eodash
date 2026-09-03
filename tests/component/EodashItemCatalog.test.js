@@ -265,17 +265,15 @@ describe("EodashItemCatalog", () => {
       );
     });
 
-    test("wires feature-click rendering with the store, map and compare flag", async () => {
+    test("wires feature-click rendering to the map and the select handler", async () => {
       await mountAsyncComponent(EodashItemCatalog, {
         initialState: withCollections,
       });
-      const store = useSTAcStore();
 
       expect(spies.useRenderOnFeatureClick).toHaveBeenCalledWith(
         expect.anything(),
-        store,
         mapEl,
-        false,
+        expect.any(Function),
       );
     });
 
@@ -322,9 +320,8 @@ describe("EodashItemCatalog", () => {
       );
       expect(spies.useRenderOnFeatureClick).toHaveBeenCalledWith(
         expect.anything(),
-        store,
         mapCompareEl,
-        true,
+        expect.any(Function),
       );
     });
   });

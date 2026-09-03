@@ -8,6 +8,15 @@ export const analysisGroup = (mapEl) =>
   );
 
 /**
+ * The "ProcessGroup" layer group holding the outputs of process runs.
+ * @param {import("@eox/map").EOxMap | undefined} mapEl
+ */
+export const processGroup = (mapEl) =>
+  /** @type {import("@eox/map/src/layers").EOxLayerTypeGroup | undefined} */ (
+    mapEl?.layers?.find((l) => l.properties?.id === "ProcessGroup")
+  );
+
+/**
  * The group's time-enabled data layer, falling back to its first layer.
  * @param {import("@eox/map/src/layers").EOxLayerTypeGroup | undefined} group
  */

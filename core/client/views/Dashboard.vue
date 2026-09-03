@@ -49,7 +49,7 @@ theme.change("dashboardTheme");
 await loadFont(eodash?.brand?.font, props.isWebComponent);
 
 const { loadSTAC, init } = useSTAcStore();
-init(eodash.stacEndpoint);
+init(eodash.stacEndpoint, eodash.options?.renders);
 await loadSTAC();
 
 const { smAndDown } = useDisplay();

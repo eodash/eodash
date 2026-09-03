@@ -64,8 +64,11 @@ import { ref } from "vue";
 import { getLayers as getLayerAction } from "@/store/actions";
 import { mapPosition, availableMapProjection, chartSpec } from "@/store/states";
 import { layerControlFormValue } from "@/utils/states";
-import { removeUnneededProperties } from "@/eodashSTAC/helpers";
+import { flattenFormValues } from "@eodash/stac/helpers";
+import { updateVectorLayerStyle } from "@eox/layercontrol";
 import { base64EncodeSpec } from "@eox/chart";
+import mustache from "mustache";
+import log from "loglevel";
 
 const dialog = defineModel({ type: Boolean, required: true, default: false });
 
@@ -138,6 +141,136 @@ const getChartExportCode = () => {
   const escapedSpec = base64EncodeSpec(chartSpec.value);
   return `${preTag}'${escapedSpec}'${endTag}`;
 };
+
+/**
+ * creates a structured clone from the layers and
+ * removes all properties from the clone
+ * except the ID and title
+ *
+ * @param {Record<string,any>[]} layers
+ */
+function removeUnneededProperties(layers, formValues = {}) {
+  /**
+   * @param {Record<string,any>} layer
+   * @returns {Record<string,any>[]}
+   */
+  const processLayer = (layer) => {
+    // If the layer (or group) is explicitly marked as not visible, skip it and all children
+    if (layer.properties?.visible === false) {
+      return [];
+    }
+
+    // If it's a Group, we just want its children
+    if (layer.type === "Group" && Array.isArray(layer.layers)) {
+      return layer.layers.flatMap(processLayer);
+    }
+
+    // Break any Vue Proxies/OpenLayers getters by stringifying first
+    let clonedLayer;
+    try {
+      clonedLayer = JSON.parse(JSON.stringify(layer));
+    } catch (_e) {
+      clonedLayer = structuredClone(layer);
+    }
+
+    // Flatten formValues to handle nested properties (e.g., vminmax: { vmin, vmax })
+    const flatFormValues = flattenFormValues(formValues);
+
+    // Burn in style variables using Mustache if formValues are provided
+    if (Object.keys(flatFormValues).length > 0) {
+      // Stringify, render mustache, then parse back
+      try {
+        const renderedString = mustache.render(
+          JSON.stringify(clonedLayer),
+          flatFormValues,
+        );
+        clonedLayer = JSON.parse(renderedString);
+      } catch (e) {
+        log.warn(
+          "[eodash] Failed to apply mustache templating during export cleanup:",
+          e,
+        );
+      }
+    }
+
+    const {
+      id,
+      title,
+      mapboxStyle,
+      projection,
+      applyOptions,
+      layerConfig,
+      visible,
+    } = clonedLayer.properties || {};
+
+    // If style was not at root but in properties (layerConfig), move it to root early
+    if (!clonedLayer.style && layerConfig?.style) {
+      clonedLayer.style = layerConfig.style;
+    }
+
+    // Burn in OpenLayers ["var", "name"] variables using flatFormValues overriding style.variables
+    const styleVariables = {
+      ...(clonedLayer.style?.variables || {}),
+      ...flatFormValues,
+    };
+
+    if (clonedLayer.style && Object.keys(styleVariables).length > 0) {
+      clonedLayer.style = updateVectorLayerStyle({
+        ...clonedLayer.style,
+        variables: styleVariables,
+      });
+    }
+
+    clonedLayer.properties = {
+      id,
+      title,
+      ...(mapboxStyle && { mapboxStyle }),
+      ...(projection && { projection }),
+      ...(applyOptions && { applyOptions }),
+      ...(visible !== undefined && { visible }),
+    };
+
+    if (clonedLayer["interactions"]) {
+      delete clonedLayer["interactions"];
+    }
+
+    /**
+     * @param {any} obj
+     */
+    const cleanupProperties = (obj) => {
+      if (!obj || typeof obj !== "object") return;
+
+      for (const key in obj) {
+        if (obj[key] === null) {
+          delete obj[key];
+        } else if (Array.isArray(obj[key])) {
+          if (obj[key].length === 0) {
+            delete obj[key];
+          } else {
+            obj[key].forEach(cleanupProperties);
+          }
+        } else if (typeof obj[key] === "object") {
+          cleanupProperties(obj[key]);
+          if (Object.keys(obj[key]).length === 0) {
+            // we don't delete empty objects for now as it might break schema requirements
+          }
+        }
+      }
+    };
+    cleanupProperties(clonedLayer);
+
+    return [clonedLayer];
+  };
+
+  let rawLayers = layers;
+  try {
+    rawLayers = JSON.parse(JSON.stringify(layers));
+  } catch (_e) {
+    rawLayers = structuredClone(layers);
+  }
+
+  return rawLayers.flatMap(processLayer);
+}
 </script>
 <style scoped>
 .code-block {

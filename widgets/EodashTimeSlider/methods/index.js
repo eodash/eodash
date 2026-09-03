@@ -1,140 +1,124 @@
-import { createLayersConfig } from "^/EodashMap/methods/create-layers-config";
-import { eodashCollections } from "@/utils/states";
-import axios from "@/plugins/axios";
+import {
+  ANALYSIS_GROUP,
+  BASE_LAYERS_GROUP,
+  OVERLAY_GROUP,
+  buildIndicatorLayers,
+} from "@/eodashSTAC/layers";
+import { eodashCollections } from "@/store/stac";
 import { mapEl } from "@/store/states";
-import { removeLayers, sanitizeBbox } from "@/eodashSTAC/helpers";
+import { defaultBaseLayers } from "@/utils/states";
+import {
+  LAYER_ID_SEPARATOR,
+  removeLayers,
+  sanitizeBbox,
+} from "@eodash/stac/helpers";
 import { getLayers } from "@/store/actions";
 import { buildCqlFilter } from "@/eodashSTAC/cql";
 
 /**
- * @param {string} stacEndpoint
+ * One frame per rendered moment, for the timelapse export. An api catalog
+ * searches for the items to render, a static one is handed them by the
+ * timeline; everything after that is the same, so the two share one build.
+ *
  * @param {[string, string]} selectedRange
  * @param {import("../types").TimelineExportEventDetail["selectedRangeItems"]} selectedRangeItems
- * @param {import("vue").Ref<import("stac-ts").StacCollection|null>} selectedStac
+ * @param {import("vue").Ref<import("@eodash/stac").STACCollection|null>} selectedStac
  * @param {import("@/types").ItemFilterFilters} filters
  */
 export async function createAnimationLayers(
-  stacEndpoint,
   selectedRange,
   selectedRangeItems,
   selectedStac,
   filters,
 ) {
-  if (eodashCollections[0].isAPI) {
-    return await createAPILayers(
-      stacEndpoint,
-      { min: selectedRange[0], max: selectedRange[1] },
-      mapEl.value?.lonLatExtent,
-      selectedStac,
-      filters,
-    );
+  const stac = selectedStac.value;
+  if (!stac) {
+    return [];
   }
+
+  const reader = eodashCollections[0];
+  /** @type {Array<string | import("@eodash/stac").STACItem>} */
+  const frames =
+    reader.kind === "api"
+      ? await searchItems(reader, selectedRange, filters)
+      : Object.values(selectedRangeItems)
+          .flat()
+          .map((dateItem) => dateItem.originalDate);
+
+  // a layer hidden on the live map is left out of the export too
   const { collections: hiddenCollections, layers: hiddenLayers } =
     getHiddenLayers([...getLayers()]);
+  const readers = eodashCollections.filter(
+    (collection) => !hiddenCollections.includes(collection.stac?.id ?? ""),
+  );
+
+  // the passes below write in place, and the fallback is shared app state
+  const baseLayers = structuredClone(defaultBaseLayers.value);
 
   return await Promise.all(
-    Object.values(selectedRangeItems).flatMap(async (itemSet) => {
-      /** @type {Array<{ layers: Record<string, any>[]; date: string }>} */
-      const mapLayersArr = [];
-      for (const dateItem of itemSet) {
-        await createLayersConfig(
-          selectedStac.value,
-          eodashCollections.filter(
-            (collection) =>
-              !hiddenCollections.includes(collection.collectionStac?.id ?? ""),
-          ),
-          dateItem.originalDate,
-        ).then((layers) => {
-          //@ts-expect-error createLayersConfig is not typed strictly
-          layers = removeLayers(layers, hiddenLayers);
-          //@ts-expect-error createLayersConfig is not typed strictly
-          layers = restoreLayersVisibility(layers);
-          layers = anonimizeLayersCORS(layers);
-          mapLayersArr.push({
-            layers,
-            date: dateItem.originalDate,
-          });
-        });
-      }
-      return mapLayersArr;
+    frames.map(async (timeOrItem) => {
+      const { layers } = await buildIndicatorLayers(mapEl.value, {
+        readers,
+        stac,
+        timeOrItem,
+        // frames are thrown away, so they must not become the readers' item
+        context: { stateful: false },
+        defaultBaseLayers: baseLayers,
+      });
+      // the export renders base, data and overlay groups only
+      const frameLayers = layers.filter((layer) =>
+        [BASE_LAYERS_GROUP, ANALYSIS_GROUP, OVERLAY_GROUP].includes(
+          layer.properties?.id ?? "",
+        ),
+      );
+      return {
+        layers: anonimizeLayersCORS(
+          restoreLayersVisibility(removeLayers(frameLayers, hiddenLayers)),
+        ),
+        date:
+          typeof timeOrItem === "string"
+            ? timeOrItem
+            : /** @type {string} */ (timeOrItem.properties.datetime),
+      };
     }),
-  ).then((results) => results.flat());
+  );
 }
 /**
+ * The items an api catalog has in the selected range and the current view. The
+ * reader owns the search endpoint and its own collection, so neither is passed.
  *
- * @param {string} stacEndpoint
- * @param {{min: string, max: string}} date
- * @param {number[] | undefined} bbox
- * @param {import("vue").Ref<import("stac-ts").StacCollection|null>} selectedStac
+ * @param {Extract<import("@eodash/stac").Reader, {kind: "api"}>} reader
+ * @param {[string, string]} selectedRange
  * @param {import("@/types").ItemFilterFilters} filters
- * @returns {Promise<Array<{ layers: Record<string, any>[]; date: string }>>}
+ * @returns {Promise<import("@eodash/stac").STACItem[]>}
  */
-async function createAPILayers(
-  stacEndpoint,
-  date = { min: "", max: "" },
-  bbox,
-  selectedStac,
-  filters,
-) {
+async function searchItems(reader, selectedRange, filters) {
+  const bbox = mapEl.value?.lonLatExtent;
   if (!bbox) {
     return [];
   }
-  const url = new URL(stacEndpoint + "/search");
-  url.searchParams.set("limit", "100");
-  url.searchParams.set("collections", selectedStac.value?.id ?? "");
-  url.searchParams.set(
-    "datetime",
-    `${new Date(date.min).toISOString()}/${new Date(date.max).toISOString()}`,
-  );
-  url.searchParams.set("bbox", sanitizeBbox(bbox).join(","));
 
-  const stacFilter = buildCqlFilter(filters);
-  if (stacFilter) {
-    url.searchParams.set("filter", stacFilter);
-  }
-
-  /** @type {import("stac-ts").StacItem[]} */
-  const items = await axios
-    .get(url.href)
-    .then((res) => res.data.features)
+  const [min, max] = selectedRange;
+  const filter = buildCqlFilter(filters);
+  const { features } = await reader
+    .search({
+      limit: 100,
+      datetime: `${new Date(min).toISOString()}/${new Date(max).toISOString()}`,
+      bbox: sanitizeBbox(bbox).join(","),
+      ...(filter && { filter }),
+    })
     .catch((err) => {
       console.error("[eodash] Error fetching items for animation:", err);
-      return [];
+      return { features: [] };
     });
-  if (!items || !items.length) {
+
+  if (!features?.length) {
     console.warn("[eodash] No items found for animation.");
-    return [];
   }
-  const { collections: hiddenCollections, layers: hiddenLayers } =
-    getHiddenLayers([...getLayers()]);
-  return await Promise.all(
-    items.map(async (item) => {
-      /** @type {Array<{ layers: Record<string, any>[]; date: string }>} */
-      const mapLayersArr = [];
-      await createLayersConfig(
-        selectedStac.value,
-        eodashCollections.filter(
-          (collection) =>
-            !hiddenCollections.includes(collection.collectionStac?.id ?? ""),
-        ),
-        item,
-      ).then((layers) => {
-        //@ts-expect-error createLayersConfig is not typed strictly
-        layers = removeLayers(layers, hiddenLayers);
-        //@ts-expect-error createLayersConfig is not typed strictly
-        layers = restoreLayersVisibility(layers);
-        layers = anonimizeLayersCORS(layers);
-        mapLayersArr.push({
-          layers,
-          date: /** @type {string} */ (item.properties.datetime),
-        });
-        return mapLayersArr;
-      });
-      return mapLayersArr;
-    }),
-  ).then((results) => results.flat());
+  return features ?? [];
 }
 /**
+ * Sets anonymous crossOrigin on layer sources for export.
  *
  * @param {Record<string, any>[]} layers
  * @returns {Record<string, any>[]}
@@ -152,7 +136,8 @@ export function anonimizeLayersCORS(layers) {
   });
 }
 /**
- * returns the list of layers that has visibility hidden
+ * Resolves collection and layer IDs that are currently hidden on the map.
+ *
  * @param {import("@eox/map").EoxLayer[]} layers
  * @returns {{ collections: string[]; layers: string[] }}
  */
@@ -188,9 +173,9 @@ export function getHiddenLayers(layers) {
     if (olLayer.getVisible() === false) {
       const refId = layer.properties.id;
       if (refId) {
-        if (refId.includes(";:;")) {
+        if (refId.includes(LAYER_ID_SEPARATOR)) {
           // Check if this looks like a typical eodash collection ID with separator
-          const parts = refId.split(";:;");
+          const parts = refId.split(LAYER_ID_SEPARATOR);
           if (parts.length > 2) {
             const prefix = parts[0];
             if (!result.collections.includes(prefix)) {
@@ -215,8 +200,8 @@ export function getHiddenLayers(layers) {
 }
 
 /**
- * Iterates through a list of layers and updates layer.properties.visible to true
- * if it is set to false
+ * Recursively resets layer visibility to true across the layer hierarchy.
+ *
  * @param {import("@eox/map").EoxLayer[]} layers
  * @returns {import("@eox/map").EoxLayer[]}
  */
@@ -232,5 +217,3 @@ export function restoreLayersVisibility(layers) {
   }
   return layers;
 }
-
-export { useScheduleMosaicUpdate } from "@/eodashSTAC/mosaic";

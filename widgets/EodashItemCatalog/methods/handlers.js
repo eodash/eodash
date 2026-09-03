@@ -1,5 +1,11 @@
 import { inAndOut } from "ol/easing";
 import { renderItemsFeatures } from "./map";
+import { eodashCollections, eodashCompareCollections } from "@/store/stac";
+import {
+  ANALYSIS_GROUP,
+  assignDataLayers,
+  assignGroupLayers,
+} from "@/eodashSTAC/layers";
 
 /**
  * Build a compact signature from filter key + stringified state.
@@ -22,7 +28,7 @@ const getFiltersSignature = (filters) => {
  *  stacItemsStyle?: object,
  *  stacItemsInteractionStyle?: object,
  *  itemfilterEl?: import("vue").Ref<any>,
- *  selectedItemRef?: import("vue").Ref<import("stac-ts").StacItem | null | undefined>,
+ *  selectedItemRef?: import("vue").Ref<import("@eodash/stac").STACItem | null | undefined>,
  *  onCollectionsChange?: (collectionIds: string[]) => void,
  *  initialCollections?: string[],
  *  mosaicOptions?: {
@@ -91,44 +97,41 @@ export const createOnFilterHandler = ({
   };
 };
 /**
+ * Creates a select event handler that highlights the item and updates map data layers.
  *
  * @param {ReturnType<typeof import("@/store/stac.js").useSTAcStore>} store
  * @param {boolean} enableCompare
  * @param {import("vue").Ref<import("@eox/map").EOxMap | null>} mapElement
- * @returns
  */
 export const createOnSelectHandler = (store, enableCompare, mapElement) => {
+  const readers = enableCompare ? eodashCompareCollections : eodashCollections;
+  const updateEvent = enableCompare
+    ? "compareLayers:updated"
+    : "layers:updated";
+  const itemEvent = enableCompare ? "compareTime:updated" : "time:updated";
+
   /** @param {CustomEvent} evt */
   return async (evt) => {
-    const item = /** @type {import("stac-ts").StacItem} */ (evt.detail);
-    if (!item) {
+    const item = /** @type {import("@eodash/stac").STACItem} */ (evt.detail);
+    const currentItem = enableCompare
+      ? store.selectedCompareItem
+      : store.selectedItem;
+
+    if (!item || item.id === currentItem?.id) {
       if (enableCompare) {
         store.selectedCompareItem = null;
       } else {
         store.selectedItem = null;
       }
+
+      readers.forEach((reader) => (reader.item = undefined));
+      await assignGroupLayers(
+        mapElement.value,
+        ANALYSIS_GROUP,
+        [],
+        updateEvent,
+      );
       return;
-    }
-    if (enableCompare) {
-      if (item.id === store.selectedCompareItem?.id) {
-        store.selectedCompareItem = null;
-        return;
-      }
-      if (store.selectedCompareStac?.id === item.collection) {
-        store.selectedCompareItem = item;
-      } else {
-        await store.loadSelectedCompareSTAC(item.collection, false, item);
-      }
-    } else {
-      if (item.id === store.selectedItem?.id) {
-        store.selectedItem = null;
-        return;
-      }
-      if (store.selectedStac?.id === item.collection) {
-        store.selectedItem = item;
-      } else {
-        await store.loadSelectedSTAC(item.collection, false, item);
-      }
     }
 
     mapElement.value?.selectInteractions["stac-items"]?.highlightById(
@@ -139,10 +142,38 @@ export const createOnSelectHandler = (store, enableCompare, mapElement) => {
         easing: inAndOut,
       },
     );
+
+    if (enableCompare) {
+      if (store.selectedCompareStac?.id === item.collection) {
+        store.selectedCompareItem = item;
+        await assignDataLayers(mapElement.value, {
+          readers,
+          stac: store.selectedCompareStac,
+          timeOrItem: item,
+          event: itemEvent,
+        });
+      } else {
+        await store.loadSelectedCompareSTAC(item.collection, false, item);
+      }
+    } else {
+      if (store.selectedStac?.id === item.collection) {
+        store.selectedItem = item;
+        await assignDataLayers(mapElement.value, {
+          readers,
+          stac: store.selectedStac,
+          timeOrItem: item,
+          event: itemEvent,
+        });
+      } else {
+        await store.loadSelectedSTAC(item.collection, false, item);
+      }
+    }
   };
 };
 
 /**
+ * Creates a hover handler to highlight the hovered item footprint on the map.
+ *
  * @param {import("vue").Ref<import("@eox/map").EOxMap | null>} mapElement
  */
 export const createOnMouseEnterResult = (mapElement) => {
@@ -157,6 +188,8 @@ export const createOnMouseEnterResult = (mapElement) => {
 };
 
 /**
+ * Creates a mouse leave handler to clear hover highlighting on the map.
+ *
  * @param {import("vue").Ref<import("@eox/map").EOxMap | null>} mapElement
  */
 export const createOnMouseLeaveResult = (mapElement) => {

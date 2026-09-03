@@ -14,25 +14,21 @@ import {
   mdiVolleyball,
   mdiWrench,
 } from "@mdi/js";
-import { reactive, ref, shallowReactive } from "vue";
+import { reactive, ref, shallowRef } from "vue";
 
 /**
- * Array of eodash STAC Collections extracted from the current selected indicator.
- * Updated in {@link file://./../store/stac.js `loadSelectedSTAC`} widget
+ * Base layers shown when a collection brings none of its own.
+ * Set from `EodashMap`'s `baseLayers` prop, which no store action can reach.
  *
- * @type {import('../eodashSTAC/EodashCollection').EodashCollection[]}
- * @private
+ * @type {import("vue").ShallowRef<import("@eox/map").EoxLayer[]>}
  */
-export const eodashCollections = shallowReactive([]);
+export const defaultBaseLayers = shallowRef([]);
 
 /**
- * Array of eodash STAC Collections extracted from the current selected COMPARE indicator.
- * Updated in {@link file://./../store/stac.js ` loadSelectedCompareSTAC`} widget
- *
- * @type {import('../eodashSTAC/EodashCollection').EodashCollection[]}
- * @private
+ * Whether the opening view came from the link rather than from a collection,
+ * so that a shared position is not overridden by a zoom to the collection.
  */
-export const eodashCompareCollections = shallowReactive([]);
+export const hasRestoredView = ref(false);
 
 /** whether it's the first load of the app, used to track if there are params in the url */
 export const isFirstLoad = ref(false);
@@ -48,20 +44,6 @@ export const layerControlFormValue = ref({});
  * @type {import("vue").Ref<Record<string, any> | undefined>}
  */
 export const layerControlFormValueCompare = ref({});
-
-/**
- * Remembers each layer's configuration form values so a user's styling and band
- * choices persist when the map rebuilds — for example when the date or the
- * selected item changes.
- *
- * Entries are keyed by map (main vs. compare), then collection, then editor kind
- * (style vs. tile URL): the map key keeps the two maps independent, the collection
- * key keeps a choice through item/time changes, and the kind key stops the style
- * and raster editors from overwriting one another. A collection that exposes two
- * layers of the same kind shares one slot.
- * @type {import("vue").Ref<Record<string, Record<string, Record<string, any>>>>}
- */
-export const layerConfigFormState = ref({});
 
 /**
  * STAC indicators color palette, defaults to Bank-Wong palette
@@ -160,13 +142,3 @@ export const dataThemesBrands = {
     color: "#8d845cff",
   },
 };
-
-/** @type {Map<string, import("stac-ts").StacItem[]>} */
-export const itemsCache = new Map();
-/**
- * Split items cache stores items with their time range metadata
- * @type {Map<string, {items: import("stac-ts").StacItem[], minTime: number, maxTime: number}>}
- */
-export const splitItemsCache = new Map();
-
-export const timesliderUpdateRef = ref(0);
