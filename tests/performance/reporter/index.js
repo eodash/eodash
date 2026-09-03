@@ -1,7 +1,7 @@
 import { writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { JsonReporter } from "vitest/node";
-import { filesInScope, keyOf, previousSamples } from "./baseline.js";
+import { fileKeyOf, filesInScope, keyOf, previousSamples } from "./baseline.js";
 import { render } from "./markdown.js";
 
 /**
@@ -22,7 +22,7 @@ import { render } from "./markdown.js";
  * @property {string} [glossary]
  * @property {{label: string, value: (perf: any) => string}[]} columns
  * @property {((sample: Sample, previous: any) => string[])[]} [notes] remarks listed under the test they concern
- * @property {((samples: Sample[], previous: Map<string, any>) => string | null)[]} [sections] blocks after the table
+ * @property {((samples: Sample[], previous: Map<string, any>, warmup: Map<string, any>) => string | null)[]} [sections] blocks after the table
  * @property {(sample: Sample) => string | null} [invalidReason] why a sample cannot be compared, which also keeps it from being used as a baseline
  */
 
@@ -36,6 +36,8 @@ export class PerformanceReporter extends JsonReporter {
   constructor({ report, ...options }) {
     super(options);
     this.report = report;
+    // Kept as our own field: the base class types it as optional.
+    this.outputFile = options.outputFile;
   }
 
   /** @param {ReadonlyArray<import("vitest/node").TestModule>} testModules */
@@ -50,20 +52,31 @@ export class PerformanceReporter extends JsonReporter {
     );
     if (missing.length) {
       this.ctx.logger.log(
-        `performance report skipped: ${missing.length} file(s) under ${this.report.scope} produced no samples`,
+        `performance report skipped, no samples from: ${missing
+          .map((file) => file.replace(`${root}/`, ""))
+          .join(", ")}`,
       );
       return;
     }
 
     const previous = await previousSamples(
-      //@ts-expect-error todo
-      resolve(root, this.options.outputFile),
+      resolve(root, this.outputFile),
       this.report,
+    );
+    // What vitest itself timed before each file's first test. Scoped like the
+    // samples are, so a wider run does not list files by absolute path.
+    const warmup = new Map(
+      testModules
+        .filter((testModule) => testModule.moduleId.includes(this.report.scope))
+        .map((testModule) => [
+          fileKeyOf(testModule.moduleId, this.report.scope),
+          testModule.diagnostic(),
+        ]),
     );
     await super.onTestRunEnd(testModules);
     await writeFile(
       resolve(root, this.report.markdownFile),
-      render(samples, previous, this.report),
+      render(samples, previous, this.report, warmup),
     );
   }
 
