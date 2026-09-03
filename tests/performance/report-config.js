@@ -85,7 +85,33 @@ export const config = {
   scope: "tests/template/",
   metaKey: "perf",
   markdownFile: "tests/performance/report.md",
+  summaryFile: "tests/performance/summary.md",
   title: "Application performance",
+
+  summary: (samples, comparable) => {
+    if (!comparable.size) {
+      return "No previous run to compare this against.";
+    }
+    const changed = samples.flatMap((sample) => {
+      const before = comparable.get(sample.key);
+      const diffs = STABLE.filter(
+        ([, field]) =>
+          before && identity(before[field]) !== identity(sample.perf[field]),
+      ).map(
+        ([label, field]) =>
+          `- ${label}: ${identity(before[field]) || "none"} → ${identity(sample.perf[field]) || "none"}`,
+      );
+      return diffs.length ? [{ key: sample.key, diffs }] : [];
+    });
+    if (!changed.length) {
+      return `No performance changes were detected, over ${comparable.size} compared tests.`;
+    }
+    return [
+      `Performance changed in ${changed.length} of ${comparable.size} compared tests.`,
+      "",
+      ...changed.flatMap(({ key, diffs }) => [`**${key}**`, "", ...diffs, ""]),
+    ].join("\n");
+  },
 
   intro: (samples) => {
     const slowest = samples

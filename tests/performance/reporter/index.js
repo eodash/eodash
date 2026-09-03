@@ -1,7 +1,13 @@
 import { writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { JsonReporter } from "vitest/node";
-import { fileKeyOf, filesInScope, keyOf, previousSamples } from "./baseline.js";
+import {
+  comparableTo,
+  fileKeyOf,
+  filesInScope,
+  keyOf,
+  previousSamples,
+} from "./baseline.js";
 import { render } from "./markdown.js";
 
 /**
@@ -17,6 +23,8 @@ import { render } from "./markdown.js";
  * @property {string} scope directory the measured tests live in, and the prefix test keys are relative to
  * @property {string} metaKey the `task.meta` field samples are attached to
  * @property {string} markdownFile written beside the json the base class writes
+ * @property {string} [summaryFile] a shorter rendering, for somewhere a whole report does not fit
+ * @property {(samples: Sample[], comparable: Map<string, any>) => string} [summary] what `summaryFile` holds
  * @property {string} title
  * @property {string | ((samples: Sample[]) => string)} intro everything above the table, so a config can lead with a caveat when a run warrants one
  * @property {string} [glossary]
@@ -73,11 +81,23 @@ export class PerformanceReporter extends JsonReporter {
           testModule.diagnostic(),
         ]),
     );
+    const comparable = comparableTo(
+      samples,
+      previous,
+      this.report.invalidReason,
+    );
     await super.onTestRunEnd(testModules);
     await writeFile(
       resolve(root, this.report.markdownFile),
-      render(samples, previous, this.report, warmup),
+      render(samples, comparable, this.report, warmup),
     );
+    const { summaryFile, summary } = this.report;
+    if (summaryFile && summary) {
+      await writeFile(
+        resolve(root, summaryFile),
+        `${summary(samples, comparable)}\n`,
+      );
+    }
   }
 
   /**

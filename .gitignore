@@ -37,3 +37,4 @@ docs/**/*.timestamp-*.mjs
 coverage
 tests/performance/report.json
 tests/performance/report.md
+tests/performance/summary.md

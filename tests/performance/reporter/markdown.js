@@ -90,23 +90,12 @@ const filesOf = (samples) => {
  * and the summary line says how many are worth opening the table for.
  *
  * @param {import("./index.js").Sample[]} samples
- * @param {Map<string, any>} previous
+ * @param {Map<string, any>} comparable each sample's predecessor, where it has one
  * @param {import("./index.js").PerformanceReportConfig} config
  * @param {Map<string, any>} warmup
  */
-export const render = (samples, previous, config, warmup) => {
+export const render = (samples, comparable, config, warmup) => {
   const { columns, notes = [], sections = [], invalidReason } = config;
-  // A sample the config calls invalid has no comparable predecessor, so nothing
-  // downstream can diff it by accident.
-  const comparable = new Map(
-    samples
-      .filter((sample) => !invalidReason?.(sample))
-      .map(
-        (sample) =>
-          /** @type {[string, any]} */ ([sample.key, previous.get(sample.key)]),
-      )
-      .filter(([, perf]) => perf),
-  );
 
   const intro =
     typeof config.intro === "function" ? config.intro(samples) : config.intro;
