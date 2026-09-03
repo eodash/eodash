@@ -125,9 +125,6 @@ export default defineConfig({
           hookTimeout: 60 * 1000,
           browser: {
             enabled: true,
-            // Pinned: how many tiles a map asks for depends on the viewport and
-            // scale factor, so measurements are only comparable while both stay
-            // fixed.
             provider: playwright({ contextOptions: { deviceScaleFactor: 1 } }),
             headless: true,
             viewport: { width: 1440, height: 900 },
