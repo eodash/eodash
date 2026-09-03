@@ -48,6 +48,21 @@ export const foldout = (lines = []) =>
         .join("\n")}\n\n  </details>`
     : "";
 
+/**
+ * A block the reader opens only if the summary interests them. Left unindented
+ * so that markdown inside it, tables above all, still renders.
+ * @param {string} summary
+ * @param {string[]} lines
+ */
+export const folded = (summary, lines) =>
+  [
+    `<details><summary>${summary}</summary>`,
+    "",
+    ...lines,
+    "",
+    "</details>",
+  ].join("\n");
+
 /** @param {string[]} cells */
 const row = (cells) => `| ${cells.join(" | ")} |`;
 
@@ -70,9 +85,9 @@ const filesOf = (samples) => {
 };
 
 /**
- * A section per test file: a table of its tests, then whatever the config has
- * to say about them underneath. Notes are only rendered where a config produces
- * them, so a table standing alone means nothing was found in that file.
+ * A section per test file: its findings, over a folded table of every test it
+ * ran. Most tests have nothing to say, so the numbers are kept one click away
+ * and the summary line says how many are worth opening the table for.
  *
  * @param {import("./index.js").Sample[]} samples
  * @param {Map<string, any>} previous
@@ -97,35 +112,45 @@ export const render = (samples, previous, config, warmup) => {
     typeof config.intro === "function" ? config.intro(samples) : config.intro;
   const lines = [`# ${config.title}`, "", intro];
 
+  const remarks = new Map(
+    samples.map((sample) => {
+      const reason = invalidReason?.(sample);
+      return [
+        sample.key,
+        [
+          ...(reason ? [`Not compared: ${reason}.`] : []),
+          ...notes.flatMap((note) => note(sample, comparable.get(sample.key))),
+        ],
+      ];
+    }),
+  );
+
   for (const [file, group] of filesOf(samples)) {
     lines.push(
       "",
       `## ${file}`,
       "",
-      row(["test", ...columns.map(({ label }) => label)]),
-      row(Array(columns.length + 1).fill("---")),
-      ...group.map((sample) =>
-        row([
-          titleOf(sample),
-          ...columns.map(({ value }) => value(sample.perf)),
-        ]),
-      ),
+      folded(`metrics for ${group.length} tests`, [
+        row(["test", ...columns.map(({ label }) => label)]),
+        row(Array(columns.length + 1).fill("---")),
+        ...group.map((sample) =>
+          row([
+            titleOf(sample),
+            ...columns.map(({ value }) => value(sample.perf)),
+          ]),
+        ),
+      ]),
     );
 
     for (const sample of group) {
-      const reason = invalidReason?.(sample);
-      const remarks = [
-        ...(reason ? [`Not compared: ${reason}.`] : []),
-        ...notes.flatMap((note) => note(sample, comparable.get(sample.key))),
-      ];
-      if (remarks.length) {
-        lines.push(
-          "",
-          `**${titleOf(sample)}**`,
-          "",
-          ...remarks.map((r) => `- ${r}`),
-        );
-      }
+      const said = remarks.get(sample.key) ?? [];
+      if (!said.length) continue;
+      lines.push(
+        "",
+        `**${titleOf(sample)}**`,
+        "",
+        ...said.map((r) => `- ${r}`),
+      );
     }
   }
 
@@ -133,6 +158,6 @@ export const render = (samples, previous, config, warmup) => {
     const block = section(samples, comparable, warmup);
     if (block) lines.push("", block);
   }
-  if (config.glossary) lines.push("", "## Glossary", "", config.glossary);
+  if (config.glossary) lines.push("", folded("Glossary", [config.glossary]));
   return [...lines, ""].join("\n");
 };

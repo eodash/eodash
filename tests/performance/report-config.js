@@ -2,7 +2,7 @@
  * What the performance report says about eodash. The reporter itself is generic;
  * every metric name, claim and word below lives here.
  */
-import { foldout, size, time } from "./reporter/markdown.js";
+import { folded, foldout, size, time } from "./reporter/markdown.js";
 
 /** A hundred samples at the 1ms profiler interval: below this a frame is noise. */
 const FRAME_FLOOR_MS = 100;
@@ -98,10 +98,10 @@ export const config = {
       "Measured with `npm run test:performance` from test start until the app went idle.",
       "",
       "Notes appear only for tests with findings. Layer counts are exact and",
-      "checked against baseline; other metrics drift naturally between runs. Read figures",
+      "compared against the previous run; other metrics drift naturally between runs. Read figures",
       "for order of magnitude. Full data in `report.json`; definitions in glossary below.",
       "",
-      "Longest actions:",
+      "Longest tests:",
       "",
       slowest,
     ].join("\n");
@@ -145,7 +145,7 @@ export const config = {
     ({ perf }) =>
       count(perf.replacedLayers)
         ? [
-            `Rebuilt instead of updated in place: ${perf.replacedLayers
+            `Map layers rebuilt instead of updated in place: ${perf.replacedLayers
               .map((id) => `\`${id}\``)
               .join(", ")}.`,
           ]
@@ -173,12 +173,10 @@ export const config = {
         }))
         .sort((a, b) => b.imports - a.imports);
       if (!files.length) return null;
-      return [
-        "## Warmup",
-        "",
-        "Time spent importing files and running suite setup before the first test.",
-        "Not counted in per-test tables. The first file to import a module pays its",
-        "compile cost, so numbers shift with run order.",
+      return folded("import and setup time per file", [
+        "Time spent importing files and running suite setup. Not counted in",
+        "per-test tables. The first file to import a module pays its compile",
+        "cost, so numbers shift with run order.",
         "",
         "| file | imports | setup |",
         "| --- | --- | --- |",
@@ -186,23 +184,19 @@ export const config = {
           ({ file, imports, setup }) =>
             `| ${file} | ${time(imports)} | ${time(setup)} |`,
         ),
-      ].join("\n");
+      ]);
     },
 
     (samples) => {
       const counted = samples.filter((sample) => !invalidReason(sample));
-      const sampled = sum(counted, "sampledMs");
-      if (!sampled) return null;
-      const idle = sum(counted, "idleMs");
+      const working = sum(counted, "sampledMs") - sum(counted, "idleMs");
+      if (!working) return null;
       const program = sum(counted, "programMs");
-      return [
-        "## Profile",
-        "",
-        `Across all tests: ${share(idle, sampled)}% idle, ` +
-          `${share(program, sampled)}% compile/browser work, ` +
-          `${share(sampled - idle - program, sampled)}% running app code. ` +
-          "Dev-server on-demand compilation adds overhead not present in production builds.",
-      ].join("\n");
+      return (
+        `Of main-thread work across all tests, ${share(program, working)}% is ` +
+        `the dev server compiling on demand and ${share(working - program, working)}% ` +
+        "is application code. A production build carries only the second."
+      );
     },
   ],
 
