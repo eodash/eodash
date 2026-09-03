@@ -169,6 +169,19 @@ describe("described resources", () => {
     expect(errorState.value.severity).toBe("warning");
   });
 
+  test("unwraps data from the 'contents' property if it's a valid JSON string", async () => {
+    const wrappedData = {
+      contents: JSON.stringify({ id: "wrapped" }),
+    };
+    await commands.serveResponses({
+      "wrapped.json": { body: JSON.stringify(wrappedData) },
+    });
+
+    const { data } = await axios.get(url("wrapped"));
+
+    expect(data).toEqual({ id: "wrapped" });
+  });
+
   test.each([
     ["eodash:vegadefinition", "chart definition", "warning"],
     ["eodash:jsonform", "process form definition", "error"],

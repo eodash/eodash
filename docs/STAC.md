@@ -341,6 +341,7 @@ Standard links without an `endpoint` property are processed immediately.
 - `type: "application/json"` - JSON data injected into Vega spec
   - Supports `method: "GET"` or `"POST"`
   - For POST: use `body` property pointing to a JSON file, can be a Mustache template
+  - If the response contains a `contents` property that is a valid JSON string, eodash will automatically parse it and use it as the chart data (this response structure is used in Whatever Origin API). Otherwise, the whole response is used.
 - `type: "text/csv"` - CSV data loaded as `data.url` in Vega spec
 - Optional `eox:flatstyle` on the link can point to a style JSON whose variables are also available for Mustache templating (e.g., thresholds, palette names)
 
