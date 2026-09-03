@@ -2,21 +2,28 @@ import { isBaseLayerOrOverlay } from "../helpers/assets.js";
 import { generateFeatures } from "../helpers/items.js";
 import { findLayer } from "../helpers/layers.js";
 import { OBSERVATION_POINT_THEMES } from "../helpers/themes.js";
+import { createHTTPInstance } from "../http.js";
 import { createLayersFromAssets } from "./assets.js";
 import { createLayersFromLinks } from "./links.js";
 
-/** The id the observation points layer always carries. */
+/** Standard layer identifier for observation points. */
 const OBSERVATION_POINTS_ID = "geodb-collection";
 
 /**
- * Generates @eox/map base layers and overlays declared at the STAC Collection level
- * rather than at the Item level. Used for indicator-wide background layers.
+ * Generates map base layers and overlays declared at the STAC Collection level.
  *
- * @param {import("../types").STACCollection} collection - The STAC Collection
- * @param {Parameters<typeof createLayersFromLinks>[6]} [options] - Build context and configurations
+ * @param {import("../types").STACCollection} collection - STAC Collection
+ * @param {Parameters<typeof createLayersFromLinks>[6] & { client?: import("../http.js").AxiosInstance }} [options] - Build options and HTTP client
  * @returns {Promise<import("../types").BuiltLayers>}
  */
-export const getIndicatorLayers = async (collection, options = {}) => {
+export const getIndicatorLayers = async (
+  collection,
+  { client, ...rest } = {},
+) => {
+  const options = {
+    ...rest,
+    http: rest.http ?? createHTTPInstance({ client }),
+  };
   const assets = Object.fromEntries(
     Object.entries(collection.assets ?? {}).filter(([, asset]) =>
       isBaseLayerOrOverlay(asset),
@@ -28,7 +35,6 @@ export const getIndicatorLayers = async (collection, options = {}) => {
     createLayersFromLinks(
       collection.id ?? "",
       title,
-      // the collection stands in for the item: only its links are read
       /** @type {any} */ (collection),
       undefined,
       undefined,
@@ -54,14 +60,13 @@ export const getIndicatorLayers = async (collection, options = {}) => {
 };
 
 /**
- * Consolidates spatial observation points across multiple collections into a single @eox/map layer.
- * Applies theming and retains existing layer interactions.
+ * Creates a vector layer containing spatial observation points across collections.
  *
  * @param {import("../types").STACCollection[]} collections - Array of STAC Collections
  * @param {object} [options]
- * @param {import("../types").ObservationPointsThemes} [options.themes] - Custom marker colors and SVG icons keyed by theme
- * @param {import("../types").EoxLayer[]} [options.currentLayers] - The existing layer tree to preserve bound interactions
- * @returns {import("../types").EoxLayer | null} A single vector layer, or null if no observation points exist
+ * @param {import("../types").ObservationPointsThemes} [options.themes] - Theme styling options
+ * @param {import("@eox/map").EoxLayer[]} [options.currentLayers] - Existing layer hierarchy to preserve interactions
+ * @returns {import("@eox/map").EoxLayer | null} Vector layer definition or null if no points exist
  */
 export const getObservationPointsLayer = (
   collections,
@@ -102,7 +107,6 @@ export const getObservationPointsLayer = (
       format: "GeoJSON",
     },
     style: themeStyle(themes),
-    // carried over so eox-map reads the layer as unchanged and leaves them bound
     interactions: [
       ...(findLayer(currentLayers, OBSERVATION_POINTS_ID)?.interactions ?? []),
     ],
@@ -115,7 +119,7 @@ export const getObservationPointsLayer = (
  *
  * @param {import("../types").STACCollection} collection
  */
-function isObservationPoints(collection) {
+export function isObservationPoints(collection) {
   return collection.endpointtype === "GeoDB" || !!collection.locations;
 }
 

@@ -1,6 +1,5 @@
 /**
- * Resolves `href` against `baseUrl` when it is relative, and leaves absolute
- * hrefs alone, `blob:` and `data:` included.
+ * Resolves a URL href relative to a base URL if not already absolute.
  *
  * @param {string} href
  * @param {string} [baseUrl]
@@ -72,7 +71,7 @@ export function encodeURLObject(obj) {
         break;
       }
       case "object": {
-        str += `${key}=${encodeURI(JSON.stringify(value))}&`;
+        str += `${key}=${encodeURIComponent(JSON.stringify(value))}&`;
         break;
       }
       default: {
@@ -94,9 +93,7 @@ export function encodeURLObject(obj) {
 export function extractCollectionUrls(stacObject, basepath) {
   /** @type {string[]} */
   const collectionUrls = [];
-  // Support for two structure types, flat and indicator, simplified here:
-  // Flat assumes Catalog-Collection-Item
-  // Indicator assumes Catalog-Collection-Collection-Item
+  // Handles flat collections and nested collecions in indicators
 
   const children = stacObject?.links?.filter(
     (link) => link.rel === "child" && link.type?.includes("json"),

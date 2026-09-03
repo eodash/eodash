@@ -29,7 +29,7 @@ import { createHTTPInstance } from "../http.js";
  * @param {Record<string, any> | null} [options.tileMatrixSets]
  * @param {import("../http.js").HttpClient} [options.http]
  * @param {import("../types").LayerConfigHelpers} [options.layerConfigHelpers]
- * @returns {Promise<{ layers: import("../types").EoxLayer[], projections: import("../types").Projection[] }>}
+ * @returns {Promise<{ layers: import("@eox/map").EoxLayer[], projections: import("../types").Projection[] }>}
  */
 export const createLayerFromRender = async (
   rasterURL,
@@ -48,13 +48,13 @@ export const createLayerFromRender = async (
   /** @type {import("../types").Projection[]} */
   const projections = [];
 
-  // config renders > collection STAC renders > item renders
+  // Precedence: config renders > collection STAC renders > item renders
   const renders = resolveRenders(collection, configRenders) ?? item?.renders;
   if (!collection || !item || !renders) {
     return { layers: [], projections };
   }
 
-  // Yield to a raster xyz/tilejson link — createLayersFromLinks renders it.
+  // Skip dynamic rendering if a matching raster tile link is already provided
   const hasMatchingTileLink = item.links?.some(
     (link) =>
       (link.rel === "xyz" || link.rel === "tilejson") &&
@@ -72,8 +72,8 @@ export const createLayerFromRender = async (
   let { layerConfig } = extractLayerConfig({}, rasterForm);
 
   /**
-   * Resolves the first defined value of a property across a render's assets,
-   * checking item assets before falling back to collection assets.
+   * Resolves the first defined property value across a render's assets.
+   *
    * @param {import("../types").Render} render
    * @param {string} propertyName
    * @returns {any}
@@ -142,7 +142,7 @@ export const createLayerFromRender = async (
         id: createLayerID(
           collection.id,
           item.id,
-          { id: item.id, href: "", title, rel: "" },
+          { id: key, href: "", title, rel: "" },
           projectionCode,
         ),
         title,

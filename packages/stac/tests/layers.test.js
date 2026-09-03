@@ -207,7 +207,7 @@ describe("building layers", () => {
         osm,
       ]);
 
-      expect(updated).toBeUndefined();
+      expect(updated.layers).toEqual([]);
       expect(warn).toHaveBeenCalledWith(
         expect.stringContaining("no layer of this collection"),
         LAYER_ID,
@@ -225,7 +225,7 @@ describe("building layers", () => {
         currentTree().layers,
       );
 
-      expect(updated).toBeUndefined();
+      expect(updated.layers).toEqual([]);
       expect(warn).toHaveBeenCalledWith(
         expect.stringContaining("no item at"),
         "2023-01-10T00:00:00Z",
@@ -446,6 +446,18 @@ describe("building layers", () => {
       expect(layer.properties.layerControlExclusive).toBe(true);
       expect(layer.properties.layerControlExpand).toBe(false);
     });
+
+    test("tints layers with the reader's colour, without the caller repeating it per build", async () => {
+      serve({ links: [] });
+      const col = await createEodashCollection(COLLECTION_URL, {
+        client,
+        color: "#123456",
+      });
+
+      const { layers } = await col.buildLayers(/** @type {any} */ (xyzItem()));
+
+      expect(layers[0].properties.color).toBe("#123456");
+    });
   });
 
   describe("the STAC fallback", () => {
@@ -478,6 +490,35 @@ describe("building layers", () => {
 
       expect(layers).toHaveLength(1);
       expect(layers[0].type).toBe("STAC");
+    });
+  });
+
+  describe("collections whose items are places", () => {
+    /** @param {Record<string, any>} over */
+    const place = (over) => ({
+      id: "item",
+      properties: {},
+      assets: {},
+      links: [],
+      ...over,
+    });
+
+    test("builds nothing for a geoDB collection, but still reports the item's projection", async () => {
+      serve({ links: [], collection: { endpointtype: "GeoDB" } });
+      const col = await reader();
+
+      const built = await col.buildLayers(
+        /** @type {any} */ (place({ "proj:epsg": 3035 })),
+      );
+
+      expect(built.layers).toEqual([]);
+      expect(built.projections).toEqual([3035]);
+    });
+
+    test("builds nothing for a collection whose children are locations", async () => {
+      serve({ links: [], collection: { locations: true } });
+
+      expect(await buildFrom(place({}))).toEqual([]);
     });
   });
 });

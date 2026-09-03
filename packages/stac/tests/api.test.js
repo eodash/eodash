@@ -61,6 +61,7 @@ describe("api collection", () => {
       serve({ onSearch: () => ({ features: [stacItem({ id: "a" })] }) });
       const col = await apiCollection();
 
+      expect(col.kind).toBe("api");
       const { features } = await col.search({
         filter: "eo:cloud_cover < 10",
         "filter-lang": "cql2-text",

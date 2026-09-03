@@ -1,7 +1,5 @@
 /**
- * How an observation point is drawn per theme, as eodash brands them. The icons
- * are the `@mdi/js` paths they were copied from, so the package needs no icon
- * dependency of its own; a caller styling its own themes passes them instead.
+ * Default theme styles for observation points with SVG marker paths.
  *
  * @type {import("../types").ObservationPointsThemes}
  */

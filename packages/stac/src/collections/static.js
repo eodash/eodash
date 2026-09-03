@@ -3,16 +3,26 @@ import { toAbsolute } from "../helpers/url.js";
 import { createCollectionBase } from "./base.js";
 
 /**
- * Instantiates a static STAC collection, discovering items through native STAC links.
+ * Creates a static STAC collection reader discovering items through STAC links.
  *
  * @param {object} context
- * @param {string} context.url
- * @param {import("../types").STACCollection} context.stac
- * @param {import("../http.js").HttpClient} context.http
+ * @param {string} context.url - Collection URL
+ * @param {import("../types").STACCollection} context.stac - Collection metadata
+ * @param {import("../http.js").HttpClient} context.http - HTTP client instance
+ * @param {string} [context.color] - Collection layer tint color
+ * @param {string} [context.viewProjection] - Map view projection
+ * @param {import("../types").BuildContext} [context.rasterOptions] - Raster rendering options
  */
-export const createStaticCollection = ({ url, stac, http }) => {
+export const createStaticCollection = ({
+  url,
+  stac,
+  http,
+  color,
+  viewProjection,
+  rasterOptions,
+}) => {
   /**
-   * The `item` links the document carries, oldest first.
+   * Retrieves item links sorted chronologically.
    *
    * @returns {Promise<import("../types").ItemLink[]>}
    */
@@ -60,12 +70,24 @@ export const createStaticCollection = ({ url, stac, http }) => {
     return http.get(toAbsolute(closest.href, url));
   };
 
-  return {
-    ...createCollectionBase({ stac, http, getDates, getItem }),
-    getItems,
-    getDates,
-    getItem,
-  };
+  return Object.assign(
+    createCollectionBase({
+      stac,
+      http,
+      getDates,
+      getItem,
+      color,
+      viewProjection,
+      rasterOptions,
+    }),
+    {
+      /** @type {"static"} */
+      kind: "static",
+      getItems,
+      getDates,
+      getItem,
+    },
+  );
 };
 
 /**

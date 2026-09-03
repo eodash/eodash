@@ -30,6 +30,7 @@
     "access": "public"
   },
   "scripts": {
+    "dev": "vite build --watch",
     "build": "vite build && npm run build:types",
     "build:types": "tsc",
     "check": "tsc --noEmit",

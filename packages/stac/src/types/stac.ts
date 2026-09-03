@@ -30,6 +30,10 @@ export interface ItemExtensions {
 
 /** What a collection carries beyond the baseline. */
 export interface CollectionExtensions {
+  "proj:code"?: string;
+  /** @deprecated superseded by `proj:code` in projection extension v1.2. */
+  "proj:epsg"?: number;
+  "eodash:proj4_def"?: Projection;
   renders?: Record<string, Render>;
   /** Point locations are carried by `child` links rather than `item` links. */
   locations?: boolean;
@@ -202,6 +206,8 @@ export interface ItemLink extends BaseLink {
   end_datetime?: string;
   /** `"lat,lon"`, on collections rendered as observation points. */
   latlng?: string;
+  /** The COG a veda endpoint reads the item from. */
+  cog_href?: string;
 }
 
 /** A url to a style JSON, or several keyed by id. */

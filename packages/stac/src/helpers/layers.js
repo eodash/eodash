@@ -2,11 +2,19 @@ import log from "loglevel";
 import { isBaseLayerOrOverlay } from "./assets.js";
 
 /**
- * Find JSON layer by ID
- *  @param {import("@eox/map").EoxLayer[]} layers
- *  @param {string} layer
- *  @returns {import("@eox/map").EoxLayer | undefined}
- **/
+ * Divides the parts of a layer id, which reads
+ * `collection;:;item;:;link;:;projection`. Consumers split ids on it to
+ * recognise the collection or link a layer came from.
+ */
+export const LAYER_ID_SEPARATOR = ";:;";
+
+/**
+ * Finds a layer by its ID in a layer tree.
+ *
+ * @param {import("@eox/map").EoxLayer[]} layers
+ * @param {string} layer - Layer ID
+ * @returns {import("@eox/map").EoxLayer | undefined}
+ */
 export const findLayer = (layers, layer) => {
   for (const lyr of layers) {
     if (lyr.type === "Group") {
@@ -23,11 +31,11 @@ export const findLayer = (layers, layer) => {
 };
 
 /**
- * Recursively find all layers whose ID up to the first ; is same as given layer
+ * Finds all layers matching the collection prefix of a reference layer.
  *
  * @param {import("@eox/map").EoxLayer[]} layers
- * @param {import("@eox/map").EoxLayer | undefined} referenceLayer - layer
- * @returns {import("@eox/map").EoxLayer[]} Matching layer objects.
+ * @param {import("@eox/map").EoxLayer | undefined} referenceLayer - Reference layer containing the prefix
+ * @returns {import("@eox/map").EoxLayer[]} Matching layer objects
  */
 export const findLayersByLayerPrefix = (layers, referenceLayer) => {
   if (!layers || !referenceLayer) {
@@ -35,11 +43,13 @@ export const findLayersByLayerPrefix = (layers, referenceLayer) => {
   }
   const refId = referenceLayer?.properties?.id;
 
-  if (typeof refId !== "string" || !refId.includes(";:;")) {
-    throw new Error("Reference layer ID must contain a ';:;' separator.");
+  if (typeof refId !== "string" || !refId.includes(LAYER_ID_SEPARATOR)) {
+    throw new Error(
+      `Reference layer ID must contain a '${LAYER_ID_SEPARATOR}' separator.`,
+    );
   }
 
-  const prefix = refId.split(";:;")[0];
+  const prefix = refId.split(LAYER_ID_SEPARATOR)[0];
   const matches = [];
 
   for (const layer of layers) {
@@ -47,7 +57,10 @@ export const findLayersByLayerPrefix = (layers, referenceLayer) => {
       matches.push(...findLayersByLayerPrefix(layer.layers, referenceLayer));
     } else {
       const id = layer?.properties?.id;
-      if (typeof id === "string" && id.split(";:;")[0] === prefix) {
+      if (
+        typeof id === "string" &&
+        id.split(LAYER_ID_SEPARATOR)[0] === prefix
+      ) {
         matches.push(layer);
       }
     }
@@ -57,21 +70,20 @@ export const findLayersByLayerPrefix = (layers, referenceLayer) => {
 };
 
 /**
- * Removes JSON layers by ID from the layer tree
- *  @param {import("@eox/map").EoxLayer[]} layers
- *  @param {string[]} layerIds
- *  @returns {import("@eox/map").EoxLayer[]}
- **/
+ * Removes layers by ID from a layer tree.
+ *
+ * @param {import("@eox/map").EoxLayer[]} layers
+ * @param {string[]} layerIds
+ * @returns {import("@eox/map").EoxLayer[]}
+ */
 export const removeLayers = (layers, layerIds) => {
   const result = [];
   for (const layer of layers) {
-    // if the layer is hidden, do not include it without checking if it's a group
     if (layer.properties?.id && layerIds.includes(layer.properties.id)) {
       continue;
     }
     if (layer.type === "Group" && Array.isArray(layer.layers)) {
       const newGroupLayers = removeLayers(layer.layers, layerIds);
-      // if the group is not hidden, add it with the updated layers (if any were removed)
       result.push(
         newGroupLayers !== layer.layers
           ? { ...layer, layers: newGroupLayers }
@@ -90,12 +102,11 @@ export const removeLayers = (layers, layerIds) => {
 };
 
 /**
- * Replaces target layers in an @eox/map layer array tree immutably, preserving unchanged array references.
- * Essential for updating specific layers (e.g. on timestamp change) without forcing @eox/map to remount the entire map.
+ * Replaces target layers in a layer tree immutably, preserving unchanged array references.
  *
- * @param {import("@eox/map").EoxLayer[]} layers - Existing layer tree array.
- * @param {string | string[]} toRemove - ID(s) of layers to remove.
- * @param {import("@eox/map").EoxLayer[]} toInsert - New layers to insert in place of the first removed layer.
+ * @param {import("@eox/map").EoxLayer[]} layers - Existing layer tree array
+ * @param {string | string[]} toRemove - ID(s) of layers to remove
+ * @param {import("@eox/map").EoxLayer[]} toInsert - New layers to insert
  * @returns {import("@eox/map").EoxLayer[]}
  */
 export const replaceLayer = (layers, toRemove, toInsert) => {
@@ -106,7 +117,6 @@ export const replaceLayer = (layers, toRemove, toInsert) => {
   for (const layer of layers) {
     if (layer.type === "Group" && Array.isArray(layer.layers)) {
       const newGroupLayers = replaceLayer(layer.layers, toRemove, toInsert);
-      // Only create a new object reference if children changed
       result.push(
         newGroupLayers !== layer.layers
           ? { ...layer, layers: newGroupLayers }
@@ -122,7 +132,6 @@ export const replaceLayer = (layers, toRemove, toInsert) => {
         result.push(...toInsert);
         inserted = true;
       }
-      // Skip this layer (it’s removed)
       continue;
     }
 
@@ -137,54 +146,59 @@ export const replaceLayer = (layers, toRemove, toInsert) => {
 };
 
 /**
- * Generates layer specific ID from STAC Links
- * related function is: {@link createAssetID}
+ * Generates a unique layer ID from STAC link metadata and projection.
  *
  * @param {string} collectionId
  * @param {string} itemId
  * @param {import("../types").STACLink} link
  * @param {string | import("ol/proj").ProjectionLike} projectionCode
- *
+ * @returns {string}
  */
 export const createLayerID = (collectionId, itemId, link, projectionCode) => {
   const linkId = link.id || link.title || link.href;
-  let lId = `${collectionId ?? ""};:;${itemId ?? ""};:;${linkId ?? ""};:;${projectionCode ?? ""}`;
+  let lId = [
+    collectionId ?? "",
+    itemId ?? "",
+    linkId ?? "",
+    projectionCode ?? "",
+  ].join(LAYER_ID_SEPARATOR);
   // If we are looking at base layers and overlays we remove the collection and item part
   // as we want to make sure tiles are not reloaded when switching layers
   if (isBaseLayerOrOverlay(link)) {
-    lId = `${linkId ?? ""};:;${projectionCode ?? ""}`;
+    lId = [linkId ?? "", projectionCode ?? ""].join(LAYER_ID_SEPARATOR);
   }
   log.debug("Generated Layer ID", lId);
   return lId;
 };
 
 /**
- * Generates layer specific ID from STAC assets, related function is: {@link createLayerID}
+ * Generates a unique layer ID for a STAC asset by index.
  *
  * @param {string} collectionId
  * @param {string} itemId
  * @param {number} index
- *
+ * @returns {string}
  */
 export const createAssetID = (collectionId, itemId, index) => {
-  let lId = `${collectionId ?? ""};:;${itemId ?? ""};:;${index ?? ""}`;
+  let lId = [collectionId ?? "", itemId ?? "", index ?? ""].join(
+    LAYER_ID_SEPARATOR,
+  );
   log.debug("Generated Asset ID", lId);
   return lId;
 };
 
 /**
- * Extracts the STAC collection which the layer was created from.
+ * Resolves the collection reader corresponding to a given layer ID.
  *
  * @template {{ stac?: import("../types").STACCollection }} Reader
- * @param {Reader[]} indicators any reader, since only its collection is read
- * @param {import('ol/layer').Layer} layer
- * @returns {Promise<Reader | undefined>}
+ * @param {Reader[]} readers
+ * @param {string} [layerId]
+ * @returns {Reader | undefined}
  */
-export const getColFromLayer = async (indicators, layer) => {
-  const [collectionId, ..._other] = layer.get("id").split(";:;");
-
-  for (const ind of indicators) {
-    if (ind.stac?.id !== collectionId) continue;
-    return ind;
+export const getColFromLayer = (readers, layerId) => {
+  if (!layerId) {
+    return undefined;
   }
+  const [collectionId] = layerId.split(LAYER_ID_SEPARATOR);
+  return readers.find((reader) => reader.stac?.id === collectionId);
 };

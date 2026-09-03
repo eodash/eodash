@@ -13,6 +13,16 @@ export const adjustParquetItems = (items) => {
     return /** @type {import("../types").STACItem} */ ({
       ...item,
 
+      // Convert Date instances to ISO 8601 strings for consistent RFC 3339 formatting
+      properties: ((properties) => {
+        for (const key of ["datetime", "start_datetime", "end_datetime"]) {
+          if (properties[key] instanceof Date) {
+            properties[key] = properties[key].toISOString();
+          }
+        }
+        return properties;
+      })(item.properties ?? {}),
+
       assets: ((assets) => {
         for (const [key, value] of Object.entries(assets)) {
           if (!value || !value.href) {

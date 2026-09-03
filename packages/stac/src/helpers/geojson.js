@@ -1,8 +1,10 @@
+import { createHTTPInstance } from "../http.js";
+
 /**
  * @param {string[]} geojsonUrls
- * @param {import("../http.js").HttpClient} http
+ * @param {import("../http.js").HttpClient} [http] -  uses fetch by default
  */
-export async function mergeGeojsons(geojsonUrls, http) {
+export async function mergeGeojsons(geojsonUrls, http = createHTTPInstance()) {
   if (!geojsonUrls.length) {
     return undefined;
   }
@@ -23,7 +25,8 @@ export async function mergeGeojsons(geojsonUrls, http) {
     ),
   );
 
-  return encodeURI(
-    "data:application/json;charset=utf-8," + JSON.stringify(merged),
+  return (
+    "data:application/json;charset=utf-8," +
+    encodeURIComponent(JSON.stringify(merged))
   );
 }

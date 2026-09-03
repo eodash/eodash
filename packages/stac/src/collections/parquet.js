@@ -9,28 +9,32 @@ import { adjustParquetItems } from "../helpers/parquet.js";
 import { toAbsolute } from "../helpers/url.js";
 import { createCollectionBase } from "./base.js";
 
-/**
- * How much of the file's tail to fetch to reach the footer. hyparquet defaults
- * to 512kB, which swallows a small mirror whole.
- */
+/** Initial byte length fetched from file tail to parse the parquet footer. */
 const FOOTER_BYTES = 1 << 15;
 
 /**
- * A datetime and the row it was read from.
- *
  * @typedef {{ row: number; time: number }} DatetimeEntry
  */
 
 /**
- * Instantiates a STAC collection backed by a GeoParquet mirror asset.
- * Defers reading columns until requested, avoiding full asset transfers when only dates are needed.
+ * Creates a STAC collection reader backed by a GeoParquet mirror asset.
  *
  * @param {object} context
- * @param {string} context.url
- * @param {import("../types").STACCollection} context.stac
- * @param {import("../http.js").HttpClient} context.http
+ * @param {string} context.url - Collection URL
+ * @param {import("../types").STACCollection} context.stac - Collection metadata
+ * @param {import("../http.js").HttpClient} context.http - HTTP client instance
+ * @param {string} [context.color] - Collection layer tint color
+ * @param {string} [context.viewProjection] - Map view projection
+ * @param {import("../types").BuildContext} [context.rasterOptions] - Raster rendering options
  */
-export const createParquetCollection = ({ url, stac, http }) => {
+export const createParquetCollection = ({
+  url,
+  stac,
+  http,
+  color,
+  viewProjection,
+  rasterOptions,
+}) => {
   const mirror = findParquetMirror(stac);
   const href = mirror ? toAbsolute(mirror.href, url) : undefined;
 
@@ -169,30 +173,71 @@ export const createParquetCollection = ({ url, stac, http }) => {
     return (await readItems())[closest.row];
   };
 
-  return {
-    ...createCollectionBase({ stac, http, getDates, getItem }),
-    getItems,
-    getDates,
-    getItem,
-  };
+  return Object.assign(
+    createCollectionBase({
+      stac,
+      http,
+      getDates,
+      getItem,
+      color,
+      viewProjection,
+      rasterOptions,
+    }),
+    {
+      /** @type {"parquet"} */
+      kind: "parquet",
+      getItems,
+      getDates,
+      getItem,
+    },
+  );
 };
 
 /**
- * The mirror's size, asked for as a range so the answer describes the file the
- * byte offsets belong to. A HEAD will not do: a host that gzips reports the
- * compressed length there — GitHub Pages serves a 313kB mirror as 139kB — and
- * the footer would then be read from the middle of the file.
- *
- * Uses `fetch` because that is what hyparquet reads the mirror with.
+ * The mirror's size, counted the way its own byte offsets are. A plain HEAD
+ * answers with the *encoded* length wherever the host compresses — GitHub Pages
+ * calls a 57917 byte mirror 30416 — landing the footer mid-file. Three ways to
+ * ask, cheapest first.
  *
  * @param {string} href
- * @returns {Promise<number | undefined>} nothing when the host ignores ranges
+ * @returns {Promise<number | undefined>} nothing when the length is unreadable
  */
 async function fetchByteLength(href) {
-  const response = await fetch(href, { headers: { Range: "bytes=0-0" } });
-  const total = Number(
-    response.headers.get("content-range")?.split("/").at(-1),
+  // A Range has browsers negotiate `identity`, and servers ignore it on a HEAD:
+  // the length wanted, no body at all. Worth trusting only while
+  // `Content-Encoding` reads back empty — hidden means a browser stripped it,
+  // having already negotiated; set means nothing did, and the length counts
+  // encoded bytes.
+  const head = await fetch(href, {
+    method: "HEAD",
+    headers: { Range: "bytes=0-0" },
+  });
+  const negotiated =
+    head.status === 200 && !head.headers.get("content-encoding");
+  const headLength = Number(head.headers.get("content-length"));
+  if (negotiated && headLength) {
+    return headLength;
+  }
+
+  // states the whole size, at the cost of a byte, but is not CORS-safelisted
+  const probe = await fetch(href, { headers: { Range: "bytes=0-0" } });
+  const declared = Number(
+    probe.headers.get("content-range")?.split("/").at(-1),
   );
+  await probe.body?.cancel();
+  if (declared) {
+    return declared;
+  }
+
+  // last resort: ask for it whole just to read `Content-Length`, then drop it
+  const response = await fetch(href, { headers: { Range: "bytes=0-" } });
+  if (response.status !== 206) {
+    // ranges went unhonoured, so there are no offsets to agree with and the
+    // decoded body is the only length that is not a guess
+    return (await response.arrayBuffer()).byteLength || undefined;
+  }
+  const total = Number(response.headers.get("content-length"));
+  await response.body?.cancel();
   return total ? total : undefined;
 }
 

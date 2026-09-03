@@ -122,7 +122,7 @@ interface Extents {
 }
 
 /** `[start, end]`, either end open as `null`. */
-type TemporalInterval = [string | null, string | null];
+export type TemporalInterval = [string | null, string | null];
 
 export interface GeoJSONFeature {
   type: "Feature";

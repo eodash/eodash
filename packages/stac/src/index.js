@@ -6,59 +6,44 @@ import { createParquetCollection } from "./collections/parquet.js";
 import { createStaticCollection } from "./collections/static.js";
 
 /**
- * A static STAC collection reader (backed by item links or a GeoParquet mirror).
+ * Creates a collection reader for querying dates and generating map layers.
+ * Selects an API, GeoParquet, or static collection reader based on the options and collection metadata.
  *
- * @typedef {ReturnType<typeof createStaticCollection>
- *   | ReturnType<typeof createParquetCollection>} CollectionReader
- */
-
-/**
- * A STAC API search collection reader.
- *
- * @typedef {ReturnType<typeof createAPICollection>} ApiReader
- */
-
-/**
- * Reads a STAC API collection endpoint.
- *
- * @overload
- * @param {string} url
- * @param {{ api: true, maxItems?: number, client?: import("./http.js").AxiosInstance }} options
- * @returns {Promise<ApiReader>}
- */
-/**
- * Reads a static STAC collection or GeoParquet mirror collection.
- *
- * @overload
- * @param {string} url
- * @param {{ api?: false, maxItems?: number, client?: import("./http.js").AxiosInstance }} [options]
- * @returns {Promise<CollectionReader>}
- */
-/**
- * Reads a STAC collection with dynamic API flag resolution.
- *
- * @overload
- * @param {string} url
- * @param {{ api?: boolean, maxItems?: number, client?: import("./http.js").AxiosInstance }} options
- * @returns {Promise<ApiReader | CollectionReader>}
- */
-/**
- * Creates a collection reader for date lookups and layer creation.
- * Static collections use item links or a GeoParquet mirror asset. STAC APIs require `options.api = true`.
- *
- * @param {string} url - Collection JSON URL or API search endpoint
+ * @param {string} url - Collection URL or API search endpoint
  * @param {object} [options]
- * @param {boolean} [options.api=false] - Set to true if queried via STAC API search
- * @param {number} [options.maxItems] - Max items returned per search query
- * @param {import("./http.js").AxiosInstance} [options.client] - Custom HTTP client
- * @returns {Promise<ApiReader | CollectionReader>}
+ * @param {boolean} [options.api=false] - Whether the collection uses a STAC API endpoint
+ * @param {number} [options.maxItems] - Maximum items to retrieve per search query
+ * @param {import("./http.js").AxiosInstance} [options.client] - Custom HTTP client instance
+ * @param {string} [options.color] - Color assigned to layers generated from this collection
+ * @param {string} [options.viewProjection] - Map view projection code used to namespace layer identifiers
+ * @param {string} [options.rasterEndpoint] - Base URL for raster tile rendering
+ * @param {Array<string | { url: string; titilerVersion?: 1 | 2; scaleFactor?: number }>} [options.upscalingEndpoints] - Tile endpoints for high-resolution rendering
+ * @param {Record<string, any> | null} [options.tileMatrixSets] - TileMatrixSet configurations keyed by projection
+ * @param {Record<string, Record<string, import("./types").Render>>} [options.renders] - Render configurations mapped by collection ID
+ * @returns {Promise<import("./types").Reader>}
  */
 export const createEodashCollection = async (url, options = {}) => {
-  const { api = false, maxItems, client } = options;
+  const {
+    api = false,
+    maxItems,
+    client,
+    color,
+    viewProjection,
+    rasterEndpoint,
+    upscalingEndpoints,
+    tileMatrixSets,
+    renders,
+  } = options;
   const http = createHTTPInstance({ client });
   /** @type {import("./types").STACCollection} */
   const stac = await http.get(url);
-  const context = { url, stac, http };
+  const rasterOptions = {
+    rasterEndpoint,
+    upscalingEndpoints,
+    tileMatrixSets,
+    renders,
+  };
+  const context = { url, stac, http, color, viewProjection, rasterOptions };
 
   if (api) {
     return createAPICollection({ ...context, maxItems });
