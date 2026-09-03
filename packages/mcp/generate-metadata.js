@@ -21,6 +21,98 @@ const CATEGORY_MAP = {
   EodashLayoutSwitcher: "Layout & Orchestration",
 };
 
+const TAGS_MAP = {
+  EodashMap: [
+    "map",
+    "visualization",
+    "layers",
+    "openlayers",
+    "geo",
+    "spatial",
+    "globe",
+    "projection",
+  ],
+  EodashLayerControl: [
+    "layer",
+    "layers",
+    "control",
+    "visibility",
+    "opacity",
+    "visualization",
+    "legend",
+  ],
+  EodashItemCatalog: [
+    "catalog",
+    "stac",
+    "items",
+    "discovery",
+    "search",
+    "filter",
+    "collection",
+  ],
+  EodashItemFilter: [
+    "filter",
+    "filtering",
+    "selection",
+    "tag",
+    "theme",
+    "attribute",
+    "search",
+  ],
+  EodashTimeSlider: [
+    "time",
+    "temporal",
+    "slider",
+    "datetime",
+    "navigation",
+    "animation",
+    "range",
+  ],
+  EodashDatePicker: [
+    "time",
+    "temporal",
+    "date",
+    "picker",
+    "datetime",
+    "calendar",
+  ],
+  EodashProcess: [
+    "process",
+    "processing",
+    "analysis",
+    "jsonform",
+    "service",
+    "execution",
+    "wps",
+    "algorithms",
+  ],
+  EodashChart: [
+    "chart",
+    "vega",
+    "graph",
+    "timeseries",
+    "statistics",
+    "analysis",
+    "plot",
+  ],
+  EodashStacInfo: [
+    "info",
+    "stac",
+    "metadata",
+    "citation",
+    "branding",
+    "details",
+  ],
+  EodashTools: ["tools", "layout", "toolbar", "actions", "orchestration"],
+  EodashLayoutSwitcher: [
+    "layout",
+    "template",
+    "switcher",
+    "view",
+    "orchestration",
+  ],
+};
+
 const STAC_EXTENSIONS_MAP = {
   EodashMap: [
     "eox:flatstyle",
@@ -813,6 +905,75 @@ function stringifyType(t) {
   return t.type || "unknown";
 }
 
+function typeToSchema(t) {
+  if (!t) return { type: "unknown" };
+  if (t.type === "intrinsic") {
+    return { type: t.name === "any" ? "unknown" : t.name };
+  }
+  if (t.type === "literal") {
+    return { const: t.value };
+  }
+  if (t.type === "array") {
+    return { type: "array", items: typeToSchema(t.elementType) };
+  }
+  if (t.type === "tuple") {
+    return { type: "array", items: t.elements.map(typeToSchema) };
+  }
+  if (t.type === "union") {
+    return { anyOf: t.types.map(typeToSchema) };
+  }
+  if (t.type === "intersection") {
+    const merged = { type: "object", properties: {} };
+    for (const sub of t.types) {
+      const s = typeToSchema(sub);
+      if (s.properties) {
+        Object.assign(merged.properties, s.properties);
+      }
+    }
+    return Object.keys(merged.properties).length > 0
+      ? merged
+      : { type: "object" };
+  }
+  if (t.type === "reference") {
+    if (t.typeArguments && t.typeArguments.length > 0) {
+      return typeToSchema(t.typeArguments[0]);
+    }
+    return { type: t.name };
+  }
+  if (t.type === "reflection") {
+    if (t.declaration?.children) {
+      const properties = {};
+      const required = [];
+      for (const child of t.declaration.children) {
+        properties[child.name] = {
+          ...typeToSchema(child.type),
+          ...(child.comment?.summary
+            ? {
+                description: child.comment.summary
+                  .map((s) => s.text)
+                  .join("")
+                  .trim(),
+              }
+            : {}),
+        };
+        if (!child.flags?.isOptional) {
+          required.push(child.name);
+        }
+      }
+      return {
+        type: "object",
+        properties,
+        ...(required.length > 0 ? { required } : {}),
+      };
+    }
+    if (t.declaration?.signatures) {
+      return { type: "function" };
+    }
+    return { type: "object" };
+  }
+  return { type: typeof t === "string" ? t : "object" };
+}
+
 function parseTypedocWidgets(repoRoot) {
   const typedocPath = path.join(repoRoot, "dist/typedoc.json");
   if (!fs.existsSync(typedocPath)) {
@@ -828,6 +989,7 @@ function parseTypedocWidgets(repoRoot) {
       const props = (w.children || []).map((p) => ({
         name: p.name,
         type: stringifyType(p.type),
+        schema: typeToSchema(p.type),
         defaultValue: p.defaultValue ?? null,
         description:
           p.comment?.summary
@@ -888,6 +1050,7 @@ export function buildMetadata(repoRoot = DEFAULT_REPO_ROOT) {
     const guide = guides[name] || "";
     const storeInteractions = analyzeStoreInteractions(name, repoRoot);
     const category = CATEGORY_MAP[name] || "General";
+    const tags = TAGS_MAP[name] || [];
     const stacExtensions = STAC_EXTENSIONS_MAP[name] || [];
     const stacCoreFields = STAC_CORE_FIELDS_MAP[name] || [];
     const isBackground = name === "EodashMap";
@@ -927,6 +1090,7 @@ export function buildMetadata(repoRoot = DEFAULT_REPO_ROOT) {
     widgetsMetadata[name] = {
       name,
       category,
+      tags,
       summary,
       isBackground,
       props: props || [],

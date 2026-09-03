@@ -245,8 +245,64 @@ if (store) {
 /**
  * Generates the HTML landing page for the MCP server Express dashboard
  */
-export function generateLandingPage(widgets, _arch) {
-  const totalWidgets = Object.keys(widgets).length;
+export function generateLandingPage(widgets, _arch, options = {}) {
+  const totalWidgets = Object.keys(widgets || {}).length;
+  const templates = options.templates || getAvailableTemplates();
+  const examplesCount = options.examplesCount ?? 12;
+  const tools = options.tools || [];
+  const totalTools = tools.length || 8;
+
+  const toolCards =
+    tools.length > 0
+      ? tools
+          .map(
+            (t) => `
+        <div class="border border-slate-100 bg-slate-50/50 rounded-lg p-4 hover:border-blue-200 transition-colors">
+          <span class="font-mono text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded">${t.name}</span>
+          <p class="text-xs text-slate-600 mt-2 leading-relaxed">${t.description || ""}</p>
+        </div>
+      `,
+          )
+          .join("")
+      : `
+        <div class="border border-slate-100 bg-slate-50/50 rounded-lg p-4">
+          <span class="font-mono text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded">list_widgets</span>
+          <p class="text-xs text-slate-600 mt-2">List all built-in eodash widgets with category and store interactions.</p>
+        </div>
+        <div class="border border-slate-100 bg-slate-50/50 rounded-lg p-4">
+          <span class="font-mono text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded">get_widget_details</span>
+          <p class="text-xs text-slate-600 mt-2">Get full TypeScript props, defaults, store bindings, STAC extensions, and examples.</p>
+        </div>
+        <div class="border border-slate-100 bg-slate-50/50 rounded-lg p-4">
+          <span class="font-mono text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded">get_custom_widget_guide</span>
+          <p class="text-xs text-slate-600 mt-2">Guides and boilerplate for Web Component, Functional, and IFrame widgets.</p>
+        </div>
+        <div class="border border-slate-100 bg-slate-50/50 rounded-lg p-4">
+          <span class="font-mono text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded">get_eodash_architecture</span>
+          <p class="text-xs text-slate-600 mt-2">Comprehensive architecture docs: layout grid, templates, store states, and deployment.</p>
+        </div>
+        <div class="border border-slate-100 bg-slate-50/50 rounded-lg p-4">
+          <span class="font-mono text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded">scaffold_dashboard</span>
+          <p class="text-xs text-slate-600 mt-2">Bootstrap complete SPA, VitePress narrative docs, or Web Component boilerplate.</p>
+        </div>
+        <div class="border border-slate-100 bg-slate-50/50 rounded-lg p-4">
+          <span class="font-mono text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded">generate_eodash_config</span>
+          <p class="text-xs text-slate-600 mt-2">Create valid, type-safe eodash configuration files with brand theme and templates.</p>
+        </div>
+        <div class="border border-slate-100 bg-slate-50/50 rounded-lg p-4">
+          <span class="font-mono text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded">generate_layer_style</span>
+          <p class="text-xs text-slate-600 mt-2">Generate map layer styles and visualization controls (vector, raster, and forms).</p>
+        </div>
+        <div class="border border-slate-100 bg-slate-50/50 rounded-lg p-4">
+          <span class="font-mono text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded">find_examples</span>
+          <p class="text-xs text-slate-600 mt-2">Search and discover working eodash dashboard examples, layer styles, and catalog configs.</p>
+        </div>
+        <div class="border border-slate-100 bg-slate-50/50 rounded-lg p-4">
+          <span class="font-mono text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded">validate_catalog_config</span>
+          <p class="text-xs text-slate-600 mt-2">Validate catalog collection and indicator configurations against official eodash schemas.</p>
+        </div>
+      `;
+
   const widgetCards = Object.values(widgets)
     .map(
       (w) => `
@@ -302,7 +358,7 @@ export function generateLandingPage(widgets, _arch) {
             This server implements the <a href="https://modelcontextprotocol.io" target="_blank" class="text-blue-600 hover:underline font-medium">Model Context Protocol (MCP)</a> for <strong>@eodash/eodash</strong>.
           </p>
           <p class="text-sm text-slate-600 leading-relaxed">
-            Coding agents and LLMs can query rich metadata, TypeScript props, reactive store flows, layout grids, and full usage snippets for all eodash built-in widgets and custom widget extensions.
+            Coding agents and LLMs can query rich metadata, TypeScript props, reactive store flows, layout grids, OpenLayers FlatStyles, dynamic forms, and curated snippets for all eodash instances.
           </p>
         </div>
         <div class="mt-6 pt-6 border-t border-slate-100 flex flex-wrap gap-3">
@@ -317,68 +373,59 @@ export function generateLandingPage(widgets, _arch) {
 
       <div class="bg-gradient-to-br from-slate-900 to-slate-800 rounded-xl p-6 text-white shadow-lg flex flex-col justify-between">
         <h2 class="text-sm font-semibold text-slate-400 tracking-wider uppercase mb-4">Dashboard Overview</h2>
-        <div class="grid grid-cols-2 gap-4 my-auto">
-          <div class="bg-slate-800/50 rounded-lg p-4 border border-slate-700/50">
+        <div class="grid grid-cols-3 gap-3 my-auto">
+          <div class="bg-slate-800/50 rounded-lg p-3 border border-slate-700/50 text-center">
             <div class="text-2xl font-bold text-blue-400">${totalWidgets}</div>
-            <div class="text-xs text-slate-400 mt-1">Built-in Widgets</div>
+            <div class="text-[11px] text-slate-400 mt-1">Widgets</div>
           </div>
-          <div class="bg-slate-800/50 rounded-lg p-4 border border-slate-700/50">
-            <div class="text-2xl font-bold text-teal-400">4</div>
-            <div class="text-xs text-slate-400 mt-1">Templates (Lite, Explore, Expert, Compare)</div>
+          <div class="bg-slate-800/50 rounded-lg p-3 border border-slate-700/50 text-center">
+            <div class="text-2xl font-bold text-teal-400">${templates.length}</div>
+            <div class="text-[11px] text-slate-400 mt-1">Templates</div>
+          </div>
+          <div class="bg-slate-800/50 rounded-lg p-3 border border-slate-700/50 text-center">
+            <div class="text-2xl font-bold text-indigo-400">${examplesCount}</div>
+            <div class="text-[11px] text-slate-400 mt-1">Examples</div>
           </div>
         </div>
         <div class="mt-4 pt-4 border-t border-slate-700/40 text-xs text-slate-400 flex justify-between items-center">
-          <span>Grid System:</span>
-          <span class="font-mono text-slate-200 bg-slate-800 px-2 py-0.5 rounded">12-Column Responsive</span>
+          <span>Templates:</span>
+          <span class="font-mono text-slate-200 bg-slate-800 px-2 py-0.5 rounded text-[11px]">${templates.join(", ")}</span>
         </div>
       </div>
     </div>
 
     <!-- Supported Tools -->
     <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
-      <h2 class="text-lg font-semibold text-slate-950 mb-4">Supported MCP Tools (6)</h2>
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <div class="border border-slate-100 bg-slate-50/50 rounded-lg p-4">
-          <span class="font-mono text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded">list_widgets</span>
-          <p class="text-xs text-slate-600 mt-2">List all built-in eodash widgets with category and store interactions.</p>
-        </div>
-        <div class="border border-slate-100 bg-slate-50/50 rounded-lg p-4">
-          <span class="font-mono text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded">get_widget_details</span>
-          <p class="text-xs text-slate-600 mt-2">Get full TypeScript props, defaults, store bindings, STAC extensions, and examples.</p>
-        </div>
-        <div class="border border-slate-100 bg-slate-50/50 rounded-lg p-4">
-          <span class="font-mono text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded">get_custom_widget_guide</span>
-          <p class="text-xs text-slate-600 mt-2">Guides and boilerplate for Web Component, Functional, and IFrame widgets.</p>
-        </div>
-        <div class="border border-slate-100 bg-slate-50/50 rounded-lg p-4">
-          <span class="font-mono text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded">get_eodash_architecture</span>
-          <p class="text-xs text-slate-600 mt-2">Comprehensive architecture docs: layout grid, templates, store states, and deployment.</p>
-        </div>
-        <div class="border border-slate-100 bg-slate-50/50 rounded-lg p-4">
-          <span class="font-mono text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded">scaffold_dashboard</span>
-          <p class="text-xs text-slate-600 mt-2">Bootstrap complete SPA, VitePress narrative docs, or Web Component boilerplate.</p>
-        </div>
-        <div class="border border-slate-100 bg-slate-50/50 rounded-lg p-4">
-          <span class="font-mono text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded">generate_eodash_config</span>
-          <p class="text-xs text-slate-600 mt-2">Create valid, type-safe eodash configuration files with brand theme and templates.</p>
-        </div>
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-semibold text-slate-950">Supported MCP Tools (${totalTools})</h2>
+        <span class="text-xs text-slate-500 font-mono bg-slate-100 px-2.5 py-1 rounded">Streamable HTTP / SSE Endpoint: POST /</span>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        ${toolCards}
       </div>
     </div>
 
     <!-- Available Widgets -->
     <div>
-      <h2 class="text-lg font-semibold text-slate-950 mb-4">Available Widgets (${totalWidgets})</h2>
+      <div class="flex items-center justify-between mb-6">
+        <div>
+          <h2 class="text-xl font-bold text-slate-950">Available Widgets (${totalWidgets})</h2>
+          <p class="text-sm text-slate-500 mt-1">Auto-extracted from Vue components and TypeScript props in @eodash/eodash.</p>
+        </div>
+      </div>
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         ${widgetCards}
       </div>
     </div>
   </main>
 
-  <footer class="bg-slate-100 border-t border-slate-200 py-6 text-center text-xs text-slate-500">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <p>&copy; ${new Date().getFullYear()} EOX IT Services GmbH & eodash contributors. Released under the MIT License.</p>
+  <footer class="bg-white border-t border-slate-200 mt-auto py-6">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between text-xs text-slate-500">
+      <div>@eodash/eodash MCP Server • European Space Agency & EOX IT Services</div>
+      <div class="font-mono">JSON-RPC 2.0 • MCP Spec 2024-11-05</div>
     </div>
   </footer>
 </body>
-</html>`;
+</html>
+`;
 }
