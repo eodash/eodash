@@ -6,13 +6,21 @@ import { resolve } from "node:path";
 export const SEPARATOR = " :: ";
 
 /**
- * A sample's identity across runs: its path below `scope` plus the test name.
+ * A file's identity across runs: its path below `scope`, without the extension.
+ * @param {string} file
+ * @param {string} scope
+ */
+export const fileKeyOf = (file, scope) =>
+  (file.split(scope)[1] ?? file).replace(/\.test\.\w+$/, "");
+
+/**
+ * A sample's identity across runs: its file plus the test name.
  * @param {string} file
  * @param {string} name
  * @param {string} scope
  */
 export const keyOf = (file, name, scope) =>
-  `${(file.split(scope)[1] ?? file).replace(/\.test\.\w+$/, "")}${SEPARATOR}${name}`;
+  `${fileKeyOf(file, scope)}${SEPARATOR}${name}`;
 
 /**
  * Test files on disk below `scope`. A run that did not cover all of them is
@@ -36,9 +44,9 @@ export const filesInScope = (root, scope) => {
 };
 
 /**
- * Samples out of a previously committed report. Missing or unreadable means a
- * first run, not an error. Samples the config would refuse to compare are
- * dropped here too: being old does not make an unusable sample usable.
+ * Samples out of the report the last run left behind. Missing or unreadable
+ * means a first run, not an error. Samples the config would refuse to compare
+ * are dropped here too: being old does not make an unusable sample usable.
  *
  * @param {string} file
  * @param {import("./index.js").PerformanceReportConfig} config

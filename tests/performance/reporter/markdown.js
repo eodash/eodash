@@ -1,28 +1,42 @@
 import { SEPARATOR } from "./baseline.js";
 
 /**
- * Two significant figures. Timings jitter by a few percent between runs and the
- * file is committed, so printing every millisecond would make each run a diff.
- * @param {number} [ms]
+ * Two significant figures. Measurements jitter by a few percent between runs of
+ * the same code, so carrying more digits would make every report differ from
+ * the last one everywhere, and hide the places that genuinely moved.
+ * @param {number} value
  */
-export const time = (ms) => {
-  if (!ms || ms < 1) return "0";
-  const scale = 10 ** Math.max(0, Math.floor(Math.log10(ms)) - 1);
-  const rounded = Math.round(ms / scale) * scale;
-  return rounded >= 1000
-    ? `${(rounded / 1000).toFixed(rounded < 10_000 ? 1 : 0)} s`
-    : `${rounded} ms`;
+const twoFigures = (value) => {
+  const scale = 10 ** Math.max(0, Math.floor(Math.log10(value)) - 1);
+  return Math.round(value / scale) * scale;
 };
 
-/** Rounded for the same reason as {@link time}. @param {number} [bytes] */
+/**
+ * A rounded value in a larger unit, keeping one decimal below ten so that
+ * dividing does not cost a figure: 9,600,000 reads as 9.6 MB, not 10 MB.
+ * @param {number} value
+ * @param {string} unit
+ */
+const inUnit = (value, unit) => `${value.toFixed(value < 10 ? 1 : 0)} ${unit}`;
+
+/** @param {number} [ms] */
+export const time = (ms) => {
+  if (!ms || ms < 1) return "0";
+  const rounded = twoFigures(ms);
+  return rounded >= 1000 ? inUnit(rounded / 1000, "s") : `${rounded} ms`;
+};
+
+/** @param {number} [bytes] Negative where a test released more than it kept. */
 export const size = (bytes) => {
   if (!bytes) return "0";
-  const magnitude = Math.abs(bytes);
-  const rounded =
-    magnitude >= 1e6
-      ? `${Math.round(magnitude / 1e6)} MB`
-      : `${Math.round(magnitude / 1e3)} KB`;
-  return bytes < 0 ? `-${rounded}` : rounded;
+  const rounded = twoFigures(Math.abs(bytes));
+  const printed =
+    rounded >= 1e6
+      ? inUnit(rounded / 1e6, "MB")
+      : rounded >= 1e3
+        ? inUnit(rounded / 1e3, "KB")
+        : `${rounded} B`;
+  return bytes < 0 ? `-${printed}` : printed;
 };
 
 /** Folded away under a note, since only one line of a trace is ever the answer.
@@ -63,16 +77,19 @@ const filesOf = (samples) => {
  * @param {import("./index.js").Sample[]} samples
  * @param {Map<string, any>} previous
  * @param {import("./index.js").PerformanceReportConfig} config
+ * @param {Map<string, any>} warmup
  */
-export const render = (samples, previous, config) => {
+export const render = (samples, previous, config, warmup) => {
   const { columns, notes = [], sections = [], invalidReason } = config;
   // A sample the config calls invalid has no comparable predecessor, so nothing
   // downstream can diff it by accident.
   const comparable = new Map(
-    //@ts-expect-error todo
     samples
       .filter((sample) => !invalidReason?.(sample))
-      .map((sample) => [sample.key, previous.get(sample.key)])
+      .map(
+        (sample) =>
+          /** @type {[string, any]} */ ([sample.key, previous.get(sample.key)]),
+      )
       .filter(([, perf]) => perf),
   );
 
@@ -113,7 +130,7 @@ export const render = (samples, previous, config) => {
   }
 
   for (const section of sections) {
-    const block = section(samples, comparable);
+    const block = section(samples, comparable, warmup);
     if (block) lines.push("", block);
   }
   if (config.glossary) lines.push("", "## Glossary", "", config.glossary);
