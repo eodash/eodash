@@ -72,12 +72,15 @@ jobs:
       - name: Install Playwright system deps 🎭
         if: matrix.project != 'cli'
         run: npx playwright install-deps chromium
-      - name: Fetch the baseline to compare against 📥
-        if: matrix.project == 'template' && github.event_name == 'pull_request'
-        uses: actions/download-artifact@v4
-        with:
-          name: performance-report
-          path: tests/performance
+      # Main writes the baseline, so only a pull request reads one, into the path
+      # the report already compares against.
+      # TEMPORARY, uncomment once a run has uploaded one to find.
+      # - name: Fetch the baseline to compare against 📥
+      #   if: matrix.project == 'template' && github.event_name == 'pull_request'
+      #   uses: actions/download-artifact@v4
+      #   with:
+      #     name: performance-report
+      #     path: tests/performance
       - name: Run ${{ matrix.project }} tests 👀
         env:
           VITE_PERF: ${{ matrix.project == 'template' && '1' || '' }}
