@@ -23,6 +23,7 @@ export function createAjvInstance() {
   // Custom formats used in eodash-schemas
   ajv.addFormat("categories", true);
   ajv.addFormat("markdown", true);
+  ajv.addFormat("iri", true);
   ajv.addFormat("datetime", {
     type: "string",
     validate: (dateTime) => {
@@ -105,24 +106,24 @@ export async function getValidators() {
   const ajv = createAjvInstance();
   const { colSchema, indSchema } = await loadSchemas();
 
-  const validateCollection = ajv.compile(colSchema);
-  const validateIndicator = ajv.compile(indSchema);
+  const validateCatalogCollection = ajv.compile(colSchema);
+  const validateCatalogIndicator = ajv.compile(indSchema);
 
   cachedValidators = {
     ajv,
-    validateCollection,
-    validateIndicator,
+    validateCatalogCollection,
+    validateCatalogIndicator,
   };
 
   return cachedValidators;
 }
 
 /**
- * Validate a catalog configuration (collection or indicator) against official schemas and business rules
+ * Validate an EODash catalog configuration against official eodash schemas and custom business rules
  *
  * @param {object} options
- * @param {string|object} options.config - Catalog configuration JSON string or object
- * @param {'collection'|'indicator'|'auto'} [options.configType='auto'] - Type of config to validate
+ * @param {string|object} options.config - JSON string or object to validate
+ * @param {'collection'|'indicator'|'catalog-collection'|'catalog-indicator'|'auto'|string} [options.configType='auto'] - Type of config to validate
  * @returns {Promise<{
  *   valid: boolean,
  *   configType: string,
@@ -174,23 +175,42 @@ export async function validateCatalogConfig({
     };
   }
 
-  // Auto-detect config type
-  let resolvedType = configType;
-  if (resolvedType === "auto") {
-    if (Array.isArray(parsed.Collections)) {
+  // Auto-detect or normalize config type
+  const rawType = String(configType).toLowerCase().trim();
+  let resolvedType = rawType;
+
+  if (rawType === "auto") {
+    if (
+      parsed.Indicators ||
+      (parsed.Name && Array.isArray(parsed.Collections))
+    ) {
       resolvedType = "indicator";
-    } else if (Array.isArray(parsed.Resources)) {
-      resolvedType = "collection";
     } else {
-      resolvedType = "collection"; // default assumption
+      resolvedType = "collection";
     }
+  } else if (
+    rawType === "indicator" ||
+    rawType === "catalog-indicator" ||
+    rawType === "catalog_indicator"
+  ) {
+    resolvedType = "indicator";
+  } else {
+    resolvedType = "collection";
   }
 
-  const { validateCollection, validateIndicator } = await getValidators();
+  const { validateCatalogCollection, validateCatalogIndicator } =
+    await getValidators();
 
-  const isIndicator = resolvedType === "indicator";
-  const validator = isIndicator ? validateIndicator : validateCollection;
-  const schemaUrl = isIndicator ? INDICATOR_SCHEMA_URL : COLLECTION_SCHEMA_URL;
+  let validator;
+  let schemaUrl;
+
+  if (resolvedType === "indicator" || resolvedType === "catalog-indicator") {
+    validator = validateCatalogIndicator;
+    schemaUrl = INDICATOR_SCHEMA_URL;
+  } else {
+    validator = validateCatalogCollection;
+    schemaUrl = COLLECTION_SCHEMA_URL;
+  }
 
   const valid = validator(parsed);
   const errors = [];
@@ -219,11 +239,11 @@ export async function validateCatalogConfig({
     }
   }
 
-  // Business Rules Checks
+  // Business Rules Checks for EODash Catalog Configs (PascalCase)
   if (parsed.Resources && Array.isArray(parsed.Resources)) {
     for (let i = 0; i < parsed.Resources.length; i++) {
       const res = parsed.Resources[i];
-      // Rule 1: Style / eox:flatstyle must be URL string, not JSON object
+      // Rule 1: Style must be URL string, not JSON object
       if (res.Style && typeof res.Style === "object") {
         errors.push({
           path: `/Resources/${i}/Style`,
@@ -231,6 +251,17 @@ export async function validateCatalogConfig({
           message: "Style MUST be a URL string, not a direct JSON object.",
           suggestion:
             "Save the style to an external JSON file and provide the relative or absolute URL in Style.",
+        });
+      }
+
+      // Rule 1b: Resources[].Flatstyle does not exist
+      if (res.Flatstyle !== undefined) {
+        errors.push({
+          path: `/Resources/${i}/Flatstyle`,
+          keyword: "additionalProperties",
+          message:
+            "Property 'Flatstyle' does not exist on Resources. Use 'Style' for resource styles (Flatstyle is only valid under Process outputs).",
+          suggestion: "Rename 'Flatstyle' to 'Style' with a valid URL string.",
         });
       }
 
@@ -248,23 +279,38 @@ export async function validateCatalogConfig({
     }
   }
 
-  const totalErrors = errors.length;
-  const isValid = totalErrors === 0;
-
-  let summary = isValid
-    ? `Configuration is valid according to ${schemaUrl}.`
-    : `Validation failed with ${totalErrors} error(s) according to ${schemaUrl}.`;
-
-  if (warnings.length > 0) {
-    summary += ` (${warnings.length} warning(s))`;
+  // Top-level Style object check
+  if (parsed.Style && typeof parsed.Style === "object") {
+    errors.push({
+      path: "/Style",
+      keyword: "type",
+      message: "Style MUST be a URL string, not a direct JSON object.",
+      suggestion:
+        "Save the style to an external JSON file and provide the relative or absolute URL in Style.",
+    });
   }
 
+  // Top-level Flatstyle check on catalog collection
+  if (parsed.Flatstyle !== undefined) {
+    errors.push({
+      path: "/Flatstyle",
+      keyword: "additionalProperties",
+      message:
+        "Property 'Flatstyle' does not exist on catalog collection. Use 'Style' (Flatstyle is only valid under Process outputs).",
+      suggestion: "Rename 'Flatstyle' to 'Style' with a valid URL string.",
+    });
+  }
+
+  const isActuallyValid = valid && errors.length === 0;
+
   return {
-    valid: isValid,
+    valid: isActuallyValid,
     configType: resolvedType,
     schemaUrl,
     errors,
     warnings,
-    summary,
+    summary: isActuallyValid
+      ? `Configuration is valid according to ${resolvedType} schema.`
+      : `Validation failed with ${errors.length} error(s)${warnings.length ? ` and ${warnings.length} warning(s)` : ""}.`,
   };
 }

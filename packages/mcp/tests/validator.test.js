@@ -131,6 +131,7 @@ describe("eodash Catalog Schema Validator - Unit Tests", () => {
     const colWithObjStyle = {
       Name: "obj-style-col",
       Title: "Object Style",
+      Description: "Description text",
       Resources: [
         {
           Name: "COG source",
@@ -160,6 +161,7 @@ describe("eodash Catalog Schema Validator - Unit Tests", () => {
     const colWithBranchingRasterform = {
       Name: "branch-col",
       Title: "Branching Rasterform",
+      Description: "Description text",
       Resources: [
         {
           Name: "WMS resource",
@@ -185,47 +187,68 @@ describe("eodash Catalog Schema Validator - Unit Tests", () => {
     expect(res.warnings.length).toBeGreaterThan(0);
     expect(res.warnings[0]).toContain("keep_oneof_values");
   });
-});
 
-describe("eodash MCP Tool - validate_catalog_config via Client", () => {
-  it("calls validate_catalog_config tool via MCP client with valid indicator config", async () => {
-    const { client } = await createTestClientServer();
-
-    const result = await client.callTool({
-      name: "validate_catalog_config",
-      arguments: {
-        config: {
-          Name: "indicator-test",
-          Title: "Indicator Test",
-          Description: "Description text for indicator test",
-          Collections: ["collection-1", "collection-2"],
+  it("catches invalid Resources[].Flatstyle in catalog collection config", async () => {
+    const invalidCol = {
+      Name: "invalid-flatstyle-col",
+      Title: "Invalid Flatstyle Resource",
+      Description: "Testing Flatstyle on resource error",
+      Resources: [
+        {
+          Name: "SAR Sigma0",
+          Flatstyle: "https://example.com/style.json", // Invalid property on Resource
+          TimeEntries: [],
         },
-        configType: "indicator",
-      },
+      ],
+    };
+
+    const res = await validateCatalogConfig({
+      config: invalidCol,
+      configType: "collection",
     });
 
-    expect(result.content[0].type).toBe("text");
-    const data = JSON.parse(result.content[0].text);
-    expect(data.valid).toBe(true);
-    expect(data.configType).toBe("indicator");
+    expect(res.valid).toBe(false);
+    expect(
+      res.errors.some((e) =>
+        e.message.includes("Property 'Flatstyle' does not exist on Resources"),
+      ),
+    ).toBe(true);
   });
 
-  it("calls validate_catalog_config tool via MCP client with invalid config string", async () => {
+  it("calls validate_catalog_config via MCP client successfully", async () => {
     const { client } = await createTestClientServer();
 
-    const result = await client.callTool({
+    const response = await client.callTool({
       name: "validate_catalog_config",
       arguments: {
         config: JSON.stringify({
-          Name: "broken-collection",
-          // Missing Resources and Title
+          Name: "test-client-collection",
+          Title: "Client Collection Title",
+          Description: "Valid description.",
+          Resources: [
+            {
+              Name: "GeoJSON source",
+              Style: "https://example.com/styles/vector.json",
+              TimeEntries: [
+                {
+                  Time: "2024-01-01T00:00:00Z",
+                  Assets: [
+                    {
+                      Identifier: "sample",
+                      File: "https://example.com/data.geojson",
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
         }),
-        configType: "collection",
+        configType: "catalog-collection",
       },
     });
 
-    const data = JSON.parse(result.content[0].text);
-    expect(data.valid).toBe(false);
-    expect(data.errors.length).toBeGreaterThan(0);
+    const parsed = JSON.parse(response.content[0].text);
+    expect(parsed.valid).toBe(true);
+    expect(parsed.configType).toBe("collection");
   });
 });

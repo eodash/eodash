@@ -35,12 +35,17 @@ export function findExamples({
 } = {}) {
   const allExamples = getExamples();
 
+  const normalizedCategory =
+    category === "raster-webgl-flatstyle" || category === "raster-cog"
+      ? "raster-flatstyle"
+      : category;
+
   let results = allExamples.map((ex) => {
     let score = 0;
 
     // Category filter
-    if (category && category !== "all") {
-      if (ex.category === category) {
+    if (normalizedCategory && normalizedCategory !== "all") {
+      if (ex.category === normalizedCategory) {
         score += 50;
       } else {
         return null; // Strict category filter if provided

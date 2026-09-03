@@ -226,13 +226,13 @@
     }
   },
   {
-    "id": "raster-webgl-cog-single-band-normalized",
-    "title": "Single-Band COG Normalized WebGLTile FlatStyle with Min/Max Sliders",
-    "category": "raster-webgl-flatstyle",
+    "id": "raster-cog-single-band-normalized",
+    "title": "Single-Band COG Normalized FlatStyle with Min/Max Sliders",
+    "category": "raster-flatstyle",
     "dataType": "cog",
     "geometryType": "raster",
     "features": [
-      "webgl-shader",
+      "client-side-rendering",
       "interpolate-color",
       "dynamic-variables",
       "jsonform",
@@ -241,14 +241,14 @@
     "tags": [
       "cog",
       "geotiff",
-      "webgl",
+      "raster-flatstyle",
       "sar",
       "rcm",
       "radar",
       "polartep",
       "cerulean"
     ],
-    "description": "OpenLayers WebGLTile FlatStyle for single-band GeoTIFF / COG (e.g. SAR Sigma0, DEM Elevation, Temperature) with client-side GPU normalization, colormap interpolation, and reactive min/max sliders.",
+    "description": "OpenLayers FlatStyle for single-band GeoTIFF / COG (e.g. SAR Sigma0, DEM Elevation, Temperature) with client-side normalization, colormap interpolation, and reactive min/max sliders.",
     "targetContext": "Host as JSON file on assets endpoint, reference in STAC Item link with 'eox:flatstyle' or in catalog collection 'Resources[].Style'.",
     "code": {
       "legend": {
@@ -314,22 +314,22 @@
     }
   },
   {
-    "id": "raster-webgl-cog-rgb-composite",
-    "title": "Sentinel-2 True Color RGB COG WebGLTile FlatStyle",
-    "category": "raster-webgl-flatstyle",
+    "id": "raster-cog-rgb-composite",
+    "title": "Sentinel-2 True Color RGB COG FlatStyle",
+    "category": "raster-flatstyle",
     "dataType": "cog",
     "geometryType": "raster",
-    "features": ["webgl-shader", "rgb-composite", "divisor-variable"],
+    "features": ["rgb-composite", "divisor-variable"],
     "tags": [
       "cog",
       "sentinel-2",
       "rgb",
       "true-color",
-      "webgl",
+      "raster-flatstyle",
       "crop-circles",
       "style-editor"
     ],
-    "description": "WebGLTile FlatStyle combining Bands 4 (Red), 3 (Green), and 2 (Blue) into a true-color satellite image composite with brightness divisor variables.",
+    "description": "Raster FlatStyle combining Bands 4 (Red), 3 (Green), and 2 (Blue) into a true-color satellite image composite with brightness divisor variables.",
     "targetContext": "Host as JSON file on assets endpoint, reference in STAC Item link with 'eox:flatstyle' or in catalog collection 'Resources[].Style'.",
     "code": {
       "variables": {
@@ -352,14 +352,22 @@
     }
   },
   {
-    "id": "raster-webgl-cog-ndvi-index-math",
-    "title": "On-the-Fly NDVI Band Math COG WebGLTile FlatStyle",
-    "category": "raster-webgl-flatstyle",
+    "id": "raster-cog-ndvi-index-math",
+    "title": "On-the-Fly NDVI Band Math COG FlatStyle",
+    "category": "raster-flatstyle",
     "dataType": "cog",
     "geometryType": "raster",
-    "features": ["webgl-shader", "band-math", "ndvi", "interpolate-color"],
-    "tags": ["cog", "ndvi", "band-math", "sentinel-2", "eopf", "eodash-assets"],
-    "description": "Calculates Normalized Difference Vegetation Index (B8 - B4)/(B8 + B4) in GPU shader with continuous color interpolation from soil to dense vegetation.",
+    "features": ["band-math", "ndvi", "interpolate-color"],
+    "tags": [
+      "cog",
+      "ndvi",
+      "band-math",
+      "sentinel-2",
+      "eopf",
+      "eodash-assets",
+      "raster-flatstyle"
+    ],
+    "description": "Calculates Normalized Difference Vegetation Index (B8 - B4)/(B8 + B4) client-side with continuous color interpolation from soil to dense vegetation.",
     "targetContext": "Host as JSON file on assets endpoint, reference in STAC Item link with 'eox:flatstyle'.",
     "code": {
       "color": [

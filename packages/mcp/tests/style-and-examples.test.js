@@ -367,17 +367,17 @@ describe("eodash Style Generator - generateLayerStyle Router & Docs URLs", () =>
     ).toBe(true);
   });
 
-  it("routes raster-webgl-flatstyle and includes WebGL expressions doc link", async () => {
+  it("routes raster-flatstyle (and raster-webgl-flatstyle) with OpenLayers doc links", async () => {
     const res = await generateLayerStyle({
-      styleType: "raster-webgl-flatstyle",
-      rasterWebglConfig: {
+      styleType: "raster-flatstyle",
+      rasterConfig: {
         mode: "single-band-normalized",
         vmin: 10,
         vmax: 90,
       },
     });
 
-    expect(res.styleType).toBe("raster-webgl-flatstyle");
+    expect(res.styleType).toBe("raster-flatstyle");
     expect(res.style.variables.vmin).toBe(10);
     expect(res.stacItemSnippet["eox:flatstyle"]).toBeDefined();
     expect(res.catalogCollectionSnippet.Resources[0].Style).toBeDefined();

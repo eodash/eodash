@@ -427,12 +427,18 @@ export function createMcpServer() {
     "generate_layer_style",
     {
       description:
-        "Generate complete OpenLayers layer styles and visualization controls (vector flatstyles, raster WebGL shaders with 'color' expressions, and dynamic raster forms). Always outputs and maintains complete style JSON definitions including 'color', 'variables', 'legend', and 'jsonform'.",
+        "Generate complete OpenLayers layer styles and visualization controls (vector flatstyles for GeoJSON/FlatGeobuf/MVT, raster flatstyles with 'color' expressions for COG/GeoTIFF single files, and dynamic raster forms). Always outputs and maintains complete style JSON definitions including 'color', 'variables', 'legend', and 'jsonform'.",
       inputSchema: z.object({
         styleType: z
-          .enum(["vector-flatstyle", "raster-webgl-flatstyle", "rasterform"])
+          .enum([
+            "vector-flatstyle",
+            "raster-flatstyle",
+            "raster-webgl-flatstyle",
+            "raster-cog",
+            "rasterform",
+          ])
           .describe(
-            "Style generator target type: 'vector-flatstyle' (OpenLayers Vector FlatStyle for vector & vector tile layers), 'raster-webgl-flatstyle' (OpenLayers WebGLTile FlatStyle for COG/GeoTIFF), or 'rasterform' (eodash:rasterform for TiTiler/WMS/XYZ).",
+            "Style generator target type: 'vector-flatstyle' (OpenLayers Vector FlatStyle for vector & vector tile layers), 'raster-flatstyle' / 'raster-cog' (OpenLayers FlatStyle for COG/GeoTIFF client-side single file rendering), or 'rasterform' (eodash:rasterform for TiTiler/WMS/XYZ).",
           ),
         vectorConfig: z
           .object({
@@ -543,7 +549,7 @@ export function createMcpServer() {
           })
           .optional()
           .describe("Options for 'vector-flatstyle' generation."),
-        rasterWebglConfig: z
+        rasterConfig: z
           .object({
             mode: z
               .enum([
@@ -557,7 +563,7 @@ export function createMcpServer() {
               .optional()
               .default("single-band-normalized")
               .describe(
-                "WebGL shader rendering mode: 'single-band-normalized' / 'single-band' (normalized float band with colormap), 'rgb-composite' / 'rgb' (3-band true color / false color), or 'band-ratio-index' (normalized difference index math).",
+                "Raster rendering mode: 'single-band-normalized' / 'single-band' (normalized float band with colormap), 'rgb-composite' / 'rgb' (3-band true color / false color composite), or 'band-ratio-index' (normalized difference index math).",
               ),
             bands: z
               .array(z.number())
@@ -620,7 +626,7 @@ export function createMcpServer() {
               .number()
               .optional()
               .describe(
-                "Explicit slider track upper bound. If omitted, computed dynamically as ~1.5x headroom over defaultMax.",
+                "Explicit slider track upper bound. If omitted, computed dynamically as ~1.5x headroom over defaultMax (e.g. 250 -> 375).",
               ),
             colorMap: z
               .string()
@@ -646,12 +652,12 @@ export function createMcpServer() {
           })
           .optional()
           .describe(
-            "Options for 'raster-webgl-flatstyle' (COG/GeoTIFF) generation.",
+            "Options for raster flatstyle (COG / single GeoTIFF) generation.",
           ),
-        rasterConfig: z
+        rasterWebglConfig: z
           .any()
           .optional()
-          .describe("Alias for rasterWebglConfig."),
+          .describe("Alias for rasterConfig."),
         rasterformConfig: z
           .object({
             serviceType: z
@@ -774,6 +780,7 @@ export function createMcpServer() {
           .enum([
             "all",
             "vector-flatstyle",
+            "raster-flatstyle",
             "raster-webgl-flatstyle",
             "rasterform",
             "jsonform",
@@ -802,7 +809,7 @@ export function createMcpServer() {
           .string()
           .optional()
           .describe(
-            "Filter by specific feature capability (e.g. 'legend', 'tooltip', 'drawtools', 'branching-oneof', 'threshold-filter', 'webgl-shader', 'time-series', 'roles').",
+            "Filter by specific feature capability (e.g. 'legend', 'tooltip', 'drawtools', 'branching-oneof', 'threshold-filter', 'time-series', 'roles').",
           ),
         limit: z
           .number()
@@ -831,7 +838,7 @@ export function createMcpServer() {
     "validate_catalog_config",
     {
       description:
-        "Validate eodash catalog collection or indicator JSON configurations against official eodash schemas (https://eodash.github.io/eodash-schemas/) and core catalog rules.",
+        "Validate EODash catalog configurations (collection or indicator JSON files) against official eodash schemas and custom business rules (e.g., verifying 'Style' is a URL string, catching invalid 'Resources[].Flatstyle', checking JSON-Editor rasterform branching options).",
       inputSchema: z.object({
         config: z
           .union([z.string(), z.record(z.any())])
@@ -839,11 +846,17 @@ export function createMcpServer() {
             "Collection or indicator configuration as a JSON string or parsed JSON object.",
           ),
         configType: z
-          .enum(["collection", "indicator", "auto"])
+          .enum([
+            "auto",
+            "collection",
+            "indicator",
+            "catalog-collection",
+            "catalog-indicator",
+          ])
           .optional()
           .default("auto")
           .describe(
-            "Target schema type: 'collection' (for collection JSONs), 'indicator' (for indicator JSONs), or 'auto' (detect automatically based on Collections/Resources properties).",
+            "Target schema type: 'auto' (auto-detects between collection and indicator), 'collection' / 'catalog-collection' (EODash collection config with Name, Title, Description, Resources), or 'indicator' / 'catalog-indicator' (EODash indicator config with Name, Title, Indicators/Collections).",
           ),
       }),
     },
