@@ -40,24 +40,24 @@ export const observeCpu = async (session) => {
       /** @param {number} node */
       const hits = (node) => nodes.get(node)?.hitCount ?? 0;
 
-      /** @type {Map<string, {ms: number, hottest: number}>} */
+      /** @type {Map<string, {ms: number, mostSampled: number}>} */
       const self = new Map();
       //@ts-expect-error todo
       profile.samples.forEach((id, index) => {
         const frame = nodes.get(id)?.callFrame;
         if (!frame) return;
         const key = frameLabel(frame) || frame.functionName;
-        const entry = self.get(key) ?? { ms: 0, hottest: id };
-        if (hits(id) > hits(entry.hottest)) entry.hottest = id;
+        const entry = self.get(key) ?? { ms: 0, mostSampled: id };
+        if (hits(id) > hits(entry.mostSampled)) entry.mostSampled = id;
         entry.ms += (profile.timeDeltas[index] ?? 0) / 1000;
         self.set(key, entry);
       });
 
       const frames = [...self]
-        .map(([label, { ms, hottest }]) => ({
+        .map(([label, { ms, mostSampled }]) => ({
           label,
           ms: Math.round(ms),
-          trace: ancestry(hottest),
+          trace: ancestry(mostSampled),
         }))
         .sort((a, b) => b.ms - a.ms);
       /** @param {string} name */

@@ -37,6 +37,7 @@ export const observeMap = (mapEl, clock) => {
   const unsubscribe = useEventBus(eoxLayersKey).on(touch);
 
   return {
+    name: "map tiles",
     busy: () => tileQueue.getTilesLoading() > 0 || tileQueue.getCount() > 0,
     collect: () => {
       const after = layersById(mapEl);

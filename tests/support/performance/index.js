@@ -8,6 +8,8 @@ import { observeNetwork } from "./network";
 /**
  * @typedef {object} Collector
  * @property {() => boolean} [busy] keeps the window open while true
+ * @property {string} [name] names this collector in the report when `busy` held
+ *   the window open
  * @property {() => object | Promise<object>} collect fields for the sample
  * @property {() => void | Promise<void>} dispose
  */
@@ -29,14 +31,20 @@ export const instrument = async () => {
     await observeNetwork(session, clock),
     await observeCpu(session),
   ];
-  const busy = collectors.flatMap((c) => c.busy ?? []);
+  /** @type {[string, () => boolean][]} */
+  const busy = collectors.flatMap(({ name, busy }) =>
+    busy ? [[name ?? "the application", busy]] : [],
+  );
 
   return {
     collect: async () => {
       const settled = await clock.settle(busy);
       const wallMs = clock.wallMs();
-      const parts = await Promise.all(collectors.map((c) => c.collect()));
-      return Object.assign({ settled, wallMs }, ...parts);
+      // In order, not in parallel: the heap reading is taken before the profile
+      // is fetched and walked, which would otherwise be counted as retained.
+      const parts = [];
+      for (const collector of collectors) parts.push(await collector.collect());
+      return Object.assign({ settled, wallMs, ...clock.held() }, ...parts);
     },
     dispose: () => Promise.all(collectors.map((c) => c.dispose())),
   };
