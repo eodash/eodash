@@ -372,7 +372,6 @@ export type Eodash = {
   id?: string;
   /** Object containing potential special configuration options */
   options?: {
-    useSubCode?: boolean;
     /**
      * TiTiler render presets, keyed by collection id then render name,
      * following the STAC `renders` extension shape. Used to render a

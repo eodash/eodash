@@ -23,8 +23,6 @@ The links in a catalog pointing to indicator collections can contain several met
 |---|---|
 | `title` | The display title for the linked collection. |
 | `subtitle` | A longer description of the collection's content. |
-| `code` | A code or identifier for the indicator. |
-| `subcode` | A subcode or identifier for the indicator. |
 | `themes` | An array of thematic categories. |
 | `satellite` | An array of satellites used for data acquisition. |
 | `sensor` | An array of sensors used for data acquisition. |

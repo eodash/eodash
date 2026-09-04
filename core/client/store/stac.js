@@ -4,7 +4,6 @@ import axios from "@/plugins/axios";
 import {
   useAbsoluteUrl,
   useCompareAbsoluteUrl,
-  useGetSubCodeId,
 } from "@/composables/index";
 import { compareIndicator, comparePoi, indicator, poi } from "@/store/states";
 import {
@@ -211,9 +210,7 @@ export const useSTAcStore = defineStore("stac", () => {
       selectedItem.value = /** @type {any} */ (stacItem) ?? undefined;
       selectedStac.value = resp.data;
       // set indicator and poi
-      indicator.value = isPoi
-        ? indicator.value
-        : useGetSubCodeId(selectedStac.value);
+      indicator.value = isPoi ? indicator.value : (selectedStac.value?.id ?? "");
       poi.value = isPoi ? (selectedStac.value?.id ?? "") : "";
     });
   }
@@ -255,7 +252,7 @@ export const useSTAcStore = defineStore("stac", () => {
       selectedCompareStac.value = resp.data;
       compareIndicator.value = isPOI
         ? compareIndicator.value
-        : useGetSubCodeId(selectedCompareStac.value);
+        : (selectedCompareStac.value?.id ?? "");
       comparePoi.value = isPOI ? (selectedCompareStac.value?.id ?? "") : "";
     });
   }
@@ -281,8 +278,7 @@ export const useSTAcStore = defineStore("stac", () => {
     }
     // construct absolute URL of a poi
     const indicatorUrl =
-      stac.value?.find((link) => useGetSubCodeId(link) === indicatorStr)
-        ?.href ?? "";
+      stac.value?.find((link) => link?.id === indicatorStr)?.href ?? "";
     const absoluteIndicatorUrl = toAbsolute(indicatorUrl, stacEndpoint.value);
     return toAbsolute(relativePath, absoluteIndicatorUrl);
   }
