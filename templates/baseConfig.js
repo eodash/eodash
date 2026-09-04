@@ -8,7 +8,6 @@ import explore from "./explore";
 const baseConfig = {
   id: "demo",
   options: {
-    // useSubCode: true,
   },
   stacEndpoint: {
     endpoint:
