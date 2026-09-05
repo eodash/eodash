@@ -14,6 +14,7 @@
 <script setup>
 import { useSTAcStore } from "@/store/stac";
 import { isFirstLoad } from "@/utils/states";
+import { poi } from "@/store/states";
 import { computed, ref } from "vue";
 
 if (!customElements.get("eox-itemfilter")) {
@@ -115,7 +116,10 @@ const createSelect = (loader, reset) => {
 };
 const selectIndicator = createSelect(
   store.loadSelectedSTAC,
-  () => (store.selectedStac = null),
+  () => {
+    store.selectedStac = null;
+    poi.value = "";
+  },
 );
 const selectCompareIndicator = createSelect(
   store.loadSelectedCompareSTAC,
