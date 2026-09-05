@@ -267,6 +267,7 @@ export const useSTAcStore = defineStore("stac", () => {
   async function resetSelectedCompareSTAC() {
     eodashCompareCollections.splice(0, eodashCompareCollections.length);
     selectedCompareStac.value = null;
+    comparePoi.value = "";
   }
 
   /**
