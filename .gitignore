@@ -36,5 +36,5 @@ docs/**/*.timestamp-*.mjs
 .vitest-attachments
 
 # mcp generated data
-packages/mcp/data
+packages/mcp/data/*-metadata.json
 

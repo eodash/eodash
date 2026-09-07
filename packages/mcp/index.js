@@ -10,6 +10,9 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { scaffoldDashboard } from "./generators/dashboard.js";
 import { generateEodashConfig } from "./generators/config.js";
+import { generateLayerStyle } from "./generators/style.js";
+import { findExamples } from "./generators/examples.js";
+import { validateCatalogConfig } from "./generators/validator.js";
 import {
   getMetadata,
   generateLandingPage,
@@ -48,7 +51,8 @@ export function createMcpServer() {
     },
     {
       instructions:
-        "This MCP server provides tools to inspect, configure, and scaffold @eodash/eodash instances, widgets, layouts, and STAC integrations.",
+        "Inspect, configure, and scaffold eodash instances, widgets, layouts, styles, and STAC integrations. " +
+        "NOTE: MCP generation tools return code/files in-memory and do NOT write directly to disk; use file writing tools to write returned files.",
       capabilities: {
         tools: {
           call: {},
@@ -57,31 +61,54 @@ export function createMcpServer() {
     },
   );
 
-  // Tool 1: list_widgets
+  // list_widgets
   server.registerTool(
     "list_widgets",
     {
       description:
-        "List all built-in eodash widgets with their category, summary, background capability, and prop count. Optionally filter by category.",
+        "List built-in eodash widgets with capability tags, summaries, prop counts, and store interactions.",
       inputSchema: z.object({
-        category: z
+        category: z.string().optional().describe("Filter by category"),
+        tag: z
           .string()
           .optional()
           .describe(
-            "Optional category filter: 'Visualization & Map', 'Catalog & Discovery', 'Filtering & Selection', 'Temporal Navigation', 'Analysis & Processing', 'Layout & Orchestration', 'Branding & Metadata'",
+            "Filter by tag (map, time, filter, catalog, layer, chart, process, stac)",
           ),
+        search: z.string().optional().describe("Free-text search query"),
       }),
     },
-    async ({ category }) => {
+    async ({ category, tag, search }) => {
       let list = Object.values(widgetsData);
       if (category) {
         const catLower = category.toLowerCase();
         list = list.filter((w) => w.category?.toLowerCase().includes(catLower));
       }
+      if (tag) {
+        const tagLower = tag.toLowerCase();
+        list = list.filter(
+          (w) =>
+            w.tags?.some((t) => t.toLowerCase().includes(tagLower)) ||
+            w.category?.toLowerCase().includes(tagLower) ||
+            w.name?.toLowerCase().includes(tagLower) ||
+            w.summary?.toLowerCase().includes(tagLower),
+        );
+      }
+      if (search) {
+        const sLower = search.toLowerCase();
+        list = list.filter(
+          (w) =>
+            w.name?.toLowerCase().includes(sLower) ||
+            w.summary?.toLowerCase().includes(sLower) ||
+            w.tags?.some((t) => t.toLowerCase().includes(sLower)) ||
+            w.category?.toLowerCase().includes(sLower),
+        );
+      }
 
       const summaryList = list.map((w) => ({
         name: w.name,
         category: w.category,
+        tags: w.tags || [],
         summary: w.summary,
         isBackground: w.isBackground,
         propCount: w.props?.length || 0,
@@ -102,29 +129,30 @@ export function createMcpServer() {
     },
   );
 
-  // Tool 2: get_widget_details
+  // get_widget_details
   server.registerTool(
     "get_widget_details",
     {
       description:
-        "Get details for a specific eodash widget: full TypeScript props (types, defaults, descriptions), store interactions, supported STAC extensions, copy-pasteable example config, and markdown guide.",
+        "Get details for a specific eodash widget: props, store interactions, STAC extensions, config example, and guide.",
       inputSchema: z.object({
         widgetName: z
           .string()
-          .describe(
-            "The name of the widget (e.g. 'EodashMap', 'EodashItemCatalog', 'EodashItemFilter', 'EodashLayerControl', 'EodashTimeSlider', 'EodashProcess', 'EodashChart', 'EodashStacInfo', 'EodashTools', 'EodashDatePicker', 'EodashLayoutSwitcher').",
-          ),
+          .optional()
+          .describe("Widget name (e.g. EodashMap, EodashItemCatalog)"),
+        name: z.string().optional().describe("Alias for widgetName"),
       }),
     },
-    async ({ widgetName }) => {
-      const widget = widgetsData[widgetName];
+    async ({ widgetName, name }) => {
+      const targetName = widgetName || name;
+      const widget = targetName ? widgetsData[targetName] : null;
       if (!widget) {
         return {
           isError: true,
           content: [
             {
               type: "text",
-              text: `Widget '${widgetName}' not found in eodash widgets registry. Available widgets: ${Object.keys(widgetsData).join(", ")}`,
+              text: `Widget '${targetName || "undefined"}' not found in eodash widgets registry. Available widgets: ${Object.keys(widgetsData).join(", ")}`,
             },
           ],
         };
@@ -141,12 +169,12 @@ export function createMcpServer() {
     },
   );
 
-  // Tool 3: get_custom_widget_guide
+  // get_custom_widget_guide
   server.registerTool(
     "get_custom_widget_guide",
     {
       description:
-        "Get guide and code templates for creating and plugging custom widgets into eodash (web-component widgets, functional widgets, iframe widgets, reactive store integration, and EOxElements playground workflow).",
+        "Get guide and code templates for creating custom eodash widgets.",
       inputSchema: z.object({
         type: z
           .enum([
@@ -158,15 +186,26 @@ export function createMcpServer() {
           ])
           .optional()
           .default("all")
-          .describe(
-            "Specific custom widget type guide to retrieve ('web-component', 'functional', 'iframe', 'eox-elements', or 'all').",
-          ),
+          .describe("Custom widget type"),
+        widgetType: z
+          .enum([
+            "web-component",
+            "functional",
+            "iframe",
+            "eox-elements",
+            "all",
+          ])
+          .optional()
+          .describe("Alias for type"),
       }),
     },
-    async ({ type }) => {
+    async ({ type, widgetType }) => {
+      const selectedType = type || widgetType || "all";
       const guides = CUSTOM_WIDGET_GUIDES;
       const selectedContent =
-        type === "all" ? guides : { [type]: guides[type] };
+        selectedType === "all"
+          ? guides
+          : { [selectedType]: guides[selectedType] };
 
       return {
         content: [
@@ -179,12 +218,12 @@ export function createMcpServer() {
     },
   );
 
-  // Tool 4: get_eodash_architecture
+  // get_eodash_architecture
   server.registerTool(
     "get_eodash_architecture",
     {
       description:
-        "Get architecture documentation of @eodash/eodash: grid system (12-column, breakpoints 'x/y/w/h'), built-in templates ('lite', 'explore', 'expert', 'compare'), reactive Pinia store states, and deployment modes (SPA vs <eo-dash> web component).",
+        "Get eodash architecture docs: grid layout, templates, Pinia store, deployment modes.",
       inputSchema: z.object({
         topic: z
           .enum([
@@ -197,7 +236,7 @@ export function createMcpServer() {
           ])
           .optional()
           .default("all")
-          .describe("Specific architecture topic to query."),
+          .describe("Architecture topic"),
       }),
     },
     async ({ topic }) => {
@@ -227,46 +266,32 @@ export function createMcpServer() {
     },
   );
 
-  // Tool 5: scaffold_dashboard
+  // scaffold_dashboard
   server.registerTool(
     "scaffold_dashboard",
     {
       description:
-        "Scaffold complete project boilerplate for an eodash dashboard: standalone SPA, VitePress narrative documentation, or embedded web component. Returns ready-to-write file dictionary including package.json, eodash.config.js, index.html, Dockerfile, and README.",
+        "Scaffold project boilerplate for an eodash dashboard (returns file map in-memory).",
       inputSchema: z.object({
         name: z
           .string()
           .optional()
           .default("my-eo-dashboard")
-          .describe("Project folder / package name."),
+          .describe("Project folder / package name"),
         projectType: z
           .enum(["standalone-spa", "vitepress-narratives", "web-component"])
           .optional()
           .default("standalone-spa")
-          .describe(
-            "Project architecture type: 'standalone-spa' (Vite + eodash SPA), 'vitepress-narratives' (VitePress docs with <eo-dash> stories), or 'web-component' (minimal custom element integration).",
-          ),
+          .describe("Architecture type"),
         stacEndpoint: z
           .string()
           .optional()
           .default(DEFAULT_STAC_ENDPOINT)
-          .describe("Default STAC catalog or STAC API endpoint URL."),
+          .describe("STAC catalog or API URL"),
         template: templateEnum
           .optional()
           .default("lite")
-          .describe(
-            `Default eodash layout template (${availableTemplates.join(", ")}). Use 'lite' (default) for static STAC Catalogs, or 'explore' for dynamic STAC APIs.`,
-          ),
-        brandName: z
-          .string()
-          .optional()
-          .default(DEFAULT_BRAND_NAME)
-          .describe("Brand title / display header."),
-        brandColor: z
-          .string()
-          .optional()
-          .default("#002742")
-          .describe("Primary brand theme color hex code."),
+          .describe("Layout template preset"),
       }),
     },
     async (params) => {
@@ -282,79 +307,37 @@ export function createMcpServer() {
     },
   );
 
-  // Tool 6: generate_eodash_config
+  // generate_eodash_config
   server.registerTool(
     "generate_eodash_config",
     {
       description:
-        "Generate a complete, type-safe eodash configuration (eodash.config.js / baseConfig.js) with STAC endpoint, brand styling, template selection (lite/explore/expert/compare), custom widget placements, and runtime options.",
+        "Generate eodash configuration code (eodash.config.js) with STAC endpoint, template, and widgets.",
       inputSchema: z.object({
         id: z
           .string()
           .optional()
           .default("demo-dashboard")
-          .describe("Unique dashboard identifier."),
+          .describe("Dashboard ID"),
         stacEndpoint: z
           .union([z.string(), z.record(z.any())])
           .optional()
           .default(DEFAULT_STAC_ENDPOINT)
-          .describe(
-            "STAC endpoint URL string or structured endpoint configuration object.",
-          ),
+          .describe("STAC endpoint URL or config object"),
         template: configTemplateEnum
           .optional()
           .default("lite")
-          .describe(
-            `Template layout preset (${availableTemplates.join(", ")}) or 'custom'. Use 'lite' (default) for static STAC Catalogs, or 'explore' for dynamic STAC APIs.`,
-          ),
-        brand: z
-          .object({
-            name: z.string().optional(),
-            footerText: z.string().optional(),
-            font: z
-              .object({
-                headers: z
-                  .object({
-                    family: z.string(),
-                    link: z.string(),
-                  })
-                  .optional(),
-                body: z
-                  .object({
-                    family: z.string(),
-                    link: z.string(),
-                  })
-                  .optional(),
-              })
-              .optional(),
-            theme: z
-              .object({
-                colors: z
-                  .object({
-                    primary: z.string().optional(),
-                    secondary: z.string().optional(),
-                    surface: z.string().optional(),
-                  })
-                  .optional(),
-                variables: z.record(z.any()).optional(),
-                collectionsPalette: z.array(z.string()).optional(),
-              })
-              .optional(),
-          })
-          .optional()
-          .describe("Brand metadata, web fonts, and color palettes."),
+          .describe("Template preset or 'custom'"),
         customWidgets: z
           .array(z.record(z.any()))
           .optional()
           .default([])
-          .describe(
-            "Array of custom widget definitions with layout coordinates and properties.",
-          ),
+          .describe("Custom widget definitions array"),
         options: z
           .record(z.any())
           .optional()
           .default({})
-          .describe("Runtime options (e.g. useSubCode)."),
+          .describe("Runtime options"),
       }),
     },
     async (params) => {
@@ -364,6 +347,298 @@ export function createMcpServer() {
           {
             type: "text",
             text: JSON.stringify(generated, null, 2),
+          },
+        ],
+      };
+    },
+  );
+
+  // generate_layer_style
+  server.registerTool(
+    "generate_layer_style",
+    {
+      description:
+        "Generate OpenLayers FlatStyles (vector/raster COG) or eodash:rasterform definitions with legend and jsonform.",
+      inputSchema: z.object({
+        styleType: z
+          .enum([
+            "vector-flatstyle",
+            "raster-flatstyle",
+            "raster-webgl-flatstyle",
+            "raster-cog",
+            "rasterform",
+          ])
+          .describe("Target style type"),
+        vectorConfig: z
+          .object({
+            geometryType: z
+              .enum(["point", "polygon", "line"])
+              .optional()
+              .default("polygon")
+              .describe("Geometry symbolizer type"),
+            mode: z
+              .enum(["single", "categorical", "continuous", "graduated"])
+              .optional()
+              .default("single")
+              .describe("Coloring mode (single, categorical, continuous)"),
+            attribute: z
+              .string()
+              .optional()
+              .default("value")
+              .describe("Feature property for data-driven styling"),
+            colormap: z
+              .string()
+              .optional()
+              .default("viridis")
+              .describe("Colormap preset name"),
+            colors: z
+              .array(z.string())
+              .optional()
+              .describe("Color hex array"),
+            categories: z
+              .array(z.record(z.any()))
+              .optional()
+              .describe("Category mappings [{value, color, label?}]"),
+            range: z
+              .array(z.number())
+              .optional()
+              .describe("[min, max] data range"),
+            fillColor: z.string().optional().describe("Fill color hex/rgba"),
+            strokeColor: z
+              .string()
+              .optional()
+              .describe("Stroke color hex/rgba"),
+            strokeWidth: z.number().optional().describe("Stroke width (px)"),
+            pointRadius: z.number().optional().describe("Point radius (px)"),
+            tooltipFields: z
+              .array(z.record(z.any()))
+              .optional()
+              .describe(
+                "Tooltip fields [{id, title?, appendix?, decimals?}]",
+              ),
+            interactiveSliders: z
+              .boolean()
+              .optional()
+              .default(false)
+              .describe("Generate stroke width slider"),
+          })
+          .optional()
+          .describe("Vector flatstyle options"),
+        rasterConfig: z
+          .object({
+            mode: z
+              .enum([
+                "single-band-normalized",
+                "single-band",
+                "single",
+                "rgb-composite",
+                "rgb",
+                "band-ratio-index",
+              ])
+              .optional()
+              .default("single-band-normalized")
+              .describe("Raster rendering mode"),
+            bands: z
+              .array(z.number())
+              .optional()
+              .default([1])
+              .describe("1-based band indices (e.g. [1] or [4,3,2])"),
+            bandIndex: z
+              .number()
+              .optional()
+              .describe("Band index (1-based)"),
+            redBand: z.number().optional().describe("Red band index"),
+            greenBand: z.number().optional().describe("Green band index"),
+            blueBand: z.number().optional().describe("Blue band index"),
+            range: z
+              .array(z.number())
+              .optional()
+              .describe("[min, max] data range"),
+            vmin: z.number().optional().describe("Min data value"),
+            vmax: z.number().optional().describe("Max data value"),
+            sliderMin: z
+              .number()
+              .optional()
+              .describe("Slider track min bound"),
+            sliderMax: z
+              .number()
+              .optional()
+              .describe("Slider track max bound"),
+            colormap: z
+              .string()
+              .optional()
+              .describe("Colormap preset name"),
+            customColors: z
+              .array(z.string())
+              .optional()
+              .describe("Custom color ramp array"),
+            interactiveMinMax: z
+              .boolean()
+              .optional()
+              .default(true)
+              .describe("Generate interactive min/max slider"),
+          })
+          .optional()
+          .describe("Raster COG flatstyle options"),
+        rasterWebglConfig: z
+          .any()
+          .optional()
+          .describe("Alias for rasterConfig"),
+        rasterformConfig: z
+          .object({
+            serviceType: z
+              .enum(["titiler", "wms", "custom-xyz"])
+              .optional()
+              .default("titiler")
+              .describe("Raster backend type"),
+            colormaps: z
+              .array(z.string())
+              .optional()
+              .describe("Colormap dropdown options"),
+            defaultColormap: z
+              .string()
+              .optional()
+              .default("viridis")
+              .describe("Default active colormap"),
+            vmin: z.number().optional().describe("Default min rescale value"),
+            vmax: z.number().optional().describe("Default max rescale value"),
+            sliderMin: z
+              .number()
+              .optional()
+              .describe("Slider track min bound"),
+            sliderMax: z
+              .number()
+              .optional()
+              .describe("Slider track max bound"),
+            hasRescale: z
+              .boolean()
+              .optional()
+              .default(true)
+              .describe("Include rescale slider"),
+            hasMultiAssetBranching: z
+              .boolean()
+              .optional()
+              .default(false)
+              .describe("Include multi-asset branching form"),
+            assets: z
+              .array(z.record(z.any()))
+              .optional()
+              .describe(
+                "Branching assets [{id, title, defaultVmin?, defaultVmax?}]",
+              ),
+          })
+          .optional()
+          .describe("Rasterform options for TiTiler/WMS/XYZ"),
+        rasterFormConfig: z
+          .any()
+          .optional()
+          .describe("Alias for rasterformConfig"),
+      }),
+    },
+    async (params) => {
+      const generated = await generateLayerStyle(params);
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(generated, null, 2),
+          },
+        ],
+      };
+    },
+  );
+
+  // find_examples
+  server.registerTool(
+    "find_examples",
+    {
+      description:
+        "Search and discover working eodash examples, layer styles, and catalog configs.",
+      inputSchema: z.object({
+        query: z.string().optional().describe("Search keywords"),
+        category: z
+          .enum([
+            "all",
+            "vector-flatstyle",
+            "raster-flatstyle",
+            "raster-webgl-flatstyle",
+            "rasterform",
+            "jsonform",
+            "catalog-collection",
+            "catalog-indicator",
+            "stac-item",
+          ])
+          .optional()
+          .default("all")
+          .describe("Config category filter"),
+        dataType: z
+          .enum([
+            "all",
+            "vector",
+            "cog",
+            "xyz",
+            "wmts",
+            "point",
+            "polygon",
+            "timeseries",
+          ])
+          .optional()
+          .default("all")
+          .describe("Geospatial data type filter"),
+        feature: z
+          .string()
+          .optional()
+          .describe("Feature tag filter (e.g. legend, tooltip, drawtools)"),
+        limit: z
+          .number()
+          .optional()
+          .default(5)
+          .describe("Max results (1-20)"),
+      }),
+    },
+    async (params) => {
+      const results = findExamples(params);
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(results, null, 2),
+          },
+        ],
+      };
+    },
+  );
+
+  // validate_catalog_config
+  server.registerTool(
+    "validate_catalog_config",
+    {
+      description:
+        "Validate eodash collection or indicator JSON configuration against schemas and rules.",
+      inputSchema: z.object({
+        config: z
+          .union([z.string(), z.record(z.any())])
+          .describe("Collection or indicator JSON string or object"),
+        configType: z
+          .enum([
+            "auto",
+            "collection",
+            "indicator",
+            "catalog-collection",
+            "catalog-indicator",
+          ])
+          .optional()
+          .default("auto")
+          .describe("Target schema type"),
+      }),
+    },
+    async (params) => {
+      const results = await validateCatalogConfig(params);
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(results, null, 2),
           },
         ],
       };
@@ -400,8 +675,15 @@ export function createExpressApp() {
 
   app.get("/ui", (_req, res) => {
     const { widgetsData, architectureData } = getMetadata();
+    const serverInstance = createMcpServer();
+    const tools = Object.entries(serverInstance._registeredTools || {}).map(
+      ([name, def]) => ({
+        name,
+        description: def.description,
+      }),
+    );
     res.setHeader("Content-Type", "text/html");
-    res.send(generateLandingPage(widgetsData, architectureData));
+    res.send(generateLandingPage(widgetsData, architectureData, { tools }));
   });
 
   app.get("/", (_req, res) => {
