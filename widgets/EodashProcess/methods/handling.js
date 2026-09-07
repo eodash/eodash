@@ -155,7 +155,6 @@ export async function updateJsonformIdentifier({
 
   const form = JSON.parse(JSON.stringify(jsonformSchema));
   const drawToolsProperties = getDrawToolsProperties(form);
-  if (drawToolsProperties.length && !mapElement) return null;
 
   /** @type {Promise<void>[]} */
   const renderPromises = [];
