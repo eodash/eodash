@@ -30,8 +30,8 @@ describe("expert template - POI selection (STAC output)", () => {
   // `eox-map` dispatches `layerschanged` once per `set layers`, so this counts
   // how many times the app wrote the map.
   let mapWrites = 0;
-  // The view while a single location is open, which going back has to widen.
-  let zoomOnPoi = 0;
+  // The extent fitted to the whole indicator, which going back has to restore.
+  let collectionWidth = 0;
 
   /**
    * The map button whose tooltip text matches; icon buttons have no name.
@@ -42,7 +42,15 @@ describe("expert template - POI selection (STAC output)", () => {
       b.textContent?.includes(text),
     );
 
-  const mapZoom = () => ctx.query("eox-map").map.getView().getZoom();
+  /**
+   * The width of the extent the app last fitted the map to. The fit is animated,
+   * so the view's own zoom is only a point on an easing curve; this is the
+   * discrete value the app sets, once per selection.
+   */
+  const fittedWidth = () => {
+    const [minX, , maxX] = ctx.query("eox-map").zoomExtent ?? [];
+    return maxX - minX;
+  };
 
   beforeAll(async () => {
     ctx = await bootExpert({ endpoint: STAC_ENDPOINT });
@@ -69,6 +77,7 @@ describe("expert template - POI selection (STAC output)", () => {
       },
       { timeout: TIMEOUT },
     );
+    collectionWidth = fittedWidth();
   });
 
   afterAll(() => ctx?.app.unmount());
@@ -133,7 +142,6 @@ describe("expert template - POI selection (STAC output)", () => {
   });
 
   test("the back button restores the indicator and its points", async () => {
-    zoomOnPoi = mapZoom();
     const btn = btnByTooltip("Back to POIs");
     if (!btn) throw new Error("back to POIs button not shown");
 
@@ -159,8 +167,9 @@ describe("expert template - POI selection (STAC output)", () => {
   });
 
   test("the map widens back to the whole collection", async () => {
-    // one location covers less ground than the collection holding it
-    await expect.poll(mapZoom, { timeout: TIMEOUT }).toBeLessThan(zoomOnPoi);
+    // back to the indicator's own extent, whether or not the location fit ran:
+    // `zoomUnlessRestored` skips the fit while an item is selected
+    await expect.poll(fittedWidth, { timeout: TIMEOUT }).toBe(collectionWidth);
   });
 
   test("a location is selectable again after going back", async () => {

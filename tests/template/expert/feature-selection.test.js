@@ -137,7 +137,6 @@ describe("expert template - feature selection in large geojsons", () => {
     // Centre the feature so a click on the map centre lands on it.
     mapEl.map.getView().setCenter(coordinate);
     mapEl.map.getView().setZoom(10);
-    await new Promise((resolve) => mapEl.map.once("rendercomplete", resolve));
     mapWrites = 0;
     await userEvent.click(mapEl);
 
