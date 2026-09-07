@@ -1,4 +1,15 @@
 /**
+ * Lightweight markdown-like renderer for links and inline code.
+ * @param {string} text
+ */
+function renderSimpleMarkdown(text) {
+  if (!text) return "";
+  return text
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>')
+    .replace(/`([^`]+)`/g, "<code>$1</code>");
+}
+
+/**
  * Renders a lightweight HTML landing page showing widget catalog, MCP tools, and instructions.
  * @param {Record<string, any>} widgetsData
  * @param {Record<string, any>} _architectureData
@@ -62,7 +73,7 @@ export function generateLandingPage(
         <span class="badge ${w.isBackground ? "badge-bg" : "badge-ui"}">${w.isBackground ? "Background" : "UI"}</span>
       </div>
       <div class="category">${w.category || "General"}</div>
-      <p class="summary">${w.summary || "No summary provided."}</p>
+      <div class="summary">${renderSimpleMarkdown(w.summary || "No summary provided.")}</div>
       <div class="tags">
         ${(w.tags || []).map((t) => `<span class="tag">${t}</span>`).join("")}
       </div>
@@ -81,7 +92,7 @@ export function generateLandingPage(
       (t) => `
     <tr>
       <td><code>${t.name}</code></td>
-      <td>${t.description || ""}</td>
+      <td>${renderSimpleMarkdown(t.description || "")}</td>
     </tr>
   `,
     )
@@ -133,6 +144,8 @@ export function generateLandingPage(
     th, td { padding: 0.75rem 1rem; text-align: left; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
     th { background: #f8fafc; color: var(--primary); }
     code { background: #f1f5f9; padding: 0.2rem 0.4rem; border-radius: 4px; font-size: 0.85rem; }
+    a { color: var(--secondary); text-decoration: none; }
+    a:hover { text-decoration: underline; }
   </style>
 </head>
 <body>
