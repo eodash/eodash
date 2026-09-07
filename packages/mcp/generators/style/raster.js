@@ -11,45 +11,37 @@ export async function generateRasterFlatStyle({
   greenBand,
   blueBand,
   range,
-  vmin,
-  vmax,
   min,
   max,
   sliderMin,
   sliderMax,
   defaultMin,
   defaultMax,
-  colorMap,
-  colormap,
+  colormap = "viridis",
   customColors,
   interactiveMinMax = true,
 } = {}) {
-  const effectiveColormap = colormap || colorMap || "viridis";
-  const palette = customColors || (await getColormapRamp(effectiveColormap));
+  const palette = customColors || (await getColormapRamp(colormap));
   const style = {};
 
-  const effectiveDefaultMin = defaultMin ?? range?.[0] ?? vmin ?? min ?? 0;
-  const effectiveDefaultMax = defaultMax ?? range?.[1] ?? vmax ?? max ?? 250;
+  const effectiveDefaultMin = defaultMin ?? range?.[0] ?? min ?? 0;
+  const effectiveDefaultMax = defaultMax ?? range?.[1] ?? max ?? 250;
 
   const effectiveSliderMin =
     sliderMin ??
-    (min !== undefined && vmin !== undefined && min < vmin
-      ? min
-      : effectiveDefaultMin < 0
-        ? Math.round(effectiveDefaultMin * 1.5)
-        : effectiveDefaultMin === 0
-          ? 0
-          : Math.round(effectiveDefaultMin * 0.5));
+    (effectiveDefaultMin < 0
+      ? Math.round(effectiveDefaultMin * 1.5)
+      : effectiveDefaultMin === 0
+        ? 0
+        : Math.round(effectiveDefaultMin * 0.5));
 
   const effectiveSliderMax =
     sliderMax ??
-    (max !== undefined && vmax !== undefined && max > vmax
-      ? max
-      : effectiveDefaultMax > 0
-        ? Math.round(effectiveDefaultMax * 1.5)
-        : effectiveDefaultMax === 0
-          ? 100
-          : Math.round(effectiveDefaultMax * 0.5));
+    (effectiveDefaultMax > 0
+      ? Math.round(effectiveDefaultMax * 1.5)
+      : effectiveDefaultMax === 0
+        ? 100
+        : Math.round(effectiveDefaultMax * 0.5));
 
   const effectiveMode =
     mode === "single-band" || mode === "single"
@@ -64,14 +56,14 @@ export async function generateRasterFlatStyle({
 
     if (interactiveMinMax) {
       style.variables = {
-        vmin: effectiveDefaultMin,
-        vmax: effectiveDefaultMax,
+        min: effectiveDefaultMin,
+        max: effectiveDefaultMax,
       };
 
       const normalizedExpression = [
         "/",
-        ["-", ["band", bandIdx], ["var", "vmin"]],
-        ["-", ["var", "vmax"], ["var", "vmin"]],
+        ["-", ["band", bandIdx], ["var", "min"]],
+        ["-", ["var", "max"], ["var", "min"]],
       ];
 
       const interpolateStops = [
@@ -92,7 +84,7 @@ export async function generateRasterFlatStyle({
       ];
 
       style.legend = {
-        domainProperties: ["vmin", "vmax"],
+        domainProperties: ["min", "max"],
         range: palette,
         scaleType: "continuous",
       };
@@ -101,20 +93,18 @@ export async function generateRasterFlatStyle({
         type: "object",
         title: "Layer Data Settings",
         properties: {
-          vminmax: {
+          minmax: {
             title: "Value Range",
             type: "object",
             properties: {
-              vmin: {
+              min: {
                 type: "number",
                 minimum: effectiveSliderMin,
-                maximum: effectiveSliderMax,
                 default: effectiveDefaultMin,
                 format: "range",
               },
-              vmax: {
+              max: {
                 type: "number",
-                minimum: effectiveSliderMin,
                 maximum: effectiveSliderMax,
                 default: effectiveDefaultMax,
                 format: "range",

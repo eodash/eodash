@@ -128,10 +128,10 @@ describe("eodash Style Generator - generateVectorFlatStyle", () => {
     expect(res.legend.domain).toContain("Category A");
   });
 
-  it("generates graduated mode polygon flatstyle with linear interpolate expression", () => {
+  it("generates continuous mode polygon flatstyle with linear interpolate expression", () => {
     const res = generateVectorFlatStyle({
       geometryType: "polygon",
-      mode: "graduated",
+      mode: "continuous",
       attribute: "pm25",
       colors: ["#00ff00", "#ffff00", "#ff0000"],
       range: [0, 100],
@@ -145,10 +145,10 @@ describe("eodash Style Generator - generateVectorFlatStyle", () => {
     expect(res.legend.domain).toEqual([0, 100]);
   });
 
-  it("generates graduated mode with colormap name without explicit colors", () => {
+  it("generates continuous mode with colormap name without explicit colors", () => {
     const res = generateVectorFlatStyle({
       geometryType: "polygon",
-      mode: "graduated",
+      mode: "continuous",
       attribute: "pm25",
       colormap: "magma",
       range: [0, 100],
@@ -158,10 +158,10 @@ describe("eodash Style Generator - generateVectorFlatStyle", () => {
     expect(res.legend.range.length).toBeGreaterThanOrEqual(8);
   });
 
-  it("generates graduated mode point flatstyle", () => {
+  it("generates continuous mode point flatstyle", () => {
     const res = generateVectorFlatStyle({
       geometryType: "point",
-      mode: "graduated",
+      mode: "continuous",
       attribute: "temperature",
       range: [-10, 40],
       pointRadius: 5,
@@ -194,27 +194,29 @@ describe("eodash Style Generator - generateRasterWebglStyle", () => {
     const res = await generateRasterWebglStyle({
       mode: "single-band-normalized",
       bands: [1],
-      vmin: 0,
-      vmax: 500,
-      colorMap: "magma",
+      min: 0,
+      max: 500,
+      colormap: "magma",
       interactiveMinMax: true,
     });
 
-    expect(res.variables.vmin).toBe(0);
-    expect(res.variables.vmax).toBe(500);
+    expect(res.variables.min).toBe(0);
+    expect(res.variables.max).toBe(500);
     expect(res.color[0]).toBe("case");
-    expect(res.legend.domainProperties).toEqual(["vmin", "vmax"]);
+    expect(res.legend.domainProperties).toEqual(["min", "max"]);
     expect(res.legend.range.length).toBeGreaterThanOrEqual(8);
     expect(res.legend.range[0].startsWith("#")).toBe(true);
-    expect(res.jsonform.properties.vminmax.format).toBe("minmax");
+    expect(res.jsonform.properties.minmax.format).toBe("minmax");
+    expect(res.jsonform.properties.minmax.properties.min.maximum).toBeUndefined();
+    expect(res.jsonform.properties.minmax.properties.max.minimum).toBeUndefined();
   });
 
   it("generates static single-band normalized COG shader without interactive sliders", async () => {
     const res = await generateRasterWebglStyle({
       mode: "single-band-normalized",
       bands: [2],
-      vmin: 100,
-      vmax: 2000,
+      min: 100,
+      max: 2000,
       interactiveMinMax: false,
     });
 
@@ -227,7 +229,7 @@ describe("eodash Style Generator - generateRasterWebglStyle", () => {
     const res = await generateRasterWebglStyle({
       mode: "rgb-composite",
       bands: [4, 3, 2],
-      vmax: 4000,
+      max: 4000,
     });
 
     expect(res.variables.bandDivisor).toBe(4000);
@@ -240,7 +242,7 @@ describe("eodash Style Generator - generateRasterWebglStyle", () => {
     const res = await generateRasterWebglStyle({
       mode: "band-ratio-index",
       bands: [8, 4],
-      colorMap: "algae",
+      colormap: "algae",
     });
 
     expect(res.color[0]).toBe("case");
@@ -266,36 +268,39 @@ describe("eodash Style Generator - generateRasterForm", () => {
     const res = generateRasterForm({
       _serviceType: "titiler",
       defaultColormap: "spectral",
-      vmin: 0,
-      vmax: 2000,
+      min: 0,
+      max: 2000,
       hasRescale: true,
     });
 
     expect(res.legend.rangeProperty).toBe("colormap_name");
-    expect(res.legend.domainProperties).toEqual(["vmin", "vmax"]);
-    expect(res.jsonform.options.removeProperties).toEqual(["vminmax"]);
+    expect(res.legend.domainProperties).toEqual(["min", "max"]);
+    expect(res.jsonform.options.removeProperties).toEqual(["minmax"]);
     expect(res.jsonform.properties.colormap_name.default).toBe("spectral");
     expect(res.jsonform.properties.rescale.template).toBe(
-      "{{vminmax.vmin}},{{vminmax.vmax}}",
+      "{{minmax.min}},{{minmax.max}}",
     );
     // Dynamic 1.5x slider bounds check
-    expect(res.jsonform.properties.vminmax.properties.vmin.default).toBe(0);
-    expect(res.jsonform.properties.vminmax.properties.vmax.default).toBe(2000);
-    expect(res.jsonform.properties.vminmax.properties.vmin.maximum).toBe(3000);
-    expect(res.jsonform.properties.vminmax.properties.vmax.maximum).toBe(3000);
+    expect(res.jsonform.properties.minmax.properties.min.default).toBe(0);
+    expect(res.jsonform.properties.minmax.properties.max.default).toBe(2000);
+    expect(res.jsonform.properties.minmax.properties.min.maximum).toBeUndefined();
+    expect(res.jsonform.properties.minmax.properties.max.minimum).toBeUndefined();
+    expect(res.jsonform.properties.minmax.properties.max.maximum).toBe(3000);
   });
 
   it("calculates dynamic 1.5x headroom for rasterform slider track (0 to 250 -> maximum 375)", () => {
     const res = generateRasterForm({
-      vmin: 0,
-      vmax: 250,
+      min: 0,
+      max: 250,
       hasRescale: true,
     });
 
-    expect(res.jsonform.properties.vminmax.properties.vmin.default).toBe(0);
-    expect(res.jsonform.properties.vminmax.properties.vmax.default).toBe(250);
-    expect(res.jsonform.properties.vminmax.properties.vmin.minimum).toBe(0);
-    expect(res.jsonform.properties.vminmax.properties.vmax.maximum).toBe(375);
+    expect(res.jsonform.properties.minmax.properties.min.default).toBe(0);
+    expect(res.jsonform.properties.minmax.properties.max.default).toBe(250);
+    expect(res.jsonform.properties.minmax.properties.min.minimum).toBe(0);
+    expect(res.jsonform.properties.minmax.properties.max.maximum).toBe(375);
+    expect(res.jsonform.properties.minmax.properties.min.maximum).toBeUndefined();
+    expect(res.jsonform.properties.minmax.properties.max.minimum).toBeUndefined();
   });
 
   it("generates minimal rasterform without rescale slider", () => {
@@ -306,7 +311,7 @@ describe("eodash Style Generator - generateRasterForm", () => {
     });
 
     expect(res.jsonform.properties.rescale).toBeUndefined();
-    expect(res.jsonform.properties.vminmax).toBeUndefined();
+    expect(res.jsonform.properties.minmax).toBeUndefined();
     expect(res.jsonform.properties.colormap_name.enum).toEqual([
       "viridis",
       "turbo",
@@ -322,22 +327,22 @@ describe("eodash Style Generator - generateRasterForm", () => {
         {
           id: "ndvi",
           title: "NDVI Index",
-          defaultVmin: -0.2,
-          defaultVmax: 0.8,
+          defaultMin: -0.2,
+          defaultMax: 0.8,
         },
       ],
     });
 
     expect(res.jsonform.options.keep_oneof_values).toBe(false);
-    expect(res.jsonform.options.removeProperties).toEqual(["vminmax"]);
+    expect(res.jsonform.options.removeProperties).toEqual(["minmax"]);
     expect(res.jsonform.oneOf).toHaveLength(2);
     expect(res.jsonform.oneOf[0].title).toBe("RGB True Color");
     expect(res.jsonform.oneOf[1].title).toBe("NDVI Index");
     expect(
-      res.jsonform.oneOf[1].properties.vminmax.properties.vmin.default,
+      res.jsonform.oneOf[1].properties.minmax.properties.min.default,
     ).toBe(-0.2);
     expect(
-      res.jsonform.oneOf[1].properties.vminmax.properties.vmax.default,
+      res.jsonform.oneOf[1].properties.minmax.properties.max.default,
     ).toBe(0.8);
   });
 });
@@ -372,13 +377,14 @@ describe("eodash Style Generator - generateLayerStyle Router & Docs URLs", () =>
       styleType: "raster-flatstyle",
       rasterConfig: {
         mode: "single-band-normalized",
-        vmin: 10,
-        vmax: 90,
+        min: 10,
+        max: 90,
       },
     });
 
     expect(res.styleType).toBe("raster-flatstyle");
-    expect(res.style.variables.vmin).toBe(10);
+    expect(res.style.variables.min).toBe(10);
+    expect(res.style.variables.max).toBe(90);
     expect(res.stacItemSnippet["eox:flatstyle"]).toBeDefined();
     expect(res.catalogCollectionSnippet.Resources[0].Style).toBeDefined();
     expect(
@@ -395,13 +401,13 @@ describe("eodash Style Generator - generateLayerStyle Router & Docs URLs", () =>
       styleType: "rasterform",
       rasterformConfig: {
         serviceType: "titiler",
-        vmin: 0,
-        vmax: 500,
+        min: 0,
+        max: 500,
       },
     });
 
     expect(res.styleType).toBe("rasterform");
-    expect(res.style.jsonform.properties.vminmax).toBeDefined();
+    expect(res.style.jsonform.properties.minmax).toBeDefined();
     expect(res.stacItemSnippet["eodash:rasterform"]).toBeDefined();
     expect(res.catalogCollectionSnippet.Resources[0].EndPoint).toContain(
       "rescale",
@@ -532,8 +538,8 @@ describe("eodash MCP Tools via Client - generate_layer_style & find_examples", (
         rasterWebglConfig: {
           mode: "single-band-normalized",
           bands: [1],
-          vmin: 0,
-          vmax: 1000,
+          min: 0,
+          max: 1000,
         },
       },
     });
@@ -552,8 +558,8 @@ describe("eodash MCP Tools via Client - generate_layer_style & find_examples", (
         styleType: "rasterform",
         rasterformConfig: {
           serviceType: "titiler",
-          vmin: 10,
-          vmax: 200,
+          min: 10,
+          max: 200,
         },
       },
     });
@@ -612,8 +618,8 @@ describe("eodash MCP Tools via Client - generate_layer_style & find_examples", (
 
     const parsed = JSON.parse(result.content[0].text);
     expect(parsed.styleType).toBe("raster-webgl-flatstyle");
-    expect(parsed.style.variables.vmin).toBe(-2);
-    expect(parsed.style.variables.vmax).toBe(35);
+    expect(parsed.style.variables.min).toBe(-2);
+    expect(parsed.style.variables.max).toBe(35);
   });
 
   it("calls list_widgets with tag and search filter", async () => {

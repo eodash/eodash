@@ -13,8 +13,6 @@ export function generateVectorFlatStyle({
   range = [0, 100],
   min,
   max,
-  vmin,
-  vmax,
   fillColor = "rgba(0, 113, 194, 0.6)",
   strokeColor = "#ffffff",
   strokeWidth = 1.5,
@@ -128,8 +126,8 @@ export function generateVectorFlatStyle({
     };
   }
 
-  // 3. Graduated / Continuous Mode (Linear Interpolation)
-  if (mode === "graduated" || mode === "continuous") {
+  // 3. Continuous Mode (Linear Interpolation)
+  if (mode === "continuous") {
     let palette = colors;
     if (!palette || palette.length <= 1) {
       palette =
@@ -140,7 +138,7 @@ export function generateVectorFlatStyle({
     const effectiveRange =
       range && range.length === 2
         ? range
-        : [vmin ?? min ?? 0, vmax ?? max ?? 100];
+        : [min ?? 0, max ?? 100];
     const [minVal, maxVal] = effectiveRange;
     const step = (maxVal - minVal) / (palette.length - 1);
 

@@ -28,7 +28,7 @@ export function registerStyleGeneratorTool(server) {
               .default("polygon")
               .describe("Geometry symbolizer type"),
             mode: z
-              .enum(["single", "categorical", "continuous", "graduated"])
+              .enum(["single", "categorical", "continuous"])
               .optional()
               .default("single")
               .describe("Coloring mode (single, categorical, continuous)"),
@@ -105,8 +105,8 @@ export function registerStyleGeneratorTool(server) {
               .array(z.number())
               .optional()
               .describe("[min, max] data range"),
-            vmin: z.number().optional().describe("Min data value"),
-            vmax: z.number().optional().describe("Max data value"),
+            min: z.number().optional().describe("Min data value"),
+            max: z.number().optional().describe("Max data value"),
             sliderMin: z
               .number()
               .optional()
@@ -151,8 +151,8 @@ export function registerStyleGeneratorTool(server) {
               .optional()
               .default("viridis")
               .describe("Default active colormap"),
-            vmin: z.number().optional().describe("Default min rescale value"),
-            vmax: z.number().optional().describe("Default max rescale value"),
+            min: z.number().optional().describe("Default min rescale value"),
+            max: z.number().optional().describe("Default max rescale value"),
             sliderMin: z
               .number()
               .optional()
@@ -175,7 +175,7 @@ export function registerStyleGeneratorTool(server) {
               .array(z.record(z.any()))
               .optional()
               .describe(
-                "Branching assets [{id, title, defaultVmin?, defaultVmax?}]",
+                "Branching assets [{id, title, defaultMin?, defaultMax?}]",
               ),
           })
           .optional()

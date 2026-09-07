@@ -16,7 +16,7 @@ export {
 };
 
 /**
- * Validate an EODash catalog configuration against official eodash schemas and custom business rules
+ * Validate an EODash catalog configuration against official eodash schemas and custom domain rules
  */
 export async function validateCatalogConfig({
   config,

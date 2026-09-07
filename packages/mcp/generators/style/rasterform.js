@@ -13,10 +13,7 @@ export function generateRasterForm({
     "rainbow",
     "turbo",
   ],
-  colormapOptions,
   defaultColormap = "viridis",
-  vmin,
-  vmax,
   min,
   max,
   sliderMin,
@@ -27,36 +24,31 @@ export function generateRasterForm({
   hasMultiAssetBranching = false,
   assets = [],
 } = {}) {
-  const effectiveColormaps = colormapOptions || colormaps;
-  const effectiveDefaultMin = defaultMin ?? vmin ?? min ?? 0;
-  const effectiveDefaultMax = defaultMax ?? vmax ?? max ?? 250;
+  const effectiveDefaultMin = defaultMin ?? min ?? 0;
+  const effectiveDefaultMax = defaultMax ?? max ?? 250;
 
   const effectiveSliderMin =
     sliderMin ??
-    (min !== undefined && vmin !== undefined && min < vmin
-      ? min
-      : effectiveDefaultMin < 0
-        ? Math.round(effectiveDefaultMin * 1.5)
-        : effectiveDefaultMin === 0
-          ? 0
-          : Math.round(effectiveDefaultMin * 0.5));
+    (effectiveDefaultMin < 0
+      ? Math.round(effectiveDefaultMin * 1.5)
+      : effectiveDefaultMin === 0
+        ? 0
+        : Math.round(effectiveDefaultMin * 0.5));
 
   const effectiveSliderMax =
     sliderMax ??
-    (max !== undefined && vmax !== undefined && max > vmax
-      ? max
-      : effectiveDefaultMax > 0
-        ? Math.round(effectiveDefaultMax * 1.5)
-        : effectiveDefaultMax === 0
-          ? 100
-          : Math.round(effectiveDefaultMax * 0.5));
+    (effectiveDefaultMax > 0
+      ? Math.round(effectiveDefaultMax * 1.5)
+      : effectiveDefaultMax === 0
+        ? 100
+        : Math.round(effectiveDefaultMax * 0.5));
 
   /** @type {Record<string, any>} */
   const rasterform = {
     type: "rasterform",
     legend: {
       rangeProperty: "colormap_name",
-      domainProperties: ["vmin", "vmax"],
+      domainProperties: ["min", "max"],
     },
   };
 
@@ -67,11 +59,11 @@ export function generateRasterForm({
       title: "Data Visualization Form",
       options: {
         keep_oneof_values: false,
-        removeProperties: ["vminmax"],
+        removeProperties: ["minmax"],
       },
       oneOf: assets.map((asset) => {
-        const assetDefaultMin = asset.defaultVmin ?? effectiveDefaultMin;
-        const assetDefaultMax = asset.defaultVmax ?? effectiveDefaultMax;
+        const assetDefaultMin = asset.defaultMin ?? effectiveDefaultMin;
+        const assetDefaultMax = asset.defaultMax ?? effectiveDefaultMax;
         const assetSliderMin =
           asset.sliderMin ??
           (assetDefaultMin < 0
@@ -99,23 +91,21 @@ export function generateRasterForm({
             colormap_name: {
               title: "Color Map",
               type: "string",
-              enum: effectiveColormaps,
+              enum: colormaps,
               default: defaultColormap,
             },
-            vminmax: {
+            minmax: {
               title: "Value Range",
               type: "object",
               properties: {
-                vmin: {
+                min: {
                   type: "number",
                   minimum: assetSliderMin,
-                  maximum: assetSliderMax,
                   default: assetDefaultMin,
                   format: "range",
                 },
-                vmax: {
+                max: {
                   type: "number",
-                  minimum: assetSliderMin,
                   maximum: assetSliderMax,
                   default: assetDefaultMax,
                   format: "range",
@@ -125,8 +115,8 @@ export function generateRasterForm({
             },
             rescale: {
               type: "string",
-              template: "{{vminmax.vmin}},{{vminmax.vmax}}",
-              watch: { vminmax: "vminmax" },
+              template: "{{minmax.min}},{{minmax.max}}",
+              watch: { minmax: "minmax" },
               options: { hidden: true },
             },
           },
@@ -137,30 +127,28 @@ export function generateRasterForm({
     // Single asset TiTiler / WMS form
     const properties = {};
 
-    if (effectiveColormaps && effectiveColormaps.length > 0) {
+    if (colormaps && colormaps.length > 0) {
       properties.colormap_name = {
         title: "Color Map",
         type: "string",
-        enum: effectiveColormaps,
+        enum: colormaps,
         default: defaultColormap,
       };
     }
 
     if (hasRescale) {
-      properties.vminmax = {
+      properties.minmax = {
         title: "Value Range",
         type: "object",
         properties: {
-          vmin: {
+          min: {
             type: "number",
             minimum: effectiveSliderMin,
-            maximum: effectiveSliderMax,
             default: effectiveDefaultMin,
             format: "range",
           },
-          vmax: {
+          max: {
             type: "number",
-            minimum: effectiveSliderMin,
             maximum: effectiveSliderMax,
             default: effectiveDefaultMax,
             format: "range",
@@ -171,8 +159,8 @@ export function generateRasterForm({
 
       properties.rescale = {
         type: "string",
-        template: "{{vminmax.vmin}},{{vminmax.vmax}}",
-        watch: { vminmax: "vminmax" },
+        template: "{{minmax.min}},{{minmax.max}}",
+        watch: { minmax: "minmax" },
         options: { hidden: true },
       };
     }
@@ -181,7 +169,7 @@ export function generateRasterForm({
       type: "object",
       title: "Data Visualization Form",
       options: {
-        removeProperties: ["vminmax"],
+        removeProperties: ["minmax"],
       },
       properties,
     };

@@ -1,9 +1,9 @@
 /**
- * Performs custom EODash domain/business rule validations
+ * Performs custom EODash domain rule validations
  * on parsed catalog config object.
  */
 export function validateCustomRules(parsed, errors, warnings) {
-  // Business Rules Checks for EODash Catalog Configs (PascalCase)
+  // Domain Rules Checks for EODash Catalog Configs (PascalCase)
   if (parsed.Resources && Array.isArray(parsed.Resources)) {
     for (let i = 0; i < parsed.Resources.length; i++) {
       const res = parsed.Resources[i];

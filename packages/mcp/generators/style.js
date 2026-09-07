@@ -122,7 +122,7 @@ export async function generateLayerStyle({
     rulesAndBestPractices.push(
       "The eodash:rasterform property is a hybrid and supports BOTH direct JSON objects and URL strings.",
       "When using branching forms (oneOf / anyOf) with differing properties, always set 'keep_oneof_values': false in options.",
-      "Use 'removeProperties': ['vminmax'] in options so intermediate slider values do not pollute tile URL query strings.",
+      "Use 'removeProperties': ['minmax'] in options so intermediate slider values do not pollute tile URL query strings.",
       "eodash STAC & Processing Guidelines: https://eodash.github.io/eodash/",
       "JSON-Editor Schema Documentation: https://github.com/json-editor/json-editor",
     );
