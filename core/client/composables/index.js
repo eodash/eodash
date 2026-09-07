@@ -372,10 +372,10 @@ export const useOnLayersUpdate = (listener) => {
   const layersEvents = useEventBus(eoxLayersKey);
 
   const unsubscribe = layersEvents.on(listener);
-
   onUnmounted(() => {
     unsubscribe();
   });
+  return unsubscribe;
 };
 /**
  * Emits a layers-update event on the shared bus once the map has applied its

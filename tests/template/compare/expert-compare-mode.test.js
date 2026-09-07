@@ -15,9 +15,11 @@ const COMPARE_TITLE = "Carbon Dioxide from OMI (daily)";
 describe("expert template - compare mode", () => {
   /** @type {Awaited<ReturnType<typeof bootExpert>>} */
   let ctx;
-  // `eox-map` dispatches `layerschanged` once per `set layers`, so this counts
-  // how many times the app wrote the map.
+  // `eox-map` dispatches `layerschanged` once per `set layers`, so these count
+  // how many times the app wrote each pane. Compare mode writes #compare, so a
+  // single counter on #main would miss the write it is meant to guard.
   let mapWrites = 0;
+  let compareMapWrites = 0;
 
   /** The map button whose tooltip text matches (icon buttons have no name). */
   const btnByTooltip = (/** @type {string} */ text) =>
@@ -29,7 +31,12 @@ describe("expert template - compare mode", () => {
 
   beforeAll(async () => {
     ctx = await bootExpert({ endpoint: STAC_ENDPOINT });
-    ctx.query("eox-map").addEventListener("layerschanged", () => mapWrites++);
+    ctx
+      .query("eox-map#main")
+      .addEventListener("layerschanged", () => mapWrites++);
+    ctx
+      .query("eox-map#compare")
+      .addEventListener("layerschanged", () => compareMapWrites++);
   });
 
   afterAll(() => ctx?.app.unmount());
@@ -82,6 +89,7 @@ describe("expert template - compare mode", () => {
       })
       .toBe(1);
     mapWrites = 0;
+    compareMapWrites = 0;
     await userEvent.click(page.getByText(COMPARE_TITLE, { exact: true }));
 
     await vi.waitFor(
@@ -97,7 +105,16 @@ describe("expert template - compare mode", () => {
     expect(compareIndicator.value).toBeTruthy();
     expect(ctx.store.selectedStac?.id).toBe(MAIN_ID);
 
-    expect(mapWrites).toBe(1);
+    await vi.waitFor(
+      () => {
+        const layer = dataLayer(analysisGroup(ctx.query("eox-map#compare")));
+        if (!layer?.properties?.id) {
+          throw new Error("compare data layer not built");
+        }
+      },
+      { timeout: TIMEOUT },
+    );
+    expect([mapWrites, compareMapWrites]).toEqual([1, 1]);
   });
 
   test("the compare pane renders the second indicator's layer and control", async () => {

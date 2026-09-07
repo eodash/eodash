@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, test, vi } from "vitest";
-import { datetime } from "@/store/states";
+import { setDatetime } from "@/store/actions";
 import { analysisGroup } from "../../support/layers";
 import { bootExpert, selectIndicator, TIMEOUT } from "../../support/template";
 
@@ -8,7 +8,7 @@ const STAC_ENDPOINT =
 // Its child collections span the same days on different grids (hourly and
 // daily), so one global datetime makes each layer snap to its own closest date.
 const INDICATOR_ID = "city_temperature_indicator";
-const TARGET_DATETIME = "2019-06-28";
+const TARGET_DATETIME = "2019-06-28T00:00:00.000Z";
 
 describe("expert template - global datetime", () => {
   /** @type {Awaited<ReturnType<typeof bootExpert>>} */
@@ -40,7 +40,8 @@ describe("expert template - global datetime", () => {
 
   test("snaps every collection's layer to its own closest available date", async () => {
     mapWrites = 0;
-    datetime.value = TARGET_DATETIME;
+
+    await setDatetime(TARGET_DATETIME);
     const target = new Date(TARGET_DATETIME).getTime();
     const distance = (/** @type {string} */ date) =>
       Math.abs(new Date(date).getTime() - target);
