@@ -29,6 +29,8 @@ npm run mcp:generate
 npm run mcp:start
 # or custom port:
 node packages/mcp/index.js --port 3001
+# or globally / via bin:
+npx @eodash/mcp-server --port 3001
 ```
 
 - Operates in stateless MCP mode (`sessionIdGenerator: undefined`, `enableJsonResponse: true`), returning direct JSON-RPC responses over HTTP POST without session state or open SSE streams.
@@ -77,4 +79,23 @@ Connect to `http://localhost:3001` via Streamable HTTP.
 
 ```bash
 npm run test:mcp
+```
+
+## Project Structure
+
+```
+packages/mcp/
+├── index.js                  # Server startup & CLI argument parser
+├── server.js                 # Express app & Streamable HTTP transport
+├── helpers.js                # Shared utilities & metadata loaders
+├── generate-metadata.js      # Metadata build script & CLI
+├── helpers/                  # Template, landing page, and guide helpers
+├── metadata/                 # AST & TypeDoc extractors for widgets/stores
+├── tools/                    # MCP tool registrations & Zod input schemas
+│   ├── widgets.js            # list_widgets, get_widget_details
+│   ├── architecture.js       # get_custom_widget_guide, get_eodash_architecture
+│   ├── discovery.js          # find_examples, validate_catalog_config
+│   └── generators/           # scaffold_dashboard, generate_eodash_config, generate_layer_style
+├── generators/               # Style, dashboard, config, and validation engines
+└── data/                     # Generated metadata JSON artifacts
 ```
