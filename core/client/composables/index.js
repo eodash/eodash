@@ -173,9 +173,7 @@ export const useURLSearchParametersSync = () => {
           }
           case "indicator": {
             log.debug("Found indicator key in url");
-            const match = store.stac?.find(
-              (link) => useGetSubCodeId(link) == value,
-            );
+            const match = store.stac?.find((link) => link?.id == value);
             if (match) {
               log.debug("Found match, loading stac item", match);
               if (searchParams.has("poi")) {
@@ -424,25 +422,6 @@ export const useEmitLayersUpdate = async (event, mapEl, layers) => {
       res(true);
     });
   });
-};
-
-/**
- * @param {import("stac-ts").StacCollection | import("stac-ts").StacLink | import("stac-ts").StacItem | null} collection
- * @returns {string} - Returns the collection id or subcode if `useSubCode` is enabled
- */
-export const useGetSubCodeId = (collection) => {
-  const eodash = useEodash();
-
-  if (!collection) {
-    return "";
-  }
-
-  if (eodash?.options?.useSubCode) {
-    return typeof collection.subcode === "string"
-      ? collection.subcode
-      : /** @type {string} */ (collection.id);
-  }
-  return /** @type {string} */ (collection.id);
 };
 
 /**

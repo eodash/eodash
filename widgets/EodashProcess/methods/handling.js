@@ -21,8 +21,8 @@ import { handleLayersCustomEndpoints } from "./custom-endpoints/layers";
 import { handleChartCustomEndpoints } from "./custom-endpoints/chart";
 import { useSTAcStore } from "@/store/stac";
 import axios from "@/plugins/axios";
-import { useGetSubCodeId } from "@/composables";
 import { getLayers, getCompareLayers } from "@/store/actions";
+
 
 /**
  * Fetch and set the jsonform schema to initialize the process
@@ -412,13 +412,13 @@ export const loadPOiIndicator = () => {
   }
   const stacStore = useSTAcStore();
   const link = stacStore.stac?.find(
-    (link) => useGetSubCodeId(link) === indicator.value,
+    (link) => link?.id === indicator.value,
   );
   stacStore.loadSelectedSTAC(link?.href);
   if (comparePoi.value) {
     if (compareIndicator.value) {
       const comparelink = stacStore.stac?.find(
-        (link) => useGetSubCodeId(link) === compareIndicator.value,
+        (link) => link?.id === compareIndicator.value,
       );
       stacStore.loadSelectedCompareSTAC(comparelink?.href).catch((err) => {
         console.error("[eodash] Error loading compare STAC:", err);
