@@ -73,7 +73,7 @@
     "test:component": "vitest run tests/component",
     "test:template": "vitest run tests/template",
     "test:cli": "vitest run --project cli",
-    "test:mcp": "npm run mcp:generate && vitest run --project mcp",
+    "test:mcp": "npm run docs:generate && npm run mcp:generate && vitest run --project mcp",
     "mcp:generate": "node packages/mcp/generate-metadata.js",
     "mcp:start": "node packages/mcp/index.js",
     "docs:dev": "test -d docs/api || npm run docs:generate && vitepress dev docs --port 3333",
