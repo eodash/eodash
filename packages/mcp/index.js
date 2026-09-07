@@ -51,8 +51,8 @@ export function createMcpServer() {
     },
     {
       instructions:
-        "This MCP server provides tools to inspect, configure, and scaffold @eodash/eodash instances, widgets, layouts, styles, and STAC integrations. " +
-        "NOTE: MCP generation tools (scaffold_dashboard, generate_eodash_config, generate_layer_style) generate code and file maps in-memory and do NOT write directly to the user's filesystem. When the user asks to create or scaffold a project or file, you MUST write the returned files/code to disk using your file-writing tools before presenting completion.",
+        "Inspect, configure, and scaffold eodash instances, widgets, layouts, styles, and STAC integrations. " +
+        "NOTE: MCP generation tools return code/files in-memory and do NOT write directly to disk; use file writing tools to write returned files.",
       capabilities: {
         tools: {
           call: {},
@@ -66,26 +66,16 @@ export function createMcpServer() {
     "list_widgets",
     {
       description:
-        "List all built-in eodash widgets with their category, capability tags, summary, background capability, and prop count. Optionally filter by category, capability tag, or search query.",
+        "List built-in eodash widgets with capability tags, summaries, prop counts, and store interactions.",
       inputSchema: z.object({
-        category: z
-          .string()
-          .optional()
-          .describe(
-            "Optional category filter: 'Visualization & Map', 'Catalog & Discovery', 'Filtering & Selection', 'Temporal Navigation', 'Analysis & Processing', 'Layout & Orchestration', 'Branding & Metadata'",
-          ),
+        category: z.string().optional().describe("Filter by category"),
         tag: z
           .string()
           .optional()
           .describe(
-            "Optional capability tag filter: 'map', 'time', 'filter', 'catalog', 'layer', 'chart', 'process', 'stac', etc.",
+            "Filter by tag (map, time, filter, catalog, layer, chart, process, stac)",
           ),
-        search: z
-          .string()
-          .optional()
-          .describe(
-            "Optional free-text search across widget names, summaries, and capability tags.",
-          ),
+        search: z.string().optional().describe("Free-text search query"),
       }),
     },
     async ({ category, tag, search }) => {
@@ -144,15 +134,13 @@ export function createMcpServer() {
     "get_widget_details",
     {
       description:
-        "Get details for a specific eodash widget: full TypeScript props (types, schemas, defaults, descriptions), store interactions, supported STAC extensions, copy-pasteable example config, and markdown guide.",
+        "Get details for a specific eodash widget: props, store interactions, STAC extensions, config example, and guide.",
       inputSchema: z.object({
         widgetName: z
           .string()
           .optional()
-          .describe(
-            "The name of the widget (e.g. 'EodashMap', 'EodashItemCatalog', 'EodashItemFilter', 'EodashLayerControl', 'EodashTimeSlider', 'EodashProcess', 'EodashChart', 'EodashStacInfo', 'EodashTools', 'EodashDatePicker', 'EodashLayoutSwitcher').",
-          ),
-        name: z.string().optional().describe("Alias for widgetName."),
+          .describe("Widget name (e.g. EodashMap, EodashItemCatalog)"),
+        name: z.string().optional().describe("Alias for widgetName"),
       }),
     },
     async ({ widgetName, name }) => {
@@ -186,7 +174,7 @@ export function createMcpServer() {
     "get_custom_widget_guide",
     {
       description:
-        "Get guide and code templates for creating and plugging custom widgets into eodash (web-component widgets, functional widgets, iframe widgets, reactive store integration, and EOxElements playground workflow).",
+        "Get guide and code templates for creating custom eodash widgets.",
       inputSchema: z.object({
         type: z
           .enum([
@@ -197,9 +185,8 @@ export function createMcpServer() {
             "all",
           ])
           .optional()
-          .describe(
-            "Specific custom widget type guide to retrieve ('web-component', 'functional', 'iframe', 'eox-elements', or 'all').",
-          ),
+          .default("all")
+          .describe("Custom widget type"),
         widgetType: z
           .enum([
             "web-component",
@@ -209,7 +196,7 @@ export function createMcpServer() {
             "all",
           ])
           .optional()
-          .describe("Alias for type."),
+          .describe("Alias for type"),
       }),
     },
     async ({ type, widgetType }) => {
@@ -236,7 +223,7 @@ export function createMcpServer() {
     "get_eodash_architecture",
     {
       description:
-        "Get architecture documentation of @eodash/eodash: grid system (12-column, breakpoints 'x/y/w/h'), built-in templates ('lite', 'explore', 'expert', 'compare'), reactive Pinia store states, and deployment modes (SPA vs <eo-dash> web component).",
+        "Get eodash architecture docs: grid layout, templates, Pinia store, deployment modes.",
       inputSchema: z.object({
         topic: z
           .enum([
@@ -249,7 +236,7 @@ export function createMcpServer() {
           ])
           .optional()
           .default("all")
-          .describe("Specific architecture topic to query."),
+          .describe("Architecture topic"),
       }),
     },
     async ({ topic }) => {
@@ -284,41 +271,27 @@ export function createMcpServer() {
     "scaffold_dashboard",
     {
       description:
-        "Scaffold complete project boilerplate for an eodash dashboard: standalone SPA, VitePress narrative documentation, or embedded web component. Returns ready-to-write in-memory file dictionary (filePath -> fileContent). NOTE: This tool does NOT write to disk itself; you MUST use your local file writing tool to write each file in the returned 'files' map to disk under the project folder.",
+        "Scaffold project boilerplate for an eodash dashboard (returns file map in-memory).",
       inputSchema: z.object({
         name: z
           .string()
           .optional()
           .default("my-eo-dashboard")
-          .describe("Project folder / package name."),
+          .describe("Project folder / package name"),
         projectType: z
           .enum(["standalone-spa", "vitepress-narratives", "web-component"])
           .optional()
           .default("standalone-spa")
-          .describe(
-            "Project architecture type: 'standalone-spa' (Vite + eodash SPA), 'vitepress-narratives' (VitePress docs with <eo-dash> stories), or 'web-component' (minimal custom element integration).",
-          ),
+          .describe("Architecture type"),
         stacEndpoint: z
           .string()
           .optional()
           .default(DEFAULT_STAC_ENDPOINT)
-          .describe("Default STAC catalog or STAC API endpoint URL."),
+          .describe("STAC catalog or API URL"),
         template: templateEnum
           .optional()
           .default("lite")
-          .describe(
-            `Default eodash layout template (${availableTemplates.join(", ")}). Use 'lite' (default) for static STAC Catalogs, or 'explore' for dynamic STAC APIs.`,
-          ),
-        brandName: z
-          .string()
-          .optional()
-          .default(DEFAULT_BRAND_NAME)
-          .describe("Brand title / display header."),
-        brandColor: z
-          .string()
-          .optional()
-          .default("#002742")
-          .describe("Primary brand theme color hex code."),
+          .describe("Layout template preset"),
       }),
     },
     async (params) => {
@@ -339,74 +312,32 @@ export function createMcpServer() {
     "generate_eodash_config",
     {
       description:
-        "Generate a complete, type-safe eodash configuration (eodash.config.js / baseConfig.js) with STAC endpoint, brand styling, template selection (lite/explore/expert/compare), custom widget placements, and runtime options. Returns configuration code string (does not write to disk directly).",
+        "Generate eodash configuration code (eodash.config.js) with STAC endpoint, template, and widgets.",
       inputSchema: z.object({
         id: z
           .string()
           .optional()
           .default("demo-dashboard")
-          .describe("Unique dashboard identifier."),
+          .describe("Dashboard ID"),
         stacEndpoint: z
           .union([z.string(), z.record(z.any())])
           .optional()
           .default(DEFAULT_STAC_ENDPOINT)
-          .describe(
-            "STAC endpoint URL string or structured endpoint configuration object.",
-          ),
+          .describe("STAC endpoint URL or config object"),
         template: configTemplateEnum
           .optional()
           .default("lite")
-          .describe(
-            `Template layout preset (${availableTemplates.join(", ")}) or 'custom'. Use 'lite' (default) for static STAC Catalogs, or 'explore' for dynamic STAC APIs.`,
-          ),
-        brand: z
-          .object({
-            name: z.string().optional(),
-            footerText: z.string().optional(),
-            font: z
-              .object({
-                headers: z
-                  .object({
-                    family: z.string(),
-                    link: z.string(),
-                  })
-                  .optional(),
-                body: z
-                  .object({
-                    family: z.string(),
-                    link: z.string(),
-                  })
-                  .optional(),
-              })
-              .optional(),
-            theme: z
-              .object({
-                colors: z
-                  .object({
-                    primary: z.string().optional(),
-                    secondary: z.string().optional(),
-                    surface: z.string().optional(),
-                  })
-                  .optional(),
-                variables: z.record(z.any()).optional(),
-                collectionsPalette: z.array(z.string()).optional(),
-              })
-              .optional(),
-          })
-          .optional()
-          .describe("Brand metadata, web fonts, and color palettes."),
+          .describe("Template preset or 'custom'"),
         customWidgets: z
           .array(z.record(z.any()))
           .optional()
           .default([])
-          .describe(
-            "Array of custom widget definitions with layout coordinates and properties.",
-          ),
+          .describe("Custom widget definitions array"),
         options: z
           .record(z.any())
           .optional()
           .default({})
-          .describe("Runtime options (e.g. useSubCode)."),
+          .describe("Runtime options"),
       }),
     },
     async (params) => {
@@ -427,7 +358,7 @@ export function createMcpServer() {
     "generate_layer_style",
     {
       description:
-        "Generate complete OpenLayers layer styles and visualization controls (vector flatstyles for GeoJSON/FlatGeobuf/MVT, raster flatstyles with 'color' expressions for COG/GeoTIFF single files, and dynamic raster forms). Always outputs and maintains complete style JSON definitions including 'color', 'variables', 'legend', and 'jsonform'.",
+        "Generate OpenLayers FlatStyles (vector/raster COG) or eodash:rasterform definitions with legend and jsonform.",
       inputSchema: z.object({
         styleType: z
           .enum([
@@ -437,118 +368,62 @@ export function createMcpServer() {
             "raster-cog",
             "rasterform",
           ])
-          .describe(
-            "Style generator target type: 'vector-flatstyle' (OpenLayers Vector FlatStyle for vector & vector tile layers), 'raster-flatstyle' / 'raster-cog' (OpenLayers FlatStyle for COG/GeoTIFF client-side single file rendering), or 'rasterform' (eodash:rasterform for TiTiler/WMS/XYZ).",
-          ),
+          .describe("Target style type"),
         vectorConfig: z
           .object({
             geometryType: z
               .enum(["point", "polygon", "line"])
               .optional()
               .default("polygon")
-              .describe("Geometry symbolizer type."),
+              .describe("Geometry symbolizer type"),
             mode: z
-              .enum(["single", "categorical", "graduated"])
+              .enum(["single", "categorical", "continuous", "graduated"])
               .optional()
               .default("single")
-              .describe(
-                "Coloring mode: 'single' (uniform color), 'categorical' (match expression by attribute), or 'graduated' (continuous linear interpolation).",
-              ),
+              .describe("Coloring mode (single, categorical, continuous)"),
             attribute: z
               .string()
               .optional()
               .default("value")
-              .describe("Feature property name for data-driven styling."),
+              .describe("Feature property for data-driven styling"),
             colormap: z
               .string()
               .optional()
               .default("viridis")
-              .describe(
-                "Colormap preset name (e.g. 'viridis', 'magma', 'plasma', 'spectral') for graduated styling.",
-              ),
+              .describe("Colormap preset name"),
             colors: z
               .array(z.string())
               .optional()
-              .describe(
-                "Explicit color hex array for graduated styling (overrides colormap preset).",
-              ),
+              .describe("Color hex array"),
             categories: z
-              .array(
-                z.object({
-                  value: z.union([z.string(), z.number()]),
-                  label: z.string().optional(),
-                  color: z.string(),
-                }),
-              )
+              .array(z.record(z.any()))
               .optional()
-              .describe("Category value-to-color mapping objects."),
+              .describe("Category mappings [{value, color, label?}]"),
             range: z
               .array(z.number())
               .optional()
-              .describe(
-                "Min and max values [min, max] or [vmin, vmax] for graduated styling domain.",
-              ),
-            min: z
-              .number()
-              .optional()
-              .describe("Minimum value for graduated styling domain."),
-            max: z
-              .number()
-              .optional()
-              .describe("Maximum value for graduated styling domain."),
-            vmin: z
-              .number()
-              .optional()
-              .describe("Minimum value (alias for min)."),
-            vmax: z
-              .number()
-              .optional()
-              .describe("Maximum value (alias for max)."),
-            fillColor: z
-              .string()
-              .optional()
-              .describe("Fill color for single mode polygons/points."),
+              .describe("[min, max] data range"),
+            fillColor: z.string().optional().describe("Fill color hex/rgba"),
             strokeColor: z
               .string()
               .optional()
-              .describe(
-                "Stroke color for lines, polygon borders, or point circle borders.",
-              ),
-            strokeWidth: z
-              .number()
-              .optional()
-              .describe("Stroke width in pixels."),
-            pointRadius: z
-              .number()
-              .optional()
-              .describe("Point circle radius in pixels."),
+              .describe("Stroke color hex/rgba"),
+            strokeWidth: z.number().optional().describe("Stroke width (px)"),
+            pointRadius: z.number().optional().describe("Point radius (px)"),
             tooltipFields: z
-              .array(
-                z.object({
-                  id: z.string().describe("Feature property ID to display."),
-                  title: z.string().optional().describe("Tooltip label title."),
-                  appendix: z
-                    .string()
-                    .optional()
-                    .describe("Suffix unit (e.g. ' µg/m³', ' %')."),
-                  decimals: z
-                    .number()
-                    .optional()
-                    .describe("Decimal rounding precision."),
-                }),
-              )
+              .array(z.record(z.any()))
               .optional()
-              .describe("Interactive tooltip configuration fields."),
+              .describe(
+                "Tooltip fields [{id, title?, appendix?, decimals?}]",
+              ),
             interactiveSliders: z
               .boolean()
               .optional()
               .default(false)
-              .describe(
-                "If true, generates dynamic style variables and jsonform sliders for strokeWidth in layer control.",
-              ),
+              .describe("Generate stroke width slider"),
           })
           .optional()
-          .describe("Options for 'vector-flatstyle' generation."),
+          .describe("Vector flatstyle options"),
         rasterConfig: z
           .object({
             mode: z
@@ -562,192 +437,102 @@ export function createMcpServer() {
               ])
               .optional()
               .default("single-band-normalized")
-              .describe(
-                "Raster rendering mode: 'single-band-normalized' / 'single-band' (normalized float band with colormap), 'rgb-composite' / 'rgb' (3-band true color / false color composite), or 'band-ratio-index' (normalized difference index math).",
-              ),
+              .describe("Raster rendering mode"),
             bands: z
               .array(z.number())
               .optional()
               .default([1])
-              .describe(
-                "1-based band index array (e.g. [1] for single band, [4,3,2] for RGB, [8,4] for NDVI).",
-              ),
+              .describe("1-based band indices (e.g. [1] or [4,3,2])"),
             bandIndex: z
               .number()
               .optional()
-              .describe("Single band index (1-based, default: 1)."),
-            redBand: z
-              .number()
-              .optional()
-              .describe("Red channel band index (1-based, default: 4)."),
-            greenBand: z
-              .number()
-              .optional()
-              .describe("Green channel band index (1-based, default: 3)."),
-            blueBand: z
-              .number()
-              .optional()
-              .describe("Blue channel band index (1-based, default: 2)."),
+              .describe("Band index (1-based)"),
+            redBand: z.number().optional().describe("Red band index"),
+            greenBand: z.number().optional().describe("Green band index"),
+            blueBand: z.number().optional().describe("Blue band index"),
             range: z
               .array(z.number())
               .optional()
-              .describe("Min and max data range [vmin, vmax] or [min, max]."),
-            vmin: z
-              .number()
-              .optional()
-              .describe("Initial/default minimum data value (default: 0)."),
-            vmax: z
-              .number()
-              .optional()
-              .describe("Initial/default maximum data value (default: 250)."),
-            min: z
-              .number()
-              .optional()
-              .describe("Minimum data value (alias for vmin)."),
-            max: z
-              .number()
-              .optional()
-              .describe("Maximum data value (alias for vmax)."),
-            defaultMin: z
-              .number()
-              .optional()
-              .describe("Explicit default minimum value."),
-            defaultMax: z
-              .number()
-              .optional()
-              .describe("Explicit default maximum value."),
+              .describe("[min, max] data range"),
+            vmin: z.number().optional().describe("Min data value"),
+            vmax: z.number().optional().describe("Max data value"),
             sliderMin: z
               .number()
               .optional()
-              .describe(
-                "Explicit slider track lower bound. If omitted, computed dynamically (0 or ~1.5x of negative defaultMin).",
-              ),
+              .describe("Slider track min bound"),
             sliderMax: z
               .number()
               .optional()
-              .describe(
-                "Explicit slider track upper bound. If omitted, computed dynamically as ~1.5x headroom over defaultMax (e.g. 250 -> 375).",
-              ),
-            colorMap: z
-              .string()
-              .optional()
-              .describe(
-                "Colormap preset name (supports viridis, magma, plasma, inferno, cividis, spectral, turbo, rainbow, etc. from eurodatacube colormaps).",
-              ),
+              .describe("Slider track max bound"),
             colormap: z
               .string()
               .optional()
-              .describe("Colormap preset name (alias for colorMap)."),
+              .describe("Colormap preset name"),
             customColors: z
               .array(z.string())
               .optional()
-              .describe("Custom color ramp array overriding preset colormap."),
+              .describe("Custom color ramp array"),
             interactiveMinMax: z
               .boolean()
               .optional()
               .default(true)
-              .describe(
-                "If true, generates variables { vmin, vmax }, jsonform minmax slider, and domainProperties legend binding.",
-              ),
+              .describe("Generate interactive min/max slider"),
           })
           .optional()
-          .describe(
-            "Options for raster flatstyle (COG / single GeoTIFF) generation.",
-          ),
+          .describe("Raster COG flatstyle options"),
         rasterWebglConfig: z
           .any()
           .optional()
-          .describe("Alias for rasterConfig."),
+          .describe("Alias for rasterConfig"),
         rasterformConfig: z
           .object({
             serviceType: z
               .enum(["titiler", "wms", "custom-xyz"])
               .optional()
               .default("titiler")
-              .describe("Raster service backend type."),
+              .describe("Raster backend type"),
             colormaps: z
               .array(z.string())
               .optional()
-              .describe("List of supported colormaps in the dropdown."),
-            colormapOptions: z
-              .array(z.string())
-              .optional()
-              .describe(
-                "List of supported colormaps in the dropdown (alias for colormaps).",
-              ),
+              .describe("Colormap dropdown options"),
             defaultColormap: z
               .string()
               .optional()
               .default("viridis")
-              .describe("Default active colormap."),
-            vmin: z
-              .number()
-              .optional()
-              .describe("Default minimum value for rescale slider."),
-            vmax: z
-              .number()
-              .optional()
-              .describe("Default maximum value for rescale slider."),
-            min: z
-              .number()
-              .optional()
-              .describe("Minimum value (alias for vmin)."),
-            max: z
-              .number()
-              .optional()
-              .describe("Maximum value (alias for vmax)."),
-            defaultMin: z
-              .number()
-              .optional()
-              .describe("Default minimum slider value."),
-            defaultMax: z
-              .number()
-              .optional()
-              .describe("Default maximum slider value."),
+              .describe("Default active colormap"),
+            vmin: z.number().optional().describe("Default min rescale value"),
+            vmax: z.number().optional().describe("Default max rescale value"),
             sliderMin: z
               .number()
               .optional()
-              .describe(
-                "Explicit slider track lower bound. If omitted, computed dynamically (0 or ~1.5x of negative defaultMin).",
-              ),
+              .describe("Slider track min bound"),
             sliderMax: z
               .number()
               .optional()
-              .describe(
-                "Explicit slider track upper bound. If omitted, computed dynamically as ~1.5x headroom over defaultMax (e.g. 250 -> 375).",
-              ),
+              .describe("Slider track max bound"),
             hasRescale: z
               .boolean()
               .optional()
               .default(true)
-              .describe(
-                "If true, generates rescale template parameter with removeProperties: ['vminmax'].",
-              ),
+              .describe("Include rescale slider"),
             hasMultiAssetBranching: z
               .boolean()
               .optional()
               .default(false)
-              .describe(
-                "If true, generates multi-asset oneOf branching form with 'keep_oneof_values': false.",
-              ),
+              .describe("Include multi-asset branching form"),
             assets: z
-              .array(
-                z.object({
-                  id: z.string(),
-                  title: z.string(),
-                  defaultVmin: z.number().optional(),
-                  defaultVmax: z.number().optional(),
-                }),
-              )
+              .array(z.record(z.any()))
               .optional()
-              .describe("Asset options for multi-asset branching oneOf forms."),
+              .describe(
+                "Branching assets [{id, title, defaultVmin?, defaultVmax?}]",
+              ),
           })
           .optional()
-          .describe("Options for 'rasterform' (TiTiler/WMS/XYZ) generation."),
+          .describe("Rasterform options for TiTiler/WMS/XYZ"),
         rasterFormConfig: z
           .any()
           .optional()
-          .describe("Alias for rasterformConfig."),
+          .describe("Alias for rasterformConfig"),
       }),
     },
     async (params) => {
@@ -768,14 +553,9 @@ export function createMcpServer() {
     "find_examples",
     {
       description:
-        "Search and discover working eodash dashboard examples, layer styles, and catalog configurations.",
+        "Search and discover working eodash examples, layer styles, and catalog configs.",
       inputSchema: z.object({
-        query: z
-          .string()
-          .optional()
-          .describe(
-            "Free-text search terms (e.g. 'titiler rescale', 'cmems wmts', 'ice charts match', 'bounding-box drawtools', 'in situ air quality points', 'ndvi band math').",
-          ),
+        query: z.string().optional().describe("Search keywords"),
         category: z
           .enum([
             "all",
@@ -790,7 +570,7 @@ export function createMcpServer() {
           ])
           .optional()
           .default("all")
-          .describe("Filter snippets by specific configuration category."),
+          .describe("Config category filter"),
         dataType: z
           .enum([
             "all",
@@ -804,20 +584,16 @@ export function createMcpServer() {
           ])
           .optional()
           .default("all")
-          .describe("Filter snippets by geospatial data type."),
+          .describe("Geospatial data type filter"),
         feature: z
           .string()
           .optional()
-          .describe(
-            "Filter by specific feature capability (e.g. 'legend', 'tooltip', 'drawtools', 'branching-oneof', 'threshold-filter', 'time-series', 'roles').",
-          ),
+          .describe("Feature tag filter (e.g. legend, tooltip, drawtools)"),
         limit: z
           .number()
           .optional()
           .default(5)
-          .describe(
-            "Maximum number of examples to return (default 5, max 20).",
-          ),
+          .describe("Max results (1-20)"),
       }),
     },
     async (params) => {
@@ -838,13 +614,11 @@ export function createMcpServer() {
     "validate_catalog_config",
     {
       description:
-        "Validate EODash catalog configurations (collection or indicator JSON files) against official eodash schemas and custom business rules (e.g., verifying 'Style' is a URL string, catching invalid 'Resources[].Flatstyle', checking JSON-Editor rasterform branching options).",
+        "Validate eodash collection or indicator JSON configuration against schemas and rules.",
       inputSchema: z.object({
         config: z
           .union([z.string(), z.record(z.any())])
-          .describe(
-            "Collection or indicator configuration as a JSON string or parsed JSON object.",
-          ),
+          .describe("Collection or indicator JSON string or object"),
         configType: z
           .enum([
             "auto",
@@ -855,9 +629,7 @@ export function createMcpServer() {
           ])
           .optional()
           .default("auto")
-          .describe(
-            "Target schema type: 'auto' (auto-detects between collection and indicator), 'collection' / 'catalog-collection' (EODash collection config with Name, Title, Description, Resources), or 'indicator' / 'catalog-indicator' (EODash indicator config with Name, Title, Indicators/Collections).",
-          ),
+          .describe("Target schema type"),
       }),
     },
     async (params) => {

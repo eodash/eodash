@@ -221,8 +221,8 @@ export function generateVectorFlatStyle({
     };
   }
 
-  // 3. Graduated Mode (Linear Interpolation)
-  if (mode === "graduated") {
+  // 3. Graduated / Continuous Mode (Linear Interpolation)
+  if (mode === "graduated" || mode === "continuous") {
     let palette = colors;
     if (!palette || palette.length <= 1) {
       palette =
