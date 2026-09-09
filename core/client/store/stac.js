@@ -25,7 +25,6 @@ import {
   getProjection,
 } from "@eodash/stac/helpers";
 import { updateEodashCollections } from "@/utils";
-import { setMapProjFromCol } from "@/eodashSTAC/triggers";
 import { availableMapProjection } from "@/store/states";
 
 /**
@@ -238,8 +237,6 @@ export const useSTAcStore = defineStore("stac", () => {
     }
 
     await axios.get(absoluteUrl.value).then(async (resp) => {
-      // set the view projection
-      await setMapProjFromCol(resp.data);
       await updateEodashCollections(
         eodashCollections,
         resp.data,

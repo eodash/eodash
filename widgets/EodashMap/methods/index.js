@@ -4,8 +4,6 @@ import axios from "@/plugins/axios";
 import log from "loglevel";
 import { useOnLayersUpdate } from "@/composables";
 import { isGlobe } from "@/store/states";
-import { sanitizeBbox } from "@eodash/stac/helpers";
-import { transformExtent } from "@eox/map";
 
 export { useMapLoading } from "./use-map-loading";
 
@@ -80,32 +78,6 @@ export const useHandleMapMoveEnd = (mapElement, mapPosition) => {
     unsubscribeGlobe();
     stopGlobeWatch();
   });
-};
-
-/**
- * Moves the main map to a newly selected collection's extent.
- *
- * Callers decide whether a zoom is wanted at all: restoring from a URL
- * positions the map itself, and selecting an item is a deferred feature.
- *
- * @param {import("@eox/map").EOxMap | null} map
- * @param {import("@eodash/stac").STACCollection | null} [collection]
- */
-export const zoomToCollection = (map, collection) => {
-  if (map?.id !== "main") {
-    return;
-  }
-
-  const bbox = collection?.extent?.spatial?.bbox?.[0];
-  if (!bbox) {
-    return;
-  }
-
-  map.zoomExtent = transformExtent(
-    sanitizeBbox([...bbox]),
-    "EPSG:4326",
-    map.map?.getView().getProjection(),
-  );
 };
 
 /**

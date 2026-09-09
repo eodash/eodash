@@ -9,12 +9,17 @@ import {
   poi,
   tooltipAdapter,
 } from "@/store/states";
-import { hasRestoredView, layerControlFormValue } from "@/utils/states";
+import {
+  hasRestoredView,
+  layerControlFormValue,
+  shouldZoomToExtent,
+} from "@/utils/states";
 import { updateIndicatorLayers } from "@/eodashSTAC/layers";
 import { flatStylesToStyleFunction } from "ol/render/canvas/style.js";
 import { mountAsyncComponent, stubCustomElement } from "../../support/mount";
 
-vi.mock("@eox/map", () => ({}));
+// `layers.js` reaches for the extent transform; the zoom itself is unit tested
+vi.mock("@eox/map", () => ({ transformExtent: (/** @type {any} */ e) => e }));
 vi.mock("@eox/map/src/plugins/advancedLayersAndSources", () => ({}));
 vi.mock("@eox/map/src/plugins/globe", () => ({}));
 
@@ -22,13 +27,11 @@ vi.mock("@eox/map/src/plugins/globe", () => ({}));
 const seed = vi.hoisted(() => ({ main: /** @type {any[] | null} */ (null) }));
 const methods = vi.hoisted(() => ({
   useHandleMapMoveEnd: vi.fn(),
-  zoomToCollection: vi.fn(),
   useMapLoading: vi.fn(),
   useUpdateTooltipProperties: vi.fn(),
 }));
 vi.mock("^/EodashMap/methods", () => ({
   useHandleMapMoveEnd: methods.useHandleMapMoveEnd,
-  zoomToCollection: methods.zoomToCollection,
   useMapLoading: methods.useMapLoading,
   useUpdateTooltipProperties: vi.fn(
     (
@@ -135,23 +138,21 @@ describe("EodashMap", () => {
       expect(mainMap()?.layers[0].layers[0].properties.id).toBe("custom-base");
     });
 
-    test("fits the selected collection when zoomToExtent is set", async () => {
+    test("publishes zoomToExtent for the layer update to read", async () => {
+      const state = { stac: { selectedStac: { id: "coll" } } };
+
       await mountAsyncComponent(EodashMap, {
         props: { zoomToExtent: true },
-        initialState: { stac: { selectedStac: { id: "coll" } } },
+        initialState: state,
       });
+      await expect.poll(() => shouldZoomToExtent.value).toBe(true);
 
-      await expect.poll(() => methods.zoomToCollection).toHaveBeenCalled();
-    });
-
-    test("leaves the view alone when zoomToExtent is off", async () => {
       await mountAsyncComponent(EodashMap, {
         props: { zoomToExtent: false },
-        initialState: { stac: { selectedStac: { id: "coll" } } },
+        initialState: state,
       });
-
       await expect.poll(() => updateIndicatorLayers).toHaveBeenCalled();
-      expect(methods.zoomToCollection).not.toHaveBeenCalled();
+      await expect.poll(() => shouldZoomToExtent.value).toBe(false);
     });
 
     test("binds center, zoom, controls and animation options onto eox-map", async () => {
