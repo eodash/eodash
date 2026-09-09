@@ -100,9 +100,9 @@ import {
 import { useDisplay, useLayout } from "vuetify";
 import {
   defaultBaseLayers,
-  hasRestoredView,
   layerControlFormValue,
   layerControlFormValueCompare,
+  shouldZoomToExtent,
 } from "@/utils/states";
 import {
   BASE_LAYERS_GROUP,
@@ -113,7 +113,6 @@ import {
   useHandleMapMoveEnd,
   useMapLoading,
   useUpdateTooltipProperties,
-  zoomToCollection,
 } from "^/EodashMap/methods";
 import { inAndOut } from "ol/easing.js";
 import mustache from "mustache";
@@ -386,6 +385,7 @@ onMounted(async () => {
   // enable terrain
   mapEl.value.globeConfig.terrain = true;
   defaultBaseLayers.value = structuredClone(toRaw(props.baseLayers));
+  shouldZoomToExtent.value = props.zoomToExtent;
 
   if (props.enableCompare) {
     mapCompareEl.value = compareMap.value;
@@ -405,24 +405,8 @@ onMounted(async () => {
   });
 
   // the URL restore can resolve either side of this mount, so the map renders
-  // what is already selected and watches for a selection that lands later
+  // whatever is already selected
   const store = useSTAcStore();
-
-  // a link that carried its own position keeps it, over the collection's
-  // extent, but only for the collection it named
-  /** @param {import("@eodash/stac").STACCollection | null} collection */
-  const zoomUnlessRestored = (collection) => {
-    if (!props.zoomToExtent || store.selectedItem) {
-      return;
-    }
-    if (hasRestoredView.value) {
-      hasRestoredView.value = false;
-      return;
-    }
-    zoomToCollection(eoxMap.value, collection);
-  };
-
-  watch(() => store.selectedStac, zoomUnlessRestored);
 
   if (!store.selectedStac) {
     assignGroupLayers(eoxMap.value, BASE_LAYERS_GROUP, props.baseLayers);
@@ -435,8 +419,6 @@ onMounted(async () => {
     timeOrItem: store.selectedItem ?? datetime.value,
     event: "layers:updated",
   });
-
-  zoomUnlessRestored(store.selectedStac);
 });
 
 // sync map loading with the global loading state

@@ -163,10 +163,16 @@ export const useURLSearchParametersSync = () => {
       const x = Number(searchParams.get("x"));
       const y = Number(searchParams.get("y"));
       const z = Number(searchParams.get("z"));
-      // recorded before the indicator load below awaits: the map watches
-      // `selectedStac` and would otherwise zoom to the collection
       hasRestoredView.value =
         !!(x && y && z) || (store.isApi && searchParams.has("item"));
+      if (x && y && z) {
+        log.debug("Coordinates found, applying map position", x, y, z);
+        mapPosition.value = [x, y, z];
+        if (mapEl.value) {
+          mapEl.value.center = [x, y];
+          mapEl.value.zoom = z;
+        }
+      }
 
       const urlDatetime = searchParams.get("datetime");
       if (urlDatetime) {
@@ -269,14 +275,7 @@ export const useURLSearchParametersSync = () => {
           mapEl.value.center = center;
           mapEl.value.zoom = zoom;
         }
-      } else if (x && y && z) {
-        log.debug("Coordinates found, applying map poisition", x, y, z);
-        mapPosition.value = [x, y, z];
-        if (mapEl.value) {
-          mapEl.value.center = [x, y];
-          mapEl.value.zoom = z;
-        }
-      } else {
+      } else if (!(x && y && z)) {
         hasRestoredView.value = false;
       }
 

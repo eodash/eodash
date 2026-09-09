@@ -30,6 +30,12 @@ export const defaultBaseLayers = shallowRef([]);
  */
 export const hasRestoredView = ref(false);
 
+/**
+ * Whether a newly rendered collection moves the map to its extent.
+ * Set from `EodashMap`'s `zoomToExtent` prop, which no store action can reach.
+ */
+export const shouldZoomToExtent = ref(false);
+
 /** whether it's the first load of the app, used to track if there are params in the url */
 export const isFirstLoad = ref(false);
 

@@ -43,13 +43,28 @@ describe("expert template - POI selection (STAC output)", () => {
     );
 
   /**
-   * The width of the extent the app last fitted the map to. The fit is animated,
-   * so the view's own zoom is only a point on an easing curve; this is the
-   * discrete value the app sets, once per selection.
+   * The width of the map's current extent. `zoomExtent` reads back as
+   * `view.calculateExtent()` rather than the value the app set, so mid-fit it is
+   * a point on the easing curve.
    */
   const fittedWidth = () => {
     const [minX, , maxX] = ctx.query("eox-map").zoomExtent ?? [];
     return maxX - minX;
+  };
+
+  /** The same width once two readings agree, so the fit has stopped moving. */
+  const settledWidth = async () => {
+    let last = NaN;
+    await vi.waitFor(
+      () => {
+        const width = fittedWidth();
+        const settled = width === last;
+        last = width;
+        if (!settled) throw new Error("the fit is still animating");
+      },
+      { timeout: TIMEOUT, interval: 100 },
+    );
+    return last;
   };
 
   beforeAll(async () => {
@@ -77,7 +92,7 @@ describe("expert template - POI selection (STAC output)", () => {
       },
       { timeout: TIMEOUT },
     );
-    collectionWidth = fittedWidth();
+    collectionWidth = await settledWidth();
   });
 
   afterAll(() => ctx?.app.unmount());
@@ -167,9 +182,10 @@ describe("expert template - POI selection (STAC output)", () => {
   });
 
   test("the map widens back to the whole collection", async () => {
-    // back to the indicator's own extent, whether or not the location fit ran:
-    // `zoomUnlessRestored` skips the fit while an item is selected
-    await expect.poll(fittedWidth, { timeout: TIMEOUT }).toBe(collectionWidth);
+    // polled rather than settled, because the widening may not have started yet
+    await expect
+      .poll(fittedWidth, { timeout: TIMEOUT })
+      .toBeCloseTo(collectionWidth, 0);
   });
 
   test("a location is selectable again after going back", async () => {

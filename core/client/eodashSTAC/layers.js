@@ -1,8 +1,19 @@
 import { getIndicatorLayers, getObservationPointsLayer } from "@eodash/stac";
-import { LAYER_ID_SEPARATOR, getProjectionCode } from "@eodash/stac/helpers";
+import {
+  LAYER_ID_SEPARATOR,
+  getProjectionCode,
+  sanitizeBbox,
+} from "@eodash/stac/helpers";
 import { assignLayers, registerProjection } from "@/store/actions";
-import { dataThemesBrands, defaultBaseLayers } from "@/utils/states";
+import {
+  dataThemesBrands,
+  defaultBaseLayers,
+  hasRestoredView,
+  shouldZoomToExtent,
+} from "@/utils/states";
 import { useSTAcStore } from "@/store/stac";
+import { setMapProjFromCol } from "@/eodashSTAC/triggers";
+import { transformExtent } from "@eox/map";
 import axios from "@/plugins/axios";
 
 export const BASE_LAYERS_GROUP = "BaseLayersGroup";
@@ -66,13 +77,55 @@ export const updateIndicatorLayers = async (
     return [];
   }
 
+  if (map?.id === "main") {
+    await setMapProjFromCol(stac);
+  }
+
   const { layers, items } = await buildIndicatorLayers(map, {
     readers,
     stac,
     timeOrItem,
   });
   await assignLayers(map, layers, event);
+  zoomToCollection(map, stac);
+
   return items;
+};
+
+/**
+ * Moves the main map to a collection's extent.
+ *
+ * A link that carried its own position keeps it, but only for the collection it
+ * named, and a selected item keeps the fit the catalog made for it.
+ *
+ * @param {import("@eox/map").EOxMap | null} map - Map instance
+ * @param {import("@eodash/stac").STACCollection | null} [collection] - Rendered STAC collection
+ */
+export const zoomToCollection = (map, collection) => {
+  if (map?.id !== "main" || !shouldZoomToExtent.value) {
+    return;
+  }
+
+  // the catalog has already fitted the map to the item it selected
+  if (useSTAcStore().selectedItem) {
+    return;
+  }
+
+  if (hasRestoredView.value) {
+    hasRestoredView.value = false;
+    return;
+  }
+
+  const bbox = collection?.extent?.spatial?.bbox?.[0];
+  if (!bbox) {
+    return;
+  }
+
+  map.zoomExtent = transformExtent(
+    sanitizeBbox([...bbox]),
+    "EPSG:4326",
+    map.OLprojection,
+  );
 };
 
 /**
@@ -219,21 +272,26 @@ async function buildDataLayers(map, { readers, stac, timeOrItem, context }) {
   /** @type {import("@eodash/stac").STACItem[]} */
   const items = [];
 
-  for (const reader of readers) {
-    const built =
-      typeof timeOrItem === "object"
-        ? await reader.buildLayers(timeOrItem, context)
-        : await reader.getLayers(timeOrItem, context);
+  const readerLayers = await Promise.all(
+    readers.map((reader) =>
+      (typeof timeOrItem === "object"
+        ? reader.buildLayers(timeOrItem, context)
+        : reader.getLayers(timeOrItem, context)
+      ).then((built) => {
+        built.layers.forEach((layer) => {
+          if (!layer.properties?.layerControlExclusive) {
+            //@ts-expect-error properties is optional upstream, always built here
+            layer.properties.layerControlExpand = true;
+            //@ts-expect-error properties is optional upstream, always built here
+            layer.properties.layerControlToolsExpand = true;
+          }
+        });
+        return built;
+      }),
+    ),
+  );
 
-    built.layers.forEach((layer) => {
-      if (!layer.properties?.layerControlExclusive) {
-        //@ts-expect-error properties is optional upstream, always built here
-        layer.properties.layerControlExpand = true;
-        //@ts-expect-error properties is optional upstream, always built here
-        layer.properties.layerControlToolsExpand = true;
-      }
-    });
-
+  for (const built of readerLayers) {
     layers.push(...built.layers);
     projections.push(...built.projections);
     if (built.item) {
