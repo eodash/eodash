@@ -1,10 +1,11 @@
-import { sanitizeBbox } from "@/eodashSTAC/helpers";
+import { sanitizeBbox } from "@eodash/stac/helpers";
 import { indicator, mapEl } from "@/store/states";
 import { useSTAcStore } from "@/store/stac";
 import axios from "@/plugins/axios";
 import { buildCqlFilter } from "@/eodashSTAC/cql";
 
 /**
+ * Creates a subtitle generator from filter configuration.
  *
  * @param {import("../types").FiltersConfig} filtersConfig
  */
@@ -39,6 +40,8 @@ export const createSubtitleProperty = (filtersConfig) => {
 };
 
 /**
+ * Transforms filter configs into eox-itemfilter property definitions.
+ *
  * @param {Array<{
  *   property: string,
  *   type: "range" | "multiselect" | "select",
@@ -53,7 +56,6 @@ export const createSubtitleProperty = (filtersConfig) => {
  * }>} filtersConfig
  * @param {boolean} datetimeFilter
  */
-// Transform simple filter configs into eox-itemfilter format
 export const createFilterProperties = (filtersConfig, datetimeFilter) => {
   const store = useSTAcStore();
   const customDatetimeConfig = filtersConfig.find(
@@ -134,7 +136,8 @@ export const createFilterProperties = (filtersConfig, datetimeFilter) => {
 };
 
 /**
- * Build search URL with proper STAC API parameters
+ * Builds a STAC API search URL from the given filter parameters.
+ *
  * @param {import("@/types").ItemFilterFilters} filters
  * @param {boolean} bboxFilter
  * @param {boolean} datetimeFilter
@@ -192,6 +195,7 @@ export const buildSearchUrl = (
 };
 
 /**
+ * Creates an external filter fetcher for eox-itemfilter integration.
  *
  * @param {import("../types").FiltersConfig} propsFilters
  * @param {boolean} bboxFilter
@@ -199,7 +203,7 @@ export const buildSearchUrl = (
  * @param {import("vue").Ref<import("@/types").GeoJsonFeature[]>} currentItems
  * @param {import("vue").Ref<string>} sortBy
  * @param {number} searchLimit
- * @param {import("vue").Ref<import("stac-ts").StacItem | null | undefined>} [selectedItemRef]
+ * @param {import("vue").Ref<import("@eodash/stac").STACItem | null | undefined>} [selectedItemRef]
  * @param {import("vue").Ref<string | null> | string | null} [stacEndpoint]
  */
 export const createExternalFilter = (
@@ -256,6 +260,7 @@ export const createExternalFilter = (
   });
 };
 /**
+ * Formats datetime range bounds into an RFC 3339 interval string for STAC API queries.
  *
  * @param {import("@/types").ItemFilterRange} datetimeFilter
  */

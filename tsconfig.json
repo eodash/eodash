@@ -19,7 +19,9 @@
     "types": ["node", "vuetify"],
     "paths": {
       "@/*": ["./core/client/*"],
-      "^/*": ["./widgets/*"]
+      "^/*": ["./widgets/*"],
+      "@eodash/stac": ["./packages/stac/src/types/index.ts"],
+      "@eodash/stac/*": ["./packages/stac/src/*/index.js"]
     }
   },
   "references": [

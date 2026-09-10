@@ -14,9 +14,13 @@ const BASE_LAYER_ID = "terrain-light;:;EPSG:3857";
 describe("expert template", () => {
   /** @type {Awaited<ReturnType<typeof bootExpert>>} */
   let ctx;
+  // `eox-map` dispatches `layerschanged` once per `set layers`, so this counts
+  // how many times the app wrote the map.
+  let mapWrites = 0;
 
   beforeAll(async () => {
     ctx = await bootExpert({ endpoint: STAC_ENDPOINT });
+    ctx.query("eox-map").addEventListener("layerschanged", () => mapWrites++);
   });
 
   afterAll(() => ctx?.app.unmount());
@@ -61,7 +65,7 @@ describe("expert template", () => {
   });
 
   test("lists every collection in the item filter", async () => {
-    /** @type {import("stac-ts").StacCatalog} */
+    /** @type {import("@eodash/stac").STACCatalog} */
     const catalog = await fetch(STAC_ENDPOINT).then((r) => r.json());
     const childCount = catalog.links.filter((l) => l.rel === "child").length;
     await expect
@@ -76,6 +80,7 @@ describe("expert template", () => {
 
   test("selecting an indicator renders its layers and gated widgets", async () => {
     // The popup is still open from the previous test.
+    mapWrites = 0;
     await userEvent.click(page.getByText(INDICATOR_TITLE, { exact: true }));
 
     await expect
@@ -92,6 +97,8 @@ describe("expert template", () => {
         timeout: TIMEOUT,
       })
       .toBeGreaterThan(0);
+
+    expect(mapWrites).toBe(1);
   });
 
   test("scrolling on the map zooms and syncs to the url", async () => {

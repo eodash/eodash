@@ -4,7 +4,6 @@
       v-if="showControls"
       :key="mapElement"
       v-bind="config"
-      ref="eoxLayercontrol"
       :for="mapElement"
       .colormapRegistry="colormapRegistry"
       .showLayerZoomState="true"
@@ -30,21 +29,17 @@
 <script setup>
 import "color-legend-element";
 import "@eox/timecontrol";
-import { computed, ref } from "vue";
+import { computed } from "vue";
 import { mapEl, mapCompareEl } from "@/store/states";
-import { assignLayers } from "@/store/actions";
+import { assignLayers, registerProjection } from "@/store/actions";
+import { eodashCollections, eodashCompareCollections } from "@/store/stac";
 import {
-  eodashCollections,
-  eodashCompareCollections,
   layerControlFormValue,
   layerControlFormValueCompare,
 } from "@/utils/states";
-import {
-  getColFromLayer,
-  updateGeoZarrBands,
-  updateLayerUrl,
-  persistLayerConfigState,
-} from "@/eodashSTAC/helpers";
+import { getColFromLayer } from "@eodash/stac/helpers";
+import { ANALYSIS_GROUP } from "@/eodashSTAC/layers";
+import { updateGeoZarrBands, updateLayerUrl } from "@/eodashSTAC/helpers";
 import { storeToRefs } from "pinia";
 import { useSTAcStore } from "@/store/stac";
 import { bandsEditorInterface } from "@/utils/bands-editor";
@@ -119,35 +114,31 @@ const eodashCols =
   props.map === "second" ? eodashCompareCollections : eodashCollections;
 const mapElement = props.map === "second" ? mapCompareEl : mapEl;
 
-/** @type { import("vue").Ref<import("@eox/layercontrol").EOxLayerControl | null>} */
-const eoxLayercontrol = ref(null);
-
 /** @param {CustomEvent<{layer:import('ol/layer').Layer; datetime:string;}>} evt */
 const handleDatetimeUpdate = async (evt) => {
   const { layer, datetime } = evt.detail;
 
-  const ec = await getColFromLayer(eodashCols, layer);
+  const ec = getColFromLayer(eodashCols, layer.get("id"));
+  if (!ec) return;
 
-  /** @type {Record<string,any>[] | undefined} */
-  let updatedLayers = [];
+  const { layers: updatedLayers, projections } = await ec.updateLayers(
+    datetime,
+    layer.get("id"),
+    mapElement.value?.layers ?? [],
+  );
+  if (!updatedLayers.length) return;
 
-  if (ec) {
-    updatedLayers = await ec.updateLayerJson(
-      datetime,
-      layer.get("id"),
-      mapElement.value?.layers ?? [],
-    );
-  }
-  if (!updatedLayers?.length) return;
-  /** @type {Record<string, any>[] | undefined} */
-  const dataLayers = updatedLayers?.find(
-    (l) => l?.properties?.id === "AnalysisGroup",
-  )?.layers;
+  await Promise.all(projections.map(registerProjection));
+
+  const group = updatedLayers.find((l) => l?.properties?.id === ANALYSIS_GROUP);
+  const dataLayers = group?.type === "Group" ? group.layers : undefined;
 
   if (dataLayers?.length) {
     // Add expand to all analysis layers
-    dataLayers?.forEach((dl) => {
+    dataLayers.forEach((dl) => {
+      //@ts-expect-error properties is optional upstream, always built here
       dl.properties.layerControlExpand = true;
+      //@ts-expect-error properties is optional upstream, always built here
       dl.properties.layerControlToolsExpand = true;
     });
     assignLayers(mapElement.value, updatedLayers);
@@ -179,13 +170,20 @@ const debouncedHandleDateTime = (evt) => {
  * @param {Event & {detail:{layer:import("ol/layer").Layer;jsonformValue:Record<string,any>}}} evt
  */
 const onLayerConfigChange = (evt) => {
-  updateGeoZarrBands(evt.detail.layer, evt.detail.jsonformValue);
-  updateLayerUrl(evt.detail.layer, evt.detail.jsonformValue);
-  // remember the selection so it survives a time/item rebuild
-  persistLayerConfigState(
+  updateGeoZarrBands(
     evt.detail.layer,
     evt.detail.jsonformValue,
-    props.map === "second" ? "compare" : "main",
+    mapElement.value,
+  );
+  updateLayerUrl(evt.detail.layer, evt.detail.jsonformValue);
+
+  // remember the selection on the collection that built the layer, so it
+  // survives a time/item rebuild
+  const { layer, jsonformValue } = evt.detail;
+  const layerConfig = layer.get("_jsonDefinition")?.properties?.layerConfig;
+  getColFromLayer(eodashCols, layer.get("id"))?.persistLayerConfig(
+    layerConfig,
+    jsonformValue,
   );
 
   if (props.map === "second") {

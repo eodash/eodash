@@ -1,6 +1,5 @@
 import { defineConfig } from "vitest/config";
 import { fileURLToPath, URL } from "node:url";
-import { createRequire } from "node:module";
 import { playwright } from "@vitest/browser-playwright";
 //@ts-expect-error todo
 import vue from "@vitejs/plugin-vue";
@@ -12,27 +11,14 @@ import {
 } from "./tests/support/commands.js";
 import { config as performanceReport } from "./tests/performance/report-config.js";
 import { PerformanceReporter } from "./tests/performance/reporter/index.js";
-
-const pkg = createRequire(import.meta.url)("./package.json");
+import { stacSourceAlias } from "./core/node/cli/globals.js";
 
 /** The measured run: template tests plus settle waits, reported on. */
 const isPerformanceRun = Boolean(process.env.VITE_PERF);
 
-const nodeOnlyDeps = [
-  "commander",
-  "vite",
-  "@vitejs/plugin-vue",
-  "vite-plugin-vuetify",
-  "dotenv",
-  "stac-ts",
-];
-
-const clientDeps = Object.keys(pkg.dependencies ?? {}).filter(
-  (m) => !nodeOnlyDeps.includes(m) && m !== "vuetify",
-);
-
 /** Shared source aliases (mirror the CLI's viteConfig aliases). */
 const alias = {
+  ...(await stacSourceAlias()),
   "@": fileURLToPath(new URL("./core/client", import.meta.url)),
   "^": fileURLToPath(new URL("./widgets", import.meta.url)),
   "user:widgets": fileURLToPath(new URL("./widgets", import.meta.url)),
@@ -97,7 +83,14 @@ export default defineConfig({
         ],
         resolve: { alias },
         define: { "process.env": {} },
-        optimizeDeps: { include: clientDeps, exclude: ["vuetify"] },
+        optimizeDeps: {
+          entries: [
+            "core/client/render.js",
+            "templates/*.js",
+            "tests/**/*.test.js",
+          ],
+          exclude: ["vuetify"],
+        },
         ...(isPerformanceRun && {
           server: {
             warmup: {
@@ -115,16 +108,15 @@ export default defineConfig({
             "tests/component/**/*.test.js",
             "tests/template/**/*.test.js",
           ],
-          // Registers measurement hooks only when VITE_PERF is set.
-          setupFiles: ["./tests/support/performance-setup.js"],
+          setupFiles: [
+            "./tests/support/pinia-setup.js",
+            "./tests/support/performance-setup.js",
+          ],
           testTimeout: 60 * 1000,
           // Template boots (app + real STAC fetches) run in beforeAll hooks.
           hookTimeout: 60 * 1000,
           browser: {
             enabled: true,
-            // Pinned: how many tiles a map asks for depends on the viewport and
-            // scale factor, so measurements are only comparable while both stay
-            // fixed.
             provider: playwright({ contextOptions: { deviceScaleFactor: 1 } }),
             headless: true,
             viewport: { width: 1440, height: 900 },

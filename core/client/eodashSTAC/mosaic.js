@@ -6,7 +6,7 @@ import {
   mapEl,
   mapPosition,
 } from "@/store/states";
-import { assignLayers, getLayers } from "@/store/actions";
+import { ANALYSIS_GROUP, assignGroupLayers } from "@/eodashSTAC/layers";
 import {
   computed,
   nextTick,
@@ -25,6 +25,7 @@ import { useEodash, useOnLayersUpdate } from "@/composables";
 import { registerProjection } from "@/store/actions";
 import {
   encodeURLObject,
+  LAYER_ID_SEPARATOR,
   extractLayerTimeValues,
   getProjectionCode,
   normalizeNodata,
@@ -32,21 +33,19 @@ import {
   resolveRenders,
   resolveTmsByProjection,
   tmsToTileGridOptions,
-} from "./helpers";
+} from "@eodash/stac/helpers";
 import { useSTAcStore } from "@/store/stac";
-import { eodashCollections } from "@/utils/states";
+import { eodashCollections } from "@/store/stac";
 import log from "loglevel";
 import { buildCqlFilter } from "./cql";
 
 const mosaicReturnToOverviewKey = Symbol("mosaic:return-to-overview");
 
 /**
- * Shared mosaic state across all components. Stores the latest mosaic layer,
- * query parameters, visibility threshold, item-view flag, and an event bus
- * for the "Back to overview" user action .
+ * Composable providing reactive state and event bus for mosaic layer management.
  */
 export const useMosaicState = createSharedComposable(() => {
-  /** @type {import("vue").ShallowRef<Record<string, any> | null>} */
+  /** @type {import("vue").ShallowRef<import("@eox/map").EoxLayer | null>} */
   const latestLayer = shallowRef(null);
   /** @type {import("vue").Ref<Record<string, string> | null>} */
   const query = ref(null);
@@ -54,7 +53,7 @@ export const useMosaicState = createSharedComposable(() => {
   const visibilityThreshold = ref(8);
   /** @type {import("vue").Ref<boolean>} */
   const isItemView = ref(false);
-  /** @type {import("vue").Ref<boolean>} - filtered mosaic has assets in the current view */
+  /** @type {import("vue").Ref<boolean>} */
   const hasDataInView = ref(true);
   const returnToOverview = useEventBus(mosaicReturnToOverviewKey);
 
@@ -77,9 +76,9 @@ export const useMosaicState = createSharedComposable(() => {
 });
 
 /**
- * Modifies the layers collection to display the mosaic layer.
- * @param {string} mosaicEndpoint - The TileJSON URL for the mosaic.
- * @param {Record<string, string> | null} [params] - Query params forwarded to the tilejson URL.
+ * Builds and renders the mosaic layer on the map.
+ * @param {string} mosaicEndpoint - TileJSON endpoint URL for the mosaic
+ * @param {Record<string, string> | null} [params] - Query parameters for the TileJSON request
  */
 export async function renderMosaic(mosaicEndpoint, params) {
   const mosaicLayers = await createMosaicLayers(mosaicEndpoint, params);
@@ -90,27 +89,28 @@ export async function renderMosaic(mosaicEndpoint, params) {
 
   const { selectedStac } = useSTAcStore();
   if (selectedStac) {
-    const eodashCol = eodashCollections.find(
-      (ec) => ec.collectionStac?.id === selectedStac.id,
-    );
+    const eodashCol = eodashCollections.find((ec) => ec.id === selectedStac.id);
     const dates = (await eodashCol?.getDates()) ?? [];
     const { timeControlValues } = extractLayerTimeValues(dates, datetime.value);
     if (timeControlValues) {
+      //@ts-expect-error properties is optional upstream, always built here
       mosaicLayers[0].properties.timeControlValues = timeControlValues;
+      //@ts-expect-error properties is optional upstream, always built here
       mosaicLayers[0].properties.timeControlProperty = "TIME";
     }
   }
 
-  assignAnalysisLayer(mosaicLayers);
+  assignGroupLayers(mapEl.value, ANALYSIS_GROUP, mosaicLayers);
   const { latestLayer } = useMosaicState();
   latestLayer.value = mosaicLayers[0];
+  //@ts-expect-error source is optional upstream, always built here
   log.debug("[eodash] Mosaic layer rendered.", mosaicLayers[0].source.url);
 }
 
 /**
- * Updates the mosaic layer based on the current filters.
- * @param {string | undefined | null} mosaicEndpoint - The TileJSON URL for the mosaic.
- * @param {{ timeRange?: [string, string]; filters?: import("@/types").ItemFilterFilters }} [queries]
+ * Updates the mosaic layer using temporal and item filters.
+ * @param {string | undefined | null} mosaicEndpoint - TileJSON endpoint URL
+ * @param {{ timeRange?: [string, string]; filters?: import("@/types").ItemFilterFilters }} [queries] - Filter parameters
  */
 export async function updateMosaicLayer(
   mosaicEndpoint,
@@ -142,17 +142,18 @@ export async function updateMosaicLayer(
 }
 
 /**
- * Renders the latest mosaic layer stored in the shared mosaic state.
+ * Renders the cached mosaic layer from the shared state onto the map.
  */
 export function renderLatestMosaic() {
   const { latestLayer } = useMosaicState();
   if (!latestLayer.value) return;
-  assignAnalysisLayer([latestLayer.value]);
+  assignGroupLayers(mapEl.value, ANALYSIS_GROUP, [latestLayer.value]);
 }
 
 /**
- * @param {string} mosaicEndpoint - The TileJSON URL for the mosaic.
- * @param {[string, string] | undefined} timeRange
+ * Initializes and displays the mosaic layer for a given time range.
+ * @param {string} mosaicEndpoint - TileJSON endpoint URL
+ * @param {[string, string] | undefined} timeRange - Start and end datetime strings
  */
 export async function initMosaic(mosaicEndpoint, timeRange) {
   await updateMosaicLayer(mosaicEndpoint, { timeRange });
@@ -163,11 +164,10 @@ export async function initMosaic(mosaicEndpoint, timeRange) {
 }
 
 /**
- * Vue composable that initializes the mosaic layer and keeps it in sync with
- * map zoom and layer updates.
- * @param {string | null | undefined} mosaicEndpoint - Pass null/undefined to disable.
- * @param {import("vue").Ref<[string, string]> | undefined} timeRange
- * @param {string[]} [indicators] - If provided, mosaic only activates for these collection IDs.
+ * Composable that initializes the mosaic layer and synchronizes visibility with map state.
+ * @param {string | null | undefined} mosaicEndpoint - TileJSON endpoint URL
+ * @param {import("vue").Ref<[string, string]> | undefined} timeRange - Reactive time range
+ * @param {string[]} [indicators] - Optional list of collection IDs to restrict mosaic activation
  */
 export function useInitMosaic(mosaicEndpoint, timeRange, indicators) {
   if (!mosaicEndpoint) return;
@@ -184,7 +184,6 @@ export function useInitMosaic(mosaicEndpoint, timeRange, indicators) {
   }
 
   const stopWatcher = watch(mapPosition, (updatedPos, oldPos) => {
-    // Any pan or zoom changes the viewport bbox; re-check data presence.
     scheduleMosaicDataCheck();
     const [_oldX, _oldY, oldZ] = oldPos;
     const [_x, _y, z] = updatedPos;
@@ -192,7 +191,6 @@ export function useInitMosaic(mosaicEndpoint, timeRange, indicators) {
     toggleMosaicVisibility(z);
   });
 
-  // Re-check when filters/time change, and re-apply visibility once it lands.
   const stopQueryWatch = watch(query, () => scheduleMosaicDataCheck());
 
   onMounted(async () => {
@@ -216,11 +214,9 @@ export function useInitMosaic(mosaicEndpoint, timeRange, indicators) {
 }
 
 /**
- * Shared debounced scheduler for mosaic updates. All callers share a single
- * timer so concurrent updates (e.g. datetime + filter changes from different
- * widgets within the debounce window) coalesce into one final update.
+ * Shared debounced function to schedule mosaic layer updates.
  *
- * @returns {(mosaicEndpoint: string | undefined | null, timeRange: [string,string] | undefined, filters?: import("@/types").ItemFilterFilters) => void}
+ * @returns {(mosaicEndpoint: string | undefined | null, timeRange: [string, string] | undefined, filters?: import("@/types").ItemFilterFilters) => void}
  */
 export const useScheduleMosaicUpdate = createSharedComposable(() =>
   useDebounceFn(
@@ -237,10 +233,10 @@ export const useScheduleMosaicUpdate = createSharedComposable(() =>
 );
 
 /**
- * Creates a layer configuration for the mosaic.
- * @param {string} mosaicEndpoint - The TileJSON URL for the mosaic.
- * @param {Record<string, string> | null} [params] - Query params (datetime, filter, etc.).
- * @returns {Promise<Record<string, any>[]>}
+ * Creates the Tile XYZ layer definition for the mosaic.
+ * @param {string} mosaicEndpoint - TileJSON endpoint URL
+ * @param {Record<string, string> | null} [params] - Query parameters for TileJSON request
+ * @returns {Promise<import("@eox/map/src/layers").EOxLayerType<"Tile", "XYZ">[]>}
  */
 async function createMosaicLayers(mosaicEndpoint, params) {
   const { selectedStac } = useSTAcStore();
@@ -299,14 +295,14 @@ async function createMosaicLayers(mosaicEndpoint, params) {
   }
 
   const layer = {
-    type: "Tile",
+    type: /** @type {const} */ ("Tile"),
     minZoom: useMosaicState().visibilityThreshold.value,
     properties: {
-      id: `${indicator.value};:;mosaic`,
+      id: `${indicator.value}${LAYER_ID_SEPARATOR}mosaic`,
       title: "Mosaic Layer",
     },
     source: {
-      type: "XYZ",
+      type: /** @type {const} */ ("XYZ"),
       url: tileJSON.tiles[0],
       projection: projectionCode,
     },
@@ -325,7 +321,8 @@ async function createMosaicLayers(mosaicEndpoint, params) {
 }
 
 /**
- * @param {string | Date} time
+ * Converts a datetime input into an ISO date string (YYYY-MM-DD).
+ * @param {string | Date} time - Input datetime
  * @returns {string | null}
  */
 function timeToDate(time) {
@@ -336,13 +333,10 @@ function timeToDate(time) {
 }
 
 /**
- * Returns the OL-equivalent zoom from `mapPosition[2]`. In 2D the raw value
- * is already the OL zoom. In globe mode the raw value is camera altitude in
- * meters; convert it via eox-map's internal formula so callers can compare
- * against a single (2D-style) threshold.
+ * Normalizes map zoom level across 2D map and 3D globe camera altitudes.
  *
- * @param {number} rawZ
- * @returns {number}
+ * @param {number} rawZ - Raw zoom level or camera altitude
+ * @returns {number} Normalized zoom level
  */
 export function normalizeGlobeZoom(rawZ) {
   if (!isGlobe.value) return rawZ;
@@ -351,7 +345,7 @@ export function normalizeGlobeZoom(rawZ) {
 }
 
 /**
- * check whether the filtered dataset has any assets in the current 2D view
+ * Checks whether features or assets exist within the current 2D map viewport.
  */
 export async function checkMosaicDataInView() {
   const { hasDataInView, query, mosaicEndpoint, visibilityThreshold } =
@@ -388,60 +382,24 @@ export async function checkMosaicDataInView() {
   }
 }
 
-/** Shared debounced data-presence check; coalesces rapid pan/zoom/filter changes. */
+/** Debounced check for asset presence in the viewport. */
 const scheduleMosaicDataCheck = useDebounceFn(checkMosaicDataInView, 300);
 
 /**
- * @param {number} zoomLevel
- * @param {number} [threshold] - defaults to the shared visibility threshold
+ * Toggles mosaic layer visibility in 3D globe mode based on altitude threshold.
+ * @param {number} zoomLevel - Current zoom level or altitude
+ * @param {number} [threshold] - Optional visibility threshold override
  */
 function toggleMosaicVisibility(zoomLevel, threshold) {
-  //  Only globe needs manual toggling.
   if (!isGlobe.value) return;
   const { latestLayer, visibilityThreshold } = useMosaicState();
   if (!latestLayer.value) return;
 
+  //@ts-expect-error properties is optional upstream, always built here
   const layerId = /** @type {string} */ (latestLayer.value.properties.id);
   const layer = mapEl.value?.getLayerById(layerId);
   if (!layer) return;
 
   const eqZoom = normalizeGlobeZoom(zoomLevel);
   layer.setVisible(eqZoom >= (threshold ?? visibilityThreshold.value));
-}
-
-/**
- * Writes layers into the AnalysisGroup and triggers a map re-render.
- * @param {Record<string, any>[]} layersToAssign
- */
-function assignAnalysisLayer(layersToAssign) {
-  const mapLayers = getLayers();
-  const { analysisGroup, layers } = ensureAnalysisGroup(mapLayers);
-  analysisGroup.layers = layersToAssign;
-  // Reassign to trigger map re-render after in-place layer mutation
-  assignLayers(mapEl.value, [...layers]);
-}
-
-/**
- * Ensure the AnalysisGroup exists in the layers collection.
- * @param {Record<string, any>[]} layersCollection
- * @returns {{ layers: Record<string, any>[], analysisGroup: Record<string, any> }}
- */
-function ensureAnalysisGroup(layersCollection) {
-  let analysisGroup = layersCollection.find(
-    (l) => l?.properties?.id === "AnalysisGroup",
-  );
-
-  if (!analysisGroup) {
-    analysisGroup = {
-      type: "Group",
-      properties: {
-        id: "AnalysisGroup",
-        title: "Data Layers",
-      },
-      layers: [],
-    };
-    layersCollection.push(analysisGroup);
-  }
-
-  return { layers: layersCollection, analysisGroup };
 }

@@ -32,8 +32,8 @@ describe("useAutoExec", () => {
     jsonformSchema.value = { options: { execute: true } };
     await flushPromises();
 
-    formEl.value?.dispatchEvent(new Event("change"));
-    expect(startProcess).toHaveBeenCalled();
+    formEl.value?.dispatchEvent(new Event("change")); // the listener is debounced, so the burst a form emits runs the process once
+    await expect.poll(() => startProcess).toHaveBeenCalled();
   });
 
   test("does not run startProcess when execute is not set", async () => {
