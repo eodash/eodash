@@ -104,6 +104,22 @@ function installErrorInterceptors() {
 }
 
 /**
+ * Checks if the response has a `contents` property that is a valid JSON string.
+ * Such structure is provided by CORS workaround from Whatever-Origin API.
+ * @param {any} data
+ */
+const parseResponseData = (data) => {
+  if (data && typeof data.contents === "string") {
+    try {
+      return JSON.parse(data.contents);
+    } catch (_e) {
+      return data;
+    }
+  }
+  return data;
+};
+
+/**
  * axios swallows `JSON.parse` failures and hands back the raw string, so a
  * malformed file reaches callers as a success. Skipped when the caller asked
  * for a non-JSON `responseType`.
@@ -111,6 +127,7 @@ function installErrorInterceptors() {
  * @param {import("axios").AxiosResponse} response
  */
 function reportParseFailure(response) {
+  response.data = parseResponseData(response.data);
   const body =
     !response.config.responseType && typeof response.data === "string"
       ? response.data
