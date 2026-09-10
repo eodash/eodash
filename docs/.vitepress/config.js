@@ -61,7 +61,7 @@ export default defineConfig({
           { text: "Configuration", link: "/configuration" },
           { text: "Templates", link: "/templates" },
           { text: "Branding", link: "/branding" },
-          { text: "STAC", link: "/STAC" },
+          { text: "STAC Concepts", link: "/STAC" },
           { text: "Eodash Store", link: "/eodash-store" },
           { text: "CLI", link: "/cli" },
         ],
@@ -81,6 +81,18 @@ export default defineConfig({
             items: internalWidgetPageItems,
           },
         ],
+      },
+      {
+        text: "Packages",
+        items: [
+          {
+            text: "@eodash/stac",
+            items: [
+              { text: "Overview", link: "/packages/stac/" },
+              { text: "Types", link: "/packages/stac/types" },
+            ],
+          },
+        ]
       },
       {
         text: "Reference",
