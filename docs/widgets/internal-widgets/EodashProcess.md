@@ -40,6 +40,8 @@ The form is whatever the collection's `eodash:jsonform` schema describes - eodas
 - **Schema options.**
   - `options.execute: true` - auto-execute. The process runs on every form change instead of showing an **Execute** button.
   - `options.multiQuery` - when a field holds multiple selections, eodash issues one request per value and aggregates the responses into a single result.
+- **Vega options.**
+  - `disableClickDateToMap` - when set to `true` in the Vega spec, disables updating the global dashboard datetime on chart item click.
 
 ## Outputs
 

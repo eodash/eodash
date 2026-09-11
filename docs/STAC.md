@@ -320,6 +320,10 @@ eodash processing transforms user inputs into dynamic visualizations through STA
 | `eodash:jsonform` | URL | JSON Schema defining user input form |
 | `eodash:vegadefinition` | URL | Vega/Vega-Lite specification for chart output |
 
+#### Vega Specification Options
+
+- `disableClickDateToMap` (boolean): When set to `true` inside the Vega specification, it disables the automatic global datetime update when clicking on chart items.
+
 #### Form Configuration Options
 
 - `options.execute` (boolean): Auto-execute when form values change

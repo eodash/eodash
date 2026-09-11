@@ -98,4 +98,19 @@ describe("onChartClick", () => {
       "not-a-date",
     );
   });
+
+  test("does nothing if disableClickDateToMap is true", () => {
+    const spec = {
+      "disableClickDateToMap": true,
+      encoding: {
+        x: { field: "timestamp", type: "temporal" },
+      },
+    };
+    const datum = { timestamp: "2023-01-01T12:00:00Z" };
+    const evt = createEvent(spec, datum);
+
+    onChartClick(evt);
+
+    expect(datetime.value).toBe("");
+  });
 });
