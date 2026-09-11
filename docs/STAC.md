@@ -322,7 +322,7 @@ eodash processing transforms user inputs into dynamic visualizations through STA
 
 #### Vega Specification Options
 
-- `disableClickDateToMap` (boolean): When set to `true` inside the Vega specification, it disables the automatic global datetime update when clicking on chart items.
+- `eodash:disableClickDateToMap` (boolean): When set to `true` inside the Vega specification, it disables the automatic global datetime update when clicking on chart items.
 
 #### Form Configuration Options
 

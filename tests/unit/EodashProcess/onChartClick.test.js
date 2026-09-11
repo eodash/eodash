@@ -99,9 +99,9 @@ describe("onChartClick", () => {
     );
   });
 
-  test("does nothing if disableClickDateToMap is true", () => {
+  test("does nothing if eodash:disableClickDateToMap is true", () => {
     const spec = {
-      "disableClickDateToMap": true,
+      "eodash:disableClickDateToMap": true,
       encoding: {
         x: { field: "timestamp", type: "temporal" },
       },

@@ -357,9 +357,10 @@ export function resetProcess({
  *
  * @param {object} evt - The click event object.
  * @param {object} evt.target - The target of the event, expected to have a Vega-Lite specification (`spec`).
- * @param {object} evt.target.spec - The Vega-Lite specification of the chart.
- * @param {Record<string,{type?:string;field?:string;}>} [evt.target.spec.encoding] - The encoding specification of the chart.
- * @param {boolean} [evt.target.spec.disableClickDateToMap] - If truthy, disabled the click chart to central app date change functionality.
+ * @param {{
+ *   encoding?: Record<string, {type?: string; field?: string;}>;
+ *   ["eodash:disableClickDateToMap"]?: boolean;
+ * }} evt.target.spec
  * @param {object} evt.detail - The detail of the event, containing information about the clicked item.
  * @param {import("vega").Item} evt.detail.item - The Vega item that was clicked.
  */
@@ -367,7 +368,7 @@ export const onChartClick = (evt) => {
   const chartSpec = evt.target?.spec;
   if (
     !chartSpec ||
-    chartSpec.disableClickDateToMap ||
+    chartSpec["eodash:disableClickDateToMap"] ||
     !evt.detail?.item?.datum
   ) {
     return;
