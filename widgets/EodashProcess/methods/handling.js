@@ -367,29 +367,32 @@ export const onChartClick = (evt) => {
   if (!chartSpec || !evt.detail?.item?.datum) {
     return;
   }
-  const encodingKey = Object.keys(chartSpec.encoding ?? {}).find(
-    (key) => chartSpec.encoding?.[key].type === "temporal",
+  const encoding = chartSpec?.encoding ?? {};
+  const encodingKey = Object.keys(encoding).find(
+    (key) => encoding[key]?.type === "temporal",
   );
-  if (!encodingKey) {
-    return;
-  }
-  const temporalKey = chartSpec.encoding?.[encodingKey].field;
+  const temporalKey = encodingKey ? encoding[encodingKey]?.field : null;
+
   if (!temporalKey) {
     return;
   }
 
   try {
-    const vegaItem = evt.detail.item;
-    let datestring = "";
-    // It seems sometimes we have datum inside datum and sometimes not
-    if (vegaItem.datum && vegaItem.datum.datum) {
-      // If datum is nested, we use the nested datum
-      datestring = vegaItem.datum.datum[temporalKey];
-    } else {
-      // Otherwise, we use the top-level datum
-      datestring = vegaItem.datum[temporalKey];
+    const vegaItem = evt.detail?.item;
+    const targetDatum = vegaItem?.datum?.datum ?? vegaItem?.datum;
+    const rawDateValue = targetDatum?.[temporalKey];
+
+    if (!rawDateValue) {
+      return;
     }
-    const temporalValue = new Date(datestring);
+
+    const temporalValue = new Date(rawDateValue);
+
+    if (isNaN(temporalValue.getTime())) {
+      console.warn("[eodash] Invalid temporal value received:", rawDateValue);
+      return;
+    }
+
     datetime.value = temporalValue.toISOString();
   } catch (error) {
     console.warn(
