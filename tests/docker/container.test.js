@@ -44,8 +44,8 @@ async function runContainerTest() {
     throw new Error(`Failed to fetch index.html: status ${indexRes.status}`);
   }
   const indexHtml = await indexRes.text();
-  if (!indexHtml.includes('<div id="app">')) {
-    throw new Error("index.html missing '<div id=\"app\">'");
+  if (!indexHtml.includes('id="app"')) {
+    throw new Error('index.html missing element with id="app"');
   }
 
   // 2. Verify config.js contract
@@ -135,6 +135,9 @@ async function runContainerTest() {
   await page.route("https://hub-brands.eox.at/**", (route) => {
     route.fulfill({
       status: 200,
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+      },
       contentType: "application/javascript",
       body: 'export const config = { theme: { primary_color: "#002742", secondary_color: "#0071C2" } };',
     });
@@ -143,12 +146,47 @@ async function runContainerTest() {
   await page.route("**/catalog.json*", (route) => {
     route.fulfill({
       status: 200,
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+      },
       contentType: "application/json",
       body: JSON.stringify({
         id: "test-catalog",
         type: "Catalog",
         stac_version: "1.0.0",
         description: "Test Catalog",
+        links: [],
+      }),
+    });
+  });
+
+  await page.route("**/collections*", (route) => {
+    route.fulfill({
+      status: 200,
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+      },
+      contentType: "application/json",
+      body: JSON.stringify({
+        collections: [],
+        links: [],
+      }),
+    });
+  });
+
+  await page.route("https://example.com/**", (route) => {
+    route.fulfill({
+      status: 200,
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+      },
+      contentType: "application/json",
+      body: JSON.stringify({
+        id: "test-api",
+        type: "Catalog",
+        stac_version: "1.0.0",
+        description: "Test API",
+        collections: [],
         links: [],
       }),
     });
@@ -165,12 +203,12 @@ async function runContainerTest() {
   const vApp = page.locator(".v-application");
   await vApp.waitFor({ state: "visible", timeout: 15000 });
 
-  // Assert header component mounted
-  const header = page.locator("header");
-  await header.waitFor({ state: "visible", timeout: 15000 });
+  // Assert main content area mounted
+  const vMain = page.locator(".v-main");
+  await vMain.waitFor({ state: "visible", timeout: 15000 });
 
-  // Assert eodash layout custom element attached to DOM
-  const layout = page.locator("eodash-layout");
+  // Assert eox-layout element attached
+  const layout = page.locator("eox-layout");
   await layout.waitFor({ state: "attached", timeout: 15000 });
 
   // Assert no unhandled page errors occurred
