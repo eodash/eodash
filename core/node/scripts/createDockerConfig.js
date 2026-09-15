@@ -87,11 +87,12 @@ export async function updateEnvRuntimeConfig(
   baseDir = "/usr/share/nginx/html",
 ) {
   if (!runtimeConfigEnv) {
-    return;
+    return 0;
   }
 
   // pattern matching the minified variable, inlined object, or process.env
   const pattern = /(?:\{\}|(?:\b[\w$]+\.)*[\w$]+)\.EODASH_RUNTIME_CONFIG/g;
+  let updatedCount = 0;
 
   const processFile = (filePath) => {
     const content = fs.readFileSync(filePath, "utf-8");
@@ -101,6 +102,7 @@ export async function updateEnvRuntimeConfig(
         JSON.stringify(runtimeConfigEnv),
       );
       fs.writeFileSync(filePath, updated, "utf-8");
+      updatedCount++;
       console.log(`[eodash] Updated EODASH_RUNTIME_CONFIG in: ${filePath}`);
     }
   };
@@ -118,6 +120,14 @@ export async function updateEnvRuntimeConfig(
   };
 
   walkDir(baseDir);
+
+  if (updatedCount === 0) {
+    console.warn(
+      `[eodash] Debug Info: EODASH_RUNTIME_CONFIG was set to "${runtimeConfigEnv}", but no matching pattern was found in built files at "${baseDir}". App may fall back to baseConfig.`,
+    );
+  }
+
+  return updatedCount;
 }
 
 const isDirectExecution =

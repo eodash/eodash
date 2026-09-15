@@ -72,11 +72,25 @@ describe("updateEnvRuntimeConfig", () => {
     await writeFile(cssFile, "/* {}.EODASH_RUNTIME_CONFIG */", "utf-8");
 
     const targetUrl = "https://example.com/config.js";
-    await updateEnvRuntimeConfig(targetUrl, testDir);
+    const count = await updateEnvRuntimeConfig(targetUrl, testDir);
 
+    expect(count).toBe(1);
     expect(await readFile(jsFile, "utf-8")).toBe(`e="${targetUrl}"`);
     expect(await readFile(cssFile, "utf-8")).toBe(
       "/* {}.EODASH_RUNTIME_CONFIG */",
     );
+  });
+
+  it("returns 0 when no files match the pattern", async () => {
+    const testDir = path.join(tmp, "no-match");
+    await mkdir(testDir, { recursive: true });
+    const jsFile = path.join(testDir, "other.js");
+    await writeFile(jsFile, "console.log('hello')", "utf-8");
+
+    const count = await updateEnvRuntimeConfig(
+      "https://example.com/cfg.js",
+      testDir,
+    );
+    expect(count).toBe(0);
   });
 });
