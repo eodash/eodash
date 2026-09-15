@@ -22,8 +22,7 @@ describe("updateEnvRuntimeConfig", () => {
     const filePath = path.join(testDir, "main.js");
     await writeFile(filePath, bundleSnippet, "utf-8");
 
-    const targetUrl =
-      "https://hub-otc-sc.eox.at/services/eoxhub-gateway/aducat/eodash/config.js";
+    const targetUrl = "https://example.com/runtime-config.js";
     await updateEnvRuntimeConfig(targetUrl, testDir);
 
     const updatedContent = await readFile(filePath, "utf-8");
