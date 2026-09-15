@@ -66,13 +66,16 @@ config.templates = Object.fromEntries(templateKeys.map(key => [key, baseTemplate
 export default config
 
 async function fetchBrand(workspaceId = "eox"){
+  if (!workspaceId) {
+    return { primary: "#002742", secondary: "#0071C2" }
+  }
   const theme = await import("https://hub-brands.eox.at/" + workspaceId + "/config.mjs")
-  .then(m => m.config.theme).catch(e => {
+  .then(m => m.config?.theme).catch(e => {
     console.warn("[eodash] Could not load brand config for workspace:", workspaceId, e)
   })
   return {
-    primary: theme?.primary_color,
-    secondary: theme?.secondary_color ?? theme?.primary_color
+    primary: theme?.primary_color ?? "#002742",
+    secondary: theme?.secondary_color ?? theme?.primary_color ?? "#0071C2"
   }
 }
 
