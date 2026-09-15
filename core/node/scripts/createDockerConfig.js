@@ -5,21 +5,9 @@
  */
 import fs from "fs";
 import path from "path";
+import { fileURLToPath } from "url";
 
-const dirname =
-  process.argv[process.argv.findIndex((arg) => arg === "--dir") + 1];
-const runtimePath = path.join(dirname, "/config.js");
-const runtimeConfigEnv = process.env.EODASH_RUNTIME_CONFIG;
-
-if (runtimeConfigEnv) {
-  updateEnvRuntimeConfig(runtimeConfigEnv, dirname).finally(() => {
-    process.exit(0);
-  });
-}
-
-fs.writeFileSync(runtimePath, createRuntimeConfig(), { encoding: "utf-8" });
-
-function createRuntimeConfig(
+export function createRuntimeConfig(
   stacEndpointEnv = process.env.STAC_ENDPOINT,
   apiEnv = process.env.API,
   brandEnv = process.env.BRAND,
@@ -93,7 +81,8 @@ async function fetchBrand(workspaceId = "eox"){
 
   `;
 }
-async function updateEnvRuntimeConfig(
+
+export async function updateEnvRuntimeConfig(
   runtimeConfigEnv = process.env.EODASH_RUNTIME_CONFIG,
   baseDir = "/usr/share/nginx/html",
 ) {
@@ -101,8 +90,8 @@ async function updateEnvRuntimeConfig(
     return;
   }
 
-  // pattern matching the  minified variable
-  const pattern = /\w+\.EODASH_RUNTIME_CONFIG/g;
+  // pattern matching the minified variable, inlined object, or process.env
+  const pattern = /(?:\{\}|(?:\b[\w$]+\.)*[\w$]+)\.EODASH_RUNTIME_CONFIG/g;
 
   const processFile = (filePath) => {
     const content = fs.readFileSync(filePath, "utf-8");
@@ -129,4 +118,28 @@ async function updateEnvRuntimeConfig(
   };
 
   walkDir(baseDir);
+}
+
+const isDirectExecution =
+  process.argv[1] &&
+  fileURLToPath(import.meta.url) === path.resolve(process.argv[1]);
+
+if (isDirectExecution) {
+  const dirIndex = process.argv.findIndex((arg) => arg === "--dir");
+  const dirname = dirIndex !== -1 ? process.argv[dirIndex + 1] : undefined;
+
+  if (dirname) {
+    const runtimePath = path.join(dirname, "/config.js");
+    const runtimeConfigEnv = process.env.EODASH_RUNTIME_CONFIG;
+
+    if (runtimeConfigEnv) {
+      updateEnvRuntimeConfig(runtimeConfigEnv, dirname).finally(() => {
+        process.exit(0);
+      });
+    } else {
+      fs.writeFileSync(runtimePath, createRuntimeConfig(), {
+        encoding: "utf-8",
+      });
+    }
+  }
 }
