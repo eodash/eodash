@@ -98,7 +98,7 @@ jobs:
         run: npm run test:${{ matrix.package }}
 
   docker:
-    name: Docker container test 🐳
+    name: Docker container test
     needs: scope
     if: needs.scope.outputs.app == 'true'
     runs-on: ubuntu-24.04
