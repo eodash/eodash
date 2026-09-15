@@ -21,15 +21,12 @@ const manifest = await fetch("./.vite/manifest.json").then(async res=> await res
 const fileConfig = manifest["templates/index.js"]
 
 const importedModule = await import("./" + fileConfig.file)
-.then(m => m.default || m)
-const key = Object.keys(importedModule)[0]
-const getBaseConfig = importedModule[key].getBaseConfig
-const baseConfig = importedModule[key].default
+const getBaseConfig = importedModule.getBaseConfig || importedModule.default
 
-const lite = baseConfig.templates.lite
-const expert = baseConfig.templates.expert
-const compare = baseConfig.templates.compare
-const explore = baseConfig.templates.explore
+const lite = importedModule.lite
+const expert = importedModule.expert
+const compare = importedModule.compare
+const explore = importedModule.explore
 
 const baseTemplates = { lite, expert, compare, explore }
 
