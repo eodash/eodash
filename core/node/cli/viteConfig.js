@@ -123,6 +123,7 @@ export const createEodashViteConfig = (ctx) =>
                   main: path.join(appPath, "index.html"),
                   templates: path.join(appPath, "templates/index.js"),
                 },
+                preserveEntrySignatures: "exports-only",
               },
             }),
           // lib build configuration
