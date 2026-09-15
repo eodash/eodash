@@ -142,14 +142,12 @@ if (isDirectExecution) {
     const runtimePath = path.join(dirname, "/config.js");
     const runtimeConfigEnv = process.env.EODASH_RUNTIME_CONFIG;
 
+    fs.writeFileSync(runtimePath, createRuntimeConfig(), {
+      encoding: "utf-8",
+    });
+
     if (runtimeConfigEnv) {
-      updateEnvRuntimeConfig(runtimeConfigEnv, dirname).finally(() => {
-        process.exit(0);
-      });
-    } else {
-      fs.writeFileSync(runtimePath, createRuntimeConfig(), {
-        encoding: "utf-8",
-      });
+      await updateEnvRuntimeConfig(runtimeConfigEnv, dirname);
     }
   }
 }
