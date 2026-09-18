@@ -73,12 +73,20 @@ export default defineConfig({
             "tests/component/**/*.test.js",
             "tests/template/**/*.test.js",
           ],
+          benchmark: { include: ["tests/bench/**/*.bench.js"] },
+          provide: {
+            benchReference,
+            ...(isBenchRun ? await loadFixtures() : {}),
+          },
           testTimeout: 60 * 1000,
           // Template boots (app + real STAC fetches) run in beforeAll hooks.
           hookTimeout: 60 * 1000,
           browser: {
             enabled: true,
-            provider: playwright(),
+            // Pinned: how many tiles a map asks for depends on the viewport and
+            // scale factor, so measurements are only comparable while both stay
+            // fixed.
+            provider: playwright({ contextOptions: { deviceScaleFactor: 1 } }),
             headless: true,
             viewport: { width: 1440, height: 900 },
             instances: [{ browser: "chromium" }],
