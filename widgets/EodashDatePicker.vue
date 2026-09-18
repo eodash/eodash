@@ -13,6 +13,7 @@
         <div class="d-flex flex-row align-center justify-center pb-1">
           <v-btn
             v-if="!hideArrows"
+            id="eodash-date-oldest"
             v-tooltip:bottom="'Set date to oldest available dataset'"
             icon
             size="small"
@@ -32,6 +33,7 @@
           ></eox-timecontrol-date>
           <v-btn
             v-if="!hideArrows"
+            id="eodash-date-newest"
             v-tooltip:bottom="'Set date to latest available dataset'"
             icon
             size="small"

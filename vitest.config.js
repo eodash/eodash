@@ -1,17 +1,39 @@
 import { defineConfig } from "vitest/config";
 import { fileURLToPath, URL } from "node:url";
 import { createRequire } from "node:module";
+import { existsSync, readdirSync } from "node:fs";
 import { playwright } from "@vitest/browser-playwright";
-//@ts-expect-error todo
 import vue from "@vitejs/plugin-vue";
 import vuetify from "vite-plugin-vuetify";
 import {
+  //@ts-expect-error todo
   serveFiles,
+  //@ts-expect-error todo
   serveResponses,
+  //@ts-expect-error todo
   stopServingFiles,
 } from "./tests/support/commands.js";
+import { BenchReporter } from "./tests/support/bench-reporter.js";
+import { loadFixtures } from "./tests/support/load-fixtures.js";
 
 const pkg = createRequire(import.meta.url)("./package.json");
+
+/** `reporters` is root-only, so this is the only place to keep it off the tests. */
+const isBenchRun = process.argv.includes("bench");
+
+const REFERENCE_DIR = ".bench-baseline";
+const RESULTS_DIR = ".bench-results";
+
+/** Listed here: `bench.from()` throws on a missing file and the browser cannot stat. */
+const benchReference = {
+  dir: REFERENCE_DIR,
+  resultsDir: RESULTS_DIR,
+  referenceSuffix: " (reference)",
+  underFloorSuffix: " (under floor)",
+  files: existsSync(REFERENCE_DIR)
+    ? readdirSync(REFERENCE_DIR).filter((file) => file.endsWith(".json"))
+    : [],
+};
 
 const nodeOnlyDeps = [
   "commander",
@@ -38,12 +60,29 @@ const alias = {
 
 export default defineConfig({
   test: {
+    ...(isBenchRun && {
+      reporters: ["default", new BenchReporter(benchReference)],
+    }),
+    coverage: {
+      include: [
+        "core/client/**/*.{js,vue}",
+        "widgets/**/*.{js,vue}",
+        "packages/*/src/**/*.js",
+      ],
+      exclude: ["**/*.d.ts", "**/types/**"],
+      reporter: ["text-summary", "html"],
+      reportOnFailure: true,
+    },
     projects: [
       {
         resolve: { alias },
         test: {
           name: "cli",
           include: ["tests/cli/**/*.spec.js"],
+          // Every benchmark is a browser benchmark. Left empty rather than
+          // omitted: a project with no `benchmark.include` falls back to
+          // `**/*.bench.js` and would run `tests/bench` in a node pool.
+          benchmark: { include: [] },
           environment: "node",
           testTimeout: 3 * 60 * 1000,
         },

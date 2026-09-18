@@ -140,7 +140,8 @@ export const stacItem = (over = {}) => {
  * Responses resolve after `delay` ms: widgets that fetch during setup mount
  * before the map otherwise, and layers rendered onto it are lost.
  * @param {{ get: import("vitest").Mock<(url: string) => Promise<unknown>> }} axiosMock
- * @param {Record<string, any>} routes pathname suffix -> response data
+ * @param {Record<string, any>} routes pathname suffix -> response data, or a
+ *   function of the url returning it
  * @param {{ delay?: number }} [options]
  * @returns {{ unmatched: string[] }}
  */
@@ -152,8 +153,19 @@ export const serveByPath = (axiosMock, routes, { delay = 50 } = {}) => {
     const { pathname } = new URL(url, "https://test.local");
     const match = paths.find((p) => pathname.endsWith(p));
     if (!match) unmatched.push(url);
-    const data = match ? routes[match] : {};
-    return new Promise((resolve) => setTimeout(() => resolve({ data }), delay));
+    const route = match ? routes[match] : {};
+    // Cloned, not shared: the STAC pipeline mutates what it is given, so one
+    // caller would change what the next receives. The copy lands inside a
+    // benchmark's timed window — for the parquet route that is 313KB an
+    // iteration charged to the app, which is the price of repeatable fixtures.
+    const data =
+      typeof route === "function" ? route(url) : structuredClone(route);
+    // `headers` is not optional: `readParquetItems` reads
+    // `response.headers["content-type"]` before touching the body, so a route
+    // without it throws before the fixture is ever parsed.
+    return new Promise((resolve) =>
+      setTimeout(() => resolve({ data, headers: {} }), delay),
+    );
   });
   return { unmatched };
 };
