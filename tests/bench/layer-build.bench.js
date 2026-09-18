@@ -1,22 +1,19 @@
 /**
  * How the layer build scales with the number of layers one collection
- * contributes, and what a styled layer costs on top. The window closes on
- * `layers:updated`, so it holds the build and every layer's tile load. The
- * shape of the curve is the finding: superlinear is a defect no single-size
- * measurement can see.
+ * contributes, and what a styled layer costs on top. The shape of the curve is
+ * the finding: superlinear is a defect no single-size measurement can see.
  *
  * Size is driven by how many `xyz` links one item carries, so the number of
  * round trips is identical at every size and the intercept is shared. Those
- * layers are built but not drawn: visible, each one costs a tile fetch and a
- * 250ms fade, and at ten layers that was 90% of the window and hid the build
- * this row exists to compare.
+ * layers are built but not drawn: their tiles would load after the window
+ * closes, during the next iteration.
  *
- * The styled row takes the asset door: a `style` link matched by `asset:keys`
- * is fetched and merged into the definition, and the source is opened by
- * OpenLayers at construction as in the app. The GeoJSON is served by vite; a
- * remote COG was the same code path over the network, and it timed the CDN.
+ * The two styled rows take the asset door: a `style` link matched by
+ * `asset:keys` is fetched and merged into the definition, one per source type
+ * the builder branches on. The COG header and the GeoJSON both load after the
+ * window closes; the rows measure the style resolution and the source setup.
  */
-import { describe, expect, test, vi } from "vitest";
+import { describe, expect, inject, test, vi } from "vitest";
 import { buildCatalog, xyzLinks } from "../support/catalog";
 import { MAP_ONLY } from "../support/template";
 import {
@@ -32,11 +29,9 @@ const axiosMock = vi.hoisted(() => ({ get: vi.fn() }));
 vi.mock("@/plugins/axios", () => ({ default: axiosMock, axios: axiosMock }));
 
 const RESET_INDICATOR_ID = "neutral";
-/**
- * What a real catalog carries. Larger counts only measured the browser loading
- * N tiles: at 100 one iteration took 13.5s, at 1000 it never finished.
- */
+/** Real catalogs carry single digits; 100 is where the curve can show. */
 const SIZES = [1, 10, 100];
+const GEOTIFF_ID = "styled-geotiff";
 const VECTOR_ID = "styled-vector";
 const VECTOR_ASSET = "storms";
 const VECTOR_FILE = "/tests/support/assets/stormtracker.geojson";
@@ -46,6 +41,8 @@ const VECTOR_FILE = "/tests/support/assets/stormtracker.geojson";
  * @param {number} n
  */
 const getCollectionId = (n) => `sub-${String(n).padStart(4, "0")}`;
+
+const geotiff = inject("geotiffFixture");
 
 /** The shape of the catalog's own styles: `variables` driving an expression. */
 const vectorStyle = {
@@ -81,6 +78,11 @@ const catalog = buildCatalog([
     links: xyzLinks(n).map((link) => ({ ...link, roles: ["invisible"] })),
   })),
   {
+    id: GEOTIFF_ID,
+    links: [],
+    assets: { [geotiff.assetKey]: geotiff.asset },
+  },
+  {
     id: VECTOR_ID,
     links: [],
     assets: {
@@ -92,6 +94,10 @@ const catalog = buildCatalog([
     },
   },
 ]);
+catalog.routes[`/c/${GEOTIFF_ID}.json`].links.push(
+  styleLink(geotiff.assetKey, `/${GEOTIFF_ID}-style.json`),
+);
+catalog.routes[`/${GEOTIFF_ID}-style.json`] = geotiff.style;
 catalog.routes[`/c/${VECTOR_ID}.json`].links.push(
   styleLink(VECTOR_ASSET, `/${VECTOR_ID}-style.json`),
 );
@@ -119,14 +125,19 @@ describe("layer construction", () => {
         ),
       );
       // Three round trips and the style; the source itself never touches axios.
-      const styled = defineBenchmark(
-        bench,
-        "styled vector",
-        createSelectionSpec(VECTOR_ID, { from: RESET_INDICATOR_ID }),
+      const styled = [
+        { name: "styled geotiff", id: GEOTIFF_ID },
+        { name: "styled vector", id: VECTOR_ID },
+      ].map(({ name, id }) =>
+        defineBenchmark(
+          bench,
+          name,
+          createSelectionSpec(id, { from: RESET_INDICATOR_ID }),
+        ),
       );
 
       try {
-        await compareBenchmarks(bench, [...sized, styled]);
+        await compareBenchmarks(bench, [...sized, ...styled]);
 
         expect(served.unmatched, "a fixture route is missing").toEqual([]);
         sized.forEach((benchmark, index) => {
@@ -135,9 +146,11 @@ describe("layer construction", () => {
           // Flat across sizes is what makes the curve construction, not latency.
           expectConstant(benchmark, "requests", 3);
         });
-        expectConstant(styled, "layers", 1);
-        expectDistinct(styled, "identity");
-        expectConstant(styled, "requests", 4);
+        for (const benchmark of styled) {
+          expectConstant(benchmark, "layers", 1);
+          expectDistinct(benchmark, "identity");
+          expectConstant(benchmark, "requests", 4);
+        }
       } finally {
         app.unmount();
       }

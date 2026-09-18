@@ -167,24 +167,6 @@ export async function selectIndicator(store, id) {
 }
 
 /**
- * Move the global date through the picker's own door: `eox-timecontrol` emits
- * `select`, and `EodashDatePicker.onSelect` writes `datetime` through the
- * `currentDate` setter. Writing `datetime` directly skips the calendar echo
- * guard, so a test that does it exercises a path no user reaches.
- *
- * @param {Element} root
- * @param {string} date anything `new Date()` parses
- */
-export const selectDate = (root, date) => {
-  const control = root.querySelector("eox-timecontrol");
-  if (!control) throw new Error("no eox-timecontrol mounted");
-  const selected = new Date(date);
-  control.dispatchEvent(
-    new CustomEvent("select", { detail: { date: [selected, selected] } }),
-  );
-};
-
-/**
  * The layerId the process drawtools is bound to (its selection target).
  * @param {Element} root
  */

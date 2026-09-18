@@ -7,6 +7,7 @@ import { getUid } from "ol/util";
  * @param {any} layer
  */
 export const getLayerIdentity = (layer) => {
+  if (!layer) return undefined;
   const source = layer.getSource?.();
   return `${getUid(layer)}/${source ? getUid(source) : "none"}`;
 };

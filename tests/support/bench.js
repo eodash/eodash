@@ -49,10 +49,9 @@ const getBaselinePath = (name) => `${reference.dir}/${getResultFile(name)}`;
 let getRequestCount = () => 0;
 
 /**
- * Stock templates as the benches boot them. Expert: a selection flies the view
- * to the extent over 1200ms, and `layers:updated` waits for the animation.
- * Explore: no `baseLayers` of its own, so `EodashMap` falls back to live OSM
- * tiles, which every complete frame would wait for.
+ * Stock templates as the benches boot them, quieted. Expert's 1200ms fly-to
+ * and explore's live OSM tiles both start after the window closes, and both
+ * are still running through the next iteration.
  */
 const BENCH_TEMPLATES = {
   expert: { background: { widget: { properties: { zoomToExtent: false } } } },
@@ -93,13 +92,15 @@ export const bootBench = async (axiosMock, { routes, hrefOf }, boot = {}) => {
   getRequestCount = () => axiosMock.get.mock.calls.length;
 
   /**
-   * eodash built the layer and eox-map applied it: the definition is in the
-   * map's config and OpenLayers holds the layer for it.
+   * Where the window stops: eodash wrote the layer into the map's config.
+   * eox-map applies that write synchronously, so the OpenLayers lookup only
+   * adds something where the config is mutated in place ahead of the write,
+   * which the mosaic does.
    *
-   * Where the window stops. A drawn frame would be the fuller answer, but it
-   * also holds the tile fetch, OpenLayers' 250ms fade and any view animation —
-   * measured, 90% of a ten-layer window, none of it eodash's work. Each act is
-   * a real state change, so the check cannot already be true when it starts.
+   * A drawn frame would be the fuller answer, but it also holds the tile
+   * fetch, OpenLayers' 250ms fade and any view animation — measured, 90% of a
+   * ten-layer window, none of it eodash's work. Each act is a real state
+   * change, so the check cannot already be true when it starts.
    *
    * @param {() => boolean} isLanded
    */
@@ -125,12 +126,11 @@ export const bootBench = async (axiosMock, { routes, hrefOf }, boot = {}) => {
 
   /** Untimed, so it can afford to resolve an OL layer. */
   const readLedgerEntry = () => {
-    const group = analysisGroup(mapEl);
-    const id = group?.layers?.[0]?.properties?.id;
+    const id = getLayerId();
     const baseLayers = mapEl.getLayerById("BaseLayersGroup");
     return {
       id,
-      layers: group?.layers?.length ?? 0,
+      layers: analysisGroup(mapEl)?.layers?.length ?? 0,
       identity: getLayerIdentity(mapEl.getLayerById(id)),
       // A group nothing touched has to survive untouched. No timing sees a
       // needless rebuild of it: base layers are cheap, so it reads as drift.

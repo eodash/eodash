@@ -245,9 +245,17 @@ describe("mosaic", () => {
       // Where the act leaves the app, so the first reset is a real change.
       await scrubAndSettle(RANGE_B, "the first scrub never landed");
 
+      let checksBeforeAct = 0;
       const benchmark = defineBenchmark(bench, "mosaic scrub", {
-        reset: () => scrubAndSettle(RANGE_A, "the reset never landed"),
+        reset: async () => {
+          await waitUntil(
+            () => checksOn(RANGE_B) > checksBeforeAct,
+            "the act's data-in-view check never ran",
+          );
+          await scrubAndSettle(RANGE_A, "the reset never landed");
+        },
         act: () => {
+          checksBeforeAct = checksOn(RANGE_B);
           scrub(RANGE_B);
         },
         isFinished: () => isOnMap(() => isOn(RANGE_B)),

@@ -34,9 +34,8 @@ export const DATES = Array.from({ length: 3 }, (_, index) =>
 const TILE = "/tests/support/assets/tile.png";
 
 /**
- * Visible, as in the app, so a timed window includes the tile request and
- * `layers:updated` waits for it. One local png; vite serves it.
- * @param {string} [title]
+ * Visible, as in the app. One local png; vite serves it.
+ * @param {string} [title] also the layer's id
  */
 export const xyzLink = (title = "xyz") => ({
   rel: "xyz",
