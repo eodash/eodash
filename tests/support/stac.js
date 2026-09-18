@@ -110,10 +110,7 @@ export const serveByPath = (axiosMock, routes, { delay = 0 } = {}) => {
     const match = paths.find((p) => pathname.endsWith(p));
     if (!match) unmatched.push(url);
     const route = match ? routes[match] : {};
-    // Cloned, or the STAC pipeline's mutations reach the next caller.
-    const data =
-      typeof route === "function" ? route(url) : structuredClone(route);
-    // `readParquetItems` reads `headers["content-type"]` before the body.
+    const data = typeof route === "function" ? route(url) : structuredClone(route);
     return new Promise((resolve) =>
       setTimeout(() => resolve({ data, headers: {} }), delay),
     );
