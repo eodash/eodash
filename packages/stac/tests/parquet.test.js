@@ -354,17 +354,18 @@ describe("a mirror published on GitHub Pages", () => {
     "https://eoxhub-workspaces.github.io/eoxhub-test-catalog/catalog/N2_CO2_mean/N2_CO2_mean/collection.json";
   const MIRROR_URL = COLLECTION_URL.replace("collection.json", "items.parquet");
 
-  /** The mirror as published: 2496 items, 313kB, one row group. */
-  const MIRROR_BYTES = 312988;
-
   test("reports a compressed length on HEAD, and its real one on a range", async () => {
+    // The size the catalog states for its own mirror; a republish moves it.
+    const { assets } = await fetch(COLLECTION_URL).then((r) => r.json());
+    const mirrorBytes = assets.geoparquet["file:size"];
+
     const head = await fetch(MIRROR_URL, { method: "HEAD" });
     const ranged = await fetch(MIRROR_URL, { headers: { Range: "bytes=0-0" } });
     const total = Number(
       ranged.headers.get("content-range")?.split("/").at(-1),
     );
 
-    expect(total).toBe(MIRROR_BYTES);
+    expect(total).toBe(mirrorBytes);
     expect(Number(head.headers.get("content-length"))).toBeLessThan(total);
     // and the reader still opens it
     const col = await createEodashCollection(COLLECTION_URL);
