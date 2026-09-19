@@ -51,6 +51,7 @@ const mapStub = (id = "main") => ({
   getLayerById: () => ({}),
   map: {
     once: (/** @type {string} */ _evt, /** @type {() => void} */ cb) => cb(),
+    render: () => {},
   },
 });
 

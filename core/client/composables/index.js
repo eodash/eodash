@@ -377,8 +377,9 @@ export const useOnLayersUpdate = (listener) => {
   return unsubscribe;
 };
 /**
- * Emits a layers-update event on the shared bus once the map has applied its
- * pending updates. Always pass the full layers array, not a partial subset.
+ * Emits a layers-update event on the shared bus once the map has rendered a
+ * complete frame with its pending updates: every source loaded, no animation
+ * in flight. Always pass the full layers array, not a partial subset.
  *
  * @param {import("@/types").LayersEventBusKeys} event
  * @param {import("@eox/map").EOxMap | null} mapEl
@@ -411,10 +412,11 @@ export const useEmitLayersUpdate = async (event, mapEl, layers) => {
       return;
     }
 
-    mapEl.map.once("loadend", async () => {
+    mapEl.map.once("rendercomplete", async () => {
       await emit();
       res(true);
     });
+    mapEl.map.render();
   });
 };
 
