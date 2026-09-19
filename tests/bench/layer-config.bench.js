@@ -48,13 +48,11 @@ describe("geozarr bands", () => {
       const { app, query, served, getLayerId, readLedgerEntry, dropOnRed } =
         await openBandsEditor(axiosMock, catalog);
 
-      // `updateGeoZarrBands` writes the new bands onto this object before
-      // swapping the source, so reading it is how the act is seen to land.
-      const source = query("eox-map")
-        .getLayerById(getLayerId())
-        .get("_jsonDefinition").source;
+      const olLayer = query("eox-map").getLayerById(getLayerId());
       const [red, otherRed] = bandsOf(style.jsonform?.properties?.bands);
-      const isOnRed = (/** @type {string} */ band) => source.bands[0] === band;
+      /** @param {string} band */
+      const isOnRed = (band) =>
+        olLayer.get("_jsonDefinition").source.bands[0] === band;
 
       dropOnRed(otherRed);
       await waitUntil(() => isOnRed(otherRed), "the first drag never landed");

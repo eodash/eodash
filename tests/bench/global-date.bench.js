@@ -99,6 +99,7 @@ describe("global date snap", () => {
         },
         isFinished: () => isOnMap(() => getLayerId() === newest),
         record: () => ({ ...readLedgerEntry(), from, onReset }),
+        isFloored: false,
       });
 
       try {

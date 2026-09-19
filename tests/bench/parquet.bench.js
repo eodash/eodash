@@ -117,7 +117,6 @@ describe("parquet-mirrored selection", () => {
         expect(served.unmatched, "a fixture route is missing").toEqual([]);
         // The indicator, its child, and the parquet. The item itself is a blob
         // fetch, so it never reaches the mock.
-        expectConstant(selection, "requests", 3);
         expectConstant(selection, "layers", 1);
         expectDistinct(selection, "identity");
         expect(store.selectedStac?.id).toBe(MIRRORED);

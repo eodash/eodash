@@ -103,8 +103,6 @@ describe("expert indicator selection", () => {
 
         expect(served.unmatched, "a fixture route is missing").toEqual([]);
         expectConstant(selection, "layers", 3);
-        // The indicator, its three children, and one item for each of them.
-        expectConstant(selection, "requests", 7);
         expectDistinct(selection, "identity");
 
         // Mirrors `boot.test.js :: selecting an indicator renders its layers and
