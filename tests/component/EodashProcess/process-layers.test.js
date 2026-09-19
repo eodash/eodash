@@ -32,7 +32,10 @@ const stubMap = () => {
     },
     updateComplete: Promise.resolve(true),
     getLayerById: () => ({}),
-    map: { once: (/** @type {any} */ _e, /** @type {any} */ cb) => cb() },
+    map: {
+      once: (/** @type {any} */ _e, /** @type {any} */ cb) => cb(),
+      render: () => {},
+    },
   };
 };
 
