@@ -100,11 +100,10 @@ const toCell = (task, { read, format }) => {
 /**
  * @param {any} live
  * @param {any} previous
- * @param {boolean} isUnderFloor no verdict: the reading is poll granularity
  */
-const compareRow = (live, previous, isUnderFloor) => ({
+const compareRow = (live, previous) => ({
   min: live.latency.min,
-  overall: isUnderFloor ? "" : summarise(live, previous),
+  overall: summarise(live, previous),
   cells: [
     live.name,
     ...COLUMNS.map((column) =>
@@ -118,9 +117,9 @@ const compareRow = (live, previous, isUnderFloor) => ({
 /**
  * Every live benchmark beside the stored one of the same name, fastest first.
  * @param {ReadonlyArray<import("vitest/node").TestModule>} modules
- * @param {{referenceSuffix: string, underFloorSuffix: string}} suffixes
+ * @param {string} referenceSuffix
  */
-const compareRuns = (modules, { referenceSuffix, underFloorSuffix }) => {
+const compareRuns = (modules, referenceSuffix) => {
   const rows = [];
   for (const module of modules) {
     for (const test of module.children.allTests()) {
@@ -132,13 +131,7 @@ const compareRuns = (modules, { referenceSuffix, underFloorSuffix }) => {
         );
         for (const task of tasks) {
           if (task.fromStore) continue;
-          rows.push(
-            compareRow(
-              task,
-              previous.get(task.name),
-              task.name.endsWith(underFloorSuffix),
-            ),
-          );
+          rows.push(compareRow(task, previous.get(task.name)));
         }
       }
     }
@@ -179,9 +172,9 @@ const renderLine = (cells, widths, overall) => {
 };
 
 export class BenchReporter {
-  /** @param {{referenceSuffix: string, underFloorSuffix: string}} reference */
-  constructor({ referenceSuffix, underFloorSuffix }) {
-    this.suffixes = { referenceSuffix, underFloorSuffix };
+  /** @param {{referenceSuffix: string}} reference */
+  constructor({ referenceSuffix }) {
+    this.referenceSuffix = referenceSuffix;
   }
 
   /** @param {import("vitest/node").Vitest} vitest */
@@ -196,7 +189,7 @@ export class BenchReporter {
    */
   onTestRunEnd(modules, _errors, reason) {
     if (reason === "interrupted") return;
-    const rows = compareRuns(modules, this.suffixes);
+    const rows = compareRuns(modules, this.referenceSuffix);
     if (!rows.length) return;
 
     const widths = measure([HEAD, ...rows.map(toCells)]);
@@ -223,7 +216,7 @@ export class BenchReporter {
         "| column | meaning |",
         "| --- | --- |",
         ...COLUMNS.map(({ title, means }) => `| ${title} | ${means} |`),
-        "| median Δ | change in the median when it leaves the middle two thirds of the baseline's samples; `=` inside; blank under the floor |",
+        "| median Δ | change in the median when it leaves the middle two thirds of the baseline's samples; `=` inside |",
         "",
         "</details>",
         "",

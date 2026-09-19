@@ -29,7 +29,6 @@ const benchReference = {
   dir: REFERENCE_DIR,
   resultsDir: RESULTS_DIR,
   referenceSuffix: " (reference)",
-  underFloorSuffix: " (under floor)",
   files: existsSync(REFERENCE_DIR)
     ? readdirSync(REFERENCE_DIR).filter((file) => file.endsWith(".json"))
     : [],

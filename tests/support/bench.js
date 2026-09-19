@@ -186,7 +186,6 @@ export const waitUntil = (check, reason) =>
  * @template T
  * @typedef {object} Benchmark one benchmark of a ranked table
  * @property {string} name
- * @property {string} label the registered name; marks an unfloored one
  * @property {import("vitest").Bench} bench
  * @property {import("vitest").BenchRegistration<string>} registration
  * @property {T[]} ledger one entry per invocation, warmups included
@@ -222,9 +221,8 @@ export const defineBenchmark = (
   /** @type {T[]} */
   const ledger = [];
   let requestsAtReset = 0;
-  const label = isFloored ? name : `${name}${reference.underFloorSuffix}`;
   const registration = bench(
-    label,
+    name,
     {
       writeResult: getResultPath(name),
       beforeEach: async () => {
@@ -245,21 +243,16 @@ export const defineBenchmark = (
       await waitUntil(isFinished, `${name}: never finished`);
     },
   );
-  return { name, label, bench, registration, ledger, isFloored };
+  return { name, bench, registration, ledger, isFloored };
 };
 
 /**
  * The previous run's result as a registration, or nothing the first time.
  * @param {Benchmark<unknown>} benchmark
  */
-const getReferenceBenchmark = ({ name, label, bench }) =>
+const getReferenceBenchmark = ({ name, bench }) =>
   reference.files.includes(getResultFile(name))
-    ? [
-        bench.from(
-          `${label}${reference.referenceSuffix}`,
-          getBaselinePath(name),
-        ),
-      ]
+    ? [bench.from(`${name}${reference.referenceSuffix}`, getBaselinePath(name))]
     : [];
 
 /**
@@ -299,7 +292,7 @@ export const runBenchmark = async (benchmark) => {
     previous,
     RUN_OPTIONS,
   );
-  assertValid(benchmark, storage.get(benchmark.label).latency);
+  assertValid(benchmark, storage.get(benchmark.name).latency);
 };
 
 /**
@@ -316,7 +309,7 @@ export const compareBenchmarks = async (bench, benchmarks) => {
     RUN_OPTIONS,
   );
   for (const benchmark of benchmarks) {
-    assertValid(benchmark, storage.get(benchmark.label).latency);
+    assertValid(benchmark, storage.get(benchmark.name).latency);
   }
 };
 

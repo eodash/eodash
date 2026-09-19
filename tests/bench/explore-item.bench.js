@@ -155,9 +155,9 @@ describe("explore item selection", () => {
           pick(ITEM_B_ID);
         },
         isFinished: () => isOnMap(() => isRendered(ITEM_B_ID)),
-        // eodash hands a selected item straight to the builder, and that is
-        // ~6ms: a reading, but mostly poll granularity. Kept for what it
-        // asserts, which no other row covers, rather than for a verdict.
+        // eodash hands a selected item straight to the builder, and on main
+        // that is ~6ms: a reading, but mostly poll granularity. Kept for what
+        // it asserts, which no other row covers.
         isFloored: false,
         record: () => {
           const id = itemLayer(ITEM_B_ID)?.properties?.id;
