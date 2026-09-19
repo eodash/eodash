@@ -92,6 +92,7 @@ export default defineConfig({
         test: {
           name: "stac",
           include: ["packages/stac/tests/**/*.test.js"],
+          benchmark: { include: [] },
           environment: "node",
         },
       },
