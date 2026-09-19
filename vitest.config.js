@@ -61,6 +61,7 @@ export default defineConfig({
   test: {
     ...(isBenchRun && {
       reporters: ["default", new BenchReporter(benchReference)],
+      fileParallelism: false,
     }),
     coverage: {
       include: [

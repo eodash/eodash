@@ -16,6 +16,7 @@ import {
   bootBench,
   expectDistinct,
   expectConstant,
+  reportMetrics,
   runBenchmark,
   TEST_TIMEOUT,
   waitUntil,
@@ -41,7 +42,7 @@ describe("expert indicator selection", () => {
   test(
     "loads a multi-collection indicator and its widgets",
     { timeout: TEST_TIMEOUT },
-    async ({ bench }) => {
+    async (ctx) => {
       const {
         app,
         query,
@@ -80,7 +81,7 @@ describe("expert indicator selection", () => {
         "the indicator never rendered",
       );
 
-      const selection = defineBenchmark(bench, "select indicator", {
+      const selection = defineBenchmark(ctx, "select indicator", {
         // Land on the plain indicator, then reopen so the act is one click.
         reset: async () => {
           await openPicker();
@@ -100,6 +101,7 @@ describe("expert indicator selection", () => {
 
       try {
         await runBenchmark(selection);
+        await reportMetrics(selection);
 
         expect(served.unmatched, "a fixture route is missing").toEqual([]);
         expectConstant(selection, "layers", 3);

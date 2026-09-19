@@ -137,15 +137,13 @@ export const stacItem = (over = {}) => {
  * Routes are matched most-specific-first; unmatched urls resolve to `{}` and
  * are recorded on `unmatched` for debugging.
  *
- * Responses resolve after `delay` ms: widgets that fetch during setup mount
- * before the map otherwise, and layers rendered onto it are lost.
  * @param {{ get: import("vitest").Mock<(url: string) => Promise<unknown>> }} axiosMock
  * @param {Record<string, any>} routes pathname suffix -> response data, or a
  *   function of the url returning it
  * @param {{ delay?: number }} [options]
  * @returns {{ unmatched: string[] }}
  */
-export const serveByPath = (axiosMock, routes, { delay = 50 } = {}) => {
+export const serveByPath = (axiosMock, routes, { delay = 0 } = {}) => {
   const paths = Object.keys(routes).sort((a, b) => b.length - a.length);
   /** @type {string[]} */
   const unmatched = [];

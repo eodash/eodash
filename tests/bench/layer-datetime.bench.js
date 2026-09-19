@@ -15,6 +15,7 @@ import {
   bootBench,
   expectDistinct,
   expectConstant,
+  reportMetrics,
   runBenchmark,
   TEST_TIMEOUT,
   waitUntil,
@@ -48,7 +49,7 @@ describe("layer control datetime", () => {
   test(
     "changing one layer's date replaces only that layer",
     { timeout: TEST_TIMEOUT },
-    async ({ bench }) => {
+    async (ctx) => {
       const {
         app,
         query,
@@ -102,7 +103,7 @@ describe("layer control datetime", () => {
         "the layer date never came back",
       );
 
-      const single = defineBenchmark(bench, "layer datetime", {
+      const single = defineBenchmark(ctx, "layer datetime", {
         reset: async () => {
           setLayerDate(DATES[0]);
           await waitUntil(
@@ -119,6 +120,7 @@ describe("layer control datetime", () => {
 
       try {
         await runBenchmark(single);
+        await reportMetrics(single);
 
         expect(served.unmatched, "a fixture route is missing").toEqual([]);
         expectConstant(single, "id", newest);

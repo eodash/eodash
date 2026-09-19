@@ -18,6 +18,7 @@ import {
   bootBench,
   expectConstant,
   expectDistinct,
+  reportMetrics,
   runBenchmark,
   TEST_TIMEOUT,
   waitUntil,
@@ -87,7 +88,7 @@ describe("explore item selection", () => {
   test(
     "selecting a catalog item renders its layer",
     { timeout: TEST_TIMEOUT },
-    async ({ bench }) => {
+    async (ctx) => {
       const { app, query, served, isOnMap } = await bootBench(
         axiosMock,
         { routes, hrefOf: (id) => id },
@@ -147,7 +148,7 @@ describe("explore item selection", () => {
       // item that is already selected and toggles it off.
       await selectItem(ITEM_B_ID);
 
-      const benchmark = defineBenchmark(bench, "explore item", {
+      const benchmark = defineBenchmark(ctx, "explore item", {
         // Back to collection A and its item, then across to B, so the act lands
         // on an item that is never already selected.
         reset: () => selectItem(ITEM_A_ID),
@@ -155,10 +156,6 @@ describe("explore item selection", () => {
           pick(ITEM_B_ID);
         },
         isFinished: () => isOnMap(() => isRendered(ITEM_B_ID)),
-        // eodash hands a selected item straight to the builder, and on main
-        // that is ~6ms: a reading, but mostly poll granularity. Kept for what
-        // it asserts, which no other row covers.
-        isFloored: false,
         record: () => {
           const id = itemLayer(ITEM_B_ID)?.properties?.id;
           return {
@@ -170,6 +167,7 @@ describe("explore item selection", () => {
 
       try {
         await runBenchmark(benchmark);
+        await reportMetrics(benchmark);
 
         expect(served.unmatched, "a fixture route is missing").toEqual([]);
         // The layer, not the group's size: the catalog's footprint overlay

@@ -19,6 +19,7 @@ import {
   bootBench,
   expectConstant,
   expectDistinct,
+  reportMetrics,
   runBenchmark,
   TEST_TIMEOUT,
   waitUntil,
@@ -165,7 +166,7 @@ describe("mosaic", () => {
   test(
     "scrubbing the time range rebuilds the mosaic layer",
     { timeout: TEST_TIMEOUT },
-    async ({ bench }) => {
+    async (ctx) => {
       const { app, query, store, served, isOnMap, readLedgerEntry } =
         await bootBench(axiosMock, catalog, {
           template: "mosaic",
@@ -246,7 +247,7 @@ describe("mosaic", () => {
       await scrubAndSettle(RANGE_B, "the first scrub never landed");
 
       let checksBeforeAct = 0;
-      const benchmark = defineBenchmark(bench, "mosaic scrub", {
+      const benchmark = defineBenchmark(ctx, "mosaic scrub", {
         reset: async () => {
           await waitUntil(
             () => checksOn(RANGE_B) > checksBeforeAct,
@@ -264,6 +265,7 @@ describe("mosaic", () => {
 
       try {
         await runBenchmark(benchmark);
+        await reportMetrics(benchmark);
 
         expect(served.unmatched, "a fixture route is missing").toEqual([]);
         // The mosaic is the group's only layer, its source new every scrub.

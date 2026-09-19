@@ -3,7 +3,8 @@
  * source: the only client-side source reconstruction in the app.
  *
  * `@eox/layercontrol` throttles a `style` change by 100ms; the reset waits it
- * out. `isFloored: false`: the rebuild is under the 10ms floor.
+ * out. A rendering row: the window closes on the frame that draws the new
+ * bands, not on eodash writing them.
  */
 import { describe, expect, test, vi } from "vitest";
 import { buildCatalog } from "../support/catalog";
@@ -19,6 +20,7 @@ import {
   defineBenchmark,
   expectConstant,
   expectDistinct,
+  reportMetrics,
   runBenchmark,
   TEST_TIMEOUT,
   waitUntil,
@@ -33,7 +35,7 @@ describe("geozarr bands", () => {
   test(
     "dragging a band rebuilds the source",
     { timeout: TEST_TIMEOUT },
-    async ({ bench }) => {
+    async (ctx) => {
       const catalog = buildCatalog([
         { id: INDICATOR_ID, links: [], assets: { [zarrAssetName]: zarrAsset } },
       ]);
@@ -57,7 +59,7 @@ describe("geozarr bands", () => {
       dropOnRed(otherRed);
       await waitUntil(() => isOnRed(otherRed), "the first drag never landed");
 
-      const benchmark = defineBenchmark(bench, "geozarr bands", {
+      const benchmark = defineBenchmark(ctx, "geozarr bands", {
         reset: async () => {
           dropOnRed(otherRed);
           await waitUntil(() => isOnRed(otherRed), "the reset never landed");
@@ -67,11 +69,13 @@ describe("geozarr bands", () => {
         act: () => dropOnRed(red),
         isFinished: () => isOnRed(red),
         record: readLedgerEntry,
-        isFloored: false,
+        target: query("eox-map").map,
+        event: "rendercomplete",
       });
 
       try {
         await runBenchmark(benchmark);
+        await reportMetrics(benchmark);
 
         expect(served.unmatched, "a fixture route is missing").toEqual([]);
         expectConstant(benchmark, "layers", 1);

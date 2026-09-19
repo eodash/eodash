@@ -82,39 +82,45 @@ const loadGeozarrFixture = async () => {
 
 /**
  * A styled COG from GTIF-Austria. Items are published only as a parquet
- * mirror, so the first row is the fixture.
- * @param {string} collectionId
+ * mirror, so the first row is the fixture. The path carries the parent and the
+ * child id, which differ wherever a container holds more than one collection.
+ * @param {string} collectionPath
  */
-const loadGeoTiffFixture = async (collectionId) => {
-  const collectionUrl = `${GTIF}/${collectionId}/${collectionId}`;
+const loadGeoTiffFixture = async (collectionPath) => {
+  const collectionUrl = `${GTIF}/${collectionPath}`;
   const collection = await fetchJson(
-    `the ${collectionId} collection`,
+    `the ${collectionPath} collection`,
     `${collectionUrl}/collection.json`,
   );
   const styleLink = collection.links?.find((link) => link.rel === "style");
   const [assetKey] = styleLink?.["asset:keys"] ?? [];
 
   const mirror = await fetchBytes(
-    `the ${collectionId} mirror`,
+    `the ${collectionPath} mirror`,
     `${collectionUrl}/items.parquet`,
   );
   const [mirroredItem] = await parquetReadObjects({ file: mirror, rowEnd: 1 });
   const asset = mirroredItem?.assets?.[assetKey];
   if (!asset) {
     throw new Error(
-      `bench fixture: ${collectionId} row 0 carries no ${assetKey} asset`,
+      `bench fixture: ${collectionPath} row 0 carries no ${assetKey} asset`,
     );
   }
 
   return {
     assetKey,
     asset: toSerializable(asset),
-    style: await fetchJson(`the ${collectionId} style`, styleLink?.href),
+    style: await fetchJson(`the ${collectionPath} style`, styleLink?.href),
+    // `provide` serializes to JSON, so the COG travels as base64 and the bench
+    // rebuilds it as a blob url the GeoTIFF source reads without a network.
+    cog: Buffer.from(
+      await fetchBytes(`the ${collectionPath} cog`, asset.href),
+    ).toString("base64"),
   };
 };
 
 /** Keyed as the tests `inject` them. */
 export const loadFixtures = async () => ({
   geozarrFixture: await loadGeozarrFixture(),
-  geotiffFixture: await loadGeoTiffFixture("gtif-wind-atlas"),
+  geotiffFixture: await loadGeoTiffFixture("wr02solar/WR-02-Solar-Nature"),
 });

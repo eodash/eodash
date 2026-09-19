@@ -15,6 +15,7 @@ import {
   bootBench,
   expectDistinct,
   expectConstant,
+  reportMetrics,
   runBenchmark,
   TEST_TIMEOUT,
   waitUntil,
@@ -33,9 +34,16 @@ describe("global date snap", () => {
   test(
     "moving the date rebuilds all six collections' layers",
     { timeout: TEST_TIMEOUT },
-    async ({ bench }) => {
-      const { app, query, served, getLayerId, isOnMap, readLedgerEntry } =
-        await bootBench(axiosMock, catalog);
+    async (ctx) => {
+      const {
+        app,
+        query,
+        served,
+        getLayerId,
+        isOnMap,
+        readLedgerEntry,
+        whenWritten,
+      } = await bootBench(axiosMock, catalog);
 
       /**
        * A real click on the app's own button, in-page. `userEvent.click` drives
@@ -62,20 +70,22 @@ describe("global date snap", () => {
       // Selecting lands on the newest date, so that id is the act's target;
       // learn the other end by jumping there once.
       const newest = getLayerId();
-      click("#eodash-date-oldest");
-      await waitUntil(
+      const moved = whenWritten(
         () => isOnMap(() => getLayerId() !== newest),
         "the date never moved",
       );
+      click("#eodash-date-oldest");
+      await moved;
       const oldest = getLayerId();
 
       // Leave setup where the act leaves the app, or the first reset has
       // nothing to do and records zero fetches where every other records six.
-      click("#eodash-date-newest");
-      await waitUntil(
+      const back = whenWritten(
         () => isOnMap(() => getLayerId() === newest),
         "the date never came back",
       );
+      click("#eodash-date-newest");
+      await back;
 
       /** The id the act started from, so a reset that did not hold is visible. */
       let from = "";
@@ -83,14 +93,15 @@ describe("global date snap", () => {
       // both halves matter because the total alternates 17/17/2.
       let onReset = 0;
 
-      const snap = defineBenchmark(bench, "date snap", {
+      const snap = defineBenchmark(ctx, "date snap", {
         reset: async () => {
           const atStart = axiosMock.get.mock.calls.length;
-          click("#eodash-date-oldest");
-          await waitUntil(
+          const returned = whenWritten(
             () => isOnMap(() => getLayerId() === oldest),
             "the reset never returned to the oldest date",
           );
+          click("#eodash-date-oldest");
+          await returned;
           onReset = axiosMock.get.mock.calls.length - atStart;
         },
         act: () => {
@@ -99,11 +110,11 @@ describe("global date snap", () => {
         },
         isFinished: () => isOnMap(() => getLayerId() === newest),
         record: () => ({ ...readLedgerEntry(), from, onReset }),
-        isFloored: false,
       });
 
       try {
         await runBenchmark(snap);
+        await reportMetrics(snap);
 
         expect(served.unmatched, "a fixture route is missing").toEqual([]);
         // Every iteration travelled the same distance, across every collection,

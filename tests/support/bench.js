@@ -7,17 +7,14 @@ import { analysisGroup, getLayerIdentity } from "./layers";
 import { serveByPath } from "./fixtures";
 import { bootTemplate, MAP_ONLY, TIMEOUT } from "./template";
 
-/** Booting an app and repeating a flow thirty-two times outlasts the default. */
+/** Booting an app and repeating a flow twenty-two times outlasts the default. */
 export const TEST_TIMEOUT = 5 * 60 * 1000;
 
-/** Nominal. Chromium's nesting clamp makes the real interval ~4.5ms. */
+/** Nominal. Chromium clamps it to ~4.5ms, so no timed window polls. */
 const POLL_MS = 1;
 
-/**
- * Below this a reading is mostly poll granularity. Nominal polls, not real ones:
- * the real 4.5ms would set 45ms and reject flows that reproduce to under 1%.
- */
-const FLOOR_MS = 10 * POLL_MS;
+/** The reporter sees every annotation in the run, so ours says what it is. */
+export const METRICS_ANNOTATION = "bench-metrics";
 
 /** Two warmups: the iteration after a single one was still slower. */
 const RUN_OPTIONS = {
@@ -28,9 +25,6 @@ const RUN_OPTIONS = {
   warmupTime: 0,
   retainSamples: true,
 };
-
-/** Short, not zero: widgets that fetch during setup must not beat the map. */
-const FIXTURE_DELAY_MS = 5;
 
 /** From the config: `bench.from` throws on a missing file, and this cannot stat. */
 const reference = inject("benchReference");
@@ -47,6 +41,12 @@ const getBaselinePath = (name) => `${reference.dir}/${getResultFile(name)}`;
 
 /** Set by {@link bootBench}; each benchmark marks its own reset against it. */
 let getRequestCount = () => 0;
+
+/**
+ * Set by {@link bootBench}; what a timed window waits on unless a row overrides it.
+ * @type {import("@eox/map").EOxMap | null}
+ */
+let mapElement = null;
 
 /**
  * Stock templates as the benches boot them, quieted. Expert's 1200ms fly-to
@@ -74,7 +74,7 @@ const BENCH_TEMPLATES = {
  * @param {{template?: string, rasterEndpoint?: string, over?: Record<string, any>}} [boot]
  */
 export const bootBench = async (axiosMock, { routes, hrefOf }, boot = {}) => {
-  const served = serveByPath(axiosMock, routes, { delay: FIXTURE_DELAY_MS });
+  const served = serveByPath(axiosMock, routes);
   const { app, query, store } = await bootTemplate({
     endpoint: CATALOG_URL,
     ...boot,
@@ -90,6 +90,7 @@ export const bootBench = async (axiosMock, { routes, hrefOf }, boot = {}) => {
   const getLayerId = () => analysisGroup(mapEl)?.layers?.[0]?.properties?.id;
 
   getRequestCount = () => axiosMock.get.mock.calls.length;
+  mapElement = mapEl;
 
   /**
    * Where the window stops: eodash wrote the layer into the map's config.
@@ -108,20 +109,26 @@ export const bootBench = async (axiosMock, { routes, hrefOf }, boot = {}) => {
     isLanded() && Boolean(mapEl.getLayerById(getLayerId()));
 
   /**
+   * The map's own signal, for setup and resets. Arm it before whatever causes
+   * the write, then await it.
+   * @param {() => boolean} isLanded
+   * @param {string} reason
+   */
+  const whenWritten = (isLanded, reason) =>
+    settleOn(mapEl, "layerschanged", isLanded, reason).settled;
+
+  /**
    * Land on a different indicator. Clearing `selectedStac` is not a reset — the
    * map watcher ignores an empty value, so nothing is torn down.
    * @param {string} id
    */
   const resetTo = async (id) => {
-    await store.loadSelectedSTAC(hrefOf(id));
-    await vi.waitFor(
-      () => {
-        if (!isOnMap(() => Boolean(getLayerId()?.startsWith(id)))) {
-          throw new Error(`the reset has not landed on ${id}`);
-        }
-      },
-      { timeout: TIMEOUT, interval: 50 },
+    const written = whenWritten(
+      () => isOnMap(() => Boolean(getLayerId()?.startsWith(id))),
+      `the reset has not landed on ${id}`,
     );
+    await store.loadSelectedSTAC(hrefOf(id));
+    await written;
   };
 
   /** Untimed, so it can afford to resolve an OL layer. */
@@ -159,19 +166,18 @@ export const bootBench = async (axiosMock, { routes, hrefOf }, boot = {}) => {
     isOnMap,
     readLedgerEntry,
     createSelectionSpec,
+    whenWritten,
   };
 };
 
 /**
- * Wait for a condition inside a timed callback.
+ * Wait for a condition in a setup step or a reset, never in a timed window.
  *
- * A timer poll on purpose. Chromium takes a timer's nesting level from the task
- * that created it and clamps a repeating timer to 4ms past level 5, so the last
- * await in a hook decides whether this polls clamped, and unclamps the app's own
- * `setTimeout(fn, 0)` with it. Measured, awaiting a `MessagePort`, a websocket
- * message or `requestAnimationFrame` there halves the reading.
+ * The nesting clamp still decides something: Chromium takes a timer's level
+ * from the task that created it, so the last await in a reset governs whether
+ * the app's own `setTimeout(fn, 0)` runs clamped in the act that follows.
  *
- * @param {() => boolean} check must be O(1) in whatever the benchmark varies
+ * @param {() => boolean} check
  * @param {string} reason what to say when it never becomes true
  */
 export const waitUntil = (check, reason) =>
@@ -183,13 +189,77 @@ export const waitUntil = (check, reason) =>
   );
 
 /**
+ * Wait for the first `event` after which `isLanded` holds.
+ *
+ * Subscribed before the act: eox-map dispatches `layerschanged` synchronously.
+ * OpenLayers decides `rendercomplete` before dispatching it, so the first one
+ * after the write can predate it; `landedAt` rejects those and `render()` asks
+ * for one that cannot be.
+ *
+ * @param {EventTarget & {render?: () => void}} target map element or OL map
+ * @param {string} event
+ * @param {() => boolean} isLanded
+ * @param {string} name
+ * @returns {{settled: Promise<void>, dispose: () => void}}
+ */
+export const settleOn = (target, event, isLanded, name) => {
+  /** @type {ReturnType<typeof setTimeout>} */
+  let timer;
+  /** @type {() => void} */
+  let handler;
+  const dispose = () => {
+    clearTimeout(timer);
+    target.removeEventListener(event, handler);
+  };
+  const settled = new Promise((resolve, reject) => {
+    let landedAt = 0;
+    handler = (/** @type {any} */ frameEvent) => {
+      if (!landedAt && isLanded()) {
+        // `Date.now`, the clock OpenLayers stamps a frame with.
+        landedAt = Date.now();
+        if (target.render) {
+          target.render?.();
+        }
+      }
+      if (!landedAt) return;
+      const drawnAt = frameEvent?.frameState?.time;
+      if (drawnAt !== undefined && drawnAt < landedAt) return;
+      dispose();
+      resolve();
+    };
+    target.addEventListener(event, handler);
+    timer = setTimeout(() => {
+      dispose();
+      reject(new Error(`${name}: never finished`));
+    }, TIMEOUT);
+  });
+  return { settled, dispose };
+};
+
+/**
+ * What every row reports rather than asserts. `requests` counts axios; the
+ * other two count everything the page fetched, so tiles and native `fetch`
+ * stop being invisible.
+ */
+const METRICS = ["requests", "fetches", "bytes"];
+
+/** Every request the page made since the last clear, from resource timing. */
+const readNetwork = () => {
+  const entries = performance.getEntriesByType("resource");
+  return {
+    fetches: entries.length,
+    bytes: entries.reduce((total, entry) => total + entry.encodedBodySize, 0),
+  };
+};
+
+/**
  * @template T
  * @typedef {object} Benchmark one benchmark of a ranked table
  * @property {string} name
  * @property {import("vitest").Bench} bench
+ * @property {(message: string) => Promise<unknown>} annotate
  * @property {import("vitest").BenchRegistration<string>} registration
  * @property {T[]} ledger one entry per invocation, warmups included
- * @property {boolean} isFloored whether the result must clear {@link FLOOR_MS}
  */
 
 /**
@@ -200,7 +270,9 @@ export const waitUntil = (check, reason) =>
  * @property {() => unknown} act the single in-page action, timed
  * @property {() => boolean} isFinished O(1) completion test, timed
  * @property {() => T} record what proves this iteration matched its siblings
- * @property {boolean} [isFloored] false for a deliberate control benchmark
+ * @property {any} [target] what closes the window; the map element by default
+ * @property {string} [event] `layerschanged` once eodash has written the layer,
+ *   or `rendercomplete` on `mapEl.map` once the frame has drawn
  */
 
 /**
@@ -208,15 +280,23 @@ export const waitUntil = (check, reason) =>
  * runs outside the timed window, so it can afford to walk the map.
  *
  * @template T
- * @param {import("vitest").Bench} bench the fixture from the test context
+ * @param {{bench: import("vitest").Bench, annotate: (message: string) => Promise<unknown>}} ctx
+ *   the test context, for the bench fixture and the metric channel
  * @param {string} name
  * @param {BenchmarkSpec<T>} spec
  * @returns {Benchmark<T>}
  */
 export const defineBenchmark = (
-  bench,
+  { bench, annotate },
   name,
-  { reset, act, isFinished, record, isFloored = true },
+  {
+    reset,
+    act,
+    isFinished,
+    record,
+    target = mapElement,
+    event = "layerschanged",
+  },
 ) => {
   /** @type {T[]} */
   const ledger = [];
@@ -227,23 +307,28 @@ export const defineBenchmark = (
       writeResult: getResultPath(name),
       beforeEach: async () => {
         await reset();
-        // Synchronous: see the nesting-level rule on `waitUntil`. Per benchmark,
-        // or a ranked table has them all share one mark.
         requestsAtReset = getRequestCount();
+        performance.clearResourceTimings();
       },
       afterEach: () => {
         ledger.push({
           ...record(),
           requests: getRequestCount() - requestsAtReset,
+          ...readNetwork(),
         });
       },
     },
     async () => {
-      await act();
-      await waitUntil(isFinished, `${name}: never finished`);
+      const { settled, dispose } = settleOn(target, event, isFinished, name);
+      try {
+        await act();
+        await settled;
+      } finally {
+        dispose();
+      }
     },
   );
-  return { name, bench, registration, ledger, isFloored };
+  return { name, bench, annotate, registration, ledger };
 };
 
 /**
@@ -256,22 +341,13 @@ const getReferenceBenchmark = ({ name, bench }) =>
     : [];
 
 /**
- * Every invocation ran, and the reading is not mostly granularity. `min` so a
- * benchmark cannot clear the floor on noise it happened to collect.
- *
+ * Every invocation recorded an entry, so none silently skipped its ledger.
  * @param {Benchmark<unknown>} benchmark
- * @param {{min: number}} latency
  */
-const assertValid = ({ name, ledger, isFloored }, latency) => {
+const assertLedgerComplete = ({ name, ledger }) =>
   expect(ledger, `${name}: an invocation recorded nothing`).toHaveLength(
     RUN_OPTIONS.warmupIterations + RUN_OPTIONS.iterations,
   );
-  if (isFloored && latency.min < FLOOR_MS) {
-    throw new Error(
-      `${name}: ${Math.round(latency.min)}ms is under the ${FLOOR_MS}ms floor, so it measures the poll interval rather than the app.\nledger: ${JSON.stringify(ledger)}`,
-    );
-  }
-};
 
 /**
  * Run one benchmark, against the previous run's result where there is one.
@@ -280,38 +356,50 @@ const assertValid = ({ name, ledger, isFloored }, latency) => {
 export const runBenchmark = async (benchmark) => {
   const [previous] = getReferenceBenchmark(benchmark);
   // `bench.compare` needs two registrations, so a first run just runs.
-  if (!previous) {
-    assertValid(
-      benchmark,
-      (await benchmark.registration.run(RUN_OPTIONS)).latency,
-    );
-    return;
-  }
-  const storage = await benchmark.bench.compare(
-    benchmark.registration,
-    previous,
-    RUN_OPTIONS,
-  );
-  assertValid(benchmark, storage.get(benchmark.name).latency);
+  await (previous
+    ? benchmark.bench.compare(benchmark.registration, previous, RUN_OPTIONS)
+    : benchmark.registration.run(RUN_OPTIONS));
+  assertLedgerComplete(benchmark);
 };
 
 /**
  * Run several as one ranked table. tinybench runs the tasks one after another
  * in registration order, never interleaved, so drift over the run lands on the
  * last rows. The baseline ran in the same order.
- * @param {import("vitest").Bench} bench
  * @param {Benchmark<unknown>[]} benchmarks
  */
-export const compareBenchmarks = async (bench, benchmarks) => {
-  const storage = await bench.compare(
+export const compareBenchmarks = async (benchmarks) => {
+  const [{ bench }] = benchmarks;
+  const hasEveryBaseline = benchmarks.every(({ name }) =>
+    reference.files.includes(getResultFile(name)),
+  );
+  await bench.compare(
     ...benchmarks.map((benchmark) => benchmark.registration),
-    ...benchmarks.flatMap(getReferenceBenchmark),
+    ...(hasEveryBaseline ? benchmarks.flatMap(getReferenceBenchmark) : []),
     RUN_OPTIONS,
   );
-  for (const benchmark of benchmarks) {
-    assertValid(benchmark, storage.get(benchmark.name).latency);
-  }
+  benchmarks.forEach((benchmark) => assertLedgerComplete(benchmark));
 };
+
+/**
+ * Hand the run's metrics to the reporter. These never fail a row: a benchmark
+ * whose request count drifted still produced a number worth reading, and the
+ * drift is the finding rather than the obstacle.
+ * @param {Benchmark<any>} benchmark
+ */
+export const reportMetrics = ({ name, ledger, annotate }) =>
+  annotate(
+    JSON.stringify({
+      kind: METRICS_ANNOTATION,
+      name,
+      metrics: Object.fromEntries(
+        METRICS.map((field) => [
+          field,
+          [...new Set(ledger.map((entry) => entry[field]))],
+        ]),
+      ),
+    }),
+  );
 
 /**
  * Every entry of `field` held one value — the shape most "this iteration did

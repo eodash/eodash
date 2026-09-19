@@ -18,6 +18,7 @@ import {
   bootBench,
   expectDistinct,
   expectConstant,
+  reportMetrics,
   runBenchmark,
   TEST_TIMEOUT,
   waitUntil,
@@ -49,7 +50,7 @@ describe("parquet-mirrored selection", () => {
   test(
     "selecting a mirrored indicator decodes its items and builds a layer",
     { timeout: TEST_TIMEOUT },
-    async ({ bench }) => {
+    async (ctx) => {
       const { app, store, served, getLayerId, isOnMap, readLedgerEntry } =
         await bootBench(axiosMock, catalog);
       await commands.serveFiles({
@@ -91,7 +92,7 @@ describe("parquet-mirrored selection", () => {
         "the mirrored indicator never rendered",
       );
 
-      const selection = defineBenchmark(bench, "mirrored selection", {
+      const selection = defineBenchmark(ctx, "mirrored selection", {
         // Land on a plain indicator, then reopen the picker so the act is one
         // click. The reset also revokes the previous run's object URLs, which
         // is real work and belongs outside the window.
@@ -113,6 +114,7 @@ describe("parquet-mirrored selection", () => {
 
       try {
         await runBenchmark(selection);
+        await reportMetrics(selection);
 
         expect(served.unmatched, "a fixture route is missing").toEqual([]);
         // The indicator, its child, and the parquet. The item itself is a blob

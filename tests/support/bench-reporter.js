@@ -3,11 +3,52 @@
  * Vitest prints a table per file and ranks within it, but never compares a
  * benchmark to anything outside its own group.
  */
-import { writeFileSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import colors from "tinyrainbow";
+
+/** Matches `METRICS_ANNOTATION` in `bench.js`, which runs in the browser. */
+const METRICS_ANNOTATION = "bench-metrics";
 
 /** Written on every run; CI appends it to the step summary. */
 const REPORT_FILE = "bench-report.md";
+/** Beside the results, so `bench:baseline` copies it with them. */
+const PROVENANCE_FILE = "provenance.json";
+
+/**
+ * Empty rather than throwing: a checkout without an `origin` should still get
+ * its report.
+ * @param {string[]} args
+ * @returns {string}
+ */
+const git = (args) => {
+  try {
+    return execFileSync("git", args, { encoding: "utf8" }).trim();
+  } catch {
+    return "";
+  }
+};
+
+/**
+ * `git@github.com:owner/repo.git` and the https form both reduce to this.
+ * @param {string} sha
+ */
+const commitUrl = (sha) => {
+  const repo = git(["remote", "get-url", "origin"])
+    .replace(/^git@github\.com:/, "https://github.com/")
+    .replace(/\.git$/, "");
+  return repo ? `${repo}/commit/${sha}` : "";
+};
+
+/** Without it a harness change reads as a code change. */
+const provenance = () => {
+  const sha = process.env.GITHUB_SHA || git(["rev-parse", "--short", "HEAD"]);
+  return JSON.stringify({
+    sha,
+    url: commitUrl(sha),
+    at: new Date().toISOString(),
+  });
+};
 
 const oneDecimal = (value) => value.toFixed(1);
 
@@ -22,7 +63,7 @@ const COLUMNS = [
     title: "min",
     read: (t) => t.latency.min,
     format: oneDecimal,
-    means: "fastest sample; what the floor is checked against",
+    means: "fastest sample",
   },
   {
     title: "p50",
@@ -63,8 +104,37 @@ const COLUMNS = [
 ];
 
 const HEAD = ["benchmark", ...COLUMNS.map(({ title }) => title), "median Δ"];
+
+const METRIC_COLUMNS = [
+  {
+    field: "requests",
+    format: String,
+    means: "axios calls the act made; the app's own fetches, all mocked",
+  },
+  {
+    field: "fetches",
+    format: String,
+    means:
+      "every request the page made, so tiles and native `fetch` count too; a zero means the browser answered from cache",
+  },
+  {
+    field: "bytes",
+    format: (value) => (value ? `${Math.round(value / 1024)}K` : "0"),
+    means: "transferred over those requests",
+  },
+];
+const METRICS_HEAD = ["benchmark", ...METRIC_COLUMNS.map(({ field }) => field)];
 const UNSEEN = "new";
 const SAME = "=";
+
+/**
+ * One value across every iteration, or all the values it took. A metric that
+ * varied means the row did unequal work, which is worth seeing rather than
+ * failing on.
+ * @param {unknown[]} values
+ * @param {(value: any) => string} format
+ */
+const toMetricCell = (values, format) => values.map(format).join(", ");
 
 /**
  * The live median against the middle two thirds of the baseline's samples. A
@@ -142,9 +212,9 @@ const compareRuns = (modules, referenceSuffix) => {
 /** @param {{cells: string[], overall: string}} row */
 const toCells = ({ cells, overall }) => [...cells, overall];
 
-/** @param {string[][]} table */
+/** @param {string[][]} table its head row decides the column count */
 const measure = (table) =>
-  HEAD.map((_, index) =>
+  table[0].map((_, index) =>
     Math.max(...table.map((cells) => cells[index].length)),
   );
 
@@ -172,9 +242,24 @@ const renderLine = (cells, widths, overall) => {
 };
 
 export class BenchReporter {
-  /** @param {{referenceSuffix: string}} reference */
-  constructor({ referenceSuffix }) {
+  /** @param {{referenceSuffix: string, dir: string, resultsDir: string}} reference */
+  constructor({ referenceSuffix, dir, resultsDir }) {
     this.referenceSuffix = referenceSuffix;
+    this.baselineProvenance = `${dir}/${PROVENANCE_FILE}`;
+    this.resultsProvenance = `${resultsDir}/${PROVENANCE_FILE}`;
+    /** @type {{name: string, metrics: Record<string, unknown[]>}[]} */
+    this.metrics = [];
+  }
+
+  /**
+   * Rows report their metrics rather than asserting them, so they arrive here
+   * as annotations instead of as failures.
+   * @param {unknown} _testCase
+   * @param {{message: string}} annotation
+   */
+  onTestCaseAnnotate(_testCase, annotation) {
+    if (!annotation.message.includes(METRICS_ANNOTATION)) return;
+    this.metrics.push(JSON.parse(annotation.message));
   }
 
   /** @param {import("vitest/node").Vitest} vitest */
@@ -200,23 +285,65 @@ export class BenchReporter {
       this.ctx.logger.log(renderLine(toCells(row), widths, row.overall));
     }
 
+    const metricRows = this.metrics.map(({ name, metrics }) => [
+      name,
+      ...METRIC_COLUMNS.map(({ field, format }) =>
+        toMetricCell(metrics[field] ?? [], format),
+      ),
+    ]);
+    if (metricRows.length) {
+      const metricWidths = measure([METRICS_HEAD, ...metricRows]);
+      this.ctx.logger.log("");
+      this.ctx.logger.log(renderLine(METRICS_HEAD, metricWidths));
+      for (const cells of metricRows) {
+        // Red where a metric took more than one value across the iterations.
+        const varied = cells.slice(1).some((cell) => cell.includes(","));
+        this.ctx.logger.log(
+          varied
+            ? colors.red(renderLine(cells, metricWidths))
+            : renderLine(cells, metricWidths),
+        );
+      }
+    }
+
+    writeFileSync(this.resultsProvenance, provenance());
+    /** @type {{sha: string, url: string, at: string} | undefined} */
+    const baseline = existsSync(this.baselineProvenance)
+      ? JSON.parse(readFileSync(this.baselineProvenance, "utf8"))
+      : undefined;
+
     writeFileSync(
       REPORT_FILE,
       [
         "### Benchmarks",
         "",
-        "Previous run → this run.",
+        baseline
+          ? `Previous run → this run. Baseline ${baseline.url ? `[\`${baseline.sha}\`](${baseline.url})` : `\`${baseline.sha}\``}, ${baseline.at}.`
+          : "Previous run → this run. The baseline predates provenance, so what it measured is unknown.",
         "",
         `| ${HEAD.join(" | ")} |`,
         `| ${HEAD.map(() => "---").join(" | ")} |`,
         ...rows.map((row) => `| ${toCells(row).join(" | ")} |`),
         "",
+        ...(metricRows.length
+          ? [
+              "Metrics, per iteration. More than one value means the row did",
+              "unequal work between iterations.",
+              "",
+              `| ${METRICS_HEAD.join(" | ")} |`,
+              `| ${METRICS_HEAD.map(() => "---").join(" | ")} |`,
+              ...metricRows.map((cells) => `| ${cells.join(" | ")} |`),
+              "",
+            ]
+          : []),
         "<details><summary>Glossary</summary>",
         "",
         "| column | meaning |",
         "| --- | --- |",
         ...COLUMNS.map(({ title, means }) => `| ${title} | ${means} |`),
-        "| median Δ | change in the median when it leaves the middle two thirds of the baseline's samples; `=` inside |",
+        "| median Δ | change in the median (p50) when it leaves the middle two thirds of the baseline's samples; `=` inside |",
+        ...METRIC_COLUMNS.map(({ field, means }) => `| ${field} | ${means} |`),
+        "| | More than one value in a metric means the row did unequal work between iterations. |",
         "",
         "</details>",
         "",

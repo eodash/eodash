@@ -37,7 +37,10 @@ export const serveFiles = async (ctx, routes) =>
     (file) => (route) =>
       route.fulfill({
         path: resolve(ctx.project.config.root, file),
-        headers: { "access-control-allow-origin": "*" },
+        headers: {
+          "access-control-allow-origin": "*",
+          "timing-allow-origin": "*",
+        },
       }),
   );
 
@@ -60,7 +63,12 @@ export const serveResponses = async (ctx, routes) =>
             status: response.status ?? 200,
             body: response.body ?? "",
             contentType: response.contentType ?? "application/json",
-            headers: { "access-control-allow-origin": "*" },
+            // `timing-allow-origin` too, or resource timing reports zero bytes for
+            // anything cross-origin and a benchmark reads as having fetched nothing.
+            headers: {
+              "access-control-allow-origin": "*",
+              "timing-allow-origin": "*",
+            },
           }),
   );
 

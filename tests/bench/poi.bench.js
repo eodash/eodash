@@ -16,6 +16,7 @@ import {
   bootBench,
   expectDistinct,
   expectConstant,
+  reportMetrics,
   runBenchmark,
   TEST_TIMEOUT,
   waitUntil,
@@ -45,7 +46,7 @@ describe("POI indicator selection", () => {
   test(
     "selecting a POI indicator builds the observation points layer",
     { timeout: TEST_TIMEOUT },
-    async ({ bench }) => {
+    async (ctx) => {
       const { app, served, getLayerId, isOnMap, readLedgerEntry } =
         await bootBench(axiosMock, catalog);
 
@@ -83,7 +84,7 @@ describe("POI indicator selection", () => {
         "the observation points layer never rendered",
       );
 
-      const selection = defineBenchmark(bench, "poi selection", {
+      const selection = defineBenchmark(ctx, "poi selection", {
         reset: async () => {
           await openPicker();
           await pick(RESET_INDICATOR_ID);
@@ -105,6 +106,7 @@ describe("POI indicator selection", () => {
 
       try {
         await runBenchmark(selection);
+        await reportMetrics(selection);
 
         expect(served.unmatched, "a fixture route is missing").toEqual([]);
         expectConstant(selection, "id", POINTS);
