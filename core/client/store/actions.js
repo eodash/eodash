@@ -114,21 +114,24 @@ export const setDatetime = async (value) => {
   datetime.value = value;
   const { selectedStac, selectedCompareStac } = useSTAcStore();
 
-  await assignDataLayers(mapEl.value, {
-    readers: eodashCollections,
-    stac: selectedStac,
-    timeOrItem: value,
-    event: "time:updated",
-  });
-
-  if (selectedCompareStac) {
-    await assignDataLayers(mapCompareEl.value, {
-      readers: eodashCompareCollections,
-      stac: selectedCompareStac,
+  await Promise.all([
+    assignDataLayers(mapEl.value, {
+      readers: eodashCollections,
+      stac: selectedStac,
       timeOrItem: value,
-      event: "compareTime:updated",
-    });
-  }
+      event: "time:updated",
+    }),
+    ...(selectedCompareStac
+      ? [
+          assignDataLayers(mapCompareEl.value, {
+            readers: eodashCompareCollections,
+            stac: selectedCompareStac,
+            timeOrItem: value,
+            event: "compareTime:updated",
+          }),
+        ]
+      : []),
+  ]);
 };
 
 /**

@@ -33,17 +33,17 @@ export const setMapProjFromCol = async (STAcCollection) => {
 };
 
 /**
- * Resolves the end date of a collection's temporal extent, falling back to the current date.
+ * Registers each projection once. A code counts as registered only after its
+ * definition is fetched, so duplicates left in the list would each fetch it.
  *
- * @param {import("@eodash/stac").STACCollection | null} [collection]
- * @returns {Date}
+ * @param {import("@eodash/stac").Projection[]} projections
  */
-export const getLatestDatetime = (collection) => {
-  const interval = collection?.extent?.temporal?.interval;
-  const declaredEnd = interval?.[0]?.[1];
-  if (!declaredEnd) {
-    return new Date();
-  }
-  const end = new Date(declaredEnd);
-  return isNaN(end.getTime()) ? new Date() : end;
+export const registerProjections = async (projections) => {
+  const byCode = new Map(
+    projections.map((projection) => [
+      getProjectionCode(projection),
+      projection,
+    ]),
+  );
+  await Promise.all([...byCode.values()].map(registerProjection));
 };

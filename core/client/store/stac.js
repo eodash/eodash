@@ -15,7 +15,6 @@ import {
   mapEl,
   poi,
 } from "@/store/states";
-import { getLatestDatetime } from "@/eodashSTAC/triggers";
 import { updateIndicatorLayers } from "@/eodashSTAC/layers";
 import { collectionsPalette } from "@/utils/states";
 import log from "loglevel";
@@ -383,3 +382,20 @@ export const useSTAcStore = defineStore("stac", () => {
     loadTileMatrixSetRegistry,
   };
 });
+
+/**
+ * Resolves the end date of a collection's temporal extent, falling back to the
+ * current date.
+ *
+ * @param {import("@eodash/stac").STACCollection | null} [collection]
+ * @returns {Date}
+ */
+function getLatestDatetime(collection) {
+  const interval = collection?.extent?.temporal?.interval;
+  const declaredEnd = interval?.[0]?.[1];
+  if (!declaredEnd) {
+    return new Date();
+  }
+  const end = new Date(declaredEnd);
+  return isNaN(end.getTime()) ? new Date() : end;
+}

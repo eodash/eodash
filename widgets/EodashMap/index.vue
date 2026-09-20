@@ -353,23 +353,11 @@ const showCompare = computed(() =>
   props.enableCompare && !!selectedCompareStac.value ? "" : "first",
 );
 
-/**
- * `sync` hands the compare map the main map's own View instance, which the main
- * map then loses when the compare map is removed. Held here so it can be given
- * back.
- * @type {import("ol").View | null}
- */
-let viewHolder = null;
-
+// `sync` hands the compare map the main map's own View, and the compare map is
+// only hidden on close, so main keeps the view the user was on.
 watch(selectedCompareStac, (compare) => {
   if (compare && compareMap.value) {
-    viewHolder = compareMap.value.map.getView();
     /** @type {any} */ (compareMap.value).sync = eoxMap.value;
-    return;
-  }
-  if (viewHolder) {
-    eoxMap.value?.map.setView(viewHolder);
-    viewHolder = null;
   }
 });
 
