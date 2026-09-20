@@ -173,7 +173,7 @@ describe("getObservationPointsLayer", () => {
     expect(fallback.else).toBe(true);
   });
 
-  test("keeps the interactions the layer already carries in the tree", () => {
+  test("keeps the interactions the layer already carries", () => {
     const interaction = { type: "select", options: { id: "stac-items" } };
 
     const layer = getObservationPointsLayer([points({})], {

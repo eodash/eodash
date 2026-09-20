@@ -146,8 +146,8 @@ describe("building layers", () => {
   describe("updateLayers", () => {
     const LAYER_ID = "coll;:;i1;:;EPSG:3857";
 
-    /** The tree as the app holds it: this collection's layer in a group, plus a basemap. */
-    const currentTree = () => {
+    /** The layers as the app holds them: this collection's in a group, plus a basemap. */
+    const currentLayers = () => {
       const old = { type: "Tile", properties: { id: LAYER_ID } };
       const osm = { type: "Tile", properties: { id: "osm" } };
       return {
@@ -163,7 +163,7 @@ describe("building layers", () => {
     test("swaps this collection's layers for the new item's, keeping the group", async () => {
       serve();
       const col = await reader();
-      const { old, osm, layers } = currentTree();
+      const { old, osm, layers } = currentLayers();
 
       const updated = await col.updateLayers(
         "2023-01-10T00:00:00Z",
@@ -179,7 +179,7 @@ describe("building layers", () => {
       // what did not change is the layer eox-map already holds, not a copy of it
       expect(updated?.layers[1]).toBe(osm);
       expect(updated?.layers).not.toBe(layers);
-      // and the tree it was handed still holds the old layer
+      // and the layers it was handed still hold the old one
       expect(layers[0].layers).toEqual([old]);
     });
 
@@ -190,19 +190,19 @@ describe("building layers", () => {
       const updated = await col.updateLayers(
         "2023-01-10T00:00:00Z",
         LAYER_ID,
-        currentTree().layers,
+        currentLayers().layers,
       );
 
       expect(updated?.projections).toEqual([3035]);
     });
 
-    test("warns and updates nothing when the tree holds no layer of this collection", async () => {
+    test("warns and updates nothing when no layer of this collection is there", async () => {
       const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
       serve();
       const col = await reader();
-      const { osm } = currentTree();
+      const { osm } = currentLayers();
 
-      // the collection's layer has since been removed from the tree
+      // the collection's layer has since been removed
       const updated = await col.updateLayers("2023-01-10T00:00:00Z", LAYER_ID, [
         osm,
       ]);
@@ -222,7 +222,7 @@ describe("building layers", () => {
       const updated = await col.updateLayers(
         "2023-01-10T00:00:00Z",
         LAYER_ID,
-        currentTree().layers,
+        currentLayers().layers,
       );
 
       expect(updated.layers).toEqual([]);
@@ -230,6 +230,26 @@ describe("building layers", () => {
         expect.stringContaining("no item at"),
         "2023-01-10T00:00:00Z",
       );
+    });
+  });
+
+  describe("the built item", () => {
+    test("follows the build, so a failed build leaves none", async () => {
+      serve();
+      const col = await reader();
+      await col.getLayers("2023-01-01T00:00:00Z");
+      expect(col.item?.id).toBe("i1");
+
+      const served = client.get.getMockImplementation();
+      // the item resolves; whatever the build reads after it does not
+      client.get.mockImplementation((/** @type {string} */ url, config) =>
+        url === "https://cat/items/i2.json"
+          ? served?.(url, config)
+          : Promise.reject(new Error("boom")),
+      );
+
+      await expect(col.getLayers("2023-01-10T00:00:00Z")).rejects.toThrow();
+      expect(col.item).toBeUndefined();
     });
   });
 

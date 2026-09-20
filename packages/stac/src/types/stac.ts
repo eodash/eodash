@@ -286,6 +286,8 @@ export interface Render {
 
 interface BaseSTACAsset extends BaseAsset, AuthRefs {
   attribution?: string;
+  /** File extension: the asset's size in bytes. */
+  "file:size"?: number;
   /** Projection extension: the code, e.g. `EPSG:3035`. */
   "proj:code"?: string;
   /**

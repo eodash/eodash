@@ -65,7 +65,7 @@ export const getIndicatorLayers = async (
  * @param {import("../types").STACCollection[]} collections - Array of STAC Collections
  * @param {object} [options]
  * @param {import("../types").ObservationPointsThemes} [options.themes] - Theme styling options
- * @param {import("@eox/map").EoxLayer[]} [options.currentLayers] - Existing layer hierarchy to preserve interactions
+ * @param {import("@eox/map").EoxLayer[]} [options.currentLayers] - Layers whose interactions are preserved
  * @returns {import("@eox/map").EoxLayer | null} Vector layer definition or null if no points exist
  */
 export const getObservationPointsLayer = (

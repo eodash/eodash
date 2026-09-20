@@ -9,7 +9,7 @@ import { isBaseLayerOrOverlay } from "./assets.js";
 export const LAYER_ID_SEPARATOR = ";:;";
 
 /**
- * Finds a layer by its ID in a layer tree.
+ * Finds a layer by its ID, across nested groups.
  *
  * @param {import("@eox/map").EoxLayer[]} layers
  * @param {string} layer - Layer ID
@@ -70,7 +70,7 @@ export const findLayersByLayerPrefix = (layers, referenceLayer) => {
 };
 
 /**
- * Removes layers by ID from a layer tree.
+ * Removes layers by ID, across nested groups.
  *
  * @param {import("@eox/map").EoxLayer[]} layers
  * @param {string[]} layerIds
@@ -102,9 +102,9 @@ export const removeLayers = (layers, layerIds) => {
 };
 
 /**
- * Replaces target layers in a layer tree immutably, preserving unchanged array references.
+ * Replaces target layers immutably, preserving unchanged array references.
  *
- * @param {import("@eox/map").EoxLayer[]} layers - Existing layer tree array
+ * @param {import("@eox/map").EoxLayer[]} layers - The layers to replace within
  * @param {string | string[]} toRemove - ID(s) of layers to remove
  * @param {import("@eox/map").EoxLayer[]} toInsert - New layers to insert
  * @returns {import("@eox/map").EoxLayer[]}

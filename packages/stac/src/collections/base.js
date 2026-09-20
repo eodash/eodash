@@ -102,8 +102,9 @@ export const createCollectionBase = ({
      */
     getLayers: async (datetime, context = {}) => {
       const item = await getItem(datetime, context.bbox);
+      // The attempt invalidates the last one; only a finished build sets it.
       if (context.stateful !== false) {
-        builtItem = item;
+        builtItem = undefined;
       }
       if (!item) {
         console.warn(
@@ -111,17 +112,21 @@ export const createCollectionBase = ({
         );
         return { layers: [], projections: [], item: undefined };
       }
-      return { ...(await buildLayers(item, getBuildContext(context))), item };
+      const built = await buildLayers(item, getBuildContext(context));
+      if (context.stateful !== false) {
+        builtItem = item;
+      }
+      return { ...built, item };
     },
 
     /**
-     * Replaces layers belonging to this collection in an existing layer tree.
+     * Replaces the layers belonging to this collection in `currentLayers`.
      *
      * @param {import("../types").Datetime} datetime
      * @param {string} layerId - Target layer ID to update
-     * @param {import("@eox/map").EoxLayer[]} currentLayers - Current map layer hierarchy
+     * @param {import("@eox/map").EoxLayer[]} currentLayers - The map's current layers
      * @param {import("../layers/index.js").BuildContext} [context]
-     * @returns {Promise<import("../types").BuiltLayers>} Updated layer hierarchy and projections
+     * @returns {Promise<import("../types").BuiltLayers>} The updated layers and their projections
      */
     updateLayers: async (datetime, layerId, currentLayers, context = {}) => {
       const item = await getItem(datetime, context.bbox);
