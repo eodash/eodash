@@ -52,14 +52,15 @@ export const xyzLinks = (n) =>
 
 /** Opaque, like a real catalog's, so no collection id prefixes an item id. */
 let itemCounter = 0;
-const nextItemId = () => `it${(itemCounter += 1).toString().padStart(6, "0")}`;
+const nextItemId = () =>
+  `item-${(itemCounter += 1).toString().padStart(6, "0")}`;
 
 /** @param {string} id */
-const getIndicatorUrl = (id) => `${ENDPOINT}/i/${id}.json`;
+const getIndicatorUrl = (id) => `${ENDPOINT}/indicators/${id}.json`;
 /** @param {string} id */
-const getChildUrl = (id) => `${ENDPOINT}/c/${id}.json`;
+const getChildUrl = (id) => `${ENDPOINT}/collections/${id}.json`;
 /** @param {string} id */
-const getItemUrl = (id) => `${ENDPOINT}/it/${id}.json`;
+const getItemUrl = (id) => `${ENDPOINT}/items/${id}.json`;
 
 /**
  * @typedef {object} Row one indicator in the catalog
@@ -107,7 +108,7 @@ export const buildCatalog = (rows) => {
       children === 1 ? id : `${id}-c${index}`,
     );
 
-    routes[`/i/${id}.json`] = stacCollection({
+    routes[`/indicators/${id}.json`] = stacCollection({
       id,
       title: id,
       extent,
@@ -141,7 +142,7 @@ export const buildCatalog = (rows) => {
       // No items: the child links are the observation points, which become one
       // Vector layer of markers.
       if (locations) {
-        routes[`/c/${childId}.json`] = stacCollection({
+        routes[`/collections/${childId}.json`] = stacCollection({
           id: childId,
           title: childId,
           extent,
@@ -160,7 +161,7 @@ export const buildCatalog = (rows) => {
 
       // No item links either: the items come from the parquet, as blob links.
       if (mirror) {
-        routes[`/c/${childId}.json`] = stacCollection({
+        routes[`/collections/${childId}.json`] = stacCollection({
           id: childId,
           title: childId,
           extent,
@@ -178,7 +179,7 @@ export const buildCatalog = (rows) => {
 
       const itemIds = DATES.map(() => nextItemId());
 
-      routes[`/c/${childId}.json`] = stacCollection({
+      routes[`/collections/${childId}.json`] = stacCollection({
         id: childId,
         title: childId,
         extent,
@@ -192,7 +193,7 @@ export const buildCatalog = (rows) => {
       });
 
       DATES.forEach((datetime, index) => {
-        routes[`/it/${itemIds[index]}.json`] = stacItem({
+        routes[`/items/${itemIds[index]}.json`] = stacItem({
           id: itemIds[index],
           collection: childId,
           bbox,

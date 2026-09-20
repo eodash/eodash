@@ -39,7 +39,7 @@ describe("geozarr bands", () => {
       const catalog = buildCatalog([
         { id: INDICATOR_ID, links: [], assets: { [zarrAssetName]: zarrAsset } },
       ]);
-      catalog.routes[`/c/${INDICATOR_ID}.json`].links.push({
+      catalog.routes[`/collections/${INDICATOR_ID}.json`].links.push({
         rel: "style",
         href: STYLE_ROUTE,
         type: "application/json",

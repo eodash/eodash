@@ -39,8 +39,11 @@ const getResultPath = (name) =>
 /** @param {string} name */
 const getBaselinePath = (name) => `${reference.dir}/${getResultFile(name)}`;
 
-/** Set by {@link bootBench}; each benchmark marks its own reset against it. */
-let getRequestCount = () => 0;
+/**
+ * Set by {@link bootBench}; each benchmark marks its own reset against them.
+ * @type {() => string[]}
+ */
+let getRequestUrls = () => [];
 
 /**
  * Set by {@link bootBench}; what a timed window waits on unless a row overrides it.
@@ -89,8 +92,11 @@ export const bootBench = async (axiosMock, { routes, hrefOf }, boot = {}) => {
   /** O(1): finds among three top-level groups, then indexes position zero. */
   const getLayerId = () => analysisGroup(mapEl)?.layers?.[0]?.properties?.id;
 
-  getRequestCount = () => axiosMock.get.mock.calls.length;
+  getRequestUrls = () => axiosMock.get.mock.calls.map(([url]) => String(url));
   mapElement = mapEl;
+  // The boot's own module loads fill the default 250-entry buffer on their own.
+  performance.setResourceTimingBufferSize(5000);
+  performance.clearResourceTimings();
 
   /**
    * Where the window stops: eodash wrote the layer into the map's config.
@@ -237,20 +243,25 @@ export const settleOn = (target, event, isLanded, name) => {
 };
 
 /**
- * What every row reports rather than asserts. `requests` counts axios; the
- * other two count everything the page fetched, so tiles and native `fetch`
- * stop being invisible.
+ * Everything the page fetched natively during one act, by when each request
+ * started. Read once per row after the run, so a request that outlived its
+ * window is still charged to the act that began it.
+ * @param {{startedAt: number, endedAt: number}} window
  */
-const METRICS = ["requests", "fetches", "bytes"];
-
-/** Every request the page made since the last clear, from resource timing. */
-const readNetwork = () => {
-  const entries = performance.getEntriesByType("resource");
-  return {
-    fetches: entries.length,
-    bytes: entries.reduce((total, entry) => total + entry.encodedBodySize, 0),
-  };
-};
+const fetchedDuring = ({ startedAt, endedAt }) =>
+  performance
+    .getEntriesByType("resource")
+    .filter(
+      (entry) =>
+        entry instanceof PerformanceResourceTiming &&
+        entry.startTime >= startedAt &&
+        entry.startTime <= endedAt,
+    )
+    .map((entry) => ({
+      url: entry.name,
+      bytes: entry.encodedBodySize,
+      status: entry.responseStatus,
+    }));
 
 /**
  * @template T
@@ -301,20 +312,24 @@ export const defineBenchmark = (
   /** @type {T[]} */
   const ledger = [];
   let requestsAtReset = 0;
+  let startedAt = 0;
   const registration = bench(
     name,
     {
       writeResult: getResultPath(name),
       beforeEach: async () => {
         await reset();
-        requestsAtReset = getRequestCount();
-        performance.clearResourceTimings();
+        requestsAtReset = getRequestUrls().length;
+        startedAt = performance.now();
       },
       afterEach: () => {
+        const requested = getRequestUrls().slice(requestsAtReset);
         ledger.push({
           ...record(),
-          requests: getRequestCount() - requestsAtReset,
-          ...readNetwork(),
+          requests: requested.length,
+          requested,
+          startedAt,
+          endedAt: performance.now(),
         });
       },
     },
@@ -363,9 +378,9 @@ export const runBenchmark = async (benchmark) => {
 };
 
 /**
- * Run several as one ranked table. tinybench runs the tasks one after another
- * in registration order, never interleaved, so drift over the run lands on the
- * last rows. The baseline ran in the same order.
+ * Run several as one ranked table. tinybench warms every task first, then times
+ * them one after another in registration order, so drift over the run lands on
+ * the last rows. The baseline ran in the same order.
  * @param {Benchmark<unknown>[]} benchmarks
  */
 export const compareBenchmarks = async (benchmarks) => {
@@ -392,12 +407,10 @@ export const reportMetrics = ({ name, ledger, annotate }) =>
     JSON.stringify({
       kind: METRICS_ANNOTATION,
       name,
-      metrics: Object.fromEntries(
-        METRICS.map((field) => [
-          field,
-          [...new Set(ledger.map((entry) => entry[field]))],
-        ]),
-      ),
+      iterations: ledger.slice(RUN_OPTIONS.warmupIterations).map((entry) => ({
+        requested: entry.requested,
+        fetched: fetchedDuring(entry),
+      })),
     }),
   );
 

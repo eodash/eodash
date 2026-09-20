@@ -12,8 +12,9 @@ const METRICS_ANNOTATION = "bench-metrics";
 
 /** Written on every run; CI appends it to the step summary. */
 const REPORT_FILE = "bench-report.md";
-/** Beside the results, so `bench:baseline` copies it with them. */
+/** Beside the results, so `bench:baseline` copies them with the rows. */
 const PROVENANCE_FILE = "provenance.json";
+const METRICS_FILE = "metrics.json";
 
 /**
  * Empty rather than throwing: a checkout without an `origin` should still get
@@ -105,36 +106,166 @@ const COLUMNS = [
 
 const HEAD = ["benchmark", ...COLUMNS.map(({ title }) => title), "median Δ"];
 
+/** @param {number} value */
+const kilobytes = (value) => (value ? `${Math.round(value / 1024)}K` : "0");
+
 const METRIC_COLUMNS = [
   {
     field: "requests",
     format: String,
-    means: "axios calls the act made; the app's own fetches, all mocked",
+    means:
+      "requests the application issued through its HTTP client per run; the tests resolve them from fixtures (`mocked`), so nothing is transferred",
   },
   {
     field: "fetches",
     format: String,
     means:
-      "every request the page made, so tiles and native `fetch` count too; a zero means the browser answered from cache",
+      "requests the browser issued over the network per run: tiles, data files, anything the tests do not intercept",
   },
   {
     field: "bytes",
-    format: (value) => (value ? `${Math.round(value / 1024)}K` : "0"),
-    means: "transferred over those requests",
+    format: kilobytes,
+    means:
+      "encoded body size of the responses; 0 where the origin sends no `timing-allow-origin` header",
   },
 ];
 const METRICS_HEAD = ["benchmark", ...METRIC_COLUMNS.map(({ field }) => field)];
+const URLS_HEAD = [
+  "benchmark",
+  "url",
+  "requests",
+  "fetches",
+  "bytes",
+  "status",
+];
 const UNSEEN = "new";
 const SAME = "=";
 
 /**
- * One value across every iteration, or all the values it took. A metric that
- * varied means the row did unequal work, which is worth seeing rather than
- * failing on.
- * @param {unknown[]} values
- * @param {(value: any) => string} format
+ * Blob and data urls are unique per object, so they group under their scheme.
+ * @param {string} url
  */
-const toMetricCell = (values, format) => values.map(format).join(", ");
+const urlKey = (url) =>
+  /^(blob|data):/.test(url)
+    ? url.slice(0, 5)
+    : new URL(url, "http://bench").pathname;
+
+/** @param {number[]} values */
+const range = (values) => ({
+  min: Math.min(...values),
+  max: Math.max(...values),
+});
+
+/**
+ * @param {{min: number, max: number}} range
+ * @param {(value: number) => string} format
+ */
+const formatRange = ({ min, max }, format) =>
+  min === max ? format(min) : `${format(min)}–${format(max)}`;
+
+/**
+ * @typedef {{requested: number, fetched: number, bytes: number, statuses: number[]}} UrlTally
+ * @typedef {{name: string, does: string, runs: number, perRun: Record<string, {min: number, max: number}>, urls: Record<string, UrlTally>}} RowMetrics
+ */
+
+/**
+ * Per run for the row, totals per url: a url short of the run count is what
+ * made a row vary.
+ * @param {string} does the test's title, the interaction under measurement
+ * @param {{name: string, iterations: {requested: string[], fetched: {url: string, bytes: number, status: number}[]}[]}} row
+ * @returns {RowMetrics}
+ */
+const summariseMetrics = (does, { name, iterations }) => {
+  /** @type {Record<string, UrlTally>} */
+  const urls = {};
+  const tally = (/** @type {string} */ url) =>
+    (urls[urlKey(url)] ??= {
+      requested: 0,
+      fetched: 0,
+      bytes: 0,
+      statuses: [],
+    });
+  for (const { requested, fetched } of iterations) {
+    for (const url of requested) tally(url).requested += 1;
+    for (const { url, bytes, status } of fetched) {
+      const entry = tally(url);
+      entry.fetched += 1;
+      entry.bytes += bytes;
+      if (!entry.statuses.includes(status)) entry.statuses.push(status);
+    }
+  }
+  return {
+    name,
+    does,
+    runs: iterations.length,
+    perRun: {
+      requests: range(iterations.map(({ requested }) => requested.length)),
+      fetches: range(iterations.map(({ fetched }) => fetched.length)),
+      bytes: range(
+        iterations.map(({ fetched }) =>
+          fetched.reduce((sum, { bytes }) => sum + bytes, 0),
+        ),
+      ),
+    },
+    urls,
+  };
+};
+
+/**
+ * @param {RowMetrics} live
+ * @param {RowMetrics} [previous]
+ */
+const metricRow = ({ name, perRun }, previous) => {
+  // A baseline written before this shape has no `perRun`.
+  const before = previous?.perRun;
+  return {
+    // The runs differ, or this run did more than the baseline.
+    flagged: METRIC_COLUMNS.some(
+      ({ field }) =>
+        perRun[field].min !== perRun[field].max ||
+        (before !== undefined &&
+          (perRun[field].min > before[field].min ||
+            perRun[field].max > before[field].max)),
+    ),
+    cells: [
+      name,
+      ...METRIC_COLUMNS.map(({ field, format }) =>
+        before
+          ? `${formatRange(before[field], format)} → ${formatRange(perRun[field], format)}`
+          : formatRange(perRun[field], format),
+      ),
+    ],
+  };
+};
+
+/**
+ * One line per scenario: rows measured by the same test share its title.
+ * @param {RowMetrics[]} metrics
+ */
+const legend = (metrics) => {
+  /** @type {Map<string, string[]>} */
+  const byScenario = new Map();
+  for (const { name, does } of metrics) {
+    byScenario.set(does, [...(byScenario.get(does) ?? []), name]);
+  }
+  return [...byScenario].map(
+    ([does, names]) => `- ${names.join(", ")}: ${does}`,
+  );
+};
+
+/**
+ * One table for every row, the row's name on its first url only.
+ * @param {RowMetrics[]} metrics
+ */
+const urlRows = (metrics) =>
+  metrics.flatMap(({ name, urls }) => {
+    const entries = Object.entries(urls);
+    if (!entries.length) return [`| ${name} | none | | | | |`];
+    return entries.map(
+      ([url, { requested, fetched, bytes, statuses }], index) =>
+        `| ${index ? "" : name} | \`${url}\` | ${requested} | ${fetched} | ${kilobytes(bytes)} | ${[...(requested ? ["mocked"] : []), ...statuses].join(", ")} |`,
+    );
+  });
 
 /**
  * The live median against the middle two thirds of the baseline's samples. A
@@ -247,19 +378,23 @@ export class BenchReporter {
     this.referenceSuffix = referenceSuffix;
     this.baselineProvenance = `${dir}/${PROVENANCE_FILE}`;
     this.resultsProvenance = `${resultsDir}/${PROVENANCE_FILE}`;
-    /** @type {{name: string, metrics: Record<string, unknown[]>}[]} */
+    this.baselineMetrics = `${dir}/${METRICS_FILE}`;
+    this.resultsMetrics = `${resultsDir}/${METRICS_FILE}`;
+    /** @type {RowMetrics[]} */
     this.metrics = [];
   }
 
   /**
    * Rows report their metrics rather than asserting them, so they arrive here
    * as annotations instead of as failures.
-   * @param {unknown} _testCase
+   * @param {import("vitest/node").TestCase} testCase
    * @param {{message: string}} annotation
    */
-  onTestCaseAnnotate(_testCase, annotation) {
+  onTestCaseAnnotate(testCase, annotation) {
     if (!annotation.message.includes(METRICS_ANNOTATION)) return;
-    this.metrics.push(JSON.parse(annotation.message));
+    this.metrics.push(
+      summariseMetrics(testCase.name, JSON.parse(annotation.message)),
+    );
   }
 
   /** @param {import("vitest/node").Vitest} vitest */
@@ -285,24 +420,34 @@ export class BenchReporter {
       this.ctx.logger.log(renderLine(toCells(row), widths, row.overall));
     }
 
-    const metricRows = this.metrics.map(({ name, metrics }) => [
-      name,
-      ...METRIC_COLUMNS.map(({ field, format }) =>
-        toMetricCell(metrics[field] ?? [], format),
+    /** @type {Record<string, RowMetrics>} */
+    const previousMetrics = existsSync(this.baselineMetrics)
+      ? JSON.parse(readFileSync(this.baselineMetrics, "utf8"))
+      : {};
+    writeFileSync(
+      this.resultsMetrics,
+      JSON.stringify(
+        Object.fromEntries(this.metrics.map((row) => [row.name, row])),
       ),
-    ]);
+    );
+    // The timing table's order, so a reader finds a row in the same place twice.
+    const order = rows.map(({ cells }) => cells[0]);
+    const metrics = this.metrics.toSorted(
+      (a, b) => order.indexOf(a.name) - order.indexOf(b.name),
+    );
+    const metricRows = metrics.map((row) =>
+      metricRow(row, previousMetrics[row.name]),
+    );
     if (metricRows.length) {
-      const metricWidths = measure([METRICS_HEAD, ...metricRows]);
+      const metricWidths = measure([
+        METRICS_HEAD,
+        ...metricRows.map(({ cells }) => cells),
+      ]);
       this.ctx.logger.log("");
       this.ctx.logger.log(renderLine(METRICS_HEAD, metricWidths));
-      for (const cells of metricRows) {
-        // Red where a metric took more than one value across the iterations.
-        const varied = cells.slice(1).some((cell) => cell.includes(","));
-        this.ctx.logger.log(
-          varied
-            ? colors.red(renderLine(cells, metricWidths))
-            : renderLine(cells, metricWidths),
-        );
+      for (const { cells, flagged } of metricRows) {
+        const line = renderLine(cells, metricWidths);
+        this.ctx.logger.log(flagged ? colors.red(line) : line);
       }
     }
 
@@ -321,18 +466,30 @@ export class BenchReporter {
           ? `Previous run → this run. Baseline ${baseline.url ? `[\`${baseline.sha}\`](${baseline.url})` : `\`${baseline.sha}\``}, ${baseline.at}.`
           : "Previous run → this run. The baseline predates provenance, so what it measured is unknown.",
         "",
+        ...legend(metrics),
+        "",
         `| ${HEAD.join(" | ")} |`,
         `| ${HEAD.map(() => "---").join(" | ")} |`,
         ...rows.map((row) => `| ${toCells(row).join(" | ")} |`),
         "",
         ...(metricRows.length
           ? [
-              "Metrics, per iteration. More than one value means the row did",
-              "unequal work between iterations.",
+              "Per run. A range means the runs differ. **Bold** where they do, or where this run did more than the baseline.",
               "",
               `| ${METRICS_HEAD.join(" | ")} |`,
               `| ${METRICS_HEAD.map(() => "---").join(" | ")} |`,
-              ...metricRows.map((cells) => `| ${cells.join(" | ")} |`),
+              ...metricRows.map(
+                ({ cells, flagged }) =>
+                  `| ${cells.map((cell) => (flagged ? `**${cell}**` : cell)).join(" | ")} |`,
+              ),
+              "",
+              `<details><summary>urls, totals over ${metrics[0].runs} runs</summary>`,
+              "",
+              `| ${URLS_HEAD.join(" | ")} |`,
+              `| ${URLS_HEAD.map(() => "---").join(" | ")} |`,
+              ...urlRows(metrics),
+              "",
+              "</details>",
               "",
             ]
           : []),
@@ -343,7 +500,7 @@ export class BenchReporter {
         ...COLUMNS.map(({ title, means }) => `| ${title} | ${means} |`),
         "| median Δ | change in the median (p50) when it leaves the middle two thirds of the baseline's samples; `=` inside |",
         ...METRIC_COLUMNS.map(({ field, means }) => `| ${field} | ${means} |`),
-        "| | More than one value in a metric means the row did unequal work between iterations. |",
+        "| status | `mocked` where the tests resolved the request; HTTP codes where the browser fetched it; both where the application did both |",
         "",
         "</details>",
         "",

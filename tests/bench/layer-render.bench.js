@@ -85,11 +85,11 @@ const catalog = buildCatalog([
     },
   },
 ]);
-catalog.routes[`/c/${GEOTIFF_ID}.json`].links.push(
+catalog.routes[`/collections/${GEOTIFF_ID}.json`].links.push(
   styleLink(geotiff.assetKey, `/${GEOTIFF_ID}-style.json`),
 );
 catalog.routes[`/${GEOTIFF_ID}-style.json`] = geotiff.style;
-catalog.routes[`/c/${VECTOR_ID}.json`].links.push(
+catalog.routes[`/collections/${VECTOR_ID}.json`].links.push(
   styleLink(VECTOR_ASSET, `/${VECTOR_ID}-style.json`),
 );
 catalog.routes[`/${VECTOR_ID}-style.json`] = vectorStyle;
