@@ -9,7 +9,6 @@ import { adjustParquetItems } from "../helpers/parquet.js";
 import { toAbsolute } from "../helpers/url.js";
 import { createCollectionBase } from "./base.js";
 
-/** Initial byte length fetched from file tail to parse the parquet footer. */
 const FOOTER_BYTES = 1 << 15;
 
 /**
@@ -38,14 +37,14 @@ export const createParquetCollection = ({
   const mirror = findParquetMirror(stac);
   const href = mirror ? toAbsolute(mirror.href, url) : undefined;
 
-  /** The mirror's footer, or nothing when the collection has none. */
+  /** The mirror's footer, or nothing when the collection has no mirror. */
   const openMirror = cachedRead(async () => {
     if (!href) {
       return undefined;
     }
     const file = await asyncBufferFromUrl({
       url: href,
-      byteLength: await fetchByteLength(href),
+      byteLength: mirror?.["file:size"] ?? (await fetchByteLength(href)),
     });
     const metadata = await parquetMetadataAsync(file, {
       initialFetchSize: FOOTER_BYTES,
@@ -78,9 +77,8 @@ export const createParquetCollection = ({
   };
 
   /**
-   * The datetime column carrying values, settled from the footer so that
-   * finding out costs nothing. An item describing a range leaves `datetime`
-   * null, which shows up here as a column with no values.
+   * The datetime column carrying values, read from the footer. An item
+   * describing a range leaves `datetime` null, so its column holds no values.
    *
    * @returns {Promise<string | undefined>}
    */
@@ -100,8 +98,8 @@ export const createParquetCollection = ({
   };
 
   /**
-   * Every item's datetime with the row it sits on, oldest first. That one
-   * column is the only thing transferred.
+   * Every item's datetime with its row, oldest first. Transfers that column
+   * alone.
    *
    * @returns {Promise<DatetimeEntry[]>}
    */
@@ -120,8 +118,8 @@ export const createParquetCollection = ({
   });
 
   /**
-   * Every item, in row order. A mirror is written as one row group, so a column
-   * chunk spans every row and one item costs as much as all of them.
+   * Every item, in row order. A mirror is one row group, so reading one item
+   * costs as much as reading all of them.
    *
    * @returns {Promise<import("../types").STACItem[]>}
    */
@@ -130,8 +128,8 @@ export const createParquetCollection = ({
   );
 
   /**
-   * The items the mirror holds, oldest first. This transfers every column, so
-   * reach for `getDates` where it answers.
+   * The items the mirror holds, oldest first. Transfers every column, so
+   * prefer `getDates` where it answers.
    *
    * @returns {Promise<import("../types").STACItem[]>}
    */
@@ -194,20 +192,15 @@ export const createParquetCollection = ({
 };
 
 /**
- * The mirror's size, counted the way its own byte offsets are. A plain HEAD
- * answers with the *encoded* length wherever the host compresses — GitHub Pages
- * calls a 57917 byte mirror 30416 — landing the footer mid-file. Three ways to
- * ask, cheapest first.
+ * The mirror's size, for a collection that does not state `file:size`. A
+ * compressing host answers with the encoded length, which lands the footer
+ * mid-file, so ask three ways, cheapest first.
  *
  * @param {string} href
  * @returns {Promise<number | undefined>} nothing when the length is unreadable
  */
 async function fetchByteLength(href) {
-  // A Range has browsers negotiate `identity`, and servers ignore it on a HEAD:
-  // the length wanted, no body at all. Worth trusting only while
-  // `Content-Encoding` reads back empty — hidden means a browser stripped it,
-  // having already negotiated; set means nothing did, and the length counts
-  // encoded bytes.
+  // trustworthy only while `Content-Encoding` reads back empty
   const head = await fetch(href, {
     method: "HEAD",
     headers: { Range: "bytes=0-0" },
@@ -232,8 +225,7 @@ async function fetchByteLength(href) {
   // last resort: ask for it whole just to read `Content-Length`, then drop it
   const response = await fetch(href, { headers: { Range: "bytes=0-" } });
   if (response.status !== 206) {
-    // ranges went unhonoured, so there are no offsets to agree with and the
-    // decoded body is the only length that is not a guess
+    // ranges went unhonoured, so only the decoded body's length is not a guess
     return (await response.arrayBuffer()).byteLength || undefined;
   }
   const total = Number(response.headers.get("content-length"));
@@ -242,9 +234,8 @@ async function fetchByteLength(href) {
 }
 
 /**
- * Remembers what a read resolved to, so it happens once however many callers
- * ask. A failure is not remembered, since one transient error would otherwise
- * leave the reader unable to read anything ever again.
+ * Remembers what a read resolved to, so it happens once. Failures are not
+ * remembered, or one transient error would disable the reader for good.
  *
  * @template T
  * @param {() => Promise<T>} read

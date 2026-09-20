@@ -110,7 +110,8 @@ export const serveByPath = (axiosMock, routes, { delay = 0 } = {}) => {
     const match = paths.find((p) => pathname.endsWith(p));
     if (!match) unmatched.push(url);
     const route = match ? routes[match] : {};
-    const data = typeof route === "function" ? route(url) : structuredClone(route);
+    const data =
+      typeof route === "function" ? route(url) : structuredClone(route);
     return new Promise((resolve) =>
       setTimeout(() => resolve({ data, headers: {} }), delay),
     );

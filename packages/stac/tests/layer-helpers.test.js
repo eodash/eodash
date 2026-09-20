@@ -31,7 +31,7 @@ const tree = () => [
   group("g", [layer(A_NESTED), layer(B_NESTED)]),
 ];
 
-describe("layer tree", () => {
+describe("layer helpers", () => {
   describe("findLayer", () => {
     test("finds a layer nested in a group", () => {
       const layers = /** @type {any} */ (tree());
