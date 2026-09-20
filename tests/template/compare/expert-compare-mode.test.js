@@ -136,4 +136,27 @@ describe("expert template - compare mode", () => {
       .toBeGreaterThan(1);
     expect(ctx.query(".v-alert")).toBeNull();
   });
+
+  test("closing compare leaves the main map where the user left it", async () => {
+    const mainMap = ctx.query("eox-map#main");
+    const CENTER = [1500000, 6000000];
+    // A pan as the user makes it: the view moves and the map settles on it.
+    const moved = new Promise((resolve) =>
+      mainMap.map.once("moveend", resolve),
+    );
+    mainMap.map.getView().setCenter(CENTER);
+    await moved;
+
+    const btn = btnByTooltip("Compare mode");
+    if (!btn) throw new Error("compare button not shown");
+    await userEvent.click(btn);
+
+    await expect
+      .poll(() => activeTemplate.value, { timeout: TIMEOUT })
+      .toBe("expert");
+
+    const after = ctx.query("eox-map#main");
+    expect(after).toBe(mainMap);
+    expect(after.map.getView().getCenter()).toEqual(CENTER);
+  });
 });

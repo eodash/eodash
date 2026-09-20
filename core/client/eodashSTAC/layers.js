@@ -4,7 +4,7 @@ import {
   getProjectionCode,
   sanitizeBbox,
 } from "@eodash/stac/helpers";
-import { assignLayers, registerProjection } from "@/store/actions";
+import { assignLayers } from "@/store/actions";
 import {
   dataThemesBrands,
   defaultBaseLayers,
@@ -12,7 +12,10 @@ import {
   shouldZoomToExtent,
 } from "@/utils/states";
 import { useSTAcStore } from "@/store/stac";
-import { setMapProjFromCol } from "@/eodashSTAC/triggers";
+import {
+  registerProjections,
+  setMapProjFromCol,
+} from "@/eodashSTAC/projection";
 import { transformExtent } from "@eox/map";
 import axios from "@/plugins/axios";
 
@@ -105,14 +108,13 @@ export const zoomToCollection = (map, collection) => {
   if (map?.id !== "main" || !shouldZoomToExtent.value) {
     return;
   }
-
-  // the catalog has already fitted the map to the item it selected
-  if (useSTAcStore().selectedItem) {
+  if (hasRestoredView.value) {
+    hasRestoredView.value = false;
     return;
   }
 
-  if (hasRestoredView.value) {
-    hasRestoredView.value = false;
+  // the catalog has already fitted the map to the item it selected
+  if (useSTAcStore().selectedItem) {
     return;
   }
 
@@ -205,11 +207,7 @@ export const buildIndicatorLayers = async (
     items,
   } = await buildDataLayers(map, { readers, stac, timeOrItem, context });
 
-  await Promise.all(
-    [...projections, ...dataProjections].map((projection) =>
-      registerProjection(projection),
-    ),
-  );
+  await registerProjections([...projections, ...dataProjections]);
 
   const footprints = map?.layers?.find(
     (layer) => layer.type === "Group" && layer.properties?.id === CATALOG_GROUP,
@@ -247,9 +245,7 @@ export const assignDataLayers = async (
     timeOrItem,
   });
 
-  await Promise.all(
-    projections.map((projection) => registerProjection(projection)),
-  );
+  await registerProjections(projections);
   await assignGroupLayers(map, ANALYSIS_GROUP, layers, event);
   return items;
 };

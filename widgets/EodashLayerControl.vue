@@ -31,7 +31,8 @@ import "color-legend-element";
 import "@eox/timecontrol";
 import { computed } from "vue";
 import { mapEl, mapCompareEl } from "@/store/states";
-import { assignLayers, registerProjection } from "@/store/actions";
+import { assignLayers } from "@/store/actions";
+import { registerProjections } from "@/eodashSTAC/projection";
 import { eodashCollections, eodashCompareCollections } from "@/store/stac";
 import {
   layerControlFormValue,
@@ -45,7 +46,6 @@ import { useSTAcStore } from "@/store/stac";
 import { bandsEditorInterface } from "@/utils/bands-editor";
 import EodashLayoutSwitcher from "^/EodashLayoutSwitcher.vue";
 import { mdiViewDashboard } from "@mdi/js";
-import { useEmitLayersUpdate } from "@/composables";
 
 if (!customElements.get("eox-layercontrol")) {
   await import("@eox/layercontrol");
@@ -134,7 +134,7 @@ const handleDatetimeUpdate = async (evt) => {
   );
   if (!updatedLayers.length) return;
 
-  await Promise.all(projections.map(registerProjection));
+  await registerProjections(projections);
 
   const group = updatedLayers.find((l) => l?.properties?.id === ANALYSIS_GROUP);
   const dataLayers = group?.type === "Group" ? group.layers : undefined;
@@ -147,12 +147,10 @@ const handleDatetimeUpdate = async (evt) => {
       //@ts-expect-error properties is optional upstream, always built here
       dl.properties.layerControlToolsExpand = true;
     });
-    assignLayers(mapElement.value, updatedLayers);
-    // Emit after layer assignment so listeners resolve against the new layer.
-    await useEmitLayersUpdate(
-      props.map === "second" ? "compareLayertime:updated" : "layertime:updated",
+    await assignLayers(
       mapElement.value,
       updatedLayers,
+      props.map === "second" ? "compareLayertime:updated" : "layertime:updated",
     );
   }
 };
