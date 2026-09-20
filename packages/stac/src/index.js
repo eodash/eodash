@@ -20,6 +20,7 @@ import { createStaticCollection } from "./collections/static.js";
  * @param {Array<string | { url: string; titilerVersion?: 1 | 2; scaleFactor?: number }>} [options.upscalingEndpoints] - Tile endpoints for high-resolution rendering
  * @param {Record<string, any> | null} [options.tileMatrixSets] - TileMatrixSet configurations keyed by projection
  * @param {Record<string, Record<string, import("./types").Render>>} [options.renders] - Render configurations mapped by collection ID
+ * @param {import("./types").STACCollection} [options.stac] - The collection document, for a caller that has already read it
  * @returns {Promise<import("./types").Reader>}
  */
 export const createEodashCollection = async (url, options = {}) => {
@@ -36,7 +37,7 @@ export const createEodashCollection = async (url, options = {}) => {
   } = options;
   const http = createHTTPInstance({ client });
   /** @type {import("./types").STACCollection} */
-  const stac = await http.get(url);
+  const stac = options.stac ?? (await http.get(url));
   const rasterOptions = {
     rasterEndpoint,
     upscalingEndpoints,
