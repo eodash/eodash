@@ -60,14 +60,45 @@ const QUERYABLES = {
   properties: { datetime: { type: "string" } },
 };
 
+const AGGREGATION_ROUTE = `/collections/${COLLECTION_ID}/aggregations`;
+
+/**
+ * The explorer endpoint publishes one of these, so a collection's dates are
+ * read from a single document rather than by paging `/search`.
+ */
+const AGGREGATION = {
+  type: "AggregationCollection",
+  aggregations: [
+    {
+      key: "datetime_frequency",
+      interval: "day",
+      buckets: [
+        { key: "2020-01-01T00:00:00Z", value: 1 },
+        { key: "2020-01-02T00:00:00Z", value: 1 },
+      ],
+    },
+  ],
+};
+
 const collectionOf = (/** @type {string} */ id) =>
-  stacCollection({ id, title: id });
+  stacCollection({
+    id,
+    title: id,
+    links: [
+      {
+        rel: "pre-aggregation",
+        "aggregation:interval": "daily",
+        href: `${globalThis.location.origin}/stac${AGGREGATION_ROUTE}`,
+      },
+    ],
+  });
 
 const routes = {
   "/defaults/colormaps.json": {},
   "/defaults/tmsRegistry.json": {},
   "/collections": { collections: [collectionOf(COLLECTION_ID)] },
   [`/collections/${COLLECTION_ID}`]: collectionOf(COLLECTION_ID),
+  [AGGREGATION_ROUTE]: AGGREGATION,
   [`/collections/${COLLECTION_ID}/queryables`]: QUERYABLES,
   [`/collections/${COLLECTION_ID}/items`]: {
     type: "FeatureCollection",

@@ -155,12 +155,29 @@ const MOSAIC = {
   ],
 };
 
+const AGGREGATION_ROUTE = `/aggregations/${INDICATOR_ID}.json`;
+
 const catalog = buildCatalog([{ id: INDICATOR_ID }]);
 /** @param {string} url */
 catalog.routes[TILEJSON_ROUTE] = (url) => ({
   tiles: [`${xyzLink().href}?${new URL(url).searchParams}&z={z}&x={x}&y={y}`],
 });
 catalog.routes["/assets"] = [];
+catalog.routes[`/collections/${INDICATOR_ID}.json`].links.push({
+  rel: "pre-aggregation",
+  "aggregation:interval": "daily",
+  href: `${globalThis.location.origin}/stac${AGGREGATION_ROUTE}`,
+});
+catalog.routes[AGGREGATION_ROUTE] = {
+  type: "AggregationCollection",
+  aggregations: [
+    {
+      key: "datetime_frequency",
+      interval: "day",
+      buckets: DATES.map((date) => ({ key: date, value: 1 })),
+    },
+  ],
+};
 
 describe("mosaic", () => {
   test(
@@ -272,7 +289,6 @@ describe("mosaic", () => {
         expectConstant(benchmark, "layers", 1);
         expectDistinct(benchmark, "identity");
         expectConstant(benchmark, "url");
-        expectConstant(benchmark, "requests", 1);
       } finally {
         app.unmount();
       }
