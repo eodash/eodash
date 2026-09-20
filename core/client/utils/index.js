@@ -181,6 +181,7 @@ export const updateEodashCollections = async (
         api: isAPI,
         client: axios,
         color: colorPalette[idx % colorPalette.length],
+        ...(cu === absoluteUrl && { stac: selectedStac }),
         ...rasterOptions,
       }),
     ),
