@@ -125,6 +125,9 @@ const utcDay = (date) =>
 /** @param {CustomEvent<{date: [Date, Date]}>} e */
 const onSelect = async (e) => {
   const [selected] = e.detail.date;
+  if (!datetime.value) {
+    return;
+  }
   calendarDay = utcDay(selected);
 
   if (selected.getTime() === new Date(datetime.value).getTime()) {
