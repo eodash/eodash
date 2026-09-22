@@ -14,7 +14,7 @@ import {
   mapEl,
   mapPosition,
 } from "@/store/states";
-import { eodashCollections } from "@/utils/states";
+import { eodashCollections } from "@/store/stac";
 import { provideEodash } from "../../support/fixtures";
 
 const axiosMock = vi.hoisted(() => ({ get: vi.fn() }));

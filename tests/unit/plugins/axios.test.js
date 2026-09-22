@@ -2,7 +2,6 @@ import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import { commands } from "vitest/browser";
 import axios from "@/plugins/axios";
 import { errorState } from "@/store/states";
-import { fetchPreAggregations } from "@/eodashSTAC/helpers";
 
 // Requests are answered by routing the browser, so axios itself is never
 // stubbed: it runs its real adapter and builds the real `AxiosError` the
@@ -219,20 +218,12 @@ describe("swallowed failures", () => {
   test("a caller that catches and degrades still shows the user the failure", async () => {
     await commands.serveResponses({ "agg.json": { status: 404 } });
 
-    // fetchPreAggregations catches, warns, and falls back to the item links
-    const result = await fetchPreAggregations(
-      /** @type {any} */ ({
-        id: "coll",
-        links: [
-          {
-            rel: "pre-aggregation",
-            "aggregation:interval": "daily",
-            href: url("agg"),
-          },
-        ],
-      }),
-      "https://interceptor.test/collection.json",
-    );
+    // a caller that catches and falls back, the way the readers do around an
+    // optional document
+    const result = await axios
+      .get(url("agg"))
+      .then((resp) => resp.data)
+      .catch(() => null);
 
     expect(result).toBeNull();
     expect(errorState.value.message).toBe(

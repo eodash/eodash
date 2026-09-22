@@ -47,16 +47,25 @@ export async function handleEOxHubEndpoint({
         },
       });
 
+      const jobUrl = responseProcess.headers.location;
+      if (!jobUrl) {
+        throw new Error(
+          `Started a process at ${link.href} but its Location header is not readable, ` +
+            "so the job cannot be polled. A cross-origin endpoint has to send " +
+            "`Access-Control-Expose-Headers: Location`.",
+        );
+      }
+
       // We save the process status url into localstorage assigning it to the indicator id
       const currentJobs = JSON.parse(
         localStorage.getItem(currentIndicator.value) || "[]",
       );
-      currentJobs.push(responseProcess.headers.location);
+      currentJobs.push(jobUrl);
       localStorage.setItem(currentIndicator.value, JSON.stringify(currentJobs));
 
       const processResults = await pollProcessStatus({
         jobs,
-        processUrl: responseProcess.headers.location,
+        processUrl: jobUrl,
         isPolling,
         enableCompare,
       })

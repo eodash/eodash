@@ -27,6 +27,11 @@ describe("expert template - POI selection (STAC output)", () => {
   let ctx;
   /** @type {string[]} */
   let locationIds = [];
+  // `eox-map` dispatches `layerschanged` once per `set layers`, so this counts
+  // how many times the app wrote the map.
+  let mapWrites = 0;
+  // The extent fitted to the whole indicator, which going back has to restore.
+  let collectionWidth = 0;
 
   /**
    * The map button whose tooltip text matches; icon buttons have no name.
@@ -37,8 +42,34 @@ describe("expert template - POI selection (STAC output)", () => {
       b.textContent?.includes(text),
     );
 
+  /**
+   * The width of the map's current extent. `zoomExtent` reads back as
+   * `view.calculateExtent()` rather than the value the app set, so mid-fit it is
+   * a point on the easing curve.
+   */
+  const fittedWidth = () => {
+    const [minX, , maxX] = ctx.query("eox-map").zoomExtent ?? [];
+    return maxX - minX;
+  };
+
+  /** The same width once two readings agree, so the fit has stopped moving. */
+  const settledWidth = async () => {
+    let last = NaN;
+    await vi.waitFor(
+      () => {
+        const width = fittedWidth();
+        const settled = width === last;
+        last = width;
+        if (!settled) throw new Error("the fit is still animating");
+      },
+      { timeout: TIMEOUT, interval: 100 },
+    );
+    return last;
+  };
+
   beforeAll(async () => {
     ctx = await bootExpert({ endpoint: STAC_ENDPOINT });
+    ctx.query("eox-map").addEventListener("layerschanged", () => mapWrites++);
     /** @type {any} */
     const locations = await fetch(LOCATIONS_URL).then((r) => r.json());
     locationIds = locations.links
@@ -61,6 +92,7 @@ describe("expert template - POI selection (STAC output)", () => {
       },
       { timeout: TIMEOUT },
     );
+    collectionWidth = await settledWidth();
   });
 
   afterAll(() => ctx?.app.unmount());
@@ -70,6 +102,7 @@ describe("expert template - POI selection (STAC output)", () => {
     const selectedId = targetFeatures(ctx.container)[0].get("id");
     expect(locationIds).toContain(selectedId);
 
+    mapWrites = 0;
     selectFeature(ctx.container, 0);
 
     await vi.waitFor(
@@ -98,6 +131,17 @@ describe("expert template - POI selection (STAC output)", () => {
       },
       { timeout: TIMEOUT },
     );
+
+    // the write that drops the points layer lands after the store settles
+    await vi.waitFor(
+      () => {
+        if (ctx.query("eox-map").getLayerById("geodb-collection")) {
+          throw new Error("points layer still present");
+        }
+      },
+      { timeout: TIMEOUT },
+    );
+    expect(mapWrites).toBe(1);
   });
 
   test("the app leaves observation-points mode once a POI is loaded", async () => {
@@ -116,6 +160,7 @@ describe("expert template - POI selection (STAC output)", () => {
     const btn = btnByTooltip("Back to POIs");
     if (!btn) throw new Error("back to POIs button not shown");
 
+    mapWrites = 0;
     await userEvent.click(btn);
 
     await vi.waitFor(
@@ -131,6 +176,16 @@ describe("expert template - POI selection (STAC output)", () => {
     );
 
     expect(indicator.value).toBe(INDICATOR_ID);
+    // the render lands after the store settles
+    await expect.poll(() => mapWrites, { timeout: TIMEOUT }).toBeGreaterThan(0);
+    expect(mapWrites).toBe(1);
+  });
+
+  test("the map widens back to the whole collection", async () => {
+    // polled rather than settled, because the widening may not have started yet
+    await expect
+      .poll(fittedWidth, { timeout: TIMEOUT })
+      .toBeCloseTo(collectionWidth, 0);
   });
 
   test("a location is selectable again after going back", async () => {

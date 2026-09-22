@@ -3,7 +3,7 @@
 import { existsSync, readFileSync } from "fs";
 import path from "path";
 import { createLogger } from "vite";
-import { fileURLToPath } from "url";
+import { fileURLToPath, pathToFileURL } from "url";
 
 /** eodash root path */
 export const appPath = searchForPackageRoot();
@@ -140,6 +140,34 @@ export async function getUserConfig(
     lib: options.lib ?? config?.lib,
     vite: config?.vite,
   };
+}
+
+/**
+ * Reads `@eodash/stac` from source inside this monorepo, so editing it needs no
+ * rebuild. A consumer ships no `packages/` and keeps resolving the published
+ * `dist`. The paths come from the package's own build entries.
+ */
+export async function stacSourceAlias() {
+  const root = path.join(appPath, "packages/stac");
+  if (!existsSync(root)) {
+    return {};
+  }
+  const { default: stacViteConfig } = await import(
+    pathToFileURL(path.join(root, "vite.config.js")).href
+  );
+  const { entry } = stacViteConfig.build.lib;
+
+  /** @type {Record<string, string>} */
+  const alias = {};
+  for (const [name, file] of Object.entries(entry)) {
+    if (name !== "index") {
+      alias[`@eodash/stac/${name}`] = path.join(root, String(file));
+    }
+  }
+  // declared last: it also matches every subpath above, and the first alias to
+  // match is the one applied
+  alias["@eodash/stac"] = path.join(root, entry.index);
+  return alias;
 }
 
 /** @param {string} [from] */

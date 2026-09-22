@@ -17,13 +17,13 @@ import { useSTAcStore } from "@/store/stac";
 import log from "loglevel";
 import { eodashKey, eoxLayersKey } from "@/utils/keys";
 import { useEventBus, useMutationObserver } from "@vueuse/core";
-import { isFirstLoad } from "@/utils/states";
+import { hasRestoredView, isFirstLoad } from "@/utils/states";
 import { setCollectionsPalette } from "@/utils";
 import mustache from "mustache";
-import { toAbsolute } from "stac-js/src/http.js";
+import { toAbsolute } from "@eodash/stac/helpers";
 import axios from "@/plugins/axios";
 import { storeToRefs } from "pinia";
-import { bboxToCenterZoom, sanitizeBbox } from "@/eodashSTAC/helpers";
+import { bboxToCenterZoom, sanitizeBbox } from "@eodash/stac/helpers";
 /**
 /** @type {import('@/types').Eodash | null}*/
 
@@ -157,14 +157,32 @@ export const useURLSearchParametersSync = () => {
       const searchParams = new URLSearchParams(window.location.search);
       const store = useSTAcStore();
 
-      /** @type {number | undefined} */
-      let x,
-        /** @type {number | undefined} */
-        y,
-        /** @type {number | undefined} */
-        z;
       /** @type {number[] | undefined} - restored item extent; wins over x/y/z */
       let itemBbox;
+
+      const x = Number(searchParams.get("x"));
+      const y = Number(searchParams.get("y"));
+      const z = Number(searchParams.get("z"));
+      hasRestoredView.value =
+        !!(x && y && z) || (store.isApi && searchParams.has("item"));
+      if (x && y && z) {
+        log.debug("Coordinates found, applying map position", x, y, z);
+        mapPosition.value = [x, y, z];
+        if (mapEl.value) {
+          mapEl.value.center = [x, y];
+          mapEl.value.zoom = z;
+        }
+      }
+
+      const urlDatetime = searchParams.get("datetime");
+      if (urlDatetime) {
+        try {
+          datetime.value = new Date(urlDatetime).toISOString();
+        } catch {
+          datetime.value = new Date().toISOString();
+        }
+      }
+
       for (const [key, value] of searchParams) {
         switch (key) {
           case "template": {
@@ -184,7 +202,7 @@ export const useURLSearchParametersSync = () => {
                   store.stacEndpoint ?? "",
                 );
                 // fetch indicator stac collection without rendering it
-                /** @type {import("stac-ts").StacCollection} */
+                /** @type {import("@eodash/stac").STACCollection} */
                 const indicatorStac = await axios
                   .get(indicatorUrl)
                   .then((resp) => resp.data);
@@ -221,7 +239,7 @@ export const useURLSearchParametersSync = () => {
                 // Restore a specific catalog item within the collection
                 const itemId = searchParams.get("item");
                 const itemUrl = `${store.stacEndpoint}/collections/${match.id}/items/${itemId}`;
-                /** @type {import("stac-ts").StacItem | null} */
+                /** @type {import("@eodash/stac").STACItem | null} */
                 const item = await axios
                   .get(itemUrl)
                   .then((resp) => resp.data)
@@ -241,28 +259,6 @@ export const useURLSearchParametersSync = () => {
             break;
           }
 
-          case "x":
-            x = Number(value);
-            break;
-
-          case "y":
-            y = Number(value);
-            break;
-
-          case "z":
-            z = Number(value);
-            break;
-
-          case "datetime":
-            try {
-              const datetimeiso = new Date(value).toISOString();
-              log.debug("Valid datetime found", datetimeiso);
-              datetime.value = datetimeiso;
-            } catch {
-              datetime.value = new Date().toISOString();
-            }
-            break;
-
           default:
             break;
         }
@@ -279,13 +275,8 @@ export const useURLSearchParametersSync = () => {
           mapEl.value.center = center;
           mapEl.value.zoom = zoom;
         }
-      } else if (x && y && z) {
-        log.debug("Coordinates found, applying map poisition", x, y, z);
-        mapPosition.value = [x, y, z];
-        if (mapEl.value) {
-          mapEl.value.center = [x, y];
-          mapEl.value.zoom = z;
-        }
+      } else if (!(x && y && z)) {
+        hasRestoredView.value = false;
       }
 
       if (!isFirstLoad.value) {
@@ -380,14 +371,15 @@ export const useOnLayersUpdate = (listener) => {
   const layersEvents = useEventBus(eoxLayersKey);
 
   const unsubscribe = layersEvents.on(listener);
-
   onUnmounted(() => {
     unsubscribe();
   });
+  return unsubscribe;
 };
 /**
- * Emits a layers-update event on the shared bus once the map has applied its
- * pending updates. Always pass the full layers array, not a partial subset.
+ * Emits a layers-update event on the shared bus once the map has rendered a
+ * complete frame with its pending updates: every source loaded, no animation
+ * in flight. Always pass the full layers array, not a partial subset.
  *
  * @param {import("@/types").LayersEventBusKeys} event
  * @param {import("@eox/map").EOxMap | null} mapEl
@@ -407,6 +399,7 @@ export const useEmitLayersUpdate = async (event, mapEl, layers) => {
       });
     });
 
+  // Use layer ID literal to prevent circular module dependencies
   const dl = /** @type {import("ol/layer").Group} */ (
     mapEl.getLayerById("AnalysisGroup")
   );
@@ -419,15 +412,16 @@ export const useEmitLayersUpdate = async (event, mapEl, layers) => {
       return;
     }
 
-    mapEl.map.once("loadend", async () => {
+    mapEl.map.once("rendercomplete", async () => {
       await emit();
       res(true);
     });
+    mapEl.map.render();
   });
 };
 
 /**
- * @param {import("stac-ts").StacCollection | import("stac-ts").StacLink | import("stac-ts").StacItem | null} collection
+ * @param {import("@eodash/stac").STACCollection | import("@eodash/stac").STACLink | import("@eodash/stac").STACItem | null} collection
  * @returns {string} - Returns the collection id or subcode if `useSubCode` is enabled
  */
 export const useGetSubCodeId = (collection) => {
