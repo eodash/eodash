@@ -114,7 +114,8 @@ describe("expert template - compare mode", () => {
       },
       { timeout: TIMEOUT },
     );
-    expect([mapWrites, compareMapWrites]).toEqual([1, 1]);
+    // picking a compare indicator builds the compare pane and leaves main alone
+    expect([mapWrites, compareMapWrites]).toEqual([0, 1]);
   });
 
   test("the compare pane renders the second indicator's layer and control", async () => {
