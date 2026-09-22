@@ -6,7 +6,7 @@ name: Benchmarks
 on:
   push:
     branches:
-      - "refactor-performance-report"
+      - "main"
   workflow_dispatch:
 
 # A later push cancels a running one, so the baseline is the newest commit's.
