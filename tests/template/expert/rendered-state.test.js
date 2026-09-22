@@ -48,7 +48,9 @@ describe("expert template - rendered state", () => {
 
     const body = description.replace(/^#+ .*(\n|$)/, "");
     const probe = (body.match(/[A-Za-z][A-Za-z ]{18,}/) ?? [""])[0].trim();
-    await expect.element(page.getByText(probe).first()).toBeInTheDocument();
+    await expect
+      .element(page.getByText(probe, { exact: false }).first())
+      .toBeInTheDocument();
   });
 
   test("the analysis group is expanded", () => {

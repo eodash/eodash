@@ -94,6 +94,12 @@ const props = defineProps({
   layoutTarget: {
     type: String,
   },
+  /** Milliseconds to wait before applying a datetime change from the layer control. */
+  datetimeDebounce: {
+    /** @type {import("vue").PropType<number>} */
+    type: Number,
+    default: 500,
+  },
 });
 
 const config = {
@@ -171,7 +177,7 @@ const debouncedHandleDateTime = (evt) => {
   clearTimeout(timeout);
   timeout = setTimeout(() => {
     handleDatetimeUpdate(evt);
-  }, 500);
+  }, props.datetimeDebounce);
 };
 // ------
 /**

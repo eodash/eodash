@@ -87,7 +87,7 @@ describe("explore template - catalog", () => {
   const scopedRoutes = { ...routes };
 
   beforeAll(async () => {
-    served = serveByPath(axiosMock, scopedRoutes);
+    served = serveByPath(axiosMock, scopedRoutes, { delay: 50 });
     ctx = await bootTemplate({
       template: "explore",
       endpoint: ENDPOINT,
@@ -249,7 +249,7 @@ describe("explore template - deep link restores an item", () => {
   let ctx;
 
   beforeAll(async () => {
-    serveByPath(axiosMock, routes);
+    serveByPath(axiosMock, routes, { delay: 50 });
     ctx = await bootTemplate({
       endpoint: ENDPOINT,
       api: true,

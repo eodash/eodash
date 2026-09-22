@@ -1,3 +1,17 @@
+import { getUid } from "ol/util";
+
+/**
+ * A layer's identity and its source's, because a swapped source refetches every
+ * tile just as a rebuild does. Uids rather than the objects, or a discarded
+ * source outlives whatever measures it.
+ * @param {any} layer
+ */
+export const getLayerIdentity = (layer) => {
+  if (!layer) return undefined;
+  const source = layer.getSource?.();
+  return `${getUid(layer)}/${source ? getUid(source) : "none"}`;
+};
+
 /**
  * The "AnalysisGroup" layer group holding the selected indicator's data layers.
  * @param {import("@eox/map").EOxMap | undefined} mapEl

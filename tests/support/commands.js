@@ -25,6 +25,9 @@ const addRoutes = async (ctx, routes, handler) => {
  * CORS header the browser needs. Routing the playwright context covers every
  * transport, including the `XMLHttpRequest` OpenLayers loads features over.
  *
+ * Playwright turns the browser cache off for a context while any route is
+ * registered, so serve only what a test needs and stop again afterwards.
+ *
  * @type {import("vitest/node").BrowserCommand<[Record<string, string>]>}
  */
 export const serveFiles = async (ctx, routes) =>
@@ -34,7 +37,10 @@ export const serveFiles = async (ctx, routes) =>
     (file) => (route) =>
       route.fulfill({
         path: resolve(ctx.project.config.root, file),
-        headers: { "access-control-allow-origin": "*" },
+        headers: {
+          "access-control-allow-origin": "*",
+          "timing-allow-origin": "*",
+        },
       }),
   );
 
@@ -57,7 +63,12 @@ export const serveResponses = async (ctx, routes) =>
             status: response.status ?? 200,
             body: response.body ?? "",
             contentType: response.contentType ?? "application/json",
-            headers: { "access-control-allow-origin": "*" },
+            // `timing-allow-origin` too, or resource timing reports zero bytes for
+            // anything cross-origin and a benchmark reads as having fetched nothing.
+            headers: {
+              "access-control-allow-origin": "*",
+              "timing-allow-origin": "*",
+            },
           }),
   );
 
