@@ -4,7 +4,6 @@ import { activeTemplate, isGlobe, mapEl } from "@/store/states";
 import { easeOut } from "ol/easing.js";
 import { storeToRefs } from "pinia";
 import { ref } from "vue";
-import { triggerRef } from "vue";
 
 export const switchGlobe = () => {
   if (!mapEl.value) {
@@ -169,7 +168,7 @@ export const onSelectCompareIndicator = (compareIndicators) => {
  * }} compareIndicators
  */
 export const onCompareClick = (compareIndicators) => {
-  const { selectedStac, selectedCompareStac } = storeToRefs(useSTAcStore());
+  const { selectedCompareStac } = storeToRefs(useSTAcStore());
   const { resetSelectedCompareSTAC } = useSTAcStore();
   showCompareIndicators.value =
     activeTemplate.value !==
@@ -184,7 +183,6 @@ export const onCompareClick = (compareIndicators) => {
   selectedCompareStac.value = null;
   resetSelectedCompareSTAC();
   setActiveTemplate(fallbackTemplate);
-  triggerRef(selectedStac);
 };
 
 export const onGeolocationClick = () => {

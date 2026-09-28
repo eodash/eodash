@@ -15,12 +15,12 @@ import log from "loglevel";
  * @param {object} params - Parameters for polling the process status.
  * @param {import("vue").Ref<import("../types").AsyncJob[]>} params.jobs - The list of jobs to update.
  * @param {string} params.processUrl - The URL of the process JSON report.
- * @param {import("vue").Ref<boolean>} params.isPolling - checks wether the polling should continue
- * @param {number} [params.pollInterval=5000] - The interval (in milliseconds) between polling attempts.
- * @param {number} [params.maxRetries=60] - The maximum number of polling attempts.
+ * @param {import("vue").Ref<boolean>} params.isPolling - Checks whether polling should continue.
+ * @param {number} [params.pollInterval=10000] - Interval (in ms) between polling attempts.
+ * @param {number} [params.maxRetries=560] - Maximum number of polling attempts.
  * @param {boolean} [params.enableCompare=false] - Whether to enable comparison mode, affecting the indicator used.
  * @returns {Promise<import("../types").EOxHubProcessResults>} The fetched results JSON.
- * @throws {Error} If the process does not complete successfully within the maximum retries.
+ * @throws {Error} If the process does not complete successfully within maxRetries.
  */
 export async function pollProcessStatus({
   jobs,
@@ -101,20 +101,22 @@ export async function updateJobsStatus(jobs, indicator) {
   const jobsUrls = JSON.parse(localStorage.getItem(indicator) || "[]");
   /** @type {import("../types").AsyncJob[]} */
   const jobResults = await Promise.all(
-    jobsUrls.map((url) =>
-      axios
-        .get(url, { params: { t: Date.now() } })
-        .then((response) => response.data)
-        .catch((error) => {
-          if (axios.isAxiosError(error)) {
-            console.warn(
-              `Job URL not accessible: ${url}. Maybe was deleted from the processing endpoint or endpoint is unavailable. Skipping...`,
-            );
-            return null;
-          }
-          throw error;
-        }),
-    ),
+    jobsUrls
+      .filter((url) => typeof url === "string")
+      .map((url) =>
+        axios
+          .get(url, { params: { t: Date.now() } })
+          .then((response) => response.data)
+          .catch((error) => {
+            if (axios.isAxiosError(error)) {
+              console.warn(
+                `Job URL not accessible: ${url}. Maybe was deleted from the processing endpoint or endpoint is unavailable. Skipping...`,
+              );
+              return null;
+            }
+            throw error;
+          }),
+      ),
   );
   const validResults = jobResults
     .filter((job) => job !== null)
@@ -136,7 +138,9 @@ export async function updateJobsStatus(jobs, indicator) {
 export const deleteJob = async (jobs, jobObject, indicator) => {
   /** @type {string[]} */
   const jobsUrls = JSON.parse(localStorage.getItem(indicator) || "[]");
-  const newJobs = jobsUrls.filter((url) => !url.includes(jobObject.jobID));
+  const newJobs = jobsUrls.filter(
+    (url) => typeof url === "string" && !url.includes(jobObject.jobID),
+  );
   localStorage.setItem(indicator, JSON.stringify(newJobs));
   await updateJobsStatus(jobs, indicator);
 };
@@ -144,7 +148,7 @@ export const deleteJob = async (jobs, jobObject, indicator) => {
 /**
  * Downloads an existing process results
  * @param {import("../types").AsyncJob} jobObject
- * @param {import("stac-ts").StacCollection | null} selectedStac
+ * @param {import("@eodash/stac").STACCollection | null} selectedStac
  */
 export const downloadPreviousResults = async (jobObject, selectedStac) => {
   /** @type {string[]} */
@@ -191,7 +195,7 @@ export const downloadPreviousResults = async (jobObject, selectedStac) => {
  *
  * @async
  * @param {import("../types").AsyncJob} jobObject
- * @param {import("stac-ts").StacCollection | null} selectedStac
+ * @param {import("@eodash/stac").STACCollection | null} selectedStac
  * @param {import("@eox/map").EOxMap | null} mapElement
  */
 export const loadProcess = async (jobObject, selectedStac, mapElement) => {
@@ -212,7 +216,7 @@ export const loadProcess = async (jobObject, selectedStac, mapElement) => {
  * load a geotiff to the map from an existing process
  *
  * @param {object} params
- * @param {import("stac-ts").StacCollection | null} params.selectedStac
+ * @param {import("@eodash/stac").STACCollection | null} params.selectedStac
  * @param {string} params.jobId
  * @param {import("../types").EOxHubProcessResults} params.results
  * @param {import("@eox/map").EOxMap | null} params.mapElement
@@ -252,6 +256,8 @@ export async function loadPreviousProcess({
 export const getJobStatusUrl = (jobID, indicator) => {
   /** @type {string[]} */
   const jobsUrls = JSON.parse(localStorage.getItem(indicator) || "[]");
-  const jobUrl = jobsUrls.find((url) => url.includes(jobID));
+  const jobUrl = jobsUrls.find(
+    (url) => typeof url === "string" && url.includes(jobID),
+  );
   return jobUrl;
 };

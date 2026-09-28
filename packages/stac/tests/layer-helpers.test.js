@@ -3,6 +3,7 @@ import {
   findLayer,
   findLayersByLayerPrefix,
   getColFromLayer,
+  isGeoZarrLayer,
   removeLayers,
   replaceLayer,
 } from "../src/helpers/layers.js";
@@ -150,6 +151,22 @@ describe("layer helpers", () => {
       const readers = [{ stac: { id: "a" } }];
 
       expect(getColFromLayer(readers, "c;:;i;:;l;:;EPSG:3857")).toBeUndefined();
+    });
+  });
+
+  describe("isGeoZarrLayer", () => {
+    test("accepts a WebGLTile layer with a GeoZarr source", () => {
+      expect(
+        isGeoZarrLayer({ type: "WebGLTile", source: { type: "GeoZarr" } }),
+      ).toBe(true);
+    });
+
+    test("rejects any other source or layer type", () => {
+      expect(
+        isGeoZarrLayer({ type: "WebGLTile", source: { type: "GeoTIFF" } }),
+      ).toBe(false);
+      expect(isGeoZarrLayer(layer("a"))).toBe(false);
+      expect(isGeoZarrLayer(undefined)).toBe(false);
     });
   });
 });
