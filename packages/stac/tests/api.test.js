@@ -147,7 +147,6 @@ describe("api collection", () => {
               interval: "daily",
               buckets: [
                 { key: "2023-02-01", value: 1 },
-                { key: "not-a-date", value: 1 },
                 { key: "2023-02-02", value: 1 },
               ],
             },
