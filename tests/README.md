@@ -112,6 +112,23 @@ npm run bench
 
 Each run writes its results to `.bench-results/` and compares them against `.bench-baseline/`. `npm run bench:baseline` runs the tier and keeps the results as the baseline; run it on `main` before benchmarking a branch. The comparison is written to `bench-report.md`.
 
+To compare against another run, point `BENCH_BASELINE` at its folder, relative to the repo root:
+
+```sh
+BENCH_BASELINE=path/to/run npm run bench
+```
+
+CI keeps every run on the `bench-results` branch, one folder per run under `<branch>/<UTC timestamp>-<sha8>/`. To compare against one of `main`'s:
+
+```sh
+git fetch origin bench-results
+git worktree add .bench-baseline/history FETCH_HEAD
+ls .bench-baseline/history/main   # oldest first
+BENCH_BASELINE=.bench-baseline/history/main/<run> npm run bench
+```
+
+The worktree sits inside the ignored `.bench-baseline/`, so your own baseline stays untouched. Remove it with `git worktree remove .bench-baseline/history`.
+
 ### Writing a benchmark
 
 Each file runs in a browser iframe with a single `test()` that receives Vitest's test context:
