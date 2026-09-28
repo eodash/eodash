@@ -49,6 +49,15 @@ function handleApiKeyBasedAuth(schemeDef, href, optionsObject) {
     case "query": {
       const apiKey = schemeDef.name;
       const envVar = "EODASH_" + apiKey;
+      // Never forward values that look like secrets (e.g. OAuth client secrets)
+      // as URL query parameters: they would leak via browser history, referrer
+      // headers, logs and network traffic to whatever host the STAC data points to.
+      if (/secret|password|private/i.test(apiKey)) {
+        console.error(
+          `refusing to expose credential-like env variable ${envVar} as a query parameter`,
+        );
+        break;
+      }
       const envValue = process.env[envVar];
       if (envValue) {
         if (typeof optionsObject !== "undefined") {
