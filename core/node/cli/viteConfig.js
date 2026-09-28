@@ -35,7 +35,7 @@ export const createEodashViteConfig = (ctx) =>
       } = ctx;
       const envPrefix = ["VITE_", "EODASH_"];
       return /** @type {import("vite").UserConfig} */ ({
-        base: userConfig.base ?? "",
+        base: userConfig.base,
         cacheDir: cachePath,
         plugins: [
           vue({
@@ -95,7 +95,7 @@ export const createEodashViteConfig = (ctx) =>
               ...(entryPath ? [entryPath] : []),
             ],
           },
-          port: userConfig.port ?? 3000,
+          port: userConfig.port,
           open: userConfig.open,
           fs: {
             allow: [searchForWorkspaceRoot(process.cwd())],

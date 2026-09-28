@@ -127,17 +127,17 @@ export async function getUserConfig(
   const forCommand = config?.[/** @type {"dev" | "preview"} */ (command)];
 
   return {
-    base: options.base ?? config?.base,
-    port: Number(options.port ?? forCommand?.port),
-    host: options.host ?? forCommand?.host,
-    open: options.open ?? forCommand?.open,
+    base: options.base ?? config?.base ?? "",
+    port: Number(options.port ?? forCommand?.port ?? 5173),
+    host: options.host ?? forCommand?.host ?? "localhost",
+    open: options.open ?? forCommand?.open ?? false,
     cacheDir: options.cacheDir ?? config?.cacheDir,
     entryPoint: options.entryPoint ?? config?.entryPoint,
     outDir: options.outDir ?? config?.outDir,
     publicDir: options.publicDir ?? config?.publicDir,
     runtime: options.runtime ?? config?.runtime,
     widgets: options.widgets ?? config?.widgets,
-    lib: options.lib ?? config?.lib,
+    lib: options.lib ?? config?.lib ?? false,
     vite: config?.vite,
   };
 }
