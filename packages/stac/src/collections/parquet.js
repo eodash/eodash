@@ -113,7 +113,6 @@ export const createParquetCollection = ({
         row,
         time: new Date(entry[column] ?? NaN).getTime(),
       }))
-      .filter(({ time }) => !isNaN(time))
       .sort((a, b) => a.time - b.time);
   });
 

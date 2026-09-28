@@ -210,7 +210,6 @@ function getItemDates(items) {
 function sortDates(values) {
   return values
     .map((value) => new Date(value ?? ""))
-    .filter((date) => !isNaN(date.getTime()))
     .sort((a, b) => a.getTime() - b.getTime());
 }
 
