@@ -331,7 +331,10 @@ const controls = computed(() => {
   return controlsObj;
 });
 
-const initialCenter = toRaw(props.center);
+// read at setup like the zoom: a URL restore can land before the map mounts
+const initialCenter = toRaw(
+  mapPosition.value.length ? mapPosition.value.slice(0, 2) : props.center,
+);
 const initialZoom = toRaw(mapPosition.value?.[2] ?? props.zoom);
 
 const animationOptions = ref({

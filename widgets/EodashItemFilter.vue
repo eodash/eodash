@@ -95,8 +95,9 @@ const props = defineProps({
  *
  * @param  {Function} loader Function to load the item
  * @param {Function} reset Function to reset the selection
+ * @param {boolean} [clearDatetime] a main pick opens on its own latest date; a compare pick keeps the current one
  */
-const createSelect = (loader, reset) => {
+const createSelect = (loader, reset, clearDatetime = false) => {
   /**
    * @param {import("@eodash/stac").STACLink | import("@eodash/stac").STACCollection} item
    */
@@ -108,7 +109,9 @@ const createSelect = (loader, reset) => {
       }
       const href = /** @type {string} */ (store.isApi ? item.id : item.href);
       const previousDatetime = datetime.value;
-      datetime.value = "";
+      if (clearDatetime) {
+        datetime.value = "";
+      }
       emit("select", item);
       await loader(href)?.catch(() => {
         datetime.value = previousDatetime;
@@ -118,9 +121,13 @@ const createSelect = (loader, reset) => {
     }
   };
 };
-const selectIndicator = createSelect(store.loadSelectedSTAC, () => {
-  store.selectedStac = null;
-});
+const selectIndicator = createSelect(
+  store.loadSelectedSTAC,
+  () => {
+    store.selectedStac = null;
+  },
+  true,
+);
 const selectCompareIndicator = createSelect(
   store.loadSelectedCompareSTAC,
   store.resetSelectedCompareSTAC,
