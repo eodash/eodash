@@ -172,6 +172,20 @@ export const createLayerID = (collectionId, itemId, link, projectionCode) => {
 };
 
 /**
+ * @typedef {import("@eox/map/src/layers").EOxLayerType<"WebGLTile","GeoZarr">} GeoZarrLayer
+ * @typedef {import("@eox/map/src/layers").EoxSource<"GeoZarr">} GeoZarrSource
+ */
+
+/**
+ * Checks if a layer definition is a GeoZarr layer.
+ *
+ * @param {any} layer - Layer configuration object
+ * @returns {layer is Omit<GeoZarrLayer, "source"> & { source: GeoZarrSource }}
+ */
+export const isGeoZarrLayer = (layer) =>
+  layer?.type === "WebGLTile" && layer?.source?.type === "GeoZarr";
+
+/**
  * Generates a unique layer ID for a STAC asset by index.
  *
  * @param {string} collectionId

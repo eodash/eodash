@@ -1,4 +1,8 @@
-import { extractUrlKeys, replaceLayer } from "@eodash/stac/helpers";
+import {
+  extractUrlKeys,
+  isGeoZarrLayer,
+  replaceLayer,
+} from "@eodash/stac/helpers";
 import { assignLayers } from "@/store/actions";
 
 /**
@@ -29,20 +33,6 @@ export function updateGeoZarrBands(olLayer, jsonformValue, map) {
       },
     ]),
   );
-}
-
-/**
- * @typedef {import("@eox/map/src/layers").EOxLayerType<"WebGLTile","GeoZarr">} GeoZarrLayer
- * @typedef {import("@eox/map/src/layers").EoxSource<"GeoZarr">} GeoZarrSource
- */
-
-/**
- * Checks if a layer definition is a GeoZarr layer.
- * @param {any} layer - Layer configuration object
- * @returns {layer is Omit<GeoZarrLayer, "source"> & { source: GeoZarrSource }}
- */
-function isGeoZarrLayer(layer) {
-  return layer?.type === "WebGLTile" && layer?.source?.type === "GeoZarr";
 }
 
 /**
