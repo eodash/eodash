@@ -21,7 +21,7 @@ const pkg = createRequire(import.meta.url)("./package.json");
 /** `reporters` is root-only, so this is the only place to keep it off the tests. */
 const isBenchRun = process.argv.includes("bench");
 
-const REFERENCE_DIR = ".bench-baseline";
+const REFERENCE_DIR = process.env.BENCH_BASELINE ?? ".bench-baseline";
 const RESULTS_DIR = ".bench-results";
 
 /** Listed here: `bench.from()` throws on a missing file and the browser cannot stat. */

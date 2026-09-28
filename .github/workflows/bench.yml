@@ -1,30 +1,27 @@
 name: Benchmarks
 
-# A push to the baseline branch records the results every later run compares
-# against; a dispatch run fetches those and reports the difference.
-# TODO: point both at main once this branch merges.
+# A push to `main` records the baseline; a pull request compares against the
+# newest `main` record in its job summary. Same-repo runs record themselves on
+# the `bench-results` branch under `<branch>/<UTC timestamp>-<sha8>/`. The branch is
+# data only; Pages serves `gh-pages`. A failing benchmark turns the check red,
+# but it is not a required check, so it never blocks a merge.
 on:
   push:
     branches:
       - "main"
-  workflow_dispatch:
+  pull_request:
 
 # A later push cancels a running one, so the baseline is the newest commit's.
 concurrency:
-  group: bench-${{ github.event_name }}-${{ github.ref }}
+  group: bench-${{ github.ref }}
   cancel-in-progress: true
-
-env:
-  BASELINE_BRANCH: refactor-performance-report
-  ARTIFACT: bench-baseline
 
 jobs:
   bench:
     name: Benchmarks 📊
     runs-on: ubuntu-24.04
     permissions:
-      contents: read
-      actions: read
+      contents: write
     steps:
       - name: Checkout 🛎
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
@@ -48,38 +45,60 @@ jobs:
       - name: Install Playwright system deps 🎭
         run: npx playwright install-deps chromium
 
-      - name: Find the recorded results 🔍
-        id: recorded
-        if: github.event_name == 'workflow_dispatch'
-        env:
-          GH_TOKEN: ${{ github.token }}
+      # A missing branch (exit 2) is tolerated; it does not exist before the
+      # first record. Anything else, such as an unreachable remote, fails.
+      - name: Look for the benchmark history 🔍
+        id: history
         run: |
-          run=$(gh run list --workflow=bench.yml --branch="$BASELINE_BRANCH" \
-            --event=push --status=success --limit=1 --json databaseId --jq '.[0].databaseId // empty')
-          echo "comparing against run ${run:-none}"
-          echo "run-id=$run" >> "$GITHUB_OUTPUT"
-      - name: Fetch the recorded results 📥
-        if: steps.recorded.outputs.run-id != ''
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+          if git ls-remote --exit-code --heads origin bench-results >/dev/null; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            [ $? -eq 2 ]
+          fi
+      - name: Checkout the benchmark history 📚
+        if: steps.history.outputs.exists == 'true'
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
-          name: ${{ env.ARTIFACT }}
-          path: .bench-baseline
-          run-id: ${{ steps.recorded.outputs.run-id }}
-          github-token: ${{ github.token }}
-
-      # Results present: every benchmark compares against them. Absent: every
-      # benchmark reports as new. Either way the run leaves its own behind.
+          ref: bench-results
+          path: bench-history
+      - name: Use main's latest results as the baseline 📥
+        run: |
+          if [ -d bench-history/main ]; then
+            latest=$(ls -d bench-history/main/*/ | sort | tail -1)
+            mkdir -p .bench-baseline
+            cp "$latest"*.json .bench-baseline/
+            echo "comparing against $latest"
+          fi
       - name: Run benchmarks 📊
+        id: bench
+        continue-on-error: ${{ github.event_name == 'pull_request' }}
         run: npm run bench
       - name: Publish the table 📝
         if: always() && hashFiles('bench-report.md') != ''
         run: cat bench-report.md >> "$GITHUB_STEP_SUMMARY"
-      - name: Record the results 📎
-        if: github.event_name == 'push'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+
+      - name: Name this run 🏷
+        id: run
+        # env, not inline: a fork's branch name is untrusted input
+        env:
+          BRANCH: ${{ github.head_ref || github.ref_name }}
+          SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          echo "dir=${BRANCH//\//-}/$(date -u +%Y%m%dT%H%M%SZ)-${SHA::8}" >> "$GITHUB_OUTPUT"
+          mkdir bench-run
+          cp .bench-results/*.json bench-report.md bench-run/
+      # A fork's token is read-only, so its runs are reported but not recorded.
+      - name: Record this run 📎
+        if: github.event.pull_request.head.repo.fork != true
+        uses: JamesIves/github-pages-deploy-action@d92aa235d04922e8f08b40ce78cc5442fcfbfa2f # v4
         with:
-          name: ${{ env.ARTIFACT }}
-          path: .bench-results
-          # Dotted, and the default skips those silently.
-          include-hidden-files: true
-          if-no-files-found: error
+          branch: bench-results
+          folder: bench-run
+          target-folder: ${{ steps.run.outputs.dir }}
+          # the default force-push drops a record another run pushed meanwhile
+          force: false
+          commit-message: "bench: ${{ steps.run.outputs.dir }}"
+      # The PR run is recorded first, then turned red; it is not a required check.
+      - name: Fail on a failed benchmark ❌
+        if: steps.bench.outcome == 'failure'
+        run: exit 1
