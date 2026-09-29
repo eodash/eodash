@@ -390,10 +390,7 @@ export function createMcpServer() {
               .optional()
               .default("viridis")
               .describe("Colormap preset name"),
-            colors: z
-              .array(z.string())
-              .optional()
-              .describe("Color hex array"),
+            colors: z.array(z.string()).optional().describe("Color hex array"),
             categories: z
               .array(z.record(z.any()))
               .optional()
@@ -412,9 +409,7 @@ export function createMcpServer() {
             tooltipFields: z
               .array(z.record(z.any()))
               .optional()
-              .describe(
-                "Tooltip fields [{id, title?, appendix?, decimals?}]",
-              ),
+              .describe("Tooltip fields [{id, title?, appendix?, decimals?}]"),
             interactiveSliders: z
               .boolean()
               .optional()
@@ -442,10 +437,7 @@ export function createMcpServer() {
               .optional()
               .default([1])
               .describe("1-based band indices (e.g. [1] or [4,3,2])"),
-            bandIndex: z
-              .number()
-              .optional()
-              .describe("Band index (1-based)"),
+            bandIndex: z.number().optional().describe("Band index (1-based)"),
             redBand: z.number().optional().describe("Red band index"),
             greenBand: z.number().optional().describe("Green band index"),
             blueBand: z.number().optional().describe("Blue band index"),
@@ -455,18 +447,9 @@ export function createMcpServer() {
               .describe("[min, max] data range"),
             vmin: z.number().optional().describe("Min data value"),
             vmax: z.number().optional().describe("Max data value"),
-            sliderMin: z
-              .number()
-              .optional()
-              .describe("Slider track min bound"),
-            sliderMax: z
-              .number()
-              .optional()
-              .describe("Slider track max bound"),
-            colormap: z
-              .string()
-              .optional()
-              .describe("Colormap preset name"),
+            sliderMin: z.number().optional().describe("Slider track min bound"),
+            sliderMax: z.number().optional().describe("Slider track max bound"),
+            colormap: z.string().optional().describe("Colormap preset name"),
             customColors: z
               .array(z.string())
               .optional()
@@ -501,14 +484,8 @@ export function createMcpServer() {
               .describe("Default active colormap"),
             vmin: z.number().optional().describe("Default min rescale value"),
             vmax: z.number().optional().describe("Default max rescale value"),
-            sliderMin: z
-              .number()
-              .optional()
-              .describe("Slider track min bound"),
-            sliderMax: z
-              .number()
-              .optional()
-              .describe("Slider track max bound"),
+            sliderMin: z.number().optional().describe("Slider track min bound"),
+            sliderMax: z.number().optional().describe("Slider track max bound"),
             hasRescale: z
               .boolean()
               .optional()
@@ -588,11 +565,7 @@ export function createMcpServer() {
           .string()
           .optional()
           .describe("Feature tag filter (e.g. legend, tooltip, drawtools)"),
-        limit: z
-          .number()
-          .optional()
-          .default(5)
-          .describe("Max results (1-20)"),
+        limit: z.number().optional().default(5).describe("Max results (1-20)"),
       }),
     },
     async (params) => {
