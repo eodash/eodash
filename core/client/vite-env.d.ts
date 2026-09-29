@@ -13,16 +13,6 @@ declare module "user:config" {
   const eodash: import("@/types").Eodash | Promise<import("@/types").Eodash>;
   export default eodash;
 }
-declare module "stac-js" {
-  export const Collection: {
-    new (data?: object): import("stac-ts").StacCollection;
-  };
-  export const Item: { new (data?: object): import("stac-ts").StacItem };
-}
-declare module "stac-js/src/http.js" {
-  const toAbsolute: (...args: string[]) => string;
-  export { toAbsolute };
-}
 
 declare const __userConfigExist__: boolean;
 declare module "@eox/ui/vuetify/blueprint.js" {

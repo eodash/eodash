@@ -74,6 +74,21 @@ describe("getUserConfig", () => {
     expect((await getUserConfig({}, "preview", root)).port).toBe(5000);
   });
 
+  it("defaults the server options when neither flags nor config set them", async () => {
+    const root = path.join(tmp, "defaults");
+    await mkdir(root, { recursive: true });
+
+    for (const command of ["dev", "preview"]) {
+      expect(await getUserConfig({}, command, root)).toMatchObject({
+        base: "",
+        port: 5173,
+        host: "localhost",
+        open: false,
+        lib: false,
+      });
+    }
+  });
+
   it("falls back to flags alone when the host has no config file", async () => {
     const root = path.join(tmp, "no-config");
     await mkdir(root, { recursive: true });

@@ -3,7 +3,8 @@
   "entryPoints": [
     "dist/types/core/client/types.d.ts",
     "dist/node/types.d.ts",
-    "core/node/typedoc/widgets.ts"
+    "core/node/typedoc/widgets.ts",
+    "packages/stac/src/types/index.ts"
   ],
   "sortEntryPoints": false,
   "docsRoot": "./docs",

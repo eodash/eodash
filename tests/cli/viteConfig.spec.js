@@ -173,14 +173,6 @@ describe("eodash vite config", () => {
         build: { outDir: OUT_DIR },
       });
     });
-
-    it("falls back to port 8080 when none is configured", async () => {
-      // Unlike the dev server, preview guards the NaN that getUserConfig
-      // produces for an unset port.
-      await previewApp(makeCtx());
-      //@ts-expect-error todo
-      expect(preview.mock.calls[0][0].preview.port).toBe(8080);
-    });
   });
 
   describe("runtime config", () => {

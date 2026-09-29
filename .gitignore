@@ -34,7 +34,11 @@ docs/**/*.timestamp-*.mjs
 # tests
 **/**/__screenshots__/
 .vitest-attachments
+.vitest/
+coverage
+.bench-baseline/
+.bench-results/
+bench-report.md
 
 # mcp generated data
 packages/mcp/data
-
