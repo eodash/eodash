@@ -36,7 +36,7 @@
 </template>
 <script setup>
 import { datetime, mapEl } from "@/store/states";
-import { eodashCollections } from "@/utils/states";
+import { eodashCollections } from "@/store/stac";
 import "@eox/timecontrol";
 import "@eox/itemfilter";
 
@@ -44,6 +44,7 @@ import { computed, onMounted, ref, unref, useTemplateRef } from "vue";
 import { storeToRefs } from "pinia";
 import { useSTAcStore } from "@/store/stac";
 import { createAnimationLayers } from "./methods";
+import { setDatetime } from "@/store/actions";
 import {
   useInitMosaic,
   useScheduleMosaicUpdate,
@@ -87,8 +88,8 @@ const currentFilters = ref({});
 
 const hasMultipleItems = computed(() => {
   return eodashCollections.some((ec) => {
-    const itemLinks = ec.collectionStac?.links.filter((l) => l.rel === "item");
-    const itemsLink = ec.collectionStac?.links.some((l) => l.rel === "items");
+    const itemLinks = ec.stac?.links.filter((l) => l.rel === "item");
+    const itemsLink = ec.stac?.links.some((l) => l.rel === "items");
     return (itemLinks && itemLinks.length > 1) || itemsLink;
   });
 });
@@ -114,7 +115,7 @@ useInitMosaic(
  *
  * @param {CustomEvent<import("./types").TimelineSelectionEventDetail>} e
  */
-const onSelect = (e) => {
+const onSelect = async (e) => {
   const { selectedItems, date } = e.detail;
   // Update the selected range with the new dates
   selectedRange.value = date;
@@ -145,9 +146,10 @@ const onSelect = (e) => {
     return currDiff < prevDiff ? curr : prev;
   });
 
-  if (closestItem) {
-    datetime.value = closestItem.originalDate;
+  if (!closestItem) {
+    return;
   }
+  await setDatetime(closestItem.originalDate);
 };
 
 /**
@@ -175,7 +177,6 @@ const onExport = async (evt) => {
   }
 
   const mapLayers = await createAnimationLayers(
-    stacEndpoint.value,
     selectedRange.value,
     selectedRangeItems,
     selectedStac,

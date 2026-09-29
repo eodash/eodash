@@ -19,10 +19,9 @@
 <script setup>
 import "@eox/stacinfo";
 import { currentUrl } from "@/store/states";
-import { storeToRefs } from "pinia";
-import { useSTAcStore } from "@/store/stac";
-import { computed, onUnmounted, ref, watch } from "vue";
-import { isSTACItem } from "@/eodashSTAC/helpers";
+import { eodashCollections } from "@/store/stac";
+import { useOnLayersUpdate } from "@/composables";
+import { computed, onMounted, onUnmounted, ref } from "vue";
 
 const { level, allowHtml, featured, footer, header, body, tags } = defineProps({
   level: {
@@ -108,8 +107,6 @@ const { level, allowHtml, featured, footer, header, body, tags } = defineProps({
   },
 });
 
-const { selectedItem } = storeToRefs(useSTAcStore());
-
 /** @type {import("vue").Ref<string | null>} */
 const itemUrl = ref(null);
 /**
@@ -125,30 +122,33 @@ const revokeItem = () => {
   }
 };
 
-watch(
-  selectedItem,
-  (item) => {
-    if (level !== "item" || !item) return;
-    revokeItem();
-    if (!isSTACItem(item)) {
-      itemUrl.value = item.href;
-      return;
-    }
-    const selfHref = item?.links?.find((l) => l.rel === "self")?.href;
-    if (selfHref) {
-      itemUrl.value = selfHref;
-    } else if (item) {
-      const blob = new Blob([JSON.stringify(item)], {
-        type: "application/json",
-      });
-      activeItemUrl = URL.createObjectURL(blob);
-      itemUrl.value = activeItemUrl;
-    } else {
-      itemUrl.value = null;
-    }
-  },
-  { immediate: true },
-);
+/**
+ * Points at the item the map is showing, rather than at the one the user
+ * picked: only a catalog offers item picking, while a static or parquet
+ * collection resolves its item from the datetime.
+ *
+ * The first collection reporting an item wins.
+ */
+const showRenderedItem = () => {
+  if (level !== "item") return;
+  const item = eodashCollections.find((ec) => ec.item)?.item;
+  if (!item) return;
+  revokeItem();
+  const selfHref = item.links?.find((l) => l.rel === "self")?.href;
+  if (selfHref) {
+    itemUrl.value = selfHref;
+    return;
+  }
+  const blob = new Blob([JSON.stringify(item)], {
+    type: "application/json",
+  });
+  activeItemUrl = URL.createObjectURL(blob);
+  itemUrl.value = activeItemUrl;
+};
+
+// `ec.item` is a plain property, so nothing can watch it
+useOnLayersUpdate(showRenderedItem);
+onMounted(showRenderedItem);
 onUnmounted(revokeItem);
 
 const stacInfoURL = computed(() =>
