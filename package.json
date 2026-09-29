@@ -76,7 +76,7 @@
     "bench:baseline": "npm run bench && mkdir -p .bench-baseline && cp .bench-results/*.json .bench-baseline/",
     "test:stac": "vitest run --project stac",
     "test:cli": "vitest run --project cli",
-    "test:mcp": "npm run docs:generate && npm run mcp:generate && vitest run --project mcp",
+    "test:mcp": "vitest run --project mcp",
     "mcp:generate": "node packages/mcp/generate-metadata.js",
     "mcp:start": "node packages/mcp/index.js",
     "test:coverage": "vitest run --coverage",

@@ -136,9 +136,7 @@ export function generateVectorFlatStyle({
         FALLBACK_PALETTES.viridis;
     }
     const effectiveRange =
-      range && range.length === 2
-        ? range
-        : [min ?? 0, max ?? 100];
+      range && range.length === 2 ? range : [min ?? 0, max ?? 100];
     const [minVal, maxVal] = effectiveRange;
     const step = (maxVal - minVal) / (palette.length - 1);
 

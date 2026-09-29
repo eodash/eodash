@@ -5,7 +5,10 @@
 function renderSimpleMarkdown(text) {
   if (!text) return "";
   return text
-    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>')
+    .replace(
+      /\[([^\]]+)\]\(([^)]+)\)/g,
+      '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>',
+    )
     .replace(/`([^`]+)`/g, "<code>$1</code>");
 }
 
@@ -61,7 +64,12 @@ export function generateLandingPage(
     },
   ];
 
-  const templates = options.templates || ["lite", "explore", "expert", "compare"];
+  const templates = options.templates || [
+    "lite",
+    "explore",
+    "expert",
+    "compare",
+  ];
   const examplesCount = options.examplesCount ?? 15;
 
   const widgetCards = widgetList

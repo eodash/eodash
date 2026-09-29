@@ -47,11 +47,7 @@ export function registerDiscoveryTools(server) {
           .string()
           .optional()
           .describe("Feature tag filter (e.g. legend, tooltip, drawtools)"),
-        limit: z
-          .number()
-          .optional()
-          .default(5)
-          .describe("Max results (1-20)"),
+        limit: z.number().optional().default(5).describe("Max results (1-20)"),
       }),
     },
     async (params) => {

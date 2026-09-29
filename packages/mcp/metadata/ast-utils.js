@@ -48,9 +48,10 @@ export function unwrapPropType(typeStr) {
 /**
  * Clean and parse JSDoc comments attached to AST nodes using TypeScript compiler API
  */
-export function getJsDocFromNode(node, sf) {
+function getJsDocFromNode(node, sf) {
   const tsType = ts.getJSDocType(node);
   let type = tsType ? tsType.getText(sf) : null;
+  let typeNode = tsType || null;
   let description = "";
   const params = [];
   let returns = null;
@@ -68,6 +69,7 @@ export function getJsDocFromNode(node, sf) {
       for (const tag of doc.tags || []) {
         if (ts.isJSDocTypeTag(tag) && tag.typeExpression?.type) {
           type = tag.typeExpression.type.getText(sf);
+          typeNode = tag.typeExpression.type;
         } else if (ts.isJSDocParameterTag(tag)) {
           const pComment = tag.comment
             ? typeof tag.comment === "string"
@@ -105,25 +107,52 @@ export function getJsDocFromNode(node, sf) {
   return {
     description: description.trim(),
     type: cleanMultilineType(type),
+    typeNode,
     params,
     returns,
   };
 }
 
 /**
- * Extract typed AST object literals into JSON Schema format
+ * Extract TypeScript AST type node into JSON Schema format
  */
-export function typeNodeToJsonSchema(node) {
-  if (ts.isTypeLiteralNode(node)) {
+export function tsTypeNodeToSchema(typeNode, sf) {
+  if (!typeNode) return { type: "unknown" };
+
+  if (ts.isImportTypeNode(typeNode)) {
+    if (typeNode.typeArguments && typeNode.typeArguments.length > 0) {
+      return tsTypeNodeToSchema(typeNode.typeArguments[0], sf);
+    }
+    return { type: "object" };
+  }
+
+  if (ts.isTypeReferenceNode(typeNode)) {
+    const typeName = typeNode.typeName.getText(sf);
+    if (
+      typeName.endsWith("PropType") &&
+      typeNode.typeArguments &&
+      typeNode.typeArguments.length > 0
+    ) {
+      return tsTypeNodeToSchema(typeNode.typeArguments[0], sf);
+    }
+    if (typeNode.typeArguments && typeNode.typeArguments.length > 0) {
+      return tsTypeNodeToSchema(typeNode.typeArguments[0], sf);
+    }
+    return { type: typeName };
+  }
+
+  if (ts.isTypeLiteralNode(typeNode)) {
     const properties = {};
     const required = [];
-    for (const member of node.members) {
-      if (ts.isPropertySignature(member) && member.name) {
-        const propName = member.name.getText();
-        if (!member.questionToken) required.push(propName);
+    for (const member of typeNode.members) {
+      if (ts.isPropertySignature(member)) {
+        const propName = member.name.getText(sf);
         properties[propName] = member.type
-          ? typeNodeToJsonSchema(member.type)
-          : { type: "any" };
+          ? tsTypeNodeToSchema(member.type, sf)
+          : { type: "unknown" };
+        if (!member.questionToken) {
+          required.push(propName);
+        }
       }
     }
     return {
@@ -132,21 +161,82 @@ export function typeNodeToJsonSchema(node) {
       ...(required.length > 0 ? { required } : {}),
     };
   }
-  if (ts.isArrayTypeNode(node)) {
+
+  if (ts.isUnionTypeNode(typeNode)) {
+    return { anyOf: typeNode.types.map((t) => tsTypeNodeToSchema(t, sf)) };
+  }
+
+  if (ts.isIntersectionTypeNode(typeNode)) {
+    const merged = { type: "object", properties: {} };
+    for (const sub of typeNode.types) {
+      const s = tsTypeNodeToSchema(sub, sf);
+      if (s.properties) {
+        Object.assign(merged.properties, s.properties);
+      }
+    }
+    return Object.keys(merged.properties).length > 0
+      ? merged
+      : { type: "object" };
+  }
+
+  if (ts.isArrayTypeNode(typeNode)) {
     return {
       type: "array",
-      items: typeNodeToJsonSchema(node.elementType),
+      items: tsTypeNodeToSchema(typeNode.elementType, sf),
     };
   }
-  if (ts.isUnionTypeNode(node)) {
-    return {
-      anyOf: node.types.map(typeNodeToJsonSchema),
-    };
-  }
-  if (node.kind === ts.SyntaxKind.StringKeyword) return { type: "string" };
-  if (node.kind === ts.SyntaxKind.NumberKeyword) return { type: "number" };
-  if (node.kind === ts.SyntaxKind.BooleanKeyword) return { type: "boolean" };
-  if (node.kind === ts.SyntaxKind.AnyKeyword) return { type: "any" };
 
-  return { type: node.getText() };
+  if (ts.isTupleTypeNode(typeNode)) {
+    return {
+      type: "array",
+      items: typeNode.elements.map((t) => tsTypeNodeToSchema(t, sf)),
+    };
+  }
+
+  if (ts.isLiteralTypeNode(typeNode)) {
+    let val;
+    try {
+      val = JSON.parse(typeNode.getText(sf));
+    } catch {
+      val = typeNode.getText(sf);
+    }
+    return { const: val };
+  }
+
+  if (ts.isFunctionTypeNode(typeNode)) {
+    return { type: "function" };
+  }
+
+  switch (typeNode.kind) {
+    case ts.SyntaxKind.StringKeyword:
+      return { type: "string" };
+    case ts.SyntaxKind.NumberKeyword:
+      return { type: "number" };
+    case ts.SyntaxKind.BooleanKeyword:
+      return { type: "boolean" };
+    case ts.SyntaxKind.ObjectKeyword:
+      return { type: "object" };
+    case ts.SyntaxKind.AnyKeyword:
+    case ts.SyntaxKind.UnknownKeyword:
+      return { type: "unknown" };
+    case ts.SyntaxKind.VoidKeyword:
+    case ts.SyntaxKind.UndefinedKeyword:
+      return { type: "undefined" };
+    default:
+      return { type: "object" };
+  }
 }
+
+export function identifierToSchema(idText) {
+  if (!idText) return { type: "unknown" };
+  const lower = idText.toLowerCase();
+  if (lower.includes("boolean")) return { type: "boolean" };
+  if (lower.includes("string")) return { type: "string" };
+  if (lower.includes("number")) return { type: "number" };
+  if (lower.includes("array")) return { type: "array" };
+  if (lower.includes("function")) return { type: "function" };
+  if (lower.includes("object")) return { type: "object" };
+  return { type: idText };
+}
+
+export { getJsDocFromNode };

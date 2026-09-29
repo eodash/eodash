@@ -2,7 +2,12 @@ import fs from "node:fs";
 import path from "node:path";
 import ts from "typescript";
 import { parse as parseVueSFC } from "@vue/compiler-sfc";
-import { getJsDocFromNode, unwrapPropType } from "./ast-utils.js";
+import {
+  getJsDocFromNode,
+  unwrapPropType,
+  tsTypeNodeToSchema,
+  identifierToSchema,
+} from "./ast-utils.js";
 import {
   CATEGORY_MAP,
   TAGS_MAP,
@@ -13,10 +18,7 @@ import {
   analyzeStoreInteractions,
   extractExamplesFromTemplates,
 } from "./store-parser.js";
-import {
-  parseTypedocWidgets,
-  loadMarkdownGuides,
-} from "./typedoc-parser.js";
+import { parseTypedocWidgets, loadMarkdownGuides } from "./typedoc-parser.js";
 import { discoverWidgetNames } from "../../../core/node/widgets.js";
 
 export { stringifyType, typeToSchema } from "./type-utils.js";
@@ -57,6 +59,9 @@ export function extractPropsFromVueSfc(vueFilePath) {
               const name = prop.name.getText(sf);
               const doc = getJsDocFromNode(prop, sf);
               let propType = doc.type ? unwrapPropType(doc.type) : "unknown";
+              let propSchema = doc.typeNode
+                ? tsTypeNodeToSchema(doc.typeNode, sf)
+                : null;
               let defaultValue = null;
               let required = false;
 
@@ -75,6 +80,7 @@ export function extractPropsFromVueSfc(vueFilePath) {
                     if (subName === "type") {
                       if (subDoc.type) {
                         propType = unwrapPropType(subDoc.type);
+                        propSchema = tsTypeNodeToSchema(subDoc.typeNode, sf);
                       } else {
                         const innerDoc = getJsDocFromNode(
                           subProp.initializer,
@@ -82,8 +88,13 @@ export function extractPropsFromVueSfc(vueFilePath) {
                         );
                         if (innerDoc.type) {
                           propType = unwrapPropType(innerDoc.type);
+                          propSchema = tsTypeNodeToSchema(
+                            innerDoc.typeNode,
+                            sf,
+                          );
                         } else if (propType === "unknown") {
                           propType = subProp.initializer.getText(sf);
+                          propSchema = identifierToSchema(propType);
                         }
                       }
                     }
@@ -103,11 +114,19 @@ export function extractPropsFromVueSfc(vueFilePath) {
                 if (propType === "unknown") {
                   propType = prop.initializer.getText(sf);
                 }
+                if (!propSchema) {
+                  propSchema = identifierToSchema(prop.initializer.getText(sf));
+                }
+              }
+
+              if (!propSchema) {
+                propSchema = identifierToSchema(propType);
               }
 
               props.push({
                 name,
                 type: propType,
+                schema: propSchema,
                 defaultValue,
                 description: doc.description,
                 required,

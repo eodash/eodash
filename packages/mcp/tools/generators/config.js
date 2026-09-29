@@ -1,9 +1,6 @@
 import { z } from "zod";
 import { generateEodashConfig } from "../../generators/config.js";
-import {
-  DEFAULT_STAC_ENDPOINT,
-  getAvailableTemplates,
-} from "../../helpers.js";
+import { DEFAULT_STAC_ENDPOINT, getAvailableTemplates } from "../../helpers.js";
 
 /**
  * Register generate_eodash_config tool

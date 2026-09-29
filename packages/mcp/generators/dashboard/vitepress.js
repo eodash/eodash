@@ -34,7 +34,8 @@ export function generateVitepressFiles({
     2,
   );
 
-  files["docs/.vitepress/config.js"] = `import { defineConfig } from "vitepress";
+  files["docs/.vitepress/config.js"] =
+    `import { defineConfig } from "vitepress";
 
 export default defineConfig({
   title: "${brandName}",
@@ -65,7 +66,8 @@ export default defineConfig({
 });
 `;
 
-  files["docs/.vitepress/theme/index.js"] = `import DefaultTheme from "vitepress/theme";
+  files["docs/.vitepress/theme/index.js"] =
+    `import DefaultTheme from "vitepress/theme";
 
 /** @type {import('vitepress').Theme} */
 export default {

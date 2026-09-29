@@ -31,7 +31,8 @@ export function generateSpaFiles({
     2,
   );
 
-  files["eodash.config.js"] = `import { defineConfig } from "@eodash/eodash/config";
+  files["eodash.config.js"] =
+    `import { defineConfig } from "@eodash/eodash/config";
 
 export default defineConfig({
   entryPoint: "src/main.js",

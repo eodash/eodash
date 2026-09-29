@@ -207,8 +207,12 @@ describe("eodash Style Generator - generateRasterWebglStyle", () => {
     expect(res.legend.range.length).toBeGreaterThanOrEqual(8);
     expect(res.legend.range[0].startsWith("#")).toBe(true);
     expect(res.jsonform.properties.minmax.format).toBe("minmax");
-    expect(res.jsonform.properties.minmax.properties.min.maximum).toBeUndefined();
-    expect(res.jsonform.properties.minmax.properties.max.minimum).toBeUndefined();
+    expect(
+      res.jsonform.properties.minmax.properties.min.maximum,
+    ).toBeUndefined();
+    expect(
+      res.jsonform.properties.minmax.properties.max.minimum,
+    ).toBeUndefined();
   });
 
   it("generates static single-band normalized COG shader without interactive sliders", async () => {
@@ -283,8 +287,12 @@ describe("eodash Style Generator - generateRasterForm", () => {
     // Dynamic 1.5x slider bounds check
     expect(res.jsonform.properties.minmax.properties.min.default).toBe(0);
     expect(res.jsonform.properties.minmax.properties.max.default).toBe(2000);
-    expect(res.jsonform.properties.minmax.properties.min.maximum).toBeUndefined();
-    expect(res.jsonform.properties.minmax.properties.max.minimum).toBeUndefined();
+    expect(
+      res.jsonform.properties.minmax.properties.min.maximum,
+    ).toBeUndefined();
+    expect(
+      res.jsonform.properties.minmax.properties.max.minimum,
+    ).toBeUndefined();
     expect(res.jsonform.properties.minmax.properties.max.maximum).toBe(3000);
   });
 
@@ -299,8 +307,12 @@ describe("eodash Style Generator - generateRasterForm", () => {
     expect(res.jsonform.properties.minmax.properties.max.default).toBe(250);
     expect(res.jsonform.properties.minmax.properties.min.minimum).toBe(0);
     expect(res.jsonform.properties.minmax.properties.max.maximum).toBe(375);
-    expect(res.jsonform.properties.minmax.properties.min.maximum).toBeUndefined();
-    expect(res.jsonform.properties.minmax.properties.max.minimum).toBeUndefined();
+    expect(
+      res.jsonform.properties.minmax.properties.min.maximum,
+    ).toBeUndefined();
+    expect(
+      res.jsonform.properties.minmax.properties.max.minimum,
+    ).toBeUndefined();
   });
 
   it("generates minimal rasterform without rescale slider", () => {
@@ -338,12 +350,12 @@ describe("eodash Style Generator - generateRasterForm", () => {
     expect(res.jsonform.oneOf).toHaveLength(2);
     expect(res.jsonform.oneOf[0].title).toBe("RGB True Color");
     expect(res.jsonform.oneOf[1].title).toBe("NDVI Index");
-    expect(
-      res.jsonform.oneOf[1].properties.minmax.properties.min.default,
-    ).toBe(-0.2);
-    expect(
-      res.jsonform.oneOf[1].properties.minmax.properties.max.default,
-    ).toBe(0.8);
+    expect(res.jsonform.oneOf[1].properties.minmax.properties.min.default).toBe(
+      -0.2,
+    );
+    expect(res.jsonform.oneOf[1].properties.minmax.properties.max.default).toBe(
+      0.8,
+    );
   });
 });
 

@@ -1,9 +1,6 @@
 import { z } from "zod";
 import { scaffoldDashboard } from "../../generators/dashboard.js";
-import {
-  DEFAULT_STAC_ENDPOINT,
-  getAvailableTemplates,
-} from "../../helpers.js";
+import { DEFAULT_STAC_ENDPOINT, getAvailableTemplates } from "../../helpers.js";
 
 /**
  * Register scaffold_dashboard tool
