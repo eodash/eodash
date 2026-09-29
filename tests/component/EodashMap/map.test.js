@@ -9,11 +9,17 @@ import {
   poi,
   tooltipAdapter,
 } from "@/store/states";
-import { layerControlFormValue } from "@/utils/states";
+import {
+  hasRestoredView,
+  layerControlFormValue,
+  shouldZoomToExtent,
+} from "@/utils/states";
+import { updateIndicatorLayers } from "@/eodashSTAC/layers";
 import { flatStylesToStyleFunction } from "ol/render/canvas/style.js";
 import { mountAsyncComponent, stubCustomElement } from "../../support/mount";
 
-vi.mock("@eox/map", () => ({}));
+// `layers.js` reaches for the extent transform; the zoom itself is unit tested
+vi.mock("@eox/map", () => ({ transformExtent: (/** @type {any} */ e) => e }));
 vi.mock("@eox/map/src/plugins/advancedLayersAndSources", () => ({}));
 vi.mock("@eox/map/src/plugins/globe", () => ({}));
 
@@ -21,13 +27,11 @@ vi.mock("@eox/map/src/plugins/globe", () => ({}));
 const seed = vi.hoisted(() => ({ main: /** @type {any[] | null} */ (null) }));
 const methods = vi.hoisted(() => ({
   useHandleMapMoveEnd: vi.fn(),
-  useInitMap: vi.fn(),
   useMapLoading: vi.fn(),
   useUpdateTooltipProperties: vi.fn(),
 }));
 vi.mock("^/EodashMap/methods", () => ({
   useHandleMapMoveEnd: methods.useHandleMapMoveEnd,
-  useInitMap: methods.useInitMap,
   useMapLoading: methods.useMapLoading,
   useUpdateTooltipProperties: vi.fn(
     (
@@ -39,6 +43,8 @@ vi.mock("^/EodashMap/methods", () => ({
     },
   ),
 }));
+
+vi.mock("@/eodashSTAC/layers", { spy: true });
 
 // Capture the props forwarded to the (separately tested) buttons component.
 const btnsCapture = vi.hoisted(() => ({ props: /** @type {any} */ (null) }));
@@ -65,9 +71,20 @@ vi.mock("^/EodashMap/EodashMapBtns.vue", () => ({
   },
 }));
 
+/** @param {any[]} [layers] */
+const compileStyles = (layers = []) => {
+  for (const layer of layers) {
+    if (layer.style) {
+      flatStylesToStyleFunction([layer.style]);
+    }
+    compileStyles(layer.layers);
+  }
+};
+
 // Minimal eox-map so onMounted's `globeConfig.terrain` assignment succeeds (an
-// unhandled throw there cascades into unrelated failures). Styles go through
-// the real ol compiler, as eox-map does, to check ol thrown errors.
+// unhandled throw there cascades into unrelated failures). Styles go through the
+// real ol compiler, group children included as eox-map compiles them, to check
+// ol thrown errors.
 stubCustomElement(
   "eox-map",
   class extends HTMLElement {
@@ -75,11 +92,7 @@ stubCustomElement(
     /** @type {any[]} */
     #layers = [];
     set layers(value) {
-      for (const layer of value ?? []) {
-        if (layer.style) {
-          flatStylesToStyleFunction([layer.style]);
-        }
-      }
+      compileStyles(value);
       this.#layers = value;
     }
     get layers() {
@@ -105,6 +118,8 @@ describe("EodashMap", () => {
     tooltipAdapter.value = null;
     layerControlFormValue.value = {};
     errorState.value = { message: "", details: "", severity: "error" };
+    hasRestoredView.value = false;
+    vi.mocked(updateIndicatorLayers).mockReset().mockResolvedValue([]);
     for (const fn of Object.values(methods)) vi.mocked(fn).mockClear();
   });
 
@@ -117,7 +132,27 @@ describe("EodashMap", () => {
       });
 
       await expect.poll(() => mainMap()?.layers).toBeTruthy();
-      expect(mainMap()?.layers[0].properties.id).toBe("custom-base");
+      // grouped at mount, so the first render replaces the group rather than
+      // inserting a second one beside loose layers
+      expect(mainMap()?.layers[0].properties.id).toBe("BaseLayersGroup");
+      expect(mainMap()?.layers[0].layers[0].properties.id).toBe("custom-base");
+    });
+
+    test("publishes zoomToExtent for the layer update to read", async () => {
+      const state = { stac: { selectedStac: { id: "coll" } } };
+
+      await mountAsyncComponent(EodashMap, {
+        props: { zoomToExtent: true },
+        initialState: state,
+      });
+      await expect.poll(() => shouldZoomToExtent.value).toBe(true);
+
+      await mountAsyncComponent(EodashMap, {
+        props: { zoomToExtent: false },
+        initialState: state,
+      });
+      await expect.poll(() => updateIndicatorLayers).toHaveBeenCalled();
+      await expect.poll(() => shouldZoomToExtent.value).toBe(false);
     });
 
     test("binds center, zoom, controls and animation options onto eox-map", async () => {

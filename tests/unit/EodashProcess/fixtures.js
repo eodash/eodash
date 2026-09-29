@@ -1,5 +1,5 @@
 /**
- * Shared EodashProcess test fixtures (see .agents/testing/process.md).
+ * Shared EodashProcess test fixtures.
  * Clone before mutating in a test.
  */
 

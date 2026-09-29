@@ -234,7 +234,6 @@ const props = defineProps({
 
 const itemfilterEl = useTemplateRef("itemfilter");
 
-// Sorting states
 const sortMenu = ref(false);
 const sortOrder = ref("-");
 /** @type {import("vue").Ref<{ property: string, label: string } | null>} */
@@ -252,11 +251,9 @@ function updateSortByParam() {
  */
 function selectSort(option) {
   if (selectedSort.value?.property === option.property) {
-    // Flip order if same property
     sortOrder.value = sortOrder.value === "-" ? "+" : "-";
   } else {
     selectedSort.value = option;
-    // default to descending when changing property
     sortOrder.value = "-";
   }
   updateSortByParam();
@@ -268,6 +265,9 @@ function selectSort(option) {
 
 const store = useSTAcStore();
 const { selectedItem, selectedCompareItem } = storeToRefs(store);
+
+/** The map this catalog draws on. The prop cannot change after setup. */
+const mapElement = props.enableCompare ? mapCompareEl : mapEl;
 
 const catalogEndpoint = computed(
   () => props.stacEndpoint || store.stacEndpoint,
@@ -284,10 +284,9 @@ const isMosaicEnabled = computed(
   () => props.useMosaic && !!mosaicEndpoint.value,
 );
 
-const activeSelectedItem =
-  /** @type {import("vue").Ref<import("stac-ts").StacItem | null | undefined>} */ (
-    props.enableCompare ? selectedCompareItem : selectedItem
-  );
+const activeSelectedItem = props.enableCompare
+  ? selectedCompareItem
+  : selectedItem;
 
 if (props.useMosaic) {
   const unsubscribeReturn = returnToOverview.on(() => {
@@ -303,13 +302,10 @@ onUnmounted(() => {
   activeSelectedItem.value = undefined;
 });
 
-// Reactive state
 /** @type {import("vue").Ref<import("@/types").GeoJsonFeature[]>} */
 const currentItems = ref([]);
 
 const items = currentItems.value;
-
-// Initial data fetch
 
 if (catalogEndpoint.value) {
   await axios
@@ -378,7 +374,7 @@ watch(activeSelectedItem, (item) => {
     renderLatestMosaic();
     renderItemsFeatures(
       currentItems.value,
-      props.enableCompare ? mapCompareEl : mapEl,
+      mapElement,
       effectiveHoverProperties.value,
       props.stacItemsStyle,
       props.stacItemsInteractionStyle,
@@ -400,7 +396,7 @@ watch(
     if (!isMosaicEnabled.value || !layer) return;
     renderItemsFeatures(
       currentItems.value,
-      props.enableCompare ? mapCompareEl : mapEl,
+      mapElement,
       effectiveHoverProperties.value,
       props.stacItemsStyle,
       props.stacItemsInteractionStyle,
@@ -413,7 +409,7 @@ const scheduleMosaicUpdate = useScheduleMosaicUpdate();
 // Event handlers
 const onFilter = createOnFilterHandler({
   currentItems,
-  mapElement: props.enableCompare ? mapCompareEl : mapEl,
+  mapElement,
   hoverProperties: effectiveHoverProperties,
   stacItemsStyle: props.stacItemsStyle,
   stacItemsInteractionStyle: props.stacItemsInteractionStyle,
@@ -449,47 +445,27 @@ const onFilter = createOnFilterHandler({
 const onSelectItem = createOnSelectHandler(
   store,
   props.enableCompare,
-  props.enableCompare ? mapCompareEl : mapEl,
+  mapElement,
 );
 
-// composables
-
-// Render items features on the map
 useRenderItemsFeatures(
   currentItems,
-  props.enableCompare ? mapCompareEl : mapEl,
+  mapElement,
   effectiveHoverProperties,
   props.stacItemsStyle,
   props.stacItemsInteractionStyle,
 );
-// Search on map move logic
-useSearchOnMapMove(
-  itemfilterEl,
-  props.bboxFilter,
-  props.enableCompare ? mapCompareEl : mapEl,
-);
-// Render on feature click
-useRenderOnFeatureClick(
-  itemfilterEl,
-  store,
-  props.enableCompare ? mapCompareEl : mapEl,
-  props.enableCompare,
-);
-// initialize mosaic and keep in sync with map state
+useSearchOnMapMove(itemfilterEl, props.bboxFilter, mapElement);
+useRenderOnFeatureClick(itemfilterEl, mapElement, onSelectItem);
 useInitMosaic(
   props.useMosaic ? mosaicEndpoint.value : null,
   undefined,
   props.mosaicIndicators,
 );
 
-// highlight on feature hover
 useHoverTooltip(effectiveHoverProperties);
-const onMouseEnterResult = createOnMouseEnterResult(
-  props.enableCompare ? mapCompareEl : mapEl,
-);
-const onMouseLeaveResult = createOnMouseLeaveResult(
-  props.enableCompare ? mapCompareEl : mapEl,
-);
+const onMouseEnterResult = createOnMouseEnterResult(mapElement);
+const onMouseLeaveResult = createOnMouseLeaveResult(mapElement);
 
 const itemfilterStyleOverride = `
   li.highlighted {
