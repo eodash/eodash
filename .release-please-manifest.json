@@ -1,4 +1,5 @@
 {
   ".": "5.9.0",
-  "packages/mcp": "1.0.0"
+  "packages/mcp": "1.0.0",
+  "packages/stac": "0.1.0"
 }
