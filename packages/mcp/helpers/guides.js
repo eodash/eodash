@@ -50,7 +50,7 @@ export default createEodash({
     description:
       "Define widgets dynamically as functions executed whenever the user selects a different STAC indicator or collection.",
     signature:
-      "defineWidget: (selectedSTAC: STACCollection | null) => Widget | null",
+      "defineWidget: (selectedSTAC: STACCollection | null, selectedCompareSTAC?: STACCollection | null) => StaticWidget | undefined | null | false",
     example: `
 export default createEodash({
   template: {

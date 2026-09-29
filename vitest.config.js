@@ -65,6 +65,7 @@ export default defineConfig({
         test: {
           name: "mcp",
           include: ["packages/mcp/tests/**/*.test.js"],
+          globalSetup: ["packages/mcp/tests/setup.js"],
           environment: "node",
           testTimeout: 60 * 1000,
         },
