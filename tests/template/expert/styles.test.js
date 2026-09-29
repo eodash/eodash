@@ -49,7 +49,8 @@ describe("expert template - eodash styles", () => {
           throw new Error("tooltip not enabled");
         }
       },
-      { timeout: TIMEOUT },
+      // set once every tile of a live, client-rendered COG has loaded
+      { timeout: TIMEOUT * 3 },
     );
   });
 });

@@ -15,6 +15,11 @@ const COMPARE_TITLE = "Carbon Dioxide from OMI (daily)";
 describe("expert template - compare mode", () => {
   /** @type {Awaited<ReturnType<typeof bootExpert>>} */
   let ctx;
+  // `eox-map` dispatches `layerschanged` once per `set layers`, so these count
+  // how many times the app wrote each pane. Compare mode writes #compare, so a
+  // single counter on #main would miss the write it is meant to guard.
+  let mapWrites = 0;
+  let compareMapWrites = 0;
 
   /** The map button whose tooltip text matches (icon buttons have no name). */
   const btnByTooltip = (/** @type {string} */ text) =>
@@ -26,6 +31,12 @@ describe("expert template - compare mode", () => {
 
   beforeAll(async () => {
     ctx = await bootExpert({ endpoint: STAC_ENDPOINT });
+    ctx
+      .query("eox-map#main")
+      .addEventListener("layerschanged", () => mapWrites++);
+    ctx
+      .query("eox-map#compare")
+      .addEventListener("layerschanged", () => compareMapWrites++);
   });
 
   afterAll(() => ctx?.app.unmount());
@@ -44,6 +55,7 @@ describe("expert template - compare mode", () => {
         timeout: TIMEOUT,
       })
       .toBeTruthy();
+    mapWrites = 0;
     await userEvent.click(page.getByText(MAIN_TITLE, { exact: true }));
 
     await expect
@@ -52,6 +64,10 @@ describe("expert template - compare mode", () => {
     await expect
       .poll(() => btnByTooltip("Compare mode"), { timeout: TIMEOUT })
       .toBeTruthy();
+
+    // the render lands after the store settles
+    await expect.poll(() => mapWrites, { timeout: TIMEOUT }).toBeGreaterThan(0);
+    expect(mapWrites).toBe(1);
   });
 
   test("the Compare button opens the picker and loads a second indicator", async () => {
@@ -72,6 +88,8 @@ describe("expert template - compare mode", () => {
         timeout: TIMEOUT,
       })
       .toBe(1);
+    mapWrites = 0;
+    compareMapWrites = 0;
     await userEvent.click(page.getByText(COMPARE_TITLE, { exact: true }));
 
     await vi.waitFor(
@@ -86,6 +104,18 @@ describe("expert template - compare mode", () => {
     expect(activeTemplate.value).toBe("compare");
     expect(compareIndicator.value).toBeTruthy();
     expect(ctx.store.selectedStac?.id).toBe(MAIN_ID);
+
+    await vi.waitFor(
+      () => {
+        const layer = dataLayer(analysisGroup(ctx.query("eox-map#compare")));
+        if (!layer?.properties?.id) {
+          throw new Error("compare data layer not built");
+        }
+      },
+      { timeout: TIMEOUT },
+    );
+    // picking a compare indicator builds the compare pane and leaves main alone
+    expect([mapWrites, compareMapWrites]).toEqual([0, 1]);
   });
 
   test("the compare pane renders the second indicator's layer and control", async () => {
@@ -106,5 +136,28 @@ describe("expert template - compare mode", () => {
       })
       .toBeGreaterThan(1);
     expect(ctx.query(".v-alert")).toBeNull();
+  });
+
+  test("closing compare leaves the main map where the user left it", async () => {
+    const mainMap = ctx.query("eox-map#main");
+    const CENTER = [1500000, 6000000];
+    // A pan as the user makes it: the view moves and the map settles on it.
+    const moved = new Promise((resolve) =>
+      mainMap.map.once("moveend", resolve),
+    );
+    mainMap.map.getView().setCenter(CENTER);
+    await moved;
+
+    const btn = btnByTooltip("Compare mode");
+    if (!btn) throw new Error("compare button not shown");
+    await userEvent.click(btn);
+
+    await expect
+      .poll(() => activeTemplate.value, { timeout: TIMEOUT })
+      .toBe("expert");
+
+    const after = ctx.query("eox-map#main");
+    expect(after).toBe(mainMap);
+    expect(after.map.getView().getCenter()).toEqual(CENTER);
   });
 });
