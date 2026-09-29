@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, test, vi } from "vitest";
 import { userEvent } from "vitest/browser";
 import { chartSpec, datetime } from "@/store/states";
-import { analysisGroup } from "../../support/layers";
+import { processGroup } from "../../support/layers";
 import {
   bootExpert,
   selectFeature,
@@ -22,7 +22,7 @@ describe("expert template - process execution (predictive maintenance)", () => {
   /** Reads the rendered result layer, so an unloaded source cannot pass. */
   const resultFeatureCount = () => {
     const mapEl = ctx.query("eox-map");
-    const id = analysisGroup(mapEl)?.layers.find((l) =>
+    const id = processGroup(mapEl)?.layers.find((l) =>
       l.properties?.id.includes("_process"),
     )?.properties?.id;
     return id

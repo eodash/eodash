@@ -14,7 +14,7 @@
 <script setup>
 import { useSTAcStore } from "@/store/stac";
 import { isFirstLoad } from "@/utils/states";
-import { poi } from "@/store/states";
+import { poi, datetime } from "@/store/states";
 import { computed, ref } from "vue";
 
 if (!customElements.get("eox-itemfilter")) {
@@ -95,10 +95,11 @@ const props = defineProps({
  *
  * @param  {Function} loader Function to load the item
  * @param {Function} reset Function to reset the selection
+ * @param {boolean} [clearDatetime] a main pick opens on its own latest date; a compare pick keeps the current one
  */
-const createSelect = (loader, reset) => {
+const createSelect = (loader, reset, clearDatetime = false) => {
   /**
-   * @param {import("stac-ts").StacLink | import("stac-ts").StacCollection} item
+   * @param {import("@eodash/stac").STACLink | import("@eodash/stac").STACCollection} item
    */
   return async (item) => {
     if (item) {
@@ -107,8 +108,14 @@ const createSelect = (loader, reset) => {
         isFirstLoad.value = false;
       }
       const href = /** @type {string} */ (store.isApi ? item.id : item.href);
-      await loader(href);
+      const previousDatetime = datetime.value;
+      if (clearDatetime) {
+        datetime.value = "";
+      }
       emit("select", item);
+      await loader(href)?.catch(() => {
+        datetime.value = previousDatetime;
+      });
     } else {
       reset();
     }
@@ -120,14 +127,15 @@ const selectIndicator = createSelect(
     store.selectedStac = null;
     poi.value = "";
   },
+  true,
 );
 const selectCompareIndicator = createSelect(
   store.loadSelectedCompareSTAC,
   store.resetSelectedCompareSTAC,
 );
-/** @param {any} evt*/
+/** @param {CustomEvent<import('@eodash/stac').STACLink>} evt */
 const onSelect = async (evt) => {
-  const item = /** @type {import('stac-ts').StacLink} */ evt.detail;
+  const item = evt.detail;
   if (props.enableCompare) {
     selectCompareIndicator(item);
   } else {

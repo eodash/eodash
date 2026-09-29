@@ -57,5 +57,3 @@ Short description of what the widget does and where it is used.
 ```
 
 New widget pages appear in the sidebar and the index table at `docs/widgets/internal-widgets.md` automatically. If you add a brand-new widget, register it in `core/node/typedoc/widgets.ts` (the build will tell you if you forget).
-
-For how the generation pipeline works under the hood, see [`.agents/08-documentation-setup.md`](../.agents/08-documentation-setup.md).

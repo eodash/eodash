@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, test, vi } from "vitest";
 import EodashTimeSlider from "^/EodashTimeSlider/index.vue";
 import { createAnimationLayers } from "^/EodashTimeSlider/methods";
 import { datetime, mapEl } from "@/store/states";
-import { eodashCollections } from "@/utils/states";
+import { eodashCollections } from "@/store/stac";
 import { mountComponent } from "../support/mount";
 
 // Keep the web-component tags (isCustomElement) so event bindings still work.
@@ -30,7 +30,8 @@ const timecontrol = () => document.querySelector("eox-timecontrol");
 const seedMultiItems = () =>
   eodashCollections.push(
     /** @type {any} */ ({
-      collectionStac: { links: [{ rel: "item" }, { rel: "item" }] },
+      stac: { links: [{ rel: "item" }, { rel: "item" }] },
+      getLayers: async () => ({ layers: [], projections: [] }),
     }),
   );
 
@@ -65,7 +66,7 @@ describe("EodashTimeSlider", () => {
 
   test("renders the time control when a collection has an items link", async () => {
     eodashCollections.push(
-      /** @type {any} */ ({ collectionStac: { links: [{ rel: "items" }] } }),
+      /** @type {any} */ ({ stac: { links: [{ rel: "items" }] } }),
     );
     await mountComponent(EodashTimeSlider);
 

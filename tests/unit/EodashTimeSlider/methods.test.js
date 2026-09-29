@@ -6,9 +6,9 @@ import {
   getHiddenLayers,
   restoreLayersVisibility,
 } from "^/EodashTimeSlider/methods";
-import { createLayersConfig } from "^/EodashMap/methods/create-layers-config";
+import { ANALYSIS_GROUP, buildIndicatorLayers } from "@/eodashSTAC/layers";
 import { mapEl } from "@/store/states";
-import { eodashCollections } from "@/utils/states";
+import { eodashCollections } from "@/store/stac";
 
 // Behavior seams in the transitive layer-helpers chain, not runner workarounds.
 vi.mock("@eox/layercontrol", () => ({
@@ -16,9 +16,16 @@ vi.mock("@eox/layercontrol", () => ({
 }));
 vi.mock("webfontloader", () => ({ default: { load: () => {} } }));
 
-// createLayersConfig owns layer content; here we isolate createAnimationLayers' own orchestration via a fixed-shape mock.
-vi.mock("^/EodashMap/methods/create-layers-config", () => ({
-  createLayersConfig: vi.fn(),
+vi.mock("@/eodashSTAC/layers", () => ({
+  buildIndicatorLayers: vi.fn(),
+  updateIndicatorLayers: vi.fn(),
+  assignDataLayers: vi.fn(),
+  assignGroupLayers: vi.fn(),
+  BASE_LAYERS_GROUP: "BaseLayersGroup",
+  CATALOG_GROUP: "CatalogGroup",
+  ANALYSIS_GROUP: "AnalysisGroup",
+  PROCESS_GROUP: "ProcessGroup",
+  OVERLAY_GROUP: "OverlayGroup",
 }));
 
 // Real axios never runs; the API branch drives this spy.
@@ -158,21 +165,33 @@ describe("createAnimationLayers (static catalog)", () => {
   beforeEach(() => {
     eodashCollections.splice(0);
     setMap(null);
-    vi.mocked(createLayersConfig).mockReset();
+    vi.mocked(buildIndicatorLayers).mockReset();
     axiosMock.get.mockReset();
   });
 
   test("emits one entry per selected item, with restored visibility and anonymized CORS", async () => {
     eodashCollections.push(
-      /** @type {any} */ ({ isAPI: false, collectionStac: { id: "collA" } }),
+      /** @type {any} */ ({ kind: "static", stac: { id: "collA" } }),
     );
-    vi.mocked(createLayersConfig).mockImplementation(async () => [
-      { type: "Tile", properties: { id: "data", visible: false }, source: {} },
-    ]);
+    vi.mocked(buildIndicatorLayers).mockImplementation(async () => ({
+      layers: [
+        {
+          type: "Group",
+          properties: { id: ANALYSIS_GROUP },
+          layers: [
+            {
+              type: "Tile",
+              properties: { id: "data", visible: false },
+              source: {},
+            },
+          ],
+        },
+      ],
+      items: [],
+    }));
     const selectedStac = ref(/** @type {any} */ ({ id: "ind" }));
 
     const result = await createAnimationLayers(
-      "https://stac",
       ["a", "b"],
       { grp: [{ originalDate: "2023-06-14" }, { originalDate: "2023-06-15" }] },
       selectedStac,
@@ -181,87 +200,112 @@ describe("createAnimationLayers (static catalog)", () => {
 
     expect(result).toHaveLength(2);
     expect(result.map((r) => r.date)).toEqual(["2023-06-14", "2023-06-15"]);
-    expect(result[0].layers[0].properties.visible).toBe(true);
-    expect(result[0].layers[0].source.crossOrigin).toBe("anonymous");
-    expect(createLayersConfig).toHaveBeenCalledWith(
-      { id: "ind" },
-      expect.any(Array),
-      "2023-06-14",
+    const data = result[0].layers[0].layers[0];
+    expect(data.properties.visible).toBe(true);
+    expect(data.source.crossOrigin).toBe("anonymous");
+    expect(buildIndicatorLayers).toHaveBeenCalledWith(
+      null,
+      expect.objectContaining({
+        stac: { id: "ind" },
+        timeOrItem: "2023-06-14",
+        context: { stateful: false },
+      }),
     );
   });
 
-  test("excludes hidden collections from the config input", async () => {
+  test("excludes hidden collections from the build input", async () => {
     setMap({
       layers: [{ properties: { id: "collB;:;item;:;3857" } }],
       getLayerById: () => ({ getVisible: () => false }),
     });
     eodashCollections.push(
-      /** @type {any} */ ({ isAPI: false, collectionStac: { id: "collA" } }),
-      /** @type {any} */ ({ isAPI: false, collectionStac: { id: "collB" } }),
+      /** @type {any} */ ({ kind: "static", stac: { id: "collA" } }),
+      /** @type {any} */ ({ kind: "static", stac: { id: "collB" } }),
     );
-    vi.mocked(createLayersConfig).mockResolvedValue([]);
+    vi.mocked(buildIndicatorLayers).mockResolvedValue({
+      layers: [],
+      items: [],
+    });
 
     await createAnimationLayers(
-      "https://stac",
       ["a", "b"],
       { grp: [{ originalDate: "2023-06-14" }] },
       ref(/** @type {any} */ ({ id: "ind" })),
       {},
     );
 
-    const [, passedCollections] = vi.mocked(createLayersConfig).mock.calls[0];
-    expect(passedCollections).toHaveLength(1);
-    expect(passedCollections[0].collectionStac.id).toBe("collA");
+    const [, options] = vi.mocked(buildIndicatorLayers).mock.calls[0];
+    expect(options.readers).toHaveLength(1);
+    expect(options.readers[0].stac.id).toBe("collA");
   });
 
-  test("strips hidden layers from the produced config", async () => {
+  test("strips hidden layers from the built layers", async () => {
     setMap({
       layers: [{ properties: { id: "base;:;3857" } }],
       getLayerById: () => ({ getVisible: () => false }),
     });
     eodashCollections.push(
-      /** @type {any} */ ({ isAPI: false, collectionStac: { id: "collA" } }),
+      /** @type {any} */ ({ kind: "static", stac: { id: "collA" } }),
     );
-    vi.mocked(createLayersConfig).mockImplementation(async () => [
-      { properties: { id: "base;:;3857" } },
-      { properties: { id: "keep" } },
-    ]);
+    vi.mocked(buildIndicatorLayers).mockImplementation(async () => ({
+      layers: [
+        {
+          type: "Group",
+          properties: { id: ANALYSIS_GROUP },
+          layers: [
+            { properties: { id: "base;:;3857" } },
+            { properties: { id: "keep" } },
+          ],
+        },
+      ],
+      items: [],
+    }));
 
     const result = await createAnimationLayers(
-      "https://stac",
       ["a", "b"],
       { grp: [{ originalDate: "2023-06-14" }] },
       ref(/** @type {any} */ ({ id: "ind" })),
       {},
     );
 
-    expect(result[0].layers.map((l) => l.properties.id)).toEqual(["keep"]);
+    expect(result[0].layers[0].layers.map((l) => l.properties.id)).toEqual([
+      "keep",
+    ]);
   });
 });
 
 describe("createAnimationLayers (API catalog)", () => {
+  /** @type {import("vitest").Mock} */
+  let search;
+
+  /** An api reader whose `search` is the seam; it owns the endpoint itself. */
+  const apiReader = (features = []) => {
+    search = vi.fn().mockResolvedValue({ features });
+    eodashCollections.push(
+      /** @type {any} */ ({ kind: "api", stac: { id: "collA" }, search }),
+    );
+  };
+
   beforeEach(() => {
     eodashCollections.splice(0);
     setMap(null);
-    vi.mocked(createLayersConfig).mockReset();
+    vi.mocked(buildIndicatorLayers).mockReset();
     axiosMock.get.mockReset();
   });
 
-  test("queries /search with datetime, bbox and CQL filter, then maps items to dated layers", async () => {
-    eodashCollections.push(
-      /** @type {any} */ ({ isAPI: true, collectionStac: { id: "collA" } }),
-    );
+  test("searches with datetime, bbox and CQL filter, then maps items to dated layers", async () => {
+    apiReader([{ id: "i1", properties: { datetime: "2023-06-15T10:00:00Z" } }]);
     setMap({ lonLatExtent: [-10, -5, 20, 15], getLayerById: () => null });
-    axiosMock.get.mockResolvedValue({
-      data: {
-        features: [
-          { id: "i1", properties: { datetime: "2023-06-15T10:00:00Z" } },
-        ],
-      },
+    vi.mocked(buildIndicatorLayers).mockResolvedValue({
+      layers: [
+        {
+          type: "Group",
+          properties: { id: ANALYSIS_GROUP },
+          layers: [{ type: "Tile", properties: { id: "data" }, source: {} }],
+        },
+      ],
+      items: [],
     });
-    vi.mocked(createLayersConfig).mockResolvedValue([
-      { type: "Tile", properties: { id: "data" }, source: {} },
-    ]);
     const filters = /** @type {any} */ ({
       cloud: {
         key: "eo:cloud_cover",
@@ -273,37 +317,30 @@ describe("createAnimationLayers (API catalog)", () => {
     });
 
     const result = await createAnimationLayers(
-      "https://api",
       ["2023-06-15T00:00:00.000Z", "2023-06-16T00:00:00.000Z"],
       {},
       ref(/** @type {any} */ ({ id: "sat-collection" })),
       filters,
     );
 
-    const url = new URL(axiosMock.get.mock.calls[0][0]);
-    const params = url.searchParams;
-    expect(url.origin + url.pathname).toBe("https://api/search");
-    expect(params.get("limit")).toBe("100");
-    expect(params.get("collections")).toBe("sat-collection");
-    expect(params.get("datetime")).toBe(
-      "2023-06-15T00:00:00.000Z/2023-06-16T00:00:00.000Z",
-    );
-    expect(params.get("bbox")).toBe("-10,-5,20,15");
-    expect(params.get("filter")).toBe('"eo:cloud_cover" <= 20');
+    // the reader injects `collections` and resolves the url from its own
+    expect(search).toHaveBeenCalledWith({
+      limit: 100,
+      datetime: "2023-06-15T00:00:00.000Z/2023-06-16T00:00:00.000Z",
+      bbox: "-10,-5,20,15",
+      filter: '"eo:cloud_cover" <= 20',
+    });
 
     expect(result).toHaveLength(1);
     expect(result[0].date).toBe("2023-06-15T10:00:00Z");
-    expect(result[0].layers[0].source.crossOrigin).toBe("anonymous");
+    expect(result[0].layers[0].layers[0].source.crossOrigin).toBe("anonymous");
   });
 
   test("returns an empty list without a map extent", async () => {
-    eodashCollections.push(
-      /** @type {any} */ ({ isAPI: true, collectionStac: { id: "collA" } }),
-    );
+    apiReader();
     setMap({ getLayerById: () => null });
 
     const result = await createAnimationLayers(
-      "https://api",
       ["2023-06-15T00:00:00.000Z", "2023-06-16T00:00:00.000Z"],
       {},
       ref(/** @type {any} */ ({ id: "sat-collection" })),
@@ -311,19 +348,15 @@ describe("createAnimationLayers (API catalog)", () => {
     );
 
     expect(result).toEqual([]);
-    expect(axiosMock.get).not.toHaveBeenCalled();
+    expect(search).not.toHaveBeenCalled();
   });
 
   test("warns and returns an empty list when no items match", async () => {
-    eodashCollections.push(
-      /** @type {any} */ ({ isAPI: true, collectionStac: { id: "collA" } }),
-    );
+    apiReader([]);
     setMap({ lonLatExtent: [-10, -5, 20, 15], getLayerById: () => null });
-    axiosMock.get.mockResolvedValue({ data: { features: [] } });
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
 
     const result = await createAnimationLayers(
-      "https://api",
       ["2023-06-15T00:00:00.000Z", "2023-06-16T00:00:00.000Z"],
       {},
       ref(/** @type {any} */ ({ id: "sat-collection" })),
