@@ -5,7 +5,7 @@ export const CUSTOM_WIDGET_GUIDES = {
   "web-component": {
     title: "Web Component Custom Widgets in eodash",
     description:
-      "Wrap any Custom Element (e.g. from @eox/*, Leaflet, or vanilla Web Components) into an eodash widget slot.",
+      "Wrap any Custom Element (e.g. EOxElements from @eox/* prefix, or vanilla Web Components) into an eodash widget slot.",
     lifecycleHooks: {
       onMounted: "(el, store) => void",
       onUnmounted: "(el, store) => void",
@@ -91,40 +91,17 @@ export default createEodash({
   template: {
     widgets: [
       {
-        id: "external-notebook",
-        title: "Live Analysis Notebook",
+        id: "external-notebooks",
+        title: "Live Notebook Explorer",
         type: "iframe",
         layout: { x: 6, y: 0, w: 6, h: 12 },
         widget: {
-          src: "https://hub.eox.at/services/eox-workspaces/notebooks/my-demo.html",
+          src: "https://eoxhub-workspaces.github.io/eoxhub-notebooks/",
         },
       },
     ],
   },
 });
 `,
-  },
-  "eox-elements": {
-    title: "EOxElements Custom Widget Workflow",
-    description:
-      "Integrate web components from the EOxElements suite (@eox/map, @eox/chart, @eox/layercontrol, @eox/itemfilter, @eox/timecontrol, @eox/jsonform, @eox/stacinfo, @eox/drawtools, @eox/feedback, @eox/geosearch, @eox/layout).",
-    workflow: [
-      "1. Test and prototype the component isolated in EOxElements playground (https://eox.at/elements).",
-      "2. Register component in eodash config via 'web-component' widget type.",
-      "3. Configure reactive store callbacks in 'onMounted' lifecycle hook.",
-    ],
-    supportedElements: [
-      "@eox/map: Map rendering and layer control",
-      "@eox/chart: Vega-Lite time series visualization",
-      "@eox/layercontrol: Layer visibility and dynamic style form controls",
-      "@eox/itemfilter: STAC metadata faceted filtering",
-      "@eox/timecontrol: Temporal slider and frame navigation",
-      "@eox/jsonform: Schema-driven dynamic UI forms",
-      "@eox/stacinfo: Formatted STAC metadata display cards",
-      "@eox/drawtools: Bounding box and polygon ROI drawing",
-      "@eox/geosearch: Nominatim location search input",
-      "@eox/feedback: User feedback collection dialog",
-      "@eox/layout: CSS Grid container primitives",
-    ],
-  },
+  }
 };

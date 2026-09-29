@@ -28,7 +28,6 @@ export function registerArchitectureTools(server, architectureData) {
             "web-component",
             "functional",
             "iframe",
-            "eox-elements",
             "all",
           ])
           .optional()

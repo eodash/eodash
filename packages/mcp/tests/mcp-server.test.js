@@ -132,7 +132,6 @@ describe("eodash MCP Server - Core Tools", () => {
     expect(guides["web-component"]).toBeDefined();
     expect(guides["functional"]).toBeDefined();
     expect(guides["iframe"]).toBeDefined();
-    expect(guides["eox-elements"]).toBeDefined();
 
     const resWc = await client.callTool({
       name: "get_custom_widget_guide",
