@@ -57,9 +57,9 @@ export async function previewApp(ctx) {
   const { userConfig, rootPath, buildTargetPath } = ctx;
   const previewServer = await preview({
     root: rootPath,
-    base: userConfig.base ?? "",
+    base: userConfig.base,
     preview: {
-      port: isNaN(userConfig.port) ? 8080 : userConfig.port,
+      port: userConfig.port,
       open: userConfig.open,
       host: userConfig.host,
     },

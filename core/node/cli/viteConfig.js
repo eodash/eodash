@@ -2,7 +2,12 @@
 
 import vue from "@vitejs/plugin-vue";
 import vuetify, { transformAssetUrls } from "vite-plugin-vuetify";
-import { appPath, renderIndexHtml, clientModules } from "./globals.js";
+import {
+  appPath,
+  renderIndexHtml,
+  clientModules,
+  stacSourceAlias,
+} from "./globals.js";
 import { readFile } from "fs/promises";
 import {
   defineConfig,
@@ -30,7 +35,7 @@ export const createEodashViteConfig = (ctx) =>
       } = ctx;
       const envPrefix = ["VITE_", "EODASH_"];
       return /** @type {import("vite").UserConfig} */ ({
-        base: userConfig.base ?? "",
+        base: userConfig.base,
         cacheDir: cachePath,
         plugins: [
           vue({
@@ -73,6 +78,7 @@ export const createEodashViteConfig = (ctx) =>
             "@": path.join(appPath, "core/client"),
             "^": path.join(appPath, "widgets"),
             "user:widgets": internalWidgetsPath,
+            ...(await stacSourceAlias()),
             ...(entryPath && {
               "user:config": entryPath,
             }),
@@ -89,7 +95,7 @@ export const createEodashViteConfig = (ctx) =>
               ...(entryPath ? [entryPath] : []),
             ],
           },
-          port: userConfig.port ?? 3000,
+          port: userConfig.port,
           open: userConfig.open,
           fs: {
             allow: [searchForWorkspaceRoot(process.cwd())],
