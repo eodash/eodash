@@ -24,12 +24,7 @@ export function registerArchitectureTools(server, architectureData) {
           .default("all")
           .describe("Custom widget type"),
         widgetType: z
-          .enum([
-            "web-component",
-            "functional",
-            "iframe",
-            "all",
-          ])
+          .enum(["web-component", "functional", "iframe", "all"])
           .optional()
           .describe("Alias for type"),
       }),

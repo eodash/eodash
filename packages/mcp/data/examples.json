@@ -901,5 +901,93 @@
         }
       }
     }
+  },
+  {
+    "id": "dashboard-scaffold-spa",
+    "title": "Standalone SPA Dashboard Project Scaffold",
+    "category": "dashboard-scaffold",
+    "dataType": "all",
+    "features": ["spa", "vite", "scaffold", "standalone"],
+    "tags": [
+      "scaffold",
+      "spa",
+      "vite",
+      "dashboard",
+      "standalone",
+      "boilerplate"
+    ],
+    "description": "Complete file tree for a standalone Vite + eodash single-page application dashboard.",
+    "targetContext": "Extract and write files to project directory to initialize a new eodash SPA project.",
+    "code": {
+      "package.json": "{\n  \"name\": \"my-eo-dashboard\",\n  \"version\": \"0.1.0\",\n  \"private\": true,\n  \"type\": \"module\",\n  \"scripts\": {\n    \"dev\": \"eodash dev\",\n    \"build\": \"eodash build\",\n    \"preview\": \"eodash preview\"\n  },\n  \"dependencies\": {\n    \"@eodash/eodash\": \"latest\"\n  }\n}",
+      "eodash.config.js": "import { defineConfig } from \"@eodash/eodash/config\";\n\nexport default defineConfig({\n  entryPoint: \"src/main.js\",\n  dev: {\n    port: 3000,\n  },\n});\n",
+      "src/main.js": "import { createEodash } from \"@eodash/eodash\";\nimport { lite } from \"@eodash/eodash/templates\";\n\nexport default createEodash({\n  id: \"my-eo-dashboard\",\n  stacEndpoint: \"https://eoxhub-workspaces.github.io/eoxhub-test-catalog/catalog/catalog.json\",\n  brand: {\n    name: \"My EO Dashboard\",\n    theme: {\n      colors: {\n        primary: \"#002742\",\n        secondary: \"#0071C2\",\n        surface: \"#ffffff\",\n      },\n    },\n    footerText: \"My EO Dashboard - Powered by eodash\",\n  },\n  template: lite,\n});\n",
+      "index.html": "<!DOCTYPE html>\n<html lang=\"en\">\n  <head>\n    <meta charset=\"UTF-8\" />\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\n    <title>My EO Dashboard</title>\n  </head>\n  <body>\n    <div id=\"app\"></div>\n    <script type=\"module\" src=\"/src/main.js\"></script>\n  </body>\n</html>\n"
+    }
+  },
+  {
+    "id": "dashboard-scaffold-vitepress",
+    "title": "VitePress Narrative Dashboard Project Scaffold",
+    "category": "dashboard-scaffold",
+    "dataType": "all",
+    "features": ["vitepress", "narrative", "storytelling", "scaffold"],
+    "tags": [
+      "scaffold",
+      "vitepress",
+      "narratives",
+      "storytelling",
+      "web-component"
+    ],
+    "description": "File structure for embedding interactive eodash dashboards and EOx storytelling components into VitePress narrative documentation.",
+    "targetContext": "Extract and write files to project directory to initialize a narrative docs project.",
+    "code": {
+      "package.json": "{\n  \"name\": \"my-narratives\",\n  \"version\": \"0.1.0\",\n  \"private\": true,\n  \"type\": \"module\",\n  \"scripts\": {\n    \"docs:dev\": \"vitepress dev docs\",\n    \"docs:build\": \"vitepress build docs\",\n    \"docs:preview\": \"vitepress preview docs\"\n  },\n  \"devDependencies\": {\n    \"@eodash/eodash\": \"latest\",\n    \"@eox/storytelling\": \"^1.0.0\",\n    \"vitepress\": \"^1.0.0\"\n  }\n}",
+      "docs/.vitepress/config.js": "import { defineConfig } from \"vitepress\";\n\nexport default defineConfig({\n  title: \"My EO Stories\",\n  description: \"Interactive Earth Observation Narratives\",\n  vue: {\n    template: {\n      compilerOptions: {\n        isCustomElement: (tag) => tag.startsWith(\"eo-\") || tag.startsWith(\"eox-\"),\n      },\n    },\n  },\n});\n",
+      "docs/.vitepress/theme/index.js": "import DefaultTheme from \"vitepress/theme\";\n\nexport default {\n  extends: DefaultTheme,\n  enhanceApp({ app }) {\n    if (!import.meta.env.SSR) {\n      import(\"@eodash/eodash/webcomponent\");\n      import(\"@eox/storytelling\");\n    }\n  },\n};\n",
+      "docs/index.md": "# Welcome to EO Stories\n\nExplore interactive indicators and narratives.\n\n<eo-dashboard config=\"/config.js\" style=\"width: 100%; height: 600px; display: block;\"></eo-dashboard>\n",
+      "docs/public/config.js": "export default {\n  id: \"narrative-dashboard\",\n  stacEndpoint: \"https://eoxhub-workspaces.github.io/eoxhub-test-catalog/catalog/catalog.json\",\n  template: \"lite\",\n};\n"
+    }
+  },
+  {
+    "id": "dashboard-scaffold-webcomponent",
+    "title": "Embedded Web Component Dashboard Project Scaffold",
+    "category": "dashboard-scaffold",
+    "dataType": "all",
+    "features": ["web-component", "custom-element", "embed", "scaffold"],
+    "tags": ["scaffold", "web-component", "embed", "html", "custom-element"],
+    "description": "Minimal embed configuration for using eodash as a custom element <eo-dashboard> in static websites, CMS, or external frontend apps.",
+    "targetContext": "Embed eodash directly into existing HTML/JS applications via custom element.",
+    "code": {
+      "index.html": "<!DOCTYPE html>\n<html lang=\"en\">\n  <head>\n    <meta charset=\"UTF-8\" />\n    <title>Embedded EO Dashboard</title>\n    <style>\n      body { margin: 0; font-family: sans-serif; }\n      eo-dash { width: 100vw; height: 100vh; display: block; }\n    </style>\n    <script type=\"module\" src=\"https://cdn.jsdelivr.net/npm/@eodash/eodash/dist/eodash.webcomponent.js\"></script>\n  </head>\n  <body>\n    <eo-dash id=\"embedded-dash\" config=\"/config.js\"></eo-dash>\n  </body>\n</html>\n",
+      "config.js": "export default {\n  id: \"embedded-dash\",\n  stacEndpoint: \"https://eoxhub-workspaces.github.io/eoxhub-test-catalog/catalog/catalog.json\",\n  template: \"lite\",\n};\n"
+    }
+  },
+  {
+    "id": "dashboard-config-standard-lite",
+    "title": "Standard Lite Dashboard Configuration",
+    "category": "dashboard-config",
+    "dataType": "all",
+    "features": ["config", "lite-template", "branding", "stac"],
+    "tags": ["config", "lite", "branding", "stac", "eodash.config.js"],
+    "description": "Standard eodash dashboard configuration module using the 'lite' template, full branding palette, and STAC endpoint.",
+    "targetContext": "Place into src/main.js or config.js in an eodash application.",
+    "code": "import { createEodash } from \"@eodash/eodash\";\nimport { lite } from \"@eodash/eodash/templates\";\n\n/** @type {import(\"@eodash/eodash\").Eodash} */\nexport default createEodash({\n  id: \"demo-dashboard\",\n  stacEndpoint: \"https://eoxhub-workspaces.github.io/eoxhub-test-catalog/catalog/catalog.json\",\n  brand: {\n    name: \"EO Dashboard\",\n    theme: {\n      colors: {\n        primary: \"#002742\",\n        secondary: \"#0071C2\",\n        surface: \"#ffffff\",\n      },\n      variables: {\n        \"surface-opacity\": 0.8,\n        \"primary-opacity\": 0.8,\n      },\n      collectionsPalette: [\n        \"#009E73\",\n        \"#E69F00\",\n        \"#56B4E9\",\n        \"#F0E442\",\n        \"#0072B2\",\n        \"#D55E00\",\n        \"#CC79A7\",\n        \"#994F00\",\n      ],\n    },\n    footerText: \"EO Dashboard - Powered by eodash\",\n  },\n  template: lite,\n});\n"
+  },
+  {
+    "id": "dashboard-config-custom-widgets",
+    "title": "Dashboard Configuration with Custom Widgets",
+    "category": "dashboard-config",
+    "dataType": "all",
+    "features": ["config", "custom-widgets", "web-components", "iframe"],
+    "tags": [
+      "config",
+      "custom-widgets",
+      "eox-elements",
+      "web-component",
+      "iframe"
+    ],
+    "description": "Dashboard configuration combining the standard template layout with custom web-component and iframe widgets.",
+    "targetContext": "Place into src/main.js or config.js in an eodash application with custom widget requirements.",
+    "code": "import { createEodash } from \"@eodash/eodash\";\nimport { explore } from \"@eodash/eodash/templates\";\n\n/** @type {import(\"@eodash/eodash\").Eodash} */\nexport default createEodash({\n  id: \"custom-widgets-dashboard\",\n  stacEndpoint: \"https://eoxhub-workspaces.github.io/eoxhub-test-catalog/catalog/catalog.json\",\n  brand: {\n    name: \"Custom Widgets EO Dashboard\",\n  },\n  template: {\n    ...explore,\n    widgets: [\n      ...(explore.widgets || []),\n      {\n        id: \"CustomSensorChart\",\n        title: \"Sensor Telemetry\",\n        type: \"web-component\",\n        widget: {\n          link: \"https://cdn.example.com/widgets/sensor-chart.js\",\n          tagName: \"sensor-chart\",\n          properties: {\n            theme: \"dark\",\n          },\n        },\n        layout: {\n          x: 0,\n          y: 8,\n          w: 6,\n          h: 4,\n        },\n      },\n      {\n        id: \"ExternalAnalytics\",\n        title: \"External Analytics\",\n        type: \"iframe\",\n        widget: {\n          src: \"https://analytics.example.com/embedded\",\n        },\n        layout: {\n          x: 6,\n          y: 8,\n          w: 6,\n          h: 4,\n        },\n      },\n    ],\n  },\n});\n"
   }
 ]

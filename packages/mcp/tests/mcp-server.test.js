@@ -31,7 +31,7 @@ describe("eodash MCP Server - Core Tools", () => {
     expect(instructions).toContain("eodash");
 
     const tools = await client.listTools();
-    expect(tools.tools.length).toBe(9);
+    expect(tools.tools.length).toBe(7);
     const toolNames = tools.tools.map((t) => t.name);
     expect(toolNames).toContain("generate_layer_style");
     expect(toolNames).toContain("find_examples");
