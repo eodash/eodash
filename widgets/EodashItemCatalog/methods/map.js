@@ -1,8 +1,7 @@
 import { useOnLayersUpdate } from "@/composables";
 import { onMounted, onUnmounted } from "vue";
-import { createOnSelectHandler } from "./handlers";
 import { tooltipAdapter } from "@/store/states";
-import { assignLayers } from "@/store/actions";
+import { CATALOG_GROUP, assignGroupLayers } from "@/eodashSTAC/layers";
 
 /**
  *
@@ -20,24 +19,14 @@ export function renderItemsFeatures(
   stacItemsInteractionStyle,
 ) {
   const currentMap = mapElement.value;
-  let analysisLayers =
-    /** @type {import("@eox/map/src/layers").EOxLayerTypeGroup} */ (
-      currentMap?.layers?.find((l) => l.properties?.id === "AnalysisGroup")
-    );
   if (!currentMap || !features) {
     return;
   }
-  if (!analysisLayers) {
-    analysisLayers = {
-      type: "Group",
-      properties: {
-        id: "AnalysisGroup",
-        title: "Data Layers",
-      },
-      layers: [],
-    };
-    assignLayers(currentMap, [...currentMap.layers, analysisLayers]);
-  }
+  // its own group, so a data rebuild cannot evict it
+  const catalogGroup =
+    /** @type {import("@eox/map/src/layers").EOxLayerTypeGroup | undefined} */ (
+      currentMap.layers?.find((l) => l.properties?.id === CATALOG_GROUP)
+    );
   /** @type {import("@eox/map").EoxLayer} */
   const stacItemsLayer = /** @type {any} */ ({
     type: "Vector",
@@ -88,20 +77,19 @@ export function renderItemsFeatures(
       },
     ],
   });
-  const exists = analysisLayers.layers.some(
-    (l) => l.properties?.id === stacItemsLayer.properties?.id,
+  const exists = catalogGroup?.layers.some(
+    (/** @type {import("@eox/map").EoxLayer} */ l) =>
+      l.properties?.id === stacItemsLayer.properties?.id,
   );
   if (exists) {
     currentMap.addOrUpdateLayer(stacItemsLayer);
     return;
-  } else {
-    // should be fixed in eox-map upstream
-    for (const id of ["stac-items", "stac-item-hover"]) {
-      if (currentMap.selectInteractions?.[id]) currentMap.removeSelect(id);
-    }
-    analysisLayers.layers.unshift(stacItemsLayer);
-    assignLayers(currentMap, [...currentMap.layers]);
   }
+  // should be fixed in eox-map upstream
+  for (const id of ["stac-items", "stac-item-hover"]) {
+    if (currentMap.selectInteractions?.[id]) currentMap.removeSelect(id);
+  }
+  assignGroupLayers(currentMap, CATALOG_GROUP, [stacItemsLayer]);
 }
 
 /**
@@ -217,19 +205,18 @@ export function useHoverTooltip(hoverProperties) {
 }
 
 /**
+ * Selects the item a clicked footprint belongs to, through the same handler the
+ * result list uses — so a map click and a list click cannot diverge.
  *
  * @param {import("vue").Ref<any>} itemfilterEl
- * @param {ReturnType< typeof import("@/store/stac").useSTAcStore>} store
  * @param {import("vue").Ref<import("@eox/map").EOxMap | null>} mapElement
- * @param {boolean} enableCompare
+ * @param {(evt: CustomEvent) => unknown} onSelectItem
  */
 export function useRenderOnFeatureClick(
   itemfilterEl,
-  store,
   mapElement,
-  enableCompare,
+  onSelectItem,
 ) {
-  const onSelectItem = createOnSelectHandler(store, enableCompare, mapElement);
   /**
    *
    * @param {CustomEvent} evt
