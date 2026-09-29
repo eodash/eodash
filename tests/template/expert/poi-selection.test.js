@@ -1,4 +1,8 @@
 import { afterAll, beforeAll, describe, expect, test, vi } from "vitest";
+import { userEvent } from "vitest/browser";
+import { buffer, containsExtent } from "ol/extent";
+import { transformExtent } from "ol/proj";
+import { sanitizeBbox } from "@eodash/stac/helpers";
 import { datetime, indicator, poi } from "@/store/states";
 import {
   bootExpert,
@@ -26,15 +30,48 @@ describe("expert template - POI selection (STAC output)", () => {
   let ctx;
   /** @type {string[]} */
   let locationIds = [];
+  // `eox-map` dispatches `layerschanged` once per `set layers`, so this counts
+  // how many times the app wrote the map.
+  let mapWrites = 0;
+
+  /**
+   * The map button whose tooltip text matches; icon buttons have no name.
+   * @param {string} text
+   */
+  const btnByTooltip = (text) =>
+    [...document.querySelectorAll(".map-buttons button")].find((b) =>
+      b.textContent?.includes(text),
+    );
+
+  /**
+   * Whether the map shows the whole selected collection. `zoomExtent` reads back
+   * as the current view, which `fit` pads to the map's aspect, so the view is
+   * compared by containment rather than by size.
+   */
+  const collectionInView = () => {
+    const mapEl = ctx.query("eox-map");
+    const bbox = ctx.store.selectedStac?.extent?.spatial?.bbox?.[0];
+    if (!bbox || !mapEl.zoomExtent) return false;
+    const extent = transformExtent(
+      sanitizeBbox([...bbox]),
+      "EPSG:4326",
+      mapEl.OLprojection,
+    );
+    // one map unit of slack for the floating point of the fit
+    return containsExtent(buffer(mapEl.zoomExtent, 1), extent);
+  };
 
   beforeAll(async () => {
     ctx = await bootExpert({ endpoint: STAC_ENDPOINT });
+    ctx.query("eox-map").addEventListener("layerschanged", () => mapWrites++);
     /** @type {any} */
     const locations = await fetch(LOCATIONS_URL).then((r) => r.json());
     locationIds = locations.links
       .filter((/** @type {any} */ l) => l.rel === "child" && "latlng" in l)
       .map((/** @type {any} */ l) => l.id);
-    if (!locationIds.length) throw new Error("no locations in collection");
+    // going back and picking a second location needs two of them
+    if (locationIds.length < 2)
+      throw new Error("the collection has fewer than 2 locations");
 
     await selectIndicator(ctx.store, INDICATOR_ID);
     // Ready once drawtools synced to the points layer and every location loaded.
@@ -58,6 +95,7 @@ describe("expert template - POI selection (STAC output)", () => {
     const selectedId = targetFeatures(ctx.container)[0].get("id");
     expect(locationIds).toContain(selectedId);
 
+    mapWrites = 0;
     selectFeature(ctx.container, 0);
 
     await vi.waitFor(
@@ -86,6 +124,17 @@ describe("expert template - POI selection (STAC output)", () => {
       },
       { timeout: TIMEOUT },
     );
+
+    // the write that drops the points layer lands after the store settles
+    await vi.waitFor(
+      () => {
+        if (ctx.query("eox-map").getLayerById("geodb-collection")) {
+          throw new Error("points layer still present");
+        }
+      },
+      { timeout: TIMEOUT },
+    );
+    expect(mapWrites).toBe(1);
   });
 
   test("the app leaves observation-points mode once a POI is loaded", async () => {
@@ -98,5 +147,70 @@ describe("expert template - POI selection (STAC output)", () => {
       { timeout: TIMEOUT },
     );
     expect(ctx.query(".v-alert")).toBeNull();
+  });
+
+  test("the back button restores the indicator and its points", async () => {
+    const btn = btnByTooltip("Back to POIs");
+    if (!btn) throw new Error("back to POIs button not shown");
+
+    mapWrites = 0;
+    await userEvent.click(btn);
+
+    await vi.waitFor(
+      () => {
+        if (poi.value !== "") {
+          throw new Error("poi not cleared");
+        }
+        if (!ctx.query("eox-map").getLayerById("geodb-collection")) {
+          throw new Error("points layer did not come back");
+        }
+      },
+      { timeout: TIMEOUT },
+    );
+
+    expect(indicator.value).toBe(INDICATOR_ID);
+    // the render lands after the store settles
+    await expect.poll(() => mapWrites, { timeout: TIMEOUT }).toBeGreaterThan(0);
+    expect(mapWrites).toBe(1);
+  });
+
+  test("the map widens back to the whole collection", async () => {
+    // polled, because the widening may not have started yet
+    await expect.poll(collectionInView, { timeout: TIMEOUT }).toBe(true);
+  });
+
+  test("a location is selectable again after going back", async () => {
+    // the rebuilt points layer has to carry the selection drawtools reads, and
+    // the form has to be the indicator's again rather than the location's
+    await vi.waitFor(
+      () => {
+        if (drawtoolsLayerId(ctx.container) !== "geodb-collection") {
+          throw new Error("drawtools not synced to the points layer");
+        }
+        if (targetFeatures(ctx.container).length !== locationIds.length) {
+          throw new Error("location features not loaded");
+        }
+      },
+      { timeout: TIMEOUT },
+    );
+
+    // selectFeature dispatches the event the interaction would, so the binding
+    // a real click needs is asserted rather than exercised
+    expect(
+      ctx.query("eox-map").selectInteractions?.["SelectLayerClickInteraction"],
+    ).toBeTruthy();
+
+    const selectedId = targetFeatures(ctx.container)[1].get("id");
+    selectFeature(ctx.container, 1);
+
+    await vi.waitFor(
+      () => {
+        if (ctx.store.selectedStac?.id !== selectedId) {
+          throw new Error("second location collection not loaded");
+        }
+      },
+      { timeout: TIMEOUT },
+    );
+    expect(poi.value).toBe(selectedId);
   });
 });
