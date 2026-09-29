@@ -6,9 +6,14 @@ export default defineConfig({
   vue: {
     template: {
       compilerOptions: {
-        isCustomElement: (tag) =>
-          tag.startsWith("eo-") || tag.startsWith("eox-"),
+        isCustomElement: (el) => el.includes("-"),
       },
+    },
+  },
+  vite: {
+    envPrefix: ["VITE_", "EODASH_"],
+    server: {
+      allowedHosts: true,
     },
   },
 });
