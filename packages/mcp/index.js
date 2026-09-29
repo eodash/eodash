@@ -18,7 +18,6 @@ import {
   generateLandingPage,
   CUSTOM_WIDGET_GUIDES,
   DEFAULT_STAC_ENDPOINT,
-  DEFAULT_BRAND_NAME,
   getAvailableTemplates,
 } from "./helpers.js";
 
