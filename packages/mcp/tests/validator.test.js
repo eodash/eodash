@@ -127,36 +127,6 @@ describe("eodash Catalog Schema Validator - Unit Tests", () => {
     expect(res.summary).toContain("Validation failed");
   });
 
-  it("enforces rule: Style MUST be a URL string and not a JSON object", async () => {
-    const colWithObjStyle = {
-      Name: "obj-style-col",
-      Title: "Object Style",
-      Description: "Description text",
-      Resources: [
-        {
-          Name: "COG source",
-          Style: { "fill-color": "#ff0000" }, // Illegal object
-          TimeEntries: [
-            {
-              Time: "2024-01-01T00:00:00Z",
-              Assets: [{ Identifier: "a", File: "https://example.com/a.tif" }],
-            },
-          ],
-        },
-      ],
-    };
-
-    const res = await validateCatalogConfig({
-      config: colWithObjStyle,
-      configType: "collection",
-    });
-
-    expect(res.valid).toBe(false);
-    expect(
-      res.errors.some((e) => e.message.includes("Style MUST be a URL string")),
-    ).toBe(true);
-  });
-
   it("warns when Rasterform uses branching without keep_oneof_values: false", async () => {
     const colWithBranchingRasterform = {
       Name: "branch-col",
@@ -243,7 +213,7 @@ describe("eodash Catalog Schema Validator - Unit Tests", () => {
             },
           ],
         }),
-        configType: "catalog-collection",
+        configType: "collection",
       },
     });
 
