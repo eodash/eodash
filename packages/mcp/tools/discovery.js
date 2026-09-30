@@ -79,9 +79,7 @@ export function registerDiscoveryTools(server) {
           .enum([
             "auto",
             "collection",
-            "indicator",
-            "catalog-collection",
-            "catalog-indicator",
+            "indicator"
           ])
           .optional()
           .default("auto")

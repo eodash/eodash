@@ -7,17 +7,6 @@ export function validateCustomRules(parsed, errors, warnings) {
   if (parsed.Resources && Array.isArray(parsed.Resources)) {
     for (let i = 0; i < parsed.Resources.length; i++) {
       const res = parsed.Resources[i];
-      // Rule 1: Style must be URL string, not JSON object
-      if (res.Style && typeof res.Style === "object") {
-        errors.push({
-          path: `/Resources/${i}/Style`,
-          keyword: "type",
-          message: "Style MUST be a URL string, not a direct JSON object.",
-          suggestion:
-            "Save the style to an external JSON file and provide the relative or absolute URL in Style.",
-        });
-      }
-
       // Rule 1b: Resources[].Flatstyle does not exist
       if (res.Flatstyle !== undefined) {
         errors.push({
@@ -41,27 +30,5 @@ export function validateCustomRules(parsed, errors, warnings) {
         }
       }
     }
-  }
-
-  // Top-level Style object check
-  if (parsed.Style && typeof parsed.Style === "object") {
-    errors.push({
-      path: "/Style",
-      keyword: "type",
-      message: "Style MUST be a URL string, not a direct JSON object.",
-      suggestion:
-        "Save the style to an external JSON file and provide the relative or absolute URL in Style.",
-    });
-  }
-
-  // Top-level Flatstyle check on catalog collection
-  if (parsed.Flatstyle !== undefined) {
-    errors.push({
-      path: "/Flatstyle",
-      keyword: "additionalProperties",
-      message:
-        "Property 'Flatstyle' does not exist on catalog collection. Use 'Style' (Flatstyle is only valid under Process outputs).",
-      suggestion: "Rename 'Flatstyle' to 'Style' with a valid URL string.",
-    });
   }
 }
