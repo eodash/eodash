@@ -13,10 +13,10 @@
       "legend",
       "cerulean",
       "deside",
-      "vector-tiles"
+      "sea-ice-concentration"
     ],
     "description": "Polygon OpenLayers FlatStyle for sea ice classification charts with categorical 'match' expressions, WMO concentration colors, and custom tooltips. Valid for GeoJSON, FlatGeobuf, and Vector Tiles.",
-    "targetContext": "Host as JSON file on assets endpoint, reference in STAC Item link with 'eox:flatstyle' or in catalog collection 'Style'.",
+    "targetContext": "Host as JSON file on assets endpoint, reference in STAC Item link with 'eox:flatstyle' or in catalog collection 'Resources[].Style'",
     "code": {
       "fill-color": [
         "match",
@@ -85,24 +85,22 @@
     "id": "vector-flatstyle-station-points-interactive",
     "title": "In Situ Air Quality Monitoring Stations with Dynamic Size and Tooltips",
     "category": "vector-flatstyle",
-    "dataType": "point",
+    "dataType": "vector",
     "geometryType": "point",
     "features": ["circle-style", "dynamic-variables", "jsonform", "tooltip"],
     "tags": [
       "air-quality",
       "stations",
       "points",
-      "jsonform-slider",
-      "tooltip",
-      "ukif",
-      "austria"
+      "slider",
+      "jsonform",
+      "tooltip"
     ],
     "description": "Point feature FlatStyle for air quality and sensor stations with variable circle radius controlled by a layer control JSONForm slider, dynamic stroke, and rich tooltip formatting.",
     "targetContext": "Host as JSON file on assets endpoint, reference in STAC Item link with 'eox:flatstyle' or in catalog collection 'Resources[].Style'.",
     "code": {
       "variables": {
-        "pointRadius": 6,
-        "strokeWidth": 1.5
+        "pointRadius": 6
       },
       "circle-radius": ["var", "pointRadius"],
       "circle-fill-color": [
@@ -116,7 +114,7 @@
         "#3e9655"
       ],
       "circle-stroke-color": "#ffffff",
-      "circle-stroke-width": ["var", "strokeWidth"],
+      "circle-stroke-width": 1.5,
       "legend": {
         "title": "PM2.5 Air Quality Index (µg/m³)",
         "scaleType": "categorical",
@@ -628,7 +626,7 @@
   {
     "id": "catalog-collection-cmems-wmts-timeseries",
     "title": "CMEMS WMTS Time-Series Collection with OGC Process & Vega Chart",
-    "category": "catalog-collection",
+    "category": "collection",
     "dataType": "wmts",
     "geometryType": "raster",
     "features": ["wmts", "time-series", "ogc-process", "vega-chart"],
@@ -683,7 +681,7 @@
   {
     "id": "catalog-collection-vector-stations-timeseries",
     "title": "Vector In Situ GeoJSON Stations Collection with TimeSeries Endpoint",
-    "category": "catalog-collection",
+    "category": "collection",
     "dataType": "vector",
     "geometryType": "point",
     "features": [
@@ -740,7 +738,7 @@
   {
     "id": "catalog-collection-post-process-cog-output",
     "title": "POST Process Execution Collection Returning GeoTIFF Layer Styled with Flatstyle",
-    "category": "catalog-collection",
+    "category": "collection",
     "dataType": "cog",
     "geometryType": "raster",
     "features": [
@@ -791,7 +789,7 @@
   {
     "id": "catalog-indicator-multi-collection",
     "title": "Indicator Definition Grouping Multiple Collections with Filter Metadata",
-    "category": "catalog-indicator",
+    "category": "indicator",
     "dataType": "timeseries",
     "geometryType": "raster",
     "features": ["indicator", "subcodes", "themes", "eox-itemfilter-tags"],
@@ -1420,7 +1418,7 @@
   {
     "id": "catalog-process-post-body-template",
     "title": "Synchronous Process Link with Mustache JSON POST Body and MultiQuery",
-    "category": "catalog-collection",
+    "category": "collection",
     "dataType": "timeseries",
     "features": [
       "process",
