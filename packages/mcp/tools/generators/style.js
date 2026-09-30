@@ -12,13 +12,7 @@ export function registerStyleGeneratorTool(server) {
         "Generate OpenLayers FlatStyles (vector/raster COG) or eodash:rasterform definitions with legend and jsonform.",
       inputSchema: z.object({
         styleType: z
-          .enum([
-            "vector-flatstyle",
-            "raster-flatstyle",
-            "raster-webgl-flatstyle",
-            "raster-cog",
-            "rasterform",
-          ])
+          .enum(["vector-flatstyle", "raster-flatstyle", "rasterform"])
           .describe("Target style type"),
         vectorConfig: z
           .object({
@@ -58,15 +52,42 @@ export function registerStyleGeneratorTool(server) {
               .describe("Stroke color hex/rgba"),
             strokeWidth: z.number().optional().describe("Stroke width (px)"),
             pointRadius: z.number().optional().describe("Point radius (px)"),
+            labelAttribute: z
+              .string()
+              .optional()
+              .describe("Feature property to display as text label"),
+            textColor: z
+              .string()
+              .optional()
+              .describe("Text label color (hex/rgba)"),
+            textFont: z
+              .string()
+              .optional()
+              .describe("Text label font (e.g. 'bold 12px sans-serif')"),
+            textOffsetX: z
+              .number()
+              .optional()
+              .describe("Text label horizontal offset (px)"),
+            textOffsetY: z
+              .number()
+              .optional()
+              .describe("Text label vertical offset (px)"),
+            textAlign: z
+              .enum(["left", "center", "right", "start", "end"])
+              .optional()
+              .describe("Text label alignment"),
             tooltipFields: z
               .array(z.record(z.any()))
               .optional()
               .describe("Tooltip fields [{id, title?, appendix?, decimals?}]"),
-            interactiveSliders: z
+            interactiveStrokeWidth: z
               .boolean()
               .optional()
-              .default(false)
-              .describe("Generate stroke width slider"),
+              .describe("Generate reactive stroke width slider"),
+            interactivePointRadius: z
+              .boolean()
+              .optional()
+              .describe("Generate reactive point radius slider"),
           })
           .optional()
           .describe("Vector flatstyle options"),
@@ -111,13 +132,30 @@ export function registerStyleGeneratorTool(server) {
               .optional()
               .default(true)
               .describe("Generate interactive min/max slider"),
+            maskBands: z
+              .array(
+                z.object({
+                  band: z.number().describe("Band index for masking"),
+                  min: z.number().optional().describe("Min threshold value"),
+                  max: z.number().optional().describe("Max threshold value"),
+                  variableMin: z
+                    .string()
+                    .optional()
+                    .describe("Min variable name"),
+                  variableMax: z
+                    .string()
+                    .optional()
+                    .describe("Max variable name"),
+                  sliderMin: z.number().optional().describe("Slider min bound"),
+                  sliderMax: z.number().optional().describe("Slider max bound"),
+                  title: z.string().optional().describe("Slider group title"),
+                }),
+              )
+              .optional()
+              .describe("Multi-band threshold masking filters"),
           })
           .optional()
           .describe("Raster COG flatstyle options"),
-        rasterWebglConfig: z
-          .any()
-          .optional()
-          .describe("Alias for rasterConfig"),
         rasterformConfig: z
           .object({
             serviceType: z
@@ -157,10 +195,6 @@ export function registerStyleGeneratorTool(server) {
           })
           .optional()
           .describe("Rasterform options for TiTiler/WMS/XYZ"),
-        rasterFormConfig: z
-          .any()
-          .optional()
-          .describe("Alias for rasterformConfig"),
       }),
     },
     async (params) => {

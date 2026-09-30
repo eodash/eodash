@@ -901,5 +901,563 @@
         }
       }
     }
+  },
+  {
+    "id": "chart-vega-timeseries-uncertainty",
+    "title": "Time-Series Chart with Uncertainty/Confidence Envelope and Hover Rule",
+    "category": "chart-vega",
+    "dataType": "timeseries",
+    "features": ["area-band", "hover-tooltip", "pan-zoom", "eox-chart"],
+    "tags": [
+      "vega-lite",
+      "chart",
+      "timeseries",
+      "uncertainty",
+      "confidence-interval",
+      "hover-rule",
+      "eodash:vegadefinition"
+    ],
+    "description": "Multi-layer Vega-Lite v5 time-series specification for EodashChart and EodashProcess. Includes mean line, upper (mean-max) and lower (min-mean) confidence areas, interactive hover pointer rule with formatted tooltips, and grid scale binding for zoom/pan.",
+    "targetContext": "Host as JSON on assets endpoint and reference in STAC Collection with 'eodash:vegadefinition' or in EodashChart widget properties.",
+    "code": {
+      "width": "container",
+      "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+      "data": {
+        "name": "process_eox"
+      },
+      "transform": [
+        { "flatten": ["CHL"], "as": ["data"] },
+        { "filter": "isValid(datum.data.mean)" }
+      ],
+      "encoding": {
+        "x": { "field": "data.datetime", "type": "temporal", "title": "Date" }
+      },
+      "layer": [
+        {
+          "mark": { "type": "area" },
+          "encoding": {
+            "y": { "field": "data.mean", "type": "quantitative" },
+            "y2": { "field": "data.max", "type": "quantitative" },
+            "fill": { "value": "#E1BE6A" },
+            "opacity": { "value": 0.7 }
+          }
+        },
+        {
+          "mark": { "type": "line", "filled": false },
+          "encoding": {
+            "y": {
+              "aggregate": "mean",
+              "field": "data.mean",
+              "type": "quantitative",
+              "scale": { "zero": false },
+              "title": "Value"
+            },
+            "color": { "value": "#222222" }
+          }
+        },
+        {
+          "mark": { "type": "area" },
+          "encoding": {
+            "y": { "field": "data.min", "type": "quantitative" },
+            "y2": { "field": "data.mean", "type": "quantitative" },
+            "fill": { "value": "#40B0A6" },
+            "opacity": { "value": 0.5 }
+          }
+        },
+        {
+          "mark": "rule",
+          "encoding": {
+            "opacity": {
+              "condition": { "value": 0.4, "param": "hover", "empty": false },
+              "value": 0
+            },
+            "tooltip": [
+              {
+                "field": "data.datetime",
+                "type": "temporal",
+                "format": "%Y-%m-%d %H:%M",
+                "title": "Date"
+              },
+              {
+                "field": "data.mean",
+                "type": "quantitative",
+                "format": ".3f",
+                "title": "Mean"
+              },
+              {
+                "field": "data.min",
+                "type": "quantitative",
+                "format": ".3f",
+                "title": "Min"
+              },
+              {
+                "field": "data.max",
+                "type": "quantitative",
+                "format": ".3f",
+                "title": "Max"
+              }
+            ]
+          },
+          "params": [
+            {
+              "name": "hover",
+              "select": {
+                "type": "point",
+                "fields": ["data.datetime"],
+                "nearest": true,
+                "on": "pointerover",
+                "clear": "pointerout"
+              }
+            },
+            { "name": "grid", "select": "interval", "bind": "scales" }
+          ]
+        }
+      ],
+      "background": "transparent"
+    }
+  },
+  {
+    "id": "chart-vega-scenario-grouped-bar",
+    "title": "Interactive Multi-Scenario Grouped Bar Chart with Dropdown Parameter Binding",
+    "category": "chart-vega",
+    "dataType": "timeseries",
+    "features": [
+      "dropdown-params",
+      "fold-transform",
+      "grouped-bars",
+      "label-expression"
+    ],
+    "tags": [
+      "vega-lite",
+      "chart",
+      "grouped-bar",
+      "scenario",
+      "dropdown-binding",
+      "eodash:vegadefinition",
+      "gtif"
+    ],
+    "description": "Interactive Vega-Lite v5 grouped bar chart with UI dropdown select controls (Metric, Climate Scenario), column folding, regex filtering, dynamic axis label expressions, and multi-feature xOffset grouping.",
+    "targetContext": "Host as JSON on assets endpoint, reference in STAC Collection with 'eodash:vegadefinition'.",
+    "code": {
+      "width": "container",
+      "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+      "data": { "name": "air_eepot_chart" },
+      "params": [
+        {
+          "name": "prefix",
+          "value": "e",
+          "bind": {
+            "input": "select",
+            "options": ["e", "c", "lcoe"],
+            "labels": [
+              "Energy [GWh]",
+              "Capacity [MW]",
+              "Levelized Cost [EUR/MWh]"
+            ],
+            "name": "Metric: "
+          }
+        },
+        {
+          "name": "suffix",
+          "value": "wocc",
+          "bind": {
+            "input": "select",
+            "options": ["wocc", "mocc", "stcc"],
+            "labels": [
+              "Without Climate Change",
+              "Medium Change",
+              "Strong Change"
+            ],
+            "name": "Climate Scenario: "
+          }
+        },
+        { "name": "grid", "select": "interval", "bind": "scales" }
+      ],
+      "transform": [
+        { "calculate": "datum.id", "as": "feature_id" },
+        { "calculate": "datum.name", "as": "feature_name" },
+        {
+          "fold": [
+            "e_2030_high_wocc",
+            "e_2030_low_wocc",
+            "e_current",
+            "c_2030_high_wocc",
+            "c_2030_low_wocc",
+            "c_current",
+            "lcoe_2030_high_wocc",
+            "lcoe_2030_low_wocc"
+          ],
+          "as": ["metric", "value"]
+        },
+        { "filter": "test('^' + prefix + '_', datum.metric)" },
+        {
+          "filter": "test('_' + suffix + '$', datum.metric) || indexof(['c_current', 'e_current'], datum.metric) >= 0"
+        }
+      ],
+      "mark": { "type": "bar" },
+      "encoding": {
+        "x": {
+          "field": "metric",
+          "type": "nominal",
+          "axis": {
+            "labelAngle": -45,
+            "title": "",
+            "labelExpr": "replace(replace(replace(datum.label, 'e_', ''), 'c_', ''), '_wocc', '')"
+          }
+        },
+        "xOffset": { "field": "feature_id", "type": "nominal" },
+        "y": {
+          "field": "value",
+          "type": "quantitative",
+          "axis": { "title": "Value" }
+        },
+        "color": {
+          "field": "feature_name",
+          "type": "nominal",
+          "title": "Region"
+        },
+        "tooltip": [
+          { "field": "feature_name", "title": "Region" },
+          { "field": "metric", "title": "Scenario" },
+          {
+            "field": "value",
+            "type": "quantitative",
+            "format": ".1f",
+            "title": "Value"
+          }
+        ]
+      },
+      "background": "transparent"
+    }
+  },
+  {
+    "id": "vector-flatstyle-points-with-text-labels",
+    "title": "Vector Points with Dynamic Size, Colors, and Text Label Symbolizers",
+    "category": "vector-flatstyle",
+    "dataType": "point",
+    "geometryType": "point",
+    "features": [
+      "text-symbolizer",
+      "point-styling",
+      "tooltip",
+      "property-binding"
+    ],
+    "tags": [
+      "vector",
+      "point",
+      "text-symbolizer",
+      "labels",
+      "flatstyle",
+      "gtif"
+    ],
+    "description": "OpenLayers FlatStyle for in situ vector points featuring property-driven radius, fill colors, and OpenLayers text symbolizers (text-value, text-font, text-offset, text-align) with custom tooltips.",
+    "targetContext": "Host as JSON on assets endpoint, reference in STAC Item link with 'eox:flatstyle' or in catalog collection 'Resources[].Style'.",
+    "code": {
+      "circle-radius": ["get", "size"],
+      "circle-fill-color": ["get", "color"],
+      "circle-stroke-color": "#000000",
+      "circle-stroke-width": 1,
+      "text-value": ["to-string", ["get", "name"]],
+      "text-font": "bold 12px sans-serif",
+      "text-fill-color": "#111111",
+      "text-offset-x": 10,
+      "text-offset-y": 0,
+      "text-align": "left",
+      "tooltip": [
+        { "id": "name", "title": "Station Name" },
+        { "id": "value", "title": "Measured Value", "decimals": 2 }
+      ]
+    }
+  },
+  {
+    "id": "vector-flatstyle-line-dynamic-width",
+    "title": "Vector Lines with Reactive Stroke Width JSONForm Slider",
+    "category": "vector-flatstyle",
+    "dataType": "vector",
+    "geometryType": "line",
+    "features": ["line-styling", "dynamic-variables", "jsonform", "slider"],
+    "tags": [
+      "vector",
+      "lines",
+      "routes",
+      "drift",
+      "stroke-width",
+      "slider",
+      "cerulean"
+    ],
+    "description": "Vector FlatStyle for ship tracks, ice drift deformation, or linear features with reactive stroke width controlled by a LayerControl JSONForm slider.",
+    "targetContext": "Host as JSON on assets endpoint, reference in STAC Item link with 'eox:flatstyle'.",
+    "code": {
+      "variables": {
+        "strokeWidth": 2
+      },
+      "stroke-color": "rgba(220, 38, 38, 0.8)",
+      "stroke-width": ["var", "strokeWidth"],
+      "legend": {
+        "domain": ["Ship Route / Drift"],
+        "range": ["rgba(220, 38, 38, 0.8)"],
+        "scaleType": "categorical"
+      },
+      "jsonform": {
+        "type": "object",
+        "title": "Layer Display Settings",
+        "properties": {
+          "strokeWidth": {
+            "title": "Line Width (px)",
+            "type": "number",
+            "minimum": 1,
+            "maximum": 15,
+            "step": 0.5,
+            "default": 2,
+            "format": "range"
+          }
+        }
+      }
+    }
+  },
+  {
+    "id": "raster-flatstyle-multiband-masking",
+    "title": "Multi-Band WebGL COG FlatStyle with Compound Masking and Min/Max Range Form",
+    "category": "raster-flatstyle",
+    "dataType": "cog",
+    "features": [
+      "multiband-masking",
+      "webgl-tile",
+      "jsonform",
+      "domainProperties",
+      "legend"
+    ],
+    "tags": [
+      "raster",
+      "cog",
+      "multiband",
+      "masking",
+      "wind-energy",
+      "elevation-filter",
+      "between",
+      "gtif"
+    ],
+    "description": "Multi-band OpenLayers WebGL FlatStyle evaluating primary band 1 continuous colormap combined with compound logical masking (between) on elevation (band 2) and slope (band 3), fully interactive via format: minmax JSONForm sliders.",
+    "targetContext": "Host as JSON on assets endpoint, reference in STAC Item link with 'eox:flatstyle' or Collection link with rel: 'service'.",
+    "code": {
+      "legend": {
+        "title": "Wind Power Density",
+        "range": [
+          "rgba(64, 128, 128, 1)",
+          "rgba(128, 192, 192, 1)",
+          "rgba(192, 224, 224, 1)",
+          "rgba(255, 255, 255, 1)",
+          "rgba(255, 192, 128, 1)",
+          "rgba(255, 128, 64, 1)",
+          "rgba(255, 64, 32, 1)"
+        ],
+        "domainProperties": ["powermin", "powermax"]
+      },
+      "variables": {
+        "powermin": 0,
+        "powermax": 1000,
+        "elevationmin": 0,
+        "elevationmax": 4000,
+        "slopemin": 0,
+        "slopemax": 50
+      },
+      "color": [
+        "case",
+        [
+          "all",
+          [">", ["band", 1], 0],
+          [
+            "between",
+            ["band", 2],
+            ["var", "elevationmin"],
+            ["var", "elevationmax"]
+          ],
+          ["between", ["band", 3], ["var", "slopemin"], ["var", "slopemax"]]
+        ],
+        [
+          "interpolate",
+          ["linear"],
+          [
+            "/",
+            ["-", ["band", 1], ["var", "powermin"]],
+            ["-", ["var", "powermax"], ["var", "powermin"]]
+          ],
+          0,
+          [64, 128, 128, 1],
+          0.166,
+          [128, 192, 192, 1],
+          0.333,
+          [192, 224, 224, 1],
+          0.5,
+          [255, 255, 255, 1],
+          0.666,
+          [255, 192, 128, 1],
+          0.833,
+          [255, 128, 64, 1],
+          1,
+          [255, 64, 32, 1]
+        ],
+        ["color", 0, 0, 0, 0]
+      ],
+      "jsonform": {
+        "type": "object",
+        "title": "Data Filters",
+        "properties": {
+          "powerrange": {
+            "title": "Power Density Range",
+            "type": "object",
+            "properties": {
+              "powermin": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 3000,
+                "format": "range",
+                "default": 0
+              },
+              "powermax": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 3000,
+                "format": "range",
+                "default": 1000
+              }
+            },
+            "format": "minmax"
+          },
+          "elevationrange": {
+            "title": "Elevation Range (m)",
+            "type": "object",
+            "properties": {
+              "elevationmin": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 4000,
+                "format": "range",
+                "default": 0
+              },
+              "elevationmax": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 4000,
+                "format": "range",
+                "default": 4000
+              }
+            },
+            "format": "minmax"
+          },
+          "sloperange": {
+            "title": "Slope Range (deg)",
+            "type": "object",
+            "properties": {
+              "slopemin": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 50,
+                "format": "range",
+                "default": 0
+              },
+              "slopemax": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 50,
+                "format": "range",
+                "default": 50
+              }
+            },
+            "format": "minmax"
+          }
+        }
+      }
+    }
+  },
+  {
+    "id": "jsonform-feature-drawtools-selector",
+    "title": "Interactive Point & Feature Map Selector JSONForm for OGC Processes",
+    "category": "jsonform",
+    "dataType": "point",
+    "features": ["drawtools", "feature-click", "process-input", "eox-map"],
+    "tags": [
+      "jsonform",
+      "drawtools",
+      "feature-selection",
+      "map-click",
+      "process",
+      "predictive-maintenance",
+      "gtif"
+    ],
+    "description": "Process input form configuration with format: 'feature' and options.drawtools pointing to 'eox-map#main'. Allows users to select points on map layers and extracts specific feature properties (e.g. ID) for process execution.",
+    "targetContext": "Host as JSON on assets endpoint, reference in STAC Collection with 'eodash:jsonform'.",
+    "code": {
+      "options": {
+        "execute": true
+      },
+      "type": "object",
+      "properties": {
+        "feature": {
+          "type": "string",
+          "title": "Select a station / asset on the map",
+          "options": {
+            "drawtools": {
+              "for": "eox-map#main",
+              "layerId": "sensor_stations",
+              "continuous": true,
+              "featureStyles": {
+                "click": {
+                  "fill-color": "rgba(51, 153, 204, 0.5)",
+                  "stroke-color": "#3399CC",
+                  "stroke-width": 2.5
+                }
+              }
+            },
+            "type": "string",
+            "featureProperty": "ID"
+          },
+          "format": "feature"
+        }
+      }
+    }
+  },
+  {
+    "id": "catalog-process-post-body-template",
+    "title": "Synchronous Process Link with Mustache JSON POST Body and MultiQuery",
+    "category": "catalog-collection",
+    "dataType": "timeseries",
+    "features": [
+      "process",
+      "post-body",
+      "mustache-template",
+      "multiquery",
+      "geojson"
+    ],
+    "tags": [
+      "stac",
+      "collection",
+      "process",
+      "service-link",
+      "post-body",
+      "mustache",
+      "multiquery",
+      "eodash"
+    ],
+    "description": "STAC Collection service link executing a synchronous POST request with a Mustache template body (preserving raw GeoJSON feature types) and multiQuery support for selected map features.",
+    "targetContext": "Reference in STAC Collection links array.",
+    "code": {
+      "links": [
+        {
+          "rel": "service",
+          "id": "timeseries-stat-service",
+          "type": "application/json",
+          "href": "https://api.example.com/statistics/timeseries",
+          "method": "POST",
+          "body": "https://assets.example.com/templates/timeseries_post_body.json",
+          "eox:flatstyle": "https://assets.example.com/styles/timeseries_style.json"
+        }
+      ],
+      "bodyTemplateSnippet": {
+        "metric": "{{metric}}",
+        "geometry": "{{feature.geometry}}",
+        "featureId": "{{feature.properties.ID}}"
+      }
+    }
   }
 ]

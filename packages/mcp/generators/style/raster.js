@@ -20,6 +20,7 @@ export async function generateRasterFlatStyle({
   colormap = "viridis",
   customColors,
   interactiveMinMax = true,
+  maskBands = [],
 } = {}) {
   const palette = customColors || (await getColormapRamp(colormap));
   const style = {};
@@ -76,13 +77,6 @@ export async function generateRasterFlatStyle({
         interpolateStops.push(Number((step * i).toFixed(4)), palette[i]);
       }
 
-      style.color = [
-        "case",
-        ["==", ["band", bandIdx], 0],
-        [0, 0, 0, 0], // Transparent nodata
-        interpolateStops,
-      ];
-
       style.legend = {
         domainProperties: ["min", "max"],
         range: palette,
@@ -114,6 +108,56 @@ export async function generateRasterFlatStyle({
           },
         },
       };
+
+      const conditions = [[">", ["band", bandIdx], 0]];
+      if (maskBands && maskBands.length > 0) {
+        for (const mb of maskBands) {
+          const varMin = mb.variableMin || `band${mb.band}min`;
+          const varMax = mb.variableMax || `band${mb.band}max`;
+          style.variables[varMin] = mb.min ?? 0;
+          style.variables[varMax] = mb.max ?? 100;
+
+          conditions.push([
+            "between",
+            ["band", mb.band],
+            ["var", varMin],
+            ["var", varMax],
+          ]);
+
+          const formKey = mb.formKey || `${varMin.replace(/min$/i, "")}range`;
+          style.jsonform.properties[formKey] = {
+            title: mb.title || `Band ${mb.band} Range`,
+            type: "object",
+            properties: {
+              [varMin]: {
+                type: "number",
+                minimum: mb.sliderMin ?? mb.min ?? 0,
+                maximum: mb.sliderMax ?? mb.max ?? 100,
+                default: mb.min ?? 0,
+                format: "range",
+              },
+              [varMax]: {
+                type: "number",
+                minimum: mb.sliderMin ?? mb.min ?? 0,
+                maximum: mb.sliderMax ?? mb.max ?? 100,
+                default: mb.max ?? 100,
+                format: "range",
+              },
+            },
+            format: "minmax",
+          };
+        }
+      }
+
+      const conditionExpr =
+        conditions.length === 1 ? conditions[0] : ["all", ...conditions];
+
+      style.color = [
+        "case",
+        conditionExpr,
+        interpolateStops,
+        ["color", 0, 0, 0, 0],
+      ];
     } else {
       const rangeDelta = effectiveDefaultMax - effectiveDefaultMin || 1;
       const normalizedExpression = [
@@ -141,11 +185,26 @@ export async function generateRasterFlatStyle({
         );
       }
 
+      const conditions = [[">", ["band", bandIdx], 0]];
+      if (maskBands && maskBands.length > 0) {
+        for (const mb of maskBands) {
+          conditions.push([
+            "between",
+            ["band", mb.band],
+            mb.min ?? 0,
+            mb.max ?? 100,
+          ]);
+        }
+      }
+
+      const conditionExpr =
+        conditions.length === 1 ? conditions[0] : ["all", ...conditions];
+
       style.color = [
         "case",
-        ["==", ["band", bandIdx], 0],
-        [0, 0, 0, 0],
+        conditionExpr,
         interpolateStops,
+        ["color", 0, 0, 0, 0],
       ];
 
       style.legend = {

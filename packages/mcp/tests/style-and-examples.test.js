@@ -4,6 +4,7 @@ import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { createMcpServer } from "../index.js";
 import {
   generateVectorFlatStyle,
+  generateRasterFlatStyle,
   generateRasterWebglStyle,
   generateRasterForm,
   generateLayerStyle,
@@ -541,13 +542,13 @@ describe("eodash MCP Tools via Client - generate_layer_style & find_examples", (
     expect(parsed.rulesAndBestPractices).toBeInstanceOf(Array);
   });
 
-  it("calls generate_layer_style via MCP client for raster-webgl-flatstyle", async () => {
+  it("calls generate_layer_style via MCP client for raster-flatstyle", async () => {
     const { client } = await createTestClientServer();
     const result = await client.callTool({
       name: "generate_layer_style",
       arguments: {
-        styleType: "raster-webgl-flatstyle",
-        rasterWebglConfig: {
+        styleType: "raster-flatstyle",
+        rasterConfig: {
           mode: "single-band-normalized",
           bands: [1],
           min: 0,
@@ -557,7 +558,7 @@ describe("eodash MCP Tools via Client - generate_layer_style & find_examples", (
     });
 
     const parsed = JSON.parse(result.content[0].text);
-    expect(parsed.styleType).toBe("raster-webgl-flatstyle");
+    expect(parsed.styleType).toBe("raster-flatstyle");
     expect(parsed.style.color).toBeDefined();
     expect(parsed.stacItemSnippet["eox:flatstyle"]).toBeDefined();
   });
@@ -613,12 +614,12 @@ describe("eodash MCP Tools via Client - generate_layer_style & find_examples", (
     expect(parsed.results[0].dataType).toBe("cog");
   });
 
-  it("calls generate_layer_style with parameter aliases (rasterConfig & colormap)", async () => {
+  it("calls generate_layer_style with rasterConfig & colormap", async () => {
     const { client } = await createTestClientServer();
     const result = await client.callTool({
       name: "generate_layer_style",
       arguments: {
-        styleType: "raster-webgl-flatstyle",
+        styleType: "raster-flatstyle",
         rasterConfig: {
           mode: "single-band",
           bandIndex: 1,
@@ -629,7 +630,7 @@ describe("eodash MCP Tools via Client - generate_layer_style & find_examples", (
     });
 
     const parsed = JSON.parse(result.content[0].text);
-    expect(parsed.styleType).toBe("raster-webgl-flatstyle");
+    expect(parsed.styleType).toBe("raster-flatstyle");
     expect(parsed.style.variables.min).toBe(-2);
     expect(parsed.style.variables.max).toBe(35);
   });
@@ -720,5 +721,78 @@ describe("eodash MCP Tools via Client - generate_layer_style & find_examples", (
     });
     expect(match.results.length).toBe(1);
     expect(match.totalFound).toBeGreaterThan(1);
+  });
+
+  it("generates vector flatstyle with text label symbolizers and reactive radius", () => {
+    const res = generateVectorFlatStyle({
+      geometryType: "point",
+      mode: "single",
+      labelAttribute: "station_name",
+      textColor: "#333333",
+      textFont: "14px sans-serif",
+      interactivePointRadius: true,
+      pointRadius: 8,
+    });
+
+    expect(res["text-value"]).toEqual(["to-string", ["get", "station_name"]]);
+    expect(res["text-font"]).toBe("14px sans-serif");
+    expect(res["text-fill-color"]).toBe("#333333");
+    expect(res["circle-radius"]).toEqual(["var", "pointRadius"]);
+    expect(res.variables.pointRadius).toBe(8);
+    expect(res.jsonform.properties.pointRadius).toBeDefined();
+  });
+
+  it("generates raster flatstyle with multi-band threshold masking and range forms", async () => {
+    const res = await generateRasterFlatStyle({
+      mode: "single-band-normalized",
+      bands: [1],
+      min: 0,
+      max: 1000,
+      interactiveMinMax: true,
+      maskBands: [
+        {
+          band: 2,
+          min: 0,
+          max: 4000,
+          variableMin: "elevationmin",
+          variableMax: "elevationmax",
+          title: "Elevation Range",
+        },
+        {
+          band: 3,
+          min: 0,
+          max: 50,
+          variableMin: "slopemin",
+          variableMax: "slopemax",
+          title: "Slope Range",
+        },
+      ],
+    });
+
+    expect(res.variables.elevationmin).toBe(0);
+    expect(res.variables.elevationmax).toBe(4000);
+    expect(res.variables.slopemin).toBe(0);
+    expect(res.variables.slopemax).toBe(50);
+    expect(res.color[0]).toBe("case");
+    expect(res.color[1][0]).toBe("all");
+    expect(res.jsonform.properties.elevationrange).toBeDefined();
+    expect(res.jsonform.properties.sloperange).toBeDefined();
+  });
+
+  it("finds Vega chart examples in find_examples catalog", () => {
+    const res = findExamples({
+      category: "chart-vega",
+    });
+
+    expect(res.results.length).toBeGreaterThanOrEqual(2);
+    const ids = res.results.map((r) => r.id);
+    expect(ids).toContain("chart-vega-timeseries-uncertainty");
+    expect(ids).toContain("chart-vega-scenario-grouped-bar");
+
+    for (const item of res.results) {
+      expect(item.category).toBe("chart-vega");
+      expect(typeof item.code).toBe("object");
+      expect(item.code.$schema).toBeDefined();
+    }
   });
 });

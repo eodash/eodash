@@ -17,9 +17,9 @@ export function registerDiscoveryTools(server) {
         category: z
           .enum([
             "all",
+            "chart-vega",
             "vector-flatstyle",
             "raster-flatstyle",
-            "raster-webgl-flatstyle",
             "rasterform",
             "jsonform",
             "catalog-collection",

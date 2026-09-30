@@ -19,60 +19,80 @@ export function generateVectorFlatStyle({
   pointRadius = 6,
   tooltipFields = [],
   interactiveSliders = false,
+  interactiveStrokeWidth = false,
+  interactivePointRadius = false,
+  labelAttribute,
+  labelField,
+  textColor = "#111111",
+  textFont = "bold 12px sans-serif",
+  textOffsetX = 10,
+  textOffsetY = 0,
+  textAlign = "left",
 } = {}) {
   const isPoint = geometryType === "point";
   const isLine = geometryType === "line";
+  const hasInteractiveStroke = interactiveSliders || interactiveStrokeWidth;
+  const hasInteractiveRadius =
+    isPoint && (interactiveSliders || interactivePointRadius);
+  const effectiveLabelAttr = labelAttribute || labelField;
 
   /** @type {Record<string, any>} */
   const style = {};
   /** @type {Record<string, any>} */
   const variables = {};
   /** @type {Record<string, any>} */
-  let jsonform = null;
+  const formProperties = {};
   /** @type {any} */
   let legend = null;
 
-  if (interactiveSliders) {
+  if (hasInteractiveStroke) {
     variables.strokeWidth = strokeWidth;
-
-    jsonform = {
-      type: "object",
-      title: "Layer Style Configuration",
-      properties: {
-        strokeWidth: {
-          type: "number",
-          title: "Stroke Width",
-          minimum: 0,
-          maximum: 10,
-          step: 0.5,
-          default: strokeWidth,
-          format: "range",
-        },
-      },
+    formProperties.strokeWidth = {
+      type: "number",
+      title: "Stroke Width (px)",
+      minimum: 0,
+      maximum: 15,
+      step: 0.5,
+      default: strokeWidth,
+      format: "range",
     };
   }
+
+  if (hasInteractiveRadius) {
+    variables.pointRadius = pointRadius;
+    formProperties.pointRadius = {
+      type: "number",
+      title: "Point Radius (px)",
+      minimum: 1,
+      maximum: 30,
+      step: 1,
+      default: pointRadius,
+      format: "range",
+    };
+  }
+
+  const effectiveRadius = hasInteractiveRadius
+    ? ["var", "pointRadius"]
+    : pointRadius;
+  const effectiveStrokeWidth = hasInteractiveStroke
+    ? ["var", "strokeWidth"]
+    : strokeWidth;
 
   // 1. Single Mode
   if (mode === "single") {
     if (isPoint) {
-      style["circle-radius"] = pointRadius;
+      style["circle-radius"] = effectiveRadius;
       style["circle-fill-color"] = fillColor;
       style["circle-stroke-color"] = strokeColor;
-      style["circle-stroke-width"] = interactiveSliders
-        ? ["var", "strokeWidth"]
-        : strokeWidth;
+      style["circle-stroke-width"] = effectiveStrokeWidth;
     } else if (isLine) {
       style["stroke-color"] = strokeColor || fillColor;
-      style["stroke-width"] = interactiveSliders
-        ? ["var", "strokeWidth"]
-        : strokeWidth;
+      style["stroke-width"] = effectiveStrokeWidth;
     } else {
       // Polygon
       style["fill-color"] = fillColor;
       style["stroke-color"] = strokeColor;
-      style["stroke-width"] = interactiveSliders
-        ? ["var", "strokeWidth"]
-        : strokeWidth;
+      style["stroke-width"] = effectiveStrokeWidth;
     }
 
     legend = {
@@ -100,23 +120,17 @@ export function generateVectorFlatStyle({
     matchExpression.push("rgba(128, 128, 128, 0.5)"); // Fallback color
 
     if (isPoint) {
-      style["circle-radius"] = pointRadius;
+      style["circle-radius"] = effectiveRadius;
       style["circle-fill-color"] = matchExpression;
       style["circle-stroke-color"] = strokeColor;
-      style["circle-stroke-width"] = interactiveSliders
-        ? ["var", "strokeWidth"]
-        : strokeWidth;
+      style["circle-stroke-width"] = effectiveStrokeWidth;
     } else if (isLine) {
       style["stroke-color"] = matchExpression;
-      style["stroke-width"] = interactiveSliders
-        ? ["var", "strokeWidth"]
-        : strokeWidth;
+      style["stroke-width"] = effectiveStrokeWidth;
     } else {
       style["fill-color"] = matchExpression;
       style["stroke-color"] = strokeColor;
-      style["stroke-width"] = interactiveSliders
-        ? ["var", "strokeWidth"]
-        : strokeWidth;
+      style["stroke-width"] = effectiveStrokeWidth;
     }
 
     legend = {
@@ -161,23 +175,17 @@ export function generateVectorFlatStyle({
     }
 
     if (isPoint) {
-      style["circle-radius"] = pointRadius;
+      style["circle-radius"] = effectiveRadius;
       style["circle-fill-color"] = interpolateExpression;
       style["circle-stroke-color"] = strokeColor;
-      style["circle-stroke-width"] = interactiveSliders
-        ? ["var", "strokeWidth"]
-        : strokeWidth;
+      style["circle-stroke-width"] = effectiveStrokeWidth;
     } else if (isLine) {
       style["stroke-color"] = interpolateExpression;
-      style["stroke-width"] = interactiveSliders
-        ? ["var", "strokeWidth"]
-        : strokeWidth;
+      style["stroke-width"] = effectiveStrokeWidth;
     } else {
       style["fill-color"] = interpolateExpression;
       style["stroke-color"] = strokeColor;
-      style["stroke-width"] = interactiveSliders
-        ? ["var", "strokeWidth"]
-        : strokeWidth;
+      style["stroke-width"] = effectiveStrokeWidth;
     }
 
     legend = {
@@ -187,6 +195,16 @@ export function generateVectorFlatStyle({
     };
   }
 
+  // Text Symbolizer (Labels)
+  if (effectiveLabelAttr) {
+    style["text-value"] = ["to-string", ["get", effectiveLabelAttr]];
+    style["text-font"] = textFont;
+    style["text-fill-color"] = textColor;
+    style["text-offset-x"] = textOffsetX;
+    style["text-offset-y"] = textOffsetY;
+    style["text-align"] = textAlign;
+  }
+
   const result = {
     ...style,
   };
@@ -194,8 +212,12 @@ export function generateVectorFlatStyle({
   if (Object.keys(variables).length > 0) {
     result.variables = variables;
   }
-  if (jsonform) {
-    result.jsonform = jsonform;
+  if (Object.keys(formProperties).length > 0) {
+    result.jsonform = {
+      type: "object",
+      title: "Layer Style Configuration",
+      properties: formProperties,
+    };
   }
   if (legend) {
     result.legend = legend;
