@@ -440,7 +440,7 @@ describe("eodash MCP Server - HTTP Endpoints", () => {
         params: {
           name: "generate_layer_style",
           arguments: {
-            styleType: "vector-flatstyle",
+            styleType: "vector-style",
             vectorConfig: {
               geometryType: "line",
               mode: "single",
@@ -453,7 +453,7 @@ describe("eodash MCP Server - HTTP Endpoints", () => {
     expect(styleRes.status).toBe(200);
     const styleBody = await styleRes.json();
     const styleData = JSON.parse(styleBody.result.content[0].text);
-    expect(styleData.styleType).toBe("vector-flatstyle");
+    expect(styleData.styleType).toBe("vector-style");
     expect(styleData.style["stroke-color"]).toBe("#003366");
 
     // 4. tools/call for find_examples via HTTP

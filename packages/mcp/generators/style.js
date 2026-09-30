@@ -40,7 +40,7 @@ export async function generateLayerStyle({
   let catalogCollectionSnippet = {};
   const rulesAndBestPractices = [];
 
-  if (styleType === "vector-flatstyle") {
+  if (styleType === "vector-style") {
     if (
       vectorConfig.mode === "continuous" &&
       vectorConfig.colormap &&
@@ -49,14 +49,14 @@ export async function generateLayerStyle({
       await fetchColormaps();
     }
     resultStyle = generateVectorFlatStyle(vectorConfig);
-    summary = `Generated OpenLayers Vector FlatStyle for ${vectorConfig.geometryType || "polygon"} (${vectorConfig.mode || "single"} mode).`;
+    summary = `Generated OpenLayers Vector Style for ${vectorConfig.geometryType || "polygon"} (${vectorConfig.mode || "single"} mode).`;
 
     rulesAndBestPractices.push(
       "Style and eox:flatstyle MUST be URL strings in STAC items and catalog collections. Host the style JSON file on your assets server.",
       "In eodash catalog configs use 'Style' on Collection or 'Resources[].Style'. Note: 'Flatstyle' does NOT exist on Resources (it is only used under Process execution definitions).",
-      "OpenLayers flat styles support vector layers (GeoJSON, FlatGeobuf) and vector tile layers (MVT).",
+      "OpenLayers styles support vector layers (GeoJSON, FlatGeobuf) and vector tile layers (MVT).",
       "Dynamic style variables (e.g. ['var', 'strokeWidth']) are reactive when paired with a matching jsonform schema in the style.",
-      "OpenLayers Flat Style Specification: https://openlayers.org/en/latest/apidoc/module-ol_style_flat.html",
+      "OpenLayers Style Specification: https://openlayers.org/en/latest/apidoc/module-ol_style_flat.html",
       "OpenLayers Style Expressions Reference: https://openlayers.org/en/latest/apidoc/module-ol_style_expressions.html",
     );
 
@@ -78,18 +78,18 @@ export async function generateLayerStyle({
         },
       ],
     };
-  } else if (styleType === "raster-flatstyle") {
+  } else if (styleType === "raster-style") {
     resultStyle = await generateRasterFlatStyle(rasterConfig);
-    summary = `Generated OpenLayers Raster FlatStyle for COG / GeoTIFF (${rasterConfig.mode || "single-band-normalized"}).`;
+    summary = `Generated OpenLayers Raster Style for COG / GeoTIFF (${rasterConfig.mode || "single-band-normalized"}).`;
 
     rulesAndBestPractices.push(
       "The 'color' expression (case + interpolate) is mandatory for raster rendering. When adding or modifying 'jsonform' sliders, never omit the 'color' property.",
-      "Raster FlatStyles run client-side for COG/GeoTIFF rendering using OpenLayers style expressions (['band', index], ['var', name], ['interpolate', ...]).",
+      "Raster Styles run client-side for COG/GeoTIFF rendering using OpenLayers style expressions (['band', index], ['var', name], ['interpolate', ...]).",
       "Style and eox:flatstyle MUST be URL strings referencing the hosted style JSON file. In catalog configs use 'Style' or 'Resources[].Style' ('Flatstyle' only exists under Process outputs).",
       "The legend.domainProperties array connects slider min/max variables directly to the legend scale.",
       "Colormaps can use any preset from https://raw.githubusercontent.com/eurodatacube/eodash-assets/refs/heads/main/defaults/colormaps.json",
       "OpenLayers Raster Expressions: https://openlayers.org/en/latest/apidoc/module-ol_style_expressions.html",
-      "OpenLayers Flat Style Specification: https://openlayers.org/en/latest/apidoc/module-ol_style_flat.html",
+      "OpenLayers Style Specification: https://openlayers.org/en/latest/apidoc/module-ol_style_flat.html",
     );
 
     stacItemSnippet = {

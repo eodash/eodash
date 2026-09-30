@@ -361,9 +361,9 @@ describe("eodash Style Generator - generateRasterForm", () => {
 });
 
 describe("eodash Style Generator - generateLayerStyle Router & Docs URLs", () => {
-  it("routes vector-flatstyle and generates full snippets with OpenLayers doc links", async () => {
+  it("routes vector-style and generates full snippets with OpenLayers doc links", async () => {
     const res = await generateLayerStyle({
-      styleType: "vector-flatstyle",
+      styleType: "vector-style",
       vectorConfig: {
         geometryType: "polygon",
         mode: "single",
@@ -371,7 +371,7 @@ describe("eodash Style Generator - generateLayerStyle Router & Docs URLs", () =>
       },
     });
 
-    expect(res.styleType).toBe("vector-flatstyle");
+    expect(res.styleType).toBe("vector-style");
     expect(res.style["fill-color"]).toBe("rgba(255, 0, 0, 0.5)");
     expect(res.stacItemSnippet["eox:flatstyle"]).toBeDefined();
     expect(res.catalogCollectionSnippet.Style).toBeDefined();
@@ -385,9 +385,9 @@ describe("eodash Style Generator - generateLayerStyle Router & Docs URLs", () =>
     ).toBe(true);
   });
 
-  it("routes raster-flatstyle with OpenLayers doc links", async () => {
+  it("routes raster-style with OpenLayers doc links", async () => {
     const res = await generateLayerStyle({
-      styleType: "raster-flatstyle",
+      styleType: "raster-style",
       rasterConfig: {
         mode: "single-band-normalized",
         min: 10,
@@ -395,7 +395,7 @@ describe("eodash Style Generator - generateLayerStyle Router & Docs URLs", () =>
       },
     });
 
-    expect(res.styleType).toBe("raster-flatstyle");
+    expect(res.styleType).toBe("raster-style");
     expect(res.style.variables.min).toBe(10);
     expect(res.style.variables.max).toBe(90);
     expect(res.stacItemSnippet["eox:flatstyle"]).toBeDefined();
@@ -516,12 +516,12 @@ describe("eodash Examples Discovery - findExamples", () => {
 });
 
 describe("eodash MCP Tools via Client - generate_layer_style & find_examples", () => {
-  it("calls generate_layer_style via MCP client for vector-flatstyle", async () => {
+  it("calls generate_layer_style via MCP client for vector-style", async () => {
     const { client } = await createTestClientServer();
     const result = await client.callTool({
       name: "generate_layer_style",
       arguments: {
-        styleType: "vector-flatstyle",
+        styleType: "vector-style",
         vectorConfig: {
           geometryType: "polygon",
           mode: "categorical",
@@ -535,19 +535,19 @@ describe("eodash MCP Tools via Client - generate_layer_style & find_examples", (
     });
 
     const parsed = JSON.parse(result.content[0].text);
-    expect(parsed.styleType).toBe("vector-flatstyle");
+    expect(parsed.styleType).toBe("vector-style");
     expect(parsed.style["fill-color"]).toBeDefined();
     expect(parsed.stacItemSnippet["eox:flatstyle"]).toBeDefined();
     expect(parsed.catalogCollectionSnippet.Style).toBeDefined();
     expect(parsed.rulesAndBestPractices).toBeInstanceOf(Array);
   });
 
-  it("calls generate_layer_style via MCP client for raster-flatstyle", async () => {
+  it("calls generate_layer_style via MCP client for raster-style", async () => {
     const { client } = await createTestClientServer();
     const result = await client.callTool({
       name: "generate_layer_style",
       arguments: {
-        styleType: "raster-flatstyle",
+        styleType: "raster-style",
         rasterConfig: {
           mode: "single-band-normalized",
           bands: [1],
@@ -558,7 +558,7 @@ describe("eodash MCP Tools via Client - generate_layer_style & find_examples", (
     });
 
     const parsed = JSON.parse(result.content[0].text);
-    expect(parsed.styleType).toBe("raster-flatstyle");
+    expect(parsed.styleType).toBe("raster-style");
     expect(parsed.style.color).toBeDefined();
     expect(parsed.stacItemSnippet["eox:flatstyle"]).toBeDefined();
   });
@@ -589,15 +589,13 @@ describe("eodash MCP Tools via Client - generate_layer_style & find_examples", (
       name: "find_examples",
       arguments: {
         query: "ice charts match",
-        category: "vector-flatstyle",
+        category: "vector-style",
       },
     });
 
     const parsed = JSON.parse(result.content[0].text);
     expect(parsed.totalFound).toBeGreaterThan(0);
-    expect(parsed.results[0].id).toBe(
-      "vector-flatstyle-ice-charts-categorical",
-    );
+    expect(parsed.results[0].id).toBe("vector-style-ice-charts-categorical");
   });
 
   it("calls find_examples via MCP client with keyword query", async () => {
@@ -659,7 +657,7 @@ describe("eodash MCP Tools via Client - generate_layer_style & find_examples", (
     const result = await client.callTool({
       name: "generate_layer_style",
       arguments: {
-        styleType: "raster-flatstyle",
+        styleType: "raster-style",
         rasterConfig: {
           mode: "single-band",
           bandIndex: 1,
@@ -670,7 +668,7 @@ describe("eodash MCP Tools via Client - generate_layer_style & find_examples", (
     });
 
     const parsed = JSON.parse(result.content[0].text);
-    expect(parsed.styleType).toBe("raster-flatstyle");
+    expect(parsed.styleType).toBe("raster-style");
     expect(parsed.style.variables.min).toBe(-2);
     expect(parsed.style.variables.max).toBe(35);
   });
@@ -750,7 +748,7 @@ describe("eodash MCP Tools via Client - generate_layer_style & find_examples", (
 
   it("find_examples correctly enforces text query filtering and accurate totalFound", async () => {
     const noMatch = await findExamples({
-      category: "vector-flatstyle",
+      category: "vector-style",
       query: "nonexistentkeywordxyz123",
     });
     expect(noMatch.results.length).toBe(0);
