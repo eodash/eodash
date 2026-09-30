@@ -579,8 +579,6 @@
       "rgb",
       "true-color",
       "raster-style",
-      "crop-circles",
-      "style-editor",
       "rgb-composite",
       "divisor-variable",
       "raster"
@@ -613,11 +611,10 @@
     "category": "raster-style",
     "tags": [
       "cog",
+      "filter",
       "ndvi",
       "band-math",
       "sentinel-2",
-      "eopf",
-      "eodash-assets",
       "raster-style",
       "interpolate-color",
       "raster"
@@ -673,8 +670,6 @@
       "rescale",
       "colormap",
       "xyz",
-      "cerulean",
-      "eodashboard",
       "removeproperties",
       "template-watch",
       "legend-rangeproperty",
@@ -750,13 +745,11 @@
       "oneof",
       "keep_oneof_values",
       "titiler",
+      "jsonform",
       "multi-asset",
       "sentinel-2",
       "rasterform",
-      "branching-oneof",
-      "keep_oneof_values_false",
-      "xyz",
-      "raster"
+      "xyz"
     ],
     "description": "Multi-asset branching form allowing users to toggle between True Color (RGB) and NDVI layers with distinct slider ranges, enforcing 'keep_oneof_values: false' to prevent state pollution.",
     "targetContext": "Define inside STAC link as 'eodash:rasterform' object, or reference as URL string.",
@@ -848,8 +841,8 @@
       "drawtools",
       "eox-map",
       "process-input",
-      "cerulean",
-      "ukif",
+      "bbox",
+      "rectangle",
       "map-interaction",
       "vector",
       "polygon"
@@ -894,24 +887,23 @@
       "cmems",
       "wmts",
       "process",
+      "chart",
       "vega",
       "oceanography",
-      "cerulean",
-      "deside",
       "time-series",
       "ogc-process",
       "vega-chart",
       "raster"
     ],
-    "description": "Complete eodash collection configuration for Copernicus Marine WMTS service with temporal query extent, dimensions, OGC process execution, and Vega timeseries chart.",
+    "description": "Complete eodash collection configuration for Copernicus Marine WMTS service with temporal query extent, dimensions, OGC process execution, and Vega timeseries chart referencing an example processing URL.",
     "targetContext": "Place in catalog 'collections/<collection-name>.json' for 'eodash_catalog' build.",
     "code": {
       "Name": "DIATO_diatoms",
       "Title": "Mass concentration of diatoms in sea water",
       "Description": "Copernicus Marine BGC monthly plankton concentration.",
-      "Themes": ["Aquaculture", "Marine Biology"],
-      "CollectionGroup": "F. Water Biology",
-      "Agency": ["Copernicus Marine", "ACRI-ST"],
+      "Themes": ["Aquaculture"],
+      "CollectionGroup": "Water Biology",
+      "Agency": ["Copernicus Marine Service"],
       "Resources": [
         {
           "EndPoint": "https://wmts.marine.copernicus.eu/teroWmts/OCEANCOLOUR_GLO_BGC_L4_NRT_009_102/cmems_obs-oc_glo_bgc-plankton_nrt_l4-multi-4km_P1M_202411",
@@ -935,7 +927,7 @@
         "EndPoints": [
           {
             "Identifier": "process_cmems",
-            "Url": "https://cmems.gtif.eox.at/cmems?dataset_id=cmems_obs-oc_glo_bgc-plankton_nrt_l4-multi-4km_P1M&variables=DIATO&start_datetime={{date_start}}&end_datetime={{date_end}}&minimum_longitude={{bbox.0}}&minimum_latitude={{bbox.1}}&maximum_longitude={{bbox.2}}&maximum_latitude={{bbox.3}}&minimum_depth={{depth}}&maximum_depth={{depth}}",
+            "Url": "https://example.com/api?dataset_id=cmems_obs-oc_glo_bgc-plankton_nrt_l4-multi-4km_P1M&variables=DIATO&start_datetime={{date_start}}&end_datetime={{date_end}}&minimum_longitude={{bbox.0}}&minimum_latitude={{bbox.1}}&maximum_longitude={{bbox.2}}&maximum_latitude={{bbox.3}}&minimum_depth={{depth}}&maximum_depth={{depth}}",
             "Type": "application/json"
           }
         ]
@@ -944,31 +936,30 @@
   },
   {
     "id": "collection-vector-stations-timeseries",
-    "title": "Vector In Situ GeoJSON Stations Collection with TimeSeries Endpoint",
+    "title": "Vector In Situ GeoJSON Stations Collection with TimeSeries Endpoint and templated  feature ID in URL",
     "category": "collection",
     "tags": [
       "vector",
+      "template",
       "geojson",
-      "in-situ",
-      "air-quality",
-      "ukif",
-      "austria",
       "time-entries",
       "process",
       "vega-chart",
       "style-url",
-      "point"
+      "point",
+      "feature",
+      "static-file"
     ],
     "description": "eodash collection configuration for in situ point station GeoJSON files with static bbox, hosted style URL, and feature-level timeseries process.",
     "targetContext": "Place in catalog 'collections/<collection-name>.json' for 'eodash_catalog' build.",
     "code": {
-      "Name": "GMIF-air-quality-stations",
-      "Title": "GMif Air Pollution Stations",
+      "Name": "air-quality-stations",
+      "Title": "Air Pollution Stations",
       "CollectionGroup": "Air Quality",
-      "Themes": ["Atmosphere", "Mobility"],
+      "Themes": ["Mobility"],
       "Tags": ["Air Quality", "PM2.5"],
-      "Description": "Consolidated GMif PM2.5 in situ station GeoJSON layer.",
-      "Agency": ["ESA", "UK Space Agency"],
+      "Description": "Consolidated PM2.5 in situ station GeoJSON layer.",
+      "Agency": ["ESA"],
       "Resources": [
         {
           "Name": "GeoJSON source",
@@ -979,8 +970,8 @@
               "Time": "20250101",
               "Assets": [
                 {
-                  "Identifier": "gmif_air_pollution_stations",
-                  "File": "https://workspace-ui-public.gtif-ukif.hub-otc.eox.at/api/public/share/public-share/stations.geojson"
+                  "Identifier": "air_pollution_stations",
+                  "File": "https://example.com/stations.geojson"
                 }
               ]
             }
@@ -994,7 +985,7 @@
         "EndPoints": [
           {
             "Identifier": "timeseries",
-            "Url": "https://workspace-ui-public.gtif-ukif.hub-otc.eox.at/api/public/share/public-share/timeseries/{{feature}}.json",
+            "Url": "https://example.com/timeseries/{{feature}}.json",
             "Method": "GET",
             "Type": "application/json"
           }
@@ -1004,26 +995,25 @@
   },
   {
     "id": "collection-post-process-cog-output",
-    "title": "POST Process Execution Collection Returning GeoTIFF Layer Styled with Flatstyle",
+    "title": "Async EOxHub Processing Execution Collection Returning GeoTIFF Layer Styled with Flatstyle",
     "category": "collection",
     "tags": [
-      "post-process",
-      "ogc-processes",
+      "process",
+      "pygeoapi",
+      "ogc-api-processes",
       "geotiff",
-      "harshness",
-      "cerulean",
       "eoxhub-workspaces",
       "image-tiff",
       "style-output",
       "cog",
       "raster"
     ],
-    "description": "Collection triggering an asynchronous or on-demand WPS / OGC Process returning an image/tiff COG layer rendered dynamically with an OpenLayers Style.",
+    "description": "Collection triggering an asynchronous or on-demand OGC Processes on EOxHub Workspaces returning an image/tiff COG layer rendered dynamically with an OpenLayers Style.",
     "targetContext": "Place in catalog 'collections/<collection-name>.json' for 'eodash_catalog' build.",
     "code": {
       "Name": "harshness_calculation",
       "Title": "Arctic Harshness Index Calculation",
-      "CollectionGroup": "A. Algorithms",
+      "CollectionGroup": "Algorithms",
       "Description": "On-demand execution of harshness navigation risk algorithm.",
       "Themes": ["Shipping", "Navigation"],
       "Agency": ["C-CORE"],
@@ -1039,7 +1029,7 @@
         "EndPoints": [
           {
             "Identifier": "harshnesscollection",
-            "Url": "https://harshness-map.gtif.eox.at/processes/execute-create-harshness/execution",
+            "Url": "https://example.com/processes/execute-create-harshness/execution",
             "Method": "POST",
             "EndPoint": "eoxhub_workspaces",
             "Body": "https://raw.githubusercontent.com/gtif-cerulean/assets/main/body/harshness.json",
@@ -1058,14 +1048,7 @@
       "indicator",
       "catalog",
       "themes",
-      "subcode",
-      "eox-itemfilter",
-      "cerulean",
-      "race",
-      "subcodes",
-      "eox-itemfilter-tags",
-      "timeseries",
-      "raster"
+      "subcode"
     ],
     "description": "Indicator grouping several STAC collections with rich filter metadata (subcodes, themes, satellites, sensors, tags) used by EOxItemFilter.",
     "targetContext": "Place in catalog 'indicators/<indicator-name>.json' for 'eodash_catalog' build.",
@@ -1079,7 +1062,6 @@
       "Satellite": ["Sentinel-1", "RADARSAT-Constellation"],
       "Sensor": ["SAR"],
       "Thumbnail": "https://assets.example.com/thumbnails/shipping.png",
-      "SubCode": "SHIPPING_ROUTES",
       "Collections": [
         "vessel_density_all",
         "antarctica_ship_route",
@@ -1089,16 +1071,16 @@
   },
   {
     "id": "stac-item-web-map-links-roles",
-    "title": "STAC Item with Web Map Links, Roles (baselayer/overlay/data), and Projections",
+    "title": "STAC Item with Web Map Links, Roles (baselayer/overlay/data)",
     "category": "stac-item",
     "tags": [
       "stac-item",
-      "web-map-links",
+      "web-map-link",
       "roles",
       "baselayer",
       "overlay",
       "stac-api",
-      "proj-epsg",
+      "visualization",
       "xyz",
       "raster"
     ],
@@ -1109,8 +1091,7 @@
       "stac_version": "1.0.0",
       "id": "sentinel-2-mosaic-2025",
       "properties": {
-        "datetime": "2025-06-01T00:00:00Z",
-        "proj:epsg": 3857
+        "datetime": "2025-06-01T00:00:00Z"
       },
       "geometry": {
         "type": "Polygon",
@@ -1171,10 +1152,10 @@
     "category": "chart-vega",
     "tags": [
       "vega-lite",
+      "vega",
       "chart",
       "timeseries",
       "uncertainty",
-      "confidence-interval",
       "hover-rule",
       "eodash:vegadefinition",
       "area-band",
@@ -1335,12 +1316,12 @@
     "category": "chart-vega",
     "tags": [
       "vega-lite",
+      "vega",
       "chart",
       "grouped-bar",
       "scenario",
       "dropdown-binding",
       "eodash:vegadefinition",
-      "gtif",
       "dropdown-params",
       "fold-transform",
       "grouped-bars",
@@ -1510,73 +1491,25 @@
     }
   },
   {
-    "id": "vector-style-line-dynamic-width",
-    "title": "Vector Lines with Reactive Stroke Width JSONForm Slider",
-    "category": "vector-style",
-    "tags": [
-      "vector",
-      "lines",
-      "routes",
-      "drift",
-      "stroke-width",
-      "slider",
-      "cerulean",
-      "line-styling",
-      "dynamic-variables",
-      "jsonform",
-      "line"
-    ],
-    "description": "Vector Style for ship tracks, ice drift deformation, or linear features with reactive stroke width controlled by a LayerControl JSONForm slider.",
-    "targetContext": "Host as JSON on assets endpoint, reference in STAC Item link with 'eox:flatstyle'.",
-    "code": {
-      "variables": {
-        "strokeWidth": 2
-      },
-      "stroke-color": "rgba(220, 38, 38, 0.8)",
-      "stroke-width": ["var", "strokeWidth"],
-      "legend": {
-        "domain": ["Ship Route / Drift"],
-        "range": ["rgba(220, 38, 38, 0.8)"],
-        "scaleType": "categorical"
-      },
-      "jsonform": {
-        "type": "object",
-        "title": "Layer Display Settings",
-        "properties": {
-          "strokeWidth": {
-            "title": "Line Width (px)",
-            "type": "number",
-            "minimum": 1,
-            "maximum": 15,
-            "step": 0.5,
-            "default": 2,
-            "format": "range"
-          }
-        }
-      }
-    }
-  },
-  {
     "id": "raster-style-multiband-masking",
-    "title": "Multi-Band WebGL COG Style with Compound Masking and Min/Max Range Form",
+    "title": "Multi-Band COG Style with Compound Masking/Filtering and Min/Max Range Form",
     "category": "raster-style",
     "tags": [
       "raster",
       "cog",
+      "filtering",
+      "analysis",
       "multiband",
       "masking",
-      "wind-energy",
-      "elevation-filter",
       "between",
       "gtif",
       "multiband-masking",
-      "webgl-tile",
       "jsonform",
       "domainproperties",
       "legend"
     ],
     "description": "Multi-band OpenLayers WebGL Style evaluating primary band 1 continuous colormap combined with compound logical masking (between) on elevation (band 2) and slope (band 3), fully interactive via format: minmax JSONForm sliders.",
-    "targetContext": "Host as JSON on assets endpoint, reference in STAC Item link with 'eox:flatstyle' or Collection link with rel: 'service'.",
+    "targetContext": "Host as JSON on assets endpoint, reference in STAC Item link with 'eox:flatstyle' or in catalog collection 'Resources[].Style'.",
     "code": {
       "legend": {
         "title": "Wind Power Density",
@@ -1710,7 +1643,7 @@
   },
   {
     "id": "jsonform-feature-drawtools-selector",
-    "title": "Interactive Point & Feature Map Selector JSONForm for OGC Processes",
+    "title": "Interactive Point & Feature Map Selector JSONForm for OGC API Processes",
     "category": "jsonform",
     "tags": [
       "jsonform",
@@ -1718,8 +1651,6 @@
       "feature-selection",
       "map-click",
       "process",
-      "predictive-maintenance",
-      "gtif",
       "feature-click",
       "process-input",
       "eox-map",
@@ -1754,44 +1685,6 @@
           },
           "format": "feature"
         }
-      }
-    }
-  },
-  {
-    "id": "catalog-process-post-body-template",
-    "title": "Synchronous Process Link with Mustache JSON POST Body and MultiQuery",
-    "category": "collection",
-    "tags": [
-      "stac",
-      "collection",
-      "process",
-      "service-link",
-      "post-body",
-      "mustache",
-      "multiquery",
-      "eodash",
-      "mustache-template",
-      "geojson",
-      "timeseries"
-    ],
-    "description": "STAC Collection service link executing a synchronous POST request with a Mustache template body (preserving raw GeoJSON feature types) and multiQuery support for selected map features.",
-    "targetContext": "Reference in STAC Collection links array.",
-    "code": {
-      "links": [
-        {
-          "rel": "service",
-          "id": "timeseries-stat-service",
-          "type": "application/json",
-          "href": "https://api.example.com/statistics/timeseries",
-          "method": "POST",
-          "body": "https://assets.example.com/templates/timeseries_post_body.json",
-          "eox:flatstyle": "https://assets.example.com/styles/timeseries_style.json"
-        }
-      ],
-      "bodyTemplateSnippet": {
-        "metric": "{{metric}}",
-        "geometry": "{{feature.geometry}}",
-        "featureId": "{{feature.properties.ID}}"
       }
     }
   }
