@@ -1,8 +1,7 @@
 {
   "id": "dashboard-scaffold-spa",
   "title": "Standalone SPA Dashboard Project Scaffold",
-  "dataType": "all",
-  "features": ["spa", "vite", "scaffold", "standalone"],
+  "category": "dashboard-scaffold",
   "tags": ["scaffold", "spa", "vite", "dashboard", "standalone", "boilerplate"],
   "description": "Complete file tree for a standalone Vite + eodash single-page application dashboard.",
   "targetContext": "Extract and write files to project directory to initialize a new eodash SPA project."

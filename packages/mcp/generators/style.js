@@ -31,19 +31,14 @@ export {
 export async function generateLayerStyle({
   styleType,
   vectorConfig = {},
-  rasterWebglConfig = {},
-  rasterConfig,
+  rasterConfig = {},
   rasterformConfig = {},
-  rasterFormConfig,
 } = {}) {
   let resultStyle;
   let summary = "";
   let stacItemSnippet = {};
   let catalogCollectionSnippet = {};
   const rulesAndBestPractices = [];
-
-  const effectiveRasterWebglConfig = rasterConfig || rasterWebglConfig;
-  const effectiveRasterFormConfig = rasterformConfig || rasterFormConfig;
 
   if (styleType === "vector-flatstyle") {
     if (
@@ -83,13 +78,9 @@ export async function generateLayerStyle({
         },
       ],
     };
-  } else if (
-    styleType === "raster-flatstyle" ||
-    styleType === "raster-webgl-flatstyle" ||
-    styleType === "raster-cog"
-  ) {
-    resultStyle = await generateRasterFlatStyle(effectiveRasterWebglConfig);
-    summary = `Generated OpenLayers Raster FlatStyle for COG / GeoTIFF (${effectiveRasterWebglConfig.mode || "single-band-normalized"}).`;
+  } else if (styleType === "raster-flatstyle") {
+    resultStyle = await generateRasterFlatStyle(rasterConfig);
+    summary = `Generated OpenLayers Raster FlatStyle for COG / GeoTIFF (${rasterConfig.mode || "single-band-normalized"}).`;
 
     rulesAndBestPractices.push(
       "The 'color' expression (case + interpolate) is mandatory for raster rendering. When adding or modifying 'jsonform' sliders, never omit the 'color' property.",
@@ -120,8 +111,8 @@ export async function generateLayerStyle({
       ],
     };
   } else if (styleType === "rasterform") {
-    resultStyle = generateRasterForm(effectiveRasterFormConfig);
-    summary = `Generated eodash:rasterform for ${effectiveRasterFormConfig.serviceType || "titiler"} layer.`;
+    resultStyle = generateRasterForm(rasterformConfig);
+    summary = `Generated eodash:rasterform for ${rasterformConfig.serviceType || "titiler"} layer.`;
 
     rulesAndBestPractices.push(
       "The eodash:rasterform property is a hybrid and supports BOTH direct JSON objects and URL strings.",

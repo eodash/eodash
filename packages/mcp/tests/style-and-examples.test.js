@@ -385,7 +385,7 @@ describe("eodash Style Generator - generateLayerStyle Router & Docs URLs", () =>
     ).toBe(true);
   });
 
-  it("routes raster-flatstyle (and raster-webgl-flatstyle) with OpenLayers doc links", async () => {
+  it("routes raster-flatstyle with OpenLayers doc links", async () => {
     const res = await generateLayerStyle({
       styleType: "raster-flatstyle",
       rasterConfig: {
@@ -473,27 +473,27 @@ describe("eodash Examples Discovery - findExamples", () => {
   });
 
   it("filters examples by category", () => {
-    const res = findExamples({ category: "catalog-collection" });
+    const res = findExamples({ category: "collection" });
     expect(res.totalFound).toBeGreaterThan(0);
     for (const ex of res.results) {
-      expect(ex.category).toBe("catalog-collection");
+      expect(ex.category).toBe("collection");
     }
   });
 
-  it("filters examples by dataType (e.g. cog, vector, wmts)", () => {
-    const cogRes = findExamples({ dataType: "cog" });
+  it("filters examples by tags (e.g. cog, vector, wmts)", () => {
+    const cogRes = findExamples({ query: "cog" });
     expect(cogRes.totalFound).toBeGreaterThan(0);
-    expect(cogRes.results.every((r) => r.dataType === "cog")).toBe(true);
+    expect(cogRes.results.every((r) => r.tags.includes("cog"))).toBe(true);
 
-    const vecRes = findExamples({ dataType: "vector" });
+    const vecRes = findExamples({ query: "vector" });
     expect(vecRes.totalFound).toBeGreaterThan(0);
-    expect(vecRes.results.every((r) => r.dataType === "vector")).toBe(true);
+    expect(vecRes.results.every((r) => r.tags.includes("vector"))).toBe(true);
   });
 
-  it("filters examples by feature tag", () => {
-    const res = findExamples({ feature: "bounding-box" });
+  it("filters examples by capability tag", () => {
+    const res = findExamples({ query: "bounding-box" });
     expect(res.totalFound).toBeGreaterThan(0);
-    expect(res.results.some((ex) => ex.features.includes("bounding-box"))).toBe(
+    expect(res.results.some((ex) => ex.tags.includes("bounding-box"))).toBe(
       true,
     );
   });
@@ -600,18 +600,58 @@ describe("eodash MCP Tools via Client - generate_layer_style & find_examples", (
     );
   });
 
-  it("calls find_examples via MCP client with dataType filter", async () => {
+  it("calls find_examples via MCP client with keyword query", async () => {
     const { client } = await createTestClientServer();
     const result = await client.callTool({
       name: "find_examples",
       arguments: {
-        dataType: "cog",
+        query: "cog",
       },
     });
 
     const parsed = JSON.parse(result.content[0].text);
     expect(parsed.totalFound).toBeGreaterThan(0);
-    expect(parsed.results[0].dataType).toBe("cog");
+    expect(parsed.results[0].tags).toContain("cog");
+  });
+
+  it("handles fuzzy search queries with typos and variations via Fuse.js", async () => {
+    const { client } = await createTestClientServer();
+
+    // Typo in "uncertainty" and "timeseries"
+    const resultTypo = await client.callTool({
+      name: "find_examples",
+      arguments: {
+        query: "timeseries uncerainty",
+        category: "chart-vega",
+      },
+    });
+    const parsedTypo = JSON.parse(resultTypo.content[0].text);
+    expect(parsedTypo.totalFound).toBeGreaterThan(0);
+    expect(parsedTypo.results[0].id).toBe("chart-vega-timeseries-uncertainty");
+
+    // Typo in "titiler"
+    const resultTitiler = await client.callTool({
+      name: "find_examples",
+      arguments: {
+        query: "titler",
+      },
+    });
+    const parsedTitiler = JSON.parse(resultTitiler.content[0].text);
+    expect(parsedTitiler.totalFound).toBeGreaterThan(0);
+    expect(parsedTitiler.results.some((r) => r.tags.includes("titiler"))).toBe(
+      true,
+    );
+
+    // Unrelated query returns empty
+    const resultEmpty = await client.callTool({
+      name: "find_examples",
+      arguments: {
+        query: "zzxxqqnonexistentterm12345",
+      },
+    });
+    const parsedEmpty = JSON.parse(resultEmpty.content[0].text);
+    expect(parsedEmpty.totalFound).toBe(0);
+    expect(parsedEmpty.results).toEqual([]);
   });
 
   it("calls generate_layer_style with rasterConfig & colormap", async () => {

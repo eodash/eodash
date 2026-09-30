@@ -1,8 +1,7 @@
 {
   "id": "dashboard-scaffold-vitepress",
   "title": "VitePress Narrative Dashboard Project Scaffold",
-  "dataType": "all",
-  "features": ["vitepress", "narrative", "storytelling", "scaffold"],
+  "category": "dashboard-scaffold",
   "tags": [
     "scaffold",
     "vitepress",
