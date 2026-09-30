@@ -11,9 +11,12 @@ export function registerDiscoveryTools(server) {
     "find_examples",
     {
       description:
-        "Search and discover working eodash examples, layer styles, and catalog configs.",
+        "Search and discover working eodash examples, layer styles, charts, and collection configs.",
       inputSchema: z.object({
-        query: z.string().optional().describe("Search keywords"),
+        query: z
+          .string()
+          .optional()
+          .describe("Search keywords matching title, tags, or description"),
         category: z
           .enum([
             "all",
@@ -31,24 +34,6 @@ export function registerDiscoveryTools(server) {
           .optional()
           .default("all")
           .describe("Config category filter"),
-        dataType: z
-          .enum([
-            "all",
-            "vector",
-            "cog",
-            "xyz",
-            "wmts",
-            "point",
-            "polygon",
-            "timeseries",
-          ])
-          .optional()
-          .default("all")
-          .describe("Geospatial data type filter"),
-        feature: z
-          .string()
-          .optional()
-          .describe("Feature tag filter (e.g. legend, tooltip, drawtools)"),
         limit: z.number().optional().default(5).describe("Max results (1-20)"),
       }),
     },
@@ -76,11 +61,7 @@ export function registerDiscoveryTools(server) {
           .union([z.string(), z.record(z.any())])
           .describe("Collection or indicator JSON string or object"),
         configType: z
-          .enum([
-            "auto",
-            "collection",
-            "indicator"
-          ])
+          .enum(["auto", "collection", "indicator"])
           .optional()
           .default("auto")
           .describe("Target schema type"),
