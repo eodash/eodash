@@ -21,8 +21,8 @@ export function registerDiscoveryTools(server) {
           .enum([
             "all",
             "chart-vega",
-            "vector-flatstyle",
-            "raster-flatstyle",
+            "vector-style",
+            "raster-style",
             "rasterform",
             "jsonform",
             "collection",

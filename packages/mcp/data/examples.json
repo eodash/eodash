@@ -1,8 +1,8 @@
 [
   {
-    "id": "vector-flatstyle-ice-charts-categorical",
-    "title": "Categorical Ice Charts Polygon FlatStyle with Legend",
-    "category": "vector-flatstyle",
+    "id": "vector-style-ice-charts-categorical",
+    "title": "Categorical Ice Charts Polygon Style with Legend",
+    "category": "vector-style",
     "tags": [
       "ice-charts",
       "categorical",
@@ -16,7 +16,7 @@
       "vector",
       "polygon"
     ],
-    "description": "Polygon OpenLayers FlatStyle for sea ice classification charts with categorical 'match' expressions, WMO concentration colors, and custom tooltips. Valid for GeoJSON, FlatGeobuf, and Vector Tiles.",
+    "description": "Polygon OpenLayers Style for sea ice classification charts with categorical 'match' expressions, WMO concentration colors, and custom tooltips. Valid for GeoJSON, FlatGeobuf, and Vector Tiles.",
     "targetContext": "Host as JSON file on assets endpoint, reference in STAC Item link with 'eox:flatstyle' or in catalog collection 'Resources[].Style'",
     "code": {
       "fill-color": [
@@ -93,9 +93,9 @@
     }
   },
   {
-    "id": "vector-flatstyle-station-points-interactive",
+    "id": "vector-style-station-points-interactive",
     "title": "In Situ Air Quality Monitoring Stations with Dynamic Size and Tooltips",
-    "category": "vector-flatstyle",
+    "category": "vector-style",
     "tags": [
       "air-quality",
       "stations",
@@ -108,7 +108,7 @@
       "vector",
       "point"
     ],
-    "description": "Point feature FlatStyle for air quality and sensor stations with variable circle radius controlled by a layer control JSONForm slider, dynamic stroke, and rich tooltip formatting.",
+    "description": "Point feature Style for air quality and sensor stations with variable circle radius controlled by a layer control JSONForm slider, dynamic stroke, and rich tooltip formatting.",
     "targetContext": "Host as JSON file on assets endpoint, reference in STAC Item link with 'eox:flatstyle' or in catalog collection 'Resources[].Style'.",
     "code": {
       "variables": {
@@ -172,22 +172,20 @@
     }
   },
   {
-    "id": "vector-flatstyle-threshold-filter-polygons",
-    "title": "Dynamic Threshold Filter FlatStyle with JSONForm Slider",
-    "category": "vector-flatstyle",
+    "id": "vector-style-threshold-filter-polygons",
+    "title": "Dynamic Threshold Filter Style with JSONForm Slider",
+    "category": "vector-style",
     "tags": [
-      "polygons",
       "threshold",
       "case-expression",
       "jsonform",
-      "harshness",
-      "cerulean",
       "dynamic-variables",
-      "threshold-filter",
       "vector",
-      "polygon"
+      "polygon",
+      "legend",
+      "filter"
     ],
-    "description": "Polygon FlatStyle filtering displayed polygons dynamically using a threshold variable connected to a JSONForm slider.",
+    "description": "Polygon Style filtering displayed polygons dynamically using a threshold variable connected to a JSONForm slider.",
     "targetContext": "Host as JSON file on assets endpoint, reference in STAC Item link with 'eox:flatstyle' or in catalog collection 'Resources[].Style'.",
     "code": {
       "variables": {
@@ -251,17 +249,12 @@
   },
   {
     "id": "raster-cog-single-band-normalized",
-    "title": "Single-Band COG Normalized FlatStyle with Min/Max Sliders",
-    "category": "raster-flatstyle",
+    "title": "Single-Band COG Normalized Style with Min/Max Sliders",
+    "category": "raster-style",
     "tags": [
       "cog",
       "geotiff",
-      "raster-flatstyle",
-      "sar",
-      "rcm",
-      "radar",
-      "polartep",
-      "cerulean",
+      "raster-style",
       "client-side-rendering",
       "interpolate-color",
       "dynamic-variables",
@@ -269,7 +262,7 @@
       "legend-domainproperties",
       "raster"
     ],
-    "description": "OpenLayers FlatStyle for single-band GeoTIFF / COG (e.g. SAR Sigma0, DEM Elevation, Temperature) with client-side normalization, colormap interpolation, and reactive min/max sliders.",
+    "description": "OpenLayers Style for single-band GeoTIFF / COG (e.g. SAR Sigma0, DEM Elevation, Temperature) with client-side normalization, colormap interpolation, and reactive min/max sliders.",
     "targetContext": "Host as JSON file on assets endpoint, reference in STAC Item link with 'eox:flatstyle' or in catalog collection 'Resources[].Style'.",
     "code": {
       "legend": {
@@ -334,21 +327,21 @@
   },
   {
     "id": "raster-cog-rgb-composite",
-    "title": "Sentinel-2 True Color RGB COG FlatStyle",
-    "category": "raster-flatstyle",
+    "title": "Sentinel-2 True Color RGB COG Style",
+    "category": "raster-style",
     "tags": [
       "cog",
       "sentinel-2",
       "rgb",
       "true-color",
-      "raster-flatstyle",
+      "raster-style",
       "crop-circles",
       "style-editor",
       "rgb-composite",
       "divisor-variable",
       "raster"
     ],
-    "description": "Raster FlatStyle combining Bands 4 (Red), 3 (Green), and 2 (Blue) into a true-color satellite image composite with brightness divisor variables.",
+    "description": "Raster Style combining Bands 4 (Red), 3 (Green), and 2 (Blue) into a true-color satellite image composite with brightness divisor variables.",
     "targetContext": "Host as JSON file on assets endpoint, reference in STAC Item link with 'eox:flatstyle' or in catalog collection 'Resources[].Style'.",
     "code": {
       "variables": {
@@ -372,8 +365,8 @@
   },
   {
     "id": "raster-cog-ndvi-index-math",
-    "title": "On-the-Fly NDVI Band Math COG FlatStyle",
-    "category": "raster-flatstyle",
+    "title": "On-the-Fly NDVI Band Math COG Style",
+    "category": "raster-style",
     "tags": [
       "cog",
       "ndvi",
@@ -381,7 +374,7 @@
       "sentinel-2",
       "eopf",
       "eodash-assets",
-      "raster-flatstyle",
+      "raster-style",
       "interpolate-color",
       "raster"
     ],
@@ -777,11 +770,11 @@
       "cerulean",
       "eoxhub-workspaces",
       "image-tiff",
-      "flatstyle-output",
+      "style-output",
       "cog",
       "raster"
     ],
-    "description": "Collection triggering an asynchronous or on-demand WPS / OGC Process returning an image/tiff COG layer rendered dynamically with an OpenLayers FlatStyle.",
+    "description": "Collection triggering an asynchronous or on-demand WPS / OGC Process returning an image/tiff COG layer rendered dynamically with an OpenLayers Style.",
     "targetContext": "Place in catalog 'collections/<collection-name>.json' for 'eodash_catalog' build.",
     "code": {
       "Name": "harshness_calculation",
@@ -1232,21 +1225,21 @@
     }
   },
   {
-    "id": "vector-flatstyle-points-with-text-labels",
+    "id": "vector-style-points-with-text-labels",
     "title": "Vector Points with Dynamic Size, Colors, and Text Label Symbolizers",
-    "category": "vector-flatstyle",
+    "category": "vector-style",
     "tags": [
       "vector",
       "point",
       "text-symbolizer",
       "labels",
-      "flatstyle",
+      "style",
       "gtif",
       "point-styling",
       "tooltip",
       "property-binding"
     ],
-    "description": "OpenLayers FlatStyle for in situ vector points featuring property-driven radius, fill colors, and OpenLayers text symbolizers (text-value, text-font, text-offset, text-align) with custom tooltips.",
+    "description": "OpenLayers Style for in situ vector points featuring property-driven radius, fill colors, and OpenLayers text symbolizers (text-value, text-font, text-offset, text-align) with custom tooltips.",
     "targetContext": "Host as JSON on assets endpoint, reference in STAC Item link with 'eox:flatstyle' or in catalog collection 'Resources[].Style'.",
     "code": {
       "circle-radius": ["get", "size"],
@@ -1273,9 +1266,9 @@
     }
   },
   {
-    "id": "vector-flatstyle-line-dynamic-width",
+    "id": "vector-style-line-dynamic-width",
     "title": "Vector Lines with Reactive Stroke Width JSONForm Slider",
-    "category": "vector-flatstyle",
+    "category": "vector-style",
     "tags": [
       "vector",
       "lines",
@@ -1289,7 +1282,7 @@
       "jsonform",
       "line"
     ],
-    "description": "Vector FlatStyle for ship tracks, ice drift deformation, or linear features with reactive stroke width controlled by a LayerControl JSONForm slider.",
+    "description": "Vector Style for ship tracks, ice drift deformation, or linear features with reactive stroke width controlled by a LayerControl JSONForm slider.",
     "targetContext": "Host as JSON on assets endpoint, reference in STAC Item link with 'eox:flatstyle'.",
     "code": {
       "variables": {
@@ -1320,9 +1313,9 @@
     }
   },
   {
-    "id": "raster-flatstyle-multiband-masking",
-    "title": "Multi-Band WebGL COG FlatStyle with Compound Masking and Min/Max Range Form",
-    "category": "raster-flatstyle",
+    "id": "raster-style-multiband-masking",
+    "title": "Multi-Band WebGL COG Style with Compound Masking and Min/Max Range Form",
+    "category": "raster-style",
     "tags": [
       "raster",
       "cog",
@@ -1338,7 +1331,7 @@
       "domainproperties",
       "legend"
     ],
-    "description": "Multi-band OpenLayers WebGL FlatStyle evaluating primary band 1 continuous colormap combined with compound logical masking (between) on elevation (band 2) and slope (band 3), fully interactive via format: minmax JSONForm sliders.",
+    "description": "Multi-band OpenLayers WebGL Style evaluating primary band 1 continuous colormap combined with compound logical masking (between) on elevation (band 2) and slope (band 3), fully interactive via format: minmax JSONForm sliders.",
     "targetContext": "Host as JSON on assets endpoint, reference in STAC Item link with 'eox:flatstyle' or Collection link with rel: 'service'.",
     "code": {
       "legend": {

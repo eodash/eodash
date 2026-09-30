@@ -9,10 +9,10 @@ export function registerStyleGeneratorTool(server) {
     "generate_layer_style",
     {
       description:
-        "Generate OpenLayers FlatStyles (vector/raster COG) or eodash:rasterform definitions with legend and jsonform.",
+        "Generate OpenLayers Styles (vector/raster COG) or eodash:rasterform definitions with legend and jsonform.",
       inputSchema: z.object({
         styleType: z
-          .enum(["vector-flatstyle", "raster-flatstyle", "rasterform"])
+          .enum(["vector-style", "raster-style", "rasterform"])
           .describe("Target style type"),
         vectorConfig: z
           .object({
@@ -90,7 +90,7 @@ export function registerStyleGeneratorTool(server) {
               .describe("Generate reactive point radius slider"),
           })
           .optional()
-          .describe("Vector flatstyle options"),
+          .describe("Vector style options"),
         rasterConfig: z
           .object({
             mode: z
@@ -155,7 +155,7 @@ export function registerStyleGeneratorTool(server) {
               .describe("Multi-band threshold masking filters"),
           })
           .optional()
-          .describe("Raster COG flatstyle options"),
+          .describe("Raster COG style options"),
         rasterformConfig: z
           .object({
             serviceType: z
