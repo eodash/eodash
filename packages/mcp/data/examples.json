@@ -1,95 +1,339 @@
 [
   {
     "id": "vector-style-ice-charts-categorical",
-    "title": "Categorical Ice Charts Polygon Style with Legend",
+    "title": "POLARIS Ice Navigation Vector Style with Dynamic Multi-Legend & JSONForm Controls",
     "category": "vector-style",
     "tags": [
+      "polaris",
       "ice-charts",
+      "sea-ice",
+      "navigation",
       "categorical",
-      "match-expression",
+      "boundTo",
+      "jsonform",
+      "dynamic-legend",
       "legend",
       "cerulean",
-      "deside",
-      "sea-ice-concentration",
-      "categorical-match",
       "tooltip",
       "vector",
-      "polygon"
+      "polygon",
+      "ship-class"
     ],
-    "description": "Polygon OpenLayers Style for sea ice classification charts with categorical 'match' expressions, WMO concentration colors, and custom tooltips. Valid for GeoJSON, FlatGeobuf, and Vector Tiles.",
+    "description": "Advanced polygon OpenLayers vector style for DMI POLARIS maritime ice risk assessment with interactive JSONForm dropdowns (visualisation mode, ship class, ice type), dynamic legend switching via boundTo, template property construction ({{vis}}_{{ice}}_{{ship}}_rio), and nested case/match expressions.",
     "targetContext": "Host as JSON file on assets endpoint, reference in STAC Item link with 'eox:flatstyle' or in catalog collection 'Resources[].Style'",
     "code": {
-      "fill-color": [
-        "match",
-        ["get", "POLY_TYPE"],
-        "I",
-        [
-          "match",
-          ["get", "CT"],
-          "92",
-          "rgba(149, 2, 140, 1.0)",
-          "91",
-          "rgba(224, 150, 224, 1.0)",
-          "89",
-          "rgba(255, 0, 0, 1.0)",
-          "81",
-          "rgba(255, 125, 7, 1.0)",
-          "70",
-          "rgba(255, 255, 0, 1.0)",
-          "40",
-          "rgba(140, 255, 159, 1.0)",
-          "10",
-          "rgba(125, 175, 224, 1.0)",
-          "02",
-          "rgba(0, 100, 255, 1.0)",
-          "rgba(0, 0, 0, 0.0)"
-        ],
-        "rgba(0, 0, 0, 0.0)"
-      ],
-      "stroke-color": "rgba(50, 50, 50, 0.4)",
-      "stroke-width": 0.5,
       "legend": [
         {
-          "title": "WMO Sea Ice Total Concentration",
-          "scaleType": "categorical",
-          "markType": "square",
-          "domain": [
-            "Fast Ice (92)",
-            "Consolidated (91)",
-            "Very Close (89)",
-            "Close (81)",
-            "Open (70)",
-            "Very Open (40)",
-            "Open Water (10)",
-            "Ice Free (02)"
-          ],
+          "title": "Total concentration colour code standard",
           "range": [
-            "rgba(149, 2, 140, 1.0)",
-            "rgba(224, 150, 224, 1.0)",
-            "rgba(255, 0, 0, 1.0)",
-            "rgba(255, 125, 7, 1.0)",
-            "rgba(255, 255, 0, 1.0)",
-            "rgba(140, 255, 159, 1.0)",
-            "rgba(125, 175, 224, 1.0)",
-            "rgba(0, 100, 255, 1.0)"
-          ]
+            "#367a4a",
+            "#3e9655",
+            "#66bc76",
+            "#fcfb01",
+            "#e36c09",
+            "#bc0106"
+          ],
+          "domain": [
+            "RIO > 20",
+            ">= 10 RIO < 20",
+            ">= 0 RIO < 10",
+            ">= -10 RIO < 0",
+            ">= -20 RIO < -10",
+            "RIO < -20"
+          ],
+          "scaleType": "categorical",
+          "markType": "circle",
+          "boundTo": {
+            "key": "type_of_visualisation",
+            "value": "polaris"
+          }
+        },
+        {
+          "title": "WMO Concentration",
+          "range": ["#8cff9f", "#ffff00", "#ff7d07", "#ff0000"],
+          "domain": ["1 - 3", "4 - 6", "7 - 9", "10"],
+          "scaleType": "categorical",
+          "markType": "circle",
+          "boundTo": {
+            "key": "type_of_visualisation",
+            "value": "WMO Concentration"
+          }
+        },
+        {
+          "title": "WMO Stage of Development",
+          "range": [
+            "#0064ff",
+            "#00000000",
+            "#ffffff",
+            "#ffccff",
+            "#ff64ff",
+            "#00000000",
+            "#9933cc",
+            "#ff66ff",
+            "#ffff00",
+            "#99cc00",
+            "#00cc00",
+            "#006600",
+            "#cc6633",
+            "#ff6600",
+            "#cc0000",
+            "#660000",
+            "#ffffff"
+          ],
+          "domain": [
+            "Ice Free",
+            "Brash Ice",
+            "No stage of development",
+            "New Ice",
+            "Nilas Ice Rind (<10 cm)",
+            "Young Ice (10 to 30 cm)",
+            "Grey Ice",
+            "Grey-White Ice",
+            "First Year Ice (>30 cm) or Brash Ice",
+            "Thin First Year Ice (30 to 70 cm)",
+            "Medium First Year Ice (70 to 120 cm)",
+            "Thick First Year Ice (>120 cm)",
+            "Old Ice",
+            "Second-Year Ice",
+            "Multi-Year Ice",
+            "Glacier Ice (Icebergs)",
+            "Unknown/Undetermined"
+          ],
+          "scaleType": "categorical",
+          "markType": "circle",
+          "boundTo": {
+            "key": "type_of_visualisation",
+            "value": "WMO Stage of Development"
+          }
         }
       ],
+      "jsonform": {
+        "type": "object",
+        "title": "Data configuration",
+        "properties": {
+          "type_of_visualisation": {
+            "title": "Type of Visualisation",
+            "type": "string",
+            "enum": [
+              "polaris",
+              "WMO Concentration",
+              "WMO Stage of Development"
+            ],
+            "options": {
+              "enum_titles": [
+                "POLARIS",
+                "WMO Concentration",
+                "WMO Stage of Development"
+              ]
+            },
+            "default": "polaris"
+          },
+          "ship_class": {
+            "title": "Ship Class",
+            "type": "string",
+            "enum": [
+              "pc_1",
+              "pc_2",
+              "pc_3",
+              "pc_4",
+              "pc_5",
+              "pc_6",
+              "pc_7",
+              "pc_ias",
+              "pc_ia",
+              "pc_ib",
+              "pc_ic",
+              "pc_nis"
+            ],
+            "options": {
+              "enum_titles": [
+                "PC1",
+                "PC2",
+                "PC3",
+                "PC4",
+                "PC5",
+                "PC6",
+                "PC7",
+                "PC IA Super",
+                "PC IA",
+                "PC IB",
+                "PC IC",
+                "PC NIS"
+              ]
+            },
+            "default": "pc_nis"
+          },
+          "type_of_ice": {
+            "title": "Type of Ice (decayed/standard)",
+            "type": "string",
+            "enum": ["standard", "decayed"],
+            "default": "standard"
+          },
+          "combined_prop": {
+            "type": "string",
+            "template": "{{vis}}_{{ice}}_{{ship}}_rio",
+            "options": {
+              "hidden": true
+            },
+            "watch": {
+              "vis": "type_of_visualisation",
+              "ice": "type_of_ice",
+              "ship": "ship_class"
+            }
+          }
+        }
+      },
+      "variables": {
+        "ship_class": "nis",
+        "type_of_ice": "standard",
+        "type_of_visualisation": "polaris",
+        "combined_prop": "polaris_standard_pc_nis_rio"
+      },
       "tooltip": [
         {
-          "id": "CT",
-          "title": "Total Concentration",
-          "appendix": "/10"
+          "id": "wmo_concentration",
+          "title": "WMO Concentration"
         },
         {
-          "id": "CA",
-          "title": "Partial Conc. A"
+          "id": "wmo_stage_of_development",
+          "title": "Stage of development"
         },
         {
-          "id": "SA",
-          "title": "Stage of Development A"
+          "id": "{{combined_prop}}",
+          "title": "Total concentration ({{ship_class}} ice: {{type_of_ice}})"
         }
-      ]
+      ],
+      "fill-color": [
+        "case",
+        ["==", ["var", "type_of_visualisation"], "WMO Concentration"],
+        [
+          "match",
+          ["get", "wmo_concentration"],
+          "Ice Free",
+          [0, 100, 255, 1],
+          "Open Water (< 1/10 ice)",
+          [150, 200, 255, 1],
+          "Bergy Water",
+          [150, 200, 255, 1],
+          "1/10",
+          [140, 255, 159, 1],
+          "2/10",
+          [140, 255, 159, 1],
+          "3/10",
+          [140, 255, 159, 1],
+          "4/10",
+          [255, 255, 0, 1],
+          "5/10",
+          [255, 255, 0, 1],
+          "6/10",
+          [255, 255, 0, 1],
+          "7/10",
+          [255, 125, 7, 1],
+          "8/10",
+          [255, 125, 7, 1],
+          "9/10",
+          [255, 0, 0, 1],
+          "10/10",
+          [255, 0, 0, 1],
+          "9/10 to 10/10 ice, 9+/10",
+          [255, 0, 0, 1],
+          "Unknown/Undetermined",
+          [255, 255, 255, 1],
+          [255, 255, 255, 1]
+        ],
+        ["==", ["var", "type_of_visualisation"], "WMO Stage of Development"],
+        [
+          "match",
+          ["get", "wmo_stage_of_development"],
+          "Ice Free",
+          [0, 100, 255, 1],
+          "Brash Ice",
+          [0, 0, 0, 0],
+          "No stage of development",
+          [255, 255, 255, 1],
+          "New Ice",
+          [255, 204, 255, 1],
+          "Nilas Ice Rind (<10 cm)",
+          [255, 100, 255, 1],
+          "Young Ice (10 to 30 cm)",
+          [0, 0, 0, 0],
+          "Grey Ice",
+          [153, 51, 204, 1],
+          "Grey-White Ice",
+          [255, 102, 255, 1],
+          "First Year Ice (>30 cm) or Brash Ice",
+          [255, 255, 0, 1],
+          "Thin First Year Ice (30 to 70 cm)",
+          [153, 204, 0, 1],
+          "Medium First Year Ice (70 to 120 cm)",
+          [0, 204, 0, 1],
+          "Thick First Year Ice (>120 cm)",
+          [0, 102, 0, 1],
+          "Old Ice",
+          [204, 102, 51, 1],
+          "Second-Year Ice",
+          [255, 102, 0, 1],
+          "Multi-Year Ice",
+          [204, 0, 0, 1],
+          "Glacier Ice (Icebergs)",
+          [102, 0, 0, 1],
+          "Unknown/Undetermined",
+          [255, 255, 255, 1],
+          [0, 0, 0, 0]
+        ],
+        ["==", ["var", "type_of_visualisation"], "polaris"],
+        [
+          "case",
+          ["==", ["get", "polygon_type"], "Ice Free"],
+          [0, 100, 255],
+          [
+            "==",
+            ["get", ["var", "combined_prop"]],
+            "RIO > 20: Normal Operation"
+          ],
+          [54, 122, 74, 1],
+          [
+            "==",
+            ["get", ["var", "combined_prop"]],
+            ">= 10 RIO < 20: Normal Operation"
+          ],
+          [62, 150, 85, 1],
+          [
+            "==",
+            ["get", ["var", "combined_prop"]],
+            ">= 0 RIO < 10: Normal Operation"
+          ],
+          [102, 188, 118, 1],
+          [
+            "==",
+            ["get", ["var", "combined_prop"]],
+            ">= -10 RIO < 0: Operation subject to special consideration"
+          ],
+          [252, 251, 1, 1],
+          [
+            "==",
+            ["get", ["var", "combined_prop"]],
+            ">= -20 RIO < -10: Operation subject to special consideration"
+          ],
+          [227, 108, 9, 1],
+          [
+            "==",
+            ["get", ["var", "combined_prop"]],
+            "RIO < -20: Operation subject to special consideration"
+          ],
+          [188, 1, 6, 1],
+          [
+            "==",
+            ["get", ["var", "combined_prop"]],
+            "<= -10 RIO < 0: Elevated operational risk"
+          ],
+          [252, 251, 1, 1],
+          [0, 0, 0, 1]
+        ],
+        [0, 0, 0, 0]
+      ],
+      "stroke-color": "black",
+      "stroke-width": 1
     }
   },
   {
