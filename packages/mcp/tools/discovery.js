@@ -25,6 +25,7 @@ export function registerDiscoveryTools(server) {
             "raster-style",
             "rasterform",
             "jsonform",
+            "process-body",
             "collection",
             "indicator",
             "stac-item",

@@ -15,7 +15,8 @@
       "fold-transform",
       "grouped-bars",
       "label-expression",
-      "timeseries"
+      "timeseries",
+      "eox-chart"
     ],
     "description": "Interactive Vega-Lite v5 grouped bar chart with UI dropdown select controls (Metric, Climate Scenario), column folding, regex filtering, dynamic axis label expressions, and multi-feature xOffset grouping.",
     "targetContext": "Host as JSON on assets endpoint, reference in STAC Collection with 'eodash:vegadefinition'.",
@@ -297,6 +298,931 @@
               "bind": "scales"
             }
           ]
+        }
+      ],
+      "background": "transparent"
+    }
+  },
+  {
+    "id": "chart-vega-grouped-co2-timeseries",
+    "title": "Grouped Bar Time-Series Chart with String Splitting Workaround & Reference Overlays",
+    "category": "chart-vega",
+    "tags": [
+      "vega-lite",
+      "vega",
+      "chart",
+      "grouped-bar",
+      "string-split",
+      "slice",
+      "eox-chart",
+      "time-series",
+      "reference-value",
+      "eodash:vegadefinition"
+    ],
+    "description": "Vega-Lite grouped bar chart using calculate transforms to slice and split composite reference values, layered with hover tooltips.",
+    "targetContext": "Save as chart specification and reference in collection or indicator Process.VegaDefinition",
+    "code": {
+      "$schema": "https://example.com/schema/vega-lite/v5.json",
+      "description": "Grouped CO₂ bar chart by time and component (safe JSON parsing workaround)",
+      "data": {
+        "name": "process_eox"
+      },
+      "transform": [
+        {
+          "calculate": "slice(datum.reference_value, 1, length(datum.reference_value) - 1)",
+          "as": "ref_clean"
+        },
+        {
+          "calculate": "split(datum.ref_clean, ',')[0]",
+          "as": "CO2 Inventory"
+        },
+        {
+          "calculate": "split(datum.ref_clean, ',')[1]",
+          "as": "CO2 Inversion in-situ"
+        },
+        {
+          "calculate": "split(datum.ref_clean, ',')[2]",
+          "as": "CO2 Inversion satellite"
+        },
+        {
+          "fold": [
+            "CO2 Inventory",
+            "CO2 Inversion in-situ",
+            "CO2 Inversion satellite"
+          ],
+          "as": ["component", "value"]
+        },
+        {
+          "calculate": "toNumber(datum.value)",
+          "as": "numeric_value"
+        }
+      ],
+      "mark": "bar",
+      "encoding": {
+        "x": {
+          "field": "time",
+          "type": "temporal",
+          "timeUnit": "year",
+          "title": "Year"
+        },
+        "xOffset": {
+          "field": "component",
+          "type": "nominal"
+        },
+        "y": {
+          "field": "numeric_value",
+          "type": "quantitative",
+          "title": "CO₂ Value [Tg C]"
+        },
+        "color": {
+          "legend": {
+            "orient": "top"
+          },
+          "field": "component",
+          "type": "nominal",
+          "title": "CO₂ Component",
+          "scale": {
+            "domain": [
+              "CO2 Inventory",
+              "CO2 Inversion satellite",
+              "CO2 Inversion in-situ"
+            ],
+            "range": ["#4c78a8", "#f58518", "#e45756"]
+          }
+        },
+        "tooltip": [
+          {
+            "field": "time",
+            "type": "temporal",
+            "title": "Date",
+            "format": "%Y-%m-%d"
+          },
+          {
+            "field": "component",
+            "type": "nominal",
+            "title": "Component"
+          },
+          {
+            "field": "numeric_value",
+            "type": "quantitative",
+            "title": "CO₂ Value [Tg C]"
+          }
+        ]
+      },
+      "params": [
+        {
+          "name": "grid",
+          "select": "interval",
+          "bind": "scales"
+        }
+      ]
+    }
+  },
+  {
+    "id": "chart-vega-dual-axis-process-datasets",
+    "title": "Dual-Axis Chart Resolving Multiple Process EndPoint Datasets (PV & Radiation)",
+    "category": "chart-vega",
+    "tags": [
+      "vega-lite",
+      "chart",
+      "dual-axis",
+      "eox-chart",
+      "vega",
+      "independent-scale",
+      "multi-dataset",
+      "geoparquet-stats",
+      "bands-flatten",
+      "eodash:vegadefinition"
+    ],
+    "description": "Vega-Lite dual-axis multi-layer chart matching named process endpoint datasets (nc1, nc2, glo1, glo2) with resolve independent y-scales and band flattening.",
+    "targetContext": "Host as JSON and reference in STAC collection or indicator Process.VegaDefinition matching Process.EndPoints identifiers",
+    "code": {
+      "$schema": "https://example.com/schema/vega-lite/v5.json",
+      "description": "Dual Axis Chart with 4 Datasets (PV on Left, GLO on Right)",
+      "datasets": {
+        "name": "timeseries"
+      },
+      "layer": [
+        {
+          "layer": [
+            {
+              "data": {
+                "name": "nc1"
+              },
+              "transform": [
+                {
+                  "flatten": ["bands"]
+                },
+                {
+                  "calculate": "'NC1 (PV)'",
+                  "as": "Source"
+                }
+              ],
+              "mark": {
+                "type": "line",
+                "point": true
+              },
+              "encoding": {
+                "x": {
+                  "field": "datetime",
+                  "type": "temporal",
+                  "title": "Time"
+                },
+                "y": {
+                  "field": "bands.mean",
+                  "type": "quantitative",
+                  "title": "PV Potential",
+                  "axis": {
+                    "orient": "left",
+                    "titleColor": "#1f77b4"
+                  }
+                },
+                "color": {
+                  "field": "Source",
+                  "type": "nominal"
+                },
+                "tooltip": [
+                  {
+                    "field": "datetime",
+                    "type": "temporal",
+                    "title": "Time",
+                    "format": "%H:%M"
+                  },
+                  {
+                    "field": "Source",
+                    "title": "Dataset"
+                  },
+                  {
+                    "field": "bands.mean",
+                    "title": "Mean",
+                    "format": ".4f"
+                  },
+                  {
+                    "field": "bands.min",
+                    "title": "Min",
+                    "format": ".4f"
+                  },
+                  {
+                    "field": "bands.max",
+                    "title": "Max",
+                    "format": ".4f"
+                  }
+                ]
+              }
+            },
+            {
+              "data": {
+                "name": "nc1"
+              },
+              "transform": [
+                {
+                  "flatten": ["bands"]
+                },
+                {
+                  "calculate": "'NC1 (PV)'",
+                  "as": "Source"
+                }
+              ],
+              "mark": {
+                "type": "area",
+                "opacity": 0.1
+              },
+              "encoding": {
+                "x": {
+                  "field": "datetime",
+                  "type": "temporal"
+                },
+                "y": {
+                  "field": "bands.min",
+                  "type": "quantitative"
+                },
+                "y2": {
+                  "field": "bands.max"
+                },
+                "color": {
+                  "field": "Source",
+                  "type": "nominal"
+                },
+                "tooltip": null
+              }
+            },
+            {
+              "data": {
+                "name": "nc2"
+              },
+              "transform": [
+                {
+                  "flatten": ["bands"]
+                },
+                {
+                  "calculate": "'NC2 (PV)'",
+                  "as": "Source"
+                }
+              ],
+              "mark": {
+                "type": "line",
+                "point": true
+              },
+              "encoding": {
+                "x": {
+                  "field": "datetime",
+                  "type": "temporal",
+                  "title": "Time"
+                },
+                "y": {
+                  "field": "bands.mean",
+                  "type": "quantitative",
+                  "title": "PV Potential",
+                  "axis": {
+                    "orient": "left",
+                    "titleColor": "#1f77b4"
+                  }
+                },
+                "color": {
+                  "field": "Source",
+                  "type": "nominal"
+                },
+                "tooltip": [
+                  {
+                    "field": "datetime",
+                    "type": "temporal",
+                    "title": "Time",
+                    "format": "%H:%M"
+                  },
+                  {
+                    "field": "Source",
+                    "title": "Dataset"
+                  },
+                  {
+                    "field": "bands.mean",
+                    "title": "Mean",
+                    "format": ".4f"
+                  },
+                  {
+                    "field": "bands.min",
+                    "title": "Min",
+                    "format": ".4f"
+                  },
+                  {
+                    "field": "bands.max",
+                    "title": "Max",
+                    "format": ".4f"
+                  }
+                ]
+              }
+            },
+            {
+              "data": {
+                "name": "nc2"
+              },
+              "transform": [
+                {
+                  "flatten": ["bands"]
+                },
+                {
+                  "calculate": "'NC2 (PV)'",
+                  "as": "Source"
+                }
+              ],
+              "mark": {
+                "type": "area",
+                "opacity": 0.1
+              },
+              "encoding": {
+                "x": {
+                  "field": "datetime",
+                  "type": "temporal"
+                },
+                "y": {
+                  "field": "bands.min",
+                  "type": "quantitative"
+                },
+                "y2": {
+                  "field": "bands.max"
+                },
+                "color": {
+                  "field": "Source",
+                  "type": "nominal"
+                },
+                "tooltip": null
+              }
+            }
+          ]
+        },
+        {
+          "layer": [
+            {
+              "data": {
+                "name": "glo1"
+              },
+              "transform": [
+                {
+                  "flatten": ["bands"]
+                },
+                {
+                  "calculate": "'GLO1 (Irradiance)'",
+                  "as": "Source"
+                }
+              ],
+              "mark": {
+                "type": "line",
+                "point": true
+              },
+              "encoding": {
+                "x": {
+                  "field": "datetime",
+                  "type": "temporal",
+                  "title": "Time"
+                },
+                "y": {
+                  "field": "bands.mean",
+                  "type": "quantitative",
+                  "title": "Global Irradiance",
+                  "axis": {
+                    "orient": "right",
+                    "titleColor": "#d62728"
+                  }
+                },
+                "color": {
+                  "field": "Source",
+                  "type": "nominal"
+                },
+                "tooltip": [
+                  {
+                    "field": "datetime",
+                    "type": "temporal",
+                    "title": "Time",
+                    "format": "%H:%M"
+                  },
+                  {
+                    "field": "Source",
+                    "title": "Dataset"
+                  },
+                  {
+                    "field": "bands.mean",
+                    "title": "Mean",
+                    "format": ".4f"
+                  },
+                  {
+                    "field": "bands.min",
+                    "title": "Min",
+                    "format": ".4f"
+                  },
+                  {
+                    "field": "bands.max",
+                    "title": "Max",
+                    "format": ".4f"
+                  }
+                ]
+              }
+            },
+            {
+              "data": {
+                "name": "glo1"
+              },
+              "transform": [
+                {
+                  "flatten": ["bands"]
+                },
+                {
+                  "calculate": "'GLO1 (Irradiance)'",
+                  "as": "Source"
+                }
+              ],
+              "mark": {
+                "type": "area",
+                "opacity": 0.1
+              },
+              "encoding": {
+                "x": {
+                  "field": "datetime",
+                  "type": "temporal"
+                },
+                "y": {
+                  "field": "bands.min",
+                  "type": "quantitative"
+                },
+                "y2": {
+                  "field": "bands.max"
+                },
+                "color": {
+                  "field": "Source",
+                  "type": "nominal"
+                },
+                "tooltip": null
+              }
+            },
+            {
+              "data": {
+                "name": "glo2"
+              },
+              "transform": [
+                {
+                  "flatten": ["bands"]
+                },
+                {
+                  "calculate": "'GLO2 (Irradiance)'",
+                  "as": "Source"
+                }
+              ],
+              "mark": {
+                "type": "line",
+                "point": true
+              },
+              "encoding": {
+                "x": {
+                  "field": "datetime",
+                  "type": "temporal",
+                  "title": "Time"
+                },
+                "y": {
+                  "field": "bands.mean",
+                  "type": "quantitative",
+                  "title": "Global Irradiance",
+                  "axis": {
+                    "orient": "right",
+                    "titleColor": "#d62728"
+                  }
+                },
+                "color": {
+                  "field": "Source",
+                  "type": "nominal"
+                },
+                "tooltip": [
+                  {
+                    "field": "datetime",
+                    "type": "temporal",
+                    "title": "Time",
+                    "format": "%H:%M"
+                  },
+                  {
+                    "field": "Source",
+                    "title": "Dataset"
+                  },
+                  {
+                    "field": "bands.mean",
+                    "title": "Mean",
+                    "format": ".4f"
+                  },
+                  {
+                    "field": "bands.min",
+                    "title": "Min",
+                    "format": ".4f"
+                  },
+                  {
+                    "field": "bands.max",
+                    "title": "Max",
+                    "format": ".4f"
+                  }
+                ]
+              }
+            },
+            {
+              "data": {
+                "name": "glo2"
+              },
+              "transform": [
+                {
+                  "flatten": ["bands"]
+                },
+                {
+                  "calculate": "'GLO2 (Irradiance)'",
+                  "as": "Source"
+                }
+              ],
+              "mark": {
+                "type": "area",
+                "opacity": 0.1
+              },
+              "encoding": {
+                "x": {
+                  "field": "datetime",
+                  "type": "temporal"
+                },
+                "y": {
+                  "field": "bands.min",
+                  "type": "quantitative"
+                },
+                "y2": {
+                  "field": "bands.max"
+                },
+                "color": {
+                  "field": "Source",
+                  "type": "nominal"
+                },
+                "tooltip": null
+              }
+            }
+          ]
+        }
+      ],
+      "resolve": {
+        "scale": {
+          "y": "independent"
+        }
+      },
+      "config": {
+        "range": {
+          "category": ["#1f77b4", "#aec7e8", "#d62728", "#ff9896"]
+        }
+      }
+    }
+  },
+  {
+    "id": "chart-vega-land-cover-fold-highlight",
+    "title": "Land Cover Category Bar Chart with Wide-to-Long Fold Transform & Dynamic Title",
+    "category": "chart-vega",
+    "tags": [
+      "vega-lite",
+      "vega",
+      "chart",
+      "fold-transform",
+      "dynamic-title",
+      "hover-selection",
+      "interactive-highlight",
+      "eodash:vegadefinition"
+    ],
+    "description": "Vega-Lite bar chart using fold transform to pivot multi-attribute land statistics into rows, dynamic title interpolation from dataset row, and interactive mouseover opacity highlight.",
+    "targetContext": "Reference in STAC Collection or Indicator Process.VegaDefinition",
+    "code": {
+      "$schema": "https://example.com/schema/vega-lite/v5.json",
+      "title": {
+        "text": {
+          "expr": "'2023 land cover in '+data('example')[0].name"
+        },
+        "anchor": "start",
+        "fontSize": 12,
+        "fontWeight": "bold"
+      },
+      "description": "Bar chart displaying land use in 2023 with interactive highlighting.",
+      "data": {
+        "name": "example"
+      },
+      "transform": [
+        {
+          "fold": [
+            "forestland",
+            "cropland",
+            "grassland",
+            "wetlands",
+            "settlements",
+            "other lands"
+          ],
+          "as": ["land_type", "area"]
+        },
+        {
+          "calculate": "datum.land_type === 'forestland' ? 'Forestland' : datum.land_type === 'cropland' ? 'Cropland' : datum.land_type === 'grassland' ? 'Grassland' : datum.land_type === 'wetlands' ? 'Wetlands' : datum.land_type === 'settlements' ? 'Settlements' : 'Other lands'",
+          "as": "land_type_capitalized"
+        },
+        {
+          "calculate": "datum.area / 1000",
+          "as": "area_kha"
+        }
+      ],
+      "mark": {
+        "type": "bar",
+        "tooltip": true,
+        "cursor": "pointer"
+      },
+      "encoding": {
+        "x": {
+          "field": "land_type_capitalized",
+          "type": "nominal",
+          "title": "Land Type",
+          "sort": "-y"
+        },
+        "y": {
+          "field": "area_kha",
+          "type": "quantitative",
+          "title": "Area (kha)"
+        },
+        "color": {
+          "field": "land_type",
+          "type": "nominal",
+          "scale": {
+            "domain": [
+              "forestland",
+              "grassland",
+              "cropland",
+              "other lands",
+              "settlements",
+              "wetlands"
+            ],
+            "range": [
+              "#334F22",
+              "#479B26",
+              "#B88E14",
+              "#7F7F7F",
+              "#723B0A",
+              "#1A4A92"
+            ]
+          },
+          "legend": null
+        },
+        "opacity": {
+          "condition": {
+            "param": "hover",
+            "value": 1
+          },
+          "value": 0.6
+        },
+        "tooltip": [
+          {
+            "field": "land_type_capitalized",
+            "type": "nominal",
+            "title": "Land Type"
+          },
+          {
+            "field": "area_kha",
+            "type": "quantitative",
+            "format": ",.2f",
+            "title": "Area (kha)"
+          }
+        ]
+      },
+      "params": [
+        {
+          "name": "hover",
+          "select": {
+            "type": "point",
+            "fields": ["land_type"],
+            "on": "mouseover",
+            "clear": "mouseout"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "chart-vega-deflection-threshold-annotations",
+    "title": "Multi-Layer Metric Chart with Dashed Threshold Reference Line & Text Annotations",
+    "category": "chart-vega",
+    "tags": [
+      "vega-lite",
+      "vega",
+      "chart",
+      "threshold-line",
+      "stroke-dash",
+      "text-annotations",
+      "hover-rule",
+      "eodash:vegadefinition"
+    ],
+    "description": "6-layer Vega-Lite time-series chart with solid primary metric line, dashed threshold reference line, in-chart text callouts, and nearest-point hover rule.",
+    "targetContext": "Reference in STAC Collection or Indicator Process.VegaDefinition",
+    "code": {
+      "$schema": "https://example.com/schema/vega-lite/v5.json",
+      "description": "Vertical deflection over time",
+      "data": {
+        "name": "timeseries"
+      },
+      "transform": [
+        {
+          "calculate": "year(datum.date)",
+          "as": "year"
+        }
+      ],
+      "layer": [
+        {
+          "mark": {
+            "type": "line",
+            "stroke": "#1f77b4"
+          },
+          "encoding": {
+            "x": {
+              "field": "date",
+              "type": "temporal",
+              "axis": {
+                "title": "Year",
+                "format": "%Y",
+                "tickCount": {
+                  "interval": "year",
+                  "step": 1
+                }
+              }
+            },
+            "y": {
+              "title": "Vertical deflection [mm]",
+              "field": "vertical deflection in mm",
+              "type": "quantitative"
+            }
+          }
+        },
+        {
+          "mark": {
+            "type": "line",
+            "stroke": "#e74c3c",
+            "strokeDash": [5, 5],
+            "strokeWidth": 2
+          },
+          "transform": [
+            {
+              "regression": "vertical deflection in mm",
+              "on": "date",
+              "method": "linear"
+            }
+          ],
+          "encoding": {
+            "x": {
+              "field": "date",
+              "type": "temporal"
+            },
+            "y": {
+              "field": "vertical deflection in mm",
+              "type": "quantitative"
+            }
+          }
+        },
+        {
+          "transform": [
+            {
+              "regression": "vertical deflection in mm",
+              "on": "date",
+              "method": "linear",
+              "params": true
+            },
+            {
+              "calculate": "'Trend: ' + format(datum.coef[1] * 365.25 * 24 * 60 * 60 * 1000, '.3f') + ' mm/year'",
+              "as": "equation"
+            },
+            {
+              "calculate": "'R² = ' + format(datum.rSquared, '.4f')",
+              "as": "r2"
+            }
+          ],
+          "mark": {
+            "type": "text",
+            "align": "right",
+            "baseline": "top",
+            "dx": -5,
+            "dy": 5,
+            "fontSize": 11,
+            "fontWeight": "normal"
+          },
+          "encoding": {
+            "x": {
+              "value": "width"
+            },
+            "y": {
+              "value": 10
+            },
+            "text": {
+              "field": "equation",
+              "type": "nominal"
+            }
+          }
+        },
+        {
+          "transform": [
+            {
+              "regression": "vertical deflection in mm",
+              "on": "date",
+              "method": "linear",
+              "params": true
+            },
+            {
+              "calculate": "'R² = ' + format(datum.rSquared, '.4f')",
+              "as": "r2"
+            }
+          ],
+          "mark": {
+            "type": "text",
+            "align": "right",
+            "baseline": "top",
+            "dx": -5,
+            "dy": 20,
+            "fontSize": 11,
+            "fontWeight": "normal"
+          },
+          "encoding": {
+            "x": {
+              "value": "width"
+            },
+            "y": {
+              "value": 10
+            },
+            "text": {
+              "field": "r2",
+              "type": "nominal"
+            }
+          }
+        },
+        {
+          "params": [
+            {
+              "name": "hover",
+              "select": {
+                "type": "point",
+                "fields": ["date"],
+                "nearest": true,
+                "on": "mouseover",
+                "clear": "mouseout"
+              }
+            }
+          ],
+          "transform": [],
+          "mark": {
+            "type": "rule",
+            "color": "grey"
+          },
+          "encoding": {
+            "x": {
+              "field": "date",
+              "type": "temporal"
+            },
+            "opacity": {
+              "condition": {
+                "param": "hover",
+                "value": 0.5,
+                "empty": false
+              },
+              "value": 0
+            },
+            "tooltip": [
+              {
+                "field": "date",
+                "type": "temporal",
+                "title": "Date"
+              },
+              {
+                "field": "vertical deflection in mm",
+                "type": "quantitative",
+                "title": "Value",
+                "format": ""
+              }
+            ]
+          }
+        },
+        {
+          "transform": [
+            {
+              "filter": {
+                "param": "hover"
+              }
+            }
+          ],
+          "mark": {
+            "type": "point",
+            "filled": true,
+            "size": 90
+          },
+          "encoding": {
+            "x": {
+              "field": "date",
+              "type": "temporal"
+            },
+            "y": {
+              "field": "vertical deflection in mm",
+              "type": "quantitative"
+            },
+            "opacity": {
+              "condition": {
+                "param": "hover",
+                "value": 0.5,
+                "empty": false
+              },
+              "value": 0
+            }
+          }
         }
       ],
       "background": "transparent"

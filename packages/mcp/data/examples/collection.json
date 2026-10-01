@@ -159,5 +159,211 @@
         ]
       }
     }
+  },
+  {
+    "id": "collection-arctic-polar-stereographic-baselayers",
+    "title": "STAC Collection with Arctic Stereographic Projection, Custom BaseLayers & Branching Rasterform",
+    "category": "collection",
+    "tags": [
+      "collection",
+      "arctic",
+      "polar",
+      "stereograpic",
+      "north",
+      "EPSG:3413",
+      "UPSArcticWGS84Quad",
+      "baselayers",
+      "rasterform",
+      "branching",
+      "continuous-legend"
+    ],
+    "description": "Complete STAC collection configured for Arctic polar projections (EPSG:3413, UPSArcticWGS84Quad), custom BaseLayers list (XYZ & WMS), and branching dynamic Rasterform with continuous color legend.",
+    "targetContext": "Save under collections/<name>.json in an eodash catalog repository",
+    "code": {
+      "Name": "RCM_eoapi_north_pole",
+      "Title": "RCM scenes - North Pole route",
+      "CollectionGroup": "Satellite Data",
+      "Themes": ["Shipping"],
+      "Description": "RCM Data collection - North Pole route",
+      "Resources": [
+        {
+          "EndPoint": "https://example.com/stac/",
+          "Name": "VEDA",
+          "Type": "tiles",
+          "CollectionId": "collection_id",
+          "ColormapName": "gray",
+          "TileMatrixSet": "UPSArcticWGS84Quad",
+          "Rescale": [0, 0.05],
+          "Assets": ["HH"],
+          "DataProjection": {
+            "name": "EPSG:5041",
+            "def": "+proj=stere +lat_0=90 +lon_0=0 +k=0.994 +x_0=2000000 +y_0=2000000 +datum=WGS84 +units=m +no_defs +type=crs"
+          },
+          "Rasterform": {
+            "jsonform": {
+              "type": "object",
+              "title": "Asset",
+              "options": {
+                "no_additional_properties": true,
+                "keep_oneof_values": false
+              },
+              "anyOf": [
+                {
+                  "title": "HH",
+                  "type": "object",
+                  "properties": {
+                    "assets": {
+                      "type": "string",
+                      "enum": ["HH"],
+                      "default": "HH",
+                      "options": {
+                        "hidden": true
+                      }
+                    },
+                    "vminmax": {
+                      "type": "object",
+                      "title": "Value Range",
+                      "properties": {
+                        "vmin": {
+                          "type": "number",
+                          "default": 0,
+                          "format": "range",
+                          "minimum": 0,
+                          "step": 0.005
+                        },
+                        "vmax": {
+                          "type": "number",
+                          "default": 0.05,
+                          "format": "range",
+                          "maximum": 0.075
+                        }
+                      },
+                      "format": "minmax"
+                    },
+                    "rescale": {
+                      "type": "string",
+                      "template": "{{vminmax.vmin}},{{vminmax.vmax}}",
+                      "watch": {
+                        "vminmax": "vminmax"
+                      },
+                      "options": {
+                        "hidden": true
+                      }
+                    },
+                    "colormap_name": {
+                      "type": "string",
+                      "title": "Colormap",
+                      "default": "gray",
+                      "enum": [
+                        "accent",
+                        "bone",
+                        "gray",
+                        "magma",
+                        "viridis"
+                      ]
+                    }
+                  },
+                  "required": ["vminmax", "assets"]
+                },
+                {
+                  "title": "HV",
+                  "type": "object",
+                  "properties": {
+                    "assets": {
+                      "type": "string",
+                      "enum": ["HV"],
+                      "default": "HV",
+                      "options": {
+                        "hidden": true
+                      }
+                    },
+                    "vminmax": {
+                      "type": "object",
+                      "title": "Value Range",
+                      "properties": {
+                        "vmin": {
+                          "type": "number",
+                          "default": 0,
+                          "format": "range",
+                          "minimum": 0,
+                          "step": 0.0005
+                        },
+                        "vmax": {
+                          "type": "number",
+                          "default": 0.005,
+                          "format": "range",
+                          "maximum": 0.0075
+                        }
+                      },
+                      "format": "minmax"
+                    },
+                    "rescale": {
+                      "type": "string",
+                      "template": "{{vminmax.vmin}},{{vminmax.vmax}}",
+                      "watch": {
+                        "vminmax": "vminmax"
+                      },
+                      "options": {
+                        "hidden": true
+                      }
+                    },
+                    "colormap_name": {
+                      "type": "string",
+                      "title": "Colormap",
+                      "default": "gray",
+                      "enum": [
+                        "accent",
+                        "bone",
+                        "gray",
+                        "magma",
+                        "viridis"
+                      ]
+                    }
+                  },
+                  "required": ["vminmax", "assets"]
+                }
+              ]
+            },
+            "legend": {
+              "title": "Value Range",
+              "scaleType": "continuous",
+              "tickFormat": ".3f",
+              "domainProperties": ["vmin", "vmax"],
+              "rangeProperty": "colormap_name"
+            }
+          }
+        }
+      ],
+      "Agency": ["ESA"],
+      "MapProjection": {
+        "name": "EPSG:3413",
+        "def": "+proj=stere +lat_0=90 +lat_ts=70 +lon_0=-45 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs +type=crs"
+      },
+      "BaseLayers": [
+        {
+          "id": "cloudless-2025",
+          "name": "EOxCloudless 2025",
+          "url": "https://s2maps-tiles.eu/wmts/1.0.0/s2cloudless-2025_3857/default/g/{z}/{y}/{x}.jpeg",
+          "media_type": "image/jpeg",
+          "protocol": "xyz",
+          "visible": false,
+          "Attribution": "{ EOxCloudless 2025: <a href=\"https://s2maps.eu\" target=\"_blank\">Sentinel-2 cloudless - s2maps.eu</a> by <a href=\"https://eox.at\" target=\"_blank\">EOX IT Services GmbH</a> (Contains modified Copernicus Sentinel data 2025) }"
+        },
+        {
+          "id": "sx-cat_ortho680500",
+          "name": "Terrain Light Stereographic North",
+          "url": "https://example.com/sxcat_maps/wms",
+          "layers": "sx-cat_ortho680500",
+          "visible": true,
+          "protocol": "wms",
+          "DataProjection": {
+            "name": "ORTHO:680500",
+            "def": "+proj=ortho +lat_0=90 +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +units=m +no_defs",
+            "extent": [-6422528, -6422528, 6422528, 6422528]
+          },
+          "Attribution": "{ Terrain light: Data &copy; <a href=\"http://www.openstreetmap.org/copyright\" target=\"_blank\">OpenStreetMap</a> contributors and <a href=\"https://example.com/\" target=\"_blank\">others</a>, Rendering &copy; <a href=\"https://example.com\" target=\"_blank\">EOX</a> }"
+        }
+      ]
+    }
   }
 ]

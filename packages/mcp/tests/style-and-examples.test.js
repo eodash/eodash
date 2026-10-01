@@ -833,4 +833,20 @@ describe("eodash MCP Tools via Client - generate_layer_style & find_examples", (
       expect(item.code.$schema).toBeDefined();
     }
   });
+
+  it("finds process POST body examples in find_examples catalog", () => {
+    const res = findExamples({
+      category: "process-body",
+    });
+
+    expect(res.results.length).toBe(2);
+    const ids = res.results.map((r) => r.id);
+    expect(ids).toContain("process-body-polarwarp-bbox-date");
+    expect(ids).toContain("process-body-structureicing-daterange-model");
+
+    for (const item of res.results) {
+      expect(item.category).toBe("process-body");
+      expect(item.code.inputs).toBeDefined();
+    }
+  });
 });

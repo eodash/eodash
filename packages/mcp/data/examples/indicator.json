@@ -22,5 +22,82 @@
         "route_optimization"
       ]
     }
+  },
+  {
+    "id": "indicator-laea-projection-multidataset",
+    "title": "Indicator with Custom Proj4 Map Projection (EPSG:3035 LAEA) & External Markdown",
+    "category": "indicator",
+    "tags": [
+      "indicator",
+      "projection",
+      "EPSG:3035",
+      "laea",
+      "proj4",
+      "description-markdown",
+      "multi-collection"
+    ],
+    "description": "Eodash indicator definition specifying a non-standard map projection (EPSG:3035 LAEA) via Proj4 definition and linking to an external markdown description path.",
+    "targetContext": "Save under indicators/<name>.json in an eodash catalog repository",
+    "code": {
+      "Name": "SAGRIS_Waterlogging_04_Lithuania_2024",
+      "Title": "SAGRIS Waterlogging 04 Lithuania (2024)",
+      "Description": "indicators/sm_lt_04_high_medium_low/description.md",
+      "Bbox": [22.64524, 54.94676, 23.02416, 55.30585],
+      "MapProjection": {
+        "name": "EPSG:3035",
+        "def": "+proj=laea +lat_0=52 +lon_0=10 +x_0=4321000 +y_0=3210000 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs +type=crs"
+      },
+      "Collections": [
+        "sm_lt_04_parcels_wms_high",
+        "sm_lt_04_parcels_wms_medium",
+        "sm_lt_04_parcels_wms_low"
+      ],
+      "Image": "https://example.com/heads/main/assets/sm_lt.png"
+    }
+  },
+  {
+    "id": "indicator-geothermal-energy-templated-url",
+    "title": "Indicator with Process Templating Form Parameter and Clicked Feature Property in URL",
+    "category": "indicator",
+    "tags": [
+      "indicator",
+      "process",
+      "url-template",
+      "jsonform-variable",
+      "feature-property",
+      "csv-endpoint"
+    ],
+    "description": "Eodash indicator with a Process block interpolating both a JSONForm selection ({{year}}) and a clicked map feature attribute ({{feature.values_.BDLNAME}}) directly into the CSV URL.",
+    "targetContext": "Save under indicators/<name>.json in an eodash catalog repository",
+    "code": {
+      "Name": "geothermal_energy_potential",
+      "Title": "Geothermal Energy Potential",
+      "Description": "Thermal conductivity is the ability of a ground to conduct heat from one location to another without the movement of the soil conducting the heat. It is expressed in watts per meter kelvin (W/mK). The thermal diffusivity is a measure that represents how fast heat diffuses through the soil. It is measured as mm2/sec. The two models were calculated using remote sensing data  (Sentinel-1, Sentinel-3) and interpolated ground data  (bulk density, soil texture, slope DEM, organic content, land use map, natura2000) by applying a model of water distribution to the first meter of the soil profile. The thermal conductivity layer was calculated for the whole Austria for 2024 and 2025.",
+      "CollectionGroup": "Energy Transition",
+      "Image": "https://example.com/api/public/share/public-4wazei3y-02/WR-07-Geothermal-Energy-Potential-Assessment/geothermal_potential_energy_preview.jpg",
+      "Provider": [
+        {
+          "Name": "GeoSphere",
+          "Url": "https://www.geosphere.at/en"
+        }
+      ],
+      "Process": {
+        "Name": "geothermal_statistics",
+        "JsonForm": "https://example.com/api/public/share/public-4wazei3y-02/WR-07-Geothermal-Energy-Potential-Assessment/process/form.json",
+        "VegaDefinition": "https://example.com/api/public/share/public-4wazei3y-02/WR-07-Geothermal-Energy-Potential-Assessment/process/vega2025.json",
+        "EndPoints": [
+          {
+            "Identifier": "geothermal_stats",
+            "Url": "https://example.com/api/public/share/public-4wazei3y-02/WR-07-Geothermal-Energy-Potential-Assessment/csv/%7B%7Byear%7D%7D/%7B%7Bfeature.values_.BDLNAME%7D%7D.csv",
+            "Type": "text/csv"
+          }
+        ]
+      },
+      "Collections": [
+        "austria_geothermal_stats",
+        "wr07-geothermal-energy-potential",
+        "wr07-diffusivity"
+      ]
+    }
   }
 ]
