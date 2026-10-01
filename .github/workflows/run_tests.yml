@@ -22,7 +22,7 @@ jobs:
         # templates/) instead of importing the built package, so that a change
         # to the app runs its suite too. Leave empty when none do.
         env:
-          RUN_ON_APP_CHANGE: ""
+          RUN_ON_APP_CHANGE: "mcp"
         run: node core/node/scripts/changedPackages.js ${{ github.event.pull_request.base.sha }}
 
   app:

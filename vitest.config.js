@@ -63,6 +63,15 @@ export default defineConfig({
       {
         resolve: { alias },
         test: {
+          name: "mcp",
+          include: ["packages/mcp/tests/**/*.test.js"],
+          environment: "node",
+          testTimeout: 60 * 1000,
+        },
+      },
+      {
+        resolve: { alias },
+        test: {
           name: "cli",
           include: ["tests/cli/**/*.spec.js"],
           // Every benchmark is a browser benchmark. Left empty rather than
