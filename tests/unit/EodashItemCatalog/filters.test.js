@@ -27,6 +27,7 @@ const setMap = (value) => {
 describe("createSubtitleProperty", () => {
   test("concatenates icon, value and unit label per configured property", () => {
     const subtitle = createSubtitleProperty(
+      undefined,
       /** @type {any} */ ([
         { property: "eo:cloud_cover", unitLabel: "%" },
         { property: "platform", icon: "SAT " },
@@ -39,6 +40,7 @@ describe("createSubtitleProperty", () => {
 
   test("rounds non-integer numeric values to one decimal", () => {
     const subtitle = createSubtitleProperty(
+      undefined,
       /** @type {any} */ ([{ property: "eo:cloud_cover", unitLabel: "%" }]),
     );
     expect(subtitle({ properties: { "eo:cloud_cover": 12.345 } })).toBe(
@@ -48,12 +50,22 @@ describe("createSubtitleProperty", () => {
 
   test("skips filters with no icon/unit label or a missing property", () => {
     const subtitle = createSubtitleProperty(
+      undefined,
       /** @type {any} */ ([
         { property: "noLabel" },
         { property: "missing", unitLabel: "%" },
       ]),
     );
     expect(subtitle({ properties: { noLabel: "x" } })).toBe("");
+  });
+
+  test("returns the configured subtitle property instead of the filter-derived one", () => {
+    /** @param {import("@eodash/stac").STACItem} item */
+    const customSubtitle = (item) => item.id;
+    const subtitle = createSubtitleProperty(customSubtitle, [
+      { property: "eo:cloud_cover", type: "range", unitLabel: "%" },
+    ]);
+    expect(subtitle).toBe(customSubtitle);
   });
 });
 
