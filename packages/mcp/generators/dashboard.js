@@ -396,9 +396,12 @@ npm run dev
   files["nginx.conf"] = nginxConf;
 
   return {
+    status: "generated_in_memory",
+    filesWrittenToDisk: false,
+    actionRequired: `IMPORTANT: Files are generated in memory and NOT written to disk yet. You MUST iterate over 'files' and write each file to disk under '${name}/' using your file-writing tool.`,
     projectType,
     name,
     files,
-    instructions: `Project '${name}' scaffolded with ${Object.keys(files).length} files. Run 'npm install' and 'npm run ${projectType === "vitepress-narratives" ? "docs:dev" : "dev"}' to start.`,
+    instructions: `Project '${name}' generated with ${Object.keys(files).length} files. Write files to disk, then run 'cd ${name} && npm install && npm run ${projectType === "vitepress-narratives" ? "docs:dev" : "dev"}'.`,
   };
 }

@@ -21,7 +21,9 @@ function assertValidJavaScript(filename, code) {
     const errMessages = diagnostics
       .map((d) => `${d.messageText} at pos ${d.start}`)
       .join("; ");
-    throw new Error(`Syntax error in generated file '${filename}': ${errMessages}\n\nCode:\n${code}`);
+    throw new Error(
+      `Syntax error in generated file '${filename}': ${errMessages}\n\nCode:\n${code}`,
+    );
   }
 }
 
@@ -29,7 +31,9 @@ function assertValidJson(filename, content) {
   try {
     JSON.parse(content);
   } catch (err) {
-    throw new Error(`Invalid JSON in generated file '${filename}': ${err.message}\n\nContent:\n${content}`);
+    throw new Error(
+      `Invalid JSON in generated file '${filename}': ${err.message}\n\nContent:\n${content}`,
+    );
   }
 }
 
@@ -60,6 +64,8 @@ describe("eodash Generators - scaffoldDashboard", () => {
 
     expect(res.projectType).toBe("standalone-spa");
     expect(res.name).toBe("alpine-monitor");
+    expect(res.filesWrittenToDisk).toBe(false);
+    expect(res.actionRequired).toContain("write each file to disk");
     expect(res.files["package.json"]).toBeDefined();
     expect(res.files["src/main.js"]).toContain("alpine-monitor");
     expect(res.files["src/main.js"]).toContain("https://example.com/stac");

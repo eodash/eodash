@@ -21,6 +21,98 @@ const CATEGORY_MAP = {
   EodashLayoutSwitcher: "Layout & Orchestration",
 };
 
+const TAGS_MAP = {
+  EodashMap: [
+    "map",
+    "visualization",
+    "layers",
+    "openlayers",
+    "geo",
+    "spatial",
+    "globe",
+    "projection",
+  ],
+  EodashLayerControl: [
+    "layer",
+    "layers",
+    "control",
+    "visibility",
+    "opacity",
+    "visualization",
+    "legend",
+  ],
+  EodashItemCatalog: [
+    "catalog",
+    "stac",
+    "items",
+    "discovery",
+    "search",
+    "filter",
+    "collection",
+  ],
+  EodashItemFilter: [
+    "filter",
+    "filtering",
+    "selection",
+    "tag",
+    "theme",
+    "attribute",
+    "search",
+  ],
+  EodashTimeSlider: [
+    "time",
+    "temporal",
+    "slider",
+    "datetime",
+    "navigation",
+    "animation",
+    "range",
+  ],
+  EodashDatePicker: [
+    "time",
+    "temporal",
+    "date",
+    "picker",
+    "datetime",
+    "calendar",
+  ],
+  EodashProcess: [
+    "process",
+    "processing",
+    "analysis",
+    "jsonform",
+    "service",
+    "execution",
+    "wps",
+    "algorithms",
+  ],
+  EodashChart: [
+    "chart",
+    "vega",
+    "graph",
+    "timeseries",
+    "statistics",
+    "analysis",
+    "plot",
+  ],
+  EodashStacInfo: [
+    "info",
+    "stac",
+    "metadata",
+    "citation",
+    "branding",
+    "details",
+  ],
+  EodashTools: ["tools", "layout", "toolbar", "actions", "orchestration"],
+  EodashLayoutSwitcher: [
+    "layout",
+    "template",
+    "switcher",
+    "view",
+    "orchestration",
+  ],
+};
+
 const STAC_EXTENSIONS_MAP = {
   EodashMap: [
     "eox:flatstyle",
@@ -111,6 +203,7 @@ function unwrapPropType(typeStr) {
 function getJsDocFromNode(node, sf) {
   const tsType = ts.getJSDocType(node);
   let type = tsType ? tsType.getText(sf) : null;
+  let typeNode = tsType || null;
   let description = "";
   const params = [];
   let returns = null;
@@ -128,6 +221,7 @@ function getJsDocFromNode(node, sf) {
       for (const tag of doc.tags || []) {
         if (ts.isJSDocTypeTag(tag) && tag.typeExpression?.type) {
           type = tag.typeExpression.type.getText(sf);
+          typeNode = tag.typeExpression.type;
         } else if (ts.isJSDocParameterTag(tag)) {
           const pComment = tag.comment
             ? typeof tag.comment === "string"
@@ -165,6 +259,7 @@ function getJsDocFromNode(node, sf) {
   return {
     description: description.trim(),
     type: cleanMultilineType(type),
+    typeNode,
     params,
     returns,
   };
@@ -679,6 +774,129 @@ function inferReactiveStoreMetadata(repoRoot) {
 /**
  * 5. Direct SFC/TS props extraction fallback
  */
+function tsTypeNodeToSchema(typeNode, sf) {
+  if (!typeNode) return { type: "unknown" };
+
+  if (ts.isImportTypeNode(typeNode)) {
+    if (typeNode.typeArguments && typeNode.typeArguments.length > 0) {
+      return tsTypeNodeToSchema(typeNode.typeArguments[0], sf);
+    }
+    return { type: "object" };
+  }
+
+  if (ts.isTypeReferenceNode(typeNode)) {
+    const typeName = typeNode.typeName.getText(sf);
+    if (
+      typeName.endsWith("PropType") &&
+      typeNode.typeArguments &&
+      typeNode.typeArguments.length > 0
+    ) {
+      return tsTypeNodeToSchema(typeNode.typeArguments[0], sf);
+    }
+    if (typeNode.typeArguments && typeNode.typeArguments.length > 0) {
+      return tsTypeNodeToSchema(typeNode.typeArguments[0], sf);
+    }
+    return { type: typeName };
+  }
+
+  if (ts.isTypeLiteralNode(typeNode)) {
+    const properties = {};
+    const required = [];
+    for (const member of typeNode.members) {
+      if (ts.isPropertySignature(member)) {
+        const propName = member.name.getText(sf);
+        properties[propName] = member.type
+          ? tsTypeNodeToSchema(member.type, sf)
+          : { type: "unknown" };
+        if (!member.questionToken) {
+          required.push(propName);
+        }
+      }
+    }
+    return {
+      type: "object",
+      properties,
+      ...(required.length > 0 ? { required } : {}),
+    };
+  }
+
+  if (ts.isUnionTypeNode(typeNode)) {
+    return { anyOf: typeNode.types.map((t) => tsTypeNodeToSchema(t, sf)) };
+  }
+
+  if (ts.isIntersectionTypeNode(typeNode)) {
+    const merged = { type: "object", properties: {} };
+    for (const sub of typeNode.types) {
+      const s = tsTypeNodeToSchema(sub, sf);
+      if (s.properties) {
+        Object.assign(merged.properties, s.properties);
+      }
+    }
+    return Object.keys(merged.properties).length > 0
+      ? merged
+      : { type: "object" };
+  }
+
+  if (ts.isArrayTypeNode(typeNode)) {
+    return {
+      type: "array",
+      items: tsTypeNodeToSchema(typeNode.elementType, sf),
+    };
+  }
+
+  if (ts.isTupleTypeNode(typeNode)) {
+    return {
+      type: "array",
+      items: typeNode.elements.map((t) => tsTypeNodeToSchema(t, sf)),
+    };
+  }
+
+  if (ts.isLiteralTypeNode(typeNode)) {
+    let val;
+    try {
+      val = JSON.parse(typeNode.getText(sf));
+    } catch {
+      val = typeNode.getText(sf);
+    }
+    return { const: val };
+  }
+
+  if (ts.isFunctionTypeNode(typeNode)) {
+    return { type: "function" };
+  }
+
+  switch (typeNode.kind) {
+    case ts.SyntaxKind.StringKeyword:
+      return { type: "string" };
+    case ts.SyntaxKind.NumberKeyword:
+      return { type: "number" };
+    case ts.SyntaxKind.BooleanKeyword:
+      return { type: "boolean" };
+    case ts.SyntaxKind.ObjectKeyword:
+      return { type: "object" };
+    case ts.SyntaxKind.AnyKeyword:
+    case ts.SyntaxKind.UnknownKeyword:
+      return { type: "unknown" };
+    case ts.SyntaxKind.VoidKeyword:
+    case ts.SyntaxKind.UndefinedKeyword:
+      return { type: "undefined" };
+    default:
+      return { type: "object" };
+  }
+}
+
+function identifierToSchema(idText) {
+  if (!idText) return { type: "unknown" };
+  const lower = idText.toLowerCase();
+  if (lower.includes("boolean")) return { type: "boolean" };
+  if (lower.includes("string")) return { type: "string" };
+  if (lower.includes("number")) return { type: "number" };
+  if (lower.includes("array")) return { type: "array" };
+  if (lower.includes("function")) return { type: "function" };
+  if (lower.includes("object")) return { type: "object" };
+  return { type: idText };
+}
+
 function extractPropsFromVueSfc(vueFilePath) {
   if (!fs.existsSync(vueFilePath)) return [];
   const vueContent = fs.readFileSync(vueFilePath, "utf8");
@@ -712,6 +930,9 @@ function extractPropsFromVueSfc(vueFilePath) {
               const name = prop.name.getText(sf);
               const doc = getJsDocFromNode(prop, sf);
               let propType = doc.type ? unwrapPropType(doc.type) : "unknown";
+              let propSchema = doc.typeNode
+                ? tsTypeNodeToSchema(doc.typeNode, sf)
+                : null;
               let defaultValue = null;
               let required = false;
 
@@ -730,6 +951,7 @@ function extractPropsFromVueSfc(vueFilePath) {
                     if (subName === "type") {
                       if (subDoc.type) {
                         propType = unwrapPropType(subDoc.type);
+                        propSchema = tsTypeNodeToSchema(subDoc.typeNode, sf);
                       } else {
                         const innerDoc = getJsDocFromNode(
                           subProp.initializer,
@@ -737,8 +959,13 @@ function extractPropsFromVueSfc(vueFilePath) {
                         );
                         if (innerDoc.type) {
                           propType = unwrapPropType(innerDoc.type);
+                          propSchema = tsTypeNodeToSchema(
+                            innerDoc.typeNode,
+                            sf,
+                          );
                         } else if (propType === "unknown") {
                           propType = subProp.initializer.getText(sf);
+                          propSchema = identifierToSchema(propType);
                         }
                       }
                     }
@@ -758,11 +985,19 @@ function extractPropsFromVueSfc(vueFilePath) {
                 if (propType === "unknown") {
                   propType = prop.initializer.getText(sf);
                 }
+                if (!propSchema) {
+                  propSchema = identifierToSchema(prop.initializer.getText(sf));
+                }
+              }
+
+              if (!propSchema) {
+                propSchema = identifierToSchema(propType);
               }
 
               props.push({
                 name,
                 type: propType,
+                schema: propSchema,
                 defaultValue,
                 description: doc.description,
                 required,
@@ -813,6 +1048,75 @@ function stringifyType(t) {
   return t.type || "unknown";
 }
 
+function typeToSchema(t) {
+  if (!t) return { type: "unknown" };
+  if (t.type === "intrinsic") {
+    return { type: t.name === "any" ? "unknown" : t.name };
+  }
+  if (t.type === "literal") {
+    return { const: t.value };
+  }
+  if (t.type === "array") {
+    return { type: "array", items: typeToSchema(t.elementType) };
+  }
+  if (t.type === "tuple") {
+    return { type: "array", items: t.elements.map(typeToSchema) };
+  }
+  if (t.type === "union") {
+    return { anyOf: t.types.map(typeToSchema) };
+  }
+  if (t.type === "intersection") {
+    const merged = { type: "object", properties: {} };
+    for (const sub of t.types) {
+      const s = typeToSchema(sub);
+      if (s.properties) {
+        Object.assign(merged.properties, s.properties);
+      }
+    }
+    return Object.keys(merged.properties).length > 0
+      ? merged
+      : { type: "object" };
+  }
+  if (t.type === "reference") {
+    if (t.typeArguments && t.typeArguments.length > 0) {
+      return typeToSchema(t.typeArguments[0]);
+    }
+    return { type: t.name };
+  }
+  if (t.type === "reflection") {
+    if (t.declaration?.children) {
+      const properties = {};
+      const required = [];
+      for (const child of t.declaration.children) {
+        properties[child.name] = {
+          ...typeToSchema(child.type),
+          ...(child.comment?.summary
+            ? {
+                description: child.comment.summary
+                  .map((s) => s.text)
+                  .join("")
+                  .trim(),
+              }
+            : {}),
+        };
+        if (!child.flags?.isOptional) {
+          required.push(child.name);
+        }
+      }
+      return {
+        type: "object",
+        properties,
+        ...(required.length > 0 ? { required } : {}),
+      };
+    }
+    if (t.declaration?.signatures) {
+      return { type: "function" };
+    }
+    return { type: "object" };
+  }
+  return { type: typeof t === "string" ? t : "object" };
+}
+
 function parseTypedocWidgets(repoRoot) {
   const typedocPath = path.join(repoRoot, "dist/typedoc.json");
   if (!fs.existsSync(typedocPath)) {
@@ -828,6 +1132,7 @@ function parseTypedocWidgets(repoRoot) {
       const props = (w.children || []).map((p) => ({
         name: p.name,
         type: stringifyType(p.type),
+        schema: typeToSchema(p.type),
         defaultValue: p.defaultValue ?? null,
         description:
           p.comment?.summary
@@ -888,6 +1193,7 @@ export function buildMetadata(repoRoot = DEFAULT_REPO_ROOT) {
     const guide = guides[name] || "";
     const storeInteractions = analyzeStoreInteractions(name, repoRoot);
     const category = CATEGORY_MAP[name] || "General";
+    const tags = TAGS_MAP[name] || [];
     const stacExtensions = STAC_EXTENSIONS_MAP[name] || [];
     const stacCoreFields = STAC_CORE_FIELDS_MAP[name] || [];
     const isBackground = name === "EodashMap";
@@ -927,6 +1233,7 @@ export function buildMetadata(repoRoot = DEFAULT_REPO_ROOT) {
     widgetsMetadata[name] = {
       name,
       category,
+      tags,
       summary,
       isBackground,
       props: props || [],
