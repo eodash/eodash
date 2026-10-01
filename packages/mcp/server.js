@@ -33,7 +33,7 @@ export function createExpressApp(createServerFn) {
   });
 
   app.get("/ui", (_req, res) => {
-    const { widgetsData, architectureData } = getMetadata();
+    const { widgetsData, architectureData, examplesCount } = getMetadata();
     const serverInstance = createServerFn();
     const tools = Object.entries(serverInstance._registeredTools || {}).map(
       ([name, def]) => ({
@@ -42,7 +42,12 @@ export function createExpressApp(createServerFn) {
       }),
     );
     res.setHeader("Content-Type", "text/html");
-    res.send(generateLandingPage(widgetsData, architectureData, { tools }));
+    res.send(
+      generateLandingPage(widgetsData, architectureData, {
+        tools,
+        examplesCount,
+      }),
+    );
   });
 
   app.get("/", (_req, res) => {
