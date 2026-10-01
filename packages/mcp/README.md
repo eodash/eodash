@@ -69,10 +69,8 @@ Connect to `http://localhost:3001` via Streamable HTTP.
 | `get_widget_details`      | Get full TypeScript props, JSON schemas for complex props, defaults, store bindings, STAC extensions, and usage snippets for a specific widget.       |
 | `get_custom_widget_guide` | Detailed guides and templates for Web Component, Functional, and IFrame custom widgets.                                                               |
 | `get_eodash_architecture` | Architecture reference covering the 12-column grid, templates, Pinia store states, and deployment modes.                                              |
-| `scaffold_dashboard`      | Scaffold boilerplate for standalone SPA, VitePress narrative docs, or embedded web component dashboard projects (returns in-memory file tree).        |
-| `generate_eodash_config`  | Generate type-safe eodash configuration with STAC endpoints, brand theme, layout template, and custom widgets (returns in-memory file content).       |
 | `generate_layer_style`    | Generate complete OpenLayers styles (`vector-flatstyle`, `raster-flatstyle` for COG) and dynamic forms (`rasterform`) with colormaps and sliders.     |
-| `find_examples`           | Search and discover working eodash dashboard examples, layer styles, and catalog configs with category, data type, and feature filters.               |
+| `find_examples`           | Search and discover working eodash dashboard scaffolds, configs, layer styles, and catalog configs with category, data type, and feature filters.     |
 | `validate_catalog_config` | Validate catalog collection and indicator configurations against official eodash schemas and domain rules.                                            |
 
 ## Running Tests
@@ -95,7 +93,7 @@ packages/mcp/
 │   ├── widgets.js            # list_widgets, get_widget_details
 │   ├── architecture.js       # get_custom_widget_guide, get_eodash_architecture
 │   ├── discovery.js          # find_examples, validate_catalog_config
-│   └── generators/           # scaffold_dashboard, generate_eodash_config, generate_layer_style
-├── generators/               # Style, dashboard, config, and validation engines
+│   └── generators/           # generate_layer_style
+├── generators/               # Style, example discovery, and validation engines
 └── data/                     # Generated metadata JSON artifacts
 ```

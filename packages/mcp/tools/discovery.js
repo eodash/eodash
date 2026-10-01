@@ -25,6 +25,8 @@ export function registerDiscoveryTools(server) {
             "catalog-collection",
             "catalog-indicator",
             "stac-item",
+            "dashboard-scaffold",
+            "dashboard-config",
           ])
           .optional()
           .default("all")
