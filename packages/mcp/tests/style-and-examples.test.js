@@ -58,6 +58,24 @@ describe("eodash Examples Discovery - findExamples", () => {
     expect(res.results[0].category).toBe("rasterform");
   });
 
+  it("searches examples by code content and handles multi-term query fallback", () => {
+    // Multi-term fallback test
+    const multiRes = findExamples({
+      query: "grouped dropdown scenario",
+      category: "chart-vega",
+    });
+    expect(multiRes.totalFound).toBeGreaterThan(0);
+    expect(multiRes.results[0].id).toBe("chart-vega-scenario-grouped-bar");
+
+    // Code payload search (e.g. searching specific Vega schema URL or transform key)
+    const codeRes = findExamples({
+      query: "air_eepot_chart",
+      category: "chart-vega",
+    });
+    expect(codeRes.totalFound).toBeGreaterThan(0);
+    expect(codeRes.results[0].id).toBe("chart-vega-scenario-grouped-bar");
+  });
+
   it("filters examples by category", () => {
     const res = findExamples({ category: "collection" });
     expect(res.totalFound).toBeGreaterThan(0);

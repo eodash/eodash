@@ -48,11 +48,20 @@ const FUSE_OPTIONS = {
     { name: "tags", weight: 0.4 },
     { name: "title", weight: 0.3 },
     { name: "description", weight: 0.2 },
-    { name: "id", weight: 0.1 },
+    { name: "id", weight: 0.05 },
+    { name: "code", weight: 0.05 },
   ],
-  threshold: 0.4,
+  getFn: (obj, path) => {
+    const val = Fuse.config.getFn(obj, path);
+    if (val && typeof val === "object") {
+      return JSON.stringify(val);
+    }
+    return val;
+  },
+  threshold: 0.32,
   ignoreLocation: true,
   minMatchCharLength: 2,
+  findAllMatches: true,
 };
 
 /**
@@ -70,9 +79,31 @@ export function findExamples({ query, category, limit = 5 } = {}) {
   let matchedItems = candidates;
 
   if (query && query.trim()) {
+    const trimmed = query.trim();
     const fuse = new Fuse(candidates, FUSE_OPTIONS);
-    const searchResults = fuse.search(query.trim());
-    matchedItems = searchResults.map((r) => r.item);
+    const searchResults = fuse.search(trimmed);
+
+    if (searchResults.length === 0 && trimmed.includes(" ")) {
+      const terms = trimmed.split(/\s+/).filter(Boolean);
+      const scoreMap = new Map();
+
+      for (const term of terms) {
+        for (const res of fuse.search(term)) {
+          const current = scoreMap.get(res.item.id) || {
+            item: res.item,
+            score: 0,
+          };
+          current.score += 1 - (res.score ?? 0);
+          scoreMap.set(res.item.id, current);
+        }
+      }
+
+      matchedItems = Array.from(scoreMap.values())
+        .sort((a, b) => b.score - a.score)
+        .map((x) => x.item);
+    } else {
+      matchedItems = searchResults.map((r) => r.item);
+    }
   }
 
   const totalFound = matchedItems.length;
