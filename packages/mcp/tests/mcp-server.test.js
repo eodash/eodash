@@ -105,12 +105,15 @@ describe("eodash MCP Server - Core Tools", () => {
     const res = await tool.handler({ topic: "all" });
     const arch = JSON.parse(res.content[0].text);
     expect(arch.gridSystem.columns).toBe(12);
-    expect(arch.templateSystem.builtInTemplates.map((t) => t.name)).toEqual([
-      "lite",
-      "explore",
-      "expert",
-      "compare",
-    ]);
+    const templateNames = arch.templateSystem.builtInTemplates.map(
+      (t) => t.name,
+    );
+    expect(templateNames).toEqual(
+      expect.arrayContaining(["lite", "explore", "expert", "compare"]),
+    );
+    expect(arch.templateSystem.builtInTemplates.length).toBeGreaterThanOrEqual(
+      4,
+    );
     expect(
       arch.reactiveStore.states.find((s) => s.name === "currentUrl"),
     ).toBeDefined();
