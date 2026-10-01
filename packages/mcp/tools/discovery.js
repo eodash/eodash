@@ -11,7 +11,7 @@ export function registerDiscoveryTools(server) {
     "find_examples",
     {
       description:
-        "SHOULD USE: Query verified working examples before authoring or modifying Vega-Lite charts, vector/raster layer styles (OpenLayers flatstyles), JSONForm/rasterform schemas, STAC collections/indicators, or geoprocess bodies. Provides battle-tested snippets with exact eodash conventions, preventing invalid properties, broken legends, and style syntax errors.",
+        "SHOULD USE: Query verified working examples before authoring or modifying Vega-Lite charts, vector/raster layer styles (OpenLayers flatstyles), JSONForm/rasterform schemas, STAC collections/indicators, or processing request bodies. Provides snippets with exact eodash conventions, preventing invalid properties, broken legends, and style syntax errors.",
       inputSchema: z.object({
         category: z
           .enum([
