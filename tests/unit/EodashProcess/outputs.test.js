@@ -276,6 +276,24 @@ describe("processCharts", () => {
     expect(dataValues).toEqual({ A: [{ a: 1 }], B: [{ b: 2 }] });
   });
 
+  test("unwraps data from the 'contents' property if it's a valid JSON string", async () => {
+    axiosMock.get.mockImplementation((/** @type {string} */ url) =>
+      Promise.resolve(
+        url.includes("spec")
+          ? { data: { mark: "line", data: { values: [] } } }
+          : { data: [{ x: 1, y: 2 }] },
+      ),
+    );
+
+    const [spec] = await processCharts({
+      links: L_CHART_JSON_GET,
+      jsonformValue: {},
+      specUrl: "https://x/spec.json",
+    });
+
+    expect(spec.data.values).toEqual([{ x: 1, y: 2 }]);
+  });
+
   test("uses custom-endpoint data when the handler returns some", async () => {
     axiosMock.get.mockResolvedValue({
       data: { mark: "line", data: { values: [] } },
