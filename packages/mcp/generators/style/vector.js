@@ -95,7 +95,7 @@ export function generateVectorFlatStyle({
 
     const matchExpression = ["match", ["get", attribute]];
     for (const cat of cats) {
-      matchExpression.push(cat.value, cat.color);
+      matchExpression.push(cat.value, cat.color || "rgba(128, 128, 128, 0.5)");
     }
     matchExpression.push("rgba(128, 128, 128, 0.5)"); // Fallback color
 
@@ -121,7 +121,7 @@ export function generateVectorFlatStyle({
 
     legend = {
       domain: cats.map((c) => c.label || String(c.value)),
-      range: cats.map((c) => c.color),
+      range: cats.map((c) => c.color || "rgba(128, 128, 128, 0.5)"),
       scaleType: "categorical",
     };
   }
@@ -138,16 +138,26 @@ export function generateVectorFlatStyle({
     const effectiveRange =
       range && range.length === 2 ? range : [min ?? 0, max ?? 100];
     const [minVal, maxVal] = effectiveRange;
-    const step = (maxVal - minVal) / (palette.length - 1);
+    const rangeDelta = maxVal - minVal || 1;
+    const step = palette.length > 1 ? rangeDelta / (palette.length - 1) : 0;
 
     const interpolateExpression = [
       "interpolate",
       ["linear"],
       ["get", attribute],
     ];
-    for (let i = 0; i < palette.length; i++) {
-      const val = minVal + step * i;
-      interpolateExpression.push(Number(val.toFixed(2)), palette[i]);
+    if (palette.length > 1) {
+      for (let i = 0; i < palette.length; i++) {
+        const val = minVal + step * i;
+        interpolateExpression.push(Number(val.toFixed(2)), palette[i]);
+      }
+    } else {
+      interpolateExpression.push(
+        minVal,
+        palette[0] || "#440154",
+        maxVal,
+        palette[0] || "#fde725",
+      );
     }
 
     if (isPoint) {

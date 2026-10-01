@@ -11,7 +11,7 @@ export function createExpressApp(createServerFn) {
   const app = express();
 
   app.use(cors({ origin: "*" }));
-  app.use(express.json());
+  app.use(express.json({ limit: "5mb" }));
 
   // Handle malformed JSON body errors in standard JSON-RPC format
   app.use((err, _req, res, next) => {

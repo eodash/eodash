@@ -12,6 +12,17 @@ const DEFAULT_REPO_ROOT = path.resolve(__dirname, "../..");
 export function buildMetadata(repoRoot = DEFAULT_REPO_ROOT) {
   const widgetsMetadata = buildWidgetsMetadata(repoRoot);
   const architectureMetadata = buildArchitectureMetadata(repoRoot);
+
+  const widgetCount = Object.keys(widgetsMetadata || {}).length;
+  const stateCount = architectureMetadata?.reactiveStore?.states?.length ?? 0;
+  const actionCount = architectureMetadata?.reactiveStore?.actions?.length ?? 0;
+
+  if (widgetCount === 0 || stateCount === 0 || actionCount === 0) {
+    throw new Error(
+      `buildMetadata validation failed: generated empty metadata (widgets: ${widgetCount}, states: ${stateCount}, actions: ${actionCount})`,
+    );
+  }
+
   return { widgetsMetadata, architectureMetadata };
 }
 

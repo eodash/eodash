@@ -6,49 +6,61 @@ export const COLLECTION_SCHEMA_URL =
 export const INDICATOR_SCHEMA_URL =
   "https://eodash.github.io/eodash-schemas/catalog/indicator-schema.json";
 
-let cachedValidators = null;
+/** @type {{ ajv: any; validateCatalogCollection: any; validateCatalogIndicator: any; usedFallback?: boolean } | null} */
+export let cachedValidators = null;
 
 /**
- * Configure an Ajv instance with standard formats and custom eodash schema formats
+ * Creates and configures an Ajv instance with custom formats
  */
 export function createAjvInstance() {
   const ajv = new Ajv({
     allErrors: true,
-    strict: false,
     verbose: true,
+    strict: false,
   });
-
   addFormats(ajv);
 
   // Custom formats used in eodash-schemas
-  ajv.addFormat("categories", true);
-  ajv.addFormat("markdown", true);
-  ajv.addFormat("iri", true);
-  ajv.addFormat("datetime", {
+  ajv.addFormat("stac-endpoint", {
     type: "string",
-    validate: (dateTime) => {
-      if (typeof dateTime !== "string") return false;
-      const d = new Date(dateTime);
-      return !isNaN(d.getTime());
-    },
+    validate: (url) => typeof url === "string" && url.length > 0,
   });
-  ajv.addFormat("bounding-box", {
-    type: "array",
-    validate: (bbox) => {
-      return (
-        Array.isArray(bbox) &&
-        bbox.length === 4 &&
-        bbox.every((n) => typeof n === "number")
-      );
-    },
+
+  ajv.addFormat("datetime-iso8601", {
+    type: "string",
+    validate: (dt) => !Number.isNaN(Date.parse(dt)),
   });
-  ajv.addFormat("point", {
+
+  ajv.addFormat("style-url", {
+    type: "string",
+    validate: (url) =>
+      typeof url === "string" &&
+      (url.startsWith("http") || url.startsWith("/")),
+  });
+
+  ajv.addFormat("coordinate-pair", {
     type: "array",
-    validate: (pt) => {
+    validate: (arr) =>
+      Array.isArray(arr) &&
+      arr.length === 2 &&
+      typeof arr[0] === "number" &&
+      typeof arr[1] === "number",
+  });
+
+  ajv.addFormat("polygon-coordinates", {
+    type: "array",
+    validate: (coords) => {
+      if (!Array.isArray(coords) || coords.length === 0) return false;
+      const ring = coords[0];
       return (
-        Array.isArray(pt) &&
-        pt.length === 2 &&
-        pt.every((n) => typeof n === "number")
+        Array.isArray(ring) &&
+        ring.length >= 4 &&
+        ring.every(
+          (pt) =>
+            Array.isArray(pt) &&
+            pt.length === 2 &&
+            pt.every((n) => typeof n === "number"),
+        )
       );
     },
   });
@@ -62,11 +74,21 @@ export function createAjvInstance() {
 export async function loadSchemas() {
   try {
     const [colSchema, indSchema] = await Promise.all([
-      fetch(COLLECTION_SCHEMA_URL).then((r) => r.json()),
-      fetch(INDICATOR_SCHEMA_URL).then((r) => r.json()),
+      fetch(COLLECTION_SCHEMA_URL, {
+        signal: AbortSignal.timeout(3000),
+      }).then((r) => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json();
+      }),
+      fetch(INDICATOR_SCHEMA_URL, {
+        signal: AbortSignal.timeout(3000),
+      }).then((r) => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json();
+      }),
     ]);
 
-    return { colSchema, indSchema };
+    return { colSchema, indSchema, usedFallback: false };
   } catch (_err) {
     // Return minimal fallback schemas if network is unreachable
     const colSchema = {
@@ -91,7 +113,7 @@ export async function loadSchemas() {
       },
       required: ["Name", "Title", "Description", "Collections"],
     };
-    return { colSchema, indSchema };
+    return { colSchema, indSchema, usedFallback: true };
   }
 }
 
@@ -104,16 +126,21 @@ export async function getValidators() {
   }
 
   const ajv = createAjvInstance();
-  const { colSchema, indSchema } = await loadSchemas();
+  const { colSchema, indSchema, usedFallback } = await loadSchemas();
 
   const validateCatalogCollection = ajv.compile(colSchema);
   const validateCatalogIndicator = ajv.compile(indSchema);
 
-  cachedValidators = {
+  const validators = {
     ajv,
     validateCatalogCollection,
     validateCatalogIndicator,
+    usedFallback,
   };
 
-  return cachedValidators;
+  if (!usedFallback) {
+    cachedValidators = validators;
+  }
+
+  return validators;
 }

@@ -35,11 +35,6 @@ export function createMcpServer() {
       instructions:
         "Inspect, configure, and scaffold @eodash/eodash instances, widgets, layouts, styles, and STAC integrations. " +
         "NOTE: MCP generation tools return code/files in-memory and do NOT write directly to disk; use file writing tools to write returned files.",
-      capabilities: {
-        tools: {
-          call: {},
-        },
-      },
     },
   );
 
@@ -58,14 +53,20 @@ export function createExpressApp() {
 async function startServer() {
   const app = createExpressApp();
   let port = 3001;
+  let host = "127.0.0.1";
 
   const portArgIndex = process.argv.indexOf("--port");
   if (portArgIndex > -1 && process.argv[portArgIndex + 1]) {
     port = parseInt(process.argv[portArgIndex + 1], 10);
   }
 
-  app.listen(port, () => {
-    console.log(`eodash MCP Server running at http://localhost:${port}`);
+  const hostArgIndex = process.argv.indexOf("--host");
+  if (hostArgIndex > -1 && process.argv[hostArgIndex + 1]) {
+    host = process.argv[hostArgIndex + 1];
+  }
+
+  app.listen(port, host, () => {
+    console.log(`eodash MCP Server running at http://${host}:${port}`);
   });
 }
 

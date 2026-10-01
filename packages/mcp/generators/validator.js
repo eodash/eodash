@@ -83,7 +83,7 @@ export async function validateCatalogConfig({
     resolvedType = "collection";
   }
 
-  const { validateCatalogCollection, validateCatalogIndicator } =
+  const { validateCatalogCollection, validateCatalogIndicator, usedFallback } =
     await getValidators();
 
   const isIndicator =
@@ -128,6 +128,7 @@ export async function validateCatalogConfig({
     valid: isActuallyValid,
     configType: resolvedType,
     schemaUrl,
+    usedFallback: Boolean(usedFallback),
     errors,
     warnings,
     summary: isActuallyValid

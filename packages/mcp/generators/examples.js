@@ -111,7 +111,7 @@ export function findExamples({
       }
 
       // If text query provided, must match at least one term
-      if (termMatches === 0 && score === 0) {
+      if (termMatches === 0) {
         return null;
       }
       score += termMatches * 10;
@@ -123,16 +123,19 @@ export function findExamples({
     return { example: ex, score };
   });
 
-  results = results
+  const filtered = results
     .filter((r) => r !== null)
-    .sort((a, b) => b.score - a.score)
+    .sort((a, b) => b.score - a.score);
+
+  const totalFound = filtered.length;
+  const paginated = filtered
     .slice(0, Math.min(20, Math.max(1, limit)))
     .map((r) => r.example);
 
   return {
-    totalFound: results.length,
+    totalFound,
     query: query || null,
     category: category || "all",
-    results,
+    results: paginated,
   };
 }

@@ -53,7 +53,9 @@ export let cachedColormaps = null;
 export async function fetchColormaps() {
   if (cachedColormaps) return cachedColormaps;
   try {
-    const res = await fetch(COLORMAPS_URL);
+    const res = await fetch(COLORMAPS_URL, {
+      signal: AbortSignal.timeout(3000),
+    });
     if (res.ok) {
       cachedColormaps = await res.json();
       return cachedColormaps;
