@@ -69,7 +69,6 @@ Connect to `http://localhost:3001` via Streamable HTTP.
 | `get_widget_details`      | Get full TypeScript props, JSON schemas for complex props, defaults, store bindings, STAC extensions, and usage snippets for a specific widget.            |
 | `get_custom_widget_guide` | Detailed guides and templates for Web Component, Functional, and IFrame custom widgets.                                                                    |
 | `get_eodash_architecture` | Architecture reference covering the 12-column grid, templates, Pinia store states, and deployment modes.                                                   |
-| `generate_layer_style`    | Generate complete OpenLayers styles (`vector-style`, `raster-style` for COG) and dynamic forms (`rasterform`) with colormaps and sliders.                  |
 | `find_examples`           | Search and discover working eodash dashboard scaffolds, configs, Vega charts, layer styles, and catalog configs with category and tag filters via Fuse.js. |
 | `validate_catalog_config` | Validate catalog collection and indicator configurations against official eodash schemas and domain rules.                                                 |
 
@@ -90,10 +89,9 @@ packages/mcp/
 ├── helpers/                  # Template, landing page, and guide helpers
 ├── metadata/                 # AST & TypeDoc extractors for widgets/stores
 ├── tools/                    # MCP tool registrations & Zod input schemas
-│   ├── widgets.js            # list_widgets, get_widget_details
-│   ├── architecture.js       # get_custom_widget_guide, get_eodash_architecture
-│   ├── discovery.js          # find_examples, validate_catalog_config
-│   └── generators/           # generate_layer_style
-├── generators/               # Style, example discovery, and validation engines
-└── data/                     # Generated metadata JSON artifacts
+│   ├── widgets.js            # list_widgets, get_widget_details, get_custom_widget_guide
+│   ├── architecture.js       # get_eodash_architecture
+│   └── discovery.js          # find_examples, validate_catalog_config
+├── generators/               # Example discovery and catalog validation engines
+└── data/                     # Generated metadata & example JSON artifacts
 ```

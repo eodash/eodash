@@ -254,13 +254,7 @@
                       "type": "string",
                       "title": "Colormap",
                       "default": "gray",
-                      "enum": [
-                        "accent",
-                        "bone",
-                        "gray",
-                        "magma",
-                        "viridis"
-                      ]
+                      "enum": ["accent", "bone", "gray", "magma", "viridis"]
                     }
                   },
                   "required": ["vminmax", "assets"]
@@ -311,13 +305,7 @@
                       "type": "string",
                       "title": "Colormap",
                       "default": "gray",
-                      "enum": [
-                        "accent",
-                        "bone",
-                        "gray",
-                        "magma",
-                        "viridis"
-                      ]
+                      "enum": ["accent", "bone", "gray", "magma", "viridis"]
                     }
                   },
                   "required": ["vminmax", "assets"]
