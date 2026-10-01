@@ -115,7 +115,7 @@ The [Widgets](/widgets/) guide covers the three kinds of widgets and how to conf
 
 ::: tip Choosing the Right Template
 - **Static STAC Catalog** (e.g. `catalog.json`): Use `template: lite` (default). Static catalogs have fixed indicator trees and do not require item search widgets.
-- **Dynamic STAC API** (e.g. `api: true`): Use `template: explore` to provide item search and filter capabilities via `EodashItemCatalog` and `EodashItemFilter`.
+- **Dynamic STAC API** (e.g. `api: true`): Use `template: explore` to provide item search and discovery capabilities via `EodashItemCatalog` and `EodashLayerControl`.
 :::
 
 ## Deployment

@@ -45,10 +45,10 @@ export function createMcpServer() {
     {
       name: pkg.name || "@eodash/mcp-server",
       version: pkg.version || "1.0.0",
-      instructions:
-        "This MCP server provides tools to inspect, configure, and scaffold @eodash/eodash instances, widgets, layouts, and STAC integrations.",
     },
     {
+      instructions:
+        "This MCP server provides tools to inspect, configure, and scaffold @eodash/eodash instances, widgets, layouts, and STAC integrations.",
       capabilities: {
         tools: {
           call: {},
@@ -191,6 +191,7 @@ export function createMcpServer() {
             "overview",
             "grid-layout",
             "templates",
+            "custom-widgets",
             "reactive-store",
             "all",
           ])
@@ -209,6 +210,8 @@ export function createMcpServer() {
         result = { gridSystem: architectureData.gridSystem };
       } else if (topic === "templates") {
         result = { templateSystem: architectureData.templateSystem };
+      } else if (topic === "custom-widgets") {
+        result = { customWidgetSystem: architectureData.customWidgetSystem };
       } else if (topic === "reactive-store") {
         result = { reactiveStore: architectureData.reactiveStore };
       }
@@ -376,8 +379,42 @@ export function createExpressApp() {
   app.use(cors({ origin: "*" }));
   app.use(express.json());
 
-  app.get("/health", (req, res) => {
+  // Handle malformed JSON body errors in standard JSON-RPC format
+  app.use((err, _req, res, next) => {
+    if (err instanceof SyntaxError && err.status === 400 && "body" in err) {
+      return res.status(400).json({
+        jsonrpc: "2.0",
+        error: {
+          code: -32700,
+          message: "Parse error: malformed JSON",
+        },
+        id: null,
+      });
+    }
+    next(err);
+  });
+
+  app.get("/health", (_req, res) => {
     res.json({ message: "eodash MCP Server is running" });
+  });
+
+  app.get("/ui", (_req, res) => {
+    const { widgetsData, architectureData } = getMetadata();
+    res.setHeader("Content-Type", "text/html");
+    res.send(generateLandingPage(widgetsData, architectureData));
+  });
+
+  app.get("/", (_req, res) => {
+    res.setHeader("Allow", "POST");
+    res.status(405).json({
+      jsonrpc: "2.0",
+      error: {
+        code: -32600,
+        message:
+          "Method Not Allowed: MCP endpoint requires POST requests. Access UI landing page at /ui.",
+      },
+      id: null,
+    });
   });
 
   app.post("/", async (req, res) => {
@@ -397,13 +434,7 @@ export function createExpressApp() {
     }
   });
 
-  app.get("/", async (req, res) => {
-    const { widgetsData, architectureData } = getMetadata();
-    res.setHeader("Content-Type", "text/html");
-    res.send(generateLandingPage(widgetsData, architectureData));
-  });
-
-  app.delete("/", (req, res) => {
+  app.delete("/", (_req, res) => {
     res.status(200).json({ message: "Stateless session closed" });
   });
 
@@ -424,11 +455,19 @@ async function startServer() {
   });
 }
 
+function isDirectExecution() {
+  if (!process.argv[1]) return false;
+  try {
+    const realArgv1 = fs.realpathSync(path.resolve(process.argv[1]));
+    const realFilename = fs.realpathSync(__filename);
+    return realArgv1 === realFilename;
+  } catch {
+    return path.resolve(process.argv[1]) === path.resolve(__filename);
+  }
+}
+
 // Auto start if executed directly
-if (
-  process.argv[1] &&
-  path.resolve(process.argv[1]) === path.resolve(__filename)
-) {
+if (isDirectExecution()) {
   startServer().catch((err) => {
     console.error("Failed to start server:", err);
     process.exit(1);
