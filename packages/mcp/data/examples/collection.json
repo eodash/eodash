@@ -353,5 +353,46 @@
         }
       ]
     }
+  },
+  {
+    "id": "collection-sh-byoc-copernicus-cdse",
+    "title": "Sentinel Hub BYOC on CDSE",
+    "category": "collection",
+    "tags": [
+      "sentinel-hub",
+      "byoc",
+      "cdse",
+      "copernicus",
+      "cog",
+      "raster",
+      "sh",
+      "wms",
+      "stac",
+      "copernicus-data-space-ecosystem"
+    ],
+    "description": "Configuration for a Sentinel Hub BYOC layer hosted on Copernicus Data Space Ecosystem (CDSE), using standard BYOC type with configured statistics API for getting a chart of time distribution of raster values for a user-drawn area.",
+    "targetContext": "Place in catalog 'collections/<name>.json'. Requires a configuration of env variables SH_INSTANCE_ID, SH_CLIENT_ID and SH_CLIENT_SECRET in the catalog repository build process.",
+    "code": {
+      "Name": "custom-byoc-layer",
+      "Title": "BYOC via CDSE Sentinel Hub",
+      "Resources": [
+        {
+          "EndPoint": "https://sh.dataspace.copernicus.eu",
+          "LayerId": "CUSTOM_LAYER_ID",
+          "Name": "Sentinel Hub",
+          "Type": "byoc",
+          "CollectionId": "00000000-0000-0000-0000-000000000000"
+        }
+      ],
+      "Services": [
+        {
+          "Endpoint": "https://sh.dataspace.copernicus.eu/api/v1/statistics",
+          "Name": "Statistical API",
+          "Type": "byoc",
+          "CollectionId": "00000000-0000-0000-0000-000000000000",
+          "Script": "custom-cog-layer/N1_CO.js"
+        }
+      ]
+    }
   }
 ]

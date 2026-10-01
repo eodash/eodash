@@ -1227,5 +1227,62 @@
       ],
       "background": "transparent"
     }
+  },
+  {
+    "id": "chart-vega-vconcat-summary-dashboard",
+    "title": "Analytical Summary Dashboard with VConcat, Fold, and JoinAggregate",
+    "category": "chart-vega",
+    "tags": [
+      "vega-lite",
+      "vconcat",
+      "fold",
+      "joinaggregate",
+      "analytical",
+      "dashboard",
+      "percentage",
+      "summary",
+      "vega",
+      "eox-chart"
+    ],
+    "description": "Complex multi-layer dashboard using vconcat to stack bar charts and scatter plots. Uses fold to pivot multi-dataset process results and joinaggregate to calculate percentage of total across datasets.",
+    "targetContext": "Reference in Process.VegaDefinition",
+    "code": {
+      "width": "container",
+      "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+      "data": { "name": "timeseries" },
+      "vconcat": [
+        {
+          "title": "Area Summary",
+          "transform": [
+            {
+              "fold": ["dataset_a", "dataset_b"],
+              "as": ["dataset", "records"]
+            },
+            { "flatten": ["records"] },
+            {
+              "aggregate": [
+                { "op": "sum", "field": "records.area", "as": "total_area" }
+              ],
+              "groupby": ["dataset"]
+            }
+          ],
+          "mark": "bar",
+          "encoding": {
+            "x": { "field": "dataset", "type": "nominal" },
+            "y": { "field": "total_area", "type": "quantitative" },
+            "color": { "field": "dataset", "type": "nominal" }
+          }
+        },
+        {
+          "title": "Metric Distribution",
+          "mark": "point",
+          "encoding": {
+            "x": { "field": "records.val", "type": "quantitative" },
+            "y": { "field": "records.area", "type": "quantitative" }
+          }
+        }
+      ],
+      "resolve": { "scale": { "color": "independent" } }
+    }
   }
 ]

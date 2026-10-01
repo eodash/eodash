@@ -99,5 +99,50 @@
         "wr07-diffusivity"
       ]
     }
+  },
+  {
+    "id": "indicator-cql2-filtering-disable",
+    "title": "Indicator with CQL2 Vector Filtering in Processing and Default Collection Disabling",
+    "category": "indicator",
+    "tags": [
+      "indicator",
+      "process",
+      "features",
+      "synchronous",
+      "tipg",
+      "cql2",
+      "vector",
+      "filtering",
+      "disable",
+      "postgis",
+      "eoapi"
+    ],
+    "description": "Indicator referencing vector collections with Processing via OGC API Features (eoapi) with complex CQL2-text filtering in the URL and 'Disable' property to hide some layers by default.",
+    "targetContext": "Save under indicators/<name>.json",
+    "code": {
+      "Name": "parcel-conversion-analysis",
+      "Title": "Agricultural Parcel Conversion",
+      "Collections": ["parcels_2024", "parcels_2025", "conversion_map"],
+      "Disable": ["parcels_2024"],
+      "Process": {
+        "Name": "statistics",
+        "JsonForm": "https://raw.githubusercontent.com/baltic-gtif/assets/refs/heads/main/jsonforms/conversion.json",
+        "VegaDefinition": "https://raw.githubusercontent.com/baltic-gtif/assets/refs/heads/main/chartdefs/vega_chart_conversion.json",
+        "EndPoints": [
+          {
+            "Identifier": "lt_2024_soc_pg_loss",
+            "Url": "https://eoapi.example.com/vector/collections/public.lt_2024_soc_pg_loss/items?filter-lang=cql2-text&filter=S_INTERSECTS(geometry,POLYGON(({{bbox.0}}%20{{bbox.1}},{{bbox.2}}%20{{bbox.1}},{{bbox.2}}%20{{bbox.3}},{{bbox.0}}%20{{bbox.3}},{{bbox.0}}%20{{bbox.1}})))",
+            "Type": "application/json",
+            "Method": "GET"
+          },
+          {
+            "Identifier": "lt_2025_soc_pg_loss",
+            "Url": "https://eoapi.example.com/vector/collections/public.lt_2025_soc_pg_loss/items?filter-lang=cql2-text&filter=S_INTERSECTS(geometry,POLYGON(({{bbox.0}}%20{{bbox.1}},{{bbox.2}}%20{{bbox.1}},{{bbox.2}}%20{{bbox.3}},{{bbox.0}}%20{{bbox.3}},{{bbox.0}}%20{{bbox.1}})))",
+            "Type": "application/json",
+            "Method": "GET"
+          }
+        ]
+      }
+    }
   }
 ]

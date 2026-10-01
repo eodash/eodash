@@ -93,5 +93,45 @@
         }
       }
     }
+  },
+  {
+    "id": "jsonform-measuring-drawtools-styling",
+    "title": "Interactive Form with Measuring Tools and Persistent Layer Styling",
+    "category": "jsonform",
+    "tags": [
+      "jsonform",
+      "measure",
+      "drawtools",
+      "styling",
+      "eox-map",
+      "bbox",
+      "selection"
+    ],
+    "description": "Bounding box selection form enabling interactive area measurement ('measure: true') and custom persistent styling for the selection layer on the map.",
+    "targetContext": "Host under a public URL and Reference in Process.JsonForm",
+    "code": {
+      "type": "object",
+      "properties": {
+        "bbox": {
+          "type": "array",
+          "title": "Select area and measure area",
+          "options": {
+            "drawtools": {
+              "for": "eox-map#main",
+              "measure": true,
+              "projection": "EPSG:4326",
+              "featureStyles": {
+                "layer": {
+                  "stroke-color": "#ff0000",
+                  "stroke-width": 3,
+                  "fill-color": "rgba(255,0,0,0.1)"
+                }
+              }
+            }
+          },
+          "format": "bounding-box"
+        }
+      }
+    }
   }
 ]
