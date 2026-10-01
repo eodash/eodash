@@ -303,6 +303,12 @@ export async function creatAsyncProcessLayerDefinitions(
     // Check if collection has eox:colorlegend definition, if yes overwrite legend description
     let extraProperties = extractLayerLegend(selectedStac);
 
+    // Prefer existing title, fall back to auto generated
+    const baseTitle = endpointLink?.title
+      ? endpointLink.title
+      : `Results ${selectedStac?.id ?? ""}`;
+    const title = `${baseTitle}${resultItem.id ? ` ${resultItem.id}` : ""}`;
+
     switch (resultItem.type) {
       case "image/tiff": {
         layers.push(
@@ -310,11 +316,7 @@ export async function creatAsyncProcessLayerDefinitions(
             type: "WebGLTile",
             properties: {
               id: endpointLink.id + "_process" + resultItem.id + postfixId,
-              title:
-                "Results " +
-                (selectedStac?.id ?? "") +
-                " " +
-                (resultItem.id ?? ""),
+              title,
               layerControlToolsExpand: true,
               ...(layerConfig && { layerConfig }),
               ...extraProperties,
@@ -345,11 +347,7 @@ export async function creatAsyncProcessLayerDefinitions(
           },
           properties: {
             id: endpointLink.id + "_process_" + resultItem.id + postfixId,
-            title:
-              "Results " +
-              (selectedStac?.id ?? "") +
-              " " +
-              (resultItem.id ?? ""),
+            title,
             ...(layerConfig && {
               layerConfig: {
                 ...layerConfig,
@@ -372,11 +370,7 @@ export async function creatAsyncProcessLayerDefinitions(
           },
           properties: {
             id: endpointLink.id + "_process_" + resultItem.id + postfixId,
-            title:
-              "Results " +
-              (selectedStac?.id ?? "") +
-              " " +
-              (resultItem.id ?? ""),
+            title,
             layerControlToolsExpand: true,
             ...(layerConfig && {
               layerConfig: {

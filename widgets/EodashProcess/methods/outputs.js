@@ -368,11 +368,13 @@ export function processImage(links, jsonformValue, origBbox) {
   /** @type {import("@eox/map/src/layers").EOxLayerType<"Image","ImageStatic">[]} */
   const layers = [];
   for (const link of imageLinks) {
+    // Prefer existing title, fall back to auto generated
+    const title = link.title ? link.title : `Results ${link.id}`;
     layers.push({
       type: "Image",
       properties: {
         id: link.id + "_process",
-        title: "Results " + link.id,
+        title,
       },
       source: {
         type: "ImageStatic",
