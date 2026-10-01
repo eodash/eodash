@@ -1,137 +1,22 @@
-import Ajv from "ajv";
-import addFormats from "ajv-formats";
+import {
+  COLLECTION_SCHEMA_URL,
+  INDICATOR_SCHEMA_URL,
+  createAjvInstance,
+  loadSchemas,
+  getValidators,
+} from "./validator/schemas.js";
+import { validateCustomRules } from "./validator/rules.js";
 
-export const COLLECTION_SCHEMA_URL =
-  "https://eodash.github.io/eodash-schemas/catalog/collection-schema.json";
-export const INDICATOR_SCHEMA_URL =
-  "https://eodash.github.io/eodash-schemas/catalog/indicator-schema.json";
-
-let cachedValidators = null;
-
-/**
- * Configure an Ajv instance with standard formats and custom eodash schema formats
- */
-export function createAjvInstance() {
-  const ajv = new Ajv({
-    allErrors: true,
-    strict: false,
-    verbose: true,
-  });
-
-  addFormats(ajv);
-
-  // Custom formats used in eodash-schemas
-  ajv.addFormat("categories", true);
-  ajv.addFormat("markdown", true);
-  ajv.addFormat("iri", true);
-  ajv.addFormat("datetime", {
-    type: "string",
-    validate: (dateTime) => {
-      if (typeof dateTime !== "string") return false;
-      const d = new Date(dateTime);
-      return !isNaN(d.getTime());
-    },
-  });
-  ajv.addFormat("bounding-box", {
-    type: "array",
-    validate: (bbox) => {
-      return (
-        Array.isArray(bbox) &&
-        bbox.length === 4 &&
-        bbox.every((n) => typeof n === "number")
-      );
-    },
-  });
-  ajv.addFormat("point", {
-    type: "array",
-    validate: (pt) => {
-      return (
-        Array.isArray(pt) &&
-        pt.length === 2 &&
-        pt.every((n) => typeof n === "number")
-      );
-    },
-  });
-
-  return ajv;
-}
+export {
+  COLLECTION_SCHEMA_URL,
+  INDICATOR_SCHEMA_URL,
+  createAjvInstance,
+  loadSchemas,
+  getValidators,
+};
 
 /**
- * Fetch remote schemas from eodash-schemas GitHub Pages
- */
-export async function loadSchemas() {
-  try {
-    const [colSchema, indSchema] = await Promise.all([
-      fetch(COLLECTION_SCHEMA_URL).then((r) => r.json()),
-      fetch(INDICATOR_SCHEMA_URL).then((r) => r.json()),
-    ]);
-
-    return { colSchema, indSchema };
-  } catch (_err) {
-    // Return minimal fallback schemas if network is unreachable
-    const colSchema = {
-      $id: COLLECTION_SCHEMA_URL,
-      type: "object",
-      properties: {
-        Name: { type: "string" },
-        Title: { type: "string" },
-        Description: { type: "string" },
-        Resources: { type: "array", minItems: 1 },
-      },
-      required: ["Name", "Title", "Description", "Resources"],
-    };
-    const indSchema = {
-      $id: INDICATOR_SCHEMA_URL,
-      type: "object",
-      properties: {
-        Name: { type: "string" },
-        Title: { type: "string" },
-        Description: { type: "string" },
-        Collections: { type: "array", minItems: 1 },
-      },
-      required: ["Name", "Title", "Description", "Collections"],
-    };
-    return { colSchema, indSchema };
-  }
-}
-
-/**
- * Initialize or get cached compiled validators
- */
-export async function getValidators() {
-  if (cachedValidators) {
-    return cachedValidators;
-  }
-
-  const ajv = createAjvInstance();
-  const { colSchema, indSchema } = await loadSchemas();
-
-  const validateCatalogCollection = ajv.compile(colSchema);
-  const validateCatalogIndicator = ajv.compile(indSchema);
-
-  cachedValidators = {
-    ajv,
-    validateCatalogCollection,
-    validateCatalogIndicator,
-  };
-
-  return cachedValidators;
-}
-
-/**
- * Validate an EODash catalog configuration against official eodash schemas and custom business rules
- *
- * @param {object} options
- * @param {string|object} options.config - JSON string or object to validate
- * @param {'collection'|'indicator'|'catalog-collection'|'catalog-indicator'|'auto'|string} [options.configType='auto'] - Type of config to validate
- * @returns {Promise<{
- *   valid: boolean,
- *   configType: string,
- *   schemaUrl: string,
- *   errors: Array<{ path: string, message: string, params?: any, suggestion?: string }>,
- *   warnings: string[],
- *   summary: string
- * }>}
+ * Validate an EODash catalog configuration against official eodash schemas and custom domain rules
  */
 export async function validateCatalogConfig({
   config,
@@ -201,16 +86,12 @@ export async function validateCatalogConfig({
   const { validateCatalogCollection, validateCatalogIndicator } =
     await getValidators();
 
-  let validator;
-  let schemaUrl;
-
-  if (resolvedType === "indicator" || resolvedType === "catalog-indicator") {
-    validator = validateCatalogIndicator;
-    schemaUrl = INDICATOR_SCHEMA_URL;
-  } else {
-    validator = validateCatalogCollection;
-    schemaUrl = COLLECTION_SCHEMA_URL;
-  }
+  const isIndicator =
+    resolvedType === "indicator" || resolvedType === "catalog-indicator";
+  const validator = isIndicator
+    ? validateCatalogIndicator
+    : validateCatalogCollection;
+  const schemaUrl = isIndicator ? INDICATOR_SCHEMA_URL : COLLECTION_SCHEMA_URL;
 
   const valid = validator(parsed);
   const errors = [];
@@ -239,67 +120,7 @@ export async function validateCatalogConfig({
     }
   }
 
-  // Business Rules Checks for EODash Catalog Configs (PascalCase)
-  if (parsed.Resources && Array.isArray(parsed.Resources)) {
-    for (let i = 0; i < parsed.Resources.length; i++) {
-      const res = parsed.Resources[i];
-      // Rule 1: Style must be URL string, not JSON object
-      if (res.Style && typeof res.Style === "object") {
-        errors.push({
-          path: `/Resources/${i}/Style`,
-          keyword: "type",
-          message: "Style MUST be a URL string, not a direct JSON object.",
-          suggestion:
-            "Save the style to an external JSON file and provide the relative or absolute URL in Style.",
-        });
-      }
-
-      // Rule 1b: Resources[].Flatstyle does not exist
-      if (res.Flatstyle !== undefined) {
-        errors.push({
-          path: `/Resources/${i}/Flatstyle`,
-          keyword: "additionalProperties",
-          message:
-            "Property 'Flatstyle' does not exist on Resources. Use 'Style' for resource styles (Flatstyle is only valid under Process outputs).",
-          suggestion: "Rename 'Flatstyle' to 'Style' with a valid URL string.",
-        });
-      }
-
-      // Rule 2: Rasterform branching keep_oneof_values check
-      if (res.Rasterform && typeof res.Rasterform === "object") {
-        if (
-          (res.Rasterform.oneOf || res.Rasterform.anyOf) &&
-          res.Rasterform.options?.keep_oneof_values !== false
-        ) {
-          warnings.push(
-            `Resource[${i}] Rasterform uses branching (oneOf/anyOf) without "keep_oneof_values": false in options. This may cause values to leak between branches in json-editor.`,
-          );
-        }
-      }
-    }
-  }
-
-  // Top-level Style object check
-  if (parsed.Style && typeof parsed.Style === "object") {
-    errors.push({
-      path: "/Style",
-      keyword: "type",
-      message: "Style MUST be a URL string, not a direct JSON object.",
-      suggestion:
-        "Save the style to an external JSON file and provide the relative or absolute URL in Style.",
-    });
-  }
-
-  // Top-level Flatstyle check on catalog collection
-  if (parsed.Flatstyle !== undefined) {
-    errors.push({
-      path: "/Flatstyle",
-      keyword: "additionalProperties",
-      message:
-        "Property 'Flatstyle' does not exist on catalog collection. Use 'Style' (Flatstyle is only valid under Process outputs).",
-      suggestion: "Rename 'Flatstyle' to 'Style' with a valid URL string.",
-    });
-  }
+  validateCustomRules(parsed, errors, warnings);
 
   const isActuallyValid = valid && errors.length === 0;
 

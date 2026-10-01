@@ -258,11 +258,11 @@
           "rgba(0, 113, 194, 1)",
           "rgba(255, 255, 255, 1)"
         ],
-        "domainProperties": ["vmin", "vmax"]
+        "domainProperties": ["min", "max"]
       },
       "variables": {
-        "vmin": 0,
-        "vmax": 1
+        "min": 0,
+        "max": 1
       },
       "color": [
         "case",
@@ -272,8 +272,8 @@
           ["linear"],
           [
             "/",
-            ["-", ["band", 1], ["var", "vmin"]],
-            ["-", ["var", "vmax"], ["var", "vmin"]]
+            ["-", ["band", 1], ["var", "min"]],
+            ["-", ["var", "max"], ["var", "min"]]
           ],
           0,
           [0, 0, 0, 1],
@@ -288,20 +288,18 @@
         "type": "object",
         "title": "Backscatter Contrast",
         "properties": {
-          "vminmax": {
+          "minmax": {
             "title": "Sigma0 Range",
             "type": "object",
             "properties": {
-              "vmin": {
+              "min": {
                 "type": "number",
                 "minimum": 0,
-                "maximum": 5,
                 "format": "range",
                 "default": 0
               },
-              "vmax": {
+              "max": {
                 "type": "number",
-                "minimum": 0,
                 "maximum": 5,
                 "format": "range",
                 "default": 1
@@ -430,18 +428,18 @@
       "cerulean",
       "eodashboard"
     ],
-    "description": "eodash:rasterform configuration for TiTiler XYZ tile layer. Uses 'removeProperties: [\"vminmax\"]' and template/watch to generate rescale URL parameter without polluting queries.",
+    "description": "eodash:rasterform configuration for TiTiler XYZ tile layer. Uses 'removeProperties: [\"minmax\"]' and template/watch to generate rescale URL parameter without polluting queries.",
     "targetContext": "Define inside STAC link as 'eodash:rasterform' object, or reference as URL string.",
     "code": {
       "legend": {
         "rangeProperty": "colormap_name",
-        "domainProperties": ["vmin", "vmax"]
+        "domainProperties": ["min", "max"]
       },
       "jsonform": {
         "type": "object",
         "title": "Tile Display Settings",
         "options": {
-          "removeProperties": ["vminmax"]
+          "removeProperties": ["minmax"]
         },
         "properties": {
           "colormap_name": {
@@ -458,21 +456,19 @@
             ],
             "default": "viridis"
           },
-          "vminmax": {
+          "minmax": {
             "title": "Value Range",
             "type": "object",
             "properties": {
-              "vmin": {
+              "min": {
                 "type": "number",
                 "format": "range",
                 "minimum": 0,
-                "maximum": 5000,
                 "default": 0
               },
-              "vmax": {
+              "max": {
                 "type": "number",
                 "format": "range",
-                "minimum": 0,
                 "maximum": 5000,
                 "default": 3000
               }
@@ -481,8 +477,8 @@
           },
           "rescale": {
             "type": "string",
-            "template": "{{vminmax.vmin}},{{vminmax.vmax}}",
-            "watch": { "vminmax": "vminmax" },
+            "template": "{{minmax.min}},{{minmax.max}}",
+            "watch": { "minmax": "minmax" },
             "options": { "hidden": true }
           }
         }
@@ -514,14 +510,14 @@
     "code": {
       "legend": {
         "rangeProperty": "colormap_name",
-        "domainProperties": ["vmin", "vmax"]
+        "domainProperties": ["min", "max"]
       },
       "jsonform": {
         "type": "object",
         "title": "Product Mode",
         "options": {
           "keep_oneof_values": false,
-          "removeProperties": ["vminmax"]
+          "removeProperties": ["minmax"]
         },
         "oneOf": [
           {
@@ -548,22 +544,20 @@
                 "enum": ["viridis", "rdylgn", "spectral"],
                 "default": "rdylgn"
               },
-              "vminmax": {
+              "minmax": {
                 "title": "NDVI Range",
                 "type": "object",
                 "properties": {
-                  "vmin": {
+                  "min": {
                     "type": "number",
                     "format": "range",
                     "minimum": -0.5,
-                    "maximum": 1,
                     "default": 0,
                     "step": 0.05
                   },
-                  "vmax": {
+                  "max": {
                     "type": "number",
                     "format": "range",
-                    "minimum": -0.5,
                     "maximum": 1,
                     "default": 0.8,
                     "step": 0.05
@@ -573,8 +567,8 @@
               },
               "rescale": {
                 "type": "string",
-                "template": "{{vminmax.vmin}},{{vminmax.vmax}}",
-                "watch": { "vminmax": "vminmax" },
+                "template": "{{minmax.min}},{{minmax.max}}",
+                "watch": { "minmax": "minmax" },
                 "options": { "hidden": true }
               }
             }
@@ -884,7 +878,7 @@
           "eodash:rasterform": {
             "legend": {
               "rangeProperty": "colormap_name",
-              "domainProperties": ["vmin", "vmax"]
+              "domainProperties": ["min", "max"]
             },
             "jsonform": {
               "type": "object",

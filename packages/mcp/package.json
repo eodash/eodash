@@ -17,8 +17,12 @@
   },
   "files": [
     "index.js",
+    "server.js",
     "helpers.js",
     "generate-metadata.js",
+    "tools",
+    "metadata",
+    "helpers",
     "generators",
     "data"
   ],
