@@ -160,6 +160,10 @@ function reportFetchFailure(error) {
     throw error;
   }
 
+  if (error.response) {
+    error.response.data = parseResponseData(error.response.data);
+  }
+
   // a timeout also sets `error.request`, so it has to be checked first
   const reason =
     error.code === "ECONNABORTED" || error.code === "ETIMEDOUT"
