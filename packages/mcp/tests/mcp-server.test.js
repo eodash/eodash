@@ -31,9 +31,9 @@ describe("eodash MCP Server - Core Tools", () => {
     expect(instructions).toContain("eodash");
 
     const tools = await client.listTools();
-    expect(tools.tools.length).toBe(7);
+    expect(tools.tools.length).toBe(6);
     const toolNames = tools.tools.map((t) => t.name);
-    expect(toolNames).toContain("generate_layer_style");
+    expect(toolNames).toContain("list_widgets");
     expect(toolNames).toContain("find_examples");
     expect(toolNames).toContain("validate_catalog_config");
   });
@@ -429,40 +429,13 @@ describe("eodash MCP Server - HTTP Endpoints", () => {
     const widgets = JSON.parse(callBody.result.content[0].text);
     expect(widgets.length).toBeGreaterThanOrEqual(10);
 
-    // 3. tools/call for generate_layer_style via HTTP
-    const styleRes = await fetch(`${baseUrl}/`, {
-      method: "POST",
-      headers,
-      body: JSON.stringify({
-        jsonrpc: "2.0",
-        id: 3,
-        method: "tools/call",
-        params: {
-          name: "generate_layer_style",
-          arguments: {
-            styleType: "vector-flatstyle",
-            vectorConfig: {
-              geometryType: "line",
-              mode: "single",
-              strokeColor: "#003366",
-            },
-          },
-        },
-      }),
-    });
-    expect(styleRes.status).toBe(200);
-    const styleBody = await styleRes.json();
-    const styleData = JSON.parse(styleBody.result.content[0].text);
-    expect(styleData.styleType).toBe("vector-flatstyle");
-    expect(styleData.style["stroke-color"]).toBe("#003366");
-
-    // 4. tools/call for find_examples via HTTP
+    // 3. tools/call for find_examples via HTTP
     const examplesRes = await fetch(`${baseUrl}/`, {
       method: "POST",
       headers,
       body: JSON.stringify({
         jsonrpc: "2.0",
-        id: 4,
+        id: 3,
         method: "tools/call",
         params: {
           name: "find_examples",

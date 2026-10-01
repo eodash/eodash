@@ -8,6 +8,9 @@ const DEFAULT_TEMPLATES_DIR = path.resolve(__dirname, "../templates");
 
 /**
  * Recursively read directory into a map of { relativePath: utf8Content }
+ * @param {string} dir
+ * @param {string} [baseDir]
+ * @returns {Record<string, string>}
  */
 function readDirectoryFiles(dir, baseDir = dir) {
   const files = {};
@@ -28,6 +31,8 @@ function readDirectoryFiles(dir, baseDir = dir) {
 
 /**
  * Parse metadata from header comments (// @tag value or JSDoc)
+ * @param {string} content
+ * @returns {Record<string, string>}
  */
 function parseHeaderMetadata(content) {
   const meta = {};
@@ -50,6 +55,8 @@ function parseHeaderMetadata(content) {
 
 /**
  * Dynamically load scaffold and config templates from disk
+ * @param {string} [templatesDir]
+ * @returns {Array<{ id: string, title: string, category: string, tags: string[], description: string, targetContext: string, code: any }>}
  */
 export function loadTemplateExamples(templatesDir = DEFAULT_TEMPLATES_DIR) {
   const examples = [];
@@ -74,13 +81,13 @@ export function loadTemplateExamples(templatesDir = DEFAULT_TEMPLATES_DIR) {
         }
 
         const files = readDirectoryFiles(folderPath);
+        const tags = manifest.tags || [];
+
         examples.push({
           id: manifest.id || `dashboard-scaffold-${folder.name}`,
           title: manifest.title || `Scaffold for ${folder.name}`,
           category: "dashboard-scaffold",
-          dataType: manifest.dataType || "all",
-          features: manifest.features || ["scaffold", folder.name],
-          tags: manifest.tags || ["scaffold", folder.name],
+          tags,
           description: manifest.description || "",
           targetContext: manifest.targetContext || "",
           code: files,
@@ -100,17 +107,18 @@ export function loadTemplateExamples(templatesDir = DEFAULT_TEMPLATES_DIR) {
         const doc = parseHeaderMetadata(content);
         const baseName = path.basename(file.name, ".js");
 
+        const tags = doc.tags
+          ? doc.tags
+              .split(",")
+              .map((s) => s.trim())
+              .filter(Boolean)
+          : [];
+
         examples.push({
           id: doc.id || `dashboard-config-${baseName}`,
           title: doc.title || baseName,
           category: "dashboard-config",
-          dataType: "all",
-          features: doc.features
-            ? doc.features.split(",").map((s) => s.trim())
-            : ["config"],
-          tags: doc.tags
-            ? doc.tags.split(",").map((s) => s.trim())
-            : ["config", baseName],
+          tags,
           description: doc.description || "",
           targetContext:
             "Place into src/main.js or config.js in an eodash application.",

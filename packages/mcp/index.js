@@ -7,7 +7,6 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { getMetadata } from "./helpers.js";
 import { registerWidgetTools } from "./tools/widgets.js";
 import { registerArchitectureTools } from "./tools/architecture.js";
-import { registerGeneratorTools } from "./tools/generators.js";
 import { registerDiscoveryTools } from "./tools/discovery.js";
 import { createExpressApp as createExpressAppInternal } from "./server.js";
 
@@ -40,7 +39,6 @@ export function createMcpServer() {
 
   registerWidgetTools(server, widgetsData);
   registerArchitectureTools(server, architectureData);
-  registerGeneratorTools(server);
   registerDiscoveryTools(server);
 
   return server;

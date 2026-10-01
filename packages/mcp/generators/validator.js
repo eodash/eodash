@@ -65,19 +65,12 @@ export async function validateCatalogConfig({
   let resolvedType = rawType;
 
   if (rawType === "auto") {
-    if (
-      parsed.Indicators ||
-      (parsed.Name && Array.isArray(parsed.Collections))
-    ) {
+    if (Array.isArray(parsed.Collections)) {
       resolvedType = "indicator";
     } else {
       resolvedType = "collection";
     }
-  } else if (
-    rawType === "indicator" ||
-    rawType === "catalog-indicator" ||
-    rawType === "catalog_indicator"
-  ) {
+  } else if (rawType === "indicator") {
     resolvedType = "indicator";
   } else {
     resolvedType = "collection";
@@ -86,8 +79,7 @@ export async function validateCatalogConfig({
   const { validateCatalogCollection, validateCatalogIndicator, usedFallback } =
     await getValidators();
 
-  const isIndicator =
-    resolvedType === "indicator" || resolvedType === "catalog-indicator";
+  const isIndicator = resolvedType === "indicator";
   const validator = isIndicator
     ? validateCatalogIndicator
     : validateCatalogCollection;

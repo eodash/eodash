@@ -2,14 +2,6 @@ import { describe, it, expect } from "vitest";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { createMcpServer } from "../index.js";
-import {
-  generateVectorFlatStyle,
-  generateRasterWebglStyle,
-  generateRasterForm,
-  generateLayerStyle,
-  fetchColormaps,
-  getColormapRamp,
-} from "../generators/style.js";
 import { findExamples, getExamples } from "../generators/examples.js";
 import { generateLandingPage } from "../helpers.js";
 
@@ -28,412 +20,8 @@ async function createTestClientServer() {
   return { server, client };
 }
 
-describe("eodash Style Generator - Colormaps Fetching", () => {
-  it("fetches or falls back to valid colormaps dictionary", async () => {
-    const colormaps = await fetchColormaps();
-    expect(colormaps).toBeDefined();
-    expect(typeof colormaps).toBe("object");
-    expect(colormaps.viridis).toBeDefined();
-    expect(Array.isArray(colormaps.viridis)).toBe(true);
-  });
-
-  it("retrieves specific colormap ramp", async () => {
-    const ramp = await getColormapRamp("magma");
-    expect(ramp).toBeDefined();
-    expect(ramp.length).toBeGreaterThan(0);
-    expect(ramp[0].startsWith("#")).toBe(true);
-  });
-
-  it("falls back gracefully for unknown colormap name", async () => {
-    const ramp = await getColormapRamp("non_existent_colormap_xyz");
-    expect(ramp).toBeDefined();
-    expect(ramp.length).toBeGreaterThan(0);
-    expect(ramp[0].startsWith("#")).toBe(true);
-  });
-});
-
-describe("eodash Style Generator - generateVectorFlatStyle", () => {
-  it("generates single mode polygon flatstyle with tooltips", () => {
-    const res = generateVectorFlatStyle({
-      geometryType: "polygon",
-      mode: "single",
-      fillColor: "rgba(0, 113, 194, 0.5)",
-      strokeColor: "#000000",
-      strokeWidth: 2,
-      tooltipFields: [
-        { id: "name", title: "Country Name" },
-        { id: "pop", title: "Population", decimals: 0, appendix: " people" },
-      ],
-    });
-
-    expect(res["fill-color"]).toBe("rgba(0, 113, 194, 0.5)");
-    expect(res["stroke-color"]).toBe("#000000");
-    expect(res["stroke-width"]).toBe(2);
-    expect(res.legend.scaleType).toBe("categorical");
-    expect(res.tooltip).toHaveLength(2);
-    expect(res.tooltip[0].id).toBe("name");
-    expect(res.tooltip[1].appendix).toBe(" people");
-    expect(res.tooltip[1].decimals).toBe(0);
-  });
-
-  it("generates line geometry single mode flatstyle", () => {
-    const res = generateVectorFlatStyle({
-      geometryType: "line",
-      mode: "single",
-      strokeColor: "#ff5500",
-      strokeWidth: 3,
-    });
-
-    expect(res["stroke-color"]).toBe("#ff5500");
-    expect(res["stroke-width"]).toBe(3);
-    expect(res["fill-color"]).toBeUndefined();
-    expect(res.legend.scaleType).toBe("categorical");
-  });
-
-  it("generates categorical mode point flatstyle with match expression and legend", () => {
-    const res = generateVectorFlatStyle({
-      geometryType: "point",
-      mode: "categorical",
-      attribute: "status",
-      categories: [
-        { value: "active", label: "Active", color: "#00ff00" },
-        { value: "inactive", label: "Inactive", color: "#ff0000" },
-      ],
-      pointRadius: 8,
-    });
-
-    expect(res["circle-radius"]).toBe(8);
-    expect(res["circle-fill-color"]).toEqual([
-      "match",
-      ["get", "status"],
-      "active",
-      "#00ff00",
-      "inactive",
-      "#ff0000",
-      "rgba(128, 128, 128, 0.5)",
-    ]);
-    expect(res.legend.domain).toEqual(["Active", "Inactive"]);
-    expect(res.legend.range).toEqual(["#00ff00", "#ff0000"]);
-  });
-
-  it("generates categorical mode with default categories if none provided", () => {
-    const res = generateVectorFlatStyle({
-      geometryType: "line",
-      mode: "categorical",
-      attribute: "highway",
-    });
-
-    expect(res["stroke-color"][0]).toBe("match");
-    expect(res["stroke-color"][1]).toEqual(["get", "highway"]);
-    expect(res.legend.domain).toContain("Category A");
-  });
-
-  it("generates continuous mode polygon flatstyle with linear interpolate expression", () => {
-    const res = generateVectorFlatStyle({
-      geometryType: "polygon",
-      mode: "continuous",
-      attribute: "pm25",
-      colors: ["#00ff00", "#ffff00", "#ff0000"],
-      range: [0, 100],
-    });
-
-    expect(res["fill-color"][0]).toBe("interpolate");
-    expect(res["fill-color"][1]).toEqual(["linear"]);
-    expect(res["fill-color"][2]).toEqual(["get", "pm25"]);
-    expect(res.legend.type).toBeUndefined();
-    expect(res.legend.scaleType).toBe("continuous");
-    expect(res.legend.domain).toEqual([0, 100]);
-  });
-
-  it("generates continuous mode with colormap name without explicit colors", () => {
-    const res = generateVectorFlatStyle({
-      geometryType: "polygon",
-      mode: "continuous",
-      attribute: "pm25",
-      colormap: "magma",
-      range: [0, 100],
-    });
-
-    expect(res["fill-color"][0]).toBe("interpolate");
-    expect(res.legend.range.length).toBeGreaterThanOrEqual(8);
-  });
-
-  it("generates continuous mode point flatstyle", () => {
-    const res = generateVectorFlatStyle({
-      geometryType: "point",
-      mode: "continuous",
-      attribute: "temperature",
-      range: [-10, 40],
-      pointRadius: 5,
-    });
-
-    expect(res["circle-radius"]).toBe(5);
-    expect(res["circle-fill-color"][0]).toBe("interpolate");
-    expect(res.legend.scaleType).toBe("continuous");
-    expect(res.legend.domain).toEqual([-10, 40]);
-  });
-
-  it("generates interactive sliders jsonform for strokeWidth and excludes opacity (eodash covers opacity automatically)", () => {
-    const res = generateVectorFlatStyle({
-      geometryType: "line",
-      mode: "single",
-      strokeColor: "#ff0000",
-      interactiveSliders: true,
-    });
-
-    expect(res.variables.strokeWidth).toBeDefined();
-    expect(res.variables.opacity).toBeUndefined();
-    expect(res["stroke-width"]).toEqual(["var", "strokeWidth"]);
-    expect(res.jsonform.properties.strokeWidth.format).toBe("range");
-    expect(res.jsonform.properties.opacity).toBeUndefined();
-  });
-});
-
-describe("eodash Style Generator - generateRasterWebglStyle", () => {
-  it("generates single-band normalized COG shader with minmax sliders", async () => {
-    const res = await generateRasterWebglStyle({
-      mode: "single-band-normalized",
-      bands: [1],
-      min: 0,
-      max: 500,
-      colormap: "magma",
-      interactiveMinMax: true,
-    });
-
-    expect(res.variables.min).toBe(0);
-    expect(res.variables.max).toBe(500);
-    expect(res.color[0]).toBe("case");
-    expect(res.legend.domainProperties).toEqual(["min", "max"]);
-    expect(res.legend.range.length).toBeGreaterThanOrEqual(8);
-    expect(res.legend.range[0].startsWith("#")).toBe(true);
-    expect(res.jsonform.properties.minmax.format).toBe("minmax");
-    expect(
-      res.jsonform.properties.minmax.properties.min.maximum,
-    ).toBeUndefined();
-    expect(
-      res.jsonform.properties.minmax.properties.max.minimum,
-    ).toBeUndefined();
-  });
-
-  it("generates static single-band normalized COG shader without interactive sliders", async () => {
-    const res = await generateRasterWebglStyle({
-      mode: "single-band-normalized",
-      bands: [2],
-      min: 100,
-      max: 2000,
-      interactiveMinMax: false,
-    });
-
-    expect(res.variables).toBeUndefined();
-    expect(res.jsonform).toBeUndefined();
-    expect(res.legend.domain).toEqual([100, 2000]);
-  });
-
-  it("generates RGB composite COG shader with band divisor variable", async () => {
-    const res = await generateRasterWebglStyle({
-      mode: "rgb-composite",
-      bands: [4, 3, 2],
-      max: 4000,
-    });
-
-    expect(res.variables.bandDivisor).toBe(4000);
-    expect(res.color[0]).toBe("case");
-    expect(res.color[3][0]).toBe("array");
-    expect(res.jsonform.properties.bandDivisor.default).toBe(4000);
-  });
-
-  it("generates normalized difference index COG shader", async () => {
-    const res = await generateRasterWebglStyle({
-      mode: "band-ratio-index",
-      bands: [8, 4],
-      colormap: "algae",
-    });
-
-    expect(res.color[0]).toBe("case");
-    expect(res.legend.domain).toEqual([-1, 1]);
-    expect(res.legend.range.length).toBeGreaterThanOrEqual(8);
-    expect(res.legend.range[0].startsWith("#")).toBe(true);
-  });
-
-  it("supports custom color array overriding preset colormap", async () => {
-    const customColors = ["#000000", "#112233", "#ffffff"];
-    const res = await generateRasterWebglStyle({
-      mode: "single-band-normalized",
-      customColors,
-      interactiveMinMax: false,
-    });
-
-    expect(res.legend.range).toEqual(customColors);
-  });
-});
-
-describe("eodash Style Generator - generateRasterForm", () => {
-  it("generates single asset TiTiler rasterform with rescale template and removeProperties", () => {
-    const res = generateRasterForm({
-      _serviceType: "titiler",
-      defaultColormap: "spectral",
-      min: 0,
-      max: 2000,
-      hasRescale: true,
-    });
-
-    expect(res.legend.rangeProperty).toBe("colormap_name");
-    expect(res.legend.domainProperties).toEqual(["min", "max"]);
-    expect(res.jsonform.options.removeProperties).toEqual(["minmax"]);
-    expect(res.jsonform.properties.colormap_name.default).toBe("spectral");
-    expect(res.jsonform.properties.rescale.template).toBe(
-      "{{minmax.min}},{{minmax.max}}",
-    );
-    // Dynamic 1.5x slider bounds check
-    expect(res.jsonform.properties.minmax.properties.min.default).toBe(0);
-    expect(res.jsonform.properties.minmax.properties.max.default).toBe(2000);
-    expect(
-      res.jsonform.properties.minmax.properties.min.maximum,
-    ).toBeUndefined();
-    expect(
-      res.jsonform.properties.minmax.properties.max.minimum,
-    ).toBeUndefined();
-    expect(res.jsonform.properties.minmax.properties.max.maximum).toBe(3000);
-  });
-
-  it("calculates dynamic 1.5x headroom for rasterform slider track (0 to 250 -> maximum 375)", () => {
-    const res = generateRasterForm({
-      min: 0,
-      max: 250,
-      hasRescale: true,
-    });
-
-    expect(res.jsonform.properties.minmax.properties.min.default).toBe(0);
-    expect(res.jsonform.properties.minmax.properties.max.default).toBe(250);
-    expect(res.jsonform.properties.minmax.properties.min.minimum).toBe(0);
-    expect(res.jsonform.properties.minmax.properties.max.maximum).toBe(375);
-    expect(
-      res.jsonform.properties.minmax.properties.min.maximum,
-    ).toBeUndefined();
-    expect(
-      res.jsonform.properties.minmax.properties.max.minimum,
-    ).toBeUndefined();
-  });
-
-  it("generates minimal rasterform without rescale slider", () => {
-    const res = generateRasterForm({
-      _serviceType: "wms",
-      colormaps: ["viridis", "turbo"],
-      hasRescale: false,
-    });
-
-    expect(res.jsonform.properties.rescale).toBeUndefined();
-    expect(res.jsonform.properties.minmax).toBeUndefined();
-    expect(res.jsonform.properties.colormap_name.enum).toEqual([
-      "viridis",
-      "turbo",
-    ]);
-  });
-
-  it("enforces keep_oneof_values: false for multi-asset branching rasterforms", () => {
-    const res = generateRasterForm({
-      _serviceType: "titiler",
-      hasMultiAssetBranching: true,
-      assets: [
-        { id: "visual", title: "RGB True Color" },
-        {
-          id: "ndvi",
-          title: "NDVI Index",
-          defaultMin: -0.2,
-          defaultMax: 0.8,
-        },
-      ],
-    });
-
-    expect(res.jsonform.options.keep_oneof_values).toBe(false);
-    expect(res.jsonform.options.removeProperties).toEqual(["minmax"]);
-    expect(res.jsonform.oneOf).toHaveLength(2);
-    expect(res.jsonform.oneOf[0].title).toBe("RGB True Color");
-    expect(res.jsonform.oneOf[1].title).toBe("NDVI Index");
-    expect(res.jsonform.oneOf[1].properties.minmax.properties.min.default).toBe(
-      -0.2,
-    );
-    expect(res.jsonform.oneOf[1].properties.minmax.properties.max.default).toBe(
-      0.8,
-    );
-  });
-});
-
-describe("eodash Style Generator - generateLayerStyle Router & Docs URLs", () => {
-  it("routes vector-flatstyle and generates full snippets with OpenLayers doc links", async () => {
-    const res = await generateLayerStyle({
-      styleType: "vector-flatstyle",
-      vectorConfig: {
-        geometryType: "polygon",
-        mode: "single",
-        fillColor: "rgba(255, 0, 0, 0.5)",
-      },
-    });
-
-    expect(res.styleType).toBe("vector-flatstyle");
-    expect(res.style["fill-color"]).toBe("rgba(255, 0, 0, 0.5)");
-    expect(res.stacItemSnippet["eox:flatstyle"]).toBeDefined();
-    expect(res.catalogCollectionSnippet.Style).toBeDefined();
-    expect(res.rulesAndBestPractices.length).toBeGreaterThan(0);
-    expect(
-      res.rulesAndBestPractices.some((r) =>
-        r.includes(
-          "https://openlayers.org/en/latest/apidoc/module-ol_style_flat.html",
-        ),
-      ),
-    ).toBe(true);
-  });
-
-  it("routes raster-flatstyle (and raster-webgl-flatstyle) with OpenLayers doc links", async () => {
-    const res = await generateLayerStyle({
-      styleType: "raster-flatstyle",
-      rasterConfig: {
-        mode: "single-band-normalized",
-        min: 10,
-        max: 90,
-      },
-    });
-
-    expect(res.styleType).toBe("raster-flatstyle");
-    expect(res.style.variables.min).toBe(10);
-    expect(res.style.variables.max).toBe(90);
-    expect(res.stacItemSnippet["eox:flatstyle"]).toBeDefined();
-    expect(res.catalogCollectionSnippet.Resources[0].Style).toBeDefined();
-    expect(
-      res.rulesAndBestPractices.some((r) =>
-        r.includes(
-          "https://openlayers.org/en/latest/apidoc/module-ol_style_expressions.html",
-        ),
-      ),
-    ).toBe(true);
-  });
-
-  it("routes rasterform and generates full snippets with rules", async () => {
-    const res = await generateLayerStyle({
-      styleType: "rasterform",
-      rasterformConfig: {
-        serviceType: "titiler",
-        min: 0,
-        max: 500,
-      },
-    });
-
-    expect(res.styleType).toBe("rasterform");
-    expect(res.style.jsonform.properties.minmax).toBeDefined();
-    expect(res.stacItemSnippet["eodash:rasterform"]).toBeDefined();
-    expect(res.catalogCollectionSnippet.Resources[0].EndPoint).toContain(
-      "rescale",
-    );
-    expect(
-      res.rulesAndBestPractices.some((r) =>
-        r.includes("https://github.com/json-editor/json-editor"),
-      ),
-    ).toBe(true);
-  });
-});
-
-describe("eodash Landing Page HTML Generator", () => {
-  it("renders landing page with dynamic tools list and statistics", () => {
+describe("eodash HTML Landing Page Generator", () => {
+  it("renders landing page with custom tool descriptions and templates", () => {
     const tools = [
       { name: "tool_a", description: "Alpha tool" },
       { name: "tool_b", description: "Beta tool" },
@@ -453,7 +41,6 @@ describe("eodash Landing Page HTML Generator", () => {
 
   it("renders default tool cards when no tools provided in options", () => {
     const html = generateLandingPage({ EodashMap: { name: "EodashMap" } }, {});
-    expect(html).toContain("generate_layer_style");
     expect(html).toContain("find_examples");
     expect(html).toContain("list_widgets");
   });
@@ -471,28 +58,46 @@ describe("eodash Examples Discovery - findExamples", () => {
     expect(res.results[0].category).toBe("rasterform");
   });
 
+  it("searches examples by code content and handles multi-term query fallback", () => {
+    // Multi-term fallback test
+    const multiRes = findExamples({
+      query: "grouped dropdown scenario",
+      category: "chart-vega",
+    });
+    expect(multiRes.totalFound).toBeGreaterThan(0);
+    expect(multiRes.results[0].id).toBe("chart-vega-scenario-grouped-bar");
+
+    // Code payload search (e.g. searching specific Vega schema URL or transform key)
+    const codeRes = findExamples({
+      query: "air_eepot_chart",
+      category: "chart-vega",
+    });
+    expect(codeRes.totalFound).toBeGreaterThan(0);
+    expect(codeRes.results[0].id).toBe("chart-vega-scenario-grouped-bar");
+  });
+
   it("filters examples by category", () => {
-    const res = findExamples({ category: "catalog-collection" });
+    const res = findExamples({ category: "collection" });
     expect(res.totalFound).toBeGreaterThan(0);
     for (const ex of res.results) {
-      expect(ex.category).toBe("catalog-collection");
+      expect(ex.category).toBe("collection");
     }
   });
 
-  it("filters examples by dataType (e.g. cog, vector, wmts)", () => {
-    const cogRes = findExamples({ dataType: "cog" });
+  it("filters examples by tags (e.g. cog, vector, wmts)", () => {
+    const cogRes = findExamples({ query: "cog" });
     expect(cogRes.totalFound).toBeGreaterThan(0);
-    expect(cogRes.results.every((r) => r.dataType === "cog")).toBe(true);
+    expect(cogRes.results.every((r) => r.tags.includes("cog"))).toBe(true);
 
-    const vecRes = findExamples({ dataType: "vector" });
+    const vecRes = findExamples({ query: "vector" });
     expect(vecRes.totalFound).toBeGreaterThan(0);
-    expect(vecRes.results.every((r) => r.dataType === "vector")).toBe(true);
+    expect(vecRes.results.every((r) => r.tags.includes("vector"))).toBe(true);
   });
 
-  it("filters examples by feature tag", () => {
-    const res = findExamples({ feature: "bounding-box" });
+  it("filters examples by capability tag", () => {
+    const res = findExamples({ query: "bounding-box" });
     expect(res.totalFound).toBeGreaterThan(0);
-    expect(res.results.some((ex) => ex.features.includes("bounding-box"))).toBe(
+    expect(res.results.some((ex) => ex.tags.includes("bounding-box"))).toBe(
       true,
     );
   });
@@ -512,126 +117,124 @@ describe("eodash Examples Discovery - findExamples", () => {
     expect(res.totalFound).toBe(0);
     expect(res.results).toEqual([]);
   });
+
+  it("find_examples correctly enforces text query filtering and accurate totalFound", () => {
+    const noMatch = findExamples({
+      category: "vector-style",
+      query: "nonexistentkeywordxyz123",
+    });
+    expect(noMatch.results.length).toBe(0);
+    expect(noMatch.totalFound).toBe(0);
+
+    const match = findExamples({
+      limit: 1,
+    });
+    expect(match.results.length).toBe(1);
+    expect(match.totalFound).toBeGreaterThan(1);
+  });
+
+  it("finds Vega chart examples in find_examples catalog", () => {
+    const res = findExamples({
+      category: "chart-vega",
+    });
+
+    expect(res.results.length).toBeGreaterThanOrEqual(2);
+    const ids = res.results.map((r) => r.id);
+    expect(ids).toContain("chart-vega-timeseries-uncertainty");
+    expect(ids).toContain("chart-vega-scenario-grouped-bar");
+
+    for (const item of res.results) {
+      expect(item.category).toBe("chart-vega");
+      expect(typeof item.code).toBe("object");
+      expect(item.code.$schema).toBeDefined();
+    }
+  });
+
+  it("finds process POST body examples in find_examples catalog", () => {
+    const res = findExamples({
+      category: "process-body",
+    });
+
+    expect(res.results.length).toBe(2);
+    const ids = res.results.map((r) => r.id);
+    expect(ids).toContain("process-body-polarwarp-bbox-date");
+    expect(ids).toContain("process-body-structureicing-daterange-model");
+
+    for (const item of res.results) {
+      expect(item.category).toBe("process-body");
+      expect(item.code.inputs).toBeDefined();
+    }
+  });
 });
 
-describe("eodash MCP Tools via Client - generate_layer_style & find_examples", () => {
-  it("calls generate_layer_style via MCP client for vector-flatstyle", async () => {
-    const { client } = await createTestClientServer();
-    const result = await client.callTool({
-      name: "generate_layer_style",
-      arguments: {
-        styleType: "vector-flatstyle",
-        vectorConfig: {
-          geometryType: "polygon",
-          mode: "categorical",
-          attribute: "risk_level",
-          categories: [
-            { value: "low", label: "Low Risk", color: "#00ff00" },
-            { value: "high", label: "High Risk", color: "#ff0000" },
-          ],
-        },
-      },
-    });
-
-    const parsed = JSON.parse(result.content[0].text);
-    expect(parsed.styleType).toBe("vector-flatstyle");
-    expect(parsed.style["fill-color"]).toBeDefined();
-    expect(parsed.stacItemSnippet["eox:flatstyle"]).toBeDefined();
-    expect(parsed.catalogCollectionSnippet.Style).toBeDefined();
-    expect(parsed.rulesAndBestPractices).toBeInstanceOf(Array);
-  });
-
-  it("calls generate_layer_style via MCP client for raster-webgl-flatstyle", async () => {
-    const { client } = await createTestClientServer();
-    const result = await client.callTool({
-      name: "generate_layer_style",
-      arguments: {
-        styleType: "raster-webgl-flatstyle",
-        rasterWebglConfig: {
-          mode: "single-band-normalized",
-          bands: [1],
-          min: 0,
-          max: 1000,
-        },
-      },
-    });
-
-    const parsed = JSON.parse(result.content[0].text);
-    expect(parsed.styleType).toBe("raster-webgl-flatstyle");
-    expect(parsed.style.color).toBeDefined();
-    expect(parsed.stacItemSnippet["eox:flatstyle"]).toBeDefined();
-  });
-
-  it("calls generate_layer_style via MCP client for rasterform", async () => {
-    const { client } = await createTestClientServer();
-    const result = await client.callTool({
-      name: "generate_layer_style",
-      arguments: {
-        styleType: "rasterform",
-        rasterformConfig: {
-          serviceType: "titiler",
-          min: 10,
-          max: 200,
-        },
-      },
-    });
-
-    const parsed = JSON.parse(result.content[0].text);
-    expect(parsed.styleType).toBe("rasterform");
-    expect(parsed.style.jsonform).toBeDefined();
-    expect(parsed.stacItemSnippet["eodash:rasterform"]).toBeDefined();
-  });
-
+describe("eodash MCP Tools via Client - Discovery & Introspection", () => {
   it("calls find_examples via MCP client with keyword and category", async () => {
     const { client } = await createTestClientServer();
     const result = await client.callTool({
       name: "find_examples",
       arguments: {
         query: "ice charts match",
-        category: "vector-flatstyle",
+        category: "vector-style",
       },
     });
 
     const parsed = JSON.parse(result.content[0].text);
     expect(parsed.totalFound).toBeGreaterThan(0);
-    expect(parsed.results[0].id).toBe(
-      "vector-flatstyle-ice-charts-categorical",
-    );
+    expect(parsed.results[0].id).toBe("vector-style-ice-charts-categorical");
   });
 
-  it("calls find_examples via MCP client with dataType filter", async () => {
+  it("calls find_examples via MCP client with keyword query", async () => {
     const { client } = await createTestClientServer();
     const result = await client.callTool({
       name: "find_examples",
       arguments: {
-        dataType: "cog",
+        query: "cog",
       },
     });
 
     const parsed = JSON.parse(result.content[0].text);
     expect(parsed.totalFound).toBeGreaterThan(0);
-    expect(parsed.results[0].dataType).toBe("cog");
+    expect(parsed.results[0].tags).toContain("cog");
   });
 
-  it("calls generate_layer_style with parameter aliases (rasterConfig & colormap)", async () => {
+  it("handles fuzzy search queries with typos and variations via Fuse.js", async () => {
     const { client } = await createTestClientServer();
-    const result = await client.callTool({
-      name: "generate_layer_style",
+
+    // Typo in "uncertainty" and "timeseries"
+    const resultTypo = await client.callTool({
+      name: "find_examples",
       arguments: {
-        styleType: "raster-webgl-flatstyle",
-        rasterConfig: {
-          mode: "single-band",
-          bandIndex: 1,
-          range: [-2, 35],
-          colormap: "magma",
-        },
+        query: "timeseries uncerainty",
+        category: "chart-vega",
       },
     });
+    const parsedTypo = JSON.parse(resultTypo.content[0].text);
+    expect(parsedTypo.totalFound).toBeGreaterThan(0);
+    expect(parsedTypo.results[0].id).toBe("chart-vega-timeseries-uncertainty");
 
-    const parsed = JSON.parse(result.content[0].text);
-    expect(parsed.styleType).toBe("raster-webgl-flatstyle");
-    expect(parsed.style.variables.min).toBe(-2);
-    expect(parsed.style.variables.max).toBe(35);
+    // Typo in "titiler"
+    const resultTitiler = await client.callTool({
+      name: "find_examples",
+      arguments: {
+        query: "titler",
+      },
+    });
+    const parsedTitiler = JSON.parse(resultTitiler.content[0].text);
+    expect(parsedTitiler.totalFound).toBeGreaterThan(0);
+    expect(parsedTitiler.results.some((r) => r.tags.includes("titiler"))).toBe(
+      true,
+    );
+
+    // Unrelated query returns empty
+    const resultEmpty = await client.callTool({
+      name: "find_examples",
+      arguments: {
+        query: "zzxxqqnonexistentterm12345",
+      },
+    });
+    const parsedEmpty = JSON.parse(resultEmpty.content[0].text);
+    expect(parsedEmpty.totalFound).toBe(0);
+    expect(parsedEmpty.results).toEqual([]);
   });
 
   it("calls list_widgets with tag and search filter", async () => {
@@ -667,58 +270,10 @@ describe("eodash MCP Tools via Client - generate_layer_style & find_examples", (
     expect(widget.name).toBe("EodashMap");
     const btnsProp = widget.props.find((p) => p.name === "btns");
     expect(btnsProp).toBeDefined();
-    // In CI, full structured schema might be missing if dist/typedoc.json is not generated
-    // or if only SFC extraction is used. This test ensures it's consistently present.
     expect(btnsProp.schema).toBeDefined();
     expect(btnsProp.schema.type).toBe("object");
     if (btnsProp.schema.properties) {
       expect(btnsProp.schema.properties.enableExportMap).toBeDefined();
     }
-  });
-
-  it("handles edge cases in raster styling: min === max and single-color palette", async () => {
-    const resEqual = await generateRasterWebglStyle({
-      vmin: 10,
-      vmax: 10,
-      interactiveMinMax: false,
-    });
-    expect(resEqual.color).toBeDefined();
-
-    const resSingleColor = await generateRasterWebglStyle({
-      customColors: ["#ff0000"],
-      interactiveMinMax: false,
-    });
-    expect(resSingleColor.color).toBeDefined();
-  });
-
-  it("handles edge cases in vector styling: category without color and single color continuous", async () => {
-    const resCat = generateVectorFlatStyle({
-      mode: "categorical",
-      categories: [{ value: "A" }],
-    });
-    expect(resCat["fill-color"]).toBeDefined();
-
-    const resCont = generateVectorFlatStyle({
-      mode: "continuous",
-      colors: ["#ff0000"],
-      min: 10,
-      max: 10,
-    });
-    expect(resCont["fill-color"]).toBeDefined();
-  });
-
-  it("find_examples correctly enforces text query filtering and accurate totalFound", async () => {
-    const noMatch = await findExamples({
-      category: "vector-flatstyle",
-      query: "nonexistentkeywordxyz123",
-    });
-    expect(noMatch.results.length).toBe(0);
-    expect(noMatch.totalFound).toBe(0);
-
-    const match = await findExamples({
-      limit: 1,
-    });
-    expect(match.results.length).toBe(1);
-    expect(match.totalFound).toBeGreaterThan(1);
   });
 });
