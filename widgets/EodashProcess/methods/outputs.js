@@ -418,6 +418,8 @@ export async function processVector(links, jsonformValue, layerId) {
       layerConfig = extracted.layerConfig;
       style = extracted.style;
     }
+    // Prefer existing title, fall back to auto generated
+    const title = link.title ? link.title : `Results ${layerId}`;
     /** @type {import("@eox/map").EoxLayer} */
     const layer = /** @type {any} */ ({
       type: "Vector",
@@ -430,7 +432,7 @@ export async function processVector(links, jsonformValue, layerId) {
       },
       properties: {
         id: link.id + "_process",
-        title: "Results " + layerId,
+        title,
         ...(layerConfig && { ...layerConfig }),
       },
       ...(style && { style }),

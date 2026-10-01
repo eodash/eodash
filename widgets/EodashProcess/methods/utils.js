@@ -89,6 +89,8 @@ export async function createTiffLayerDefinition(
   }
   // We want to make sure the urls are alphabetically sorted
   urls = urls.sort();
+  // Prefer existing title, fall back to auto generated
+  const title = link.title ? link.title : `Results ${layerId}`;
   const layerdef =
     urls.length > 0
       ? /** @type {import("@eox/map/src/layers").EOxLayerType<"WebGLTile","GeoTIFF">} */ ({
@@ -100,7 +102,7 @@ export async function createTiffLayerDefinition(
           },
           properties: {
             id: link.id + "_process" + processId,
-            title: "Results " + layerId,
+            title,
             ...(layerConfig && { layerConfig: layerConfig }),
             layerControlToolsExpand: true,
           },
