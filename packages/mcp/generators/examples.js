@@ -6,21 +6,36 @@ import { loadTemplateExamples } from "./template-loader.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const EXAMPLES_DIR = path.resolve(__dirname, "../data/examples");
 
 let cachedExamples = null;
 
 /**
- * Load examples registry from data/examples.json and file-backed templates
+ * Load examples registry from data/examples/*.json category files and file-backed templates
+ * @returns {Array<{ id: string, title: string, category: string, tags: string[], description: string, targetContext: string, code: any }>}
  */
 export function getExamples() {
   if (cachedExamples) return cachedExamples;
-  const filePath = path.join(__dirname, "../data/examples.json");
-  let jsonExamples = [];
-  try {
-    const raw = fs.readFileSync(filePath, "utf8");
-    jsonExamples = JSON.parse(raw);
-  } catch (err) {
-    console.error("Failed to load examples registry:", err);
+
+  const jsonExamples = [];
+  if (fs.existsSync(EXAMPLES_DIR)) {
+    const files = fs
+      .readdirSync(EXAMPLES_DIR)
+      .filter((f) => f.endsWith(".json"));
+    for (const file of files) {
+      const filePath = path.join(EXAMPLES_DIR, file);
+      try {
+        const raw = fs.readFileSync(filePath, "utf8");
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) {
+          jsonExamples.push(...parsed);
+        } else if (parsed && typeof parsed === "object") {
+          jsonExamples.push(parsed);
+        }
+      } catch (err) {
+        console.error(`Failed to load category examples from ${file}:`, err);
+      }
+    }
   }
 
   const templateExamples = loadTemplateExamples();
@@ -42,6 +57,7 @@ const FUSE_OPTIONS = {
 
 /**
  * Search and retrieve curated eodash configuration snippets using Fuse.js
+ * @param {{ query?: string, category?: string, limit?: number }} [options]
  */
 export function findExamples({ query, category, limit = 5 } = {}) {
   const allExamples = getExamples();

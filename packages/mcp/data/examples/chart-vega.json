@@ -1,0 +1,305 @@
+[
+  {
+    "id": "chart-vega-scenario-grouped-bar",
+    "title": "Interactive Multi-Scenario Grouped Bar Chart with Dropdown Parameter Binding",
+    "category": "chart-vega",
+    "tags": [
+      "vega-lite",
+      "vega",
+      "chart",
+      "grouped-bar",
+      "scenario",
+      "dropdown-binding",
+      "eodash:vegadefinition",
+      "dropdown-params",
+      "fold-transform",
+      "grouped-bars",
+      "label-expression",
+      "timeseries"
+    ],
+    "description": "Interactive Vega-Lite v5 grouped bar chart with UI dropdown select controls (Metric, Climate Scenario), column folding, regex filtering, dynamic axis label expressions, and multi-feature xOffset grouping.",
+    "targetContext": "Host as JSON on assets endpoint, reference in STAC Collection with 'eodash:vegadefinition'.",
+    "code": {
+      "width": "container",
+      "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+      "data": {
+        "name": "air_eepot_chart"
+      },
+      "params": [
+        {
+          "name": "prefix",
+          "value": "e",
+          "bind": {
+            "input": "select",
+            "options": ["e", "c", "lcoe"],
+            "labels": [
+              "Energy [GWh]",
+              "Capacity [MW]",
+              "Levelized Cost [EUR/MWh]"
+            ],
+            "name": "Metric: "
+          }
+        },
+        {
+          "name": "suffix",
+          "value": "wocc",
+          "bind": {
+            "input": "select",
+            "options": ["wocc", "mocc", "stcc"],
+            "labels": [
+              "Without Climate Change",
+              "Medium Change",
+              "Strong Change"
+            ],
+            "name": "Climate Scenario: "
+          }
+        },
+        {
+          "name": "grid",
+          "select": "interval",
+          "bind": "scales"
+        }
+      ],
+      "transform": [
+        {
+          "calculate": "datum.id",
+          "as": "feature_id"
+        },
+        {
+          "calculate": "datum.name",
+          "as": "feature_name"
+        },
+        {
+          "fold": [
+            "e_2030_high_wocc",
+            "e_2030_low_wocc",
+            "e_current",
+            "c_2030_high_wocc",
+            "c_2030_low_wocc",
+            "c_current",
+            "lcoe_2030_high_wocc",
+            "lcoe_2030_low_wocc"
+          ],
+          "as": ["metric", "value"]
+        },
+        {
+          "filter": "test('^' + prefix + '_', datum.metric)"
+        },
+        {
+          "filter": "test('_' + suffix + '$', datum.metric) || indexof(['c_current', 'e_current'], datum.metric) >= 0"
+        }
+      ],
+      "mark": {
+        "type": "bar"
+      },
+      "encoding": {
+        "x": {
+          "field": "metric",
+          "type": "nominal",
+          "axis": {
+            "labelAngle": -45,
+            "title": "",
+            "labelExpr": "replace(replace(replace(datum.label, 'e_', ''), 'c_', ''), '_wocc', '')"
+          }
+        },
+        "xOffset": {
+          "field": "feature_id",
+          "type": "nominal"
+        },
+        "y": {
+          "field": "value",
+          "type": "quantitative",
+          "axis": {
+            "title": "Value"
+          }
+        },
+        "color": {
+          "field": "feature_name",
+          "type": "nominal",
+          "title": "Region"
+        },
+        "tooltip": [
+          {
+            "field": "feature_name",
+            "title": "Region"
+          },
+          {
+            "field": "metric",
+            "title": "Scenario"
+          },
+          {
+            "field": "value",
+            "type": "quantitative",
+            "format": ".1f",
+            "title": "Value"
+          }
+        ]
+      },
+      "background": "transparent"
+    }
+  },
+  {
+    "id": "chart-vega-timeseries-uncertainty",
+    "title": "Time-Series Chart with Uncertainty/Confidence Envelope and Hover Rule",
+    "category": "chart-vega",
+    "tags": [
+      "vega-lite",
+      "vega",
+      "chart",
+      "timeseries",
+      "uncertainty",
+      "hover-rule",
+      "eodash:vegadefinition",
+      "area-band",
+      "hover-tooltip",
+      "pan-zoom",
+      "eox-chart"
+    ],
+    "description": "Multi-layer Vega-Lite v5 time-series specification for EodashChart and EodashProcess. Includes mean line, upper (mean-max) and lower (min-mean) confidence areas, interactive hover pointer rule with formatted tooltips, and grid scale binding for zoom/pan.",
+    "targetContext": "Host as JSON on assets endpoint and reference in STAC Collection with 'eodash:vegadefinition' or in EodashChart widget properties.",
+    "code": {
+      "width": "container",
+      "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+      "data": {
+        "name": "process_eox"
+      },
+      "transform": [
+        {
+          "flatten": ["CHL"],
+          "as": ["data"]
+        },
+        {
+          "filter": "isValid(datum.data.mean)"
+        }
+      ],
+      "encoding": {
+        "x": {
+          "field": "data.datetime",
+          "type": "temporal",
+          "title": "Date"
+        }
+      },
+      "layer": [
+        {
+          "mark": {
+            "type": "area"
+          },
+          "encoding": {
+            "y": {
+              "field": "data.mean",
+              "type": "quantitative"
+            },
+            "y2": {
+              "field": "data.max",
+              "type": "quantitative"
+            },
+            "fill": {
+              "value": "#E1BE6A"
+            },
+            "opacity": {
+              "value": 0.7
+            }
+          }
+        },
+        {
+          "mark": {
+            "type": "line",
+            "filled": false
+          },
+          "encoding": {
+            "y": {
+              "aggregate": "mean",
+              "field": "data.mean",
+              "type": "quantitative",
+              "scale": {
+                "zero": false
+              },
+              "title": "Value"
+            },
+            "color": {
+              "value": "#222222"
+            }
+          }
+        },
+        {
+          "mark": {
+            "type": "area"
+          },
+          "encoding": {
+            "y": {
+              "field": "data.min",
+              "type": "quantitative"
+            },
+            "y2": {
+              "field": "data.mean",
+              "type": "quantitative"
+            },
+            "fill": {
+              "value": "#40B0A6"
+            },
+            "opacity": {
+              "value": 0.5
+            }
+          }
+        },
+        {
+          "mark": "rule",
+          "encoding": {
+            "opacity": {
+              "condition": {
+                "value": 0.4,
+                "param": "hover",
+                "empty": false
+              },
+              "value": 0
+            },
+            "tooltip": [
+              {
+                "field": "data.datetime",
+                "type": "temporal",
+                "format": "%Y-%m-%d %H:%M",
+                "title": "Date"
+              },
+              {
+                "field": "data.mean",
+                "type": "quantitative",
+                "format": ".3f",
+                "title": "Mean"
+              },
+              {
+                "field": "data.min",
+                "type": "quantitative",
+                "format": ".3f",
+                "title": "Min"
+              },
+              {
+                "field": "data.max",
+                "type": "quantitative",
+                "format": ".3f",
+                "title": "Max"
+              }
+            ]
+          },
+          "params": [
+            {
+              "name": "hover",
+              "select": {
+                "type": "point",
+                "fields": ["data.datetime"],
+                "nearest": true,
+                "on": "pointerover",
+                "clear": "pointerout"
+              }
+            },
+            {
+              "name": "grid",
+              "select": "interval",
+              "bind": "scales"
+            }
+          ]
+        }
+      ],
+      "background": "transparent"
+    }
+  }
+]

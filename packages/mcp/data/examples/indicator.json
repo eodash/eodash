@@ -1,0 +1,26 @@
+[
+  {
+    "id": "indicator-multi-collection",
+    "title": "Indicator Definition Grouping Multiple Collections with Filter Metadata",
+    "category": "indicator",
+    "tags": ["indicator", "catalog", "themes", "subcode"],
+    "description": "Indicator grouping several STAC collections with rich filter metadata (subcodes, themes, satellites, sensors, tags) used by EOxItemFilter.",
+    "targetContext": "Place in catalog 'indicators/<indicator-name>.json' for 'eodash_catalog' build.",
+    "code": {
+      "Name": "shipping_traffic_and_routes",
+      "Title": "Maritime Shipping Traffic & Navigation Routes",
+      "Description": "Synthesizes vessel AIS density, optimal route corridors, and ice conditions.",
+      "CollectionGroup": "Navigation",
+      "Themes": ["Maritime", "Economy"],
+      "Tags": ["AIS", "Vessels", "Routes"],
+      "Satellite": ["Sentinel-1", "RADARSAT-Constellation"],
+      "Sensor": ["SAR"],
+      "Thumbnail": "https://assets.example.com/thumbnails/shipping.png",
+      "Collections": [
+        "vessel_density_all",
+        "antarctica_ship_route",
+        "route_optimization"
+      ]
+    }
+  }
+]

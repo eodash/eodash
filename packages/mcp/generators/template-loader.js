@@ -8,6 +8,9 @@ const DEFAULT_TEMPLATES_DIR = path.resolve(__dirname, "../templates");
 
 /**
  * Recursively read directory into a map of { relativePath: utf8Content }
+ * @param {string} dir
+ * @param {string} [baseDir]
+ * @returns {Record<string, string>}
  */
 function readDirectoryFiles(dir, baseDir = dir) {
   const files = {};
@@ -28,6 +31,8 @@ function readDirectoryFiles(dir, baseDir = dir) {
 
 /**
  * Parse metadata from header comments (// @tag value or JSDoc)
+ * @param {string} content
+ * @returns {Record<string, string>}
  */
 function parseHeaderMetadata(content) {
   const meta = {};
@@ -50,6 +55,8 @@ function parseHeaderMetadata(content) {
 
 /**
  * Dynamically load scaffold and config templates from disk
+ * @param {string} [templatesDir]
+ * @returns {Array<{ id: string, title: string, category: string, tags: string[], description: string, targetContext: string, code: any }>}
  */
 export function loadTemplateExamples(templatesDir = DEFAULT_TEMPLATES_DIR) {
   const examples = [];
