@@ -31,11 +31,12 @@ describe("eodash MCP Server - Core Tools", () => {
     expect(instructions).toContain("eodash");
 
     const tools = await client.listTools();
-    expect(tools.tools.length).toBe(6);
+    expect(tools.tools.length).toBe(7);
     const toolNames = tools.tools.map((t) => t.name);
     expect(toolNames).toContain("list_widgets");
     expect(toolNames).toContain("find_examples");
     expect(toolNames).toContain("validate_catalog_config");
+    expect(toolNames).toContain("generate_map_from_stac");
   });
 
   it("list_widgets tool returns all widgets and supports filtering by category", async () => {

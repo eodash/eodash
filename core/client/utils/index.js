@@ -1,7 +1,6 @@
 import log from "loglevel";
 import { collectionsPalette } from "./states";
-import { createEodashCollection } from "@eodash/stac";
-import { extractCollectionUrls } from "@eodash/stac/helpers";
+import { createEodashIndicator } from "@eodash/stac";
 import { axios } from "@/plugins/axios";
 import WebFontLoader from "webfontloader";
 
@@ -172,22 +171,16 @@ export const updateEodashCollections = async (
   isAPI,
   rasterOptions = {},
 ) => {
-  // init eodash collections
-  const collectionUrls = extractCollectionUrls(selectedStac, absoluteUrl);
+  // init eodash collections via indicator reader
+  const indicator = await createEodashIndicator(absoluteUrl, {
+    stac: selectedStac,
+    api: isAPI,
+    client: axios,
+    colorPalette,
+    ...rasterOptions,
+  });
 
-  const collections = await Promise.all(
-    collectionUrls.map((cu, idx) =>
-      createEodashCollection(cu, {
-        api: isAPI,
-        client: axios,
-        color: colorPalette[idx % colorPalette.length],
-        ...(cu === absoluteUrl && { stac: selectedStac }),
-        ...rasterOptions,
-      }),
-    ),
-  );
-
-  eodashCollections.splice(0, eodashCollections.length, ...collections);
+  eodashCollections.splice(0, eodashCollections.length, ...indicator.readers);
 };
 /**
  *

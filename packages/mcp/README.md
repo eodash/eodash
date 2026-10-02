@@ -10,6 +10,7 @@ Provides intelligent assistance, introspection, type-safe widget definitions, la
 - **Curated Examples Discovery**: Query working dashboard examples, Vega / Vega-Lite charts (`chart-vega`), layer styles, process forms, and catalog configs filtered by category, tags, and weighted free-text search via Fuse.js.
 - **Catalog Schema Validation**: Validate EODash catalog collections and indicators against official schemas (`collection-schema.json`, `indicator-schema.json`) and domain rules (enforcing URL strings for `Style`, rejecting `Resources[].Flatstyle`, checking `keep_oneof_values: false` on branching JSON-Editor forms).
 - **Custom Widget Guidance**: Detailed guides and code templates for Web Component (`type: "web-component"`), Functional (`defineWidget: (selectedSTAC) => ...`), and IFrame widgets, including direct integration with `@eox/*` components and the reactive Pinia `eodashStore`.
+- **STAC to EOxMap Generation**: Build complete, ready-to-render `<eox-map>` configurations (layers, center, zoom, projection, datetime, timeControl, legend) directly from STAC Catalogs, Indicators, Collections, or Items with fuzzy search, GeoParquet support, and automatic legend/timeline extraction.
 - **Architecture & Layout Reference**: Detailed explanation of the 12-column responsive grid system, coordinate syntax (`"mobile/tablet/desktop"`), built-in templates (`lite`, `explore`, `expert`, `compare`), reactive state flows, and SPA vs `<eo-dash>` web component deployments.
 
 ## Setup & Running
@@ -70,6 +71,65 @@ Connect to `http://localhost:3001` via Streamable HTTP.
 | `get_eodash_architecture` | Architecture reference covering the 12-column grid, templates, Pinia store states, and deployment modes.                                                   |
 | `find_examples`           | Search and discover working eodash dashboard scaffolds, configs, Vega charts, layer styles, and catalog configs with category and tag filters via Fuse.js. |
 | `validate_catalog_config` | Validate catalog collection and indicator configurations against official eodash schemas and domain rules.                                                 |
+| `generate_map_from_stac`  | Build complete EOxMap layer and view configuration (layers, center, zoom, timeControl, legend) from a STAC catalog, indicator, collection, or item.       |
+
+## STAC Mapping Tool (`generate_map_from_stac`)
+
+The `generate_map_from_stac` tool translates any STAC resource into a complete `<eox-map>` configuration JSON object.
+
+### Capabilities
+- **Document Hierarchy Auto-Inference**: Automatically detects whether the provided STAC resource is a Catalog, Indicator Collection, Data Collection, or standalone STAC Item.
+- **Catalog Navigation & Indicator Selection**:
+  - When a root STAC Catalog is supplied, use `query` (e.g. `'Carbon Dioxide'`, `'NO2'`) to fuzzy-search child indicators by title, subtitle, tags, themes, ID, or description via Fuse.js.
+  - Or supply `collection_id` (e.g. `'N2_CO2_mean'`) to directly target a specific collection.
+- **Diverse Data Backends**: Resolves GeoParquet collection mirrors (`items.parquet`), TiTiler raster COGs, WMS, WMTS, and XYZ tile layers.
+- **Composite Map Assembly**: Automatically bundles default baselayers (Terrain, Cloudless, OSM), data layers, and overlay labels with group tagging and exclusive visibility.
+- **Legend Extraction**: Reads color legend definitions directly from STAC layer styling metadata (`eox:colorlegend`, `layerLegend`, or rasterform/style legend configurations) without URL parsing.
+- **Temporal Aggregation**: Collects available time steps into `timeControl: { availableDates, minDate, maxDate }` for direct use with `EodashTimeSlider`.
+
+### Limitations
+- **No Image Rendering**: Outputs OpenLayers/EOxMap layer definitions; does not download raster tiles or render PNG pixels.
+- **Ambiguity Clarification**: If a catalog query matches multiple indicators closely, the tool returns an error with a structured `candidates` array (`id`, `title`, `description`, `score`) so the caller can clarify with `collection_id`.
+
+### Example Tool Invocation
+
+```json
+{
+  "url": "https://ESA-eodashboards.github.io/eodashboard-catalog/trilateral/catalog.json",
+  "query": "Carbon Dioxide",
+  "datetime": "2017-05-18",
+  "bbox": [90, -10, 140, 20]
+}
+```
+
+### Returned Output Structure
+
+```json
+{
+  "indicator": {
+    "id": "N2_CO2_mean",
+    "title": "Carbon Dioxide from OMI (daily)",
+    "href": "https://.../N2_CO2_mean/collection.json"
+  },
+  "layers": [ ... ],
+  "center": [ 115, 5 ],
+  "zoom": 4,
+  "projection": "EPSG:3857",
+  "datetime": "2017-05-18",
+  "timeControl": {
+    "availableDates": [ "2015-01-01T00:00:00.000Z", ... ],
+    "minDate": "2015-01-01T00:00:00.000Z",
+    "maxDate": "2022-02-13T00:00:00.000Z"
+  },
+  "legend": {
+    "title": "CO2 mean concentration [ppm]",
+    "scaleType": "continuous",
+    "tickFormat": ".5f",
+    "domainProperties": [ "vmin", "vmax" ],
+    "rangeProperty": "colormap_name"
+  }
+}
+```
 
 ## Running Tests
 
@@ -90,7 +150,11 @@ packages/mcp/
 ├── tools/                    # MCP tool registrations & Zod input schemas
 │   ├── widgets.js            # list_widgets, get_widget_details, get_custom_widget_guide
 │   ├── architecture.js       # get_eodash_architecture
-│   └── discovery.js          # find_examples, validate_catalog_config
-├── generators/               # Example discovery and catalog validation engines
+│   ├── discovery.js          # find_examples, validate_catalog_config
+│   └── stac.js               # generate_map_from_stac
+├── generators/               # Example discovery, catalog validation, and STAC map engines
+│   ├── examples.js           # find_examples query engine
+│   ├── validator.js          # validate_catalog_config schema engine
+│   └── stac-map.js           # buildStacMap & STAC catalog inference engine
 └── data/                     # Generated metadata & example JSON artifacts
 ```

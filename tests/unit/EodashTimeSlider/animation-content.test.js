@@ -4,6 +4,7 @@ import { createAnimationLayers } from "^/EodashTimeSlider/methods";
 import { mapEl } from "@/store/states";
 import { eodashCollections } from "@/store/stac";
 import { defaultBaseLayers } from "@/utils/states";
+import { applyVisibilityRoles } from "@eodash/stac/helpers";
 
 // Behavior seams in the transitive layer-helpers chain, not runner workarounds.
 vi.mock("@eox/layercontrol", () => ({
@@ -17,6 +18,11 @@ const stacMock = vi.hoisted(() => ({
   getIndicatorLayers: vi.fn(),
   getObservationPointsLayer: vi.fn(),
   createEodashCollection: vi.fn(),
+  createEodashIndicator: vi.fn(),
+  buildIndicatorDataLayers: vi.fn(),
+  normalizeBaseLayers: vi.fn((base, fallback = []) =>
+    base.length ? base : fallback,
+  ),
   getTooltipProperties: vi.fn(),
 }));
 vi.mock("@eodash/stac", () => stacMock);
@@ -74,6 +80,96 @@ describe("createAnimationLayers - rendered layers", () => {
       .mockReset()
       .mockResolvedValue({ layers: [], projections: [] });
     stacMock.getObservationPointsLayer.mockReset().mockReturnValue(null);
+    stacMock.buildIndicatorDataLayers
+      .mockReset()
+      .mockImplementation(
+        async ({
+          readers,
+          stac,
+          timeOrItem,
+          context,
+          themes,
+          currentLayers,
+        }) => {
+          const isItem =
+            typeof timeOrItem === "object" &&
+            timeOrItem !== null &&
+            !(timeOrItem instanceof Date);
+
+          const readerResults = await Promise.all(
+            readers.map((reader) =>
+              (isItem
+                ? reader.buildLayers(timeOrItem, context)
+                : reader.getLayers(timeOrItem, context)
+              ).then((built) => {
+                built.layers.forEach((layer) => {
+                  if (!layer.properties?.layerControlExclusive) {
+                    layer.properties.layerControlExpand = true;
+                    layer.properties.layerControlToolsExpand = true;
+                  }
+                });
+                return built;
+              }),
+            ),
+          );
+
+          const layers = [];
+          const projections = [];
+          const items = [];
+
+          for (const built of readerResults) {
+            layers.push(...built.layers);
+            projections.push(...built.projections);
+            if (built.item) {
+              items.push(built.item);
+            }
+          }
+
+          applyVisibilityRoles(stac, layers);
+
+          const observationPoints = stacMock.getObservationPointsLayer(
+            readers.map((reader) => reader.stac),
+            { themes, currentLayers },
+          );
+          if (observationPoints) {
+            layers.push(observationPoints);
+          }
+
+          return { layers, projections, items };
+        },
+      );
+
+    stacMock.normalizeBaseLayers
+      .mockReset()
+      .mockImplementation((baseLayers, fallbackBaseLayers = []) => {
+        if (baseLayers.length) {
+          let counter = 0;
+          let lastPos = 0;
+          for (let indx = 0; indx < baseLayers.length; indx++) {
+            const bl = baseLayers[indx];
+            if (!("visible" in bl.properties)) {
+              bl.properties.visible = false;
+            }
+            if (bl.properties.visible) {
+              counter++;
+              lastPos = indx;
+            }
+          }
+          if (counter === 0) {
+            baseLayers[0].properties.visible = true;
+          }
+          if (counter > 0) {
+            baseLayers.forEach((bl, indx) => {
+              bl.properties.visible = indx === lastPos;
+            });
+          }
+          baseLayers.forEach((bl) => {
+            bl.properties.layerControlExclusive = true;
+          });
+          return baseLayers;
+        }
+        return [...fallbackBaseLayers];
+      });
   });
 
   test("wraps a collection's layers into the data group with expand flags", async () => {
