@@ -55,7 +55,7 @@
     <eox-itemfilter
       ref="itemfilter"
       class="itemfilter-scroll"
-      titleProperty="id"
+      .titleProperty="titleProperty"
       .imageProperty="imageProperty"
       .subTitleProperty="subTitleProperty"
       .filterProperties="filterProperties"
@@ -124,6 +124,13 @@ const props = defineProps({
     type: String,
     default: "Explore Catalog",
   },
+  titleProperty: {
+    type: /** @type {import("vue").PropType<import("./types").ItemAccessor>} */ ([
+      String,
+      Function,
+    ]),
+    default: "id",
+  },
   hoverProperties: {
     /** @type {import("vue").PropType<string[]>} */
     type: Array,
@@ -161,8 +168,18 @@ const props = defineProps({
     type: Boolean,
     default: true,
   },
+  subTitleProperty: {
+    type: /** @type {import("vue").PropType<import("./types").ItemAccessor>} */ ([
+      String,
+      Function,
+    ]),
+    default: undefined,
+  },
   imageProperty: {
-    type: String,
+    type: /** @type {import("vue").PropType<import("./types").ItemAccessor>} */ ([
+      String,
+      Function,
+    ]),
     default: "assets.thumbnail.href",
   },
   showTitleBlock: {
@@ -346,7 +363,10 @@ await applyCollections(
 selectedSort.value = sortByOptions.value[0] ?? null;
 updateSortByParam();
 
-const subTitleProperty = createSubtitleProperty(props.filters ?? []);
+const subTitleProperty = createSubtitleProperty(
+  props.subTitleProperty,
+  props.filters ?? [],
+);
 
 const externalFilterHandler = createExternalFilter(
   props.filters ?? [],
