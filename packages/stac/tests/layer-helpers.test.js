@@ -1,5 +1,6 @@
 import { describe, expect, test } from "vitest";
 import {
+  applyVisibilityRoles,
   findLayer,
   findLayersByLayerPrefix,
   getColFromLayer,
@@ -167,6 +168,61 @@ describe("layer helpers", () => {
       ).toBe(false);
       expect(isGeoZarrLayer(layer("a"))).toBe(false);
       expect(isGeoZarrLayer(undefined)).toBe(false);
+    });
+  });
+
+  describe("applyVisibilityRoles", () => {
+    test("applies disable role to ALL matching layers of a collection", () => {
+      const collection = {
+        links: [{ id: "collA", roles: ["disable"] }],
+      };
+      const layers = [
+        {
+          properties: {
+            id: "collA;:;item1;:;layer1",
+            visible: true,
+            layerControlExpand: true,
+          },
+        },
+        {
+          properties: {
+            id: "collA;:;item1;:;layer2",
+            visible: true,
+            layerControlExpand: true,
+          },
+        },
+        {
+          properties: {
+            id: "collB;:;item1;:;layer1",
+            visible: true,
+            layerControlExpand: true,
+          },
+        },
+      ];
+
+      applyVisibilityRoles(collection, layers);
+
+      expect(layers[0].properties.visible).toBe(false);
+      expect(layers[0].properties.layerControlExpand).toBe(false);
+      expect(layers[1].properties.visible).toBe(false);
+      expect(layers[1].properties.layerControlExpand).toBe(false);
+      expect(layers[2].properties.visible).toBe(true);
+      expect(layers[2].properties.layerControlExpand).toBe(true);
+    });
+
+    test("applies hidden role to ALL matching layers of a collection", () => {
+      const collection = {
+        links: [{ id: "collA", roles: ["hidden"] }],
+      };
+      const layers = [
+        { properties: { id: "collA;:;item1;:;layer1" } },
+        { properties: { id: "collA;:;item1;:;layer2" } },
+      ];
+
+      applyVisibilityRoles(collection, layers);
+
+      expect(layers[0].properties.layerControlHide).toBe(true);
+      expect(layers[1].properties.layerControlHide).toBe(true);
     });
   });
 });

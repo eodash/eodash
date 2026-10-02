@@ -8,6 +8,7 @@ import { getMetadata } from "./helpers.js";
 import { registerWidgetTools } from "./tools/widgets.js";
 import { registerArchitectureTools } from "./tools/architecture.js";
 import { registerDiscoveryTools } from "./tools/discovery.js";
+import { registerStacTools } from "./tools/stac.js";
 import { createExpressApp as createExpressAppInternal } from "./server.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -40,6 +41,7 @@ export function createMcpServer() {
   registerWidgetTools(server, widgetsData);
   registerArchitectureTools(server, architectureData);
   registerDiscoveryTools(server);
+  registerStacTools(server);
 
   return server;
 }
