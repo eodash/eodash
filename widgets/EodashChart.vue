@@ -81,12 +81,16 @@ const usedChartSpec = computed(() => {
   return enableCompare ? compareChartSpec.value : chartSpec.value;
 });
 
+/**
+ * @param {any} spec
+ * @returns {boolean}
+ */
 function hasImageMark(spec) {
   if (!spec) return false;
   if (spec.mark === "image" || spec.mark?.type === "image") return true;
   if (Array.isArray(spec.layer)) {
     return spec.layer.some(
-      (layer) => layer.mark === "image" || layer.mark?.type === "image"
+      (/** @type {any} */ layer) => layer.mark === "image" || layer.mark?.type === "image"
     );
   }
   return false;
@@ -99,7 +103,8 @@ const isImageChart = computed(() => {
 const isFitX = computed(() => {
   const spec = usedChartSpec.value;
   if (!spec) return false;
-  const fitX = spec.autosize === "fit-x" || spec.autosize?.type === "fit-x";
+  const autosize = /** @type {any} */ (spec.autosize);
+  const fitX = spec.autosize === "fit-x" || autosize?.type === "fit-x";
   return fitX && isImageChart.value;
 });
 
@@ -131,6 +136,11 @@ const hasBindings = computed(() => {
 
 const renderedChartSpec = ref(null);
 
+/**
+ * @param {any} data
+ * @param {any} spec
+ * @returns {string | null}
+ */
 function getImageUrl(data, spec) {
   let url = findUrlInArray(data);
   if (url) return url;
@@ -142,6 +152,10 @@ function getImageUrl(data, spec) {
   return null;
 }
 
+/**
+ * @param {any} arr
+ * @returns {string | null}
+ */
 function findUrlInArray(arr) {
   if (!Array.isArray(arr) || arr.length === 0) return null;
   const firstItem = arr[0];
@@ -203,10 +217,11 @@ watch(
 
     // Set height dynamically based on container width and aspect ratio if fit-x,
     // otherwise use "container" or custom numeric height.
+    const specAny = /** @type {any} */ (newSpec);
     if (isFitX.value) {
       adjustedSpec.height = dynamicFitHeight.value;
-    } else if (typeof newSpec.height === "number") {
-      adjustedSpec.height = newSpec.height;
+    } else if (typeof specAny.height === "number") {
+      adjustedSpec.height = specAny.height;
     } else {
       adjustedSpec.height = "container";
     }
