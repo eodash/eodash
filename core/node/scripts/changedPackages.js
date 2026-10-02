@@ -28,8 +28,16 @@ const SHARED = [
   ".github/",
 ];
 
-/** The app's sources; unlisted root files (docs/, Dockerfile, ...) map to no scope. */
-const APP_PATHS = ["core/", "widgets/", "templates/", "tests/"];
+/** The app's sources and container/build files; unlisted root files (docs/, ...) map to no scope. */
+const APP_PATHS = [
+  "core/",
+  "widgets/",
+  "templates/",
+  "tests/",
+  "Dockerfile",
+  "docker-entrypoint.sh",
+  "rolldown.config.js",
+];
 
 /**
  * Package directory names whose suites also run when the app's sources change,
