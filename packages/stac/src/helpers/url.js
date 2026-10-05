@@ -43,6 +43,43 @@ export function extractUrlKeys(schema) {
 }
 
 /**
+ * Recursively extracts values from a form value object based on url_key definitions in a schema.
+ *
+ * @param {Record<string, any> | null | undefined} schema - The JSON Schema
+ * @param {any} value - The current level of form values corresponding to the schema
+ * @returns {Record<string, any>} A map of url_key parameter names to their form values
+ */
+export function extractUrlKeyValues(schema, value) {
+  /** @type {Record<string, any>} */
+  const results = {};
+  if (!schema || typeof schema !== "object" || !value || typeof value !== "object") {
+    return results;
+  }
+
+  if (schema.properties) {
+    for (const [key, propDef] of Object.entries(schema.properties)) {
+      if (propDef && typeof propDef === "object") {
+        const subValue = value[key];
+        if (typeof propDef.url_key === "string" && subValue !== undefined && subValue !== null) {
+          results[propDef.url_key] = subValue;
+        }
+        Object.assign(results, extractUrlKeyValues(propDef, subValue));
+      }
+    }
+  }
+
+  for (const combinator of ["oneOf", "allOf", "anyOf"]) {
+    if (Array.isArray(schema[combinator])) {
+      for (const sub of schema[combinator]) {
+        Object.assign(results, extractUrlKeyValues(sub, value));
+      }
+    }
+  }
+
+  return results;
+}
+
+/**
  * Serializes an object into a query string compatible with TiTiler.
  * Arrays repeat the key per element, nested elements comma-join, and objects are JSON-encoded.
  *

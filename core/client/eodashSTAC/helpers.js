@@ -1,4 +1,5 @@
 import {
+  extractUrlKeyValues,
   extractUrlKeys,
   isGeoZarrLayer,
   replaceLayer,
@@ -58,7 +59,7 @@ function appendQueryParams(url, params) {
 }
 
 /**
- * Updates a VectorTile layer source URL by injecting form values mapped to URL keys.
+ * Updates a VectorTile or Vector layer source URL by injecting form values mapped to URL keys.
  *
  * @param {import("ol/layer/Layer").default} olLayer - Target OpenLayers layer
  * @param {Record<string, any>} jsonformValue - Form values mapped to URL parameters
@@ -66,14 +67,14 @@ function appendQueryParams(url, params) {
  */
 export function updateLayerUrl(olLayer, jsonformValue) {
   const jsonLayer = olLayer.get("_jsonDefinition");
-  if (!jsonLayer || jsonLayer.type !== "VectorTile") {
+  if (!jsonLayer || (jsonLayer.type !== "VectorTile" && jsonLayer.type !== "Vector")) {
     return false;
   }
 
   const schema = jsonLayer.properties?.layerConfig?.schema;
-  const urlKeys = extractUrlKeys(schema);
+  const queryParamsToInject = extractUrlKeyValues(schema, jsonformValue);
 
-  if (Object.keys(urlKeys).length === 0) {
+  if (Object.keys(queryParamsToInject).length === 0) {
     return false;
   }
 
@@ -85,12 +86,6 @@ export function updateLayerUrl(olLayer, jsonformValue) {
 
   if (!olLayer.get("originalUrl")) {
     olLayer.set("originalUrl", originalUrl);
-  }
-
-  /** @type {Record<string, string>} */
-  const queryParamsToInject = {};
-  for (const [propName, urlKey] of Object.entries(urlKeys)) {
-    queryParamsToInject[urlKey] = jsonformValue[propName];
   }
 
   const newUrl = appendQueryParams(originalUrl, queryParamsToInject);
@@ -105,12 +100,17 @@ export function updateLayerUrl(olLayer, jsonformValue) {
     }
     const source = olLayer.getSource();
     olLayer.set("injectedUrl", newUrl);
-    if (source && "setUrl" in source) {
-      /** @type {any} */ (source).setUrl(newUrl);
-      return true;
-    }
-    if (source && "setUrls" in source) {
-      /** @type {any} */ (source).setUrls([newUrl]);
+
+    if (source) {
+      if ("setUrl" in source) {
+        /** @type {any} */ (source).setUrl(newUrl);
+      } else if ("setUrls" in source) {
+        /** @type {any} */ (source).setUrls([newUrl]);
+      }
+
+      if ("refresh" in source && typeof source.refresh === "function") {
+        /** @type {any} */ (source).refresh();
+      }
       return true;
     }
   }

@@ -47,11 +47,59 @@ describe("updateLayerUrl", () => {
     expect(source.setUrl).toHaveBeenCalledTimes(1);
   });
 
-  test("ignores non-VectorTile layers, keyless schemas and missing urls", () => {
-    const nonVt = mockOlLayer({
-      jsonDefinition: { type: "Vector", source: { url: "https://x" } },
+  test("injects the url_key values as query params and updates the Vector (GeoJSON) source", () => {
+    const jsonDefinition = {
+      type: "Vector",
+      properties: { layerConfig: { schema: VT_SCHEMA } },
+      source: { url: "https://geojson/data" },
+    };
+    const source = { setUrl: vi.fn(), refresh: vi.fn() };
+    const layer = mockOlLayer({ jsonDefinition, source });
+
+    const updated = updateLayerUrl(/** @type {any} */ (layer), { flood: 30 });
+
+    expect(updated).toBe(true);
+    const newUrl = "https://geojson/data?flood_percent=30";
+    expect(source.setUrl).toHaveBeenCalledWith(newUrl);
+    expect(source.refresh).toHaveBeenCalled();
+    expect(jsonDefinition.source.url).toBe(newUrl);
+    expect(layer.get("originalUrl")).toBe("https://geojson/data");
+    expect(layer.get("injectedUrl")).toBe(newUrl);
+  });
+
+  test("injects nested url_key values (like style parameters) and updates the source", () => {
+    const nestedSchema = {
+      properties: {
+        style: {
+          properties: {
+            color: { url_key: "color_param" },
+          },
+        },
+      },
+    };
+    const jsonDefinition = {
+      type: "Vector",
+      properties: { layerConfig: { schema: nestedSchema } },
+      source: { url: "https://geojson/data" },
+    };
+    const source = { setUrl: vi.fn(), refresh: vi.fn() };
+    const layer = mockOlLayer({ jsonDefinition, source });
+
+    const updated = updateLayerUrl(/** @type {any} */ (layer), {
+      style: { color: "blue" },
     });
-    expect(updateLayerUrl(/** @type {any} */ (nonVt), { flood: 1 })).toBe(
+
+    expect(updated).toBe(true);
+    const newUrl = "https://geojson/data?color_param=blue";
+    expect(source.setUrl).toHaveBeenCalledWith(newUrl);
+    expect(source.refresh).toHaveBeenCalled();
+  });
+
+  test("ignores non-supported layers, keyless schemas and missing urls", () => {
+    const nonSupported = mockOlLayer({
+      jsonDefinition: { type: "WebGLTile", source: { url: "https://x" } },
+    });
+    expect(updateLayerUrl(/** @type {any} */ (nonSupported), { flood: 1 })).toBe(
       false,
     );
 
