@@ -9,47 +9,13 @@ export const toAbsolute = (href, baseUrl) =>
   baseUrl ? new URL(href, baseUrl).toString() : href;
 
 /**
- * Recursively extracts URL keys from a JSON Schema.
- * Maps schema property names to their defined `url_key`.
- *
- * @param {Record<string, any> | null | undefined} schema
- * @returns {Record<string, string>}
- */
-export function extractUrlKeys(schema) {
-  /** @type {Record<string, string>} */
-  const keys = {};
-  if (!schema || typeof schema !== "object") return keys;
-
-  if (schema.properties) {
-    for (const [key, propDef] of Object.entries(schema.properties)) {
-      if (propDef && typeof propDef === "object") {
-        if (typeof propDef.url_key === "string") {
-          keys[key] = propDef.url_key;
-        }
-        Object.assign(keys, extractUrlKeys(propDef));
-      }
-    }
-  }
-
-  for (const combinator of ["oneOf", "allOf", "anyOf"]) {
-    if (Array.isArray(schema[combinator])) {
-      for (const sub of schema[combinator]) {
-        Object.assign(keys, extractUrlKeys(sub));
-      }
-    }
-  }
-
-  return keys;
-}
-
-/**
  * Recursively extracts values from a form value object based on url_key definitions in a schema.
  *
  * @param {Record<string, any> | null | undefined} schema - The JSON Schema
  * @param {any} value - The current level of form values corresponding to the schema
  * @returns {Record<string, any>} A map of url_key parameter names to their form values
  */
-export function extractUrlKeyValues(schema, value) {
+export function extractUrlKeys(schema, value) {
   /** @type {Record<string, any>} */
   const results = {};
   if (!schema || typeof schema !== "object" || !value || typeof value !== "object") {
@@ -62,8 +28,8 @@ export function extractUrlKeyValues(schema, value) {
         const subValue = value[key];
         if (typeof propDef.url_key === "string" && subValue !== undefined && subValue !== null) {
           results[propDef.url_key] = subValue;
-        }
-        Object.assign(results, extractUrlKeyValues(propDef, subValue));
+         }
+        Object.assign(results, extractUrlKeys(propDef, subValue));
       }
     }
   }
@@ -71,7 +37,7 @@ export function extractUrlKeyValues(schema, value) {
   for (const combinator of ["oneOf", "allOf", "anyOf"]) {
     if (Array.isArray(schema[combinator])) {
       for (const sub of schema[combinator]) {
-        Object.assign(results, extractUrlKeyValues(sub, value));
+        Object.assign(results, extractUrlKeys(sub, value));
       }
     }
   }

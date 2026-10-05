@@ -1,5 +1,4 @@
 import {
-  extractUrlKeyValues,
   extractUrlKeys,
   isGeoZarrLayer,
   replaceLayer,
@@ -72,7 +71,7 @@ export function updateLayerUrl(olLayer, jsonformValue) {
   }
 
   const schema = jsonLayer.properties?.layerConfig?.schema;
-  const queryParamsToInject = extractUrlKeyValues(schema, jsonformValue);
+  const queryParamsToInject = extractUrlKeys(schema, jsonformValue);
 
   if (Object.keys(queryParamsToInject).length === 0) {
     return false;

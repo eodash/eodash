@@ -1,28 +1,7 @@
 import { describe, expect, test } from "vitest";
-import { extractUrlKeys, extractUrlKeyValues } from "../src/helpers/url.js";
+import { extractUrlKeys } from "../src/helpers/url.js";
 
 describe("extractUrlKeys", () => {
-  test("collects url_key through nested properties and combinators", () => {
-    const keys = extractUrlKeys({
-      properties: {
-        a: { url_key: "ka", properties: { b: { url_key: "kb" } } },
-        noKey: {},
-      },
-      oneOf: [{ properties: { c: { url_key: "kc" } } }],
-      allOf: [{ properties: { d: { url_key: "kd" } } }],
-      anyOf: [{ properties: { e: { url_key: "ke" } } }],
-    });
-
-    expect(keys).toEqual({ a: "ka", b: "kb", c: "kc", d: "kd", e: "ke" });
-  });
-
-  test("returns an empty map for non-object schemas", () => {
-    expect(extractUrlKeys(null)).toEqual({});
-    expect(extractUrlKeys(/** @type {any} */ ("nope"))).toEqual({});
-  });
-});
-
-describe("extractUrlKeyValues", () => {
   test("collects url_key values through nested and flat properties and combinators", () => {
     const schema = {
       properties: {
@@ -50,7 +29,7 @@ describe("extractUrlKeyValues", () => {
       extra: "yes",
     };
 
-    const extracted = extractUrlKeyValues(schema, value);
+    const extracted = extractUrlKeys(schema, value);
     expect(extracted).toEqual({
       flood_percent: 30,
       color_param: "blue",
@@ -58,9 +37,9 @@ describe("extractUrlKeyValues", () => {
     });
   });
 
-  test("handles missing or null values gracefully", () => {
-    expect(extractUrlKeyValues(null, {})).toEqual({});
-    expect(extractUrlKeyValues({}, null)).toEqual({});
-    expect(extractUrlKeyValues(/** @type {any} */ ("nope"), {})).toEqual({});
+  test("returns an empty map for non-object schemas or missing values", () => {
+    expect(extractUrlKeys(null, {})).toEqual({});
+    expect(extractUrlKeys({}, null)).toEqual({});
+    expect(extractUrlKeys(/** @type {any} */ ("nope"), {})).toEqual({});
   });
 });
