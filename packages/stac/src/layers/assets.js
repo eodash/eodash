@@ -39,7 +39,7 @@ export async function createLayersFromAssets(
     http = createHTTPInstance(),
     layerConfigHelpers = createLayerConfigHelpers(),
   } = options;
-  const { extractLayerConfig } = layerConfigHelpers;
+  const { extractLayerConfig, applyRasterFormValue } = layerConfigHelpers;
   log.debug("Creating layers from assets");
   /** @type {import("@eox/map").EoxLayer[]} */
   const jsonArray = [];
@@ -59,18 +59,55 @@ export async function createLayersFromAssets(
 
   for (const [idx, assetId] of Object.keys(assets).entries()) {
     assetIds.push(assetId);
+    const assetName = assetId;
 
     if (
       assets[assetId]?.type?.includes("application/geo+json") &&
       assets[assetId]?.href?.includes("http")
     ) {
-      geoJsonSources.push(assets[assetId].href);
+      const styles = await resolveStyle(
+        stacObject,
+        collection,
+        http,
+        undefined,
+        assetName,
+      );
+      const { layerConfig } = extractLayerConfig(styles);
+      let href = assets[assetId].href;
+      if (layerConfig) {
+        const mockLayer = {
+          type: "Vector",
+          source: { url: href },
+          properties: { layerConfig }
+        };
+        applyRasterFormValue(mockLayer);
+        href = mockLayer.source.url;
+      }
+      geoJsonSources.push(href);
       geoJsonIdx.push(idx);
     } else if (
       assets[assetId]?.type?.includes("application/vnd.flatgeobuf") &&
       assets[assetId]?.href?.includes("http")
     ) {
-      fgbSources.push(assets[assetId].href);
+      const styles = await resolveStyle(
+        stacObject,
+        collection,
+        http,
+        undefined,
+        assetName,
+      );
+      const { layerConfig } = extractLayerConfig(styles);
+      let href = assets[assetId].href;
+      if (layerConfig) {
+        const mockLayer = {
+          type: "Vector",
+          source: { url: href },
+          properties: { layerConfig }
+        };
+        applyRasterFormValue(mockLayer);
+        href = mockLayer.source.url;
+      }
+      fgbSources.push(href);
       fgbIdx.push(idx);
     } else if (
       assets[assetId]?.type ==
@@ -320,6 +357,7 @@ export async function createLayersFromAssets(
       layer.properties = { ...layer.properties, ...(extraProperties ?? {}) };
       extractRoles(layer.properties, assets[assetName]);
       addTooltipInteraction(layer, style);
+      applyRasterFormValue(layer);
       jsonArray.push(layer);
       if (stacObject?.["eodash:merge_assets"] !== false) break;
     }
@@ -382,6 +420,7 @@ export async function createLayersFromAssets(
       layer.properties = { ...layer.properties, ...(extraProperties ?? {}) };
       extractRoles(layer.properties, assets[assetName]);
       addTooltipInteraction(layer, style);
+      applyRasterFormValue(layer);
       jsonArray.push(layer);
       if (stacObject?.["eodash:merge_assets"] !== false) break;
     }

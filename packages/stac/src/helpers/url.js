@@ -46,6 +46,41 @@ export function extractUrlKeys(schema, value) {
 }
 
 /**
+ * Recursively scans a schema to find properties with `url_key` and extracts their `default` values.
+ *
+ * @param {Record<string, any> | null | undefined} schema
+ * @returns {Record<string, any>} A map of url_key to its default value
+ */
+export function extractDefaultUrlKeys(schema) {
+  /** @type {Record<string, any>} */
+  const results = {};
+  if (!schema || typeof schema !== "object") {
+    return results;
+  }
+
+  if (schema.properties) {
+    for (const [_, propDef] of Object.entries(schema.properties)) {
+      if (propDef && typeof propDef === "object") {
+        if (typeof propDef.url_key === "string" && propDef.default !== undefined && propDef.default !== null) {
+          results[propDef.url_key] = propDef.default;
+        }
+        Object.assign(results, extractDefaultUrlKeys(propDef));
+      }
+    }
+  }
+
+  for (const combinator of ["oneOf", "allOf", "anyOf"]) {
+    if (Array.isArray(schema[combinator])) {
+      for (const sub of schema[combinator]) {
+        Object.assign(results, extractDefaultUrlKeys(sub));
+      }
+    }
+  }
+
+  return results;
+}
+
+/**
  * Serializes an object into a query string compatible with TiTiler.
  * Arrays repeat the key per element, nested elements comma-join, and objects are JSON-encoded.
  *
