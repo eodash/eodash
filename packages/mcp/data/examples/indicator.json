@@ -72,7 +72,7 @@
     "code": {
       "Name": "geothermal_energy_potential",
       "Title": "Geothermal Energy Potential",
-      "Description": "Thermal conductivity is the ability of a ground to conduct heat from one location to another without the movement of the soil conducting the heat. It is expressed in watts per meter kelvin (W/mK). The thermal diffusivity is a measure that represents how fast heat diffuses through the soil. It is measured as mm2/sec. The two models were calculated using remote sensing data  (Sentinel-1, Sentinel-3) and interpolated ground data  (bulk density, soil texture, slope DEM, organic content, land use map, natura2000) by applying a model of water distribution to the first meter of the soil profile. The thermal conductivity layer was calculated for the whole Austria for 2024 and 2025.",
+      "Description": "Thermal conductivity is the ability of a ground to conduct heat from one location to another without the movement of the soil conducting the heat.",
       "CollectionGroup": "Energy Transition",
       "Image": "https://example.com/api/public/share/public-4wazei3y-02/WR-07-Geothermal-Energy-Potential-Assessment/geothermal_potential_energy_preview.jpg",
       "Provider": [
@@ -143,6 +143,138 @@
           }
         ]
       }
+    }
+  },
+  {
+    "id": "indicator-inline-feature-properties-process",
+    "title": "Indicator with Client-Side Inline JSON Data URI Process from Clicked Vector Feature Properties",
+    "category": "indicator",
+    "tags": [
+      "indicator",
+      "process",
+      "feature-stats",
+      "vector",
+      "feature-properties",
+      "data-uri",
+      "inline-json",
+      "zero-backend",
+      "client-side",
+      "vector-feature",
+      "template-substitution"
+    ],
+    "description": "Indicator with a zero-backend Process definition where clicked map feature attributes ({{feature.values_.*}}) are interpolated directly into a client-side 'data:application/json' endpoint URL. Allows EodashChart to visualize vector properties in Vega without requiring any external processing API or backend service.",
+    "targetContext": "Save under indicators/<name>.json in an eodash catalog repository",
+    "code": {
+      "Name": "brownfield_recovery_potential",
+      "Title": "Brownfield Recovery Potential",
+      "Description": "Nationwide inventory of potential industrial and commercial brownfields across Austria",
+      "Image": "https://example.com/assets/brownfieldcover.jpg",
+      "CollectionGroup": "Sustainable Cities",
+      "Themes": ["Sustainable Cities"],
+      "Resources": [
+        {
+          "Name": "GeoJSON source",
+          "Bbox": [9.489, 45.934, 17.366, 49.611],
+          "Style": "https://example.com/mapstyle_merged_data.json",
+          "TimeEntries": [
+            {
+              "Time": "2024",
+              "Assets": [
+                {
+                  "Identifier": "brownfields",
+                  "File": "https://example.com/brownfield_2024.geojson"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "Process": {
+        "Name": "stats",
+        "JsonForm": "https://example.com/form_merged.json",
+        "EndPoints": [
+          {
+            "Identifier": "stats",
+            "Url": "data:application/json,[{\"total_price\":\"{{feature.values_.total_price}}\",\"total_solar_pot\":{{feature.values_.total_solar_pot}},\"Brownfield_Total\":{{feature.values_.Brownfield_Total}},\"Prediction_Subclass_DOP\":\"{{feature.values_.Prediction_Subclass_DOP}}\",\"build_area\":{{feature.values_.build_area}},\"sealed_area\":{{feature.values_.sealed_area}},\"seal_perc\":{{feature.values_.seal_perc}},\"area\":{{feature.values_.area}},\"solar_pot_djf\":{{feature.values_.solar_pot_djf}},\"solar_pot_jja\":{{feature.values_.solar_pot_jja}},\"solar_pot_mam\":{{feature.values_.solar_pot_mam}},\"solar_pot_son\":{{feature.values_.solar_pot_son}},\"Name\":\"{{feature.values_.Name}}\",\"\u20ac/m\u00b2\":\"{{feature.values_.\u20ac/m\u00b2}}\"}]",
+            "Type": "application/json"
+          }
+        ],
+        "VegaDefinition": "https://example.com/vega_chart_stats.json"
+      }
+    }
+  },
+  {
+    "id": "indicator-overlay-layers-cors-proxy",
+    "title": "Indicator with OverlayLayers (Vector & XYZ) and CORS-Proxied Multi-Endpoint Processing",
+    "category": "indicator",
+    "tags": [
+      "indicator",
+      "overlay-layers",
+      "vector",
+      "overlay",
+      "cors-proxy",
+      "geojson-overlay",
+      "xyz-overlay",
+      "cql2-point",
+      "multi-endpoint",
+      "disable-collections",
+      "cors"
+    ],
+    "description": "Complete eodash indicator demonstrating OverlayLayers (custom-styled GeoJSON vector overlays and XYZ tile labels), selective collection enabling via 'Disable' list, and multi-endpoint Process execution combining an OGC API Features vector point intersection with an external third-party API proxied through 'cors.eox.at/get?url=...' with point coordinate templating.",
+    "targetContext": "Save under indicators/<name>.json in an eodash catalog repository",
+    "code": {
+      "Name": "tourism_uc2_indicator",
+      "Title": "Snow Depth Anomaly & Hazard Assessment",
+      "Image": "https://example.com/assets/snow_anomaly.jpg",
+      "CollectionGroup": "Climate Change & Tourism",
+      "Description": "Comprehensive climate indicators and hazard evaluation for Austrian tourism regions.",
+      "Collections": ["tourism_uc2_snow_anomaly", "tourism_uc2_flood"],
+      "Disable": ["tourism_uc2_flood"],
+      "Themes": ["Climate Change & Tourism"],
+      "Provider": [
+        {
+          "Name": "GeoVille",
+          "Url": "https://www.geoville.com/"
+        }
+      ],
+      "Process": {
+        "Name": "timeseries",
+        "JsonForm": "https://example.com/snow_depth_anomaly_jsonform.json",
+        "VegaDefinition": "https://example.com/snow_depth_anomaly_vega.json",
+        "EndPoints": [
+          {
+            "Identifier": "snow_variation",
+            "Url": "https://eoapi.example.com/vector/collections/public.snow_anomaly_geoville/items?limit=1&bbox-only=true&filter=S_INTERSECTS(geometry,%20POINT({{point.0}}%20{{point.1}}))",
+            "Type": "application/json",
+            "Method": "GET"
+          },
+          {
+            "Identifier": "cors_proxy",
+            "Url": "https://cors.eox.at/get?url=https%3A%2F%2Fexample.com%2Fcors-not-enabled%2F%3Fepsg%3D4326%26x%3D%{{point.0}}%26y%3D{{point.1}}",
+            "Type": "application/json",
+            "Method": "GET"
+          }
+        ]
+      },
+      "OverlayLayers": [
+        {
+          "id": "tourism_regions",
+          "name": "Tourism Regions",
+          "url": "https://example.com/tourismregions_FINAL.geojson",
+          "protocol": "GeoJSON source",
+          "Style": "https://example.com/tourism_regions_overlay_style.json",
+          "DataProjection": "EPSG:4326",
+          "visible": true
+        },
+        {
+          "id": "overlay_bright",
+          "name": "Overlay labels",
+          "url": "https://s2maps-tiles.eu/wmts/1.0.0/overlay_base_bright_3857/default/g/{z}/{y}/{x}.png",
+          "Attribution": "{ Overlay: Data \u00a9 OpenStreetMap contributors, Rendering \u00a9 EOX }",
+          "visible": true,
+          "protocol": "xyz"
+        }
+      ]
     }
   }
 ]

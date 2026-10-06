@@ -323,7 +323,7 @@
     "targetContext": "Save as chart specification and reference in collection or indicator Process.VegaDefinition",
     "code": {
       "$schema": "https://example.com/schema/vega-lite/v5.json",
-      "description": "Grouped CO₂ bar chart by time and component (safe JSON parsing workaround)",
+      "description": "Grouped CO\u2082 bar chart by time and component (safe JSON parsing workaround)",
       "data": {
         "name": "process_eox"
       },
@@ -372,7 +372,7 @@
         "y": {
           "field": "numeric_value",
           "type": "quantitative",
-          "title": "CO₂ Value [Tg C]"
+          "title": "CO\u2082 Value [Tg C]"
         },
         "color": {
           "legend": {
@@ -380,7 +380,7 @@
           },
           "field": "component",
           "type": "nominal",
-          "title": "CO₂ Component",
+          "title": "CO\u2082 Component",
           "scale": {
             "domain": [
               "CO2 Inventory",
@@ -405,7 +405,7 @@
           {
             "field": "numeric_value",
             "type": "quantitative",
-            "title": "CO₂ Value [Tg C]"
+            "title": "CO\u2082 Value [Tg C]"
           }
         ]
       },
@@ -1085,7 +1085,7 @@
               "as": "equation"
             },
             {
-              "calculate": "'R² = ' + format(datum.rSquared, '.4f')",
+              "calculate": "'R\u00b2 = ' + format(datum.rSquared, '.4f')",
               "as": "r2"
             }
           ],
@@ -1120,7 +1120,7 @@
               "params": true
             },
             {
-              "calculate": "'R² = ' + format(datum.rSquared, '.4f')",
+              "calculate": "'R\u00b2 = ' + format(datum.rSquared, '.4f')",
               "as": "r2"
             }
           ],
@@ -1249,7 +1249,9 @@
     "code": {
       "width": "container",
       "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
-      "data": { "name": "timeseries" },
+      "data": {
+        "name": "timeseries"
+      },
       "vconcat": [
         {
           "title": "Area Summary",
@@ -1258,31 +1260,982 @@
               "fold": ["dataset_a", "dataset_b"],
               "as": ["dataset", "records"]
             },
-            { "flatten": ["records"] },
+            {
+              "flatten": ["records"]
+            },
             {
               "aggregate": [
-                { "op": "sum", "field": "records.area", "as": "total_area" }
+                {
+                  "op": "sum",
+                  "field": "records.area",
+                  "as": "total_area"
+                }
               ],
               "groupby": ["dataset"]
             }
           ],
           "mark": "bar",
           "encoding": {
-            "x": { "field": "dataset", "type": "nominal" },
-            "y": { "field": "total_area", "type": "quantitative" },
-            "color": { "field": "dataset", "type": "nominal" }
+            "x": {
+              "field": "dataset",
+              "type": "nominal"
+            },
+            "y": {
+              "field": "total_area",
+              "type": "quantitative"
+            },
+            "color": {
+              "field": "dataset",
+              "type": "nominal"
+            }
           }
         },
         {
           "title": "Metric Distribution",
           "mark": "point",
           "encoding": {
-            "x": { "field": "records.val", "type": "quantitative" },
-            "y": { "field": "records.area", "type": "quantitative" }
+            "x": {
+              "field": "records.val",
+              "type": "quantitative"
+            },
+            "y": {
+              "field": "records.area",
+              "type": "quantitative"
+            }
           }
         }
       ],
-      "resolve": { "scale": { "color": "independent" } }
+      "resolve": {
+        "scale": {
+          "color": "independent"
+        }
+      }
+    }
+  },
+  {
+    "id": "chart-vega-dual-axis-reference-bands",
+    "title": "Dual-Axis Time Series with Temporal Reference Bands & Interactive Legend Toggle",
+    "category": "chart-vega",
+    "tags": [
+      "vega-lite",
+      "vega",
+      "chart",
+      "timeseries",
+      "dual-axis",
+      "reference-bands",
+      "interval-bands",
+      "legend-toggle",
+      "fold-transform",
+      "break-paths",
+      "eodash:vegadefinition",
+      "eox-chart"
+    ],
+    "description": "Dual-axis Vega-Lite time-series chart splitting folded metrics across independent primary (left) and secondary (right) Y-axes while sharing a unified color scale and interactive legend toggle. Features embedded temporal background reference bands (rect marks with x/x2) for calendar/vacation intervals, missing-value gap handling with break-paths-filter-domains, dynamic title evaluation from dataset row, and nearest-point hover tooltip with synchronized vertical rule line.",
+    "targetContext": "Host as JSON and reference via Process.VegaDefinition or STAC Collection eodash:vegadefinition",
+    "code": {
+      "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+      "description": "Dual-Axis Interactive Time Series with High-Performance Hover",
+      "title": {
+        "text": {
+          "expr": "data('timeseries').length > 0 ? 'Tourism Region: ' + data('timeseries')[0].tourism_region : 'Tourism Region'"
+        },
+        "anchor": "start",
+        "fontSize": 16,
+        "fontWeight": "bold",
+        "offset": 12
+      },
+      "data": {
+        "name": "timeseries",
+        "format": {
+          "type": "json"
+        }
+      },
+      "transform": [
+        {
+          "calculate": "toDate(datum.time)",
+          "as": "parsed_time"
+        },
+        {
+          "calculate": "isValid(datum.snow_depth_mean) ? datum.snow_depth_mean * 100 : null",
+          "as": "snow_depth_cm"
+        }
+      ],
+      "resolve": {
+        "scale": {
+          "y": "independent"
+        }
+      },
+      "layer": [
+        {
+          "data": {
+            "values": [
+              {
+                "start": "2023-02-04",
+                "end": "2023-02-26",
+                "holiday": "Semester Breaks 2023"
+              },
+              {
+                "start": "2023-04-01",
+                "end": "2023-04-10",
+                "holiday": "Easter Holidays 2023"
+              }
+            ]
+          },
+          "mark": {
+            "type": "rect",
+            "opacity": 0.15,
+            "color": "#f3c14b"
+          },
+          "encoding": {
+            "x": {
+              "field": "start",
+              "type": "temporal"
+            },
+            "x2": {
+              "field": "end"
+            },
+            "tooltip": [
+              {
+                "field": "holiday",
+                "type": "nominal",
+                "title": "Austrian Vacation"
+              }
+            ]
+          }
+        },
+        {
+          "transform": [
+            {
+              "fold": [
+                "stays",
+                "max_temp_mean",
+                "snow_depth_cm",
+                "precip_sum_mean"
+              ],
+              "as": ["raw_metric", "value"]
+            },
+            {
+              "calculate": "datum.raw_metric === 'stays' ? 'Stays' : datum.raw_metric === 'max_temp_mean' ? 'Max Temp (\u00b0C)' : datum.raw_metric === 'snow_depth_cm' ? 'Snow Depth (cm)' : 'Precipitation (mm)'",
+              "as": "Property"
+            },
+            {
+              "filter": "datum.Property === 'Stays'"
+            }
+          ],
+          "params": [
+            {
+              "name": "legend_toggle",
+              "select": {
+                "type": "point",
+                "fields": ["Property"],
+                "toggle": "true"
+              },
+              "bind": "legend"
+            }
+          ],
+          "mark": {
+            "type": "line",
+            "strokeWidth": 2,
+            "clip": true,
+            "invalid": "break-paths-filter-domains"
+          },
+          "encoding": {
+            "x": {
+              "field": "parsed_time",
+              "type": "temporal",
+              "title": "Date",
+              "axis": {
+                "grid": false,
+                "format": "%b %Y",
+                "labelAngle": -45
+              }
+            },
+            "y": {
+              "field": "value",
+              "type": "quantitative",
+              "title": "Stays",
+              "scale": {
+                "zero": false
+              },
+              "axis": {
+                "titleColor": "#1f77b4",
+                "labelColor": "#1f77b4"
+              }
+            },
+            "color": {
+              "field": "Property",
+              "type": "nominal",
+              "title": "Properties",
+              "scale": {
+                "domain": [
+                  "Stays",
+                  "Max Temp (\u00b0C)",
+                  "Snow Depth (cm)",
+                  "Precipitation (mm)"
+                ],
+                "range": ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728"]
+              }
+            },
+            "opacity": {
+              "condition": {
+                "param": "legend_toggle",
+                "value": 1
+              },
+              "value": 0.1
+            }
+          }
+        },
+        {
+          "transform": [
+            {
+              "fold": [
+                "stays",
+                "max_temp_mean",
+                "snow_depth_cm",
+                "precip_sum_mean"
+              ],
+              "as": ["raw_metric", "value"]
+            },
+            {
+              "calculate": "datum.raw_metric === 'stays' ? 'Stays' : datum.raw_metric === 'max_temp_mean' ? 'Max Temp (\u00b0C)' : datum.raw_metric === 'snow_depth_cm' ? 'Snow Depth (cm)' : 'Precipitation (mm)'",
+              "as": "Property"
+            },
+            {
+              "filter": "datum.Property !== 'Stays'"
+            }
+          ],
+          "mark": {
+            "type": "line",
+            "strokeWidth": 2,
+            "clip": true,
+            "invalid": "break-paths-filter-domains"
+          },
+          "encoding": {
+            "x": {
+              "field": "parsed_time",
+              "type": "temporal",
+              "title": "Date",
+              "axis": {
+                "grid": false,
+                "format": "%b %Y",
+                "labelAngle": -45
+              }
+            },
+            "y": {
+              "field": "value",
+              "type": "quantitative",
+              "title": "Weather Metrics",
+              "scale": {
+                "zero": false
+              },
+              "axis": {
+                "orient": "right",
+                "grid": false
+              }
+            },
+            "color": {
+              "field": "Property",
+              "type": "nominal",
+              "scale": {
+                "domain": [
+                  "Stays",
+                  "Max Temp (\u00b0C)",
+                  "Snow Depth (cm)",
+                  "Precipitation (mm)"
+                ],
+                "range": ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728"]
+              }
+            },
+            "opacity": {
+              "condition": {
+                "param": "legend_toggle",
+                "value": 1
+              },
+              "value": 0.1
+            }
+          }
+        },
+        {
+          "mark": {
+            "type": "point",
+            "opacity": 0
+          },
+          "params": [
+            {
+              "name": "hover",
+              "select": {
+                "type": "point",
+                "encodings": ["x"],
+                "nearest": true,
+                "on": "pointerover",
+                "clear": "pointerout"
+              }
+            }
+          ],
+          "encoding": {
+            "x": {
+              "field": "parsed_time",
+              "type": "temporal"
+            },
+            "tooltip": [
+              {
+                "field": "parsed_time",
+                "type": "temporal",
+                "title": "Date",
+                "format": "%b %d, %Y"
+              },
+              {
+                "field": "stays",
+                "type": "quantitative",
+                "title": "Stays",
+                "format": ".0f"
+              },
+              {
+                "field": "max_temp_mean",
+                "type": "quantitative",
+                "title": "Max Temp (\u00b0C)",
+                "format": ".1f"
+              },
+              {
+                "field": "snow_depth_cm",
+                "type": "quantitative",
+                "title": "Snow Depth (cm)",
+                "format": ".1f"
+              },
+              {
+                "field": "precip_sum_mean",
+                "type": "quantitative",
+                "title": "Precipitation (mm)",
+                "format": ".1f"
+              }
+            ]
+          }
+        },
+        {
+          "transform": [
+            {
+              "filter": {
+                "param": "hover",
+                "empty": false
+              }
+            }
+          ],
+          "mark": {
+            "type": "rule",
+            "color": "gray",
+            "strokeDash": [3, 3],
+            "strokeWidth": 1.5
+          },
+          "encoding": {
+            "x": {
+              "field": "parsed_time",
+              "type": "temporal"
+            }
+          }
+        }
+      ],
+      "config": {
+        "view": {
+          "strokeWidth": 0
+        },
+        "axis": {
+          "labelFontSize": 11,
+          "titleFontSize": 12
+        },
+        "legend": {
+          "labelFontSize": 11,
+          "titleFontSize": 12
+        }
+      },
+      "width": "container"
+    }
+  },
+  {
+    "id": "chart-vega-kpi-metrics-dashboard",
+    "title": "Multi-Metric KPI Summary Dashboard with Dynamic Object Mapping & Direct Bar Labels",
+    "category": "chart-vega",
+    "tags": [
+      "vega-lite",
+      "vega",
+      "chart",
+      "kpi-cards",
+      "summary-cards",
+      "vconcat",
+      "hconcat",
+      "dictionary-lookup",
+      "bar-labels",
+      "eodash:vegadefinition",
+      "eox-chart"
+    ],
+    "description": "Composite Vega-Lite dashboard featuring three top-row KPI metric cards (large text marks with SI and percentage formatting) coupled with two bottom-row categorical comparison bar charts. Employs inline JavaScript object dictionary lookup ({'code':'Label'}[datum.field]) in calculate transforms for clean category relabeling and overlays direct value text marks on bars while suppressing quantitative axes for clean card presentation.",
+    "targetContext": "Host as JSON and reference via Process.VegaDefinition or STAC Collection eodash:vegadefinition",
+    "code": {
+      "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+      "background": "white",
+      "padding": 5,
+      "autosize": "pad",
+      "data": {
+        "name": "stats"
+      },
+      "vconcat": [
+        {
+          "title": "Property Snapshot",
+          "hconcat": [
+            {
+              "width": 130,
+              "mark": "text",
+              "encoding": {
+                "text": {
+                  "field": "total_price",
+                  "type": "quantitative",
+                  "format": ".3s"
+                },
+                "color": {
+                  "value": "#2c3e50"
+                },
+                "size": {
+                  "value": 26
+                }
+              },
+              "title": ["Estimated", "Plot Price (\u20ac)"]
+            },
+            {
+              "width": 130,
+              "mark": "text",
+              "encoding": {
+                "text": {
+                  "field": "Brownfield_Total",
+                  "type": "quantitative",
+                  "format": ".0%"
+                },
+                "color": {
+                  "value": "#d35400"
+                },
+                "size": {
+                  "value": 26
+                }
+              },
+              "title": ["Brownfield", "Probability"]
+            },
+            {
+              "width": 130,
+              "mark": "text",
+              "encoding": {
+                "text": {
+                  "field": "total_solar_pot",
+                  "type": "quantitative",
+                  "format": ".0f"
+                },
+                "color": {
+                  "value": "#f1c40f"
+                },
+                "size": {
+                  "value": 26
+                }
+              },
+              "title": ["Estimated Solar", "Yield (MWh/year)"]
+            }
+          ],
+          "spacing": 10
+        },
+        {
+          "spacing": 20,
+          "resolve": {
+            "scale": {
+              "color": "independent"
+            }
+          },
+          "hconcat": [
+            {
+              "title": "Area Usage (m\u00b2)",
+              "width": 180,
+              "height": 70,
+              "transform": [
+                {
+                  "fold": ["area", "sealed_area", "build_area"],
+                  "as": ["Type", "m2"]
+                },
+                {
+                  "calculate": "{'area':'Total','sealed_area':'Sealed','build_area':'Build'}[datum.Type]",
+                  "as": "Label"
+                }
+              ],
+              "encoding": {
+                "x": {
+                  "field": "Label",
+                  "sort": ["Total", "Sealed", "Build"],
+                  "axis": {
+                    "labelAngle": 0,
+                    "title": null
+                  }
+                },
+                "y": {
+                  "field": "m2",
+                  "type": "quantitative",
+                  "axis": null
+                },
+                "color": {
+                  "field": "Label",
+                  "legend": null,
+                  "scale": {
+                    "domain": ["Total", "Sealed", "Build"],
+                    "range": ["#95a5a6", "#34495e", "#bdc3c7"]
+                  }
+                },
+                "tooltip": [
+                  {
+                    "field": "Label",
+                    "title": "Type"
+                  },
+                  {
+                    "field": "m2",
+                    "format": ",.0f"
+                  }
+                ]
+              },
+              "layer": [
+                {
+                  "mark": {
+                    "type": "bar",
+                    "cornerRadiusEnd": 3
+                  }
+                },
+                {
+                  "mark": {
+                    "type": "text",
+                    "dy": -5,
+                    "fontSize": 10
+                  },
+                  "encoding": {
+                    "text": {
+                      "field": "m2",
+                      "format": ",.0f"
+                    },
+                    "color": {
+                      "value": "black"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "title": "Solar Yield (kWh/m\u00b2)",
+              "width": 230,
+              "height": 70,
+              "transform": [
+                {
+                  "fold": [
+                    "solar_pot_djf",
+                    "solar_pot_mam",
+                    "solar_pot_jja",
+                    "solar_pot_son"
+                  ],
+                  "as": ["Season", "MWh"]
+                },
+                {
+                  "calculate": "datum.MWh * 1000",
+                  "as": "kWh"
+                },
+                {
+                  "calculate": "{'solar_pot_djf':'Win','solar_pot_mam':'Spr','solar_pot_jja':'Sum','solar_pot_son':'Aut'}[datum.Season]",
+                  "as": "Label"
+                }
+              ],
+              "encoding": {
+                "x": {
+                  "field": "Label",
+                  "sort": ["Win", "Spr", "Sum", "Aut"],
+                  "axis": {
+                    "labelAngle": 0,
+                    "title": null
+                  }
+                },
+                "y": {
+                  "field": "kWh",
+                  "type": "quantitative",
+                  "axis": null
+                },
+                "color": {
+                  "field": "Label",
+                  "legend": null,
+                  "scale": {
+                    "domain": ["Win", "Spr", "Sum", "Aut"],
+                    "range": ["#e5d8bd", "#fed98e", "#fe9929", "#d95f0e"]
+                  }
+                },
+                "tooltip": [
+                  {
+                    "field": "Label",
+                    "title": "Season"
+                  },
+                  {
+                    "field": "kWh",
+                    "format": ".1f"
+                  }
+                ]
+              },
+              "layer": [
+                {
+                  "mark": {
+                    "type": "bar",
+                    "cornerRadiusEnd": 3
+                  }
+                },
+                {
+                  "mark": {
+                    "type": "text",
+                    "dy": -5,
+                    "fontSize": 11
+                  },
+                  "encoding": {
+                    "text": {
+                      "field": "kWh",
+                      "format": ".0f"
+                    },
+                    "color": {
+                      "value": "black"
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "config": {
+        "view": {
+          "stroke": "transparent"
+        },
+        "title": {
+          "fontSize": 11,
+          "anchor": "middle",
+          "dy": -5
+        },
+        "axis": {
+          "domain": false,
+          "ticks": false,
+          "labelFontSize": 10
+        }
+      }
+    }
+  },
+  {
+    "id": "chart-vega-tabular-scorecard-flatten",
+    "title": "Tabular Multi-Endpoint Hazard Scorecard with Array Construction, Flatten & Status Badges",
+    "category": "chart-vega",
+    "tags": [
+      "vega-lite",
+      "vega",
+      "chart",
+      "tabular",
+      "scorecard",
+      "status-card",
+      "flatten-transform",
+      "multi-endpoint",
+      "badge-pill",
+      "container-responsive",
+      "eodash:vegadefinition",
+      "eox-chart"
+    ],
+    "description": "Analytical tabular scorecard Vega Lite spec resolving multiple process endpoints onto a shared categorical Y-axis. Uses calculate transforms to construct parallel metric label, key, value, and ordering arrays, flattened with the flatten transform into discrete table rows. Renders rounded rect pill backgrounds colored by reference classification with left-aligned metric titles and right-aligned dynamically formatted values with unit suffixes.",
+    "targetContext": "Host as JSON and reference via Process.VegaDefinition or STAC Collection eodash:vegadefinition",
+    "code": {
+      "$schema": "https://vega.github.io/schema/vega-lite/v6.json",
+      "description": "Snow-depth anomaly and location-specific natural-hazard overview",
+      "title": {
+        "text": "Snow Depth Anomaly & Natural Hazards",
+        "subtitle": "Snow conditions and location-specific values",
+        "anchor": "start",
+        "fontSize": 15,
+        "subtitleFontSize": 11,
+        "subtitleColor": "#666666"
+      },
+      "width": "container",
+      "height": "container",
+      "padding": 8,
+      "layer": [
+        {
+          "data": {
+            "name": "snow_variation"
+          },
+          "transform": [
+            {
+              "calculate": "['Snow depth anomaly', 'Relative anomaly']",
+              "as": "row_labels"
+            },
+            {
+              "calculate": "[datum.anomaly_cm == null || datum.anomaly_cm == '' ? null : toNumber(datum.anomaly_cm) * 100, datum.anomaly_percent == null || datum.anomaly_percent == '' ? null : toNumber(datum.anomaly_percent)]",
+              "as": "row_values"
+            },
+            {
+              "calculate": "[' cm', ' %']",
+              "as": "row_units"
+            },
+            {
+              "calculate": "[0, 1]",
+              "as": "row_order"
+            },
+            {
+              "flatten": ["row_labels", "row_values", "row_units", "row_order"]
+            },
+            {
+              "calculate": "datum.row_values == null ? 'No data' : format(datum.row_values, '+.1f') + datum.row_units",
+              "as": "display_value"
+            },
+            {
+              "calculate": "datum.row_values == null ? 'No data' : datum.row_values < 0 ? 'Below reference' : datum.row_values > 0 ? 'Above reference' : 'At reference'",
+              "as": "row_class"
+            }
+          ],
+          "layer": [
+            {
+              "mark": {
+                "type": "rect",
+                "cornerRadius": 4
+              },
+              "encoding": {
+                "x": {
+                  "value": 0
+                },
+                "x2": {
+                  "value": 430
+                },
+                "y": {
+                  "field": "row_labels",
+                  "type": "nominal",
+                  "sort": {
+                    "field": "row_order",
+                    "order": "ascending"
+                  },
+                  "axis": null,
+                  "scale": {
+                    "paddingInner": 0.15,
+                    "paddingOuter": 0.05
+                  }
+                },
+                "color": {
+                  "field": "row_class",
+                  "type": "nominal",
+                  "scale": {
+                    "domain": [
+                      "Below reference",
+                      "At reference",
+                      "Above reference",
+                      "No data"
+                    ],
+                    "range": ["#f6d2c8", "#eeeeee", "#d2e5f3", "#f4f4f4"]
+                  },
+                  "legend": null
+                }
+              }
+            },
+            {
+              "mark": {
+                "type": "text",
+                "align": "left",
+                "baseline": "middle",
+                "dx": 10,
+                "fontSize": 11,
+                "fontWeight": 600,
+                "color": "#245f85"
+              },
+              "encoding": {
+                "x": {
+                  "value": 0
+                },
+                "y": {
+                  "field": "row_labels",
+                  "type": "nominal",
+                  "sort": {
+                    "field": "row_order",
+                    "order": "ascending"
+                  },
+                  "axis": null
+                },
+                "text": {
+                  "field": "row_labels"
+                }
+              }
+            },
+            {
+              "mark": {
+                "type": "text",
+                "align": "right",
+                "baseline": "middle",
+                "dx": -10,
+                "fontSize": 11,
+                "fontWeight": 700,
+                "color": "#245f85"
+              },
+              "encoding": {
+                "x": {
+                  "value": 430
+                },
+                "y": {
+                  "field": "row_labels",
+                  "type": "nominal",
+                  "sort": {
+                    "field": "row_order",
+                    "order": "ascending"
+                  },
+                  "axis": null
+                },
+                "text": {
+                  "field": "display_value"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "data": {
+            "name": "hazards"
+          },
+          "transform": [
+            {
+              "calculate": "['Flood', 'Avalanche', 'Landslide susceptibility', 'Earthquake zone', 'Reference ground acceleration', 'Hail', 'Heat indicator', 'Basic wind speed', 'Wind gusts', 'Lightning density', 'Snow load', 'Surface-runoff depth', 'Surface-runoff velocity']",
+              "as": "row_labels"
+            },
+            {
+              "calculate": "['hochwasser', 'lawinen', 'rutschungen', 'erdbeben', 'erdbeben_agr', 'hagel', 'hitze', 'basiswindgeschwindigkeit', 'windspitzen', 'blitzdichte', 'schneelast', 'oberflaechenabfluss_d', 'oberflaechenabfluss_v']",
+              "as": "row_keys"
+            },
+            {
+              "calculate": "[datum.data.hochwasser, datum.data.lawinen, datum.data.rutschungen, datum.data.erdbeben, datum.data.erdbeben_agr, datum.data.hagel, datum.data.hitze, datum.data.basiswindgeschwindigkeit, datum.data.windspitzen, datum.data.blitzdichte, datum.data.schneelast, datum.data.oberflaechenabfluss_d, datum.data.oberflaechenabfluss_v]",
+              "as": "row_values"
+            },
+            {
+              "calculate": "[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]",
+              "as": "row_order"
+            },
+            {
+              "flatten": ["row_labels", "row_keys", "row_values", "row_order"]
+            },
+            {
+              "calculate": "datum.row_values == null || datum.row_values == '' ? null : toNumber(datum.row_values)",
+              "as": "value_num"
+            },
+            {
+              "calculate": "datum.value_num == null ? 'No data' : datum.row_keys == 'basiswindgeschwindigkeit' ? format(datum.value_num, '.1f') + ' m/s' : datum.row_keys == 'blitzdichte' ? format(datum.value_num, '.1f') + ' strikes/km\u00b2/year' : datum.row_keys == 'erdbeben' ? 'Zone ' + format(datum.value_num, '.0f') : datum.row_keys == 'erdbeben_agr' ? format(datum.value_num, '.2f') + ' m/s\u00b2' : datum.row_keys == 'schneelast' ? format(datum.value_num, '.1f') + ' kN/m\u00b2' : datum.row_keys == 'oberflaechenabfluss_d' ? format(datum.value_num, '.1f') + ' cm' : datum.row_keys == 'oberflaechenabfluss_v' ? format(datum.value_num, '.2f') + ' m/s' : datum.row_keys == 'hitze' ? format(datum.value_num, '.2f') : 'Class ' + format(datum.value_num, '.0f')",
+              "as": "display_value"
+            },
+            {
+              "calculate": "datum.value_num == null ? 'No data' : 'Available'",
+              "as": "row_class"
+            }
+          ],
+          "layer": [
+            {
+              "mark": {
+                "type": "rect",
+                "cornerRadius": 4
+              },
+              "encoding": {
+                "x": {
+                  "value": 0
+                },
+                "x2": {
+                  "value": 430
+                },
+                "y": {
+                  "field": "row_labels",
+                  "type": "nominal",
+                  "sort": {
+                    "field": "row_order",
+                    "order": "ascending"
+                  },
+                  "axis": null,
+                  "scale": {
+                    "paddingInner": 0.15,
+                    "paddingOuter": 0.05
+                  }
+                },
+                "color": {
+                  "field": "row_class",
+                  "type": "nominal",
+                  "scale": {
+                    "domain": ["Available", "No data"],
+                    "range": ["#e7eef5", "#f3f3f3"]
+                  },
+                  "legend": null
+                }
+              }
+            },
+            {
+              "mark": {
+                "type": "text",
+                "align": "left",
+                "baseline": "middle",
+                "dx": 10,
+                "fontSize": 11,
+                "fontWeight": 500,
+                "color": "#262626"
+              },
+              "encoding": {
+                "x": {
+                  "value": 0
+                },
+                "y": {
+                  "field": "row_labels",
+                  "type": "nominal",
+                  "sort": {
+                    "field": "row_order",
+                    "order": "ascending"
+                  },
+                  "axis": null
+                },
+                "text": {
+                  "field": "row_labels"
+                }
+              }
+            },
+            {
+              "mark": {
+                "type": "text",
+                "align": "right",
+                "baseline": "middle",
+                "dx": -10,
+                "fontSize": 11,
+                "fontWeight": 600,
+                "color": "#262626"
+              },
+              "encoding": {
+                "x": {
+                  "value": 430
+                },
+                "y": {
+                  "field": "row_labels",
+                  "type": "nominal",
+                  "sort": {
+                    "field": "row_order",
+                    "order": "ascending"
+                  },
+                  "axis": null
+                },
+                "text": {
+                  "field": "display_value"
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "resolve": {
+        "scale": {
+          "y": "shared",
+          "color": "independent"
+        }
+      },
+      "config": {
+        "background": "transparent",
+        "view": {
+          "stroke": null
+        },
+        "font": "sans-serif",
+        "title": {
+          "color": "#202124"
+        }
+      }
     }
   }
 ]

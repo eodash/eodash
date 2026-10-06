@@ -370,7 +370,7 @@
       "stac",
       "copernicus-data-space-ecosystem"
     ],
-    "description": "Configuration for a Sentinel Hub BYOC layer hosted on Copernicus Data Space Ecosystem (CDSE), using standard BYOC type with configured statistics API for getting a chart of time distribution of raster values for a user-drawn area.",
+    "description": "Configuration for a Sentinel Hub BYOC layer hosted on CDSE, using standard BYOC type with configured statistics API for getting a chart of time distribution of raster values for a user-drawn area.",
     "targetContext": "Place in catalog 'collections/<name>.json'. Requires a configuration of env variables SH_INSTANCE_ID, SH_CLIENT_ID and SH_CLIENT_SECRET in the catalog repository build process.",
     "code": {
       "Name": "custom-byoc-layer",

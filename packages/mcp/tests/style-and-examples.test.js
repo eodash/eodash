@@ -136,18 +136,69 @@ describe("eodash Examples Discovery - findExamples", () => {
   it("finds Vega chart examples in find_examples catalog", () => {
     const res = findExamples({
       category: "chart-vega",
+      limit: 20,
     });
 
-    expect(res.results.length).toBeGreaterThanOrEqual(2);
+    expect(res.results.length).toBeGreaterThanOrEqual(5);
     const ids = res.results.map((r) => r.id);
     expect(ids).toContain("chart-vega-timeseries-uncertainty");
     expect(ids).toContain("chart-vega-scenario-grouped-bar");
+    expect(ids).toContain("chart-vega-dual-axis-reference-bands");
+    expect(ids).toContain("chart-vega-kpi-metrics-dashboard");
+    expect(ids).toContain("chart-vega-tabular-scorecard-flatten");
 
     for (const item of res.results) {
       expect(item.category).toBe("chart-vega");
       expect(typeof item.code).toBe("object");
       expect(item.code.$schema).toBeDefined();
     }
+  });
+
+  it("finds newly added GTIF patterns: reference-bands, KPI dashboard, scorecard, inline data-uri, and overlay-layers", () => {
+    // 1. Reference bands vega chart
+    const refBandsRes = findExamples({
+      query: "reference-bands",
+      category: "chart-vega",
+    });
+    expect(refBandsRes.totalFound).toBeGreaterThan(0);
+    expect(refBandsRes.results[0].id).toBe(
+      "chart-vega-dual-axis-reference-bands",
+    );
+
+    // 2. KPI metrics dashboard
+    const kpiRes = findExamples({ query: "kpi-cards", category: "chart-vega" });
+    expect(kpiRes.totalFound).toBeGreaterThan(0);
+    expect(kpiRes.results[0].id).toBe("chart-vega-kpi-metrics-dashboard");
+
+    // 3. Tabular scorecard
+    const scorecardRes = findExamples({
+      query: "scorecard flatten",
+      category: "chart-vega",
+    });
+    expect(scorecardRes.totalFound).toBeGreaterThan(0);
+    expect(scorecardRes.results[0].id).toBe(
+      "chart-vega-tabular-scorecard-flatten",
+    );
+
+    // 4. Inline data:application/json feature properties process
+    const dataUriRes = findExamples({
+      query: "data-uri feature-properties",
+      category: "indicator",
+    });
+    expect(dataUriRes.totalFound).toBeGreaterThan(0);
+    expect(dataUriRes.results[0].id).toBe(
+      "indicator-inline-feature-properties-process",
+    );
+
+    // 5. OverlayLayers and CORS proxy
+    const overlayRes = findExamples({
+      query: "overlay-layers cors-proxy",
+      category: "indicator",
+    });
+    expect(overlayRes.totalFound).toBeGreaterThan(0);
+    expect(overlayRes.results[0].id).toBe(
+      "indicator-overlay-layers-cors-proxy",
+    );
   });
 
   it("finds process POST body examples in find_examples catalog", () => {
