@@ -249,3 +249,75 @@ export const applyVisibilityRoles = (collection, layers = []) => {
     }
   }
 };
+
+/**
+ * Default fallback base layer (OpenStreetMap) when no baselayer links are provided by STAC.
+ * @type {import("@eox/map").EoxLayer[]}
+ */
+export const DEFAULT_BASE_LAYERS = [
+  {
+    type: "Tile",
+    properties: {
+      id: "osm",
+      title: "OpenStreetMap",
+      group: "baselayer",
+      visible: true,
+      layerControlExclusive: true,
+    },
+    source: {
+      type: "OSM",
+    },
+  },
+];
+
+/**
+ * Normalizes baselayer visibility and exclusivity on a set of base layers.
+ *
+ * @param {import("@eox/map").EoxLayer[]} baseLayers
+ * @param {import("@eox/map").EoxLayer[]} [fallbackBaseLayers]
+ * @returns {import("@eox/map").EoxLayer[]}
+ */
+export const normalizeBaseLayers = (
+  baseLayers,
+  fallbackBaseLayers = DEFAULT_BASE_LAYERS,
+) => {
+  if (baseLayers.length) {
+    let counter = 0;
+    let lastPos = 0;
+    for (let indx = 0; indx < baseLayers.length; indx++) {
+      const bl = baseLayers[indx];
+      // @ts-expect-error properties is optional upstream, always built here
+      if (!("visible" in bl.properties)) {
+        // @ts-expect-error properties is optional upstream, always built here
+        bl.properties.visible = false;
+      }
+
+      // @ts-expect-error properties is optional upstream, always built here
+      if (bl.properties.visible) {
+        counter++;
+        lastPos = indx;
+      }
+    }
+
+    if (counter === 0) {
+      // @ts-expect-error properties is optional upstream, always built here
+      baseLayers[0].properties.visible = true;
+    }
+
+    if (counter > 0) {
+      baseLayers.forEach((bl, indx) => {
+        // @ts-expect-error properties is optional upstream, always built here
+        bl.properties.visible = indx === lastPos;
+      });
+    }
+
+    baseLayers.forEach((bl) => {
+      // @ts-expect-error properties is optional upstream, always built here
+      bl.properties.layerControlExclusive = true;
+    });
+    return baseLayers;
+  }
+
+  return [...fallbackBaseLayers];
+};
+

@@ -1,0 +1,53 @@
+ Test prompts for another AI agent with generate_map_from_stac tool:
+     
+ ### 1. Catalog Fuzzy Search by Indicator Query 
+  "Using the eodash MCP tool generate_map_from_stac, generate map configuration for nitrogen dioxide from this catalog    
+  URL: https://eoxhub-workspaces.github.io/eoxhub-test-catalog/catalog/catalog.json. Search with query NO2 and give me    
+  the layer list, zoom level, and center."     
+ ### 2. Catalog Direct Collection ID
+     
+  "Call generate_map_from_stac on catalog https://eoxhub-workspaces.github.io/eoxhub-test-catalog/catalog/catalog.json    
+  targeting collection ID trc_no2_global. Extract the timeControl dates and all generated legends."
+ ### 3. Live STAC API Endpoint
+  "Query the live Copernicus STAC API root https://api.explorer.eopf.copernicus.eu/stac using generate_map_from_stac.     
+  Search with query sentinel-2 or select the first child collection. Show returned base layers, data layers, and
+  projections."
+ ### 4. Direct Indicator Collection URL with Specific Date
+  "Call generate_map_from_stac with direct indicator collection URL:  
+  https://eoxhub-workspaces.github.io/eoxhub-test-catalog/catalog/trc_no2_global/collection.json. Set datetime parameter  
+  to 2020-05-01T00:00:00Z. Show resulting layer definitions and projection code."        
+ ### 5. In-Memory stac_object (No URL Fetch)    
+  "Call generate_map_from_stac passing an in-memory stac_object instead of a URL. Pass this minimal STAC Collection:      
+ 
+  ```json
+ {   
+   "type": "Collection", 
+   "id": "synthetic-co2-demo",     
+   "title": "Synthetic CO2 Demo",  
+   "description": "Demonstration collection",  
+   "extent": { 
+     "spatial": { "bbox": [[-180, -90, 180, 90]] },      
+     "temporal": { "interval": [["2020-01-01T00:00:00Z", "2024-01-01T00:00:00Z"]] }      
+   },
+   "links": [  
+     {         
+       "rel": "child",   
+       "href": "https://eoxhub-workspaces.github.io/eoxhub-test-catalog/catalog/trc_no2_global/item.json"    
+     }         
+   ] 
+ }   
+  ```   
+ 
+  Verify generated map configuration has base layers, view center, and zoom."   
+     
+ ### 6. Ambiguity Resolution Handling  
+     
+  "Call generate_map_from_stac with catalog https://eoxhub-workspaces.github.io/eoxhub-test-catalog/catalog/catalog.json  
+  using vague query air. When the tool returns candidate indicators with ambiguity scores, report the candidate list and  
+  ask me which collection ID to load."
+     
+ ### 7. Multi-Legend & Timeline Extraction      
+  "Use generate_map_from_stac on      
+  https://eoxhub-workspaces.github.io/eoxhub-test-catalog/catalog/trc_no2_global/collection.json. Inspect the returned    
+  legends array and timeControl object. What are the min/max dates, and what legend styles are configured for EOxMap?"    
+

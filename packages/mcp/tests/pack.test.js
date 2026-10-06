@@ -26,18 +26,42 @@ describe("MCP Package Packaging and Integrity", () => {
     const files = packInfo[0].files.map((f) => f.path);
 
     // Verify key files and directories are included in the tarball
-    expect(files).toContain("index.js");
-    expect(files).toContain("server.js");
-    expect(files).toContain("helpers.js");
+    expect(files).toContain("dist/index.js");
+    expect(files).toContain("dist/server.js");
+    expect(files).toContain("dist/helpers.js");
     expect(files).toContain("package.json");
 
-    // Verify data, templates, and tools are included
+    // Verify data and templates are included
     const hasData = files.some((f) => f.startsWith("data/"));
     const hasTemplates = files.some((f) => f.startsWith("templates/"));
-    const hasTools = files.some((f) => f.startsWith("tools/"));
 
     expect(hasData).toBe(true);
     expect(hasTemplates).toBe(true);
-    expect(hasTools).toBe(true);
+  });
+
+  it("runs the bundled dist/index.js directly over stdio", async () => {
+    const { Client } = await import(
+      "@modelcontextprotocol/sdk/client/index.js"
+    );
+    const { StdioClientTransport } = await import(
+      "@modelcontextprotocol/sdk/client/stdio.js"
+    );
+
+    const transport = new StdioClientTransport({
+      command: "node",
+      args: [path.resolve(MCP_DIR, "dist/index.js"), "--stdio"],
+    });
+    const client = new Client({
+      name: "bundle-test-client",
+      version: "1.0.0",
+    });
+    await client.connect(transport);
+
+    const tools = await client.listTools();
+    expect(tools.tools.length).toBeGreaterThanOrEqual(6);
+    const names = tools.tools.map((t) => t.name);
+    expect(names).toContain("generate_map_from_stac");
+
+    await transport.close();
   });
 });

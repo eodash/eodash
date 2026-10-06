@@ -4,6 +4,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { getMetadata } from "./helpers.js";
 import { registerWidgetTools } from "./tools/widgets.js";
 import { registerArchitectureTools } from "./tools/architecture.js";
@@ -14,9 +15,13 @@ import { createExpressApp as createExpressAppInternal } from "./server.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const pkg = JSON.parse(
-  fs.readFileSync(path.join(__dirname, "package.json"), "utf8"),
-);
+const pkgPath = fs.existsSync(path.join(__dirname, "package.json"))
+  ? path.join(__dirname, "package.json")
+  : path.join(__dirname, "../package.json");
+
+const pkg = fs.existsSync(pkgPath)
+  ? JSON.parse(fs.readFileSync(pkgPath, "utf8"))
+  : { name: "@eodash/mcp-server", version: "1.0.0" };
 
 export { getMetadata };
 
@@ -51,6 +56,30 @@ export function createExpressApp() {
 }
 
 async function startServer() {
+  if (process.argv.includes("--help") || process.argv.includes("-h")) {
+    console.log(`
+eodash MCP Server
+
+Usage:
+  eodash-mcp-server [options]
+
+Options:
+  --stdio, -s       Run server with STDIO transport (for MCP desktop clients & local integration)
+  --port <port>     Port for SSE/HTTP server (default: 3001)
+  --host <host>     Host for SSE/HTTP server (default: 127.0.0.1)
+  --help, -h        Show help
+`);
+    process.exit(0);
+  }
+
+  if (process.argv.includes("--stdio") || process.argv.includes("-s")) {
+    const server = createMcpServer();
+    const transport = new StdioServerTransport();
+    await server.connect(transport);
+    console.error("eodash MCP Server running on stdio");
+    return;
+  }
+
   const app = createExpressApp();
   let port = 3001;
   let host = "127.0.0.1";

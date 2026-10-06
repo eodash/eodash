@@ -23,12 +23,23 @@ Generate widget and architecture metadata from the codebase:
 npm run mcp:generate
 ```
 
-### 2. Run Server (Stateless HTTP)
+### 2. Run Server
+
+#### STDIO Mode (Recommended for Local Clients & IDEs)
+
+```bash
+# Run over stdio:
+node packages/mcp/dist/index.js --stdio
+# or via npx / bin:
+npx @eodash/mcp-server --stdio
+```
+
+#### HTTP / SSE Mode
 
 ```bash
 npm run mcp:start
-# or custom port:
-node packages/mcp/index.js --port 3001
+# or custom port / host:
+node packages/mcp/dist/index.js --port 3001 --host 127.0.0.1
 # or globally / via bin:
 npx @eodash/mcp-server --port 3001
 ```
@@ -39,17 +50,22 @@ npx @eodash/mcp-server --port 3001
 
 ### 3. MCP Client Configuration
 
-Connect your MCP client (Claude Desktop, Cursor, Pi MCP adapter, MCP Inspector, or custom agents) via Streamable HTTP:
+Connect your MCP client (Claude Desktop, Cursor, Pi MCP adapter, MCP Inspector, or custom agents):
 
-#### MCP Inspector
+#### Claude Desktop Configuration (`claude_desktop_config.json`) - STDIO
 
-```bash
-npx @modelcontextprotocol/inspector
+```json
+{
+  "mcpServers": {
+    "eodash": {
+      "command": "npx",
+      "args": ["-y", "@eodash/mcp-server", "--stdio"]
+    }
+  }
+}
 ```
 
-Connect to `http://localhost:3001` via Streamable HTTP.
-
-#### Claude Desktop Configuration (`claude_desktop_config.json`)
+#### Claude Desktop Configuration (`claude_desktop_config.json`) - HTTP
 
 ```json
 {

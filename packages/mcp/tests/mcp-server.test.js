@@ -5,6 +5,7 @@ import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import http from "node:http";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
+import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import { createMcpServer, createExpressApp } from "../index.js";
 import { buildMetadata } from "../generate-metadata.js";
 
@@ -463,5 +464,22 @@ describe("eodash MCP Server - HTTP Endpoints", () => {
     const examplesBody = await examplesRes.json();
     const examplesData = JSON.parse(examplesBody.result.content[0].text);
     expect(examplesData.totalFound).toBeGreaterThan(0);
+  });
+
+  it("supports stdio transport when launched with --stdio", async () => {
+    const transport = new StdioClientTransport({
+      command: "node",
+      args: [path.resolve(__dirname, "../index.js"), "--stdio"],
+    });
+    const client = new Client({ name: "stdio-test-client", version: "1.0.0" });
+    await client.connect(transport);
+
+    const tools = await client.listTools();
+    expect(tools.tools.length).toBeGreaterThanOrEqual(6);
+    const names = tools.tools.map((t) => t.name);
+    expect(names).toContain("generate_map_from_stac");
+    expect(names).toContain("list_widgets");
+
+    await transport.close();
   });
 });
