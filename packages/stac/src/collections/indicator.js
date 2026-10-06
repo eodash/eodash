@@ -55,29 +55,36 @@ export const buildIndicatorDataLayers = async ({
     timeOrItem !== null &&
     !(timeOrItem instanceof Date);
 
-  const activeReaders = isItem
-    ? readers.filter(
-        (r) =>
-          !(
-            /** @type {import("../types").STACItem} */ (timeOrItem).collection
-          ) ||
-          r.stac?.id ===
-            /** @type {import("../types").STACItem} */ (timeOrItem).collection,
-      )
-    : readers;
+  const itemCollection = isItem
+    ? /** @type {import("../types").STACItem} */ (timeOrItem).collection
+    : undefined;
+  const itemDate = isItem
+    ? /** @type {import("../types").STACItem} */ (timeOrItem).properties
+        ?.datetime ||
+      /** @type {import("../types").STACItem} */ (timeOrItem).properties
+        ?.start_datetime ||
+      undefined
+    : undefined;
 
   const readerResults = await Promise.all(
-    (activeReaders.length ? activeReaders : readers).map((reader) =>
-      (isItem
-        ? reader.buildLayers(
-            /** @type {import("../types").STACItem} */ (timeOrItem),
-            context,
-          )
+    readers.map((reader) => {
+      const isTargetReader =
+        !itemCollection ||
+        reader.stac?.id === itemCollection ||
+        readers.length === 1;
+      const buildPromise = isItem
+        ? isTargetReader
+          ? reader.buildLayers(
+              /** @type {import("../types").STACItem} */ (timeOrItem),
+              context,
+            )
+          : reader.getLayers(itemDate, context)
         : reader.getLayers(
             /** @type {string | Date | undefined} */ (timeOrItem),
             context,
-          )
-      ).then((built) => {
+          );
+
+      return buildPromise.then((built) => {
         built.layers.forEach((layer) => {
           if (!layer.properties?.layerControlExclusive) {
             // @ts-expect-error properties is optional upstream, always built here
@@ -87,8 +94,8 @@ export const buildIndicatorDataLayers = async ({
           }
         });
         return built;
-      }),
-    ),
+      });
+    }),
   );
 
   /** @type {import("@eox/map").EoxLayer[]} */
@@ -118,7 +125,6 @@ export const buildIndicatorDataLayers = async ({
 
   return { layers, projections: deduplicateProjections(projections), items };
 };
-
 
 /**
  * Default color palette assigned across STAC collections (Bank-Wong palette from templates/baseConfig.js).
@@ -210,15 +216,19 @@ export const createEodashIndicator = async (url, options = {}) => {
    * @param {import("../types").Datetime | undefined} targetDatetime
    * @param {import("../types").STACItem | undefined} targetItem
    * @param {import("../types").BuildContext} [context]
+   * @param {Date[][]} [prefetchedDates]
    */
   const buildLayersInternal = async (
     targetDatetime,
     targetItem,
     context = {},
+    prefetchedDates = undefined,
   ) => {
     let resolvedDate = targetDatetime;
     if (!targetItem && !resolvedDate) {
-      const dates = await Promise.all(readers.map((r) => r.getDates()));
+      const dates =
+        prefetchedDates ??
+        (await Promise.all(readers.map((r) => r.getDates())));
       const allDates = dates
         .flat()
         .map((d) => d.getTime())
@@ -339,7 +349,39 @@ export const createEodashIndicator = async (url, options = {}) => {
     getMapConfig: async (configOptions = {}) => {
       const { datetime, item, bbox, context } = configOptions;
 
-      const buildResult = await buildLayersInternal(datetime, item, context);
+      /** @type {Date[][] | undefined} */
+      let prefetchedDates = undefined;
+      /** @type {{ availableDates: string[], minDate?: string, maxDate?: string } | undefined} */
+      let timeControl = undefined;
+      try {
+        prefetchedDates = await Promise.all(readers.map((r) => r.getDates()));
+        const allTimestamps = prefetchedDates
+          .flat()
+          .map((d) => d.getTime())
+          .filter((t) => !Number.isNaN(t))
+          .sort((a, b) => a - b);
+
+        const uniqueTimestamps = Array.from(new Set(allTimestamps));
+        if (uniqueTimestamps.length > 0) {
+          const availableDates = uniqueTimestamps.map((t) =>
+            new Date(t).toISOString(),
+          );
+          timeControl = {
+            availableDates,
+            minDate: availableDates[0],
+            maxDate: availableDates[availableDates.length - 1],
+          };
+        }
+      } catch {
+        // Fallback: ignore date extraction failure if reader has no items
+      }
+
+      const buildResult = await buildLayersInternal(
+        datetime,
+        item,
+        context,
+        prefetchedDates,
+      );
 
       // Center and zoom resolution
       /** @type {any} */
@@ -361,31 +403,6 @@ export const createEodashIndicator = async (url, options = {}) => {
           buildResult.item?.properties?.datetime ??
           buildResult.item?.properties?.start_datetime) ||
         undefined;
-
-      /** @type {{ availableDates: string[], minDate?: string, maxDate?: string } | undefined} */
-      let timeControl = undefined;
-      try {
-        const dates = await Promise.all(readers.map((r) => r.getDates()));
-        const allTimestamps = dates
-          .flat()
-          .map((d) => d.getTime())
-          .filter((t) => !Number.isNaN(t))
-          .sort((a, b) => a - b);
-
-        const uniqueTimestamps = Array.from(new Set(allTimestamps));
-        if (uniqueTimestamps.length > 0) {
-          const availableDates = uniqueTimestamps.map((t) =>
-            new Date(t).toISOString(),
-          );
-          timeControl = {
-            availableDates,
-            minDate: availableDates[0],
-            maxDate: availableDates[availableDates.length - 1],
-          };
-        }
-      } catch {
-        // Fallback: ignore date extraction failure if reader has no items
-      }
 
       return {
         layers: buildResult.layers,

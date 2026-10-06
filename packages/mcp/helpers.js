@@ -16,6 +16,10 @@ const __dirname = path.dirname(__filename);
 
 let cachedMetadata = null;
 
+export function _resetMetadataCache() {
+  cachedMetadata = null;
+}
+
 /**
  * Loads cached metadata from pre-generated JSON files in data/
  */

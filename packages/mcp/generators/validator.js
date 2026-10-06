@@ -4,6 +4,7 @@ import {
   createAjvInstance,
   loadSchemas,
   getValidators,
+  _resetValidatorsCache,
 } from "./validator/schemas.js";
 import { validateCustomRules } from "./validator/rules.js";
 
@@ -13,6 +14,7 @@ export {
   createAjvInstance,
   loadSchemas,
   getValidators,
+  _resetValidatorsCache,
 };
 
 /**

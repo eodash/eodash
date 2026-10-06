@@ -69,6 +69,12 @@ export function registerStacTools(server) {
             .string()
             .optional()
             .describe("Base URL for TiTiler raster tile rendering endpoint"),
+          api: z
+            .boolean()
+            .optional()
+            .describe(
+              "Explicitly specify whether the STAC endpoint is a dynamic STAC API (true) or static catalog (false). Defaults to auto-inferred from URL (.json -> static).",
+            ),
         })
         .refine((data) => Boolean(data.url || data.stac_object), {
           message: "Either 'url' or 'stac_object' must be provided.",

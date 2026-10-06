@@ -282,17 +282,18 @@ export const normalizeBaseLayers = (
   fallbackBaseLayers = DEFAULT_BASE_LAYERS,
 ) => {
   if (baseLayers.length) {
+    const layers = baseLayers.map((bl) => ({
+      ...bl,
+      properties: { ...(bl.properties || {}) },
+    }));
     let counter = 0;
     let lastPos = 0;
-    for (let indx = 0; indx < baseLayers.length; indx++) {
-      const bl = baseLayers[indx];
-      // @ts-expect-error properties is optional upstream, always built here
+    for (let indx = 0; indx < layers.length; indx++) {
+      const bl = layers[indx];
       if (!("visible" in bl.properties)) {
-        // @ts-expect-error properties is optional upstream, always built here
         bl.properties.visible = false;
       }
 
-      // @ts-expect-error properties is optional upstream, always built here
       if (bl.properties.visible) {
         counter++;
         lastPos = indx;
@@ -300,24 +301,20 @@ export const normalizeBaseLayers = (
     }
 
     if (counter === 0) {
-      // @ts-expect-error properties is optional upstream, always built here
-      baseLayers[0].properties.visible = true;
+      layers[0].properties.visible = true;
     }
 
     if (counter > 0) {
-      baseLayers.forEach((bl, indx) => {
-        // @ts-expect-error properties is optional upstream, always built here
+      layers.forEach((bl, indx) => {
         bl.properties.visible = indx === lastPos;
       });
     }
 
-    baseLayers.forEach((bl) => {
-      // @ts-expect-error properties is optional upstream, always built here
+    layers.forEach((bl) => {
       bl.properties.layerControlExclusive = true;
     });
-    return baseLayers;
+    return /** @type {import("@eox/map").EoxLayer[]} */ (layers);
   }
 
   return [...fallbackBaseLayers];
 };
-

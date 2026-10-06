@@ -34,13 +34,13 @@
         },
         "date_start": {
           "title": "Start Date",
-          "type": "date",
+          "type": "string",
           "format": "date",
           "default": "2025-01-01"
         },
         "date_end": {
           "title": "End Date",
-          "type": "date",
+          "type": "string",
           "format": "date",
           "default": "2026-03-01"
         }

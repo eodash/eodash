@@ -227,6 +227,7 @@ export function selectCatalogIndicator(catalog, { collection_id, query } = {}) {
  * @param {number[]} [params.bbox] - Bounding box [minX, minY, maxX, maxY]
  * @param {string} [params.viewProjection] - Desired map view projection (e.g. 'EPSG:4326', 'EPSG:3035')
  * @param {string} [params.rasterEndpoint] - Base URL for TiTiler / raster tile rendering
+ * @param {boolean} [params.api] - Explicitly specify whether endpoint is STAC API (true) or static (false)
  * @param {object} [options]
  * @param {import("@eodash/stac").HttpClient | import("@eodash/stac/http").AxiosInstance} [options.client] - Optional HTTP client (for hermetic testing)
  * @returns {Promise<import("@eodash/stac").MapConfig & { indicator?: { id?: string, title?: string, href?: string } }>}
@@ -241,6 +242,7 @@ export async function buildStacMap(
     bbox,
     viewProjection,
     rasterEndpoint,
+    api,
   },
   { client } = {},
 ) {
@@ -380,6 +382,7 @@ export async function buildStacMap(
     client,
     viewProjection,
     rasterEndpoint,
+    ...(api !== undefined && { api }),
   });
 
   const mapConfig = await indicator.getMapConfig({

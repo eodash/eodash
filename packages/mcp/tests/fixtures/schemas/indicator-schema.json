@@ -1,0 +1,1734 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "$id": "https://eodash.github.io/eodash-schemas/catalog/indicator-schema.json",
+  "properties": {
+    "Name": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[a-zA-Z0-9_-]+$"
+    },
+    "Title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "Description": {
+      "type": "string"
+    },
+    "Themes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "Tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "DataSource": {
+      "type": "object",
+      "properties": {
+        "Spaceborne": {
+          "type": "object",
+          "properties": {
+            "Satellite": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "Sensor": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "InSitu": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "Other": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "Agency": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "License": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "Url": {
+                "type": "string"
+              },
+              "Type": {
+                "type": "string",
+                "default": "text/html"
+              },
+              "Title": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "Url"
+            ]
+          }
+        }
+      ]
+    },
+    "Provider": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "Name": {
+            "type": "string"
+          },
+          "Description": {
+            "type": "string"
+          },
+          "Roles": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "Url": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "Name",
+          "Url"
+        ]
+      }
+    },
+    "Stories": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "Name": {
+            "type": "string"
+          },
+          "Url": {
+            "type": "string"
+          },
+          "Id": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "Citation": {
+      "type": "object",
+      "properties": {
+        "DOI": {
+          "type": "string"
+        },
+        "Citation": {
+          "type": "string"
+        },
+        "Publication": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "DOI": {
+                "type": "string"
+              },
+              "Citation": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "Image": {
+      "type": "string"
+    },
+    "Services": {
+      "type": "array",
+      "items": {
+        "anyOf": [
+          {
+            "type": "object",
+            "properties": {
+              "Name": {
+                "type": "string",
+                "const": "Statistical API"
+              },
+              "Type": {
+                "type": "string",
+                "enum": [
+                  "byoc",
+                  "zarr"
+                ]
+              },
+              "CollectionId": {
+                "type": "string"
+              },
+              "Script": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "Name",
+              "Type",
+              "CollectionId",
+              "Script"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "Name": {
+                "type": "string",
+                "const": "EOxHub Notebook"
+              },
+              "Title": {
+                "type": "string"
+              },
+              "Url": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "Name",
+              "Title",
+              "Url"
+            ]
+          }
+        ]
+      }
+    },
+    "References": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "Url": {
+            "type": "string"
+          },
+          "Name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "Url",
+          "Name"
+        ]
+      }
+    },
+    "CollectionGroup": {
+      "type": "string"
+    },
+    "Process": {
+      "type": "object",
+      "properties": {
+        "Name": {
+          "type": "string"
+        },
+        "JsonForm": {
+          "type": "string"
+        },
+        "VegaDefinition": {
+          "type": "string"
+        },
+        "EndPoints": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "properties": {
+              "Identifier": {
+                "type": "string"
+              },
+              "Url": {
+                "type": "string"
+              },
+              "Title": {
+                "type": "string",
+                "default": "Results <endpoint-identifier>"
+              },
+              "Type": {
+                "type": "string",
+                "enum": [
+                  "application/geo+json",
+                  "application/json",
+                  "application/vnd.flatgeobuf",
+                  "text/csv",
+                  "image/png",
+                  "image/tiff",
+                  "text/plain"
+                ]
+              },
+              "EndPoint": {
+                "type": "string"
+              },
+              "Method": {
+                "type": "string",
+                "enum": [
+                  "GET",
+                  "POST",
+                  "PUT",
+                  "DELETE",
+                  "PATCH",
+                  "OPTIONS"
+                ]
+              },
+              "Body": {
+                "type": "string"
+              },
+              "Flatstyle": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "Identifier": {
+                          "type": "string"
+                        },
+                        "Url": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "Identifier",
+                        "Url"
+                      ]
+                    }
+                  }
+                ]
+              }
+            },
+            "required": [
+              "Identifier",
+              "Url",
+              "Type"
+            ]
+          }
+        }
+      },
+      "required": [
+        "JsonForm",
+        "EndPoints"
+      ]
+    },
+    "Subtitle": {
+      "type": "string"
+    },
+    "ShortDescription": {
+      "type": "string"
+    },
+    "BaseLayers": {
+      "type": "array",
+      "items": {
+        "anyOf": [
+          {
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "url": {
+                "type": "string"
+              },
+              "visible": {
+                "type": "boolean"
+              },
+              "Attribution": {
+                "type": "string",
+                "media": {
+                  "type": "html"
+                }
+              },
+              "DataProjection": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "def": {
+                        "type": "string"
+                      },
+                      "extent": {
+                        "type": "array",
+                        "items": {
+                          "type": "number"
+                        },
+                        "minItems": 4,
+                        "maxItems": 4
+                      }
+                    },
+                    "required": [
+                      "name"
+                    ]
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ]
+              },
+              "protocol": {
+                "readOnly": true,
+                "type": "string",
+                "const": "xyz"
+              },
+              "media_type": {
+                "type": "string"
+              },
+              "Rasterform": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "object"
+                  }
+                ],
+                "default": true
+              },
+              "Unit": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "url",
+              "protocol"
+            ]
+          },
+          {
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "url": {
+                "type": "string"
+              },
+              "visible": {
+                "type": "boolean"
+              },
+              "Attribution": {
+                "type": "string",
+                "media": {
+                  "type": "html"
+                }
+              },
+              "DataProjection": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "def": {
+                        "type": "string"
+                      },
+                      "extent": {
+                        "type": "array",
+                        "items": {
+                          "type": "number"
+                        },
+                        "minItems": 4,
+                        "maxItems": 4
+                      }
+                    },
+                    "required": [
+                      "name"
+                    ]
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ]
+              },
+              "protocol": {
+                "readOnly": true,
+                "type": "string",
+                "const": "wms"
+              },
+              "layers": {
+                "styles": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              },
+              "dimensions": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": [
+                    "string",
+                    "number"
+                  ]
+                }
+              },
+              "version": {
+                "type": "string"
+              },
+              "styles": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "tilesize": {
+                "type": "number"
+              },
+              "Unit": {
+                "type": "string"
+              },
+              "Rasterform": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "object"
+                  }
+                ],
+                "default": true
+              }
+            },
+            "required": [
+              "id",
+              "url",
+              "protocol",
+              "layers"
+            ]
+          },
+          {
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "url": {
+                "type": "string"
+              },
+              "visible": {
+                "type": "boolean"
+              },
+              "Attribution": {
+                "type": "string",
+                "media": {
+                  "type": "html"
+                }
+              },
+              "DataProjection": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "def": {
+                        "type": "string"
+                      },
+                      "extent": {
+                        "type": "array",
+                        "items": {
+                          "type": "number"
+                        },
+                        "minItems": 4,
+                        "maxItems": 4
+                      }
+                    },
+                    "required": [
+                      "name"
+                    ]
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ]
+              },
+              "protocol": {
+                "readOnly": true,
+                "type": "string",
+                "const": "wmts"
+              },
+              "layer": {
+                "type": "string"
+              },
+              "dimensions": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": [
+                    "string",
+                    "number"
+                  ]
+                }
+              },
+              "Unit": {
+                "type": "string"
+              },
+              "Rasterform": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "object"
+                  }
+                ],
+                "default": true
+              }
+            },
+            "required": [
+              "id",
+              "url",
+              "protocol",
+              "layer"
+            ]
+          },
+          {
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "url": {
+                "type": "string"
+              },
+              "visible": {
+                "type": "boolean"
+              },
+              "Attribution": {
+                "type": "string",
+                "media": {
+                  "type": "html"
+                }
+              },
+              "DataProjection": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "def": {
+                        "type": "string"
+                      },
+                      "extent": {
+                        "type": "array",
+                        "items": {
+                          "type": "number"
+                        },
+                        "minItems": 4,
+                        "maxItems": 4
+                      }
+                    },
+                    "required": [
+                      "name"
+                    ]
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ]
+              },
+              "protocol": {
+                "readOnly": true,
+                "type": "string",
+                "const": "vector-tile"
+              },
+              "Style": {
+                "type": "string"
+              },
+              "idProperty": {
+                "type": "string"
+              },
+              "layers": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            },
+            "required": [
+              "id",
+              "url",
+              "protocol"
+            ]
+          },
+          {
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "url": {
+                "type": "string"
+              },
+              "visible": {
+                "type": "boolean"
+              },
+              "Attribution": {
+                "type": "string",
+                "media": {
+                  "type": "html"
+                }
+              },
+              "DataProjection": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "def": {
+                        "type": "string"
+                      },
+                      "extent": {
+                        "type": "array",
+                        "items": {
+                          "type": "number"
+                        },
+                        "minItems": 4,
+                        "maxItems": 4
+                      }
+                    },
+                    "required": [
+                      "name"
+                    ]
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ]
+              },
+              "protocol": {
+                "readOnly": true,
+                "type": "string",
+                "const": "mapbox-style-document"
+              },
+              "applyOptions": {
+                "type": "object"
+              }
+            },
+            "required": [
+              "id",
+              "url",
+              "protocol"
+            ]
+          },
+          {
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "url": {
+                "type": "string"
+              },
+              "visible": {
+                "type": "boolean"
+              },
+              "Attribution": {
+                "type": "string",
+                "media": {
+                  "type": "html"
+                }
+              },
+              "DataProjection": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "def": {
+                        "type": "string"
+                      },
+                      "extent": {
+                        "type": "array",
+                        "items": {
+                          "type": "number"
+                        },
+                        "minItems": 4,
+                        "maxItems": 4
+                      }
+                    },
+                    "required": [
+                      "name"
+                    ]
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ]
+              },
+              "protocol": {
+                "readOnly": true,
+                "type": "string",
+                "const": "COG source"
+              },
+              "Style": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "url",
+              "protocol"
+            ]
+          },
+          {
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "url": {
+                "type": "string"
+              },
+              "visible": {
+                "type": "boolean"
+              },
+              "Attribution": {
+                "type": "string",
+                "media": {
+                  "type": "html"
+                }
+              },
+              "DataProjection": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "def": {
+                        "type": "string"
+                      },
+                      "extent": {
+                        "type": "array",
+                        "items": {
+                          "type": "number"
+                        },
+                        "minItems": 4,
+                        "maxItems": 4
+                      }
+                    },
+                    "required": [
+                      "name"
+                    ]
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ]
+              },
+              "protocol": {
+                "readOnly": true,
+                "type": "string",
+                "const": "GeoJSON source"
+              },
+              "Style": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "url",
+              "protocol"
+            ]
+          },
+          {
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "url": {
+                "type": "string"
+              },
+              "visible": {
+                "type": "boolean"
+              },
+              "Attribution": {
+                "type": "string",
+                "media": {
+                  "type": "html"
+                }
+              },
+              "DataProjection": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "def": {
+                        "type": "string"
+                      },
+                      "extent": {
+                        "type": "array",
+                        "items": {
+                          "type": "number"
+                        },
+                        "minItems": 4,
+                        "maxItems": 4
+                      }
+                    },
+                    "required": [
+                      "name"
+                    ]
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ]
+              },
+              "protocol": {
+                "readOnly": true,
+                "type": "string",
+                "const": "FlatGeobuf source"
+              },
+              "Style": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "url",
+              "protocol"
+            ]
+          }
+        ]
+      }
+    },
+    "OverlayLayers": {
+      "type": "array",
+      "items": {
+        "anyOf": [
+          {
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "url": {
+                "type": "string"
+              },
+              "visible": {
+                "type": "boolean"
+              },
+              "Attribution": {
+                "type": "string",
+                "media": {
+                  "type": "html"
+                }
+              },
+              "DataProjection": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "def": {
+                        "type": "string"
+                      },
+                      "extent": {
+                        "type": "array",
+                        "items": {
+                          "type": "number"
+                        },
+                        "minItems": 4,
+                        "maxItems": 4
+                      }
+                    },
+                    "required": [
+                      "name"
+                    ]
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ]
+              },
+              "protocol": {
+                "readOnly": true,
+                "type": "string",
+                "const": "xyz"
+              },
+              "media_type": {
+                "type": "string"
+              },
+              "Rasterform": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "object"
+                  }
+                ],
+                "default": true
+              },
+              "Unit": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "url",
+              "protocol"
+            ]
+          },
+          {
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "url": {
+                "type": "string"
+              },
+              "visible": {
+                "type": "boolean"
+              },
+              "Attribution": {
+                "type": "string",
+                "media": {
+                  "type": "html"
+                }
+              },
+              "DataProjection": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "def": {
+                        "type": "string"
+                      },
+                      "extent": {
+                        "type": "array",
+                        "items": {
+                          "type": "number"
+                        },
+                        "minItems": 4,
+                        "maxItems": 4
+                      }
+                    },
+                    "required": [
+                      "name"
+                    ]
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ]
+              },
+              "protocol": {
+                "readOnly": true,
+                "type": "string",
+                "const": "wms"
+              },
+              "layers": {
+                "styles": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              },
+              "dimensions": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": [
+                    "string",
+                    "number"
+                  ]
+                }
+              },
+              "version": {
+                "type": "string"
+              },
+              "styles": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "tilesize": {
+                "type": "number"
+              },
+              "Unit": {
+                "type": "string"
+              },
+              "Rasterform": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "object"
+                  }
+                ],
+                "default": true
+              }
+            },
+            "required": [
+              "id",
+              "url",
+              "protocol",
+              "layers"
+            ]
+          },
+          {
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "url": {
+                "type": "string"
+              },
+              "visible": {
+                "type": "boolean"
+              },
+              "Attribution": {
+                "type": "string",
+                "media": {
+                  "type": "html"
+                }
+              },
+              "DataProjection": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "def": {
+                        "type": "string"
+                      },
+                      "extent": {
+                        "type": "array",
+                        "items": {
+                          "type": "number"
+                        },
+                        "minItems": 4,
+                        "maxItems": 4
+                      }
+                    },
+                    "required": [
+                      "name"
+                    ]
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ]
+              },
+              "protocol": {
+                "readOnly": true,
+                "type": "string",
+                "const": "wmts"
+              },
+              "layer": {
+                "type": "string"
+              },
+              "dimensions": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": [
+                    "string",
+                    "number"
+                  ]
+                }
+              },
+              "Unit": {
+                "type": "string"
+              },
+              "Rasterform": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "object"
+                  }
+                ],
+                "default": true
+              }
+            },
+            "required": [
+              "id",
+              "url",
+              "protocol",
+              "layer"
+            ]
+          },
+          {
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "url": {
+                "type": "string"
+              },
+              "visible": {
+                "type": "boolean"
+              },
+              "Attribution": {
+                "type": "string",
+                "media": {
+                  "type": "html"
+                }
+              },
+              "DataProjection": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "def": {
+                        "type": "string"
+                      },
+                      "extent": {
+                        "type": "array",
+                        "items": {
+                          "type": "number"
+                        },
+                        "minItems": 4,
+                        "maxItems": 4
+                      }
+                    },
+                    "required": [
+                      "name"
+                    ]
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ]
+              },
+              "protocol": {
+                "readOnly": true,
+                "type": "string",
+                "const": "vector-tile"
+              },
+              "Style": {
+                "type": "string"
+              },
+              "idProperty": {
+                "type": "string"
+              },
+              "layers": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            },
+            "required": [
+              "id",
+              "url",
+              "protocol"
+            ]
+          },
+          {
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "url": {
+                "type": "string"
+              },
+              "visible": {
+                "type": "boolean"
+              },
+              "Attribution": {
+                "type": "string",
+                "media": {
+                  "type": "html"
+                }
+              },
+              "DataProjection": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "def": {
+                        "type": "string"
+                      },
+                      "extent": {
+                        "type": "array",
+                        "items": {
+                          "type": "number"
+                        },
+                        "minItems": 4,
+                        "maxItems": 4
+                      }
+                    },
+                    "required": [
+                      "name"
+                    ]
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ]
+              },
+              "protocol": {
+                "readOnly": true,
+                "type": "string",
+                "const": "mapbox-style-document"
+              },
+              "applyOptions": {
+                "type": "object"
+              }
+            },
+            "required": [
+              "id",
+              "url",
+              "protocol"
+            ]
+          },
+          {
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "url": {
+                "type": "string"
+              },
+              "visible": {
+                "type": "boolean"
+              },
+              "Attribution": {
+                "type": "string",
+                "media": {
+                  "type": "html"
+                }
+              },
+              "DataProjection": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "def": {
+                        "type": "string"
+                      },
+                      "extent": {
+                        "type": "array",
+                        "items": {
+                          "type": "number"
+                        },
+                        "minItems": 4,
+                        "maxItems": 4
+                      }
+                    },
+                    "required": [
+                      "name"
+                    ]
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ]
+              },
+              "protocol": {
+                "readOnly": true,
+                "type": "string",
+                "const": "COG source"
+              },
+              "Style": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "url",
+              "protocol"
+            ]
+          },
+          {
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "url": {
+                "type": "string"
+              },
+              "visible": {
+                "type": "boolean"
+              },
+              "Attribution": {
+                "type": "string",
+                "media": {
+                  "type": "html"
+                }
+              },
+              "DataProjection": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "def": {
+                        "type": "string"
+                      },
+                      "extent": {
+                        "type": "array",
+                        "items": {
+                          "type": "number"
+                        },
+                        "minItems": 4,
+                        "maxItems": 4
+                      }
+                    },
+                    "required": [
+                      "name"
+                    ]
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ]
+              },
+              "protocol": {
+                "readOnly": true,
+                "type": "string",
+                "const": "GeoJSON source"
+              },
+              "Style": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "url",
+              "protocol"
+            ]
+          },
+          {
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "url": {
+                "type": "string"
+              },
+              "visible": {
+                "type": "boolean"
+              },
+              "Attribution": {
+                "type": "string",
+                "media": {
+                  "type": "html"
+                }
+              },
+              "DataProjection": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "def": {
+                        "type": "string"
+                      },
+                      "extent": {
+                        "type": "array",
+                        "items": {
+                          "type": "number"
+                        },
+                        "minItems": 4,
+                        "maxItems": 4
+                      }
+                    },
+                    "required": [
+                      "name"
+                    ]
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ]
+              },
+              "protocol": {
+                "readOnly": true,
+                "type": "string",
+                "const": "FlatGeobuf source"
+              },
+              "Style": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "url",
+              "protocol"
+            ]
+          }
+        ]
+      }
+    },
+    "MapProjection": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "def": {
+              "type": "string"
+            },
+            "extent": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 4,
+              "maxItems": 4
+            }
+          },
+          "required": [
+            "name"
+          ]
+        },
+        {
+          "type": "string"
+        },
+        {
+          "type": "number"
+        }
+      ]
+    },
+    "Colorlegend": {
+      "type": "object",
+      "properties": {
+        "range": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "domain": {
+          "type": "array",
+          "items": {
+            "type": [
+              "number",
+              "string"
+            ]
+          }
+        },
+        "tickFormat": {
+          "type": "string"
+        },
+        "tickValues": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        },
+        "scaleType": {
+          "type": "string",
+          "enum": [
+            "continuous",
+            "discrete",
+            "threshold",
+            "categorical",
+            "log10"
+          ]
+        },
+        "markType": {
+          "type": "string",
+          "enum": [
+            "rect",
+            "circle",
+            "line"
+          ]
+        }
+      }
+    },
+    "Legend": {
+      "type": "string"
+    },
+    "Disable": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "Hidden": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "Collections": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "required": [
+    "Name",
+    "Title",
+    "Description",
+    "Collections"
+  ]
+}

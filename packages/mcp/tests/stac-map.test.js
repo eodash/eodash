@@ -628,4 +628,85 @@ describe("MCP Protocol Tool - generate_map_from_stac", () => {
       fetchSpy.mockRestore();
     }
   });
+
+  it("treats a STAC API URL without a .json suffix as an API and static when api is passed", async () => {
+    const apiIndicator = {
+      type: "Collection",
+      id: "api_col",
+      links: [
+        {
+          rel: "items",
+          href: "https://api.example.com/collections/api_col/items",
+        },
+      ],
+    };
+
+    const mockClient = {
+      get: vi.fn().mockImplementation(async (url) => {
+        if (url.includes("/search") || url.includes("/items")) {
+          return {
+            data: {
+              type: "FeatureCollection",
+              features: [
+                stacItem({
+                  id: "item1",
+                  properties: { datetime: "2023-01-01T00:00:00Z" },
+                  links: [
+                    { rel: "xyz", href: "https://tiles/{z}/{x}/{y}.png" },
+                  ],
+                }),
+              ],
+            },
+          };
+        }
+        return { data: apiIndicator };
+      }),
+    };
+
+    // 1. Without .json suffix and without explicit api param -> treated as API
+    const resApi = await buildStacMap(
+      {
+        url: "https://api.example.com/collections/api_col",
+        datetime: "2023-01-01T00:00:00Z",
+      },
+      { client: mockClient },
+    );
+    expect(resApi.layers).toBeDefined();
+
+    // 2. Without .json suffix but with api: false -> treated as static
+    const staticCol = makeIndicator();
+    const staticClient = {
+      get: vi.fn().mockResolvedValue({ data: staticCol }),
+    };
+    const resStatic = await buildStacMap(
+      {
+        url: "https://static.example.com/catalog/indicator",
+        api: false,
+        datetime: "2023-01-01T00:00:00Z",
+      },
+      { client: staticClient },
+    );
+    expect(resStatic.layers).toBeDefined();
+  });
+
+  it("builds the same map with an axios-style client returning { data }", async () => {
+    const indicatorData = makeIndicator();
+    const axiosClient = {
+      get: vi.fn().mockResolvedValue({
+        data: indicatorData,
+      }),
+    };
+
+    const mapConfig = await buildStacMap(
+      {
+        url: "https://example.com/indicator.json",
+        datetime: "2023-01-01T00:00:00Z",
+      },
+      { client: axiosClient },
+    );
+
+    expect(mapConfig).toBeDefined();
+    expect(mapConfig.layers).toBeDefined();
+    expect(mapConfig.layers.length).toBeGreaterThanOrEqual(1);
+  });
 });

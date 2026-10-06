@@ -243,14 +243,13 @@ describe("layer helpers", () => {
     });
 
     test("enforces exclusivity and sets first layer visible when none visible", () => {
-      const base = [
-        { properties: { id: "b1" } },
-        { properties: { id: "b2" } },
-      ];
+      const base = [{ properties: { id: "b1" } }, { properties: { id: "b2" } }];
       const result = normalizeBaseLayers(/** @type {any} */ (base));
       expect(result[0].properties.visible).toBe(true);
       expect(result[1].properties.visible).toBe(false);
-      expect(result.every((l) => l.properties.layerControlExclusive)).toBe(true);
+      expect(result.every((l) => l.properties.layerControlExclusive)).toBe(
+        true,
+      );
     });
 
     test("keeps only the last visible layer active when multiple are visible", () => {
@@ -261,6 +260,16 @@ describe("layer helpers", () => {
       const result = normalizeBaseLayers(/** @type {any} */ (base));
       expect(result[0].properties.visible).toBe(false);
       expect(result[1].properties.visible).toBe(true);
+    });
+
+    test("does not mutate the base layer array passed to normalizeBaseLayers", () => {
+      const original = [
+        { properties: { id: "b1", visible: true } },
+        { properties: { id: "b2", visible: true } },
+      ];
+      const copy = JSON.parse(JSON.stringify(original));
+      normalizeBaseLayers(/** @type {any} */ (original));
+      expect(original).toEqual(copy);
     });
   });
 });

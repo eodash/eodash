@@ -11,6 +11,7 @@ import { registerArchitectureTools } from "./tools/architecture.js";
 import { registerDiscoveryTools } from "./tools/discovery.js";
 import { registerStacTools } from "./tools/stac.js";
 import { createExpressApp as createExpressAppInternal } from "./server.js";
+import { getValidators } from "./generators/validator.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -70,6 +71,17 @@ Options:
   --help, -h        Show help
 `);
     process.exit(0);
+  }
+
+  // Warm up schemas at startup from authoritative remote URL
+  try {
+    await getValidators();
+  } catch (err) {
+    console.error(
+      "Failed to load eodash catalog schemas at startup:",
+      err.message,
+    );
+    process.exit(1);
   }
 
   if (process.argv.includes("--stdio") || process.argv.includes("-s")) {

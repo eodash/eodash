@@ -6,8 +6,12 @@ export const COLLECTION_SCHEMA_URL =
 export const INDICATOR_SCHEMA_URL =
   "https://eodash.github.io/eodash-schemas/catalog/indicator-schema.json";
 
-/** @type {{ ajv: any; validateCatalogCollection: any; validateCatalogIndicator: any; usedFallback?: boolean } | null} */
+/** @type {{ ajv: any; validateCatalogCollection: any; validateCatalogIndicator: any } | null} */
 export let cachedValidators = null;
+
+export function _resetValidatorsCache() {
+  cachedValidators = null;
+}
 
 /**
  * Creates and configures an Ajv instance with custom formats
@@ -69,52 +73,29 @@ export function createAjvInstance() {
 }
 
 /**
- * Fetch remote schemas from eodash-schemas GitHub Pages
+ * Fetch remote schemas directly from authoritative eodash-schemas URL
  */
 export async function loadSchemas() {
-  try {
-    const [colSchema, indSchema] = await Promise.all([
-      fetch(COLLECTION_SCHEMA_URL, {
-        signal: AbortSignal.timeout(3000),
-      }).then((r) => {
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        return r.json();
-      }),
-      fetch(INDICATOR_SCHEMA_URL, {
-        signal: AbortSignal.timeout(3000),
-      }).then((r) => {
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        return r.json();
-      }),
-    ]);
+  const [colSchema, indSchema] = await Promise.all([
+    fetch(COLLECTION_SCHEMA_URL).then(async (r) => {
+      if (!r.ok) {
+        throw new Error(
+          `HTTP ${r.status} ${r.statusText} fetching collection schema from ${COLLECTION_SCHEMA_URL}`,
+        );
+      }
+      return r.json();
+    }),
+    fetch(INDICATOR_SCHEMA_URL).then(async (r) => {
+      if (!r.ok) {
+        throw new Error(
+          `HTTP ${r.status} ${r.statusText} fetching indicator schema from ${INDICATOR_SCHEMA_URL}`,
+        );
+      }
+      return r.json();
+    }),
+  ]);
 
-    return { colSchema, indSchema, usedFallback: false };
-  } catch (_err) {
-    // Return minimal fallback schemas if network is unreachable
-    const colSchema = {
-      $id: COLLECTION_SCHEMA_URL,
-      type: "object",
-      properties: {
-        Name: { type: "string" },
-        Title: { type: "string" },
-        Description: { type: "string" },
-        Resources: { type: "array", minItems: 1 },
-      },
-      required: ["Name", "Title", "Description", "Resources"],
-    };
-    const indSchema = {
-      $id: INDICATOR_SCHEMA_URL,
-      type: "object",
-      properties: {
-        Name: { type: "string" },
-        Title: { type: "string" },
-        Description: { type: "string" },
-        Collections: { type: "array", minItems: 1 },
-      },
-      required: ["Name", "Title", "Description", "Collections"],
-    };
-    return { colSchema, indSchema, usedFallback: true };
-  }
+  return { colSchema, indSchema };
 }
 
 /**
@@ -126,21 +107,16 @@ export async function getValidators() {
   }
 
   const ajv = createAjvInstance();
-  const { colSchema, indSchema, usedFallback } = await loadSchemas();
+  const { colSchema, indSchema } = await loadSchemas();
 
   const validateCatalogCollection = ajv.compile(colSchema);
   const validateCatalogIndicator = ajv.compile(indSchema);
 
-  const validators = {
+  cachedValidators = {
     ajv,
     validateCatalogCollection,
     validateCatalogIndicator,
-    usedFallback,
   };
 
-  if (!usedFallback) {
-    cachedValidators = validators;
-  }
-
-  return validators;
+  return cachedValidators;
 }

@@ -64,6 +64,34 @@ export function createExpressApp(createServerFn) {
   });
 
   app.post("/", async (req, res) => {
+    const origin = req.headers.origin;
+    if (origin) {
+      try {
+        const parsedUrl = new URL(origin);
+        const host = parsedUrl.hostname;
+        if (host !== "localhost" && host !== "127.0.0.1" && host !== "[::1]") {
+          return res.status(403).json({
+            jsonrpc: "2.0",
+            error: {
+              code: -32600,
+              message:
+                "Forbidden: cross-origin requests from untrusted origins are not permitted",
+            },
+            id: null,
+          });
+        }
+      } catch {
+        return res.status(403).json({
+          jsonrpc: "2.0",
+          error: {
+            code: -32600,
+            message: "Forbidden: invalid Origin header",
+          },
+          id: null,
+        });
+      }
+    }
+
     try {
       const transport = new StreamableHTTPServerTransport({
         sessionIdGenerator: undefined,

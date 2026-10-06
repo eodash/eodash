@@ -225,7 +225,7 @@ describe("createEodashIndicator", () => {
     expect(mapConfig.datetime).toContain("2023-01-10T00:00:00");
   });
 
-  test("builds layers filtered to item's collection when specific item is provided", async () => {
+  test("renders the selected item for its own collection and the item nearest its date for every other collection", async () => {
     serveMockData();
     const indicator = await createEodashIndicator(INDICATOR_URL, { client });
 
@@ -244,13 +244,25 @@ describe("createEodashIndicator", () => {
 
     const res = await indicator.buildLayers(specificItem);
     expect(res.item).toBe(specificItem);
-    // Should contain child1 data layer, but not invoke child2
+    // Renders selected item for child1 AND renders nearest date item for child2
     expect(res.layers.some((l) => l.properties?.id?.includes("child1"))).toBe(
       true,
     );
     expect(res.layers.some((l) => l.properties?.id?.includes("child2"))).toBe(
-      false,
+      true,
     );
+  });
+
+  test("fetches dates once per reader in getMapConfig", async () => {
+    serveMockData();
+    const indicator = await createEodashIndicator(INDICATOR_URL, { client });
+    const spies = indicator.readers.map((r) => vi.spyOn(r, "getDates"));
+
+    await indicator.getMapConfig();
+
+    for (const spy of spies) {
+      expect(spy).toHaveBeenCalledTimes(1);
+    }
   });
 
   test("assigns colors from DEFAULT_COLLECTIONS_PALETTE to child collections by default", async () => {

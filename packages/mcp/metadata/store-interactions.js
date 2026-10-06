@@ -115,9 +115,12 @@ export function analyzeStoreInteractions(widgetName, repoRoot) {
               "loadSelectedSTAC",
               "loadSelectedCompareSTAC",
               "resetSelectedCompareSTAC",
+              "loadColormapRegistry",
+              "loadTileMatrixSetRegistry",
               "$reset",
               "$patch",
               "$subscribe",
+              "$dispose",
             ].includes(propName)
           ) {
             if (

@@ -122,6 +122,7 @@
     "code": {
       "Name": "parcel-conversion-analysis",
       "Title": "Agricultural Parcel Conversion",
+      "Description": "Agricultural parcel conversion analysis indicator with CQL2 filtering.",
       "Collections": ["parcels_2024", "parcels_2025", "conversion_map"],
       "Disable": ["parcels_2024"],
       "Process": {
@@ -171,24 +172,7 @@
       "Image": "https://example.com/assets/brownfieldcover.jpg",
       "CollectionGroup": "Sustainable Cities",
       "Themes": ["Sustainable Cities"],
-      "Resources": [
-        {
-          "Name": "GeoJSON source",
-          "Bbox": [9.489, 45.934, 17.366, 49.611],
-          "Style": "https://example.com/mapstyle_merged_data.json",
-          "TimeEntries": [
-            {
-              "Time": "2024",
-              "Assets": [
-                {
-                  "Identifier": "brownfields",
-                  "File": "https://example.com/brownfield_2024.geojson"
-                }
-              ]
-            }
-          ]
-        }
-      ],
+      "Collections": ["brownfield_recovery_sites"],
       "Process": {
         "Name": "stats",
         "JsonForm": "https://example.com/form_merged.json",

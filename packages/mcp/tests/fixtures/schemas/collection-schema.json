@@ -1,0 +1,3553 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "$id": "https://eodash.github.io/eodash-schemas/catalog/collection-schema.json",
+  "properties": {
+    "Name": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[a-zA-Z0-9_-]+$"
+    },
+    "Title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "Description": {
+      "type": "string"
+    },
+    "Themes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "Tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "DataSource": {
+      "type": "object",
+      "properties": {
+        "Spaceborne": {
+          "type": "object",
+          "properties": {
+            "Satellite": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "Sensor": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "InSitu": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "Other": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "Agency": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "License": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "Url": {
+                "type": "string"
+              },
+              "Type": {
+                "type": "string",
+                "default": "text/html"
+              },
+              "Title": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "Url"
+            ]
+          }
+        }
+      ]
+    },
+    "Provider": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "Name": {
+            "type": "string"
+          },
+          "Description": {
+            "type": "string"
+          },
+          "Roles": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "Url": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "Name",
+          "Url"
+        ]
+      }
+    },
+    "Stories": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "Name": {
+            "type": "string"
+          },
+          "Url": {
+            "type": "string"
+          },
+          "Id": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "Citation": {
+      "type": "object",
+      "properties": {
+        "DOI": {
+          "type": "string"
+        },
+        "Citation": {
+          "type": "string"
+        },
+        "Publication": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "DOI": {
+                "type": "string"
+              },
+              "Citation": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "Image": {
+      "type": "string"
+    },
+    "Services": {
+      "type": "array",
+      "items": {
+        "anyOf": [
+          {
+            "type": "object",
+            "properties": {
+              "Name": {
+                "type": "string",
+                "const": "Statistical API"
+              },
+              "Type": {
+                "type": "string",
+                "enum": [
+                  "byoc",
+                  "zarr"
+                ]
+              },
+              "CollectionId": {
+                "type": "string"
+              },
+              "Script": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "Name",
+              "Type",
+              "CollectionId",
+              "Script"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "Name": {
+                "type": "string",
+                "const": "EOxHub Notebook"
+              },
+              "Title": {
+                "type": "string"
+              },
+              "Url": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "Name",
+              "Title",
+              "Url"
+            ]
+          }
+        ]
+      }
+    },
+    "References": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "Url": {
+            "type": "string"
+          },
+          "Name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "Url",
+          "Name"
+        ]
+      }
+    },
+    "CollectionGroup": {
+      "type": "string"
+    },
+    "Process": {
+      "type": "object",
+      "properties": {
+        "Name": {
+          "type": "string"
+        },
+        "JsonForm": {
+          "type": "string"
+        },
+        "VegaDefinition": {
+          "type": "string"
+        },
+        "EndPoints": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "properties": {
+              "Identifier": {
+                "type": "string"
+              },
+              "Url": {
+                "type": "string"
+              },
+              "Title": {
+                "type": "string",
+                "default": "Results <endpoint-identifier>"
+              },
+              "Type": {
+                "type": "string",
+                "enum": [
+                  "application/geo+json",
+                  "application/json",
+                  "application/vnd.flatgeobuf",
+                  "text/csv",
+                  "image/png",
+                  "image/tiff",
+                  "text/plain"
+                ]
+              },
+              "EndPoint": {
+                "type": "string"
+              },
+              "Method": {
+                "type": "string",
+                "enum": [
+                  "GET",
+                  "POST",
+                  "PUT",
+                  "DELETE",
+                  "PATCH",
+                  "OPTIONS"
+                ]
+              },
+              "Body": {
+                "type": "string"
+              },
+              "Flatstyle": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "Identifier": {
+                          "type": "string"
+                        },
+                        "Url": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "Identifier",
+                        "Url"
+                      ]
+                    }
+                  }
+                ]
+              }
+            },
+            "required": [
+              "Identifier",
+              "Url",
+              "Type"
+            ]
+          }
+        }
+      },
+      "required": [
+        "JsonForm",
+        "EndPoints"
+      ]
+    },
+    "Subtitle": {
+      "type": "string"
+    },
+    "ShortDescription": {
+      "type": "string"
+    },
+    "BaseLayers": {
+      "type": "array",
+      "items": {
+        "anyOf": [
+          {
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "url": {
+                "type": "string"
+              },
+              "visible": {
+                "type": "boolean"
+              },
+              "Attribution": {
+                "type": "string",
+                "media": {
+                  "type": "html"
+                }
+              },
+              "DataProjection": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "def": {
+                        "type": "string"
+                      },
+                      "extent": {
+                        "type": "array",
+                        "items": {
+                          "type": "number"
+                        },
+                        "minItems": 4,
+                        "maxItems": 4
+                      }
+                    },
+                    "required": [
+                      "name"
+                    ]
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ]
+              },
+              "protocol": {
+                "readOnly": true,
+                "type": "string",
+                "const": "xyz"
+              },
+              "media_type": {
+                "type": "string"
+              },
+              "Rasterform": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "object"
+                  }
+                ],
+                "default": true
+              },
+              "Unit": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "url",
+              "protocol"
+            ]
+          },
+          {
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "url": {
+                "type": "string"
+              },
+              "visible": {
+                "type": "boolean"
+              },
+              "Attribution": {
+                "type": "string",
+                "media": {
+                  "type": "html"
+                }
+              },
+              "DataProjection": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "def": {
+                        "type": "string"
+                      },
+                      "extent": {
+                        "type": "array",
+                        "items": {
+                          "type": "number"
+                        },
+                        "minItems": 4,
+                        "maxItems": 4
+                      }
+                    },
+                    "required": [
+                      "name"
+                    ]
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ]
+              },
+              "protocol": {
+                "readOnly": true,
+                "type": "string",
+                "const": "wms"
+              },
+              "layers": {
+                "styles": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              },
+              "dimensions": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": [
+                    "string",
+                    "number"
+                  ]
+                }
+              },
+              "version": {
+                "type": "string"
+              },
+              "styles": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "tilesize": {
+                "type": "number"
+              },
+              "Unit": {
+                "type": "string"
+              },
+              "Rasterform": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "object"
+                  }
+                ],
+                "default": true
+              }
+            },
+            "required": [
+              "id",
+              "url",
+              "protocol",
+              "layers"
+            ]
+          },
+          {
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "url": {
+                "type": "string"
+              },
+              "visible": {
+                "type": "boolean"
+              },
+              "Attribution": {
+                "type": "string",
+                "media": {
+                  "type": "html"
+                }
+              },
+              "DataProjection": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "def": {
+                        "type": "string"
+                      },
+                      "extent": {
+                        "type": "array",
+                        "items": {
+                          "type": "number"
+                        },
+                        "minItems": 4,
+                        "maxItems": 4
+                      }
+                    },
+                    "required": [
+                      "name"
+                    ]
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ]
+              },
+              "protocol": {
+                "readOnly": true,
+                "type": "string",
+                "const": "wmts"
+              },
+              "layer": {
+                "type": "string"
+              },
+              "dimensions": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": [
+                    "string",
+                    "number"
+                  ]
+                }
+              },
+              "Unit": {
+                "type": "string"
+              },
+              "Rasterform": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "object"
+                  }
+                ],
+                "default": true
+              }
+            },
+            "required": [
+              "id",
+              "url",
+              "protocol",
+              "layer"
+            ]
+          },
+          {
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "url": {
+                "type": "string"
+              },
+              "visible": {
+                "type": "boolean"
+              },
+              "Attribution": {
+                "type": "string",
+                "media": {
+                  "type": "html"
+                }
+              },
+              "DataProjection": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "def": {
+                        "type": "string"
+                      },
+                      "extent": {
+                        "type": "array",
+                        "items": {
+                          "type": "number"
+                        },
+                        "minItems": 4,
+                        "maxItems": 4
+                      }
+                    },
+                    "required": [
+                      "name"
+                    ]
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ]
+              },
+              "protocol": {
+                "readOnly": true,
+                "type": "string",
+                "const": "vector-tile"
+              },
+              "Style": {
+                "type": "string"
+              },
+              "idProperty": {
+                "type": "string"
+              },
+              "layers": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            },
+            "required": [
+              "id",
+              "url",
+              "protocol"
+            ]
+          },
+          {
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "url": {
+                "type": "string"
+              },
+              "visible": {
+                "type": "boolean"
+              },
+              "Attribution": {
+                "type": "string",
+                "media": {
+                  "type": "html"
+                }
+              },
+              "DataProjection": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "def": {
+                        "type": "string"
+                      },
+                      "extent": {
+                        "type": "array",
+                        "items": {
+                          "type": "number"
+                        },
+                        "minItems": 4,
+                        "maxItems": 4
+                      }
+                    },
+                    "required": [
+                      "name"
+                    ]
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ]
+              },
+              "protocol": {
+                "readOnly": true,
+                "type": "string",
+                "const": "mapbox-style-document"
+              },
+              "applyOptions": {
+                "type": "object"
+              }
+            },
+            "required": [
+              "id",
+              "url",
+              "protocol"
+            ]
+          },
+          {
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "url": {
+                "type": "string"
+              },
+              "visible": {
+                "type": "boolean"
+              },
+              "Attribution": {
+                "type": "string",
+                "media": {
+                  "type": "html"
+                }
+              },
+              "DataProjection": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "def": {
+                        "type": "string"
+                      },
+                      "extent": {
+                        "type": "array",
+                        "items": {
+                          "type": "number"
+                        },
+                        "minItems": 4,
+                        "maxItems": 4
+                      }
+                    },
+                    "required": [
+                      "name"
+                    ]
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ]
+              },
+              "protocol": {
+                "readOnly": true,
+                "type": "string",
+                "const": "COG source"
+              },
+              "Style": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "url",
+              "protocol"
+            ]
+          },
+          {
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "url": {
+                "type": "string"
+              },
+              "visible": {
+                "type": "boolean"
+              },
+              "Attribution": {
+                "type": "string",
+                "media": {
+                  "type": "html"
+                }
+              },
+              "DataProjection": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "def": {
+                        "type": "string"
+                      },
+                      "extent": {
+                        "type": "array",
+                        "items": {
+                          "type": "number"
+                        },
+                        "minItems": 4,
+                        "maxItems": 4
+                      }
+                    },
+                    "required": [
+                      "name"
+                    ]
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ]
+              },
+              "protocol": {
+                "readOnly": true,
+                "type": "string",
+                "const": "GeoJSON source"
+              },
+              "Style": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "url",
+              "protocol"
+            ]
+          },
+          {
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "url": {
+                "type": "string"
+              },
+              "visible": {
+                "type": "boolean"
+              },
+              "Attribution": {
+                "type": "string",
+                "media": {
+                  "type": "html"
+                }
+              },
+              "DataProjection": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "def": {
+                        "type": "string"
+                      },
+                      "extent": {
+                        "type": "array",
+                        "items": {
+                          "type": "number"
+                        },
+                        "minItems": 4,
+                        "maxItems": 4
+                      }
+                    },
+                    "required": [
+                      "name"
+                    ]
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ]
+              },
+              "protocol": {
+                "readOnly": true,
+                "type": "string",
+                "const": "FlatGeobuf source"
+              },
+              "Style": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "url",
+              "protocol"
+            ]
+          }
+        ]
+      }
+    },
+    "OverlayLayers": {
+      "type": "array",
+      "items": {
+        "anyOf": [
+          {
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "url": {
+                "type": "string"
+              },
+              "visible": {
+                "type": "boolean"
+              },
+              "Attribution": {
+                "type": "string",
+                "media": {
+                  "type": "html"
+                }
+              },
+              "DataProjection": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "def": {
+                        "type": "string"
+                      },
+                      "extent": {
+                        "type": "array",
+                        "items": {
+                          "type": "number"
+                        },
+                        "minItems": 4,
+                        "maxItems": 4
+                      }
+                    },
+                    "required": [
+                      "name"
+                    ]
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ]
+              },
+              "protocol": {
+                "readOnly": true,
+                "type": "string",
+                "const": "xyz"
+              },
+              "media_type": {
+                "type": "string"
+              },
+              "Rasterform": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "object"
+                  }
+                ],
+                "default": true
+              },
+              "Unit": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "url",
+              "protocol"
+            ]
+          },
+          {
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "url": {
+                "type": "string"
+              },
+              "visible": {
+                "type": "boolean"
+              },
+              "Attribution": {
+                "type": "string",
+                "media": {
+                  "type": "html"
+                }
+              },
+              "DataProjection": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "def": {
+                        "type": "string"
+                      },
+                      "extent": {
+                        "type": "array",
+                        "items": {
+                          "type": "number"
+                        },
+                        "minItems": 4,
+                        "maxItems": 4
+                      }
+                    },
+                    "required": [
+                      "name"
+                    ]
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ]
+              },
+              "protocol": {
+                "readOnly": true,
+                "type": "string",
+                "const": "wms"
+              },
+              "layers": {
+                "styles": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              },
+              "dimensions": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": [
+                    "string",
+                    "number"
+                  ]
+                }
+              },
+              "version": {
+                "type": "string"
+              },
+              "styles": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "tilesize": {
+                "type": "number"
+              },
+              "Unit": {
+                "type": "string"
+              },
+              "Rasterform": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "object"
+                  }
+                ],
+                "default": true
+              }
+            },
+            "required": [
+              "id",
+              "url",
+              "protocol",
+              "layers"
+            ]
+          },
+          {
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "url": {
+                "type": "string"
+              },
+              "visible": {
+                "type": "boolean"
+              },
+              "Attribution": {
+                "type": "string",
+                "media": {
+                  "type": "html"
+                }
+              },
+              "DataProjection": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "def": {
+                        "type": "string"
+                      },
+                      "extent": {
+                        "type": "array",
+                        "items": {
+                          "type": "number"
+                        },
+                        "minItems": 4,
+                        "maxItems": 4
+                      }
+                    },
+                    "required": [
+                      "name"
+                    ]
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ]
+              },
+              "protocol": {
+                "readOnly": true,
+                "type": "string",
+                "const": "wmts"
+              },
+              "layer": {
+                "type": "string"
+              },
+              "dimensions": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": [
+                    "string",
+                    "number"
+                  ]
+                }
+              },
+              "Unit": {
+                "type": "string"
+              },
+              "Rasterform": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "object"
+                  }
+                ],
+                "default": true
+              }
+            },
+            "required": [
+              "id",
+              "url",
+              "protocol",
+              "layer"
+            ]
+          },
+          {
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "url": {
+                "type": "string"
+              },
+              "visible": {
+                "type": "boolean"
+              },
+              "Attribution": {
+                "type": "string",
+                "media": {
+                  "type": "html"
+                }
+              },
+              "DataProjection": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "def": {
+                        "type": "string"
+                      },
+                      "extent": {
+                        "type": "array",
+                        "items": {
+                          "type": "number"
+                        },
+                        "minItems": 4,
+                        "maxItems": 4
+                      }
+                    },
+                    "required": [
+                      "name"
+                    ]
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ]
+              },
+              "protocol": {
+                "readOnly": true,
+                "type": "string",
+                "const": "vector-tile"
+              },
+              "Style": {
+                "type": "string"
+              },
+              "idProperty": {
+                "type": "string"
+              },
+              "layers": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            },
+            "required": [
+              "id",
+              "url",
+              "protocol"
+            ]
+          },
+          {
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "url": {
+                "type": "string"
+              },
+              "visible": {
+                "type": "boolean"
+              },
+              "Attribution": {
+                "type": "string",
+                "media": {
+                  "type": "html"
+                }
+              },
+              "DataProjection": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "def": {
+                        "type": "string"
+                      },
+                      "extent": {
+                        "type": "array",
+                        "items": {
+                          "type": "number"
+                        },
+                        "minItems": 4,
+                        "maxItems": 4
+                      }
+                    },
+                    "required": [
+                      "name"
+                    ]
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ]
+              },
+              "protocol": {
+                "readOnly": true,
+                "type": "string",
+                "const": "mapbox-style-document"
+              },
+              "applyOptions": {
+                "type": "object"
+              }
+            },
+            "required": [
+              "id",
+              "url",
+              "protocol"
+            ]
+          },
+          {
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "url": {
+                "type": "string"
+              },
+              "visible": {
+                "type": "boolean"
+              },
+              "Attribution": {
+                "type": "string",
+                "media": {
+                  "type": "html"
+                }
+              },
+              "DataProjection": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "def": {
+                        "type": "string"
+                      },
+                      "extent": {
+                        "type": "array",
+                        "items": {
+                          "type": "number"
+                        },
+                        "minItems": 4,
+                        "maxItems": 4
+                      }
+                    },
+                    "required": [
+                      "name"
+                    ]
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ]
+              },
+              "protocol": {
+                "readOnly": true,
+                "type": "string",
+                "const": "COG source"
+              },
+              "Style": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "url",
+              "protocol"
+            ]
+          },
+          {
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "url": {
+                "type": "string"
+              },
+              "visible": {
+                "type": "boolean"
+              },
+              "Attribution": {
+                "type": "string",
+                "media": {
+                  "type": "html"
+                }
+              },
+              "DataProjection": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "def": {
+                        "type": "string"
+                      },
+                      "extent": {
+                        "type": "array",
+                        "items": {
+                          "type": "number"
+                        },
+                        "minItems": 4,
+                        "maxItems": 4
+                      }
+                    },
+                    "required": [
+                      "name"
+                    ]
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ]
+              },
+              "protocol": {
+                "readOnly": true,
+                "type": "string",
+                "const": "GeoJSON source"
+              },
+              "Style": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "url",
+              "protocol"
+            ]
+          },
+          {
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "url": {
+                "type": "string"
+              },
+              "visible": {
+                "type": "boolean"
+              },
+              "Attribution": {
+                "type": "string",
+                "media": {
+                  "type": "html"
+                }
+              },
+              "DataProjection": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "def": {
+                        "type": "string"
+                      },
+                      "extent": {
+                        "type": "array",
+                        "items": {
+                          "type": "number"
+                        },
+                        "minItems": 4,
+                        "maxItems": 4
+                      }
+                    },
+                    "required": [
+                      "name"
+                    ]
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ]
+              },
+              "protocol": {
+                "readOnly": true,
+                "type": "string",
+                "const": "FlatGeobuf source"
+              },
+              "Style": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "url",
+              "protocol"
+            ]
+          }
+        ]
+      }
+    },
+    "MapProjection": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "def": {
+              "type": "string"
+            },
+            "extent": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 4,
+              "maxItems": 4
+            }
+          },
+          "required": [
+            "name"
+          ]
+        },
+        {
+          "type": "string"
+        },
+        {
+          "type": "number"
+        }
+      ]
+    },
+    "Colorlegend": {
+      "type": "object",
+      "properties": {
+        "range": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "domain": {
+          "type": "array",
+          "items": {
+            "type": [
+              "number",
+              "string"
+            ]
+          }
+        },
+        "tickFormat": {
+          "type": "string"
+        },
+        "tickValues": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        },
+        "scaleType": {
+          "type": "string",
+          "enum": [
+            "continuous",
+            "discrete",
+            "threshold",
+            "categorical",
+            "log10"
+          ]
+        },
+        "markType": {
+          "type": "string",
+          "enum": [
+            "rect",
+            "circle",
+            "line"
+          ]
+        }
+      }
+    },
+    "Legend": {
+      "type": "string"
+    },
+    "Resources": {
+      "type": "array",
+      "maxItems": 1,
+      "items": {
+        "anyOf": [
+          {
+            "properties": {
+              "Attribution": {
+                "type": "string",
+                "media": {
+                  "type": "html"
+                }
+              },
+              "DataProjection": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "def": {
+                        "type": "string"
+                      },
+                      "extent": {
+                        "type": "array",
+                        "items": {
+                          "type": "number"
+                        },
+                        "minItems": 4,
+                        "maxItems": 4
+                      }
+                    },
+                    "required": [
+                      "name"
+                    ]
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ]
+              },
+              "Name": {
+                "readOnly": true,
+                "type": "string",
+                "const": "Sentinel Hub"
+              },
+              "EndPoint": {
+                "type": "string"
+              },
+              "Type": {
+                "type": "string",
+                "enum": [
+                  "byoc",
+                  "zarr"
+                ]
+              },
+              "CollectionId": {
+                "type": "string"
+              },
+              "LayerId": {
+                "type": "string"
+              },
+              "Dimensions": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": [
+                    "string",
+                    "number"
+                  ]
+                }
+              },
+              "Query": {
+                "type": "object",
+                "properties": {
+                  "Start": {
+                    "type": "string",
+                    "format": "datetime"
+                  },
+                  "End": {
+                    "type": "string",
+                    "format": "datetime"
+                  }
+                }
+              },
+              "CustomSHEnvId": {
+                "type": "string"
+              },
+              "InstanceId": {
+                "type": "string"
+              },
+              "RemoveWebMapLinks": {
+                "type": "boolean",
+                "default": true
+              }
+            },
+            "required": [
+              "Name",
+              "EndPoint",
+              "Type",
+              "CollectionId",
+              "LayerId"
+            ]
+          },
+          {
+            "properties": {
+              "Attribution": {
+                "type": "string",
+                "media": {
+                  "type": "html"
+                }
+              },
+              "DataProjection": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "def": {
+                        "type": "string"
+                      },
+                      "extent": {
+                        "type": "array",
+                        "items": {
+                          "type": "number"
+                        },
+                        "minItems": 4,
+                        "maxItems": 4
+                      }
+                    },
+                    "required": [
+                      "name"
+                    ]
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ]
+              },
+              "Name": {
+                "readOnly": true,
+                "type": "string",
+                "const": "Sentinel Hub WMS"
+              },
+              "EndPoint": {
+                "type": "string"
+              },
+              "CollectionId": {
+                "type": "string"
+              },
+              "LayerId": {
+                "type": "string"
+              },
+              "WMSIntervalsBetweenDates": {
+                "type": "boolean",
+                "default": false
+              },
+              "DateTimeInterval": {
+                "type": "object",
+                "properties": {
+                  "Start": {
+                    "type": "string",
+                    "format": "datetime"
+                  },
+                  "End": {
+                    "type": "string",
+                    "format": "datetime"
+                  },
+                  "Timedelta": {
+                    "type": "object",
+                    "properties": {
+                      "days": {
+                        "type": "number"
+                      },
+                      "hours": {
+                        "type": "number"
+                      },
+                      "minutes": {
+                        "type": "number"
+                      },
+                      "seconds": {
+                        "type": "number"
+                      }
+                    }
+                  }
+                },
+                "required": [
+                  "Start",
+                  "End"
+                ]
+              },
+              "Times": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "Dimensions": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": [
+                    "string",
+                    "number"
+                  ]
+                }
+              },
+              "TileSize": {
+                "type": "number",
+                "default": 512
+              }
+            },
+            "required": [
+              "Name",
+              "EndPoint",
+              "LayerId"
+            ]
+          },
+          {
+            "properties": {
+              "Attribution": {
+                "type": "string",
+                "media": {
+                  "type": "html"
+                }
+              },
+              "DataProjection": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "def": {
+                        "type": "string"
+                      },
+                      "extent": {
+                        "type": "array",
+                        "items": {
+                          "type": "number"
+                        },
+                        "minItems": 4,
+                        "maxItems": 4
+                      }
+                    },
+                    "required": [
+                      "name"
+                    ]
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ]
+              },
+              "Name": {
+                "readOnly": true,
+                "type": "string",
+                "const": "WMS"
+              },
+              "EndPoint": {
+                "type": "string"
+              },
+              "Type": {
+                "type": "string",
+                "enum": [
+                  "OverwriteTimes",
+                  "Time"
+                ]
+              },
+              "LayerId": {
+                "type": "string"
+              },
+              "Styles": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "MediaType": {
+                "type": "string",
+                "default": "image/png"
+              },
+              "Version": {
+                "type": "string",
+                "enum": [
+                  "1.1.0",
+                  "1.1.1",
+                  "1.3.0"
+                ]
+              },
+              "WMSIntervalsBetweenDates": {
+                "type": "boolean",
+                "default": false
+              },
+              "DateTimeInterval": {
+                "type": "object",
+                "properties": {
+                  "Start": {
+                    "type": "string",
+                    "format": "datetime"
+                  },
+                  "End": {
+                    "type": "string",
+                    "format": "datetime"
+                  },
+                  "Timedelta": {
+                    "type": "object",
+                    "properties": {
+                      "days": {
+                        "type": "number"
+                      },
+                      "hours": {
+                        "type": "number"
+                      },
+                      "minutes": {
+                        "type": "number"
+                      },
+                      "seconds": {
+                        "type": "number"
+                      }
+                    }
+                  }
+                },
+                "required": [
+                  "Start",
+                  "End"
+                ]
+              },
+              "Times": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "OverwriteBBox": {
+                "anyOf": [
+                  {
+                    "type": "array",
+                    "format": "bounding-box"
+                  },
+                  {
+                    "type": "array",
+                    "minItems": 4,
+                    "maxItems": 4,
+                    "items": {
+                      "type": "number"
+                    }
+                  }
+                ]
+              },
+              "TileSize": {
+                "type": "number",
+                "default": 512
+              },
+              "Dimensions": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": [
+                    "string",
+                    "number"
+                  ]
+                }
+              },
+              "Rasterform": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "object"
+                  }
+                ],
+                "default": true
+              },
+              "Unit": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "Name",
+              "EndPoint",
+              "LayerId"
+            ]
+          },
+          {
+            "properties": {
+              "Attribution": {
+                "type": "string",
+                "media": {
+                  "type": "html"
+                }
+              },
+              "DataProjection": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "def": {
+                        "type": "string"
+                      },
+                      "extent": {
+                        "type": "array",
+                        "items": {
+                          "type": "number"
+                        },
+                        "minItems": 4,
+                        "maxItems": 4
+                      }
+                    },
+                    "required": [
+                      "name"
+                    ]
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ]
+              },
+              "Name": {
+                "readOnly": true,
+                "type": "string",
+                "const": "VEDA"
+              },
+              "EndPoint": {
+                "type": "string"
+              },
+              "Type": {
+                "type": "string",
+                "enum": [
+                  "cog",
+                  "tiles"
+                ]
+              },
+              "CollectionId": {
+                "type": "string"
+              },
+              "Colormap": {
+                "type": "string"
+              },
+              "ColormapName": {
+                "type": "string",
+                "enum": [
+                  "accent",
+                  "accent_r",
+                  "afmhot",
+                  "afmhot_r",
+                  "autumn",
+                  "autumn_r",
+                  "binary",
+                  "binary_r",
+                  "blues",
+                  "blues_r",
+                  "bone",
+                  "bone_r",
+                  "brbg",
+                  "brbg_r",
+                  "brg",
+                  "brg_r",
+                  "bugn",
+                  "bugn_r",
+                  "bupu",
+                  "bupu_r",
+                  "bwr",
+                  "bwr_r",
+                  "cfastie",
+                  "cividis",
+                  "cividis_r",
+                  "cmrmap",
+                  "cmrmap_r",
+                  "cool",
+                  "cool_r",
+                  "coolwarm",
+                  "coolwarm_r",
+                  "copper",
+                  "copper_r",
+                  "cubehelix",
+                  "cubehelix_r",
+                  "dark2",
+                  "dark2_r",
+                  "flag",
+                  "flag_r",
+                  "gist_earth",
+                  "gist_earth_r",
+                  "gist_gray",
+                  "gist_gray_r",
+                  "gist_heat",
+                  "gist_heat_r",
+                  "gist_ncar",
+                  "gist_ncar_r",
+                  "gist_rainbow",
+                  "gist_rainbow_r",
+                  "gist_stern",
+                  "gist_stern_r",
+                  "gist_yarg",
+                  "gist_yarg_r",
+                  "gnbu",
+                  "gnbu_r",
+                  "gnuplot",
+                  "gnuplot2",
+                  "gnuplot2_r",
+                  "gnuplot_r",
+                  "gray",
+                  "gray_r",
+                  "greens",
+                  "greens_r",
+                  "greys",
+                  "greys_r",
+                  "hot",
+                  "hot_r",
+                  "hsv",
+                  "hsv_r",
+                  "inferno",
+                  "inferno_r",
+                  "jet",
+                  "jet_r",
+                  "magma",
+                  "magma_r",
+                  "nipy_spectral",
+                  "nipy_spectral_r",
+                  "ocean",
+                  "ocean_r",
+                  "oranges",
+                  "oranges_r",
+                  "orrd",
+                  "orrd_r",
+                  "paired",
+                  "paired_r",
+                  "pastel1",
+                  "pastel1_r",
+                  "pastel2",
+                  "pastel2_r",
+                  "pink",
+                  "pink_r",
+                  "piyg",
+                  "piyg_r",
+                  "plasma",
+                  "plasma_r",
+                  "prgn",
+                  "prgn_r",
+                  "prism",
+                  "prism_r",
+                  "pubu",
+                  "pubu_r",
+                  "pubugn",
+                  "pubugn_r",
+                  "puor",
+                  "puor_r",
+                  "purd",
+                  "purd_r",
+                  "purples",
+                  "purples_r",
+                  "rainbow",
+                  "rainbow_r",
+                  "rdbu",
+                  "rdbu_r",
+                  "rdgy",
+                  "rdgy_r",
+                  "rdpu",
+                  "rdpu_r",
+                  "rdylbu",
+                  "rdylbu_r",
+                  "rdylgn",
+                  "rdylgn_r",
+                  "reds",
+                  "reds_r",
+                  "rplumbo",
+                  "schwarzwald",
+                  "seismic",
+                  "seismic_r",
+                  "set1",
+                  "set1_r",
+                  "set2",
+                  "set2_r",
+                  "set3",
+                  "set3_r",
+                  "spectral",
+                  "spectral_r",
+                  "spring",
+                  "spring_r",
+                  "summer",
+                  "summer_r",
+                  "tab10",
+                  "tab10_r",
+                  "tab20",
+                  "tab20_r",
+                  "tab20b",
+                  "tab20b_r",
+                  "tab20c",
+                  "tab20c_r",
+                  "terrain",
+                  "terrain_r",
+                  "twilight",
+                  "twilight_r",
+                  "twilight_shifted",
+                  "twilight_shifted_r",
+                  "viridis",
+                  "viridis_r",
+                  "winter",
+                  "winter_r",
+                  "wistia",
+                  "wistia_r",
+                  "ylgn",
+                  "ylgn_r",
+                  "ylgnbu",
+                  "ylgnbu_r",
+                  "ylorbr",
+                  "ylorbr_r",
+                  "ylorrd",
+                  "ylorrd_r"
+                ]
+              },
+              "Rescale": {
+                "type": "array",
+                "items": {
+                  "type": [
+                    "number",
+                    "string"
+                  ]
+                },
+                "minItems": 2,
+                "maxItems": 2
+              },
+              "Expression": {
+                "type": "string"
+              },
+              "Bidx": {
+                "type": "integer",
+                "default": 1
+              },
+              "Assets": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "ColorFormula": {
+                "type": "string"
+              },
+              "Nodata": {
+                "type": "number"
+              },
+              "Rasterform": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "object"
+                  }
+                ],
+                "default": true
+              },
+              "Unit": {
+                "type": "string"
+              },
+              "RemoveWebMapLinks": {
+                "type": "boolean",
+                "default": true
+              }
+            },
+            "required": [
+              "Name",
+              "EndPoint",
+              "Type",
+              "CollectionId"
+            ]
+          },
+          {
+            "properties": {
+              "Attribution": {
+                "type": "string",
+                "media": {
+                  "type": "html"
+                }
+              },
+              "DataProjection": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "def": {
+                        "type": "string"
+                      },
+                      "extent": {
+                        "type": "array",
+                        "items": {
+                          "type": "number"
+                        },
+                        "minItems": 4,
+                        "maxItems": 4
+                      }
+                    },
+                    "required": [
+                      "name"
+                    ]
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ]
+              },
+              "Name": {
+                "readOnly": true,
+                "type": "string",
+                "const": "xcube"
+              },
+              "EndPoint": {
+                "type": "string"
+              },
+              "Type": {
+                "type": "string",
+                "readOnly": true,
+                "const": "zarr"
+              },
+              "StacEndpoint": {
+                "type": "string",
+                "default": "/ogc"
+              },
+              "DatacubeId": {
+                "type": "string"
+              },
+              "Variable": {
+                "type": "string"
+              },
+              "ColormapName": {
+                "type": "string",
+                "enum": [
+                  "Accent",
+                  "Blues",
+                  "BrBG",
+                  "BuGn",
+                  "BuPu",
+                  "CMRmap",
+                  "Dark2",
+                  "GnBu",
+                  "Grays",
+                  "Greens",
+                  "Greys",
+                  "OrRd",
+                  "Oranges",
+                  "PRGn",
+                  "Paired",
+                  "Pastel1",
+                  "Pastel2",
+                  "PiYG",
+                  "PuBu",
+                  "PuBuGn",
+                  "PuOr",
+                  "PuRd",
+                  "Purples",
+                  "RdBu",
+                  "RdGy",
+                  "RdPu",
+                  "RdYlBu",
+                  "RdYlGn",
+                  "Reds",
+                  "Set1",
+                  "Set2",
+                  "Set3",
+                  "Spectral",
+                  "Wistia",
+                  "YlGn",
+                  "YlGnBu",
+                  "YlOrBr",
+                  "YlOrRd",
+                  "afmhot",
+                  "algae",
+                  "algae_i",
+                  "algae_r_i",
+                  "amp",
+                  "amp_i",
+                  "amp_r_i",
+                  "autumn",
+                  "balance",
+                  "balance_i",
+                  "balance_r_i",
+                  "berlin",
+                  "binary",
+                  "bone",
+                  "brg",
+                  "bwr",
+                  "chl_DeM2",
+                  "cividis",
+                  "cool",
+                  "coolwarm",
+                  "copper",
+                  "cubehelix",
+                  "curl",
+                  "curl_i",
+                  "curl_r_i",
+                  "deep",
+                  "deep_i",
+                  "deep_r_i",
+                  "delta",
+                  "delta_i",
+                  "delta_r_i",
+                  "dense",
+                  "dense_i",
+                  "dense_r_i",
+                  "diff",
+                  "diff_i",
+                  "diff_r_i",
+                  "esa_cci_lc_classes",
+                  "flag",
+                  "gist_earth",
+                  "gist_gray",
+                  "gist_grey",
+                  "gist_heat",
+                  "gist_ncar",
+                  "gist_rainbow",
+                  "gist_stern",
+                  "gist_yarg",
+                  "gist_yerg",
+                  "gnuplot",
+                  "gnuplot2",
+                  "gray",
+                  "gray_i",
+                  "gray_r_i",
+                  "grey",
+                  "haline",
+                  "haline_i",
+                  "haline_r_i",
+                  "hot",
+                  "hsv",
+                  "ice",
+                  "ice_i",
+                  "ice_r_i",
+                  "inferno",
+                  "jet",
+                  "magma",
+                  "managua",
+                  "matter",
+                  "matter_i",
+                  "matter_r_i",
+                  "nipy_spectral",
+                  "ocean",
+                  "oxy",
+                  "oxy_i",
+                  "oxy_r_i",
+                  "phase",
+                  "phase_i",
+                  "phase_r_i",
+                  "pink",
+                  "plasma",
+                  "plasma_r",
+                  "prism",
+                  "rain",
+                  "rain_i",
+                  "rain_r_i",
+                  "rainbow",
+                  "reg_map",
+                  "reg_map_i",
+                  "reg_map_r_i",
+                  "seismic",
+                  "solar",
+                  "solar_i",
+                  "solar_r_i",
+                  "speed",
+                  "speed_i",
+                  "speed_r_i",
+                  "spring",
+                  "summer",
+                  "tab10",
+                  "tab20",
+                  "tab20b",
+                  "tab20c",
+                  "tarn",
+                  "tarn_i",
+                  "tarn_r_i",
+                  "tempo",
+                  "tempo_i",
+                  "tempo_r_i",
+                  "terrain",
+                  "thermal",
+                  "thermal_i",
+                  "thermal_r_i",
+                  "topo",
+                  "topo_i",
+                  "topo_r_i",
+                  "turbid",
+                  "turbid_i",
+                  "turbid_r_i",
+                  "turbo",
+                  "twilight",
+                  "twilight_shifted",
+                  "vanimo",
+                  "viridis",
+                  "viridis_alpha",
+                  "winter"
+                ]
+              },
+              "Rescale": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                },
+                "minItems": 2,
+                "maxItems": 2
+              },
+              "Query": {
+                "type": "object",
+                "properties": {
+                  "Start": {
+                    "type": "string",
+                    "format": "datetime"
+                  },
+                  "End": {
+                    "type": "string",
+                    "format": "datetime"
+                  }
+                }
+              },
+              "Rasterform": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "object"
+                  }
+                ],
+                "default": true
+              },
+              "Unit": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "Name",
+              "EndPoint",
+              "Type",
+              "StacEndpoint",
+              "DatacubeId",
+              "Variable"
+            ]
+          },
+          {
+            "properties": {
+              "Attribution": {
+                "type": "string",
+                "media": {
+                  "type": "html"
+                }
+              },
+              "DataProjection": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "def": {
+                        "type": "string"
+                      },
+                      "extent": {
+                        "type": "array",
+                        "items": {
+                          "type": "number"
+                        },
+                        "minItems": 4,
+                        "maxItems": 4
+                      }
+                    },
+                    "required": [
+                      "name"
+                    ]
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ]
+              },
+              "Name": {
+                "readOnly": true,
+                "type": "string",
+                "const": "marinedatastore"
+              },
+              "EndPoint": {
+                "type": "string"
+              },
+              "Type": {
+                "type": "string",
+                "enum": [
+                  "WMTSCapabilities"
+                ]
+              },
+              "LayerId": {
+                "type": "string"
+              },
+              "Variable": {
+                "type": "string"
+              },
+              "Dimensions": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": [
+                    "string",
+                    "number"
+                  ]
+                }
+              },
+              "Query": {
+                "type": "object",
+                "properties": {
+                  "Start": {
+                    "type": "string",
+                    "format": "datetime"
+                  },
+                  "End": {
+                    "type": "string",
+                    "format": "datetime"
+                  }
+                }
+              },
+              "Rasterform": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "object"
+                  }
+                ],
+                "default": true
+              },
+              "Unit": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "Name",
+              "EndPoint",
+              "Type",
+              "LayerId",
+              "Dimensions"
+            ]
+          },
+          {
+            "properties": {
+              "Attribution": {
+                "type": "string",
+                "media": {
+                  "type": "html"
+                }
+              },
+              "DataProjection": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "def": {
+                        "type": "string"
+                      },
+                      "extent": {
+                        "type": "array",
+                        "items": {
+                          "type": "number"
+                        },
+                        "minItems": 4,
+                        "maxItems": 4
+                      }
+                    },
+                    "required": [
+                      "name"
+                    ]
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ]
+              },
+              "Style": {
+                "type": "string"
+              },
+              "Bbox": {
+                "anyOf": [
+                  {
+                    "type": "array",
+                    "format": "bounding-box"
+                  },
+                  {
+                    "type": "array",
+                    "minItems": 4,
+                    "maxItems": 4,
+                    "items": {
+                      "type": "number"
+                    }
+                  }
+                ]
+              },
+              "ParquetSource": {
+                "type": "string"
+              },
+              "MergeAssets": {
+                "type": "boolean"
+              },
+              "TimeEntries": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "Time": {
+                      "type": "string",
+                      "format": "datetime"
+                    },
+                    "Assets": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "Identifier": {
+                            "type": "string"
+                          },
+                          "File": {
+                            "type": "string"
+                          },
+                          "Title": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "Identifier",
+                          "File"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "Time",
+                    "Assets"
+                  ]
+                }
+              },
+              "Name": {
+                "readOnly": true,
+                "type": "string",
+                "const": "COG source"
+              }
+            },
+            "required": [
+              "Style",
+              "TimeEntries",
+              "Name"
+            ]
+          },
+          {
+            "properties": {
+              "Attribution": {
+                "type": "string",
+                "media": {
+                  "type": "html"
+                }
+              },
+              "DataProjection": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "def": {
+                        "type": "string"
+                      },
+                      "extent": {
+                        "type": "array",
+                        "items": {
+                          "type": "number"
+                        },
+                        "minItems": 4,
+                        "maxItems": 4
+                      }
+                    },
+                    "required": [
+                      "name"
+                    ]
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ]
+              },
+              "Style": {
+                "type": "string"
+              },
+              "Bbox": {
+                "anyOf": [
+                  {
+                    "type": "array",
+                    "format": "bounding-box"
+                  },
+                  {
+                    "type": "array",
+                    "minItems": 4,
+                    "maxItems": 4,
+                    "items": {
+                      "type": "number"
+                    }
+                  }
+                ]
+              },
+              "ParquetSource": {
+                "type": "string"
+              },
+              "MergeAssets": {
+                "type": "boolean"
+              },
+              "TimeEntries": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "Time": {
+                      "type": "string",
+                      "format": "datetime"
+                    },
+                    "Assets": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "Identifier": {
+                            "type": "string"
+                          },
+                          "File": {
+                            "type": "string"
+                          },
+                          "Title": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "Identifier",
+                          "File"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "Time",
+                    "Assets"
+                  ]
+                }
+              },
+              "Name": {
+                "readOnly": true,
+                "type": "string",
+                "const": "GeoJSON source"
+              }
+            },
+            "required": [
+              "Style",
+              "TimeEntries",
+              "Name"
+            ]
+          },
+          {
+            "properties": {
+              "Attribution": {
+                "type": "string",
+                "media": {
+                  "type": "html"
+                }
+              },
+              "DataProjection": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "def": {
+                        "type": "string"
+                      },
+                      "extent": {
+                        "type": "array",
+                        "items": {
+                          "type": "number"
+                        },
+                        "minItems": 4,
+                        "maxItems": 4
+                      }
+                    },
+                    "required": [
+                      "name"
+                    ]
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ]
+              },
+              "Style": {
+                "type": "string"
+              },
+              "Bbox": {
+                "anyOf": [
+                  {
+                    "type": "array",
+                    "format": "bounding-box"
+                  },
+                  {
+                    "type": "array",
+                    "minItems": 4,
+                    "maxItems": 4,
+                    "items": {
+                      "type": "number"
+                    }
+                  }
+                ]
+              },
+              "ParquetSource": {
+                "type": "string"
+              },
+              "MergeAssets": {
+                "type": "boolean"
+              },
+              "TimeEntries": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "Time": {
+                      "type": "string",
+                      "format": "datetime"
+                    },
+                    "Assets": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "Identifier": {
+                            "type": "string"
+                          },
+                          "File": {
+                            "type": "string"
+                          },
+                          "Title": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "Identifier",
+                          "File"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "Time",
+                    "Assets"
+                  ]
+                }
+              },
+              "Name": {
+                "readOnly": true,
+                "type": "string",
+                "const": "FlatGeobuf source"
+              }
+            },
+            "required": [
+              "Style",
+              "TimeEntries",
+              "Name"
+            ]
+          },
+          {
+            "properties": {
+              "Attribution": {
+                "type": "string",
+                "media": {
+                  "type": "html"
+                }
+              },
+              "DataProjection": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "def": {
+                        "type": "string"
+                      },
+                      "extent": {
+                        "type": "array",
+                        "items": {
+                          "type": "number"
+                        },
+                        "minItems": 4,
+                        "maxItems": 4
+                      }
+                    },
+                    "required": [
+                      "name"
+                    ]
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ]
+              },
+              "Name": {
+                "readOnly": true,
+                "type": "string",
+                "const": "VectorTile source"
+              },
+              "Style": {
+                "type": "string"
+              },
+              "idProperty": {
+                "type": "string"
+              },
+              "layers": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "Bbox": {
+                "anyOf": [
+                  {
+                    "type": "array",
+                    "format": "bounding-box"
+                  },
+                  {
+                    "type": "array",
+                    "minItems": 4,
+                    "maxItems": 4,
+                    "items": {
+                      "type": "number"
+                    }
+                  }
+                ]
+              },
+              "TimeEntries": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "Time": {
+                      "type": "string",
+                      "format": "datetime"
+                    },
+                    "Url": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "Time",
+                    "Url"
+                  ]
+                }
+              }
+            },
+            "required": [
+              "Name",
+              "TimeEntries"
+            ]
+          },
+          {
+            "properties": {
+              "Attribution": {
+                "type": "string",
+                "media": {
+                  "type": "html"
+                }
+              },
+              "DataProjection": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "def": {
+                        "type": "string"
+                      },
+                      "extent": {
+                        "type": "array",
+                        "items": {
+                          "type": "number"
+                        },
+                        "minItems": 4,
+                        "maxItems": 4
+                      }
+                    },
+                    "required": [
+                      "name"
+                    ]
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ]
+              },
+              "Name": {
+                "readOnly": true,
+                "type": "string",
+                "const": "MapboxStyle source"
+              },
+              "Bbox": {
+                "anyOf": [
+                  {
+                    "type": "array",
+                    "format": "bounding-box"
+                  },
+                  {
+                    "type": "array",
+                    "minItems": 4,
+                    "maxItems": 4,
+                    "items": {
+                      "type": "number"
+                    }
+                  }
+                ]
+              },
+              "TimeEntries": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "Time": {
+                      "type": "string",
+                      "format": "datetime"
+                    },
+                    "Url": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "Time",
+                    "Url"
+                  ]
+                }
+              },
+              "applyOptions": {
+                "type": "object"
+              }
+            },
+            "required": [
+              "Name",
+              "TimeEntries"
+            ]
+          },
+          {
+            "properties": {
+              "Attribution": {
+                "type": "string",
+                "media": {
+                  "type": "html"
+                }
+              },
+              "DataProjection": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "def": {
+                        "type": "string"
+                      },
+                      "extent": {
+                        "type": "array",
+                        "items": {
+                          "type": "number"
+                        },
+                        "minItems": 4,
+                        "maxItems": 4
+                      }
+                    },
+                    "required": [
+                      "name"
+                    ]
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ]
+              },
+              "Name": {
+                "readOnly": true,
+                "type": "string",
+                "const": "rasdaman"
+              },
+              "EndPoint": {
+                "type": "string"
+              },
+              "CoverageId": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "Name",
+              "EndPoint",
+              "CoverageId"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "Name": {
+                "readOnly": true,
+                "type": "string",
+                "const": "Collection-only"
+              },
+              "OverwriteBBox": {
+                "anyOf": [
+                  {
+                    "type": "array",
+                    "format": "bounding-box"
+                  },
+                  {
+                    "type": "array",
+                    "minItems": 4,
+                    "maxItems": 4,
+                    "items": {
+                      "type": "number"
+                    }
+                  }
+                ]
+              },
+              "DateTimeInterval": {
+                "type": "object",
+                "properties": {
+                  "Start": {
+                    "type": "string",
+                    "format": "datetime"
+                  },
+                  "End": {
+                    "type": "string",
+                    "format": "datetime"
+                  },
+                  "Timedelta": {
+                    "type": "object",
+                    "properties": {
+                      "days": {
+                        "type": "number"
+                      },
+                      "hours": {
+                        "type": "number"
+                      },
+                      "minutes": {
+                        "type": "number"
+                      },
+                      "seconds": {
+                        "type": "number"
+                      }
+                    }
+                  }
+                },
+                "required": [
+                  "Start",
+                  "End"
+                ]
+              },
+              "Times": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            },
+            "required": [
+              "Name"
+            ]
+          }
+        ]
+      }
+    },
+    "Locations": {
+      "anyOf": [
+        {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "Identifier": {
+                "type": "string"
+              },
+              "Name": {
+                "type": "string"
+              },
+              "Times": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "Country": {
+                "type": [
+                  "string",
+                  "array"
+                ],
+                "items": {
+                  "type": "string"
+                }
+              },
+              "Point": {
+                "type": "array",
+                "format": "point"
+              },
+              "Bbox": {
+                "anyOf": [
+                  {
+                    "type": "array",
+                    "format": "bounding-box"
+                  },
+                  {
+                    "type": "array",
+                    "minItems": 4,
+                    "maxItems": 4,
+                    "items": {
+                      "type": "number"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "type": "boolean"
+        }
+      ]
+    },
+    "Subcollections": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "Identifier": {
+            "type": "string"
+          },
+          "Name": {
+            "type": "string"
+          },
+          "Collection": {
+            "type": "string"
+          },
+          "Country": {
+            "type": [
+              "string",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "Point": {
+            "type": "array",
+            "format": "point"
+          },
+          "Bbox": {
+            "anyOf": [
+              {
+                "type": "array",
+                "format": "bounding-box"
+              },
+              {
+                "type": "array",
+                "minItems": 4,
+                "maxItems": 4,
+                "items": {
+                  "type": "number"
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  "required": [
+    "Name",
+    "Title",
+    "Description",
+    "Resources"
+  ]
+}

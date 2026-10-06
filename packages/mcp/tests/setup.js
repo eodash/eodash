@@ -13,12 +13,10 @@ export async function setup() {
   const widgetsFile = path.join(dataDir, "widgets-metadata.json");
   const archFile = path.join(dataDir, "architecture-metadata.json");
 
-  if (!fs.existsSync(widgetsFile) || !fs.existsSync(archFile)) {
-    if (!fs.existsSync(dataDir)) {
-      fs.mkdirSync(dataDir, { recursive: true });
-    }
-    const { widgetsMetadata, architectureMetadata } = buildMetadata(REPO_ROOT);
-    fs.writeFileSync(widgetsFile, JSON.stringify(widgetsMetadata, null, 2));
-    fs.writeFileSync(archFile, JSON.stringify(architectureMetadata, null, 2));
+  if (!fs.existsSync(dataDir)) {
+    fs.mkdirSync(dataDir, { recursive: true });
   }
+  const { widgetsMetadata, architectureMetadata } = buildMetadata(REPO_ROOT);
+  fs.writeFileSync(widgetsFile, JSON.stringify(widgetsMetadata, null, 2));
+  fs.writeFileSync(archFile, JSON.stringify(architectureMetadata, null, 2));
 }
