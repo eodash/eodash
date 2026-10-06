@@ -87,9 +87,7 @@
                 "type": "string"
               }
             },
-            "required": [
-              "Url"
-            ]
+            "required": ["Url"]
           }
         }
       ]
@@ -115,10 +113,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "Name",
-          "Url"
-        ]
+        "required": ["Name", "Url"]
       }
     },
     "Stories": {
@@ -179,10 +174,7 @@
               },
               "Type": {
                 "type": "string",
-                "enum": [
-                  "byoc",
-                  "zarr"
-                ]
+                "enum": ["byoc", "zarr"]
               },
               "CollectionId": {
                 "type": "string"
@@ -191,12 +183,7 @@
                 "type": "string"
               }
             },
-            "required": [
-              "Name",
-              "Type",
-              "CollectionId",
-              "Script"
-            ]
+            "required": ["Name", "Type", "CollectionId", "Script"]
           },
           {
             "type": "object",
@@ -212,11 +199,7 @@
                 "type": "string"
               }
             },
-            "required": [
-              "Name",
-              "Title",
-              "Url"
-            ]
+            "required": ["Name", "Title", "Url"]
           }
         ]
       }
@@ -233,10 +216,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "Url",
-          "Name"
-        ]
+        "required": ["Url", "Name"]
       }
     },
     "CollectionGroup": {
@@ -287,14 +267,7 @@
               },
               "Method": {
                 "type": "string",
-                "enum": [
-                  "GET",
-                  "POST",
-                  "PUT",
-                  "DELETE",
-                  "PATCH",
-                  "OPTIONS"
-                ]
+                "enum": ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"]
               },
               "Body": {
                 "type": "string"
@@ -316,27 +289,17 @@
                           "type": "string"
                         }
                       },
-                      "required": [
-                        "Identifier",
-                        "Url"
-                      ]
+                      "required": ["Identifier", "Url"]
                     }
                   }
                 ]
               }
             },
-            "required": [
-              "Identifier",
-              "Url",
-              "Type"
-            ]
+            "required": ["Identifier", "Url", "Type"]
           }
         }
       },
-      "required": [
-        "JsonForm",
-        "EndPoints"
-      ]
+      "required": ["JsonForm", "EndPoints"]
     },
     "Subtitle": {
       "type": "string"
@@ -388,9 +351,7 @@
                         "maxItems": 4
                       }
                     },
-                    "required": [
-                      "name"
-                    ]
+                    "required": ["name"]
                   },
                   {
                     "type": "string"
@@ -426,11 +387,7 @@
                 "type": "string"
               }
             },
-            "required": [
-              "id",
-              "url",
-              "protocol"
-            ]
+            "required": ["id", "url", "protocol"]
           },
           {
             "properties": {
@@ -472,9 +429,7 @@
                         "maxItems": 4
                       }
                     },
-                    "required": [
-                      "name"
-                    ]
+                    "required": ["name"]
                   },
                   {
                     "type": "string"
@@ -500,10 +455,7 @@
               "dimensions": {
                 "type": "object",
                 "additionalProperties": {
-                  "type": [
-                    "string",
-                    "number"
-                  ]
+                  "type": ["string", "number"]
                 }
               },
               "version": {
@@ -536,12 +488,7 @@
                 "default": true
               }
             },
-            "required": [
-              "id",
-              "url",
-              "protocol",
-              "layers"
-            ]
+            "required": ["id", "url", "protocol", "layers"]
           },
           {
             "properties": {
@@ -583,9 +530,7 @@
                         "maxItems": 4
                       }
                     },
-                    "required": [
-                      "name"
-                    ]
+                    "required": ["name"]
                   },
                   {
                     "type": "string"
@@ -606,10 +551,7 @@
               "dimensions": {
                 "type": "object",
                 "additionalProperties": {
-                  "type": [
-                    "string",
-                    "number"
-                  ]
+                  "type": ["string", "number"]
                 }
               },
               "Unit": {
@@ -630,12 +572,7 @@
                 "default": true
               }
             },
-            "required": [
-              "id",
-              "url",
-              "protocol",
-              "layer"
-            ]
+            "required": ["id", "url", "protocol", "layer"]
           },
           {
             "properties": {
@@ -677,9 +614,7 @@
                         "maxItems": 4
                       }
                     },
-                    "required": [
-                      "name"
-                    ]
+                    "required": ["name"]
                   },
                   {
                     "type": "string"
@@ -707,11 +642,7 @@
                 }
               }
             },
-            "required": [
-              "id",
-              "url",
-              "protocol"
-            ]
+            "required": ["id", "url", "protocol"]
           },
           {
             "properties": {
@@ -753,9 +684,7 @@
                         "maxItems": 4
                       }
                     },
-                    "required": [
-                      "name"
-                    ]
+                    "required": ["name"]
                   },
                   {
                     "type": "string"
@@ -774,11 +703,7 @@
                 "type": "object"
               }
             },
-            "required": [
-              "id",
-              "url",
-              "protocol"
-            ]
+            "required": ["id", "url", "protocol"]
           },
           {
             "properties": {
@@ -820,9 +745,7 @@
                         "maxItems": 4
                       }
                     },
-                    "required": [
-                      "name"
-                    ]
+                    "required": ["name"]
                   },
                   {
                     "type": "string"
@@ -841,11 +764,7 @@
                 "type": "string"
               }
             },
-            "required": [
-              "id",
-              "url",
-              "protocol"
-            ]
+            "required": ["id", "url", "protocol"]
           },
           {
             "properties": {
@@ -887,9 +806,7 @@
                         "maxItems": 4
                       }
                     },
-                    "required": [
-                      "name"
-                    ]
+                    "required": ["name"]
                   },
                   {
                     "type": "string"
@@ -908,11 +825,7 @@
                 "type": "string"
               }
             },
-            "required": [
-              "id",
-              "url",
-              "protocol"
-            ]
+            "required": ["id", "url", "protocol"]
           },
           {
             "properties": {
@@ -954,9 +867,7 @@
                         "maxItems": 4
                       }
                     },
-                    "required": [
-                      "name"
-                    ]
+                    "required": ["name"]
                   },
                   {
                     "type": "string"
@@ -975,11 +886,7 @@
                 "type": "string"
               }
             },
-            "required": [
-              "id",
-              "url",
-              "protocol"
-            ]
+            "required": ["id", "url", "protocol"]
           }
         ]
       }
@@ -1028,9 +935,7 @@
                         "maxItems": 4
                       }
                     },
-                    "required": [
-                      "name"
-                    ]
+                    "required": ["name"]
                   },
                   {
                     "type": "string"
@@ -1066,11 +971,7 @@
                 "type": "string"
               }
             },
-            "required": [
-              "id",
-              "url",
-              "protocol"
-            ]
+            "required": ["id", "url", "protocol"]
           },
           {
             "properties": {
@@ -1112,9 +1013,7 @@
                         "maxItems": 4
                       }
                     },
-                    "required": [
-                      "name"
-                    ]
+                    "required": ["name"]
                   },
                   {
                     "type": "string"
@@ -1140,10 +1039,7 @@
               "dimensions": {
                 "type": "object",
                 "additionalProperties": {
-                  "type": [
-                    "string",
-                    "number"
-                  ]
+                  "type": ["string", "number"]
                 }
               },
               "version": {
@@ -1176,12 +1072,7 @@
                 "default": true
               }
             },
-            "required": [
-              "id",
-              "url",
-              "protocol",
-              "layers"
-            ]
+            "required": ["id", "url", "protocol", "layers"]
           },
           {
             "properties": {
@@ -1223,9 +1114,7 @@
                         "maxItems": 4
                       }
                     },
-                    "required": [
-                      "name"
-                    ]
+                    "required": ["name"]
                   },
                   {
                     "type": "string"
@@ -1246,10 +1135,7 @@
               "dimensions": {
                 "type": "object",
                 "additionalProperties": {
-                  "type": [
-                    "string",
-                    "number"
-                  ]
+                  "type": ["string", "number"]
                 }
               },
               "Unit": {
@@ -1270,12 +1156,7 @@
                 "default": true
               }
             },
-            "required": [
-              "id",
-              "url",
-              "protocol",
-              "layer"
-            ]
+            "required": ["id", "url", "protocol", "layer"]
           },
           {
             "properties": {
@@ -1317,9 +1198,7 @@
                         "maxItems": 4
                       }
                     },
-                    "required": [
-                      "name"
-                    ]
+                    "required": ["name"]
                   },
                   {
                     "type": "string"
@@ -1347,11 +1226,7 @@
                 }
               }
             },
-            "required": [
-              "id",
-              "url",
-              "protocol"
-            ]
+            "required": ["id", "url", "protocol"]
           },
           {
             "properties": {
@@ -1393,9 +1268,7 @@
                         "maxItems": 4
                       }
                     },
-                    "required": [
-                      "name"
-                    ]
+                    "required": ["name"]
                   },
                   {
                     "type": "string"
@@ -1414,11 +1287,7 @@
                 "type": "object"
               }
             },
-            "required": [
-              "id",
-              "url",
-              "protocol"
-            ]
+            "required": ["id", "url", "protocol"]
           },
           {
             "properties": {
@@ -1460,9 +1329,7 @@
                         "maxItems": 4
                       }
                     },
-                    "required": [
-                      "name"
-                    ]
+                    "required": ["name"]
                   },
                   {
                     "type": "string"
@@ -1481,11 +1348,7 @@
                 "type": "string"
               }
             },
-            "required": [
-              "id",
-              "url",
-              "protocol"
-            ]
+            "required": ["id", "url", "protocol"]
           },
           {
             "properties": {
@@ -1527,9 +1390,7 @@
                         "maxItems": 4
                       }
                     },
-                    "required": [
-                      "name"
-                    ]
+                    "required": ["name"]
                   },
                   {
                     "type": "string"
@@ -1548,11 +1409,7 @@
                 "type": "string"
               }
             },
-            "required": [
-              "id",
-              "url",
-              "protocol"
-            ]
+            "required": ["id", "url", "protocol"]
           },
           {
             "properties": {
@@ -1594,9 +1451,7 @@
                         "maxItems": 4
                       }
                     },
-                    "required": [
-                      "name"
-                    ]
+                    "required": ["name"]
                   },
                   {
                     "type": "string"
@@ -1615,11 +1470,7 @@
                 "type": "string"
               }
             },
-            "required": [
-              "id",
-              "url",
-              "protocol"
-            ]
+            "required": ["id", "url", "protocol"]
           }
         ]
       }
@@ -1644,9 +1495,7 @@
               "maxItems": 4
             }
           },
-          "required": [
-            "name"
-          ]
+          "required": ["name"]
         },
         {
           "type": "string"
@@ -1668,10 +1517,7 @@
         "domain": {
           "type": "array",
           "items": {
-            "type": [
-              "number",
-              "string"
-            ]
+            "type": ["number", "string"]
           }
         },
         "tickFormat": {
@@ -1695,11 +1541,7 @@
         },
         "markType": {
           "type": "string",
-          "enum": [
-            "rect",
-            "circle",
-            "line"
-          ]
+          "enum": ["rect", "circle", "line"]
         }
       }
     },
@@ -1725,10 +1567,5 @@
       }
     }
   },
-  "required": [
-    "Name",
-    "Title",
-    "Description",
-    "Collections"
-  ]
+  "required": ["Name", "Title", "Description", "Collections"]
 }
