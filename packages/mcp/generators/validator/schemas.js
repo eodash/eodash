@@ -21,6 +21,11 @@ export function createAjvInstance() {
     allErrors: true,
     verbose: true,
     strict: false,
+    logger: {
+      log: console.log,
+      warn: () => {},
+      error: console.error,
+    },
   });
   addFormats(ajv);
 
@@ -67,6 +72,38 @@ export function createAjvInstance() {
         )
       );
     },
+  });
+
+  ajv.addFormat("bounding-box", {
+    type: "array",
+    validate: (b) =>
+      Array.isArray(b) &&
+      b.length === 4 &&
+      b.every((n) => typeof n === "number"),
+  });
+
+  ajv.addFormat("point", {
+    type: "array",
+    validate: (p) =>
+      Array.isArray(p) &&
+      p.length === 2 &&
+      p.every((n) => typeof n === "number"),
+  });
+
+  ajv.addFormat("datetime", {
+    type: "string",
+    validate: (dt) =>
+      typeof dt === "string" &&
+      (!Number.isNaN(Date.parse(dt)) || /^\d{4}\d{2}\d{2}/.test(dt)),
+  });
+
+  ajv.addFormat("markdown", {
+    type: "string",
+    validate: (s) => typeof s === "string",
+  });
+
+  ajv.addFormat("categories", {
+    validate: () => true,
   });
 
   return ajv;
