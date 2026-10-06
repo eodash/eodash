@@ -3,7 +3,7 @@ import {
   applyVisibilityRoles,
   findLayer,
   findLayersByLayerPrefix,
-  getColFromLayer,
+  findReaderByLayerId,
   isGeoZarrLayer,
   removeLayers,
   replaceLayer,
@@ -141,17 +141,19 @@ describe("layer helpers", () => {
     });
   });
 
-  describe("getColFromLayer", () => {
+  describe("findReaderByLayerId", () => {
     test("matches the reader whose collection the layer was built from", () => {
       const readers = [{ stac: { id: "a" } }, { stac: { id: "b" } }];
 
-      expect(getColFromLayer(readers, B_NESTED)).toBe(readers[1]);
+      expect(findReaderByLayerId(readers, B_NESTED)).toBe(readers[1]);
     });
 
     test("returns nothing when no reader owns it", () => {
       const readers = [{ stac: { id: "a" } }];
 
-      expect(getColFromLayer(readers, "c;:;i;:;l;:;EPSG:3857")).toBeUndefined();
+      expect(
+        findReaderByLayerId(readers, "c;:;i;:;l;:;EPSG:3857"),
+      ).toBeUndefined();
     });
   });
 

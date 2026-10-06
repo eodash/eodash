@@ -154,7 +154,7 @@ export const setCollectionsPalette = (colors) => {
  * @param {import("@eodash/stac").Reader[]} eodashCollections - Reactive array to receive the initialized collection readers
  * @param {import("@eodash/stac").STACCollection} selectedStac - Indicator collection metadata
  * @param {string} absoluteUrl - Indicator URL used as the base for relative collection links
- * @param {string[]} colorPalette - Color palette assigned cyclically across collections
+ * @param {string[]} colors - Color palette assigned cyclically across collections
  * @param {boolean} isAPI - Whether collections are backed by a STAC API endpoint
  * @param {object} [rasterOptions] - Default options applied when building layers
  * @param {string} [rasterOptions.rasterEndpoint]
@@ -167,7 +167,7 @@ export const updateEodashCollections = async (
   eodashCollections,
   selectedStac,
   absoluteUrl,
-  colorPalette,
+  colors,
   isAPI,
   rasterOptions = {},
 ) => {
@@ -176,7 +176,7 @@ export const updateEodashCollections = async (
     stac: selectedStac,
     api: isAPI,
     client: axios,
-    colorPalette,
+    colors,
     ...rasterOptions,
   });
 

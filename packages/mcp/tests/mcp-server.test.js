@@ -39,6 +39,19 @@ describe("eodash MCP Server - Core Tools", () => {
     expect(toolNames).toContain("generate_map_from_stac");
   });
 
+  it("generate_map_from_stac requires either url or stac_object", async () => {
+    const { client } = await createTestClientServer();
+
+    const errorRes = await client.callTool({
+      name: "generate_map_from_stac",
+      arguments: {},
+    });
+    expect(errorRes.isError).toBe(true);
+    expect(errorRes.content[0].text).toContain(
+      "Either 'url' or 'stac_object' must be provided",
+    );
+  });
+
   it("list_widgets tool returns all widgets and supports filtering by category", async () => {
     const { client } = await createTestClientServer();
 

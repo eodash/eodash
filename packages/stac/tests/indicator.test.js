@@ -1,5 +1,8 @@
 import { beforeEach, describe, expect, test, vi } from "vitest";
-import { createEodashIndicator } from "../src/index.js";
+import {
+  createEodashIndicator,
+  DEFAULT_COLLECTIONS_PALETTE,
+} from "../src/index.js";
 import {
   serveUrls,
   stacCollection,
@@ -248,5 +251,31 @@ describe("createEodashIndicator", () => {
     expect(res.layers.some((l) => l.properties?.id?.includes("child2"))).toBe(
       false,
     );
+  });
+
+  test("assigns colors from DEFAULT_COLLECTIONS_PALETTE to child collections by default", async () => {
+    serveMockData();
+    const indicator = await createEodashIndicator(INDICATOR_URL, { client });
+
+    const res = await indicator.getLayers("2023-01-10T00:00:00Z");
+    const child1Layer = res.layers.find((l) =>
+      l.properties?.id?.includes("child1"),
+    );
+    expect(child1Layer?.properties?.color).toBe(DEFAULT_COLLECTIONS_PALETTE[0]);
+  });
+
+  test("uses custom colors array when provided", async () => {
+    serveMockData();
+    const customColors = ["#ff0000", "#00ff00"];
+    const indicator = await createEodashIndicator(INDICATOR_URL, {
+      client,
+      colors: customColors,
+    });
+
+    const res = await indicator.getLayers("2023-01-10T00:00:00Z");
+    const child1Layer = res.layers.find((l) =>
+      l.properties?.id?.includes("child1"),
+    );
+    expect(child1Layer?.properties?.color).toBe("#ff0000");
   });
 });

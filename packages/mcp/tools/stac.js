@@ -20,55 +20,60 @@ export function registerStacTools(server) {
         "LIMITATIONS:\n" +
         "- NO IMAGE RENDERING: Outputs OpenLayers/EOxMap JSON layer configuration; does NOT download tiles or return image pixels.\n" +
         "- AMBIGUITY: If a catalog query matches multiple indicators closely, returns error with structured `candidates` array; retry with `collection_id`.",
-      inputSchema: z.object({
-        url: z
-          .string()
-          .optional()
-          .describe(
-            "STAC catalog URL, collection URL, indicator URL, or STAC API endpoint. The tool will auto-infer catalog/indicator/collection types and handle child links.",
-          ),
-        stac_object: z
-          .record(z.any())
-          .optional()
-          .describe(
-            "Pre-fetched STAC JSON document (Catalog, Collection, Indicator, or Item). Use this when the STAC content is already loaded in memory.",
-          ),
-        query: z
-          .string()
-          .optional()
-          .describe(
-            "Search term (name, title, tags, themes, description) to select an indicator from a STAC catalog (e.g. 'Carbon Dioxide', 'CO2', 'NO2'). If ambiguous, tool returns candidate list.",
-          ),
-        collection_id: z
-          .string()
-          .optional()
-          .describe(
-            "Specific collection ID or code to select from a STAC catalog (e.g. 'N2_CO2_mean')",
-          ),
-        datetime: z
-          .string()
-          .optional()
-          .describe(
-            "ISO 8601 date or datetime string (e.g. '2024-06-01T00:00:00Z'). If omitted, resolves the latest date from the collection.",
-          ),
-        bbox: z
-          .array(z.number())
-          .length(4)
-          .optional()
-          .describe(
-            "Bounding box [minX, minY, maxX, maxY] in EPSG:4326 (WGS84 degrees)",
-          ),
-        viewProjection: z
-          .string()
-          .optional()
-          .describe(
-            "Desired map view projection (e.g. 'EPSG:4326', 'EPSG:3035'). Defaults to STAC metadata projection or 'EPSG:3857'.",
-          ),
-        rasterEndpoint: z
-          .string()
-          .optional()
-          .describe("Base URL for TiTiler raster tile rendering endpoint"),
-      }),
+      inputSchema: z
+        .object({
+          url: z
+            .string()
+            .optional()
+            .describe(
+              "STAC catalog URL, collection URL, indicator URL, or STAC API endpoint. Either 'url' or 'stac_object' must be provided. The tool will auto-infer catalog/indicator/collection types and handle child links.",
+            ),
+          stac_object: z
+            .record(z.any())
+            .optional()
+            .describe(
+              "Pre-fetched STAC JSON document (Catalog, Collection, Indicator, or Item). Either 'url' or 'stac_object' must be provided. Use this when the STAC content is already loaded in memory.",
+            ),
+          query: z
+            .string()
+            .optional()
+            .describe(
+              "Search term (name, title, tags, themes, description) to select an indicator from a STAC catalog (e.g. 'Carbon Dioxide', 'CO2', 'NO2'). If ambiguous, tool returns candidate list.",
+            ),
+          collection_id: z
+            .string()
+            .optional()
+            .describe(
+              "Specific collection ID or code to select from a STAC catalog (e.g. 'N2_CO2_mean')",
+            ),
+          datetime: z
+            .string()
+            .optional()
+            .describe(
+              "ISO 8601 date or datetime string (e.g. '2024-06-01T00:00:00Z'). If omitted, resolves the latest date from the collection.",
+            ),
+          bbox: z
+            .array(z.number())
+            .length(4)
+            .optional()
+            .describe(
+              "Bounding box [minX, minY, maxX, maxY] in EPSG:4326 (WGS84 degrees)",
+            ),
+          viewProjection: z
+            .string()
+            .optional()
+            .describe(
+              "Desired map view projection (e.g. 'EPSG:4326', 'EPSG:3035'). Defaults to STAC metadata projection or 'EPSG:3857'.",
+            ),
+          rasterEndpoint: z
+            .string()
+            .optional()
+            .describe("Base URL for TiTiler raster tile rendering endpoint"),
+        })
+        .refine((data) => Boolean(data.url || data.stac_object), {
+          message: "Either 'url' or 'stac_object' must be provided.",
+          path: ["url"],
+        }),
     },
     async (params) => {
       try {

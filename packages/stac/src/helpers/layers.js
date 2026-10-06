@@ -217,8 +217,6 @@ export const findReaderByLayerId = (readers, layerId) => {
   return readers.find((reader) => reader.stac?.id === prefix);
 };
 
-export const getColFromLayer = findReaderByLayerId;
-
 /**
  * Applies link visibility roles to layer properties based on link role definitions in the collection.
  *

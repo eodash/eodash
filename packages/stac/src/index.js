@@ -80,6 +80,7 @@ export {
   createEodashIndicator,
   buildIndicatorDataLayers,
   normalizeBaseLayers,
+  DEFAULT_COLLECTIONS_PALETTE,
 } from "./collections/indicator.js";
 export {
   getIndicatorLayers,

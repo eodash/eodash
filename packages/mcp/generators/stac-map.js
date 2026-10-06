@@ -1,6 +1,8 @@
 import Fuse from "fuse.js";
 import { createEodashIndicator } from "@eodash/stac";
-import { isSTACItem, toAbsolute } from "@eodash/stac/helpers";
+import { isSTACCatalog, isSTACItem, toAbsolute } from "@eodash/stac/helpers";
+
+export { isSTACCatalog };
 
 /**
  * Fuse.js configuration for fuzzy-searching catalog indicators.
@@ -18,27 +20,6 @@ const CATALOG_FUSE_OPTIONS = {
   ignoreLocation: true,
   includeScore: true,
 };
-
-/**
- * Checks whether a STAC object represents a Catalog (rather than Collection or Item).
- *
- * @param {Record<string, any>} [doc]
- * @returns {boolean}
- */
-export function isSTACCatalog(doc) {
-  if (!doc || typeof doc !== "object") return false;
-  if (doc.type === "Catalog") return true;
-  // If it has type explicitly not Collection / Feature, or lacks extent but has child links
-  if (!doc.extent && !doc.geometry && Array.isArray(doc.links)) {
-    const hasChildren = doc.links.some(
-      (l) => l.rel === "child" && (l.type ? l.type.includes("json") : true),
-    );
-    if (hasChildren && doc.type !== "Collection" && doc.type !== "Feature") {
-      return true;
-    }
-  }
-  return false;
-}
 
 /**
  * Creates a minimal standalone STAC Collection document to wrap a self-contained STAC Item.

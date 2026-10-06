@@ -16,6 +16,7 @@ export {
   getTooltipProperties,
   getIndicatorLayers,
   getObservationPointsLayer,
+  DEFAULT_COLLECTIONS_PALETTE,
 } from "../index.js";
 
 import type { BoundLegend, STACItem, Projection } from "./stac";

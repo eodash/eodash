@@ -93,46 +93,6 @@ The `generate_map_from_stac` tool translates any STAC resource into a complete `
 - **No Image Rendering**: Outputs OpenLayers/EOxMap layer definitions; does not download raster tiles or render PNG pixels.
 - **Ambiguity Clarification**: If a catalog query matches multiple indicators closely, the tool returns an error with a structured `candidates` array (`id`, `title`, `description`, `score`) so the caller can clarify with `collection_id`.
 
-### Example Tool Invocation
-
-```json
-{
-  "url": "https://ESA-eodashboards.github.io/eodashboard-catalog/trilateral/catalog.json",
-  "query": "Carbon Dioxide",
-  "datetime": "2017-05-18",
-  "bbox": [90, -10, 140, 20]
-}
-```
-
-### Returned Output Structure
-
-```json
-{
-  "indicator": {
-    "id": "N2_CO2_mean",
-    "title": "Carbon Dioxide from OMI (daily)",
-    "href": "https://.../N2_CO2_mean/collection.json"
-  },
-  "layers": [ ... ],
-  "center": [ 115, 5 ],
-  "zoom": 4,
-  "projection": "EPSG:3857",
-  "datetime": "2017-05-18",
-  "timeControl": {
-    "availableDates": [ "2015-01-01T00:00:00.000Z", ... ],
-    "minDate": "2015-01-01T00:00:00.000Z",
-    "maxDate": "2022-02-13T00:00:00.000Z"
-  },
-  "legend": {
-    "title": "CO2 mean concentration [ppm]",
-    "scaleType": "continuous",
-    "tickFormat": ".5f",
-    "domainProperties": [ "vmin", "vmax" ],
-    "rangeProperty": "colormap_name"
-  }
-}
-```
-
 ## Running Tests
 
 ```bash

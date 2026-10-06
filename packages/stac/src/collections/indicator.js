@@ -13,7 +13,7 @@ import { applyVisibilityRoles } from "../helpers/layers.js";
  * Deduplicates projections by name / code.
  * @param {import("../types").Projection[]} projList
  */
-export const dedupeProjections = (projList) => {
+export const deduplicateProjections = (projList) => {
   const map = new Map();
   for (const p of projList) {
     const key = typeof p === "object" && p !== null ? p.name : p;
@@ -110,7 +110,7 @@ export const buildIndicatorDataLayers = async ({
     layers.push(observationPoints);
   }
 
-  return { layers, projections: dedupeProjections(projections), items };
+  return { layers, projections: deduplicateProjections(projections), items };
 };
 
 /**
@@ -184,6 +184,22 @@ export const normalizeBaseLayers = (
 };
 
 /**
+ * Default color palette assigned across STAC collections (Bank-Wong palette from templates/baseConfig.js).
+ * @type {string[]}
+ */
+export const DEFAULT_COLLECTIONS_PALETTE = [
+  "#009E73",
+  "#E69F00",
+  "#56B4E9",
+  "#009E73",
+  "#F0E442",
+  "#0072B2",
+  "#D55E00",
+  "#CC79A7",
+  "#994F00",
+];
+
+/**
  * Creates an indicator reader that coordinates multiple STAC collections,
  * combines base layers, data layers, observation points, and overlays,
  * and can produce complete EOxMap configurations.
@@ -192,8 +208,7 @@ export const normalizeBaseLayers = (
  * @param {object} [options]
  * @param {boolean} [options.api] - Whether the collections use STAC API endpoints (autoinferred if omitted)
  * @param {string} [options.viewProjection] - Map view projection (autoinferred from stac if omitted, default "EPSG:3857")
- * @param {string | string[]} [options.colorPalette] - Colors assigned across child collections
- * @param {string} [options.color] - Single color assigned to layers
+ * @param {string[]} [options.colors] - Colors assigned across child collections
  * @param {import("../http.js").AxiosInstance} [options.client] - Custom HTTP client
  * @param {import("../types").STACCollection} [options.stac] - Pre-fetched STAC collection/indicator document
  * @param {string} [options.rasterEndpoint] - Base URL for raster tile rendering
@@ -206,8 +221,7 @@ export const normalizeBaseLayers = (
 export const createEodashIndicator = async (url, options = {}) => {
   const {
     client,
-    colorPalette,
-    color,
+    colors = DEFAULT_COLLECTIONS_PALETTE,
     rasterEndpoint,
     upscalingEndpoints,
     tileMatrixSets,
@@ -233,18 +247,17 @@ export const createEodashIndicator = async (url, options = {}) => {
 
   const collectionUrls = extractCollectionUrls(stac, url);
 
-  const colors = Array.isArray(colorPalette)
-    ? colorPalette
-    : color
-      ? [color]
-      : [];
+  const palette =
+    Array.isArray(colors) && colors.length
+      ? colors
+      : DEFAULT_COLLECTIONS_PALETTE;
 
   const readers = await Promise.all(
     collectionUrls.map((cu, idx) =>
       createEodashCollection(cu, {
         api: isApi,
         client,
-        color: colors.length ? colors[idx % colors.length] : undefined,
+        color: palette[idx % palette.length],
         viewProjection,
         ...(cu === url && { stac }),
         rasterEndpoint,
@@ -308,7 +321,7 @@ export const createEodashIndicator = async (url, options = {}) => {
 
     return {
       layers: allLayers,
-      projections: dedupeProjections([
+      projections: deduplicateProjections([
         ...indicatorProjections,
         ...dataResult.projections,
       ]),

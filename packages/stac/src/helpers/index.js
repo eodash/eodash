@@ -1,6 +1,7 @@
 export * from "./assets.js";
 export * from "./auth.js";
 export * from "./bbox.js";
+export * from "./catalog.js";
 export * from "./datetime.js";
 export * from "./geojson.js";
 export * from "./items.js";
