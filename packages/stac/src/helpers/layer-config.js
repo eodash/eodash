@@ -1,6 +1,6 @@
 import log from "loglevel";
 import mustache from "mustache";
-import { applyValuesToUrl } from "./url.js";
+import { applyValuesToUrl, extractUrlKeys, extractDefaultUrlKeys } from "./url.js";
 
 /**
  * Stored layer configuration form values keyed by editor type.
@@ -230,26 +230,60 @@ function applyStyleVariables(state, variables) {
 }
 
 /**
- * Applies persisted tileUrl values to a layer's source params or URL.
+ * Applies persisted tileUrl/style values to a layer's source params or URL.
  *
  * @param {FormValues} state
  * @param {Record<string, any>} layer - Built layer object
  */
 function applyRasterFormValue(state, layer) {
-  if (layer?.properties?.layerConfig?.type !== "tileUrl") return;
-  const value = getCachedConfig(state, "tileUrl");
+  if (!layer) return;
+  const layerConfig = layer.properties?.layerConfig;
+  if (!layerConfig) return;
+
+  const type = layerConfig.type;
+  if (type !== "style" && type !== "tileUrl") return;
+
   const source = layer.source;
-  if (!source || !value || !Object.keys(value).length) return;
-  if (source.params) {
-    Object.assign(source.params, flattenFormValues(value));
+  if (!source) return;
+
+  // 1. For Vector or VectorTile layers, extract and apply url_key parameters from the schema
+  if (layer.type === "Vector" || layer.type === "VectorTile") {
+    const schema = layerConfig.schema;
+    if (schema && typeof source.url === "string") {
+      const value = getCachedConfig(state, type);
+      /** @type {Record<string, any>} */
+      const queryParamsToInject = {};
+
+      // Start with the schema properties' default values
+      Object.assign(queryParamsToInject, extractDefaultUrlKeys(schema));
+
+      // Overwrite with any cached form values
+      if (value && Object.keys(value).length > 0) {
+        Object.assign(queryParamsToInject, extractUrlKeys(schema, value));
+      }
+
+      if (Object.keys(queryParamsToInject).length > 0) {
+        source.url = applyValuesToUrl(source.url, queryParamsToInject);
+      }
+    }
     return;
   }
-  if (typeof source.url === "string") {
-    source.url = applyValuesToUrl(source.url, value);
-  } else if (Array.isArray(source.urls)) {
-    source.urls = /** @type {string[]} */ (source.urls).map((u) =>
-      applyValuesToUrl(u, value),
-    );
+
+  // 2. Original raster tileUrl logic
+  if (type === "tileUrl") {
+    const value = getCachedConfig(state, "tileUrl");
+    if (!value || !Object.keys(value).length) return;
+    if (source.params) {
+      Object.assign(source.params, flattenFormValues(value));
+      return;
+    }
+    if (typeof source.url === "string") {
+      source.url = applyValuesToUrl(source.url, value);
+    } else if (Array.isArray(source.urls)) {
+      source.urls = /** @type {string[]} */ (source.urls).map((u) =>
+        applyValuesToUrl(u, value),
+      );
+    }
   }
 }
 

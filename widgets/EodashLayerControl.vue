@@ -158,6 +158,8 @@ const handleDatetimeUpdate = async (evt) => {
 // -----  debounce logic
 /** @type {NodeJS.Timeout | undefined} */
 let timeout;
+/** @type {NodeJS.Timeout | undefined} */
+let layerConfigTimeout;
 
 /**
  * @param {CustomEvent<{layer:import('ol/layer').Layer; datetime:string;}>} evt
@@ -179,11 +181,16 @@ const onLayerConfigChange = (evt) => {
     evt.detail.jsonformValue,
     mapElement.value,
   );
-  updateLayerUrl(evt.detail.layer, evt.detail.jsonformValue);
+
+  const { layer, jsonformValue } = evt.detail;
+
+  clearTimeout(layerConfigTimeout);
+  layerConfigTimeout = setTimeout(() => {
+    updateLayerUrl(layer, jsonformValue);
+  }, 300);
 
   // remember the selection on the collection that built the layer, so it
   // survives a time/item rebuild
-  const { layer, jsonformValue } = evt.detail;
   const layerConfig = layer.get("_jsonDefinition")?.properties?.layerConfig;
   getColFromLayer(eodashCols, layer.get("id"))?.persistLayerConfig(
     layerConfig,

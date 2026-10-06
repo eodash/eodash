@@ -9,24 +9,27 @@ export const toAbsolute = (href, baseUrl) =>
   baseUrl ? new URL(href, baseUrl).toString() : href;
 
 /**
- * Recursively extracts URL keys from a JSON Schema.
- * Maps schema property names to their defined `url_key`.
+ * Recursively extracts values from a form value object based on url_key definitions in a schema.
  *
- * @param {Record<string, any> | null | undefined} schema
- * @returns {Record<string, string>}
+ * @param {Record<string, any> | null | undefined} schema - The JSON Schema
+ * @param {any} value - The current level of form values corresponding to the schema
+ * @returns {Record<string, any>} A map of url_key parameter names to their form values
  */
-export function extractUrlKeys(schema) {
-  /** @type {Record<string, string>} */
-  const keys = {};
-  if (!schema || typeof schema !== "object") return keys;
+export function extractUrlKeys(schema, value) {
+  /** @type {Record<string, any>} */
+  const results = {};
+  if (!schema || typeof schema !== "object" || !value || typeof value !== "object") {
+    return results;
+  }
 
   if (schema.properties) {
     for (const [key, propDef] of Object.entries(schema.properties)) {
       if (propDef && typeof propDef === "object") {
-        if (typeof propDef.url_key === "string") {
-          keys[key] = propDef.url_key;
-        }
-        Object.assign(keys, extractUrlKeys(propDef));
+        const subValue = value[key];
+        if (typeof propDef.url_key === "string" && subValue !== undefined && subValue !== null) {
+          results[propDef.url_key] = subValue;
+         }
+        Object.assign(results, extractUrlKeys(propDef, subValue));
       }
     }
   }
@@ -34,12 +37,47 @@ export function extractUrlKeys(schema) {
   for (const combinator of ["oneOf", "allOf", "anyOf"]) {
     if (Array.isArray(schema[combinator])) {
       for (const sub of schema[combinator]) {
-        Object.assign(keys, extractUrlKeys(sub));
+        Object.assign(results, extractUrlKeys(sub, value));
       }
     }
   }
 
-  return keys;
+  return results;
+}
+
+/**
+ * Recursively scans a schema to find properties with `url_key` and extracts their `default` values.
+ *
+ * @param {Record<string, any> | null | undefined} schema
+ * @returns {Record<string, any>} A map of url_key to its default value
+ */
+export function extractDefaultUrlKeys(schema) {
+  /** @type {Record<string, any>} */
+  const results = {};
+  if (!schema || typeof schema !== "object") {
+    return results;
+  }
+
+  if (schema.properties) {
+    for (const [_, propDef] of Object.entries(schema.properties)) {
+      if (propDef && typeof propDef === "object") {
+        if (typeof propDef.url_key === "string" && propDef.default !== undefined && propDef.default !== null) {
+          results[propDef.url_key] = propDef.default;
+        }
+        Object.assign(results, extractDefaultUrlKeys(propDef));
+      }
+    }
+  }
+
+  for (const combinator of ["oneOf", "allOf", "anyOf"]) {
+    if (Array.isArray(schema[combinator])) {
+      for (const sub of schema[combinator]) {
+        Object.assign(results, extractDefaultUrlKeys(sub));
+      }
+    }
+  }
+
+  return results;
 }
 
 /**
