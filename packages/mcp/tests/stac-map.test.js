@@ -321,17 +321,6 @@ describe("STAC Map Generator - buildStacMap", () => {
         },
       };
 
-      const customItem = stacItem({
-        id: "item_with_legend",
-        links: [
-          {
-            rel: "xyz",
-            href: "https://tile.example.com/{z}/{x}/{y}.png",
-            title: "Tile with legend",
-          },
-        ],
-      });
-
       const config = await buildStacMap(
         {
           stac_object: customCollection,
@@ -409,6 +398,93 @@ describe("STAC Map Generator - buildStacMap", () => {
           { client },
         ),
       ).rejects.toThrow(/No indicator in catalog matched query/);
+    });
+
+    it("handles STAC API root catalogs with /collections endpoint", async () => {
+      const apiRoot = {
+        type: "Catalog",
+        id: "api_root",
+        links: [
+          {
+            rel: "data",
+            href: "https://api.example.com/collections",
+            type: "application/json",
+          },
+        ],
+      };
+      const mockClient = {
+        get: async (url) => {
+          if (url === "https://api.example.com/collections") {
+            return {
+              data: {
+                collections: [
+                  {
+                    id: "api_col_1",
+                    title: "API Collection 1",
+                    description: "First collection",
+                    links: [
+                      {
+                        rel: "self",
+                        href: "https://api.example.com/collections/api_col_1",
+                      },
+                    ],
+                  },
+                ],
+              },
+            };
+          }
+          if (url === "https://api.example.com/collections/api_col_1") {
+            return {
+              data: {
+                type: "Collection",
+                id: "api_col_1",
+                title: "API Collection 1",
+                links: [
+                  {
+                    rel: "self",
+                    href: "https://api.example.com/collections/api_col_1",
+                  },
+                ],
+                summaries: { datetime: ["2023-01-01T00:00:00Z"] },
+                extent: {
+                  spatial: { bbox: [[-180, -90, 180, 90]] },
+                  temporal: { interval: [["2023-01-01T00:00:00Z", null]] },
+                },
+              },
+            };
+          }
+          if (url.endsWith("/search")) {
+            return {
+              data: {
+                features: [
+                  stacItem({
+                    id: "item_api_1",
+                    properties: { datetime: "2023-01-01T00:00:00Z" },
+                    links: [
+                      {
+                        rel: "xyz",
+                        href: "https://api.example.com/tiles/{z}/{x}/{y}.png",
+                      },
+                    ],
+                  }),
+                ],
+                numberMatched: 1,
+              },
+            };
+          }
+        },
+      };
+
+      const config = await buildStacMap(
+        {
+          stac_object: apiRoot,
+          collection_id: "api_col_1",
+        },
+        { client: mockClient },
+      );
+
+      expect(config.indicator?.id).toBe("api_col_1");
+      expect(config.layers).toBeDefined();
     });
   });
 });

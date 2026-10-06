@@ -114,9 +114,7 @@ export function selectCatalogIndicator(catalog, { collection_id, query } = {}) {
   if (collection_id) {
     const targetId = collection_id.trim();
     const matched = childLinks.find(
-      (l) =>
-        l.id === targetId ||
-        l.href?.includes(targetId),
+      (l) => l.id === targetId || l.href?.includes(targetId),
     );
     if (!matched) {
       const sample = childLinks
@@ -293,7 +291,8 @@ export async function buildStacMap(
   if (currentUrl && !resolvedCollection && !resolvedItem) {
     let fetchedDoc = null;
     if (client?.get) {
-      fetchedDoc = await client.get(currentUrl).catch(() => null);
+      const res = await client.get(currentUrl).catch(() => null);
+      fetchedDoc = res?.data || res;
     } else {
       try {
         const resp = await fetch(currentUrl);
@@ -316,6 +315,53 @@ export async function buildStacMap(
 
   // 3. Auto-infer STAC Catalog: if document is a Catalog, select matching child indicator
   if (resolvedCollection && isSTACCatalog(resolvedCollection)) {
+    // Handle STAC API root catalogs (fetch collections via rel: "data" or "collections" link if child links are missing)
+    const collectionsLink = resolvedCollection.links?.find(
+      (l) =>
+        l.rel === "data" ||
+        l.rel === "collections" ||
+        l.href?.endsWith("/collections"),
+    );
+    if (
+      collectionsLink &&
+      !resolvedCollection.links?.some((l) => l.rel === "child")
+    ) {
+      const parentHref =
+        currentUrl ||
+        resolvedCollection.links?.find((l) => l.rel === "self")?.href ||
+        "";
+      const absCollectionsUrl = toAbsolute(collectionsLink.href, parentHref);
+      let collectionsDoc = null;
+      if (client?.get) {
+        const res = await client.get(absCollectionsUrl).catch(() => null);
+        collectionsDoc = res?.data || res;
+      } else {
+        try {
+          const resp = await fetch(absCollectionsUrl);
+          if (resp.ok) {
+            collectionsDoc = await resp.json();
+          }
+        } catch {
+          // Ignore network or parsing failure
+        }
+      }
+      if (collectionsDoc?.collections) {
+        resolvedCollection.links = [
+          ...(resolvedCollection.links || []),
+          ...collectionsDoc.collections.map((col) => ({
+            rel: "child",
+            type: "application/json",
+            id: col.id,
+            title: col.title || col.id,
+            description: col.description || "",
+            href:
+              col.links?.find((l) => l.rel === "self")?.href ||
+              `${absCollectionsUrl.replace(/\/collections$/, "")}/collections/${col.id}`,
+          })),
+        ];
+      }
+    }
+
     const selectedLink = selectCatalogIndicator(resolvedCollection, {
       collection_id,
       query,

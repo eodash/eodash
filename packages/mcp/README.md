@@ -71,13 +71,14 @@ Connect to `http://localhost:3001` via Streamable HTTP.
 | `get_eodash_architecture` | Architecture reference covering the 12-column grid, templates, Pinia store states, and deployment modes.                                                   |
 | `find_examples`           | Search and discover working eodash dashboard scaffolds, configs, Vega charts, layer styles, and catalog configs with category and tag filters via Fuse.js. |
 | `validate_catalog_config` | Validate catalog collection and indicator configurations against official eodash schemas and domain rules.                                                 |
-| `generate_map_from_stac`  | Build complete EOxMap layer and view configuration (layers, center, zoom, timeControl, legend) from a STAC catalog, indicator, collection, or item.       |
+| `generate_map_from_stac`  | Build complete EOxMap layer and view configuration (layers, center, zoom, timeControl, legend) from a STAC catalog, indicator, collection, or item.        |
 
 ## STAC Mapping Tool (`generate_map_from_stac`)
 
 The `generate_map_from_stac` tool translates any STAC resource into a complete `<eox-map>` configuration JSON object.
 
 ### Capabilities
+
 - **Document Hierarchy Auto-Inference**: Automatically detects whether the provided STAC resource is a Catalog, Indicator Collection, Data Collection, or standalone STAC Item.
 - **Catalog Navigation & Indicator Selection**:
   - When a root STAC Catalog is supplied, use `query` (e.g. `'Carbon Dioxide'`, `'NO2'`) to fuzzy-search child indicators by title, subtitle, tags, themes, ID, or description via Fuse.js.
@@ -88,6 +89,7 @@ The `generate_map_from_stac` tool translates any STAC resource into a complete `
 - **Temporal Aggregation**: Collects available time steps into `timeControl: { availableDates, minDate, maxDate }` for direct use with `EodashTimeSlider`.
 
 ### Limitations
+
 - **No Image Rendering**: Outputs OpenLayers/EOxMap layer definitions; does not download raster tiles or render PNG pixels.
 - **Ambiguity Clarification**: If a catalog query matches multiple indicators closely, the tool returns an error with a structured `candidates` array (`id`, `title`, `description`, `score`) so the caller can clarify with `collection_id`.
 
