@@ -44,7 +44,10 @@ export function getMetadata() {
                 examplesCount += content.length;
               }
             } catch (err) {
-              console.warn(`Could not parse example file ${file}:`, err.message);
+              console.warn(
+                `Could not parse example file ${file}:`,
+                err.message,
+              );
             }
           }
         }
