@@ -317,8 +317,6 @@ describe("EodashLayerControl", () => {
       mapEl.value = /** @type {any} */ (mapStub());
       await mountControl({ initialState: withStac });
 
-      vi.useFakeTimers();
-
       const source = { setUrl: vi.fn() };
       emitConfigChange({
         layer: mockOlLayer({
@@ -328,13 +326,9 @@ describe("EodashLayerControl", () => {
         jsonformValue: { flood: 30 },
       });
 
-      await vi.advanceTimersByTimeAsync(350);
-
-      expect(source.setUrl).toHaveBeenCalledWith(
+      await expect.poll(() => source.setUrl).toHaveBeenCalledWith(
         "https://vt/tiles?flood_percent=30",
       );
-
-      vi.useRealTimers();
     });
   });
 });
