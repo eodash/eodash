@@ -179,7 +179,7 @@ describe("STAC Map Generator - buildStacMap", () => {
     const config = await buildStacMap(
       {
         url: INDICATOR_URL,
-        item: customItem,
+        stac_object: customItem,
       },
       { client },
     );
@@ -203,7 +203,7 @@ describe("STAC Map Generator - buildStacMap", () => {
       ],
     });
 
-    const config = await buildStacMap({ item: customItem });
+    const config = await buildStacMap({ stac_object: customItem });
     expect(config.item?.id).toBe("item_no_collection");
     expect(config.projection).toBe("EPSG:3857");
     expect(config.layers.some((l) => l.properties?.id === "osm")).toBe(true);
@@ -258,7 +258,7 @@ describe("STAC Map Generator - buildStacMap", () => {
     it("throws informative error when STAC catalog is passed without query or collection_id", async () => {
       const catalog = makeCatalog();
       await expect(
-        buildStacMap({ collection: catalog }, { client }),
+        buildStacMap({ stac_object: catalog }, { client }),
       ).rejects.toThrow(/STAC Catalog containing 3 indicator collections/);
     });
 
@@ -268,7 +268,7 @@ describe("STAC Map Generator - buildStacMap", () => {
 
       const config = await buildStacMap(
         {
-          collection: catalog,
+          stac_object: catalog,
           query: "Carbon Dioxide",
         },
         { client },
@@ -288,7 +288,7 @@ describe("STAC Map Generator - buildStacMap", () => {
 
       const config = await buildStacMap(
         {
-          collection: catalog,
+          stac_object: catalog,
           query: "CO2",
         },
         { client },
@@ -335,14 +335,14 @@ describe("STAC Map Generator - buildStacMap", () => {
       const config = await buildStacMap(
         {
           stac_object: customCollection,
-          item: customItem,
         },
         { client },
       );
 
-      expect(config.legend).toBeDefined();
-      expect(config.legend?.type).toBe("continuous");
-      expect(config.legend?.title).toBe("Carbon Unit (ppm)");
+      expect(config.legends).toBeDefined();
+      expect(Array.isArray(config.legends)).toBe(true);
+      expect(config.legends[0]?.type).toBe("continuous");
+      expect(config.legends[0]?.title).toBe("Carbon Unit (ppm)");
     });
 
     it("provides structured ambiguity feedback when multiple catalog indicators have close scores", async () => {
@@ -374,7 +374,7 @@ describe("STAC Map Generator - buildStacMap", () => {
       await expect(
         buildStacMap(
           {
-            collection: ambiguousCatalog,
+            stac_object: ambiguousCatalog,
             query: "Carbon Dioxide",
           },
           { client },
@@ -388,7 +388,7 @@ describe("STAC Map Generator - buildStacMap", () => {
 
       const config = await buildStacMap(
         {
-          collection: catalog,
+          stac_object: catalog,
           collection_id: "N2_CO2_mean",
         },
         { client },
@@ -403,7 +403,7 @@ describe("STAC Map Generator - buildStacMap", () => {
       await expect(
         buildStacMap(
           {
-            collection: catalog,
+            stac_object: catalog,
             query: "completely-unknown-parameter-xyz",
           },
           { client },

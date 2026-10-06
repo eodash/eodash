@@ -10,7 +10,7 @@ export function registerStacTools(server) {
     "generate_map_from_stac",
     {
       description:
-        "Build complete EOxMap layer configuration and map view parameters (layers, center, zoom, projection, projections, item, datetime, timeControl, legend) from a STAC catalog, indicator, collection URL, STAC API endpoint, or in-memory STAC object.\n\n" +
+        "Build complete EOxMap layer configuration and map view parameters (layers, center, zoom, projection, projections, item, datetime, timeControl, legends) from a STAC catalog, indicator, collection URL, STAC API endpoint, or in-memory STAC object.\n\n" +
         "CAPABILITIES:\n" +
         "- Auto-infers document hierarchy: STAC Catalog, Indicator Collection, Data Collection, or STAC Item.\n" +
         "- When given a STAC Catalog: filters child indicators using fuzzy search (`query`) or exact ID (`collection_id`).\n" +

@@ -12,7 +12,6 @@ const CATALOG_FUSE_OPTIONS = {
     { name: "tags", weight: 0.2 },
     { name: "themes", weight: 0.1 },
     { name: "id", weight: 0.1 },
-    { name: "code", weight: 0.05 },
     { name: "description", weight: 0.05 },
   ],
   threshold: 0.4,
@@ -49,24 +48,16 @@ export function isSTACCatalog(doc) {
  * @returns {import("@eodash/stac").STACCollection}
  */
 function createDummyCollectionForItem(item, fallbackUrl = "") {
-  const collectionId =
-    item.collection ||
-    (typeof item.id === "string" ? `collection-${item.id}` : "item-collection");
+  const collectionId = "single-item-collection";
   const selfHref =
     item.links?.find((l) => l.rel === "self")?.href || fallbackUrl || "";
 
   return {
     type: "Collection",
-    stac_version: item.stac_version || "1.0.0",
+    stac_version: "1.0.0",
     id: collectionId,
-    title:
-      typeof item.properties?.title === "string"
-        ? item.properties.title
-        : collectionId,
-    description:
-      typeof item.properties?.description === "string"
-        ? item.properties.description
-        : "Auto-generated collection for STAC Item",
+    title: collectionId,
+    description: "Auto-generated collection for STAC Item",
     license: "proprietary",
     extent: {
       spatial: {
@@ -104,7 +95,7 @@ function createDummyCollectionForItem(item, fallbackUrl = "") {
  *
  * @param {Record<string, any>} catalog - The STAC catalog document
  * @param {object} [options]
- * @param {string} [options.collection_id] - Specific collection ID or code
+ * @param {string} [options.collection_id] - Specific collection ID
  * @param {string} [options.query] - Free-text search query
  * @returns {Record<string, any>} Selected child link object
  */
@@ -120,13 +111,11 @@ export function selectCatalogIndicator(catalog, { collection_id, query } = {}) {
   }
 
   // 1. Direct collection_id match
-  if (collection_id && collection_id.trim()) {
+  if (collection_id) {
     const targetId = collection_id.trim();
     const matched = childLinks.find(
       (l) =>
         l.id === targetId ||
-        l.code === targetId ||
-        l.subcode === targetId ||
         l.href?.includes(targetId),
     );
     if (!matched) {
@@ -144,22 +133,16 @@ export function selectCatalogIndicator(catalog, { collection_id, query } = {}) {
   }
 
   // 2. Query search
-  if (query && query.trim()) {
+  if (query) {
     const trimmed = query.trim().toLowerCase();
 
-    // Exact word / acronym / substring priority check (e.g. "CO2", "NO2", exact title / tag match)
+    // Exact word / acronym / substring priority check (e.g. "CO2", "NO2", exact title)
     const exactMatch = childLinks.find((l) => {
       const id = String(l.id || "").toLowerCase();
-      const code = String(l.code || "").toLowerCase();
       const title = String(l.title || "").toLowerCase();
-      const tags = Array.isArray(l.tags)
-        ? l.tags.map((t) => String(t).toLowerCase())
-        : [];
 
-      // Exact ID or code match
-      if (id === trimmed || code === trimmed) return true;
-      // Exact tag match
-      if (tags.includes(trimmed)) return true;
+      // Exact ID match
+      if (id === trimmed) return true;
       // Word boundary match in title
       const titleWords = title.split(/[\s,()[\]\-_]+/);
       if (titleWords.includes(trimmed)) return true;
@@ -184,7 +167,7 @@ export function selectCatalogIndicator(catalog, { collection_id, query } = {}) {
 
       if (closeMatches.length > 1) {
         const candidates = closeMatches.map((r) => ({
-          id: r.item.id || r.item.code,
+          id: r.item.id,
           title: r.item.title,
           description: r.item.subtitle || r.item.description || "",
           score: Number((1 - (r.score ?? 0)).toFixed(2)),
@@ -244,8 +227,8 @@ export function selectCatalogIndicator(catalog, { collection_id, query } = {}) {
 
   // 3. No collection_id or query supplied for Catalog -> prompt with available collections
   const available = childLinks
-    .slice(0, 15)
-    .map((l) => `"${l.title || l.id}" (id: ${l.id || l.code})`)
+    .slice(0, 10)
+    .map((l) => `"${l.title || l.id}" (id: ${l.id})`)
     .join("\n- ");
   throw new Error(
     `The provided URL is a STAC Catalog containing ${childLinks.length} indicator collections. ` +
@@ -259,8 +242,6 @@ export function selectCatalogIndicator(catalog, { collection_id, query } = {}) {
  * @param {object} params
  * @param {string} [params.url] - STAC catalog/collection/indicator URL or STAC API endpoint
  * @param {Record<string, any>} [params.stac_object] - Pre-fetched STAC document (Catalog, Collection, Indicator, or Item)
- * @param {Record<string, any>} [params.collection] - Deprecated alias for stac_object
- * @param {import("@eodash/stac").STACItem} [params.item] - Deprecated alias for stac_object when passing an Item
  * @param {string} [params.query] - Free-text search query to select an indicator from a catalog
  * @param {string} [params.collection_id] - Specific collection ID to select from a catalog
  * @param {string} [params.datetime] - Target ISO datetime string
@@ -275,8 +256,6 @@ export async function buildStacMap(
   {
     url,
     stac_object,
-    collection,
-    item,
     query,
     collection_id,
     datetime,
@@ -286,7 +265,7 @@ export async function buildStacMap(
   },
   { client } = {},
 ) {
-  const inputObject = stac_object || collection || item;
+  const inputObject = stac_object;
 
   if (!url && !inputObject) {
     throw new Error(
@@ -300,7 +279,7 @@ export async function buildStacMap(
   /** @type {{ id?: string, title?: string, href?: string } | undefined} */
   let matchedIndicatorInfo = undefined;
 
-  // 1. If pre-fetched document provided via stac_object / collection / item
+  // 1. If pre-fetched document provided via stac_object
   if (inputObject) {
     if (isSTACItem(inputObject)) {
       resolvedItem = /** @type {any} */ (inputObject);
@@ -315,7 +294,7 @@ export async function buildStacMap(
     let fetchedDoc = null;
     if (client?.get) {
       fetchedDoc = await client.get(currentUrl).catch(() => null);
-    } else if (typeof fetch === "function") {
+    } else {
       try {
         const resp = await fetch(currentUrl);
         if (resp.ok) {
@@ -348,7 +327,7 @@ export async function buildStacMap(
       "";
     currentUrl = toAbsolute(selectedLink.href, parentHref);
     matchedIndicatorInfo = {
-      id: selectedLink.id || selectedLink.code,
+      id: selectedLink.id,
       title: selectedLink.title,
       href: currentUrl,
     };
@@ -356,7 +335,7 @@ export async function buildStacMap(
     resolvedCollection = undefined;
   }
 
-  // 4. Resolve targetUrl: prioritize collection link, then collection self link, then item self link, then currentUrl
+  // 4. Resolve targetUrl: prioritize currentUrl, then collection link, then collection self link, then item self link
   const targetUrl =
     currentUrl ||
     resolvedCollection?.links?.find((l) => l.rel === "self")?.href ||
@@ -386,18 +365,21 @@ export async function buildStacMap(
     mapConfig.indicator = matchedIndicatorInfo;
   }
 
-  // Extract legend from built layers if present (eox:colorlegend, style legend, rasterform legend, or image asset)
-  const legendLayer = mapConfig.layers?.find(
+  // Extract legends from built layers if present (eox:colorlegend, style legend, rasterform legend, or image asset)
+  const legendLayers = mapConfig.layers?.filter(
     (l) =>
       l.properties?.layerLegend ||
       l.properties?.layerConfig?.legend ||
       l.properties?.description?.includes("<img"),
   );
-  if (legendLayer) {
-    mapConfig.legend = legendLayer.properties.layerLegend ||
-      legendLayer.properties.layerConfig?.legend || {
-        html: legendLayer.properties.description,
-      };
+  if (legendLayers && legendLayers.length > 0) {
+    mapConfig.legends = legendLayers.map(
+      (l) =>
+        l.properties.layerLegend ||
+        l.properties.layerConfig?.legend || {
+          html: l.properties.description,
+        },
+    );
   }
 
   return mapConfig;

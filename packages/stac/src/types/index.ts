@@ -132,6 +132,12 @@ export interface MapConfig {
     minDate?: string;
     maxDate?: string;
   };
+  legends?: Array<BoundLegend | Record<string, any>>;
+  indicator?: {
+    id?: string;
+    title?: string;
+    href?: string;
+  };
 }
 
 /** The built layers with the projections they reference. */
