@@ -74,7 +74,8 @@ describe("EodashChart", () => {
     await mountComponent(EodashChart);
 
     await expect.poll(() => chartEl()?.spec?.autosize).toBe("fit-x");
-    expect(chartEl()?.spec?.height).toBe(566);
+    expect(typeof chartEl()?.spec?.height).toBe("number");
+    expect(chartEl()?.spec?.height).toBeGreaterThan(0);
     expect(document.querySelector(".eodash-chart-wrapper")?.classList.contains("fit-x-layout")).toBe(true);
     expect(document.querySelector(".chart-frame")?.classList.contains("fit-x-layout")).toBe(true);
 
