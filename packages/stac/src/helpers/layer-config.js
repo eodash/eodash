@@ -249,7 +249,7 @@ function applyRasterFormValue(state, layer) {
   // 1. For Vector or VectorTile layers, extract and apply url_key parameters from the schema
   if (layer.type === "Vector" || layer.type === "VectorTile") {
     const schema = layerConfig.schema;
-    if (schema && typeof source.url === "string") {
+    if (schema && typeof source.url === "string" && !source.url.startsWith("data:")) {
       const value = getCachedConfig(state, type);
       /** @type {Record<string, any>} */
       const queryParamsToInject = {};
