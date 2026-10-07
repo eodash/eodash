@@ -1,5 +1,5 @@
 import { useOnLayersUpdate } from "@/composables";
-import { onMounted, onUnmounted } from "vue";
+import { onMounted, onUnmounted, watch } from "vue";
 import { tooltipAdapter } from "@/store/states";
 import { CATALOG_GROUP, assignGroupLayers } from "@/eodashSTAC/layers";
 
@@ -112,12 +112,15 @@ export const useSearchOnMapMove = (itemFilter, bboxFilter, mapElement) => {
       itemFilter.value?.search();
     }, 500);
   };
-  onMounted(() => {
-    mapElement.value?.map.on("moveend", handler);
-  });
-  onUnmounted(() => {
-    mapElement.value?.map.un("moveend", handler);
-  });
+
+  watch(
+    mapElement,
+    (map, _, onCleanup) => {
+      map?.map.on("moveend", handler);
+      onCleanup(() => map?.map.un("moveend", handler));
+    },
+    { immediate: true },
+  );
 };
 /**
  *
@@ -239,12 +242,14 @@ export function useRenderOnFeatureClick(
     }
   };
 
-  onMounted(() => {
-    //@ts-expect-error todo
-    mapElement.value?.addEventListener("select", handler);
-  });
-  onUnmounted(() => {
-    //@ts-expect-error todo
-    mapElement.value?.removeEventListener("select", handler);
-  });
+  watch(
+    mapElement,
+    (map, _, onCleanup) => {
+      //@ts-expect-error todo
+      map?.addEventListener("select", handler);
+      //@ts-expect-error todo
+      onCleanup(() => map?.removeEventListener("select", handler));
+    },
+    { immediate: true },
+  );
 }
