@@ -26,7 +26,7 @@ export function extractUrlKeys(schema, value) {
     for (const [key, propDef] of Object.entries(schema.properties)) {
       if (propDef && typeof propDef === "object") {
         const subValue = value[key];
-        if (typeof propDef.url_key === "string" && subValue !== undefined && subValue !== null) {
+        if (typeof propDef.url_key === "string") {
           results[propDef.url_key] = subValue;
          }
         Object.assign(results, extractUrlKeys(propDef, subValue));
