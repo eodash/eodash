@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { instrumentTool } from "../helpers/logger.js";
 
 /**
  * Register widget discovery and inspection tools
@@ -21,7 +22,7 @@ export function registerWidgetTools(server, widgetsData) {
         search: z.string().optional().describe("Free-text search query"),
       }),
     },
-    async ({ category, tag, search }) => {
+    instrumentTool("list_widgets", async ({ category, tag, search }) => {
       let list = Object.values(widgetsData);
       if (category) {
         const catLower = category.toLowerCase();
@@ -69,7 +70,7 @@ export function registerWidgetTools(server, widgetsData) {
           },
         ],
       };
-    },
+    }),
   );
 
   // get_widget_details
@@ -86,7 +87,7 @@ export function registerWidgetTools(server, widgetsData) {
         name: z.string().optional().describe("Alias for widgetName"),
       }),
     },
-    async ({ widgetName, name }) => {
+    instrumentTool("get_widget_details", async ({ widgetName, name }) => {
       const targetName = widgetName || name;
       const widget = targetName ? widgetsData[targetName] : null;
       if (!widget) {
@@ -109,6 +110,6 @@ export function registerWidgetTools(server, widgetsData) {
           },
         ],
       };
-    },
+    }),
   );
 }

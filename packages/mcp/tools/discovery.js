@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { findExamples } from "../generators/examples.js";
 import { validateCatalogConfig } from "../generators/validator.js";
+import { instrumentTool } from "../helpers/logger.js";
 
 /**
  * Register search, example discovery, and config validation tools
@@ -42,7 +43,7 @@ export function registerDiscoveryTools(server) {
         limit: z.number().optional().default(5).describe("Max results (1-20)"),
       }),
     },
-    async (params) => {
+    instrumentTool("find_examples", async (params) => {
       const results = findExamples(params);
       return {
         content: [
@@ -52,7 +53,7 @@ export function registerDiscoveryTools(server) {
           },
         ],
       };
-    },
+    }),
   );
 
   // validate_catalog_config
@@ -72,7 +73,7 @@ export function registerDiscoveryTools(server) {
           .describe("Target schema type"),
       }),
     },
-    async (params) => {
+    instrumentTool("validate_catalog_config", async (params) => {
       const results = await validateCatalogConfig(params);
       return {
         content: [
@@ -82,6 +83,6 @@ export function registerDiscoveryTools(server) {
           },
         ],
       };
-    },
+    }),
   );
 }

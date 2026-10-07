@@ -29,6 +29,8 @@ export {
   createDummyCollectionForItem,
   selectCatalogIndicator,
 } from "./helpers/stac.js";
+export { logger, httpLogger, instrumentTool } from "./helpers/logger.js";
+import { logger } from "./helpers/logger.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -70,10 +72,11 @@ export function getMetadata() {
                 examplesCount += content.length;
               }
             } catch (err) {
-              console.warn(
-                `Could not parse example file ${file}:`,
-                err.message,
-              );
+              logger.warn({
+                event: "parse_example_file_warn",
+                file,
+                error: err.message,
+              });
             }
           }
         }
@@ -82,7 +85,10 @@ export function getMetadata() {
       cachedMetadata = { widgetsData, architectureData, examplesCount };
       return cachedMetadata;
     } catch (err) {
-      console.warn("Could not read cached metadata:", err.message);
+      logger.warn({
+        event: "read_cached_metadata_warn",
+        error: err.message,
+      });
     }
   }
 
