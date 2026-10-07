@@ -1,8 +1,76 @@
 import Fuse from "fuse.js";
 import { createEodashIndicator } from "@eodash/stac";
 import { isSTACCatalog, isSTACItem, toAbsolute } from "@eodash/stac/helpers";
+import { createSafeHttpClient } from "../utils/safe-fetch.js";
 
 export { isSTACCatalog };
+
+/**
+ * Strips null bytes and non-printable control characters, capping description length.
+ *
+ * @param {string} str
+ * @param {number} [maxLength=1000]
+ * @returns {string}
+ */
+export function sanitizeText(str, maxLength = 1000) {
+  if (typeof str !== "string") return "";
+  // eslint-disable-next-line no-control-regex
+  const regex = /[\x00-\x08\x0B\x0C\x0E-\x1F\x7F\u200B-\u200D\uFEFF]/g;
+  const cleaned = str.replace(regex, "");
+  return cleaned.length <= maxLength ? cleaned : cleaned.slice(0, maxLength);
+}
+
+const MAX_GEOJSON_VERTICES = 10_000;
+
+/**
+ * Counts coordinate vertices in a GeoJSON geometry.
+ *
+ * @param {any} geometry
+ * @returns {number}
+ */
+export function countGeoJsonVertices(geometry) {
+  if (!geometry || !geometry.coordinates) return 0;
+  let count = 0;
+  function walk(coords) {
+    if (!Array.isArray(coords)) return;
+    if (
+      coords.length >= 2 &&
+      typeof coords[0] === "number" &&
+      typeof coords[1] === "number"
+    ) {
+      count += 1;
+      return;
+    }
+    for (const c of coords) {
+      walk(c);
+      if (count > MAX_GEOJSON_VERTICES) return;
+    }
+  }
+  walk(geometry.coordinates);
+  return count;
+}
+
+/**
+ * Checks if an object contains circular references.
+ *
+ * @param {any} obj
+ * @param {WeakSet<object>} [seen]
+ * @returns {boolean}
+ */
+export function hasCircularReference(obj, seen = new WeakSet()) {
+  if (!obj || typeof obj !== "object") return false;
+  if (seen.has(obj)) return true;
+  seen.add(obj);
+  for (const val of Object.values(obj)) {
+    if (typeof val === "object" && val !== null) {
+      if (hasCircularReference(val, seen)) return true;
+    }
+  }
+  return false;
+}
+
+const DEFAULT_MAX_COLLECTIONS = 100;
+const DEFAULT_MAX_TRAVERSAL_DEPTH = 5;
 
 /**
  * Fuse.js configuration for fuzzy-searching catalog indicators.
@@ -81,9 +149,15 @@ function createDummyCollectionForItem(item, fallbackUrl = "") {
  * @returns {Record<string, any>} Selected child link object
  */
 export function selectCatalogIndicator(catalog, { collection_id, query } = {}) {
-  const childLinks = (catalog.links || []).filter(
-    (l) => l.rel === "child" && (l.type ? l.type.includes("json") : true),
+  const maxCollections = parseInt(
+    process.env.EODASH_MAX_COLLECTIONS || String(DEFAULT_MAX_COLLECTIONS),
+    10,
   );
+  const childLinks = (catalog.links || [])
+    .filter(
+      (l) => l.rel === "child" && (l.type ? l.type.includes("json") : true),
+    )
+    .slice(0, maxCollections);
 
   if (childLinks.length === 0) {
     throw new Error(
@@ -254,6 +328,21 @@ export async function buildStacMap(
     );
   }
 
+  if (inputObject && hasCircularReference(inputObject)) {
+    throw new Error("Invalid STAC object: circular references detected.");
+  }
+
+  const httpClient = client || createSafeHttpClient();
+  const maxDepth = parseInt(
+    process.env.EODASH_MAX_TRAVERSAL_DEPTH ||
+      String(DEFAULT_MAX_TRAVERSAL_DEPTH),
+    10,
+  );
+  const maxCollections = parseInt(
+    process.env.EODASH_MAX_COLLECTIONS || String(DEFAULT_MAX_COLLECTIONS),
+    10,
+  );
+
   let resolvedCollection = undefined;
   let resolvedItem = undefined;
   let currentUrl = url || "";
@@ -269,99 +358,101 @@ export async function buildStacMap(
     }
   }
 
-  // 2. Inspect document: fetch once if URL given without pre-resolved collection or item
-  // If it is a catalog (or query / collection_id specified), resolve the catalog indicator
-  if (currentUrl && !resolvedCollection && !resolvedItem) {
-    let fetchedDoc = null;
-    if (client?.get) {
-      const res = await client.get(currentUrl).catch(() => null);
-      fetchedDoc = res?.data || res;
-    } else {
-      try {
-        const resp = await fetch(currentUrl);
-        if (resp.ok) {
-          fetchedDoc = await resp.json();
+  const visitedUrls = new Set();
+  if (currentUrl) visitedUrls.add(currentUrl);
+
+  let depth = 0;
+  while (depth < maxDepth) {
+    depth += 1;
+
+    // 2. Inspect document: fetch once if URL given without pre-resolved collection or item
+    // If it is a catalog (or query / collection_id specified), resolve the catalog indicator
+    if (currentUrl && !resolvedCollection && !resolvedItem) {
+      const res = await httpClient.get(currentUrl).catch(() => null);
+      const fetchedDoc = res?.data || res;
+
+      if (fetchedDoc) {
+        if (isSTACItem(fetchedDoc)) {
+          resolvedItem = fetchedDoc;
+        } else if (isSTACCatalog(fetchedDoc)) {
+          resolvedCollection = fetchedDoc;
         }
-      } catch {
-        // Fallback: let createEodashIndicator handle loading if fetch fails
       }
     }
 
-    if (fetchedDoc) {
-      if (isSTACItem(fetchedDoc)) {
-        resolvedItem = fetchedDoc;
-      } else if (isSTACCatalog(fetchedDoc)) {
-        resolvedCollection = fetchedDoc;
-      }
-    }
-  }
+    // 3. Auto-infer STAC Catalog: if document is a Catalog, select matching child indicator
+    if (resolvedCollection && isSTACCatalog(resolvedCollection)) {
+      // Handle STAC API root catalogs (fetch collections via rel: "data" or "collections" link if child links are missing)
+      const collectionsLink = resolvedCollection.links?.find(
+        (l) =>
+          l.rel === "data" ||
+          l.rel === "collections" ||
+          l.href?.endsWith("/collections"),
+      );
+      if (
+        collectionsLink &&
+        !resolvedCollection.links?.some((l) => l.rel === "child")
+      ) {
+        const parentHref =
+          currentUrl ||
+          resolvedCollection.links?.find((l) => l.rel === "self")?.href ||
+          "";
+        const absCollectionsUrl = toAbsolute(collectionsLink.href, parentHref);
+        const res = await httpClient.get(absCollectionsUrl).catch(() => null);
+        const collectionsDoc = res?.data || res;
 
-  // 3. Auto-infer STAC Catalog: if document is a Catalog, select matching child indicator
-  if (resolvedCollection && isSTACCatalog(resolvedCollection)) {
-    // Handle STAC API root catalogs (fetch collections via rel: "data" or "collections" link if child links are missing)
-    const collectionsLink = resolvedCollection.links?.find(
-      (l) =>
-        l.rel === "data" ||
-        l.rel === "collections" ||
-        l.href?.endsWith("/collections"),
-    );
-    if (
-      collectionsLink &&
-      !resolvedCollection.links?.some((l) => l.rel === "child")
-    ) {
+        if (collectionsDoc?.collections) {
+          resolvedCollection.links = [
+            ...(resolvedCollection.links || []),
+            ...collectionsDoc.collections
+              .slice(0, maxCollections)
+              .map((col) => ({
+                rel: "child",
+                type: "application/json",
+                id: col.id,
+                title: col.title || col.id,
+                description: sanitizeText(col.description || "", 1000),
+                href:
+                  col.links?.find((l) => l.rel === "self")?.href ||
+                  `${absCollectionsUrl.replace(/\/collections$/, "")}/collections/${col.id}`,
+              })),
+          ];
+        }
+      }
+
+      const selectedLink = selectCatalogIndicator(resolvedCollection, {
+        collection_id,
+        query,
+      });
+      // Resolve absolute URL to child indicator
       const parentHref =
         currentUrl ||
         resolvedCollection.links?.find((l) => l.rel === "self")?.href ||
         "";
-      const absCollectionsUrl = toAbsolute(collectionsLink.href, parentHref);
-      let collectionsDoc = null;
-      if (client?.get) {
-        const res = await client.get(absCollectionsUrl).catch(() => null);
-        collectionsDoc = res?.data || res;
-      } else {
-        try {
-          const resp = await fetch(absCollectionsUrl);
-          if (resp.ok) {
-            collectionsDoc = await resp.json();
-          }
-        } catch {
-          // Ignore network or parsing failure
-        }
+      const nextUrl = toAbsolute(selectedLink.href, parentHref);
+      if (visitedUrls.has(nextUrl)) {
+        throw new Error(
+          `Circular reference detected in STAC catalog links at "${nextUrl}".`,
+        );
       }
-      if (collectionsDoc?.collections) {
-        resolvedCollection.links = [
-          ...(resolvedCollection.links || []),
-          ...collectionsDoc.collections.map((col) => ({
-            rel: "child",
-            type: "application/json",
-            id: col.id,
-            title: col.title || col.id,
-            description: col.description || "",
-            href:
-              col.links?.find((l) => l.rel === "self")?.href ||
-              `${absCollectionsUrl.replace(/\/collections$/, "")}/collections/${col.id}`,
-          })),
-        ];
-      }
+      visitedUrls.add(nextUrl);
+      currentUrl = nextUrl;
+      matchedIndicatorInfo = {
+        id: selectedLink.id,
+        title: sanitizeText(selectedLink.title || "", 200),
+        description: sanitizeText(
+          selectedLink.subtitle || selectedLink.description || "",
+          1000,
+        ),
+        href: currentUrl,
+      };
+      // Clear resolvedCollection so child indicator is loaded from its own URL
+      resolvedCollection = undefined;
+      continue;
     }
 
-    const selectedLink = selectCatalogIndicator(resolvedCollection, {
-      collection_id,
-      query,
-    });
-    // Resolve absolute URL to child indicator
-    const parentHref =
-      currentUrl ||
-      resolvedCollection.links?.find((l) => l.rel === "self")?.href ||
-      "";
-    currentUrl = toAbsolute(selectedLink.href, parentHref);
-    matchedIndicatorInfo = {
-      id: selectedLink.id,
-      title: selectedLink.title,
-      href: currentUrl,
-    };
-    // Clear resolvedCollection so child indicator is loaded from its own URL
-    resolvedCollection = undefined;
+    // Document is item or collection, finished traversal
+    break;
   }
 
   // 4. Resolve targetUrl: prioritize currentUrl, then collection link, then collection self link, then item self link
@@ -377,9 +468,20 @@ export async function buildStacMap(
     resolvedCollection = createDummyCollectionForItem(resolvedItem, targetUrl);
   }
 
+  // Guard against massive GeoJSON vertex flood on any provided geometry
+  const candidateGeometry = inputObject?.geometry || resolvedItem?.geometry;
+  if (
+    candidateGeometry &&
+    countGeoJsonVertices(candidateGeometry) > MAX_GEOJSON_VERTICES
+  ) {
+    throw new Error(
+      `Invalid STAC document: geometry exceeds maximum allowed vertex limit (${MAX_GEOJSON_VERTICES}).`,
+    );
+  }
+
   const indicator = await createEodashIndicator(targetUrl, {
     stac: resolvedCollection,
-    client,
+    client: httpClient,
     viewProjection,
     rasterEndpoint,
     ...(api !== undefined && { api }),
@@ -410,6 +512,29 @@ export async function buildStacMap(
           html: l.properties.description,
         },
     );
+  }
+
+  // Sanitize text fields in mapConfig
+  if (mapConfig.indicator) {
+    if (mapConfig.indicator.title) {
+      mapConfig.indicator.title = sanitizeText(mapConfig.indicator.title, 200);
+    }
+    if (mapConfig.indicator.description) {
+      mapConfig.indicator.description = sanitizeText(
+        mapConfig.indicator.description,
+        1000,
+      );
+    }
+  }
+  if (mapConfig.layers) {
+    for (const layer of mapConfig.layers) {
+      if (layer.properties?.description) {
+        layer.properties.description = sanitizeText(
+          layer.properties.description,
+          1000,
+        );
+      }
+    }
   }
 
   return mapConfig;
