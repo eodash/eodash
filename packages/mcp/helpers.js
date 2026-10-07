@@ -19,12 +19,7 @@ export {
   safeFetch,
   createSafeHttpClient,
 } from "./helpers/safe-fetch.js";
-export {
-  sanitizeText,
-  countGeoJsonVertices,
-  hasCircularReference,
-  MAX_GEOJSON_VERTICES,
-} from "./helpers/security.js";
+export { sanitizeText, hasCircularReference } from "./helpers/security.js";
 export {
   createDummyCollectionForItem,
   selectCatalogIndicator,

@@ -1,12 +1,7 @@
 import { createEodashIndicator } from "@eodash/stac";
 import { isSTACCatalog, isSTACItem, toAbsolute } from "@eodash/stac/helpers";
 import { createSafeHttpClient } from "../helpers/safe-fetch.js";
-import {
-  sanitizeText,
-  countGeoJsonVertices,
-  hasCircularReference,
-  MAX_GEOJSON_VERTICES,
-} from "../helpers/security.js";
+import { sanitizeText, hasCircularReference } from "../helpers/security.js";
 import {
   DEFAULT_MAX_COLLECTIONS,
   DEFAULT_MAX_TRAVERSAL_DEPTH,
@@ -17,7 +12,6 @@ import {
 export {
   isSTACCatalog,
   sanitizeText,
-  countGeoJsonVertices,
   hasCircularReference,
   createDummyCollectionForItem,
   selectCatalogIndicator,
@@ -200,17 +194,6 @@ export async function buildStacMap(
   // 5. If caller only provided an item directly without collection or url, wrap it with a dummy collection
   if (resolvedItem && !resolvedCollection && !targetUrl) {
     resolvedCollection = createDummyCollectionForItem(resolvedItem, targetUrl);
-  }
-
-  // Guard against massive GeoJSON vertex flood on any provided geometry
-  const candidateGeometry = inputObject?.geometry || resolvedItem?.geometry;
-  if (
-    candidateGeometry &&
-    countGeoJsonVertices(candidateGeometry) > MAX_GEOJSON_VERTICES
-  ) {
-    throw new Error(
-      `Invalid STAC document: geometry exceeds maximum allowed vertex limit (${MAX_GEOJSON_VERTICES}).`,
-    );
   }
 
   const indicator = await createEodashIndicator(targetUrl, {
