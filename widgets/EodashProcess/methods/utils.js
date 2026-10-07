@@ -89,6 +89,8 @@ export async function createTiffLayerDefinition(
   }
   // We want to make sure the urls are alphabetically sorted
   urls = urls.sort();
+  // Prefer existing title, fall back to auto generated
+  const title = link.title ? link.title : `Results ${layerId}`;
   const layerdef =
     urls.length > 0
       ? /** @type {import("@eox/map/src/layers").EOxLayerType<"WebGLTile","GeoTIFF">} */ ({
@@ -100,7 +102,7 @@ export async function createTiffLayerDefinition(
           },
           properties: {
             id: link.id + "_process" + processId,
-            title: "Results " + layerId,
+            title,
             ...(layerConfig && { layerConfig: layerConfig }),
             layerControlToolsExpand: true,
           },
@@ -301,6 +303,12 @@ export async function creatAsyncProcessLayerDefinitions(
     // Check if collection has eox:colorlegend definition, if yes overwrite legend description
     let extraProperties = extractLayerLegend(selectedStac);
 
+    // Prefer existing title, fall back to auto generated
+    const baseTitle = endpointLink?.title
+      ? endpointLink.title
+      : `Results ${selectedStac?.id ?? ""}`;
+    const title = `${baseTitle}${resultItem.id ? ` ${resultItem.id}` : ""}`;
+
     switch (resultItem.type) {
       case "image/tiff": {
         layers.push(
@@ -308,11 +316,7 @@ export async function creatAsyncProcessLayerDefinitions(
             type: "WebGLTile",
             properties: {
               id: endpointLink.id + "_process" + resultItem.id + postfixId,
-              title:
-                "Results " +
-                (selectedStac?.id ?? "") +
-                " " +
-                (resultItem.id ?? ""),
+              title,
               layerControlToolsExpand: true,
               ...(layerConfig && { layerConfig }),
               ...extraProperties,
@@ -343,11 +347,7 @@ export async function creatAsyncProcessLayerDefinitions(
           },
           properties: {
             id: endpointLink.id + "_process_" + resultItem.id + postfixId,
-            title:
-              "Results " +
-              (selectedStac?.id ?? "") +
-              " " +
-              (resultItem.id ?? ""),
+            title,
             ...(layerConfig && {
               layerConfig: {
                 ...layerConfig,
@@ -370,11 +370,7 @@ export async function creatAsyncProcessLayerDefinitions(
           },
           properties: {
             id: endpointLink.id + "_process_" + resultItem.id + postfixId,
-            title:
-              "Results " +
-              (selectedStac?.id ?? "") +
-              " " +
-              (resultItem.id ?? ""),
+            title,
             layerControlToolsExpand: true,
             ...(layerConfig && {
               layerConfig: {
