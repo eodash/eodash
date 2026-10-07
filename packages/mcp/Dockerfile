@@ -40,9 +40,8 @@ ENV NODE_ENV=production
 ENV HOST=0.0.0.0
 ENV PORT=3001
 
-# Copy production node_modules
+# Copy production node_modules (hoisted to root /app/node_modules by npm workspaces)
 COPY --chown=node:node --from=prod-deps /app/node_modules ./node_modules
-COPY --chown=node:node --from=prod-deps /app/packages/mcp/node_modules ./packages/mcp/node_modules
 
 # Copy package manifests and built artifacts
 COPY --chown=node:node --from=builder /app/package.json ./package.json
