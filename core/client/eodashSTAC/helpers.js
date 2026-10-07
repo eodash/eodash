@@ -79,7 +79,7 @@ export function updateLayerUrl(olLayer, jsonformValue) {
 
   let originalUrl = olLayer.get("originalUrl") || jsonLayer.source?.url;
 
-  if (!originalUrl || typeof originalUrl !== "string") {
+  if (!originalUrl || typeof originalUrl !== "string" || originalUrl.startsWith("data:")) {
     return false;
   }
 
