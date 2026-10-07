@@ -53,19 +53,49 @@ jobs:
           echo "tag=$TAG" >> $GITHUB_OUTPUT
           echo "Generated prerelease tag: $TAG"
         if: ${{ !steps.release.outputs.release_created }}
+      # Build the core frontend SPA when root (".") is released or during general main-branch prereleases.
+      # Skipped when release-please only released a workspace package (e.g. packages/mcp).
       - name: Build SPA ⚙️
-        run: npm run build
-      - name: Build image 🔧
         run: |
-          if [ "${{ steps.release.outputs.release_created }}" == "true" ]; then
-            docker build -t ghcr.io/eodash/eodash:${{ steps.release.outputs.tag_name }} .
-          else
-            docker build -t ghcr.io/eodash/eodash:${{ steps.prerelease.outputs.tag }} .
+          # Check if root package (".") was released, or if this is a non-release main-branch push
+          if jq -e 'contains(["."])' <<< '${{ steps.release.outputs.paths_released }}' > /dev/null 2>&1 || [ "${{ steps.release.outputs.releases_created }}" != "true" ]; then
+            npm run build
           fi
-      - name: Push ghcr 🚀
+
+      # Build and push the eodash SPA container image (ghcr.io/eodash/eodash).
+      # 1. On official root release: tag with release tag (e.g., eodash-v5.9.0).
+      # 2. On standard main push without release: tag with prerelease tag (e.g., eodash-v5.9.1-beta.0).
+      # 3. If only a sub-package like packages/mcp was released: skip to avoid tag mismatch.
+      - name: Build and push SPA image 🔧
         run: |
-          if [ "${{ steps.release.outputs.release_created }}" == "true" ]; then
+          if jq -e 'contains(["."])' <<< '${{ steps.release.outputs.paths_released }}' > /dev/null 2>&1; then
+            echo "Building SPA image for release: ${{ steps.release.outputs.tag_name }}"
+            docker build -t ghcr.io/eodash/eodash:${{ steps.release.outputs.tag_name }} .
             docker push ghcr.io/eodash/eodash:${{ steps.release.outputs.tag_name }}
-          else
+          elif [ "${{ steps.release.outputs.releases_created }}" != "true" ]; then
+            echo "Building SPA image for prerelease: ${{ steps.prerelease.outputs.tag }}"
+            docker build -t ghcr.io/eodash/eodash:${{ steps.prerelease.outputs.tag }} .
             docker push ghcr.io/eodash/eodash:${{ steps.prerelease.outputs.tag }}
+          else
+            echo "Root SPA was not released in this run; skipping SPA container build."
+          fi
+
+      # Build and push the MCP Server container image.
+      # Runs ONLY when release-please creates an official release for packages/mcp.
+      # Tags pushed: specific version (e.g. ghcr.io/eodash/mcp-server:1.0.0) and :latest.
+      # No dev/prerelease builds are pushed for the MCP server.
+      - name: Build and push MCP Server image 🚀
+        run: |
+          set -euo pipefail
+          # Check if packages/mcp is in the released paths array
+          if jq -e 'contains(["packages/mcp"])' <<< '${{ steps.release.outputs.paths_released }}' > /dev/null 2>&1; then
+            MCP_VERSION=$(jq -r .version packages/mcp/package.json)
+            echo "Building and pushing MCP Server image for version: $MCP_VERSION"
+            docker build -f packages/mcp/Dockerfile \
+              -t ghcr.io/eodash/mcp-server:${MCP_VERSION} \
+              -t ghcr.io/eodash/mcp-server:latest .
+            docker push ghcr.io/eodash/mcp-server:${MCP_VERSION}
+            docker push ghcr.io/eodash/mcp-server:latest
+          else
+            echo "packages/mcp was not released in this run; skipping MCP container build."
           fi

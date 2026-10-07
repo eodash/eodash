@@ -93,8 +93,8 @@ Options:
   }
 
   const app = createExpressApp();
-  let port = 3001;
-  let host = "127.0.0.1";
+  let port = parseInt(process.env.PORT || "3001", 10);
+  let host = process.env.HOST || "127.0.0.1";
 
   const portArgIndex = process.argv.indexOf("--port");
   if (portArgIndex > -1 && process.argv[portArgIndex + 1]) {
