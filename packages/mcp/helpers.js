@@ -9,7 +9,26 @@ export {
   DEFAULT_BRAND_NAME,
   getAvailableTemplates,
   getEodashVersion,
+  loadTemplateExamples,
+  readDirectoryFiles,
+  parseHeaderMetadata,
 } from "./helpers/templates.js";
+export {
+  isPrivateOrReservedIP,
+  validateUrlIsSafe,
+  safeFetch,
+  createSafeHttpClient,
+} from "./helpers/safe-fetch.js";
+export {
+  sanitizeText,
+  countGeoJsonVertices,
+  hasCircularReference,
+  MAX_GEOJSON_VERTICES,
+} from "./helpers/security.js";
+export {
+  createDummyCollectionForItem,
+  selectCatalogIndicator,
+} from "./helpers/stac.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

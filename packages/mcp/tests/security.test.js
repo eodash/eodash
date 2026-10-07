@@ -3,13 +3,13 @@ import http from "node:http";
 import {
   isPrivateOrReservedIP,
   validateUrlIsSafe,
-} from "../utils/safe-fetch.js";
+} from "../helpers/safe-fetch.js";
 import {
   hasCircularReference,
   sanitizeText,
   countGeoJsonVertices,
-  buildStacMap,
-} from "../generators/stac-map.js";
+} from "../helpers/security.js";
+import { buildStacMap } from "../generators/stac-map.js";
 import { createExpressApp } from "../server.js";
 
 describe("MCP Security Hardening & Defenses", () => {
