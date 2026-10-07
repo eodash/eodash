@@ -56,6 +56,18 @@ export async function createLayersFromAssets(
   const zarrAssetIds = [];
   const zarrIdx = [];
   const assetIds = [];
+  /** @type {Map<string, ReturnType<typeof resolveStyle>>} */
+  const assetStyles = new Map();
+  /** @param {string} assetName */
+  const resolveAssetStyle = (assetName) => {
+    if (!assetStyles.has(assetName)) {
+      assetStyles.set(
+        assetName,
+        resolveStyle(stacObject, collection, http, undefined, assetName),
+      );
+    }
+    return assetStyles.get(assetName);
+  };
 
   for (const [idx, assetId] of Object.keys(assets).entries()) {
     assetIds.push(assetId);
