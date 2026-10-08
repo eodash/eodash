@@ -18,36 +18,6 @@ export function sanitizeText(str, maxLength = 1000) {
   return cleaned.length <= maxLength ? cleaned : cleaned.slice(0, maxLength);
 }
 
-export const MAX_GEOJSON_VERTICES = 10_000;
-
-/**
- * Counts coordinate vertices in a GeoJSON geometry.
- *
- * @param {any} geometry
- * @returns {number}
- */
-export function countGeoJsonVertices(geometry) {
-  if (!geometry || !geometry.coordinates) return 0;
-  let count = 0;
-  function walk(coords) {
-    if (!Array.isArray(coords)) return;
-    if (
-      coords.length >= 2 &&
-      typeof coords[0] === "number" &&
-      typeof coords[1] === "number"
-    ) {
-      count += 1;
-      return;
-    }
-    for (const c of coords) {
-      walk(c);
-      if (count > MAX_GEOJSON_VERTICES) return;
-    }
-  }
-  walk(geometry.coordinates);
-  return count;
-}
-
 /**
  * Checks if an object contains circular references.
  *
