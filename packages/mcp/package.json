@@ -8,30 +8,24 @@
     "url": "git@github.com:eodash/eodash.git"
   },
   "description": "Model Context Protocol server for @eodash/eodash custom widgets, templates, configuration and architecture.",
-  "main": "index.js",
+  "main": "dist/index.js",
   "bin": {
-    "eodash-mcp-server": "./index.js"
+    "eodash-mcp-server": "./dist/index.js"
   },
   "publishConfig": {
     "access": "public"
   },
   "files": [
-    "index.js",
-    "server.js",
-    "helpers.js",
-    "generate-metadata.js",
-    "tools",
-    "metadata",
-    "helpers",
-    "generators",
-    "templates",
-    "data"
+    "dist",
+    "data",
+    "templates"
   ],
   "scripts": {
     "generate": "node generate-metadata.js",
-    "prepack": "node generate-metadata.js",
+    "build": "npm run generate && vite build",
+    "prepack": "npm run build",
     "check": "tsc --noEmit",
-    "start": "node index.js"
+    "start": "node dist/index.js"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.30.0",

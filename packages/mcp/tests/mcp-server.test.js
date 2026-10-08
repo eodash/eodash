@@ -5,6 +5,7 @@ import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import http from "node:http";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
+import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import { createMcpServer, createExpressApp } from "../index.js";
 import { buildMetadata } from "../generate-metadata.js";
 
@@ -31,11 +32,25 @@ describe("eodash MCP Server - Core Tools", () => {
     expect(instructions).toContain("eodash");
 
     const tools = await client.listTools();
-    expect(tools.tools.length).toBe(6);
+    expect(tools.tools.length).toBe(7);
     const toolNames = tools.tools.map((t) => t.name);
     expect(toolNames).toContain("list_widgets");
     expect(toolNames).toContain("find_examples");
     expect(toolNames).toContain("validate_catalog_config");
+    expect(toolNames).toContain("generate_map_from_stac");
+  });
+
+  it("generate_map_from_stac requires either url or stac_object", async () => {
+    const { client } = await createTestClientServer();
+
+    const errorRes = await client.callTool({
+      name: "generate_map_from_stac",
+      arguments: {},
+    });
+    expect(errorRes.isError).toBe(true);
+    expect(errorRes.content[0].text).toContain(
+      "Either 'url' or 'stac_object' must be provided",
+    );
   });
 
   it("list_widgets tool returns all widgets and supports filtering by category", async () => {
@@ -449,5 +464,178 @@ describe("eodash MCP Server - HTTP Endpoints", () => {
     const examplesBody = await examplesRes.json();
     const examplesData = JSON.parse(examplesBody.result.content[0].text);
     expect(examplesData.totalFound).toBeGreaterThan(0);
+  });
+
+  it("supports stdio transport when launched with --stdio", async () => {
+    const transport = new StdioClientTransport({
+      command: "node",
+      args: [path.resolve(__dirname, "../index.js"), "--stdio"],
+    });
+    const client = new Client({ name: "stdio-test-client", version: "1.0.0" });
+    await client.connect(transport);
+
+    const tools = await client.listTools();
+    expect(tools.tools.length).toBeGreaterThanOrEqual(6);
+    const names = tools.tools.map((t) => t.name);
+    expect(names).toContain("generate_map_from_stac");
+    expect(names).toContain("list_widgets");
+
+    await transport.close();
+  });
+
+  it("returns an isError result for invalid tool arguments", async () => {
+    const [clientTransport, serverTransport] =
+      InMemoryTransport.createLinkedPair();
+    const client = new Client({ name: "error-test-client", version: "1.0.0" });
+    const server = createMcpServer();
+    await server.connect(serverTransport);
+    await client.connect(clientTransport);
+
+    const res = await client.callTool({
+      name: "get_widget_details",
+      arguments: {
+        widget_name: 12345, // invalid type, expects string
+      },
+    });
+
+    expect(res.isError).toBe(true);
+    await clientTransport.close();
+  });
+
+  it("rejects POST / with a foreign Origin header", async () => {
+    const res = await fetch(`${baseUrl}/`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Origin: "https://evil.com",
+      },
+      body: JSON.stringify({
+        jsonrpc: "2.0",
+        id: 100,
+        method: "tools/list",
+        params: {},
+      }),
+    });
+
+    expect(res.status).toBe(403);
+    const body = await res.json();
+    expect(body.error?.message).toContain("Forbidden");
+  });
+
+  it("buildMetadata fails when widgets, store, or templates are missing", () => {
+    expect(() => buildMetadata("/nonexistent-path-for-test")).toThrow(
+      /buildMetadata validation failed/,
+    );
+  });
+
+  it("references only existing widgets in MCP templates/configs and scaffolds", () => {
+    const { widgetsMetadata } = buildMetadata();
+    const knownWidgets = new Set(Object.keys(widgetsMetadata));
+    const templatesDir = path.resolve(__dirname, "../templates");
+
+    function scanFiles(dir) {
+      let results = [];
+      if (!fs.existsSync(dir)) return results;
+      const entries = fs.readdirSync(dir, { withFileTypes: true });
+      for (const entry of entries) {
+        const full = path.join(dir, entry.name);
+        if (entry.isDirectory()) {
+          results.push(...scanFiles(full));
+        } else if (entry.name.endsWith(".js") || entry.name.endsWith(".json")) {
+          results.push(full);
+        }
+      }
+      return results;
+    }
+
+    const files = scanFiles(templatesDir);
+    expect(files.length).toBeGreaterThan(0);
+
+    // Regex to match "name": "Eodash..." or name: "Eodash..."
+    const widgetNameRegex =
+      /(?:["']?name["']?\s*:\s*["'])(Eodash[A-Za-z0-9]+)["']/g;
+
+    for (const file of files) {
+      const content = fs.readFileSync(file, "utf8");
+      let match;
+      while ((match = widgetNameRegex.exec(content)) !== null) {
+        const referenced = match[1];
+        expect(knownWidgets.has(referenced)).toBe(true);
+      }
+    }
+  });
+
+  it("never reports a stac store action as a store read", () => {
+    const { widgetsMetadata } = buildMetadata();
+    const stacActions = [
+      "init",
+      "loadSTAC",
+      "loadSelectedSTAC",
+      "loadSelectedCompareSTAC",
+      "resetSelectedCompareSTAC",
+      "loadColormapRegistry",
+      "loadTileMatrixSetRegistry",
+    ];
+
+    for (const [name, meta] of Object.entries(widgetsMetadata)) {
+      const reads = meta.storeInteractions?.reads || [];
+      for (const action of stacActions) {
+        expect(
+          reads,
+          `Widget ${name} reported action ${action} as a store read`,
+        ).not.toContain(action);
+      }
+    }
+  });
+
+  it("lists exactly the exports of core/client/store/{states,actions,stac}.js", () => {
+    const { architectureMetadata } = buildMetadata();
+    const storePath = path.resolve(__dirname, "../../../core/client/store");
+
+    function getExportedNames(filePath) {
+      const content = fs.readFileSync(filePath, "utf8");
+      const sf = ts.createSourceFile(
+        filePath,
+        content,
+        ts.ScriptTarget.Latest,
+        true,
+      );
+      const names = [];
+      ts.forEachChild(sf, (node) => {
+        if (
+          ts.isVariableStatement(node) &&
+          node.modifiers?.some((m) => m.kind === ts.SyntaxKind.ExportKeyword)
+        ) {
+          for (const decl of node.declarationList.declarations) {
+            if (ts.isIdentifier(decl.name)) {
+              names.push(decl.name.text);
+            }
+          }
+        } else if (
+          ts.isFunctionDeclaration(node) &&
+          node.modifiers?.some((m) => m.kind === ts.SyntaxKind.ExportKeyword) &&
+          node.name
+        ) {
+          names.push(node.name.text);
+        }
+      });
+      return names;
+    }
+
+    const stateExports = getExportedNames(path.join(storePath, "states.js"));
+    const metaStates = architectureMetadata.reactiveStore.states.map(
+      (s) => s.name,
+    );
+    for (const exp of stateExports) {
+      expect(metaStates).toContain(exp);
+    }
+
+    const actionExports = getExportedNames(path.join(storePath, "actions.js"));
+    const metaActions = architectureMetadata.reactiveStore.actions.map(
+      (a) => a.name,
+    );
+    for (const exp of actionExports) {
+      expect(metaActions).toContain(exp);
+    }
   });
 });

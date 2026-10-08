@@ -77,6 +77,12 @@ export const getTooltipProperties = async (item, { client } = {}) => {
 };
 
 export {
+  createEodashIndicator,
+  buildIndicatorDataLayers,
+  normalizeBaseLayers,
+  DEFAULT_COLLECTIONS_PALETTE,
+} from "./collections/indicator.js";
+export {
   getIndicatorLayers,
   getObservationPointsLayer,
 } from "./layers/collection.js";

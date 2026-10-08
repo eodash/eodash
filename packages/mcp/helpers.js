@@ -16,13 +16,20 @@ const __dirname = path.dirname(__filename);
 
 let cachedMetadata = null;
 
+export function _resetMetadataCache() {
+  cachedMetadata = null;
+}
+
 /**
  * Loads cached metadata from pre-generated JSON files in data/
  */
 export function getMetadata() {
   if (cachedMetadata) return cachedMetadata;
-  const widgetsFile = path.join(__dirname, "data/widgets-metadata.json");
-  const archFile = path.join(__dirname, "data/architecture-metadata.json");
+  const baseDir = fs.existsSync(path.join(__dirname, "data"))
+    ? __dirname
+    : path.join(__dirname, "..");
+  const widgetsFile = path.join(baseDir, "data/widgets-metadata.json");
+  const archFile = path.join(baseDir, "data/architecture-metadata.json");
 
   if (fs.existsSync(widgetsFile) && fs.existsSync(archFile)) {
     try {
@@ -31,7 +38,7 @@ export function getMetadata() {
 
       // Count examples
       let examplesCount = 0;
-      const examplesDir = path.join(__dirname, "data/examples");
+      const examplesDir = path.join(baseDir, "data/examples");
       if (fs.existsSync(examplesDir)) {
         const exampleFiles = fs.readdirSync(examplesDir);
         for (const file of exampleFiles) {

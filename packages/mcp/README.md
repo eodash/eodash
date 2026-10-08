@@ -10,6 +10,7 @@ Provides intelligent assistance, introspection, type-safe widget definitions, la
 - **Curated Examples Discovery**: Query working dashboard examples, Vega / Vega-Lite charts (`chart-vega`), layer styles, process forms, and catalog configs filtered by category, tags, and weighted free-text search via Fuse.js.
 - **Catalog Schema Validation**: Validate EODash catalog collections and indicators against official schemas (`collection-schema.json`, `indicator-schema.json`) and domain rules (enforcing URL strings for `Style`, rejecting `Resources[].Flatstyle`, checking `keep_oneof_values: false` on branching JSON-Editor forms).
 - **Custom Widget Guidance**: Detailed guides and code templates for Web Component (`type: "web-component"`), Functional (`defineWidget: (selectedSTAC) => ...`), and IFrame widgets, including direct integration with `@eox/*` components and the reactive Pinia `eodashStore`.
+- **STAC to EOxMap Generation**: Build complete, ready-to-render `<eox-map>` configurations (layers, center, zoom, projection, datetime, timeControl, legend) directly from STAC Catalogs, Indicators, Collections, or Items with fuzzy search, GeoParquet support, and automatic legend/timeline extraction.
 - **Architecture & Layout Reference**: Detailed explanation of the 12-column responsive grid system, coordinate syntax (`"mobile/tablet/desktop"`), built-in templates (`lite`, `explore`, `expert`, `compare`), reactive state flows, and SPA vs `<eo-dash>` web component deployments.
 
 ## Setup & Running
@@ -22,12 +23,23 @@ Generate widget and architecture metadata from the codebase:
 npm run mcp:generate
 ```
 
-### 2. Run Server (Stateless HTTP)
+### 2. Run Server
+
+#### STDIO Mode (Recommended for Local Clients & IDEs)
+
+```bash
+# Run over stdio:
+node packages/mcp/dist/index.js --stdio
+# or via npx / bin:
+npx @eodash/mcp-server --stdio
+```
+
+#### HTTP / SSE Mode
 
 ```bash
 npm run mcp:start
-# or custom port:
-node packages/mcp/index.js --port 3001
+# or custom port / host:
+node packages/mcp/dist/index.js --port 3001 --host 127.0.0.1
 # or globally / via bin:
 npx @eodash/mcp-server --port 3001
 ```
@@ -38,17 +50,22 @@ npx @eodash/mcp-server --port 3001
 
 ### 3. MCP Client Configuration
 
-Connect your MCP client (Claude Desktop, Cursor, Pi MCP adapter, MCP Inspector, or custom agents) via Streamable HTTP:
+Connect your MCP client (Claude Desktop, Cursor, Pi MCP adapter, MCP Inspector, or custom agents):
 
-#### MCP Inspector
+#### Claude Desktop Configuration (`claude_desktop_config.json`) - STDIO
 
-```bash
-npx @modelcontextprotocol/inspector
+```json
+{
+  "mcpServers": {
+    "eodash": {
+      "command": "npx",
+      "args": ["-y", "@eodash/mcp-server", "--stdio"]
+    }
+  }
+}
 ```
 
-Connect to `http://localhost:3001` via Streamable HTTP.
-
-#### Claude Desktop Configuration (`claude_desktop_config.json`)
+#### Claude Desktop Configuration (`claude_desktop_config.json`) - HTTP
 
 ```json
 {
@@ -70,6 +87,27 @@ Connect to `http://localhost:3001` via Streamable HTTP.
 | `get_eodash_architecture` | Architecture reference covering the 12-column grid, templates, Pinia store states, and deployment modes.                                                   |
 | `find_examples`           | Search and discover working eodash dashboard scaffolds, configs, Vega charts, layer styles, and catalog configs with category and tag filters via Fuse.js. |
 | `validate_catalog_config` | Validate catalog collection and indicator configurations against official eodash schemas and domain rules.                                                 |
+| `generate_map_from_stac`  | Build complete EOxMap layer and view configuration (layers, center, zoom, timeControl, legend) from a STAC catalog, indicator, collection, or item.        |
+
+## STAC Mapping Tool (`generate_map_from_stac`)
+
+The `generate_map_from_stac` tool translates any STAC resource into a complete `<eox-map>` configuration JSON object.
+
+### Capabilities
+
+- **Document Hierarchy Auto-Inference**: Automatically detects whether the provided STAC resource is a Catalog, Indicator Collection, Data Collection, or standalone STAC Item.
+- **Catalog Navigation & Indicator Selection**:
+  - When a root STAC Catalog is supplied, use `query` (e.g. `'Carbon Dioxide'`, `'NO2'`) to fuzzy-search child indicators by title, subtitle, tags, themes, ID, or description via Fuse.js.
+  - Or supply `collection_id` (e.g. `'N2_CO2_mean'`) to directly target a specific collection.
+- **Diverse Data Backends**: Resolves GeoParquet collection mirrors (`items.parquet`), TiTiler raster COGs, WMS, WMTS, and XYZ tile layers.
+- **Composite Map Assembly**: Automatically bundles default baselayers (Terrain, Cloudless, OSM), data layers, and overlay labels with group tagging and exclusive visibility.
+- **Legend Extraction**: Reads color legend definitions directly from STAC layer styling metadata (`eox:colorlegend`, `layerLegend`, or rasterform/style legend configurations) without URL parsing.
+- **Temporal Aggregation**: Collects available time steps into `timeControl: { availableDates, minDate, maxDate }` for direct use with `EodashTimeSlider`.
+
+### Limitations
+
+- **No Image Rendering**: Outputs OpenLayers/EOxMap layer definitions; does not download raster tiles or render PNG pixels.
+- **Ambiguity Clarification**: If a catalog query matches multiple indicators closely, the tool returns an error with a structured `candidates` array (`id`, `title`, `description`, `score`) so the caller can clarify with `collection_id`.
 
 ## Running Tests
 
@@ -90,7 +128,11 @@ packages/mcp/
 ├── tools/                    # MCP tool registrations & Zod input schemas
 │   ├── widgets.js            # list_widgets, get_widget_details, get_custom_widget_guide
 │   ├── architecture.js       # get_eodash_architecture
-│   └── discovery.js          # find_examples, validate_catalog_config
-├── generators/               # Example discovery and catalog validation engines
+│   ├── discovery.js          # find_examples, validate_catalog_config
+│   └── stac.js               # generate_map_from_stac
+├── generators/               # Example discovery, catalog validation, and STAC map engines
+│   ├── examples.js           # find_examples query engine
+│   ├── validator.js          # validate_catalog_config schema engine
+│   └── stac-map.js           # buildStacMap & STAC catalog inference engine
 └── data/                     # Generated metadata & example JSON artifacts
 ```
