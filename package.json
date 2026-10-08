@@ -157,6 +157,6 @@
     "node": ">=24.0.0"
   },
   "bin": {
-    "eodash": "./dist/node/cli.js"
+    "eodash": "dist/node/cli.js"
   }
 }

@@ -5,12 +5,12 @@
   "type": "module",
   "repository": {
     "type": "git",
-    "url": "git@github.com:eodash/eodash.git"
+    "url": "git+ssh://git@github.com/eodash/eodash.git"
   },
   "description": "Model Context Protocol server for @eodash/eodash custom widgets, templates, configuration and architecture.",
   "main": "dist/index.js",
   "bin": {
-    "eodash-mcp": "./dist/index.js"
+    "eodash-mcp": "dist/index.js"
   },
   "publishConfig": {
     "access": "public"
