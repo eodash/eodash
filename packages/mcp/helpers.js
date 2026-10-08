@@ -18,6 +18,7 @@ export {
   validateUrlIsSafe,
   safeFetch,
   createSafeHttpClient,
+  createSafeFetch,
 } from "./helpers/safe-fetch.js";
 export { sanitizeText, hasCircularReference } from "./helpers/security.js";
 export {

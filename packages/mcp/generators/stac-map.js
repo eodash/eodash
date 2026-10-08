@@ -1,6 +1,9 @@
 import { createEodashIndicator } from "@eodash/stac";
 import { isSTACCatalog, isSTACItem, toAbsolute } from "@eodash/stac/helpers";
-import { createSafeHttpClient } from "../helpers/safe-fetch.js";
+import {
+  createSafeHttpClient,
+  createSafeFetch,
+} from "../helpers/safe-fetch.js";
 import { sanitizeText, hasCircularReference } from "../helpers/security.js";
 import {
   DEFAULT_MAX_COLLECTIONS,
@@ -32,6 +35,7 @@ export {
  * @param {boolean} [params.api] - Explicitly specify whether endpoint is STAC API (true) or static (false)
  * @param {object} [options]
  * @param {import("@eodash/stac").HttpClient | import("@eodash/stac/http").AxiosInstance} [options.client] - Optional HTTP client (for hermetic testing)
+ * @param {typeof fetch} [options.fetch] - Optional fetch implementation (for hermetic testing)
  * @returns {Promise<import("@eodash/stac").MapConfig & { indicator?: { id?: string, title?: string, href?: string } }>}
  */
 export async function buildStacMap(
@@ -46,7 +50,7 @@ export async function buildStacMap(
     rasterEndpoint,
     api,
   },
-  { client } = {},
+  { client, fetch: customFetch } = {},
 ) {
   const inputObject = stac_object;
 
@@ -61,6 +65,7 @@ export async function buildStacMap(
   }
 
   const httpClient = client || createSafeHttpClient();
+  const safeFetchFn = customFetch || createSafeFetch();
   const maxDepth = parseInt(
     process.env.EODASH_MAX_TRAVERSAL_DEPTH ||
       String(DEFAULT_MAX_TRAVERSAL_DEPTH),
@@ -199,6 +204,7 @@ export async function buildStacMap(
   const indicator = await createEodashIndicator(targetUrl, {
     stac: resolvedCollection,
     client: httpClient,
+    fetch: safeFetchFn,
     viewProjection,
     rasterEndpoint,
     ...(api !== undefined && { api }),

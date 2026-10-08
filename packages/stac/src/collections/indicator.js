@@ -152,6 +152,7 @@ export const DEFAULT_COLLECTIONS_PALETTE = [
  * @param {boolean} [options.api] - Whether the collections use STAC API endpoints (autoinferred if omitted)
  * @param {string} [options.viewProjection] - Map view projection (autoinferred from stac if omitted, default "EPSG:3857")
  * @param {string[]} [options.colors] - Colors assigned across child collections
+ * @param {typeof fetch} [options.fetch] - Custom fetch implementation
  * @param {import("../http.js").AxiosInstance} [options.client] - Custom HTTP client
  * @param {import("../types").STACCollection} [options.stac] - Pre-fetched STAC collection/indicator document
  * @param {string} [options.rasterEndpoint] - Base URL for raster tile rendering
@@ -164,6 +165,7 @@ export const DEFAULT_COLLECTIONS_PALETTE = [
 export const createEodashIndicator = async (url, options = {}) => {
   const {
     client,
+    fetch: customFetch,
     colors = DEFAULT_COLLECTIONS_PALETTE,
     rasterEndpoint,
     upscalingEndpoints,
@@ -200,6 +202,7 @@ export const createEodashIndicator = async (url, options = {}) => {
       createEodashCollection(cu, {
         api: isApi,
         client,
+        fetch: customFetch,
         color: palette[idx % palette.length],
         viewProjection,
         ...(cu === url && { stac }),

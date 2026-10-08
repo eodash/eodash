@@ -172,7 +172,7 @@ export async function safeFetch(urlStr, options = {}) {
     timeout = DEFAULT_TIMEOUT_MS,
     maxBytes = DEFAULT_MAX_BYTES,
     userAgent = process.env.EODASH_MCP_USER_AGENT ||
-      "eodash-mcp/0.2.0 (+https://github.com/eodash/eodash)",
+      "eodash-mcp (+https://github.com/eodash/eodash)",
     allowLocalhost = process.env.ALLOW_LOCAL_STAC_ENDPOINTS === "true",
     headers = {},
   } = options;
@@ -201,7 +201,6 @@ export async function safeFetch(urlStr, options = {}) {
         redirect: "manual",
         signal: controller.signal,
       });
-
 
       // Handle 3xx Redirects safely
       if ([301, 302, 303, 307, 308].includes(response.status)) {
@@ -316,6 +315,94 @@ export async function safeFetch(urlStr, options = {}) {
   }
 
   throw new Error(`Failed to complete request after redirects`);
+}
+
+/**
+ * Creates a standard fetch-compatible function with SSRF validation, redirect inspection,
+ * and timeout controls, suitable for binary streaming, Range requests, and hyparquet's asyncBufferFromUrl.
+ *
+ * @param {object} [options]
+ * @param {number} [options.timeout=10000]
+ * @param {string} [options.userAgent]
+ * @param {boolean} [options.allowLocalhost=false]
+ * @returns {(input: RequestInfo | URL, init?: RequestInit) => Promise<Response>}
+ */
+export function createSafeFetch(options = {}) {
+  const {
+    timeout = DEFAULT_TIMEOUT_MS,
+    userAgent = process.env.EODASH_MCP_USER_AGENT ||
+      "eodash-mcp (+https://github.com/eodash/eodash)",
+    allowLocalhost = process.env.ALLOW_LOCAL_STAC_ENDPOINTS === "true",
+  } = options;
+
+  return async function safeFetchHandler(input, init = {}) {
+    let currentUrl =
+      typeof input === "string"
+        ? input
+        : input instanceof URL
+          ? input.toString()
+          : input?.url || String(input);
+
+    let redirectsRemaining = MAX_REDIRECTS;
+
+    while (redirectsRemaining >= 0) {
+      await validateUrlIsSafe(currentUrl, { allowLocalhost });
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(
+        () =>
+          controller.abort(new Error(`Request timed out after ${timeout}ms`)),
+        timeout,
+      );
+
+      if (init?.signal) {
+        init.signal.addEventListener("abort", () => {
+          controller.abort(init.signal.reason);
+        });
+      }
+
+      try {
+        const headers = new Headers(init?.headers);
+        if (!headers.has("User-Agent")) {
+          headers.set("User-Agent", userAgent);
+        }
+
+        const response = await fetch(currentUrl, {
+          ...init,
+          headers,
+          redirect: "manual",
+          signal: controller.signal,
+        });
+
+        // Handle 3xx Redirects safely
+        if ([301, 302, 303, 307, 308].includes(response.status)) {
+          const location = response.headers.get("location");
+          if (!location) {
+            throw new Error(
+              `Received redirect status ${response.status} without Location header`,
+            );
+          }
+          currentUrl = new URL(location, currentUrl).toString();
+          redirectsRemaining -= 1;
+          if (redirectsRemaining < 0) {
+            throw new Error(
+              `Exceeded maximum redirect limit (${MAX_REDIRECTS})`,
+            );
+          }
+          continue;
+        }
+
+        return response;
+      } catch (err) {
+        clearTimeout(timeoutId);
+        throw err;
+      } finally {
+        clearTimeout(timeoutId);
+      }
+    }
+
+    throw new Error(`Failed to complete request after redirects`);
+  };
 }
 
 /**

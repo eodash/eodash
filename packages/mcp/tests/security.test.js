@@ -3,6 +3,7 @@ import http from "node:http";
 import {
   isPrivateOrReservedIP,
   validateUrlIsSafe,
+  createSafeFetch,
 } from "../helpers/safe-fetch.js";
 import { hasCircularReference, sanitizeText } from "../helpers/security.js";
 import { buildStacMap } from "../generators/stac-map.js";
@@ -61,6 +62,52 @@ describe("MCP Security Hardening & Defenses", () => {
       await expect(
         validateUrlIsSafe("http://service.internal/api"),
       ).rejects.toThrow(/Forbidden hostname "service.internal"/);
+    });
+
+    it("createSafeFetch enforces SSRF guard and blocks binary parquet requests to private IPs", async () => {
+      const safeFetch = createSafeFetch();
+
+      await expect(
+        safeFetch("http://192.168.1.1/data.parquet", {
+          headers: { Range: "bytes=0-1024" },
+        }),
+      ).rejects.toThrow(/Forbidden target IP address/);
+
+      await expect(
+        safeFetch("http://169.254.169.254/items.parquet"),
+      ).rejects.toThrow(/Forbidden target IP address/);
+
+      await expect(safeFetch("file:///var/data/items.parquet")).rejects.toThrow(
+        /Forbidden protocol "file:"/,
+      );
+    });
+
+    it("createSafeFetch returns standard Response object with arrayBuffer on valid endpoints", async () => {
+      const testServer = http.createServer((req, res) => {
+        if (req.method === "HEAD") {
+          res.setHeader("Content-Length", "100");
+          res.writeHead(200);
+          return res.end();
+        }
+        res.setHeader("Content-Type", "application/octet-stream");
+        res.writeHead(200);
+        res.end(Buffer.from("PARQUET_TEST_BYTES"));
+      });
+
+      await new Promise((resolve) => testServer.listen(0, resolve));
+      const port = testServer.address().port;
+
+      try {
+        const safeFetch = createSafeFetch({ allowLocalhost: true });
+        const res = await safeFetch(`http://127.0.0.1:${port}/test.parquet`);
+
+        expect(res.ok).toBe(true);
+        expect(res.status).toBe(200);
+        const buf = await res.arrayBuffer();
+        expect(new TextDecoder().decode(buf)).toBe("PARQUET_TEST_BYTES");
+      } finally {
+        await new Promise((resolve) => testServer.close(resolve));
+      }
     });
   });
 
