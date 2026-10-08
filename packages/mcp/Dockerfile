@@ -1,4 +1,4 @@
-# Multi-stage Dockerfile for @eodash/mcp-server
+# Multi-stage Dockerfile for @eodash/mcp
 # Build context: repository root (.)
 
 # Stage 1: Build MCP bundle and pre-generate metadata

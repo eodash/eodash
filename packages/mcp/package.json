@@ -1,5 +1,5 @@
 {
-  "name": "@eodash/mcp-server",
+  "name": "@eodash/mcp",
   "mcpName": "io.github.eodash.eodash",
   "version": "1.0.0",
   "type": "module",
@@ -10,7 +10,7 @@
   "description": "Model Context Protocol server for @eodash/eodash custom widgets, templates, configuration and architecture.",
   "main": "dist/index.js",
   "bin": {
-    "eodash-mcp-server": "./dist/index.js"
+    "eodash-mcp": "./dist/index.js"
   },
   "publishConfig": {
     "access": "public"
