@@ -12,6 +12,7 @@ import { registerDiscoveryTools } from "./tools/discovery.js";
 import { registerStacTools } from "./tools/stac.js";
 import { createExpressApp as createExpressAppInternal } from "./server.js";
 import { getValidators } from "./generators/validator.js";
+import { logger } from "./helpers/logger.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -77,10 +78,10 @@ Options:
   try {
     await getValidators();
   } catch (err) {
-    console.error(
-      "Failed to load eodash catalog schemas at startup:",
-      err.message,
-    );
+    logger.fatal({
+      event: "startup_schema_preload_failed",
+      error: err.message,
+    });
     process.exit(1);
   }
 
@@ -88,13 +89,16 @@ Options:
     const server = createMcpServer();
     const transport = new StdioServerTransport();
     await server.connect(transport);
-    console.error("eodash MCP Server running on stdio");
+    logger.info({
+      event: "server_started",
+      transport: "stdio",
+    });
     return;
   }
 
   const app = createExpressApp();
-  let port = 3001;
-  let host = "127.0.0.1";
+  let port = parseInt(process.env.PORT || "3001", 10);
+  let host = process.env.HOST || "127.0.0.1";
 
   const portArgIndex = process.argv.indexOf("--port");
   if (portArgIndex > -1 && process.argv[portArgIndex + 1]) {
@@ -107,7 +111,14 @@ Options:
   }
 
   app.listen(port, host, () => {
-    console.log(`eodash MCP Server running at http://${host}:${port}`);
+    logger.info({
+      event: "server_started",
+      transport: "http",
+      host,
+      port,
+      url: `http://${host}:${port}`,
+      node_version: process.version,
+    });
   });
 }
 
@@ -125,7 +136,11 @@ function isDirectExecution() {
 // Auto start if executed directly
 if (isDirectExecution()) {
   startServer().catch((err) => {
-    console.error("Failed to start server:", err);
+    logger.fatal({
+      event: "server_start_failed",
+      error: err.message,
+      stack: err.stack,
+    });
     process.exit(1);
   });
 }

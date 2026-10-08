@@ -79,10 +79,7 @@ export function createDummyCollectionForItem(item, fallbackUrl = "") {
  * @param {string} [options.query] - Free-text search query
  * @returns {Record<string, any>} Selected child link object
  */
-export function selectCatalogIndicator(
-  catalog,
-  { collection_id, query } = {},
-) {
+export function selectCatalogIndicator(catalog, { collection_id, query } = {}) {
   const maxCollections = parseInt(
     process.env.EODASH_MAX_COLLECTIONS || String(DEFAULT_MAX_COLLECTIONS),
     10,

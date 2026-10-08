@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { getMetadata, generateLandingPage } from "./helpers.js";
+import { logger, httpLogger } from "./helpers/logger.js";
 
 /**
  * Creates and configures the Express HTTP application for the MCP server
@@ -27,10 +28,20 @@ export function createExpressApp(createServerFn) {
   );
 
   app.use(cors({ origin: "*" }));
+  app.use(httpLogger);
 
   // Limit concurrent connections globally (max 50) and per IP (max 10), with idle & heartbeat reaper
   app.use((req, res, next) => {
+    const clientIp = req.ip || req.socket.remoteAddress || "unknown";
+
     if (activeGlobalConnections >= maxGlobalConnections) {
+      logger.warn({
+        event: "rate_limit_exceeded",
+        limit_type: "global",
+        active_global: activeGlobalConnections,
+        max_global: maxGlobalConnections,
+        ip: clientIp,
+      });
       return res.status(429).json({
         jsonrpc: "2.0",
         error: {
@@ -41,9 +52,15 @@ export function createExpressApp(createServerFn) {
       });
     }
 
-    const clientIp = req.ip || req.socket.remoteAddress || "unknown";
     const currentCount = ipConnections.get(clientIp) || 0;
     if (currentCount >= maxConnectionsPerIp) {
+      logger.warn({
+        event: "rate_limit_exceeded",
+        limit_type: "per_ip",
+        client_count: currentCount,
+        max_per_ip: maxConnectionsPerIp,
+        ip: clientIp,
+      });
       return res.status(429).json({
         jsonrpc: "2.0",
         error: {
@@ -60,6 +77,11 @@ export function createExpressApp(createServerFn) {
     // Idle connection reaper: terminates socket if inactive for idleTimeoutMs
     req.setTimeout(idleTimeoutMs, () => {
       if (!res.writableEnded) {
+        logger.info({
+          event: "idle_connection_reaped",
+          ip: clientIp,
+          idle_timeout_ms: idleTimeoutMs,
+        });
         res.destroy(
           new Error(`Connection closed due to ${idleTimeoutMs}ms idle timeout`),
         );
@@ -70,6 +92,11 @@ export function createExpressApp(createServerFn) {
     let heartbeatTimer = null;
     const isEventStream = req.headers.accept?.includes("text/event-stream");
     if (isEventStream) {
+      logger.info({
+        event: "sse_connected",
+        ip: clientIp,
+        active_global: activeGlobalConnections,
+      });
       heartbeatTimer = setInterval(() => {
         if (!res.writableEnded && res.writable) {
           res.write(": keepalive\n\n");
@@ -88,6 +115,13 @@ export function createExpressApp(createServerFn) {
       } else {
         ipConnections.set(clientIp, count - 1);
       }
+      if (isEventStream) {
+        logger.info({
+          event: "sse_disconnected",
+          ip: clientIp,
+          active_global: activeGlobalConnections,
+        });
+      }
     });
 
     next();
@@ -96,8 +130,13 @@ export function createExpressApp(createServerFn) {
   app.use(express.json({ limit: "1mb" }));
 
   // Handle malformed JSON body errors and payload size limits in standard JSON-RPC format
-  app.use((err, _req, res, next) => {
+  app.use((err, req, res, next) => {
     if (err.type === "entity.too.large") {
+      logger.warn({
+        event: "payload_too_large",
+        ip: req.ip,
+        limit: "1mb",
+      });
       return res.status(413).json({
         jsonrpc: "2.0",
         error: {
@@ -108,6 +147,11 @@ export function createExpressApp(createServerFn) {
       });
     }
     if (err instanceof SyntaxError && err.status === 400 && "body" in err) {
+      logger.warn({
+        event: "malformed_json_body",
+        ip: req.ip,
+        error: err.message,
+      });
       return res.status(400).json({
         jsonrpc: "2.0",
         error: {
@@ -172,6 +216,12 @@ export function createExpressApp(createServerFn) {
           host !== "127.0.0.1" &&
           host !== "[::1]"
         ) {
+          logger.warn({
+            event: "cors_rejected",
+            origin,
+            origin_host: host,
+            ip: req.ip,
+          });
           return res.status(403).json({
             jsonrpc: "2.0",
             error: {
@@ -183,6 +233,11 @@ export function createExpressApp(createServerFn) {
           });
         }
       } catch {
+        logger.warn({
+          event: "cors_invalid_origin",
+          origin,
+          ip: req.ip,
+        });
         return res.status(403).json({
           jsonrpc: "2.0",
           error: {
@@ -203,7 +258,12 @@ export function createExpressApp(createServerFn) {
       await server.connect(transport);
       await transport.handleRequest(req, res, req.body);
     } catch (err) {
-      console.error("Error handling MCP request:", err);
+      logger.error({
+        event: "mcp_request_error",
+        ip: req.ip,
+        error: err.message,
+        stack: err.stack,
+      });
       if (!res.headersSent) {
         res.status(500).json({ error: err.message || "Internal server error" });
       }

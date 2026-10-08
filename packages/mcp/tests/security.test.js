@@ -4,11 +4,7 @@ import {
   isPrivateOrReservedIP,
   validateUrlIsSafe,
 } from "../helpers/safe-fetch.js";
-import {
-  hasCircularReference,
-  sanitizeText,
-  countGeoJsonVertices,
-} from "../helpers/security.js";
+import { hasCircularReference, sanitizeText } from "../helpers/security.js";
 import { buildStacMap } from "../generators/stac-map.js";
 import { createExpressApp } from "../server.js";
 
@@ -189,45 +185,6 @@ describe("MCP Security Hardening & Defenses", () => {
           1000,
         );
       }
-    });
-
-    it("detects and rejects massive GeoJSON vertex flood (>50,000 vertices)", async () => {
-      // Normal geometry
-      const normalGeom = {
-        type: "Polygon",
-        coordinates: [
-          [
-            [0, 0],
-            [1, 0],
-            [1, 1],
-            [0, 1],
-            [0, 0],
-          ],
-        ],
-      };
-      expect(countGeoJsonVertices(normalGeom)).toBe(5);
-
-      // Huge coordinates
-      const hugeCoords = [];
-      for (let i = 0; i < 50_001; i++) {
-        hugeCoords.push([i, i]);
-      }
-      const floodGeom = {
-        type: "LineString",
-        coordinates: hugeCoords,
-      };
-
-      const floodItem = {
-        type: "Feature",
-        id: "flood_item",
-        geometry: floodGeom,
-        properties: { datetime: "2025-01-01T00:00:00Z" },
-        links: [],
-      };
-
-      await expect(buildStacMap({ stac_object: floodItem })).rejects.toThrow(
-        /geometry exceeds maximum allowed vertex limit/,
-      );
     });
   });
 

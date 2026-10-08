@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { buildStacMap } from "../generators/stac-map.js";
+import { instrumentTool } from "../helpers/logger.js";
 
 /**
  * Register STAC mapping tools
@@ -81,7 +82,7 @@ export function registerStacTools(server) {
           path: ["url"],
         }),
     },
-    async (params) => {
+    instrumentTool("generate_map_from_stac", async (params) => {
       try {
         const result = await buildStacMap(params);
         return {
@@ -122,6 +123,6 @@ export function registerStacTools(server) {
           ],
         };
       }
-    },
+    }),
   );
 }

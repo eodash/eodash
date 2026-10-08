@@ -1,5 +1,6 @@
 import Ajv from "ajv";
 import addFormats from "ajv-formats";
+import { logger } from "../../helpers/logger.js";
 
 export const COLLECTION_SCHEMA_URL =
   "https://eodash.github.io/eodash-schemas/catalog/collection-schema.json";
@@ -22,9 +23,9 @@ export function createAjvInstance() {
     verbose: true,
     strict: false,
     logger: {
-      log: console.log,
+      log: (...args) => logger.debug(...args),
       warn: () => {},
-      error: console.error,
+      error: (...args) => logger.error(...args),
     },
   });
   addFormats(ajv);

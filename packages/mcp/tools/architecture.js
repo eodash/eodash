@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { CUSTOM_WIDGET_GUIDES } from "../helpers.js";
+import { instrumentTool } from "../helpers/logger.js";
 
 /**
  * Register architecture documentation tools
@@ -25,7 +26,7 @@ export function registerArchitectureTools(server, architectureData) {
           .describe("Custom widget type"),
       }),
     },
-    async ({ type }) => {
+    instrumentTool("get_custom_widget_guide", async ({ type }) => {
       const selectedType = type || "all";
       const guides = CUSTOM_WIDGET_GUIDES;
       const selectedContent =
@@ -41,7 +42,7 @@ export function registerArchitectureTools(server, architectureData) {
           },
         ],
       };
-    },
+    }),
   );
 
   // get_eodash_architecture
@@ -65,7 +66,7 @@ export function registerArchitectureTools(server, architectureData) {
           .describe("Architecture topic"),
       }),
     },
-    async ({ topic }) => {
+    instrumentTool("get_eodash_architecture", async ({ topic }) => {
       let result;
       if (topic === "all") {
         result = architectureData;
@@ -89,6 +90,6 @@ export function registerArchitectureTools(server, architectureData) {
           },
         ],
       };
-    },
+    }),
   );
 }
