@@ -126,6 +126,7 @@ export async function getUserConfig(
 
   const forCommand = config?.[/** @type {"dev" | "preview"} */ (command)];
 
+  const port = options.port ?? forCommand?.port;
   return {
     base: options.base ?? config?.base ?? "",
     port: Number(options.port ?? forCommand?.port ?? 5173),
