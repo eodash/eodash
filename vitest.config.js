@@ -68,6 +68,7 @@ export default defineConfig({
           globalSetup: ["packages/mcp/tests/setup.js"],
           environment: "node",
           testTimeout: 60 * 1000,
+          benchmark: { include: [] },
         },
       },
       {

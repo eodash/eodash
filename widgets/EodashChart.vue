@@ -2,10 +2,10 @@
   <div
     ref="container"
     class="eodash-chart-wrapper"
-    :class="{ 
-      'fit-x-layout': isFitX, 
-      'maximized': areChartsSeparateLayout,
-      'fit-x-maximized': isFitX && areChartsSeparateLayout
+    :class="{
+      'fit-x-layout': isFitX,
+      maximized: areChartsSeparateLayout,
+      'fit-x-maximized': isFitX && areChartsSeparateLayout,
     }"
   >
     <button
@@ -90,7 +90,8 @@ function hasImageMark(spec) {
   if (spec.mark === "image" || spec.mark?.type === "image") return true;
   if (Array.isArray(spec.layer)) {
     return spec.layer.some(
-      (/** @type {any} */ layer) => layer.mark === "image" || layer.mark?.type === "image"
+      (/** @type {any} */ layer) =>
+        layer.mark === "image" || layer.mark?.type === "image",
     );
   }
   return false;
@@ -162,7 +163,10 @@ function findUrlInArray(arr) {
   if (!firstItem || typeof firstItem !== "object") return null;
   for (const key of Object.keys(firstItem)) {
     const val = firstItem[key];
-    if (typeof val === "string" && (val.startsWith("http") || val.startsWith("/"))) {
+    if (
+      typeof val === "string" &&
+      (val.startsWith("http") || val.startsWith("/"))
+    ) {
       return val;
     }
   }

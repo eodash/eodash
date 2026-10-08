@@ -14,6 +14,7 @@ import { createStaticCollection } from "./collections/static.js";
  * @param {boolean} [options.api=false] - Whether the collection uses a STAC API endpoint
  * @param {number} [options.maxItems] - Maximum items to retrieve per search query
  * @param {import("./http.js").AxiosInstance} [options.client] - Custom HTTP client instance
+ * @param {typeof fetch} [options.fetch] - Custom fetch implementation (e.g. for SSRF-protected binary range requests)
  * @param {string} [options.color] - Color assigned to layers generated from this collection
  * @param {string} [options.viewProjection] - Map view projection code used to namespace layer identifiers
  * @param {string} [options.rasterEndpoint] - Base URL for raster tile rendering
@@ -28,6 +29,7 @@ export const createEodashCollection = async (url, options = {}) => {
     api = false,
     maxItems,
     client,
+    fetch: customFetch,
     color,
     viewProjection,
     rasterEndpoint,
@@ -44,7 +46,15 @@ export const createEodashCollection = async (url, options = {}) => {
     tileMatrixSets,
     renders,
   };
-  const context = { url, stac, http, color, viewProjection, rasterOptions };
+  const context = {
+    url,
+    stac,
+    http,
+    fetch: customFetch,
+    color,
+    viewProjection,
+    rasterOptions,
+  };
 
   if (api) {
     return createAPICollection({ ...context, maxItems });

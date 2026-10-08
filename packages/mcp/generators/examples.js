@@ -2,7 +2,8 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import Fuse from "fuse.js";
-import { loadTemplateExamples } from "./template-loader.js";
+import { loadTemplateExamples } from "../helpers/templates.js";
+import { logger } from "../helpers/logger.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -33,7 +34,11 @@ export function getExamples() {
           jsonExamples.push(parsed);
         }
       } catch (err) {
-        console.error(`Failed to load category examples from ${file}:`, err);
+        logger.error({
+          event: "load_example_error",
+          file,
+          error: err.message,
+        });
       }
     }
   }

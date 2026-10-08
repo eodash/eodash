@@ -1,4 +1,7 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, beforeAll, afterAll, vi } from "vitest";
+import { createServer } from "node:http";
+import fs from "node:fs";
+import path from "node:path";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { createMcpServer } from "../index.js";
@@ -708,5 +711,125 @@ describe("MCP Protocol Tool - generate_map_from_stac", () => {
     expect(mapConfig).toBeDefined();
     expect(mapConfig.layers).toBeDefined();
     expect(mapConfig.layers.length).toBeGreaterThanOrEqual(1);
+  });
+
+  describe("GeoParquet mirror integration via safeFetch", () => {
+    const FIXTURE_PATH = path.resolve(
+      import.meta.dirname,
+      "../../../tests/support/assets/stormtracker.parquet",
+    );
+    let server;
+    let serverUrl;
+    const rangeRequests = [];
+
+    beforeAll(async () => {
+      process.env.ALLOW_LOCAL_STAC_ENDPOINTS = "true";
+      const parquetBuffer = fs.readFileSync(FIXTURE_PATH);
+
+      server = createServer((req, res) => {
+        if (req.url === "/collection.json") {
+          res.writeHead(200, { "Content-Type": "application/json" });
+          return res.end(
+            JSON.stringify({
+              id: "stormtracker-collection",
+              type: "Collection",
+              stac_version: "1.0.0",
+              description: "Collection backed by a GeoParquet mirror",
+              assets: {
+                mirror: {
+                  href: "items.parquet",
+                  type: "application/vnd.apache.parquet",
+                  roles: ["collection-mirror"],
+                  "file:size": parquetBuffer.length,
+                },
+              },
+              extent: {
+                spatial: { bbox: [[-180, -90, 180, 90]] },
+                temporal: {
+                  interval: [
+                    ["2024-07-31T23:59:59.999Z", "2026-01-31T23:59:59.999Z"],
+                  ],
+                },
+              },
+              links: [
+                {
+                  rel: "self",
+                  href: `${serverUrl}/collection.json`,
+                  type: "application/json",
+                },
+              ],
+            }),
+          );
+        }
+
+        if (req.url === "/items.parquet") {
+          if (req.method === "HEAD") {
+            res.writeHead(200, {
+              "Content-Length": String(parquetBuffer.length),
+              "Content-Type": "application/vnd.apache.parquet",
+            });
+            return res.end();
+          }
+
+          const range = req.headers.range;
+          if (range) {
+            rangeRequests.push(range);
+            const [startStr, endStr] = range.replace("bytes=", "").split("-");
+            const start = Number(startStr);
+            const end = endStr ? Number(endStr) : parquetBuffer.length - 1;
+
+            res.writeHead(206, {
+              "Content-Range": `bytes ${start}-${end}/${parquetBuffer.length}`,
+              "Content-Length": String(end - start + 1),
+              "Content-Type": "application/vnd.apache.parquet",
+            });
+            return res.end(parquetBuffer.subarray(start, end + 1));
+          }
+
+          res.writeHead(200, {
+            "Content-Length": String(parquetBuffer.length),
+            "Content-Type": "application/vnd.apache.parquet",
+          });
+          return res.end(parquetBuffer);
+        }
+
+        res.writeHead(404).end();
+      });
+
+      await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+      serverUrl = `http://127.0.0.1:${server.address().port}`;
+    });
+
+    afterAll(async () => {
+      delete process.env.ALLOW_LOCAL_STAC_ENDPOINTS;
+      await new Promise((resolve) => server.close(resolve));
+    });
+
+    it("builds map config and extracts timeline from a GeoParquet-backed collection via safeFetch", async () => {
+      rangeRequests.length = 0;
+
+      const mapConfig = await buildStacMap({
+        url: `${serverUrl}/collection.json`,
+        datetime: "2024-08-01T00:00:00.000Z",
+      });
+
+      // 1. Verifies safeFetch performed Range requests to fetch Parquet chunks
+      expect(rangeRequests.length).toBeGreaterThan(0);
+      expect(rangeRequests.some((r) => r.startsWith("bytes="))).toBe(true);
+
+      // 2. Verifies map configuration and layers were generated
+      expect(mapConfig).toBeDefined();
+      expect(mapConfig.layers).toBeInstanceOf(Array);
+      expect(mapConfig.layers.length).toBeGreaterThan(0);
+
+      // 3. Verifies datetime resolution and timeControl decoded from the parquet footer
+      expect(mapConfig.datetime).toBe("2024-08-01T00:00:00.000Z");
+      expect(mapConfig.timeControl).toBeDefined();
+      expect(mapConfig.timeControl.availableDates).toEqual([
+        "2024-08-01T00:00:00.000Z",
+        "2025-01-31T23:59:59.999Z",
+        "2025-07-31T23:59:59.999Z",
+      ]);
+    });
   });
 });

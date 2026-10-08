@@ -271,6 +271,40 @@ describe("parquet collection", () => {
     expect(item?.assets).toBeTruthy();
   });
 
+  test("uses custom fetch implementation when provided to createEodashCollection", async () => {
+    const customFetch = vi.fn((url, init) => fetch(url, init));
+    const url = `${host.url}/collection.json`;
+    serveUrls(client, {
+      [url]: stacCollection({
+        id: "storm-custom-fetch",
+        assets: {
+          mirror: {
+            href: "items.parquet",
+            type: "application/vnd.apache.parquet",
+            roles: ["collection-mirror"],
+          },
+        },
+        extent: {
+          spatial: { bbox: [[-180, -90, 180, 90]] },
+          temporal: {
+            interval: [
+              ["2024-07-31T23:59:59.999Z", "2026-01-31T23:59:59.999Z"],
+            ],
+          },
+        },
+      }),
+    });
+
+    const col = await createEodashCollection(url, {
+      client,
+      fetch: customFetch,
+    });
+    expect(col.kind).toBe("parquet");
+    const dates = await col.getDates();
+    expect(dates).toHaveLength(3);
+    expect(customFetch).toHaveBeenCalled();
+  });
+
   // the fixture is written newest first, so file order would fail this
   test("getItems is ordered oldest first", async () => {
     const col = await mirrorCollection();

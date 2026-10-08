@@ -30,7 +30,7 @@ function assertAllRegistered(widgetNames, registeredNames) {
     .map(
       (n) =>
         `  - "${n}": add an import and \`export const ${n} = ...\` to core/node/typedoc/widgets.ts` +
-        ` so its API page is generated, or add it to EXCLUDED in docs/widgets/internal-widgets.data.js` +
+        ` so its API page is generated, or add it to EXCLUDED_WIDGETS in core/node/widgets.js` +
         ` if it is an internal helper.`,
     )
     .join("\n");

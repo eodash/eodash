@@ -470,6 +470,7 @@ describe("eodash MCP Server - HTTP Endpoints", () => {
     const transport = new StdioClientTransport({
       command: "node",
       args: [path.resolve(__dirname, "../index.js"), "--stdio"],
+      env: { ...process.env, SKIP_SCHEMA_PRELOAD: "true" },
     });
     const client = new Client({ name: "stdio-test-client", version: "1.0.0" });
     await client.connect(transport);
@@ -479,6 +480,27 @@ describe("eodash MCP Server - HTTP Endpoints", () => {
     const names = tools.tools.map((t) => t.name);
     expect(names).toContain("generate_map_from_stac");
     expect(names).toContain("list_widgets");
+
+    await transport.close();
+  });
+
+  it("boots in stdio mode without network when --skip-schema-preload is passed", async () => {
+    const transport = new StdioClientTransport({
+      command: "node",
+      args: [
+        path.resolve(__dirname, "../index.js"),
+        "--stdio",
+        "--skip-schema-preload",
+      ],
+    });
+    const client = new Client({
+      name: "skip-preload-test-client",
+      version: "1.0.0",
+    });
+    await client.connect(transport);
+
+    const tools = await client.listTools();
+    expect(tools.tools.length).toBeGreaterThanOrEqual(6);
 
     await transport.close();
   });
