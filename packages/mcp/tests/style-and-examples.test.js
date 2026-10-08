@@ -675,4 +675,50 @@ describe("eodash MCP Tools via Client - generate_layer_style & find_examples", (
       expect(btnsProp.schema.properties.enableExportMap).toBeDefined();
     }
   });
+
+  it("handles edge cases in raster styling: min === max and single-color palette", async () => {
+    const resEqual = await generateRasterWebglStyle({
+      vmin: 10,
+      vmax: 10,
+      interactiveMinMax: false,
+    });
+    expect(resEqual.color).toBeDefined();
+
+    const resSingleColor = await generateRasterWebglStyle({
+      customColors: ["#ff0000"],
+      interactiveMinMax: false,
+    });
+    expect(resSingleColor.color).toBeDefined();
+  });
+
+  it("handles edge cases in vector styling: category without color and single color continuous", async () => {
+    const resCat = generateVectorFlatStyle({
+      mode: "categorical",
+      categories: [{ value: "A" }],
+    });
+    expect(resCat["fill-color"]).toBeDefined();
+
+    const resCont = generateVectorFlatStyle({
+      mode: "continuous",
+      colors: ["#ff0000"],
+      min: 10,
+      max: 10,
+    });
+    expect(resCont["fill-color"]).toBeDefined();
+  });
+
+  it("find_examples correctly enforces text query filtering and accurate totalFound", async () => {
+    const noMatch = await findExamples({
+      category: "vector-flatstyle",
+      query: "nonexistentkeywordxyz123",
+    });
+    expect(noMatch.results.length).toBe(0);
+    expect(noMatch.totalFound).toBe(0);
+
+    const match = await findExamples({
+      limit: 1,
+    });
+    expect(match.results.length).toBe(1);
+    expect(match.totalFound).toBeGreaterThan(1);
+  });
 });

@@ -1,7 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { buildMetadata } from "./generate-metadata.js";
 
 export { CUSTOM_WIDGET_GUIDES } from "./helpers/guides.js";
 export { generateLandingPage } from "./helpers/landing-page.js";
@@ -14,12 +13,11 @@ export {
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const REPO_ROOT = path.resolve(__dirname, "../..");
 
 let cachedMetadata = null;
 
 /**
- * Loads cached metadata or rebuilds on-the-fly
+ * Loads cached metadata from pre-generated JSON files in data/
  */
 export function getMetadata() {
   if (cachedMetadata) return cachedMetadata;
@@ -33,15 +31,11 @@ export function getMetadata() {
       cachedMetadata = { widgetsData, architectureData };
       return cachedMetadata;
     } catch (err) {
-      console.warn("Could not read cached metadata, rebuilding:", err.message);
+      console.warn("Could not read cached metadata:", err.message);
     }
   }
 
-  // Dynamic on-the-fly generation fallback
-  const { widgetsMetadata, architectureMetadata } = buildMetadata(REPO_ROOT);
-  cachedMetadata = {
-    widgetsData: widgetsMetadata,
-    architectureData: architectureMetadata,
-  };
-  return cachedMetadata;
+  throw new Error(
+    "Metadata not found in @eodash/mcp-server/data/. Run 'npm run mcp:generate' or ensure data/*.json is packaged.",
+  );
 }

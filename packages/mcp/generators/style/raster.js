@@ -115,10 +115,11 @@ export async function generateRasterFlatStyle({
         },
       };
     } else {
+      const rangeDelta = effectiveDefaultMax - effectiveDefaultMin || 1;
       const normalizedExpression = [
         "/",
         ["-", ["band", bandIdx], effectiveDefaultMin],
-        effectiveDefaultMax - effectiveDefaultMin,
+        rangeDelta,
       ];
 
       const interpolateStops = [
@@ -126,9 +127,18 @@ export async function generateRasterFlatStyle({
         ["linear"],
         normalizedExpression,
       ];
-      const step = 1.0 / (palette.length - 1);
-      for (let i = 0; i < palette.length; i++) {
-        interpolateStops.push(Number((step * i).toFixed(4)), palette[i]);
+      if (palette.length > 1) {
+        const step = 1.0 / (palette.length - 1);
+        for (let i = 0; i < palette.length; i++) {
+          interpolateStops.push(Number((step * i).toFixed(4)), palette[i]);
+        }
+      } else {
+        interpolateStops.push(
+          0,
+          palette[0] || "#440154",
+          1,
+          palette[0] || "#fde725",
+        );
       }
 
       style.color = [

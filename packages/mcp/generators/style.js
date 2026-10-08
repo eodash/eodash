@@ -43,10 +43,14 @@ export async function generateLayerStyle({
   const rulesAndBestPractices = [];
 
   const effectiveRasterWebglConfig = rasterConfig || rasterWebglConfig;
-  const effectiveRasterFormConfig = rasterFormConfig || rasterformConfig;
+  const effectiveRasterFormConfig = rasterformConfig || rasterFormConfig;
 
   if (styleType === "vector-flatstyle") {
-    if (vectorConfig.colormap && !cachedColormaps) {
+    if (
+      vectorConfig.mode === "continuous" &&
+      vectorConfig.colormap &&
+      !cachedColormaps
+    ) {
       await fetchColormaps();
     }
     resultStyle = generateVectorFlatStyle(vectorConfig);

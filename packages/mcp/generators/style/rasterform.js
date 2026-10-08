@@ -2,17 +2,8 @@
  * Generate eodash:rasterform for TiTiler / WMS / XYZ layers
  */
 export function generateRasterForm({
-  _serviceType = "titiler",
-  colormaps = [
-    "viridis",
-    "magma",
-    "plasma",
-    "inferno",
-    "cividis",
-    "spectral",
-    "rainbow",
-    "turbo",
-  ],
+  serviceType = "titiler",
+  colormaps = ["viridis", "magma", "plasma"],
   defaultColormap = "viridis",
   min,
   max,
@@ -46,6 +37,7 @@ export function generateRasterForm({
   /** @type {Record<string, any>} */
   const rasterform = {
     type: "rasterform",
+    ...(serviceType !== "titiler" ? { serviceType } : {}),
     legend: {
       rangeProperty: "colormap_name",
       domainProperties: ["min", "max"],
