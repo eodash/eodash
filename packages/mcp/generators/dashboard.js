@@ -4,32 +4,11 @@ import {
   getEodashVersion,
   getAvailableTemplates,
 } from "../helpers.js";
+import { generateSpaFiles } from "./dashboard/spa.js";
+import { generateVitepressFiles } from "./dashboard/vitepress.js";
+import { generateWebcomponentFiles } from "./dashboard/webcomponent.js";
 
-/**
- * Scaffold eodash dashboard projects: SPA, VitePress Narratives, or Web Component.
- */
-export function scaffoldDashboard({
-  name = "my-eo-dashboard",
-  projectType = "standalone-spa",
-  stacEndpoint = DEFAULT_STAC_ENDPOINT,
-  template = "lite",
-  brandName = DEFAULT_BRAND_NAME,
-  brandColor = "#002742",
-} = {}) {
-  const files = {};
-  const eodashVersion = getEodashVersion();
-  const availableTemplates = getAvailableTemplates();
-  const templateImportList = availableTemplates.join(", ");
-
-  const gitignore = `node_modules
-dist
-.eodash
-.env
-.DS_Store
-*.local
-`;
-
-  const dockerfileSpa = `FROM node:24-alpine AS builder
+const DOCKERFILE_SPA = `FROM node:24-alpine AS builder
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci
@@ -43,7 +22,7 @@ EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]
 `;
 
-  const dockerfileVitePress = `FROM node:24-alpine AS builder
+const DOCKERFILE_VITEPRESS = `FROM node:24-alpine AS builder
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci
@@ -57,7 +36,7 @@ EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]
 `;
 
-  const nginxConf = `server {
+const NGINX_CONF = `server {
   listen 80;
   server_name localhost;
   location / {
@@ -68,332 +47,54 @@ CMD ["nginx", "-g", "daemon off;"]
 }
 `;
 
+const GITIGNORE = `node_modules
+dist
+.eodash
+.env
+.DS_Store
+*.local
+`;
+
+/**
+ * Scaffold eodash dashboard projects: SPA, VitePress Narratives, or Web Component.
+ */
+export function scaffoldDashboard({
+  name = "my-eo-dashboard",
+  projectType = "standalone-spa",
+  stacEndpoint = DEFAULT_STAC_ENDPOINT,
+  template = "lite",
+  brandName = DEFAULT_BRAND_NAME,
+  brandColor = "#002742",
+} = {}) {
+  const eodashVersion = getEodashVersion();
+  const availableTemplates = getAvailableTemplates();
+  const templateImportList = availableTemplates.join(", ");
+
+  const context = {
+    name,
+    stacEndpoint,
+    template,
+    brandName,
+    brandColor,
+    eodashVersion,
+    templateImportList,
+  };
+
+  let files = {};
   if (projectType === "standalone-spa") {
-    files["package.json"] = JSON.stringify(
-      {
-        name,
-        version: "0.1.0",
-        private: true,
-        type: "module",
-        scripts: {
-          dev: "eodash dev",
-          build: "eodash build",
-          preview: "eodash preview",
-        },
-        dependencies: {
-          "@eodash/eodash": eodashVersion,
-        },
-      },
-      null,
-      2,
-    );
-
-    files["eodash.config.js"] =
-      `import { defineConfig } from "@eodash/eodash/config";
-
-export default defineConfig({
-  entryPoint: "src/main.js",
-  dev: {
-    port: 3000,
-  },
-});
-`;
-
-    files["src/main.js"] = `import { createEodash } from "@eodash/eodash";
-import { ${templateImportList} } from "@eodash/eodash/templates";
-
-const selectedTemplate = ${template};
-
-export default createEodash({
-  id: "${name}",
-  stacEndpoint: "${stacEndpoint}",
-  brand: {
-    name: "${brandName}",
-    theme: {
-      colors: {
-        primary: "${brandColor}",
-        secondary: "#0071C2",
-        surface: "#ffffff",
-      },
-    },
-    footerText: "${brandName} - Powered by eodash",
-  },
-  template: selectedTemplate,
-});
-`;
-
-    files["index.html"] = `<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>${brandName}</title>
-  </head>
-  <body>
-    <div id="app"></div>
-    <script type="module" src="/node_modules/@eodash/eodash/dist/client/main.js"></script>
-  </body>
-</html>
-`;
-
-    files["README.md"] = `# ${brandName}
-
-An Earth Observation dashboard built with [@eodash/eodash](https://github.com/eodash/eodash).
-
-## Quick Start
-
-\`\`\`bash
-# Install dependencies
-npm install
-
-# Start development server
-npm run dev
-
-# Build for production
-npm run build
-
-# Preview build
-npm run preview
-\`\`\`
-`;
+    files = generateSpaFiles(context);
   } else if (projectType === "vitepress-narratives") {
-    files["package.json"] = JSON.stringify(
-      {
-        name,
-        version: "0.1.0",
-        private: true,
-        type: "module",
-        scripts: {
-          "docs:dev": "vitepress dev docs --port 3333",
-          "docs:build": "vitepress build docs",
-          "docs:preview": "vitepress preview docs",
-        },
-        dependencies: {
-          "@eodash/eodash": eodashVersion,
-          "@eox/storytelling": "^1.13.0",
-        },
-        devDependencies: {
-          vitepress: "^1.5.0",
-        },
-      },
-      null,
-      2,
-    );
-
-    files["docs/.vitepress/config.js"] =
-      `import { defineConfig } from "vitepress";
-
-export default defineConfig({
-  title: "${brandName}",
-  description: "Narratives and Earth Observation Dashboard",
-  vue: {
-    template: {
-      compilerOptions: {
-        isCustomElement: (el) => el.includes("-"),
-      },
-    },
-  },
-  themeConfig: {
-    nav: [
-      { text: "Dashboard", link: "/dashboard" },
-      { text: "Stories", link: "/narratives/story-1" },
-    ],
-    sidebar: {
-      "/narratives/": [
-        {
-          text: "Earth Observation Stories",
-          items: [
-            { text: "Introduction", link: "/narratives/story-1" },
-          ],
-        },
-      ],
-    },
-  },
-});
-`;
-
-    files["docs/.vitepress/theme/index.js"] =
-      `import DefaultTheme from "vitepress/theme";
-
-/** @type {import('vitepress').Theme} */
-export default {
-  ...DefaultTheme,
-  async enhanceApp({ app, router, siteData }) {
-    if (!import.meta.env.SSR) {
-      await import("@eodash/eodash/webcomponent");
-      await import("@eox/storytelling");
-    }
-  },
-};
-`;
-
-    files["docs/public/config.js"] = `export default {
-  id: "${name}",
-  stacEndpoint: "${stacEndpoint}",
-  brand: {
-    name: "${brandName}",
-    theme: {
-      colors: {
-        primary: "${brandColor}",
-      },
-    },
-    footerText: "${brandName} - Powered by eodash",
-  },
-  template: "${template}",
-};
-`;
-
-    files["docs/public/story-content.md"] = `# ${brandName} Story
-
-Welcome to the interactive narrative. This markdown content is rendered dynamically by \`<eox-storytelling>\`.
-
-## Key Indicators
-- **STAC Catalog**: [${stacEndpoint}](${stacEndpoint})
-- **Template Layout**: ${template}
-`;
-
-    files["docs/index.md"] = `---
-layout: home
-hero:
-  name: ${brandName}
-  text: Earth Observation Insights
-  tagline: Interactive dashboards and EO storytelling powered by eodash
-  actions:
-    - theme: brand
-      text: Open Dashboard
-      link: /dashboard
-    - theme: alt
-      text: Explore Stories
-      link: /narratives/story-1
----
-`;
-
-    files["docs/dashboard.md"] = `---
-layout: page
----
-
-# ${brandName} Interactive Dashboard
-
-<client-only>
-  <eo-dash
-    config="/config.js"
-    style="width: 100%; height: 800px; display: block;"
-  ></eo-dash>
-</client-only>
-`;
-
-    files["docs/narratives/story-1.md"] = `# Environmental Monitoring Narrative
-
-Interactive indicators and story narrative combining markdown narratives and live map widgets.
-
-<client-only>
-  <eox-storytelling
-    show-nav
-    markdown-url="/story-content.md"
-  ></eox-storytelling>
-</client-only>
-
-<client-only>
-  <eo-dash
-    config="/config.js"
-    style="width: 100%; height: 500px; display: block; margin-top: 2rem;"
-  ></eo-dash>
-</client-only>
-`;
-
-    files["README.md"] = `# ${brandName} (VitePress Narratives)
-
-Dashboard and narrative documentation built with VitePress, [@eox/storytelling](https://github.com/EOX-A/EOxElements), and [@eodash/eodash](https://github.com/eodash/eodash).
-
-## Features
-- **Client-Side Rendering Guard**: SSR-safe loading of custom elements via \`.vitepress/theme/index.js\`.
-- **Custom Element Compiler**: VitePress configured with \`isCustomElement: (el) => el.includes('-')\`.
-- **Interactive Storytelling**: Narrative articles embedded with \`<eox-storytelling>\` and \`<eo-dash>\`.
-
-## Quick Start
-
-\`\`\`bash
-npm install
-npm run docs:dev
-\`\`\`
-`;
+    files = generateVitepressFiles(context);
   } else if (projectType === "web-component") {
-    files["package.json"] = JSON.stringify(
-      {
-        name,
-        version: "0.1.0",
-        private: true,
-        type: "module",
-        scripts: {
-          dev: "vite",
-          build: "vite build",
-          preview: "vite preview",
-        },
-        devDependencies: {
-          "@eodash/eodash": eodashVersion,
-          vite: "^7.0.0",
-        },
-      },
-      null,
-      2,
-    );
-
-    files["config.js"] = `export default {
-  id: "${name}",
-  stacEndpoint: "${stacEndpoint}",
-  brand: {
-    name: "${brandName}",
-    theme: {
-      colors: {
-        primary: "${brandColor}",
-      },
-    },
-    footerText: "${brandName} - Powered by eodash",
-  },
-  template: "${template}",
-};
-`;
-
-    files["index.html"] = `<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>${brandName}</title>
-    <style>
-      body { margin: 0; font-family: sans-serif; }
-      eo-dash { width: 100vw; height: 100vh; display: block; }
-    </style>
-    <script type="module">
-      import "@eodash/eodash/webcomponent";
-    </script>
-  </head>
-  <body>
-    <eo-dash
-      id="${name}"
-      config="/config.js"
-    ></eo-dash>
-  </body>
-</html>
-`;
-
-    files["README.md"] = `# ${brandName} (Web Component)
-
-Embedded \`<eo-dash>\` web component dashboard.
-
-\`\`\`bash
-npm install
-npm run dev
-\`\`\`
-`;
+    files = generateWebcomponentFiles(context);
   }
 
-  files[".gitignore"] = gitignore;
+  files[".gitignore"] = GITIGNORE;
   files["Dockerfile"] =
     projectType === "vitepress-narratives"
-      ? dockerfileVitePress
-      : dockerfileSpa;
-  files["nginx.conf"] = nginxConf;
+      ? DOCKERFILE_VITEPRESS
+      : DOCKERFILE_SPA;
+  files["nginx.conf"] = NGINX_CONF;
 
   return {
     status: "generated_in_memory",
