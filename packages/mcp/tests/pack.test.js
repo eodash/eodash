@@ -64,6 +64,7 @@ describe("MCP Package Packaging and Integrity", () => {
     const transport = new StdioClientTransport({
       command: "node",
       args: [path.resolve(MCP_DIR, "dist/index.js"), "--stdio"],
+      env: { ...process.env, SKIP_SCHEMA_PRELOAD: "true" },
     });
     const client = new Client({
       name: "bundle-test-client",
@@ -111,6 +112,7 @@ describe("MCP Package Packaging and Integrity", () => {
       const transport = new StdioClientTransport({
         command: "node",
         args: [pkgDistIndex, "--stdio"],
+        env: { ...process.env, SKIP_SCHEMA_PRELOAD: "true" },
       });
       const client = new Client({
         name: "tarball-client",

@@ -69,20 +69,27 @@ Options:
   --stdio, -s       Run server with STDIO transport (for MCP desktop clients & local integration)
   --port <port>     Port for SSE/HTTP server (default: 3001)
   --host <host>     Host for SSE/HTTP server (default: 127.0.0.1)
+  --skip-schema-preload Skip startup warming of remote STAC schemas
   --help, -h        Show help
 `);
     process.exit(0);
   }
 
-  // Warm up schemas at startup from authoritative remote URL
-  try {
-    await getValidators();
-  } catch (err) {
-    logger.fatal({
-      event: "startup_schema_preload_failed",
-      error: err.message,
-    });
-    process.exit(1);
+  const skipPreload =
+    process.env.SKIP_SCHEMA_PRELOAD === "true" ||
+    process.argv.includes("--skip-schema-preload");
+
+  if (!skipPreload) {
+    // Warm up schemas at startup from authoritative remote URL
+    try {
+      await getValidators();
+    } catch (err) {
+      logger.fatal({
+        event: "startup_schema_preload_failed",
+        error: err.message,
+      });
+      process.exit(1);
+    }
   }
 
   if (process.argv.includes("--stdio") || process.argv.includes("-s")) {
