@@ -30,9 +30,9 @@ export default createEodash({
           },
           onMounted: (el, store) => {
             console.log("Custom widget mounted:", el);
-            // Listen to reactive store state
-            el.addEventListener("range-changed", (e) => {
-              store.states.currentUrl.value = e.detail.stacUrl;
+            // Load selected STAC collection/item via store method
+            el.addEventListener("range-changed", async (e) => {
+              await store.loadSelectedSTAC(e.detail.stacUrl);
             });
           },
           onUnmounted: (el, store) => {
