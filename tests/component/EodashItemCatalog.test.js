@@ -146,12 +146,24 @@ describe("EodashItemCatalog", () => {
 
       await expect.poll(() => filterEl()).toBeTruthy();
       const el = filterEl();
-      expect(el?.getAttribute("titleproperty")).toBe("id");
+      expect(el?.titleProperty).toBe("id");
       expect(el?.imageProperty).toBe("assets.thumbnail.href");
       expect(typeof el?.subTitleProperty).toBe("function");
       expect(
         el?.subTitleProperty({ properties: { "eo:cloud_cover": 12 } }),
       ).toContain("12%");
+    });
+
+    test("passes a custom title accessor through to the item filter", async () => {
+      /** @param {import("@eodash/stac").STACItem} item */
+      const titleProperty = (item) => item.id.split("_")[0];
+      await mountAsyncComponent(EodashItemCatalog, {
+        props: { titleProperty },
+        initialState: withCollections,
+      });
+
+      await expect.poll(() => filterEl()).toBeTruthy();
+      expect(filterEl()?.titleProperty).toBe(titleProperty);
     });
 
     test("binds the built filter properties to eox-itemfilter", async () => {

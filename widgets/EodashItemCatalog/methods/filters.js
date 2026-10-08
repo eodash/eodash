@@ -7,9 +7,13 @@ import { buildCqlFilter } from "@/eodashSTAC/cql";
 /**
  * Creates a subtitle generator from filter configuration.
  *
+ * @param {import("../types").ItemAccessor | undefined} subtitleProperty
  * @param {import("../types").FiltersConfig} filtersConfig
  */
-export const createSubtitleProperty = (filtersConfig) => {
+export const createSubtitleProperty = (subtitleProperty, filtersConfig) => {
+  if (subtitleProperty) {
+    return subtitleProperty;
+  }
   /**
    * @param {Record<string, any>} item
    */ // should be dynamic based on a prop

@@ -14,7 +14,7 @@
 <script setup>
 import { useSTAcStore } from "@/store/stac";
 import { isFirstLoad } from "@/utils/states";
-import { datetime } from "@/store/states";
+import { poi, datetime } from "@/store/states";
 import { computed, ref } from "vue";
 
 if (!customElements.get("eox-itemfilter")) {
@@ -125,6 +125,7 @@ const selectIndicator = createSelect(
   store.loadSelectedSTAC,
   () => {
     store.selectedStac = null;
+    poi.value = "";
   },
   true,
 );
