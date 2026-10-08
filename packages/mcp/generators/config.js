@@ -49,25 +49,36 @@ export function generateEodashConfig({
       brand.footerText || `${brand.name || "EO Dashboard"} - Built with eodash`,
   };
 
-  const isCustomTemplate = template === "custom" || customWidgets.length > 0;
+  const hasCustomWidgets = customWidgets.length > 0;
+  const isCustomTemplate = template === "custom" || hasCustomWidgets;
+  const baseTemplateName = template === "custom" ? null : template;
 
-  let imports = `import { deepmergeCustom } from "deepmerge-ts";\n`;
-  if (!isCustomTemplate) {
-    imports += `import { ${template} } from "@eodash/eodash/templates";\n`;
-  } else {
-    imports += `import { explore } from "@eodash/eodash/templates";\n`;
+  let imports = "";
+  if (baseTemplateName) {
+    imports += `import { ${baseTemplateName} } from "@eodash/eodash/templates";\n`;
   }
 
   let templateSection = "";
-  if (!isCustomTemplate) {
-    templateSection = `  template: ${template},`;
+  if (!hasCustomWidgets && baseTemplateName) {
+    templateSection = `  template: ${baseTemplateName},`;
+  } else if (hasCustomWidgets && baseTemplateName) {
+    const formattedWidgets = JSON.stringify(customWidgets, null, 4).replace(
+      /\n/g,
+      "\n    ",
+    );
+    templateSection = `  template: {
+    ...${baseTemplateName},
+    widgets: [
+      ...(${baseTemplateName}.widgets || []),
+      ...${formattedWidgets},
+    ],
+  },`;
   } else {
     const formattedWidgets = JSON.stringify(customWidgets, null, 4).replace(
       /\n/g,
       "\n    ",
     );
     templateSection = `  template: {
-    // Custom widget layout definition
     widgets: ${formattedWidgets},
   },`;
   }

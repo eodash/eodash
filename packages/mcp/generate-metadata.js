@@ -4,12 +4,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import ts from "typescript";
 import { parse as parseVueSFC } from "@vue/compiler-sfc";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const DEFAULT_REPO_ROOT = path.resolve(__dirname, "../..");
-
-const EXCLUDED_WIDGETS = new Set(["ExportState", "PopUp", "WidgetsContainer"]);
+import { discoverWidgetNames } from "../../core/node/widgets.js";
 
 // Known widget fallback categories & STAC extensions if not documented elsewhere
 const CATEGORY_MAP = {
@@ -42,42 +37,30 @@ const STAC_EXTENSIONS_MAP = {
     "eodash:merge_assets",
     "eodash:layerExclusive",
   ],
-  EodashItemCatalog: ["eo:cloud_cover", "datetime", "assets.thumbnail"],
-  EodashItemFilter: ["themes", "tags"],
-  EodashTimeSlider: ["cube:dimensions", "extent.temporal", "datetime"],
-  EodashDatePicker: ["extent.temporal", "datetime"],
-  EodashProcess: ["eodash:jsonform", "links (rel=service)"],
-  EodashChart: [
-    "links (rel=service, type=application/json|text/csv)",
-    "eodash:vegadefinition",
-  ],
-  EodashStacInfo: ["sci:citation", "sci:doi", "sci:publication", "providers"],
+  EodashItemCatalog: ["eo:cloud_cover"],
+  EodashItemFilter: [],
+  EodashTimeSlider: [],
+  EodashDatePicker: [],
+  EodashProcess: ["eodash:jsonform"],
+  EodashChart: ["eodash:vegadefinition"],
+  EodashStacInfo: ["sci:citation", "sci:doi", "sci:publication"],
 };
 
-/**
- * 1. Dynamically discover widget names in widgets/
- */
-function discoverWidgetNames(repoRoot) {
-  const widgetsDir = path.join(repoRoot, "widgets");
-  if (!fs.existsSync(widgetsDir)) return [];
+const STAC_CORE_FIELDS_MAP = {
+  EodashMap: [],
+  EodashLayerControl: [],
+  EodashItemCatalog: ["datetime", "assets.thumbnail"],
+  EodashItemFilter: ["themes", "tags", "summaries"],
+  EodashTimeSlider: ["extent.temporal", "datetime"],
+  EodashDatePicker: ["extent.temporal", "datetime"],
+  EodashProcess: ["links (rel=service)"],
+  EodashChart: ["links (rel=service, type=application/json|text/csv)"],
+  EodashStacInfo: ["providers", "description", "title"],
+};
 
-  const entries = fs.readdirSync(widgetsDir, { withFileTypes: true });
-  const names = new Set();
-
-  for (const entry of entries) {
-    if (entry.isFile() && entry.name.endsWith(".vue")) {
-      const name = entry.name.replace(/\.vue$/, "");
-      if (!EXCLUDED_WIDGETS.has(name)) names.add(name);
-    } else if (entry.isDirectory()) {
-      const indexPath = path.join(widgetsDir, entry.name, "index.vue");
-      if (fs.existsSync(indexPath) && !EXCLUDED_WIDGETS.has(entry.name)) {
-        names.add(entry.name);
-      }
-    }
-  }
-
-  return Array.from(names).sort();
-}
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const DEFAULT_REPO_ROOT = path.resolve(__dirname, "../..");
 
 /**
  * Recursively collect all files in a directory
@@ -101,49 +84,90 @@ function collectFiles(dir) {
   return results;
 }
 
-/**
- * Clean and parse JSDoc comments attached to AST nodes
- */
-function cleanDoc(comment) {
-  if (!comment)
-    return { description: "", type: null, params: [], returns: null };
-  const lines = comment
-    .replace(/^\/\*\*?/, "")
-    .replace(/\*\/$/, "")
+function cleanMultilineType(typeStr) {
+  if (!typeStr) return null;
+  return typeStr
     .split("\n")
-    .map((l) => l.replace(/^\s*\*\s?/, "").trim())
-    .filter(Boolean);
+    .map((line) => line.replace(/^\s*\*\s?/, "").trim())
+    .filter(Boolean)
+    .join(" ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
 
-  let type = null;
-  let returns = null;
+function unwrapPropType(typeStr) {
+  if (!typeStr) return "unknown";
+  const cleaned = cleanMultilineType(typeStr);
+  const match = cleaned.match(
+    /^(?:import\(["']vue["']\)\.)?PropType<([\s\S]+)>$/,
+  );
+  if (match) return match[1].trim();
+  return cleaned;
+}
+
+/**
+ * Clean and parse JSDoc comments attached to AST nodes using TypeScript compiler API
+ */
+function getJsDocFromNode(node, sf) {
+  const tsType = ts.getJSDocType(node);
+  let type = tsType ? tsType.getText(sf) : null;
+  let description = "";
   const params = [];
-  const descLines = [];
+  let returns = null;
 
-  for (const line of lines) {
-    const typeMatch = line.match(/^@type\s+\{([^}]+)\}/);
-    const paramMatch = line.match(
-      /^@param\s+\{([^}]+)\}\s+(\[?\w+\]?)(\s+.*)?/,
-    );
-    const returnMatch = line.match(/^@returns?\s+\{([^}]+)\}(\s+.*)?/);
-
-    if (typeMatch) {
-      type = typeMatch[1];
-    } else if (paramMatch) {
-      params.push({
-        name: paramMatch[2].replace(/^\[|\]$/g, ""),
-        type: paramMatch[1],
-        description: (paramMatch[3] || "").trim(),
-      });
-    } else if (returnMatch) {
-      returns = {
-        type: returnMatch[1],
-        description: (returnMatch[2] || "").trim(),
-      };
-    } else if (!line.startsWith("@")) {
-      descLines.push(line);
+  if (node.jsDoc) {
+    for (const doc of node.jsDoc) {
+      if (doc.comment) {
+        description =
+          typeof doc.comment === "string"
+            ? doc.comment
+            : doc.comment
+                .map((c) => (typeof c === "string" ? c : c.text || ""))
+                .join("");
+      }
+      for (const tag of doc.tags || []) {
+        if (ts.isJSDocTypeTag(tag) && tag.typeExpression?.type) {
+          type = tag.typeExpression.type.getText(sf);
+        } else if (ts.isJSDocParameterTag(tag)) {
+          const pComment = tag.comment
+            ? typeof tag.comment === "string"
+              ? tag.comment
+              : tag.comment
+                  .map((c) => (typeof c === "string" ? c : c.text || ""))
+                  .join("")
+            : "";
+          params.push({
+            name: tag.name?.getText(sf) || "",
+            type:
+              cleanMultilineType(tag.typeExpression?.type?.getText(sf)) ||
+              "any",
+            description: pComment.trim(),
+          });
+        } else if (ts.isJSDocReturnTag(tag)) {
+          const rComment = tag.comment
+            ? typeof tag.comment === "string"
+              ? tag.comment
+              : tag.comment
+                  .map((c) => (typeof c === "string" ? c : c.text || ""))
+                  .join("")
+            : "";
+          returns = {
+            type:
+              cleanMultilineType(tag.typeExpression?.type?.getText(sf)) ||
+              "any",
+            description: rComment.trim(),
+          };
+        }
+      }
     }
   }
-  return { description: descLines.join(" "), type, params, returns };
+
+  return {
+    description: description.trim(),
+    type: cleanMultilineType(type),
+    params,
+    returns,
+  };
 }
 
 /**
@@ -168,6 +192,7 @@ function analyzeStoreInteractions(widgetName, repoRoot) {
 
   for (const file of filesToScan) {
     let scriptContent = "";
+    let templateContent = "";
     if (file.endsWith(".vue")) {
       const vueContent = fs.readFileSync(file, "utf8");
       try {
@@ -176,6 +201,7 @@ function analyzeStoreInteractions(widgetName, repoRoot) {
           (parsed.descriptor.scriptSetup?.content || "") +
           "\n" +
           (parsed.descriptor.script?.content || "");
+        templateContent = parsed.descriptor.template?.content || "";
       } catch {
         scriptContent = vueContent;
       }
@@ -190,38 +216,77 @@ function analyzeStoreInteractions(widgetName, repoRoot) {
       true,
     );
     const importedStoreVars = new Set();
+    const piniaStoreInstances = new Set();
 
     function visit(node) {
       // 1. Identify store imports
       if (ts.isImportDeclaration(node)) {
         const spec = node.moduleSpecifier.text;
-        if (spec.includes("store/states") || spec.includes("store")) {
+        if (
+          spec.includes("store/states") ||
+          spec.includes("store/actions") ||
+          spec.includes("@/store/states") ||
+          spec.includes("@/utils/states") ||
+          spec === "@/store" ||
+          spec === "@eodash/eodash"
+        ) {
           if (
             node.importClause?.namedBindings &&
             ts.isNamedImports(node.importClause.namedBindings)
           ) {
             for (const el of node.importClause.namedBindings.elements) {
-              importedStoreVars.add(el.name.text);
+              const varName = el.name.text;
+              if (varName !== "useSTAcStore" && varName !== "store") {
+                importedStoreVars.add(varName);
+              }
             }
           }
         }
       }
 
-      // 2. Detect store.<prop> or states.<prop> accesses
+      // 2. Identify pinia store instance or destructuring: const { selectedStac } = toRefs(useSTAcStore())
+      if (ts.isVariableDeclaration(node)) {
+        if (node.initializer && ts.isCallExpression(node.initializer)) {
+          const fnText = node.initializer.expression.getText(sf);
+          if (fnText === "useSTAcStore") {
+            if (ts.isIdentifier(node.name)) {
+              piniaStoreInstances.add(node.name.text);
+            }
+          } else if (fnText === "toRefs" || fnText === "storeToRefs") {
+            const innerArg = node.initializer.arguments[0];
+            if (innerArg && innerArg.getText(sf).includes("useSTAcStore")) {
+              if (ts.isObjectBindingPattern(node.name)) {
+                for (const el of node.name.elements) {
+                  if (ts.isIdentifier(el.name)) {
+                    importedStoreVars.add(el.name.text);
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+
+      // 3. Detect store.<prop>, states.<prop>, or piniaInstance.<prop> accesses
       if (ts.isPropertyAccessExpression(node)) {
         const propName = node.name.text;
         const target = node.expression.getText(sf);
         if (
           target === "store" ||
           target === "store.states" ||
-          target === "states"
+          target === "states" ||
+          piniaStoreInstances.has(target)
         ) {
           if (
             ![
               "init",
+              "loadSTAC",
               "loadSelectedSTAC",
               "loadSelectedCompareSTAC",
               "resetSelectedCompareSTAC",
+              "$reset",
+              "$patch",
+              "$subscribe",
             ].includes(propName)
           ) {
             if (
@@ -237,7 +302,7 @@ function analyzeStoreInteractions(widgetName, repoRoot) {
         }
       }
 
-      // 3. Detect importedStoreVar.value = ... (mutations)
+      // 4. Detect importedStoreVar.value = ... (mutations)
       if (
         ts.isBinaryExpression(node) &&
         node.operatorToken.kind === ts.SyntaxKind.EqualsToken
@@ -253,11 +318,44 @@ function analyzeStoreInteractions(widgetName, repoRoot) {
         }
       }
 
-      // 4. Detect importedStoreVar reads
+      // 5. Detect importedStoreVar reads (ignoring imports, definitions, callee positions, write targets)
       if (ts.isIdentifier(node)) {
-        if (importedStoreVars.has(node.text)) {
-          if (!writes.has(node.text)) {
-            reads.add(node.text);
+        const varName = node.text;
+        if (importedStoreVars.has(varName)) {
+          // Ignore if part of import specifier
+          let isImport = false;
+          let p = node.parent;
+          while (p) {
+            if (ts.isImportDeclaration(p) || ts.isImportSpecifier(p)) {
+              isImport = true;
+              break;
+            }
+            p = p.parent;
+          }
+
+          // Ignore if in callee position: varName(...)
+          const isCallee =
+            ts.isCallExpression(node.parent) && node.parent.expression === node;
+
+          // Ignore if property name in object literal without shorthand
+          const isObjectKey =
+            ts.isPropertyAssignment(node.parent) && node.parent.name === node;
+
+          // Ignore if LHS of assignment
+          const isLhsAssignment =
+            (ts.isBinaryExpression(node.parent) &&
+              node.parent.left === node &&
+              node.parent.operatorToken.kind === ts.SyntaxKind.EqualsToken) ||
+            (ts.isPropertyAccessExpression(node.parent) &&
+              node.parent.expression === node &&
+              node.parent.name.text === "value" &&
+              ts.isBinaryExpression(node.parent.parent) &&
+              node.parent.parent.left === node.parent &&
+              node.parent.parent.operatorToken.kind ===
+                ts.SyntaxKind.EqualsToken);
+
+          if (!isImport && !isCallee && !isObjectKey && !isLhsAssignment) {
+            reads.add(varName);
           }
         }
       }
@@ -266,6 +364,15 @@ function analyzeStoreInteractions(widgetName, repoRoot) {
     }
 
     visit(sf);
+
+    if (templateContent) {
+      for (const varName of importedStoreVars) {
+        const regex = new RegExp(`\\b${varName}\\b`);
+        if (regex.test(templateContent)) {
+          reads.add(varName);
+        }
+      }
+    }
   }
 
   return {
@@ -337,7 +444,7 @@ function extractExamplesFromTemplates(repoRoot) {
 /**
  * 4. AST-based reactive store inference from core/client/store/*.js
  */
-function parseStoreFileAst(filePath) {
+function parseTopLevelStoreAst(filePath) {
   if (!fs.existsSync(filePath)) return [];
   const content = fs.readFileSync(filePath, "utf8");
   const sf = ts.createSourceFile(
@@ -348,27 +455,31 @@ function parseStoreFileAst(filePath) {
   );
   const items = [];
 
-  function visit(node) {
-    // Variable statements: export const currentUrl = ref("");
-    if (ts.isVariableStatement(node)) {
-      const commentRanges = ts.getLeadingCommentRanges(content, node.pos);
-      const rawComment = commentRanges
-        ? commentRanges.map((r) => content.slice(r.pos, r.end)).join("\n")
-        : "";
-      const doc = cleanDoc(rawComment);
+  for (const stmt of sf.statements) {
+    if (ts.isVariableStatement(stmt)) {
+      const isExported = stmt.modifiers?.some(
+        (m) => m.kind === ts.SyntaxKind.ExportKeyword,
+      );
+      if (!isExported) continue;
 
-      for (const decl of node.declarationList.declarations) {
+      const doc = getJsDocFromNode(stmt, sf);
+
+      for (const decl of stmt.declarationList.declarations) {
         const name = decl.name.getText(sf);
-        let kind = "ref";
+        let kind = "value";
         let isFn = false;
 
         if (decl.initializer) {
-          const initText = decl.initializer.getText(sf);
-          if (initText.startsWith("shallowRef")) kind = "shallowRef";
-          else if (initText.startsWith("reactive")) kind = "reactive";
-          else if (
+          if (ts.isCallExpression(decl.initializer)) {
+            const callee = decl.initializer.expression.getText(sf);
+            if (
+              ["ref", "shallowRef", "reactive", "computed"].includes(callee)
+            ) {
+              kind = callee;
+            }
+          } else if (
             ts.isArrowFunction(decl.initializer) ||
-            initText.includes("=>")
+            ts.isFunctionExpression(decl.initializer)
           ) {
             isFn = true;
           }
@@ -379,7 +490,9 @@ function parseStoreFileAst(filePath) {
           if (isFn) inferredType = "Function";
           else if (kind === "shallowRef") inferredType = "ShallowRef<any>";
           else if (kind === "reactive") inferredType = "Reactive<object>";
-          else inferredType = "Ref<any>";
+          else if (kind === "computed") inferredType = "ComputedRef<any>";
+          else if (kind === "ref") inferredType = "Ref<any>";
+          else inferredType = "any";
         }
 
         items.push({
@@ -395,29 +508,157 @@ function parseStoreFileAst(filePath) {
       }
     }
 
-    // Function declarations: export async function registerProjection(...)
-    if (ts.isFunctionDeclaration(node) && node.name) {
-      const name = node.name.getText(sf);
-      const commentRanges = ts.getLeadingCommentRanges(content, node.pos);
-      const rawComment = commentRanges
-        ? commentRanges.map((r) => content.slice(r.pos, r.end)).join("\n")
-        : "";
-      const doc = cleanDoc(rawComment);
+    if (ts.isFunctionDeclaration(stmt) && stmt.name) {
+      const isExported = stmt.modifiers?.some(
+        (m) => m.kind === ts.SyntaxKind.ExportKeyword,
+      );
+      if (!isExported) continue;
+
+      const name = stmt.name.getText(sf);
+      const doc = getJsDocFromNode(stmt, sf);
 
       items.push({
         name,
         category: "action",
-        type: "Function",
+        type: doc.type || "Function",
         description: doc.description || `Action ${name}`,
         ...(doc.params.length > 0 ? { params: doc.params } : {}),
         ...(doc.returns ? { returns: doc.returns } : {}),
       });
     }
-
-    ts.forEachChild(node, visit);
   }
 
-  visit(sf);
+  return items;
+}
+
+function parsePiniaStoreAst(filePath) {
+  if (!fs.existsSync(filePath)) return [];
+  const content = fs.readFileSync(filePath, "utf8");
+  const sf = ts.createSourceFile(
+    filePath,
+    content,
+    ts.ScriptTarget.Latest,
+    true,
+  );
+  const items = [];
+
+  for (const stmt of sf.statements) {
+    if (ts.isVariableStatement(stmt)) {
+      for (const decl of stmt.declarationList.declarations) {
+        if (decl.initializer && ts.isCallExpression(decl.initializer)) {
+          const callee = decl.initializer.expression.getText(sf);
+          if (callee === "defineStore") {
+            const setupFn = decl.initializer.arguments[1];
+            if (
+              setupFn &&
+              (ts.isArrowFunction(setupFn) ||
+                ts.isFunctionExpression(setupFn)) &&
+              ts.isBlock(setupFn.body)
+            ) {
+              const scopeDecls = new Map();
+              let returnStmt = null;
+
+              for (const bodyStmt of setupFn.body.statements) {
+                if (ts.isVariableStatement(bodyStmt)) {
+                  const doc = getJsDocFromNode(bodyStmt, sf);
+                  for (const d of bodyStmt.declarationList.declarations) {
+                    const dName = d.name.getText(sf);
+                    let kind = "value";
+                    let isFn = false;
+
+                    if (d.initializer) {
+                      if (ts.isCallExpression(d.initializer)) {
+                        const cName = d.initializer.expression.getText(sf);
+                        if (
+                          [
+                            "ref",
+                            "shallowRef",
+                            "reactive",
+                            "computed",
+                          ].includes(cName)
+                        ) {
+                          kind = cName;
+                        }
+                      } else if (
+                        ts.isArrowFunction(d.initializer) ||
+                        ts.isFunctionExpression(d.initializer)
+                      ) {
+                        isFn = true;
+                      }
+                    }
+                    scopeDecls.set(dName, {
+                      name: dName,
+                      isFn,
+                      kind,
+                      doc,
+                    });
+                  }
+                } else if (
+                  ts.isFunctionDeclaration(bodyStmt) &&
+                  bodyStmt.name
+                ) {
+                  const fName = bodyStmt.name.getText(sf);
+                  const doc = getJsDocFromNode(bodyStmt, sf);
+                  scopeDecls.set(fName, {
+                    name: fName,
+                    isFn: true,
+                    kind: "function",
+                    doc,
+                  });
+                } else if (ts.isReturnStatement(bodyStmt)) {
+                  returnStmt = bodyStmt;
+                }
+              }
+
+              if (
+                returnStmt &&
+                returnStmt.expression &&
+                ts.isObjectLiteralExpression(returnStmt.expression)
+              ) {
+                for (const prop of returnStmt.expression.properties) {
+                  const pName = prop.name?.getText(sf);
+                  if (!pName) continue;
+                  const info = scopeDecls.get(pName);
+                  if (info) {
+                    let inferredType = info.doc.type;
+                    if (!inferredType) {
+                      if (info.isFn) inferredType = "Function";
+                      else if (info.kind === "shallowRef")
+                        inferredType = "ShallowRef<any>";
+                      else if (info.kind === "reactive")
+                        inferredType = "Reactive<object>";
+                      else if (info.kind === "computed")
+                        inferredType = "ComputedRef<any>";
+                      else if (info.kind === "ref") inferredType = "Ref<any>";
+                      else inferredType = "any";
+                    }
+
+                    items.push({
+                      name: pName,
+                      category: info.isFn ? "action" : "state",
+                      type: inferredType,
+                      description:
+                        info.doc.description ||
+                        (info.isFn
+                          ? `Action ${pName}`
+                          : `Reactive ${pName} state`),
+                      ...(info.doc.params.length > 0
+                        ? { params: info.doc.params }
+                        : {}),
+                      ...(info.doc.returns
+                        ? { returns: info.doc.returns }
+                        : {}),
+                    });
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
   return items;
 }
 
@@ -429,9 +670,9 @@ function inferReactiveStoreMetadata(repoRoot) {
   return {
     description:
       "Global reactive store and Pinia store managing STAC endpoint, active collection, selected item, datetime, map instances, and chart states. Accessible via window.eodashStore or `import { store } from '@eodash/eodash'`.",
-    states: parseStoreFileAst(statesFile),
-    stacStore: parseStoreFileAst(stacFile),
-    actions: parseStoreFileAst(actionsFile),
+    states: parseTopLevelStoreAst(statesFile),
+    stacStore: parsePiniaStoreAst(stacFile),
+    actions: parseTopLevelStoreAst(actionsFile),
   };
 }
 
@@ -469,43 +710,53 @@ function extractPropsFromVueSfc(vueFilePath) {
           for (const prop of arg.properties) {
             if (ts.isPropertyAssignment(prop)) {
               const name = prop.name.getText(sf);
-              const commentRanges = ts.getLeadingCommentRanges(
-                scriptContent,
-                prop.pos,
-              );
-              const comment = commentRanges
-                ? commentRanges
-                    .map((r) => scriptContent.slice(r.pos, r.end))
-                    .join("\n")
-                : "";
-              const doc = cleanDoc(comment);
-
+              const doc = getJsDocFromNode(prop, sf);
+              let propType = doc.type ? unwrapPropType(doc.type) : "unknown";
               let defaultValue = null;
-              let propType = doc.type || "unknown";
+              let required = false;
 
               if (ts.isObjectLiteralExpression(prop.initializer)) {
                 for (const subProp of prop.initializer.properties) {
+                  const subDoc = getJsDocFromNode(subProp, sf);
                   if (ts.isPropertyAssignment(subProp)) {
                     const subName = subProp.name.getText(sf);
+                    if (subName === "required") {
+                      required =
+                        subProp.initializer.kind === ts.SyntaxKind.TrueKeyword;
+                    }
                     if (subName === "default") {
                       defaultValue = subProp.initializer.getText(sf);
                     }
-                    if (subName === "type" && propType === "unknown") {
-                      const typeComments = ts.getLeadingCommentRanges(
-                        scriptContent,
-                        subProp.pos,
+                    if (subName === "type") {
+                      if (subDoc.type) {
+                        propType = unwrapPropType(subDoc.type);
+                      } else {
+                        const innerDoc = getJsDocFromNode(
+                          subProp.initializer,
+                          sf,
+                        );
+                        if (innerDoc.type) {
+                          propType = unwrapPropType(innerDoc.type);
+                        } else if (propType === "unknown") {
+                          propType = subProp.initializer.getText(sf);
+                        }
+                      }
+                    }
+                  } else if (ts.isMethodDeclaration(subProp)) {
+                    const subName = subProp.name.getText(sf);
+                    if (subName === "default") {
+                      const ret = subProp.body?.statements.find((s) =>
+                        ts.isReturnStatement(s),
                       );
-                      const typeDoc = cleanDoc(
-                        typeComments
-                          ? typeComments
-                              .map((r) => scriptContent.slice(r.pos, r.end))
-                              .join("\n")
-                          : "",
-                      );
-                      if (typeDoc.type) propType = typeDoc.type;
-                      else propType = subProp.initializer.getText(sf);
+                      defaultValue = ret?.expression
+                        ? ret.expression.getText(sf)
+                        : subProp.getText(sf);
                     }
                   }
+                }
+              } else if (ts.isIdentifier(prop.initializer)) {
+                if (propType === "unknown") {
+                  propType = prop.initializer.getText(sf);
                 }
               }
 
@@ -514,7 +765,7 @@ function extractPropsFromVueSfc(vueFilePath) {
                 type: propType,
                 defaultValue,
                 description: doc.description,
-                required: defaultValue === null,
+                required,
               });
             }
           }
@@ -638,6 +889,7 @@ export function buildMetadata(repoRoot = DEFAULT_REPO_ROOT) {
     const storeInteractions = analyzeStoreInteractions(name, repoRoot);
     const category = CATEGORY_MAP[name] || "General";
     const stacExtensions = STAC_EXTENSIONS_MAP[name] || [];
+    const stacCoreFields = STAC_CORE_FIELDS_MAP[name] || [];
     const isBackground = name === "EodashMap";
 
     // Extract first summary paragraph from markdown guide if available
@@ -680,6 +932,7 @@ export function buildMetadata(repoRoot = DEFAULT_REPO_ROOT) {
       props: props || [],
       storeInteractions,
       stacExtensions,
+      stacCoreFields,
       example,
       templateExample: templateExamples[name] || null,
       markdownGuide: guide,
@@ -699,7 +952,7 @@ export function buildMetadata(repoRoot = DEFAULT_REPO_ROOT) {
   const knownTemplateDescriptions = {
     lite: "Streamlined layout for static STAC Catalogs & public dissemination with minimal controls (Map, Header Tools, Layers, StacInfo, DatePicker). Recommended default for static catalogs.",
     explore:
-      "Feature-rich discovery layout for dynamic STAC APIs (ItemFilter, ItemCatalog explorer, Map, LayerControl, TimeSlider, StacInfo, and Process analysis). Recommended for searchable STAC APIs.",
+      "Discovery layout for dynamic STAC APIs featuring an interactive background Map, LayerControl, and an ItemCatalog explorer drawer.",
     expert:
       "Power-user dashboard with comprehensive layer manipulation and full analysis tooling.",
     compare:
@@ -712,7 +965,7 @@ export function buildMetadata(repoRoot = DEFAULT_REPO_ROOT) {
     gridSystem: {
       columns: 12,
       notation:
-        "x/y/w/h where coordinates can be numbers (1-12) or breakpoint strings 'mobile/tablet/desktop' (e.g. '12/9/10').",
+        "x is 0-indexed column (0–11), y is 0-indexed unbounded row, w is column span (1–12), h is row span. Coordinates and spans accept numbers or responsive breakpoint strings 'mobile/tablet/desktop' (e.g. '12/9/10').",
       examples: [
         { label: "Full width sidebar", layout: { x: 0, y: 0, w: 3, h: 12 } },
         {
@@ -733,17 +986,16 @@ export function buildMetadata(repoRoot = DEFAULT_REPO_ROOT) {
     },
     customWidgetSystem: {
       description:
-        "eodash supports 3 types of custom widgets: 'web-component' (dynamic import or CDN URL), 'functional' (Vue component / render function), and 'iframe' (embedded HTML / notebook).",
+        "eodash supports 3 types of widgets: 'internal' (built-in eodash widgets), 'web-component' (custom elements via dynamic import or CDN URL), and 'iframe' (embedded external web app / notebook). In addition, 'functional' is a dynamic wrapper (defineWidget: (selectedSTAC) => Widget | null) executed reactively when selected STAC indicator changes.",
       types: [
         {
           type: "web-component",
           description:
-            "Loads any standard Custom Element via ESM dynamic import function or CDN URL. Provides lifecycle hooks onMounted(el, store) and onUnmounted(el, store).",
+            "Loads standard Custom Element via ESM dynamic import function or CDN URL. Provides lifecycle hooks onMounted(el, store) and onUnmounted(el, store).",
         },
         {
-          type: "functional",
-          description:
-            "Dynamic function `defineWidget: (selectedSTAC) => Widget | null` executed reactively when selected STAC indicator changes.",
+          type: "internal",
+          description: "Built-in eodash widget component registered by name.",
         },
         {
           type: "iframe",

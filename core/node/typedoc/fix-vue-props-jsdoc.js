@@ -139,12 +139,21 @@ function extractDefinePropsInfo(scriptContent, filename) {
         if (ts.isObjectLiteralExpression(prop.initializer)) {
           const defaultProp = prop.initializer.properties.find(
             (p) =>
-              ts.isPropertyAssignment(p) &&
+              (ts.isPropertyAssignment(p) || ts.isMethodDeclaration(p)) &&
               ts.isIdentifier(p.name) &&
               p.name.text === "default",
           );
           if (defaultProp) {
-            sourceDefault = defaultValueText(defaultProp.initializer, sf);
+            if (ts.isMethodDeclaration(defaultProp)) {
+              const ret = defaultProp.body?.statements.find((s) =>
+                ts.isReturnStatement(s),
+              );
+              sourceDefault = ret?.expression
+                ? ret.expression.getText(sf).replace(/\s+/g, " ").trim()
+                : defaultProp.getText(sf).replace(/\s+/g, " ").trim();
+            } else {
+              sourceDefault = defaultValueText(defaultProp.initializer, sf);
+            }
           }
         }
 

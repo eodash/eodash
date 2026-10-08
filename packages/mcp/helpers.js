@@ -7,44 +7,77 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const REPO_ROOT = path.resolve(__dirname, "../..");
 
-const rootPkg = JSON.parse(
-  fs.readFileSync(path.join(REPO_ROOT, "package.json"), "utf8"),
-);
+function getRootPackage() {
+  try {
+    const pkgPath = path.join(REPO_ROOT, "package.json");
+    if (fs.existsSync(pkgPath)) {
+      return JSON.parse(fs.readFileSync(pkgPath, "utf8"));
+    }
+  } catch {
+    // fallback when root package.json is unreachable
+  }
+  return { version: "5.9.0" };
+}
 
 export const DEFAULT_STAC_ENDPOINT =
   "https://eoxhub-workspaces.github.io/eoxhub-test-catalog/catalog/catalog.json";
 export const DEFAULT_BRAND_NAME = "EOxHub Demo Dashboard";
 
+let cachedTemplates = null;
+let cachedMetadata = null;
+
 /**
  * Dynamically discovers available built-in templates from templates/*.js
  */
 export function getAvailableTemplates() {
+  if (cachedTemplates) return cachedTemplates;
   const templatesDir = path.join(REPO_ROOT, "templates");
-  if (!fs.existsSync(templatesDir)) {
-    return ["explore", "lite", "expert", "compare"];
+  if (fs.existsSync(templatesDir)) {
+    const files = fs.readdirSync(templatesDir);
+    const discovered = files
+      .filter(
+        (f) => f.endsWith(".js") && f !== "index.js" && f !== "baseConfig.js",
+      )
+      .map((f) => path.basename(f, ".js"));
+    if (discovered.length > 0) {
+      cachedTemplates = discovered;
+      return cachedTemplates;
+    }
   }
-  const files = fs.readdirSync(templatesDir);
-  const discovered = files
-    .filter(
-      (f) => f.endsWith(".js") && f !== "index.js" && f !== "baseConfig.js",
-    )
-    .map((f) => path.basename(f, ".js"));
-  return discovered.length > 0
-    ? discovered
-    : ["explore", "lite", "expert", "compare"];
+
+  // Standalone package fallback: read from pre-built architecture metadata if present
+  const archFile = path.join(__dirname, "data/architecture-metadata.json");
+  if (fs.existsSync(archFile)) {
+    try {
+      const arch = JSON.parse(fs.readFileSync(archFile, "utf8"));
+      if (arch.templateSystem?.builtInTemplates?.length) {
+        cachedTemplates = arch.templateSystem.builtInTemplates.map(
+          (t) => t.name,
+        );
+        return cachedTemplates;
+      }
+    } catch {
+      // fallback
+    }
+  }
+
+  cachedTemplates = ["explore", "lite", "expert", "compare"];
+  return cachedTemplates;
 }
 
 /**
  * Gets the current @eodash/eodash version from the root package.json
  */
 export function getEodashVersion() {
-  return `^${rootPkg.version}`;
+  const rootPkg = getRootPackage();
+  return rootPkg.version ? `^${rootPkg.version}` : "^5.9.0";
 }
 
 /**
  * Loads cached metadata or rebuilds on-the-fly
  */
 export function getMetadata() {
+  if (cachedMetadata) return cachedMetadata;
   const widgetsFile = path.join(__dirname, "data/widgets-metadata.json");
   const archFile = path.join(__dirname, "data/architecture-metadata.json");
 
@@ -52,7 +85,8 @@ export function getMetadata() {
     try {
       const widgetsData = JSON.parse(fs.readFileSync(widgetsFile, "utf8"));
       const architectureData = JSON.parse(fs.readFileSync(archFile, "utf8"));
-      return { widgetsData, architectureData };
+      cachedMetadata = { widgetsData, architectureData };
+      return cachedMetadata;
     } catch (err) {
       console.warn("Could not read cached metadata, rebuilding:", err.message);
     }
@@ -60,10 +94,11 @@ export function getMetadata() {
 
   // Dynamic on-the-fly generation fallback
   const { widgetsMetadata, architectureMetadata } = buildMetadata(REPO_ROOT);
-  return {
+  cachedMetadata = {
     widgetsData: widgetsMetadata,
     architectureData: architectureMetadata,
   };
+  return cachedMetadata;
 }
 
 /**
@@ -89,9 +124,9 @@ export default createEodash({
         type: "web-component",
         layout: { x: 0, y: 6, w: 6, h: 6 },
         widget: {
-          name: "my-custom-chart",
+          tagName: "my-custom-chart",
           // ESM import function or direct CDN bundle URL:
-          import: () => import("./src/widgets/MyCustomChart.js"),
+          link: () => import("./src/widgets/MyCustomChart.js"),
           properties: {
             theme: "dark",
             unit: "celsius",
@@ -124,8 +159,6 @@ export default createEodash({
   template: {
     widgets: [
       {
-        id: "dynamic-panel",
-        layout: { x: 9, y: 0, w: 3, h: 8 },
         defineWidget: (selectedSTAC) => {
           if (!selectedSTAC) return null;
 
@@ -196,7 +229,8 @@ const store = window.eodashStore;
 if (store) {
   // Read states
   console.log("Current STAC collection:", store.states.currentUrl.value);
-  console.log("Active OpenLayers map instance:", store.states.mapEl.value);
+  console.log("EOxMap custom element DOM node:", store.states.mapEl.value);
+  console.log("Underlying OpenLayers map instance:", store.states.mapEl.value?.map);
 
   // Hook into tooltip property formatting
   store.states.tooltipAdapter.value = ({ key, value }, mapId) => {
@@ -248,7 +282,7 @@ export function generateLandingPage(widgets, _arch) {
       <div class="flex items-center space-x-3">
         <div class="bg-blue-600 text-white font-bold px-2.5 py-1 rounded">eo</div>
         <span class="font-bold text-slate-900 text-lg">eodash MCP Server</span>
-        <span class="text-xs font-mono bg-slate-100 text-slate-600 px-2 py-0.5 rounded">v${rootPkg.version}</span>
+        <span class="text-xs font-mono bg-slate-100 text-slate-600 px-2 py-0.5 rounded">v${getRootPackage().version}</span>
       </div>
       <div class="flex items-center space-x-2">
         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">

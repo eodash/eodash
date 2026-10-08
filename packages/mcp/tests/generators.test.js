@@ -1,8 +1,52 @@
 import { describe, it, expect } from "vitest";
+import ts from "typescript";
+import { Client } from "@modelcontextprotocol/sdk/client/index.js";
+import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { createMcpServer } from "../index.js";
 import { scaffoldDashboard } from "../generators/dashboard.js";
 import { generateEodashConfig } from "../generators/config.js";
 import { getAvailableTemplates } from "../helpers.js";
+
+function assertValidJavaScript(filename, code) {
+  const sf = ts.createSourceFile(
+    filename,
+    code,
+    ts.ScriptTarget.Latest,
+    true,
+    ts.ScriptKind.JS,
+  );
+  // TypeScript parser attaches syntax errors directly to source file parse diagnostics
+  const diagnostics = sf.parseDiagnostics || [];
+  if (diagnostics.length > 0) {
+    const errMessages = diagnostics
+      .map((d) => `${d.messageText} at pos ${d.start}`)
+      .join("; ");
+    throw new Error(`Syntax error in generated file '${filename}': ${errMessages}\n\nCode:\n${code}`);
+  }
+}
+
+function assertValidJson(filename, content) {
+  try {
+    JSON.parse(content);
+  } catch (err) {
+    throw new Error(`Invalid JSON in generated file '${filename}': ${err.message}\n\nContent:\n${content}`);
+  }
+}
+
+async function createTestClientServer() {
+  const server = createMcpServer();
+  const [clientTransport, serverTransport] =
+    InMemoryTransport.createLinkedPair();
+  const client = new Client(
+    { name: "test-client", version: "1.0.0" },
+    { capabilities: {} },
+  );
+  await Promise.all([
+    server.connect(serverTransport),
+    client.connect(clientTransport),
+  ]);
+  return { server, client };
+}
 
 describe("eodash Generators - scaffoldDashboard", () => {
   it("generates standalone SPA boilerplate", () => {
@@ -21,6 +65,9 @@ describe("eodash Generators - scaffoldDashboard", () => {
     expect(res.files["src/main.js"]).toContain("https://example.com/stac");
     expect(res.files["src/main.js"]).toContain("Alpine Monitor");
     expect(res.files["eodash.config.js"]).toContain("entryPoint");
+    expect(res.files["eodash.config.js"]).toContain(
+      'import { defineConfig } from "@eodash/eodash/config"',
+    );
     expect(res.files["index.html"]).toBeDefined();
     expect(res.files["Dockerfile"]).toBeDefined();
     expect(res.files[".gitignore"]).toBeDefined();
@@ -42,7 +89,11 @@ describe("eodash Generators - scaffoldDashboard", () => {
       "import.meta.env.SSR",
     );
     expect(res.files["docs/index.md"]).toContain("Climate Stories");
-    expect(res.files["docs/dashboard.md"]).toContain("<eo-dash");
+    expect(res.files["docs/dashboard.md"]).toContain('config="/config.js"');
+    expect(res.files["docs/public/config.js"]).toBeDefined();
+    expect(res.files["docs/public/story-content.md"]).toBeDefined();
+    expect(res.files["Dockerfile"]).toContain("npm run docs:build");
+    expect(res.files["Dockerfile"]).toContain("docs/.vitepress/dist");
     expect(res.files["docs/narratives/story-1.md"]).toContain(
       "<eox-storytelling",
     );
@@ -56,6 +107,8 @@ describe("eodash Generators - scaffoldDashboard", () => {
 
     expect(res.projectType).toBe("web-component");
     expect(res.files["index.html"]).toContain("<eo-dash");
+    expect(res.files["index.html"]).toContain('config="/config.js"');
+    expect(res.files["config.js"]).toBeDefined();
     expect(res.files["index.html"]).toContain("@eodash/eodash/webcomponent");
   });
 });
@@ -136,19 +189,81 @@ describe("eodash Generators - generateEodashConfig", () => {
     expect(res.configCode).toContain("custom-map");
     expect(res.configCode).toContain("catalog-panel");
     expect(res.configCode).toContain("EodashMap");
+
+    // Merging custom widgets with a base template
+    const resMerged = generateEodashConfig({
+      id: "extended-lite",
+      template: "lite",
+      customWidgets,
+    });
+    expect(resMerged.template).toBe("custom");
+    expect(resMerged.configCode).toContain(
+      'import { lite } from "@eodash/eodash/templates";',
+    );
+    expect(resMerged.configCode).toContain("...lite,");
+    expect(resMerged.configCode).toContain("custom-map");
+  });
+
+  it("verifies all scaffolded files parse as valid JS/JSON across all project types", () => {
+    const projectTypes = [
+      "standalone-spa",
+      "vitepress-narratives",
+      "web-component",
+    ];
+
+    for (const projectType of projectTypes) {
+      const scaffold = scaffoldDashboard({
+        name: `test-${projectType}`,
+        projectType,
+        template: "explore",
+      });
+
+      for (const [filename, content] of Object.entries(scaffold.files)) {
+        if (filename.endsWith(".js")) {
+          assertValidJavaScript(filename, content);
+        } else if (filename.endsWith(".json")) {
+          assertValidJson(filename, content);
+        }
+      }
+    }
+  });
+
+  it("verifies all generated config outputs parse as valid JavaScript AST", () => {
+    const templates = ["lite", "explore", "expert", "compare", "custom"];
+    for (const tpl of templates) {
+      const config = generateEodashConfig({
+        id: `test-config-${tpl}`,
+        template: tpl,
+        brand: { name: `Brand ${tpl}` },
+        customWidgets:
+          tpl === "custom"
+            ? [
+                {
+                  id: "custom-map",
+                  title: "Custom Map",
+                  layout: { x: 0, y: 0, w: 12, h: 6 },
+                  widget: { name: "EodashMap" },
+                },
+              ]
+            : [],
+      });
+
+      assertValidJavaScript("eodash.config.js", config.configCode);
+    }
   });
 });
 
 describe("eodash MCP Server - Generator Tool Execution", () => {
-  it("executes scaffold_dashboard MCP tool", async () => {
-    const server = createMcpServer();
-    const tool = server._registeredTools?.["scaffold_dashboard"];
-    expect(tool).toBeDefined();
+  it("executes scaffold_dashboard MCP tool via protocol", async () => {
+    const { client } = await createTestClientServer();
 
-    const res = await tool.handler({
-      name: "mcp-test-dash",
-      projectType: "standalone-spa",
-      template: "lite",
+    const res = await client.callTool({
+      name: "scaffold_dashboard",
+      arguments: {
+        name: "mcp-test-dash",
+        projectType: "standalone-spa",
+        template: "lite",
+      },
     });
 
     const body = JSON.parse(res.content[0].text);
@@ -156,15 +271,16 @@ describe("eodash MCP Server - Generator Tool Execution", () => {
     expect(body.files["src/main.js"]).toContain("lite");
   });
 
-  it("executes generate_eodash_config MCP tool", async () => {
-    const server = createMcpServer();
-    const tool = server._registeredTools?.["generate_eodash_config"];
-    expect(tool).toBeDefined();
+  it("executes generate_eodash_config MCP tool via protocol", async () => {
+    const { client } = await createTestClientServer();
 
-    const res = await tool.handler({
-      id: "test-generated-config",
-      template: "expert",
-      brand: { name: "Test Generator" },
+    const res = await client.callTool({
+      name: "generate_eodash_config",
+      arguments: {
+        id: "test-generated-config",
+        template: "expert",
+        brand: { name: "Test Generator" },
+      },
     });
 
     const body = JSON.parse(res.content[0].text);
