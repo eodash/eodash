@@ -1,0 +1,14 @@
+{
+  "id": "dashboard-scaffold-vitepress",
+  "title": "VitePress Narrative Dashboard Project Scaffold",
+  "category": "dashboard-scaffold",
+  "tags": [
+    "scaffold",
+    "vitepress",
+    "narratives",
+    "storytelling",
+    "web-component"
+  ],
+  "description": "File structure for embedding interactive eodash dashboards and EOx storytelling components into VitePress narrative documentation.",
+  "targetContext": "Extract and write files to project directory to initialize a narrative docs project."
+}

@@ -1,0 +1,14 @@
+{
+  "name": "my-eo-dashboard",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "eodash dev",
+    "build": "eodash build",
+    "preview": "eodash preview"
+  },
+  "dependencies": {
+    "@eodash/eodash": "latest"
+  }
+}

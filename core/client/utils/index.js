@@ -1,7 +1,6 @@
 import log from "loglevel";
 import { collectionsPalette } from "./states";
-import { createEodashCollection } from "@eodash/stac";
-import { extractCollectionUrls } from "@eodash/stac/helpers";
+import { createEodashIndicator } from "@eodash/stac";
 import { axios } from "@/plugins/axios";
 import WebFontLoader from "webfontloader";
 
@@ -155,7 +154,7 @@ export const setCollectionsPalette = (colors) => {
  * @param {import("@eodash/stac").Reader[]} eodashCollections - Reactive array to receive the initialized collection readers
  * @param {import("@eodash/stac").STACCollection} selectedStac - Indicator collection metadata
  * @param {string} absoluteUrl - Indicator URL used as the base for relative collection links
- * @param {string[]} colorPalette - Color palette assigned cyclically across collections
+ * @param {string[]} colors - Color palette assigned cyclically across collections
  * @param {boolean} isAPI - Whether collections are backed by a STAC API endpoint
  * @param {object} [rasterOptions] - Default options applied when building layers
  * @param {string} [rasterOptions.rasterEndpoint]
@@ -168,26 +167,20 @@ export const updateEodashCollections = async (
   eodashCollections,
   selectedStac,
   absoluteUrl,
-  colorPalette,
+  colors,
   isAPI,
   rasterOptions = {},
 ) => {
-  // init eodash collections
-  const collectionUrls = extractCollectionUrls(selectedStac, absoluteUrl);
+  // init eodash collections via indicator reader
+  const indicator = await createEodashIndicator(absoluteUrl, {
+    stac: selectedStac,
+    api: isAPI,
+    client: axios,
+    colors,
+    ...rasterOptions,
+  });
 
-  const collections = await Promise.all(
-    collectionUrls.map((cu, idx) =>
-      createEodashCollection(cu, {
-        api: isAPI,
-        client: axios,
-        color: colorPalette[idx % colorPalette.length],
-        ...(cu === absoluteUrl && { stac: selectedStac }),
-        ...rasterOptions,
-      }),
-    ),
-  );
-
-  eodashCollections.splice(0, eodashCollections.length, ...collections);
+  eodashCollections.splice(0, eodashCollections.length, ...indicator.readers);
 };
 /**
  *

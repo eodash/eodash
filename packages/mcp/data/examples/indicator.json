@@ -1,0 +1,264 @@
+[
+  {
+    "id": "indicator-multi-collection",
+    "title": "Indicator Definition Grouping Multiple Collections with Filter Metadata",
+    "category": "indicator",
+    "tags": ["indicator", "catalog", "themes", "subcode"],
+    "description": "Indicator grouping several STAC collections with rich filter metadata (subcodes, themes, satellites, sensors, tags) used by EOxItemFilter.",
+    "targetContext": "Place in catalog 'indicators/<indicator-name>.json' for 'eodash_catalog' build.",
+    "code": {
+      "Name": "shipping_traffic_and_routes",
+      "Title": "Maritime Shipping Traffic & Navigation Routes",
+      "Description": "Synthesizes vessel AIS density, optimal route corridors, and ice conditions.",
+      "CollectionGroup": "Navigation",
+      "Themes": ["Maritime", "Economy"],
+      "Tags": ["AIS", "Vessels", "Routes"],
+      "Satellite": ["Sentinel-1", "RADARSAT-Constellation"],
+      "Sensor": ["SAR"],
+      "Thumbnail": "https://assets.example.com/thumbnails/shipping.png",
+      "Collections": [
+        "vessel_density_all",
+        "antarctica_ship_route",
+        "route_optimization"
+      ]
+    }
+  },
+  {
+    "id": "indicator-laea-projection-multidataset",
+    "title": "Indicator with Custom Proj4 Map Projection (EPSG:3035 LAEA) & External Markdown",
+    "category": "indicator",
+    "tags": [
+      "indicator",
+      "projection",
+      "EPSG:3035",
+      "laea",
+      "proj4",
+      "description-markdown",
+      "multi-collection"
+    ],
+    "description": "Eodash indicator definition specifying a non-standard map projection (EPSG:3035 LAEA) via Proj4 definition and linking to an external markdown description path.",
+    "targetContext": "Save under indicators/<name>.json in an eodash catalog repository",
+    "code": {
+      "Name": "SAGRIS_Waterlogging_04_Lithuania_2024",
+      "Title": "SAGRIS Waterlogging 04 Lithuania (2024)",
+      "Description": "indicators/sm_lt_04_high_medium_low/description.md",
+      "Bbox": [22.64524, 54.94676, 23.02416, 55.30585],
+      "MapProjection": {
+        "name": "EPSG:3035",
+        "def": "+proj=laea +lat_0=52 +lon_0=10 +x_0=4321000 +y_0=3210000 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs +type=crs"
+      },
+      "Collections": [
+        "sm_lt_04_parcels_wms_high",
+        "sm_lt_04_parcels_wms_medium",
+        "sm_lt_04_parcels_wms_low"
+      ],
+      "Image": "https://example.com/heads/main/assets/sm_lt.png"
+    }
+  },
+  {
+    "id": "indicator-geothermal-energy-templated-url",
+    "title": "Indicator with Process Templating Form Parameter and Clicked Feature Property in URL",
+    "category": "indicator",
+    "tags": [
+      "indicator",
+      "process",
+      "url-template",
+      "jsonform-variable",
+      "feature-property",
+      "csv-endpoint"
+    ],
+    "description": "Eodash indicator with a Process block interpolating both a JSONForm selection ({{year}}) and a clicked map feature attribute ({{feature.values_.BDLNAME}}) directly into the CSV URL.",
+    "targetContext": "Save under indicators/<name>.json in an eodash catalog repository",
+    "code": {
+      "Name": "geothermal_energy_potential",
+      "Title": "Geothermal Energy Potential",
+      "Description": "Thermal conductivity is the ability of a ground to conduct heat from one location to another without the movement of the soil conducting the heat.",
+      "CollectionGroup": "Energy Transition",
+      "Image": "https://example.com/api/public/share/public-4wazei3y-02/WR-07-Geothermal-Energy-Potential-Assessment/geothermal_potential_energy_preview.jpg",
+      "Provider": [
+        {
+          "Name": "GeoSphere",
+          "Url": "https://www.geosphere.at/en"
+        }
+      ],
+      "Process": {
+        "Name": "geothermal_statistics",
+        "JsonForm": "https://example.com/api/public/share/public-4wazei3y-02/WR-07-Geothermal-Energy-Potential-Assessment/process/form.json",
+        "VegaDefinition": "https://example.com/api/public/share/public-4wazei3y-02/WR-07-Geothermal-Energy-Potential-Assessment/process/vega2025.json",
+        "EndPoints": [
+          {
+            "Identifier": "geothermal_stats",
+            "Url": "https://example.com/api/public/share/public-4wazei3y-02/WR-07-Geothermal-Energy-Potential-Assessment/csv/%7B%7Byear%7D%7D/%7B%7Bfeature.values_.BDLNAME%7D%7D.csv",
+            "Type": "text/csv"
+          }
+        ]
+      },
+      "Collections": [
+        "austria_geothermal_stats",
+        "wr07-geothermal-energy-potential",
+        "wr07-diffusivity"
+      ]
+    }
+  },
+  {
+    "id": "indicator-cql2-filtering-disable",
+    "title": "Indicator with CQL2 Vector Filtering in Processing and Default Collection Disabling",
+    "category": "indicator",
+    "tags": [
+      "indicator",
+      "process",
+      "features",
+      "synchronous",
+      "tipg",
+      "cql2",
+      "vector",
+      "filtering",
+      "disable",
+      "postgis",
+      "eoapi"
+    ],
+    "description": "Indicator referencing vector collections with Processing via OGC API Features (eoapi) with complex CQL2-text filtering in the URL and 'Disable' property to hide some layers by default.",
+    "targetContext": "Save under indicators/<name>.json",
+    "code": {
+      "Name": "parcel-conversion-analysis",
+      "Title": "Agricultural Parcel Conversion",
+      "Description": "Agricultural parcel conversion analysis indicator with CQL2 filtering.",
+      "Collections": ["parcels_2024", "parcels_2025", "conversion_map"],
+      "Disable": ["parcels_2024"],
+      "Process": {
+        "Name": "statistics",
+        "JsonForm": "https://raw.githubusercontent.com/baltic-gtif/assets/refs/heads/main/jsonforms/conversion.json",
+        "VegaDefinition": "https://raw.githubusercontent.com/baltic-gtif/assets/refs/heads/main/chartdefs/vega_chart_conversion.json",
+        "EndPoints": [
+          {
+            "Identifier": "lt_2024_soc_pg_loss",
+            "Url": "https://eoapi.example.com/vector/collections/public.lt_2024_soc_pg_loss/items?filter-lang=cql2-text&filter=S_INTERSECTS(geometry,POLYGON(({{bbox.0}}%20{{bbox.1}},{{bbox.2}}%20{{bbox.1}},{{bbox.2}}%20{{bbox.3}},{{bbox.0}}%20{{bbox.3}},{{bbox.0}}%20{{bbox.1}})))",
+            "Type": "application/json",
+            "Method": "GET"
+          },
+          {
+            "Identifier": "lt_2025_soc_pg_loss",
+            "Url": "https://eoapi.example.com/vector/collections/public.lt_2025_soc_pg_loss/items?filter-lang=cql2-text&filter=S_INTERSECTS(geometry,POLYGON(({{bbox.0}}%20{{bbox.1}},{{bbox.2}}%20{{bbox.1}},{{bbox.2}}%20{{bbox.3}},{{bbox.0}}%20{{bbox.3}},{{bbox.0}}%20{{bbox.1}})))",
+            "Type": "application/json",
+            "Method": "GET"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "indicator-inline-feature-properties-process",
+    "title": "Indicator with Client-Side Inline JSON Data URI Process from Clicked Vector Feature Properties",
+    "category": "indicator",
+    "tags": [
+      "indicator",
+      "process",
+      "feature-stats",
+      "vector",
+      "feature-properties",
+      "data-uri",
+      "inline-json",
+      "zero-backend",
+      "client-side",
+      "vector-feature",
+      "template-substitution"
+    ],
+    "description": "Indicator with a zero-backend Process definition where clicked map feature attributes ({{feature.values_.*}}) are interpolated directly into a client-side 'data:application/json' endpoint URL. Allows EodashChart to visualize vector properties in Vega without requiring any external processing API or backend service.",
+    "targetContext": "Save under indicators/<name>.json in an eodash catalog repository",
+    "code": {
+      "Name": "brownfield_recovery_potential",
+      "Title": "Brownfield Recovery Potential",
+      "Description": "Nationwide inventory of potential industrial and commercial brownfields across Austria",
+      "Image": "https://example.com/assets/brownfieldcover.jpg",
+      "CollectionGroup": "Sustainable Cities",
+      "Themes": ["Sustainable Cities"],
+      "Collections": ["brownfield_recovery_sites"],
+      "Process": {
+        "Name": "stats",
+        "JsonForm": "https://example.com/form_merged.json",
+        "EndPoints": [
+          {
+            "Identifier": "stats",
+            "Url": "data:application/json,[{\"total_price\":\"{{feature.values_.total_price}}\",\"total_solar_pot\":{{feature.values_.total_solar_pot}},\"Brownfield_Total\":{{feature.values_.Brownfield_Total}},\"Prediction_Subclass_DOP\":\"{{feature.values_.Prediction_Subclass_DOP}}\",\"build_area\":{{feature.values_.build_area}},\"sealed_area\":{{feature.values_.sealed_area}},\"seal_perc\":{{feature.values_.seal_perc}},\"area\":{{feature.values_.area}},\"solar_pot_djf\":{{feature.values_.solar_pot_djf}},\"solar_pot_jja\":{{feature.values_.solar_pot_jja}},\"solar_pot_mam\":{{feature.values_.solar_pot_mam}},\"solar_pot_son\":{{feature.values_.solar_pot_son}},\"Name\":\"{{feature.values_.Name}}\",\"\u20ac/m\u00b2\":\"{{feature.values_.\u20ac/m\u00b2}}\"}]",
+            "Type": "application/json"
+          }
+        ],
+        "VegaDefinition": "https://example.com/vega_chart_stats.json"
+      }
+    }
+  },
+  {
+    "id": "indicator-overlay-layers-cors-proxy",
+    "title": "Indicator with OverlayLayers (Vector & XYZ) and CORS-Proxied Multi-Endpoint Processing",
+    "category": "indicator",
+    "tags": [
+      "indicator",
+      "overlay-layers",
+      "vector",
+      "overlay",
+      "cors-proxy",
+      "geojson-overlay",
+      "xyz-overlay",
+      "cql2-point",
+      "multi-endpoint",
+      "disable-collections",
+      "cors"
+    ],
+    "description": "Complete eodash indicator demonstrating OverlayLayers (custom-styled GeoJSON vector overlays and XYZ tile labels), selective collection enabling via 'Disable' list, and multi-endpoint Process execution combining an OGC API Features vector point intersection with an external third-party API proxied through 'cors.eox.at/get?url=...' with point coordinate templating.",
+    "targetContext": "Save under indicators/<name>.json in an eodash catalog repository",
+    "code": {
+      "Name": "tourism_uc2_indicator",
+      "Title": "Snow Depth Anomaly & Hazard Assessment",
+      "Image": "https://example.com/assets/snow_anomaly.jpg",
+      "CollectionGroup": "Climate Change & Tourism",
+      "Description": "Comprehensive climate indicators and hazard evaluation for Austrian tourism regions.",
+      "Collections": ["tourism_uc2_snow_anomaly", "tourism_uc2_flood"],
+      "Disable": ["tourism_uc2_flood"],
+      "Themes": ["Climate Change & Tourism"],
+      "Provider": [
+        {
+          "Name": "GeoVille",
+          "Url": "https://www.geoville.com/"
+        }
+      ],
+      "Process": {
+        "Name": "timeseries",
+        "JsonForm": "https://example.com/snow_depth_anomaly_jsonform.json",
+        "VegaDefinition": "https://example.com/snow_depth_anomaly_vega.json",
+        "EndPoints": [
+          {
+            "Identifier": "snow_variation",
+            "Url": "https://eoapi.example.com/vector/collections/public.snow_anomaly_geoville/items?limit=1&bbox-only=true&filter=S_INTERSECTS(geometry,%20POINT({{point.0}}%20{{point.1}}))",
+            "Type": "application/json",
+            "Method": "GET"
+          },
+          {
+            "Identifier": "cors_proxy",
+            "Url": "https://cors.eox.at/get?url=https%3A%2F%2Fexample.com%2Fcors-not-enabled%2F%3Fepsg%3D4326%26x%3D%{{point.0}}%26y%3D{{point.1}}",
+            "Type": "application/json",
+            "Method": "GET"
+          }
+        ]
+      },
+      "OverlayLayers": [
+        {
+          "id": "tourism_regions",
+          "name": "Tourism Regions",
+          "url": "https://example.com/tourismregions_FINAL.geojson",
+          "protocol": "GeoJSON source",
+          "Style": "https://example.com/tourism_regions_overlay_style.json",
+          "DataProjection": "EPSG:4326",
+          "visible": true
+        },
+        {
+          "id": "overlay_bright",
+          "name": "Overlay labels",
+          "url": "https://s2maps-tiles.eu/wmts/1.0.0/overlay_base_bright_3857/default/g/{z}/{y}/{x}.png",
+          "Attribution": "{ Overlay: Data \u00a9 OpenStreetMap contributors, Rendering \u00a9 EOX }",
+          "visible": true,
+          "protocol": "xyz"
+        }
+      ]
+    }
+  }
+]

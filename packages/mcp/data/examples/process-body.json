@@ -1,0 +1,63 @@
+[
+  {
+    "id": "process-body-polarwarp-bbox-date",
+    "title": "OGC API Process POST Body with Bounding Box, Date Placeholders/Templates",
+    "category": "process-body",
+    "tags": [
+      "process-body",
+      "ogc-api-process",
+      "post-body",
+      "process",
+      "body",
+      "templated",
+      "inputs",
+      "bbox",
+      "date"
+    ],
+    "description": "OGC API Process execution POST request body template with parameter replacement tokens for bbox ({{bbox.0}}..{{bbox.3}}), date, and form values.",
+    "targetContext": "Host as JSON and reference in STAC Collection or Indicator Process.Body link",
+    "code": {
+      "inputs": {
+        "date": "{{date}}",
+        "lon_min": "{{bbox.0}}",
+        "lat_min": "{{bbox.1}}",
+        "lon_max": "{{bbox.2}}",
+        "lat_max": "{{bbox.3}}",
+        "num_gcps": "{{gcp}}"
+      }
+    }
+  },
+  {
+    "id": "process-body-structureicing-daterange-model",
+    "title": "OGC API Process POST Body with fixed and variable/templated Configuration",
+    "category": "process-body",
+    "tags": [
+      "process-body",
+      "ogc-api-process",
+      "post-body",
+      "inputs",
+      "date-range",
+      "bbox",
+      "templated",
+      "post",
+      "body"
+    ],
+    "description": "OGC API Process execution POST payload template with date range tokens ({{date_start}}, {{date_end}}), bbox coordinates, and algorithm calculation parameters that are fixed for the process / not configurable by UI.",
+    "targetContext": "Host as JSON and reference in STAC Collection or Indicator Process.Body link",
+    "code": {
+      "inputs": {
+        "start_year": "{{date_start}}",
+        "end_year": "{{date_end}}",
+        "data_dir": "/data/",
+        "formula": "A",
+        "x_resolution": "0.4",
+        "y_resolution": "0.4",
+        "lon_min": "{{bbox.0}}",
+        "lat_min": "{{bbox.1}}",
+        "lon_max": "{{bbox.2}}",
+        "lat_max": "{{bbox.3}}",
+        "clean": "True"
+      }
+    }
+  }
+]

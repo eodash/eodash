@@ -1,0 +1,43 @@
+{
+  "name": "@eodash/mcp-server",
+  "mcpName": "io.github.eodash.eodash",
+  "version": "1.0.0",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:eodash/eodash.git"
+  },
+  "description": "Model Context Protocol server for @eodash/eodash custom widgets, templates, configuration and architecture.",
+  "main": "dist/index.js",
+  "bin": {
+    "eodash-mcp-server": "./dist/index.js"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "dist",
+    "data",
+    "templates"
+  ],
+  "scripts": {
+    "generate": "node generate-metadata.js",
+    "build": "npm run generate && vite build",
+    "prepack": "npm run build",
+    "check": "tsc --noEmit",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "@vue/compiler-sfc": "^3.5.41",
+    "ajv": "^8.20.0",
+    "ajv-formats": "^3.0.1",
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
+    "fuse.js": "^7.5.0",
+    "pino": "^10.3.1",
+    "pino-http": "^11.0.0",
+    "typescript": "^6.0.3",
+    "zod": "^4.4.3"
+  }
+}

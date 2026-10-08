@@ -1,9 +1,12 @@
 import { describe, expect, test } from "vitest";
 import {
+  applyVisibilityRoles,
+  DEFAULT_BASE_LAYERS,
   findLayer,
   findLayersByLayerPrefix,
-  getColFromLayer,
+  findReaderByLayerId,
   isGeoZarrLayer,
+  normalizeBaseLayers,
   removeLayers,
   replaceLayer,
 } from "../src/helpers/layers.js";
@@ -140,17 +143,19 @@ describe("layer helpers", () => {
     });
   });
 
-  describe("getColFromLayer", () => {
+  describe("findReaderByLayerId", () => {
     test("matches the reader whose collection the layer was built from", () => {
       const readers = [{ stac: { id: "a" } }, { stac: { id: "b" } }];
 
-      expect(getColFromLayer(readers, B_NESTED)).toBe(readers[1]);
+      expect(findReaderByLayerId(readers, B_NESTED)).toBe(readers[1]);
     });
 
     test("returns nothing when no reader owns it", () => {
       const readers = [{ stac: { id: "a" } }];
 
-      expect(getColFromLayer(readers, "c;:;i;:;l;:;EPSG:3857")).toBeUndefined();
+      expect(
+        findReaderByLayerId(readers, "c;:;i;:;l;:;EPSG:3857"),
+      ).toBeUndefined();
     });
   });
 
@@ -167,6 +172,104 @@ describe("layer helpers", () => {
       ).toBe(false);
       expect(isGeoZarrLayer(layer("a"))).toBe(false);
       expect(isGeoZarrLayer(undefined)).toBe(false);
+    });
+  });
+
+  describe("applyVisibilityRoles", () => {
+    test("applies disable role to ALL matching layers of a collection", () => {
+      const collection = {
+        links: [{ id: "collA", roles: ["disable"] }],
+      };
+      const layers = [
+        {
+          properties: {
+            id: "collA;:;item1;:;layer1",
+            visible: true,
+            layerControlExpand: true,
+          },
+        },
+        {
+          properties: {
+            id: "collA;:;item1;:;layer2",
+            visible: true,
+            layerControlExpand: true,
+          },
+        },
+        {
+          properties: {
+            id: "collB;:;item1;:;layer1",
+            visible: true,
+            layerControlExpand: true,
+          },
+        },
+      ];
+
+      applyVisibilityRoles(collection, layers);
+
+      expect(layers[0].properties.visible).toBe(false);
+      expect(layers[0].properties.layerControlExpand).toBe(false);
+      expect(layers[1].properties.visible).toBe(false);
+      expect(layers[1].properties.layerControlExpand).toBe(false);
+      expect(layers[2].properties.visible).toBe(true);
+      expect(layers[2].properties.layerControlExpand).toBe(true);
+    });
+
+    test("applies hidden role to ALL matching layers of a collection", () => {
+      const collection = {
+        links: [{ id: "collA", roles: ["hidden"] }],
+      };
+      const layers = [
+        { properties: { id: "collA;:;item1;:;layer1" } },
+        { properties: { id: "collA;:;item1;:;layer2" } },
+      ];
+
+      applyVisibilityRoles(collection, layers);
+
+      expect(layers[0].properties.layerControlHide).toBe(true);
+      expect(layers[1].properties.layerControlHide).toBe(true);
+    });
+  });
+
+  describe("normalizeBaseLayers", () => {
+    test("returns fallback base layers when input is empty", () => {
+      const fallback = [{ type: "Tile", properties: { id: "custom" } }];
+      expect(normalizeBaseLayers([], /** @type {any} */ (fallback))).toEqual(
+        fallback,
+      );
+    });
+
+    test("falls back to DEFAULT_BASE_LAYERS when input is empty and no fallback given", () => {
+      expect(normalizeBaseLayers([])).toEqual(DEFAULT_BASE_LAYERS);
+    });
+
+    test("enforces exclusivity and sets first layer visible when none visible", () => {
+      const base = [{ properties: { id: "b1" } }, { properties: { id: "b2" } }];
+      const result = normalizeBaseLayers(/** @type {any} */ (base));
+      expect(result[0].properties.visible).toBe(true);
+      expect(result[1].properties.visible).toBe(false);
+      expect(result.every((l) => l.properties.layerControlExclusive)).toBe(
+        true,
+      );
+    });
+
+    test("keeps only the last visible layer active when multiple are visible", () => {
+      const base = [
+        { properties: { id: "b1", visible: true } },
+        { properties: { id: "b2", visible: true } },
+      ];
+      const result = normalizeBaseLayers(/** @type {any} */ (base));
+      expect(result[0].properties.visible).toBe(false);
+      expect(result[1].properties.visible).toBe(true);
+    });
+
+    test("does not mutate the base layer array passed to normalizeBaseLayers", () => {
+      const original = [
+        { properties: { id: "b1", visible: true } },
+        { properties: { id: "b2", visible: true } },
+      ];
+      const copy = JSON.parse(JSON.stringify(original));
+      normalizeBaseLayers(/** @type {any} */ (original));
+      expect(original).toEqual(copy);
     });
   });
 });

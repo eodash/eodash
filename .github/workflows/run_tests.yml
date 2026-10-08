@@ -22,7 +22,7 @@ jobs:
         # templates/) instead of importing the built package, so that a change
         # to the app runs its suite too. Leave empty when none do.
         env:
-          RUN_ON_APP_CHANGE: ""
+          RUN_ON_APP_CHANGE: "mcp"
         run: node core/node/scripts/changedPackages.js ${{ github.event.pull_request.base.sha }}
 
   app:
@@ -56,17 +56,17 @@ jobs:
         run: npm ci --prefer-offline --no-audit
       # the cli project runs in node, so it needs no browser
       - name: Cache Playwright browser 🎭
-        if: matrix.project != 'cli'
+        if: matrix.project != 'cli' && matrix.project != 'mcp'
         id: playwright-cache
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
       - name: Install Playwright browser 🎭
-        if: matrix.project != 'cli' && steps.playwright-cache.outputs.cache-hit != 'true'
+        if: matrix.project != 'cli' && steps.playwright-cache.outputs.cache-hit != 'true' && matrix.project != 'mcp'
         run: npx playwright install chromium
       - name: Install Playwright system deps 🎭
-        if: matrix.project != 'cli'
+        if: matrix.project != 'cli' && matrix.project != 'mcp'
         run: npx playwright install-deps chromium
       - name: Run ${{ matrix.project }} tests 👀
         run: npm run test:${{ matrix.project }}

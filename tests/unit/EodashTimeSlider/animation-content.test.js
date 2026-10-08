@@ -4,6 +4,10 @@ import { createAnimationLayers } from "^/EodashTimeSlider/methods";
 import { mapEl } from "@/store/states";
 import { eodashCollections } from "@/store/stac";
 import { defaultBaseLayers } from "@/utils/states";
+import {
+  applyVisibilityRoles,
+  normalizeBaseLayers,
+} from "@eodash/stac/helpers";
 
 // Behavior seams in the transitive layer-helpers chain, not runner workarounds.
 vi.mock("@eox/layercontrol", () => ({
@@ -17,6 +21,11 @@ const stacMock = vi.hoisted(() => ({
   getIndicatorLayers: vi.fn(),
   getObservationPointsLayer: vi.fn(),
   createEodashCollection: vi.fn(),
+  createEodashIndicator: vi.fn(),
+  buildIndicatorDataLayers: vi.fn(),
+  normalizeBaseLayers: vi.fn((base, fallback = []) =>
+    base.length ? base : fallback,
+  ),
   getTooltipProperties: vi.fn(),
 }));
 vi.mock("@eodash/stac", () => stacMock);
@@ -74,6 +83,39 @@ describe("createAnimationLayers - rendered layers", () => {
       .mockReset()
       .mockResolvedValue({ layers: [], projections: [] });
     stacMock.getObservationPointsLayer.mockReset().mockReturnValue(null);
+    stacMock.buildIndicatorDataLayers
+      .mockReset()
+      .mockImplementation(async ({ readers, stac, timeOrItem, context }) => {
+        const isItem =
+          typeof timeOrItem === "object" &&
+          timeOrItem !== null &&
+          !(timeOrItem instanceof Date);
+
+        const results = await Promise.all(
+          readers.map((reader) =>
+            isItem
+              ? reader.buildLayers(timeOrItem, context)
+              : reader.getLayers(timeOrItem, context),
+          ),
+        );
+        const layers = results.flatMap((r) => r.layers);
+        for (const layer of layers) {
+          if (!layer.properties?.layerControlExclusive) {
+            layer.properties.layerControlExpand = true;
+            layer.properties.layerControlToolsExpand = true;
+          }
+        }
+        applyVisibilityRoles(stac, layers);
+        const observationPoints = stacMock.getObservationPointsLayer();
+        if (observationPoints) {
+          layers.push(observationPoints);
+        }
+        return { layers, projections: [], items: [] };
+      });
+
+    stacMock.normalizeBaseLayers
+      .mockReset()
+      .mockImplementation(normalizeBaseLayers);
   });
 
   test("wraps a collection's layers into the data group with expand flags", async () => {
