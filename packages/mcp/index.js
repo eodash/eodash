@@ -23,7 +23,7 @@ const pkgPath = fs.existsSync(path.join(__dirname, "package.json"))
 
 const pkg = fs.existsSync(pkgPath)
   ? JSON.parse(fs.readFileSync(pkgPath, "utf8"))
-  : { name: "@eodash/mcp-server", version: "1.0.0" };
+  : { name: "@eodash/mcp", version: "1.0.0" };
 
 export { getMetadata };
 
@@ -35,7 +35,7 @@ export function createMcpServer() {
 
   const server = new McpServer(
     {
-      name: pkg.name || "@eodash/mcp-server",
+      name: pkg.name || "@eodash/mcp",
       version: pkg.version || "1.0.0",
     },
     {
@@ -63,7 +63,7 @@ async function startServer() {
 eodash MCP Server
 
 Usage:
-  eodash-mcp-server [options]
+  eodash-mcp [options]
 
 Options:
   --stdio, -s       Run server with STDIO transport (for MCP desktop clients & local integration)

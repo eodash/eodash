@@ -139,7 +139,7 @@ describe("MCP Package Packaging and Integrity", () => {
     const existsSpy = vi.spyOn(fs, "existsSync").mockReturnValue(false);
     try {
       expect(() => getMetadata()).toThrow(
-        /Metadata not found in @eodash\/mcp-server\/data\//,
+        /Metadata not found in @eodash\/mcp\/data\//,
       );
     } finally {
       existsSpy.mockRestore();
