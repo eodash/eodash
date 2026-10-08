@@ -113,6 +113,11 @@ export default {
 
 The [Widgets](/widgets/) guide covers the three kinds of widgets and how to configure each. The [Templates](/templates) page explains how to start from a maintained template rather than an empty grid.
 
+::: tip Choosing the Right Template
+- **Static STAC Catalog** (e.g. `catalog.json`): Use `template: lite` (default). Static catalogs have fixed indicator trees and do not require item search widgets.
+- **Dynamic STAC API** (e.g. `api: true`): Use `template: explore` to provide item search and filter capabilities via `EodashItemCatalog` and `EodashItemFilter`.
+:::
+
 ## Deployment
 
 A configuration takes effect once it reaches a browser. eodash supports two deployment modes, and the same configuration object is used for both.

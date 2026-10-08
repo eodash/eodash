@@ -11,7 +11,7 @@ export function scaffoldDashboard({
   name = "my-eo-dashboard",
   projectType = "standalone-spa",
   stacEndpoint = DEFAULT_STAC_ENDPOINT,
-  template = "explore",
+  template = "lite",
   brandName = DEFAULT_BRAND_NAME,
   brandColor = "#002742",
 } = {}) {
@@ -59,8 +59,8 @@ CMD ["nginx", "-g", "daemon off;"]
         private: true,
         type: "module",
         scripts: {
-          dev: "eodash dev --entryPoint eodash.config.js",
-          build: "eodash build --entryPoint eodash.config.js",
+          dev: "eodash dev",
+          build: "eodash build",
           preview: "eodash preview",
         },
         dependencies: {
@@ -71,13 +71,22 @@ CMD ["nginx", "-g", "daemon off;"]
       2,
     );
 
-    files["eodash.config.js"] = `import { deepmergeCustom } from "deepmerge-ts";
+    files["eodash.config.js"] = `import { defineConfig } from "@eodash/eodash";
+
+export default defineConfig({
+  entryPoint: "src/main.js",
+  dev: {
+    port: 3000,
+  },
+});
+`;
+
+    files["src/main.js"] = `import { createEodash } from "@eodash/eodash";
 import { explore, lite, expert, compare } from "@eodash/eodash/templates";
 
 const selectedTemplate = ${template};
 
-/** @type {import("@eodash/eodash").Eodash} */
-export default {
+export default createEodash({
   id: "${name}",
   stacEndpoint: "${stacEndpoint}",
   brand: {
@@ -92,7 +101,7 @@ export default {
     footerText: "${brandName} - Powered by eodash",
   },
   template: selectedTemplate,
-};
+});
 `;
 
     files["index.html"] = `<!DOCTYPE html>
