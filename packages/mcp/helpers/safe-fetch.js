@@ -202,7 +202,6 @@ export async function safeFetch(urlStr, options = {}) {
         signal: controller.signal,
       });
 
-      clearTimeout(timeoutId);
 
       // Handle 3xx Redirects safely
       if ([301, 302, 303, 307, 308].includes(response.status)) {
@@ -234,7 +233,6 @@ export async function safeFetch(urlStr, options = {}) {
         !contentType ||
         contentType.includes("json") ||
         contentType.includes("geo+json") ||
-        contentType.includes("stac") ||
         contentType.includes("text/plain");
       if (!isJson) {
         throw new Error(
@@ -312,6 +310,8 @@ export async function safeFetch(urlStr, options = {}) {
     } catch (err) {
       clearTimeout(timeoutId);
       throw err;
+    } finally {
+      clearTimeout(timeoutId);
     }
   }
 
