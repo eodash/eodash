@@ -89,6 +89,6 @@ export function getMetadata() {
   }
 
   throw new Error(
-    "Metadata not found in @eodash/mcp-server/data/. Run 'npm run mcp:generate' or ensure data/*.json is packaged.",
+    "Metadata not found in @eodash/mcp/data/. Run 'npm run mcp:generate' or ensure data/*.json is packaged.",
   );
 }

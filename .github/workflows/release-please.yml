@@ -82,7 +82,7 @@ jobs:
 
       # Build and push the MCP Server container image.
       # Runs ONLY when release-please creates an official release for packages/mcp.
-      # Tags pushed: specific version (e.g. ghcr.io/eodash/mcp-server:1.0.0) and :latest.
+      # Tags pushed: specific version (e.g. ghcr.io/eodash/mcp:1.0.0) and :latest.
       # No dev/prerelease builds are pushed for the MCP server.
       - name: Build and push MCP Server image 🚀
         run: |
@@ -92,10 +92,10 @@ jobs:
             MCP_VERSION=$(jq -r .version packages/mcp/package.json)
             echo "Building and pushing MCP Server image for version: $MCP_VERSION"
             docker build -f packages/mcp/Dockerfile \
-              -t ghcr.io/eodash/mcp-server:${MCP_VERSION} \
-              -t ghcr.io/eodash/mcp-server:latest .
-            docker push ghcr.io/eodash/mcp-server:${MCP_VERSION}
-            docker push ghcr.io/eodash/mcp-server:latest
+              -t ghcr.io/eodash/mcp:${MCP_VERSION} \
+              -t ghcr.io/eodash/mcp:latest .
+            docker push ghcr.io/eodash/mcp:${MCP_VERSION}
+            docker push ghcr.io/eodash/mcp:latest
           else
             echo "packages/mcp was not released in this run; skipping MCP container build."
           fi

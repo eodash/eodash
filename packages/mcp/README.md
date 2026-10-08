@@ -1,4 +1,4 @@
-# @eodash/mcp-server
+# @eodash/mcp
 
 Model Context Protocol (MCP) server for `@eodash/eodash`.
 
@@ -31,7 +31,7 @@ npm run mcp:generate
 # Run over stdio:
 node packages/mcp/dist/index.js --stdio
 # or via npx / bin:
-npx @eodash/mcp-server --stdio
+npx @eodash/mcp --stdio
 ```
 
 #### HTTP / SSE Mode
@@ -41,7 +41,7 @@ npm run mcp:start
 # or custom port / host:
 node packages/mcp/dist/index.js --port 3001 --host 127.0.0.1
 # or globally / via bin:
-npx @eodash/mcp-server --port 3001
+npx @eodash/mcp --port 3001
 ```
 
 - Operates in stateless MCP mode (`sessionIdGenerator: undefined`, `enableJsonResponse: true`), returning direct JSON-RPC responses over HTTP POST without session state or open SSE streams.
@@ -59,7 +59,7 @@ Connect your MCP client (Claude Desktop, Cursor, Pi MCP adapter, MCP Inspector, 
   "mcpServers": {
     "eodash": {
       "command": "npx",
-      "args": ["-y", "@eodash/mcp-server", "--stdio"]
+      "args": ["-y", "@eodash/mcp", "--stdio"]
     }
   }
 }
