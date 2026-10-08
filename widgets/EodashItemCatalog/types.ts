@@ -1,3 +1,5 @@
+import { STACItem } from "@eodash/stac";
+
 export interface FilterConfigItem {
   property: string;
   type: "range" | "multiselect" | "select";
@@ -21,3 +23,4 @@ export interface SortOption {
   property: string;
   label: string;
 }
+export type ItemAccessor = string | ((item: STACItem) => string);
