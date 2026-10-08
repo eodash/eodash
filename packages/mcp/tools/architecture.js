@@ -14,13 +14,7 @@ export function registerArchitectureTools(server, architectureData) {
         "Get guide and code templates for creating custom eodash widgets.",
       inputSchema: z.object({
         type: z
-          .enum([
-            "web-component",
-            "functional",
-            "iframe",
-            "eox-elements",
-            "all",
-          ])
+          .enum(["web-component", "functional", "iframe", "all"])
           .optional()
           .default("all")
           .describe("Custom widget type"),
