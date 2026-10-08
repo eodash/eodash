@@ -40,6 +40,8 @@ The form is whatever the collection's `eodash:jsonform` schema describes - eodas
 - **Schema options.**
   - `options.execute: true` - auto-execute. The process runs on every form change instead of showing an **Execute** button.
   - `options.multiQuery` - when a field holds multiple selections, eodash issues one request per value and aggregates the responses into a single result.
+- **Vega options.**
+  - `eodash:disableClickDateToMap` - when set to `true` in the Vega spec, disables updating the global dashboard datetime on chart item click.
 
 ## Outputs
 
@@ -54,6 +56,8 @@ The process output is determined by the `service` links returned for the collect
 | `application/json; profile=collection` (with `endpoint: "STAC"`) | Loads another STAC collection as the output - currently used for points-of-interest collections. |
 
 Chart output is shared through the [eodash store](/eodash-store): `EodashProcess` writes `chartSpec` and `chartData`, and `EodashChart` reads them. Map layers are added to the active map.
+
+By default, the display title of the generated results layers on the map is `"Results "` followed by the collection or layer ID. If a `title` property is present on the STAC link, that title is preferred and used as the layer's display title in the layer control instead.
 
 ## Custom endpoints
 
