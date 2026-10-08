@@ -28,7 +28,32 @@ export function getMetadata() {
     try {
       const widgetsData = JSON.parse(fs.readFileSync(widgetsFile, "utf8"));
       const architectureData = JSON.parse(fs.readFileSync(archFile, "utf8"));
-      cachedMetadata = { widgetsData, architectureData };
+
+      // Count examples
+      let examplesCount = 0;
+      const examplesDir = path.join(__dirname, "data/examples");
+      if (fs.existsSync(examplesDir)) {
+        const exampleFiles = fs.readdirSync(examplesDir);
+        for (const file of exampleFiles) {
+          if (file.endsWith(".json")) {
+            try {
+              const content = JSON.parse(
+                fs.readFileSync(path.join(examplesDir, file), "utf8"),
+              );
+              if (Array.isArray(content)) {
+                examplesCount += content.length;
+              }
+            } catch (err) {
+              console.warn(
+                `Could not parse example file ${file}:`,
+                err.message,
+              );
+            }
+          }
+        }
+      }
+
+      cachedMetadata = { widgetsData, architectureData, examplesCount };
       return cachedMetadata;
     } catch (err) {
       console.warn("Could not read cached metadata:", err.message);

@@ -11,44 +11,34 @@ export function registerDiscoveryTools(server) {
     "find_examples",
     {
       description:
-        "Search and discover working eodash examples, layer styles, and catalog configs.",
+        "SHOULD USE: Query verified working examples before authoring or modifying Vega-Lite charts, vector/raster layer styles (OpenLayers flatstyles), JSONForm/rasterform schemas, STAC collections/indicators, or processing request bodies. Provides snippets with exact eodash conventions, preventing invalid properties, broken legends, and style syntax errors.",
       inputSchema: z.object({
-        query: z.string().optional().describe("Search keywords"),
         category: z
           .enum([
             "all",
-            "vector-flatstyle",
-            "raster-flatstyle",
-            "raster-webgl-flatstyle",
+            "chart-vega",
+            "vector-style",
+            "raster-style",
             "rasterform",
             "jsonform",
-            "catalog-collection",
-            "catalog-indicator",
+            "process-body",
+            "collection",
+            "indicator",
             "stac-item",
             "dashboard-scaffold",
             "dashboard-config",
           ])
           .optional()
           .default("all")
-          .describe("Config category filter"),
-        dataType: z
-          .enum([
-            "all",
-            "vector",
-            "cog",
-            "xyz",
-            "wmts",
-            "point",
-            "polygon",
-            "timeseries",
-          ])
-          .optional()
-          .default("all")
-          .describe("Geospatial data type filter"),
-        feature: z
+          .describe(
+            "Config category filter: 'chart-vega' (Vega-Lite), 'vector-style' (OpenLayers flatstyles & dynamic legends), 'raster-style' (colormaps, band math), 'rasterform' / 'jsonform' (UI forms), 'process-body' (geoprocessing payloads), 'collection' / 'indicator' / 'stac-item' (STAC catalog configs), 'dashboard-scaffold' / 'dashboard-config'.",
+          ),
+        query: z
           .string()
           .optional()
-          .describe("Feature tag filter (e.g. legend, tooltip, drawtools)"),
+          .describe(
+            "Search keywords, visual types, or mechanics. E.g., 'grouped-bar dropdown', 'dynamic legend boundTo', 'raster colormap', 'sentinel-2 band math'. Leave empty to list category highlights.",
+          ),
         limit: z.number().optional().default(5).describe("Max results (1-20)"),
       }),
     },
@@ -76,13 +66,7 @@ export function registerDiscoveryTools(server) {
           .union([z.string(), z.record(z.any())])
           .describe("Collection or indicator JSON string or object"),
         configType: z
-          .enum([
-            "auto",
-            "collection",
-            "indicator",
-            "catalog-collection",
-            "catalog-indicator",
-          ])
+          .enum(["auto", "collection", "indicator"])
           .optional()
           .default("auto")
           .describe("Target schema type"),

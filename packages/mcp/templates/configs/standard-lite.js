@@ -1,6 +1,5 @@
 // @id dashboard-config-standard-lite
 // @title Standard Lite Dashboard Configuration
-// @features config, lite-template, branding, stac
 // @tags config, lite, branding, stac, eodash.config.js
 // @description Standard eodash dashboard configuration module using the 'lite' template, full branding palette, and STAC endpoint.
 import { createEodash } from "@eodash/eodash";

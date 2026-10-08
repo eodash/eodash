@@ -23,14 +23,10 @@ export function registerArchitectureTools(server, architectureData) {
           .optional()
           .default("all")
           .describe("Custom widget type"),
-        widgetType: z
-          .enum(["web-component", "functional", "iframe", "all"])
-          .optional()
-          .describe("Alias for type"),
       }),
     },
-    async ({ type, widgetType }) => {
-      const selectedType = type || widgetType || "all";
+    async ({ type }) => {
+      const selectedType = type || "all";
       const guides = CUSTOM_WIDGET_GUIDES;
       const selectedContent =
         selectedType === "all"

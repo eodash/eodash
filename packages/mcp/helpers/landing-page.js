@@ -43,10 +43,6 @@ export function generateLandingPage(
       description: "Architecture docs for grid, store, and templates.",
     },
     {
-      name: "generate_layer_style",
-      description: "Generate OpenLayers flat styles and raster forms.",
-    },
-    {
       name: "find_examples",
       description:
         "Discover working dashboard snippets, scaffolds, and configs.",

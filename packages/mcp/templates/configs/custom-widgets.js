@@ -1,6 +1,5 @@
 // @id dashboard-config-custom-widgets
 // @title Dashboard Configuration with Custom Widgets
-// @features config, custom-widgets, web-components, iframe
 // @tags config, custom-widgets, eox-elements, web-component, iframe
 // @description Dashboard configuration combining the standard template layout with custom web-component and iframe widgets.
 import { createEodash } from "@eodash/eodash";

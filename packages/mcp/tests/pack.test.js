@@ -31,7 +31,7 @@ describe("MCP Package Packaging and Integrity", () => {
     expect(files).toContain("helpers.js");
     expect(files).toContain("package.json");
 
-    // Verify data and templates are included
+    // Verify data, templates, and tools are included
     const hasData = files.some((f) => f.startsWith("data/"));
     const hasTemplates = files.some((f) => f.startsWith("templates/"));
     const hasTools = files.some((f) => f.startsWith("tools/"));

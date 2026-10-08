@@ -1,0 +1,398 @@
+[
+  {
+    "id": "collection-cmems-wmts-timeseries",
+    "title": "CMEMS WMTS Time-Series Collection with OGC Process & Vega Chart",
+    "category": "collection",
+    "tags": [
+      "cmems",
+      "wmts",
+      "process",
+      "chart",
+      "vega",
+      "oceanography",
+      "time-series",
+      "ogc-process",
+      "vega-chart",
+      "raster"
+    ],
+    "description": "Complete eodash collection configuration for Copernicus Marine WMTS service with temporal query extent, dimensions, OGC process execution, and Vega timeseries chart referencing an example processing URL.",
+    "targetContext": "Place in catalog 'collections/<collection-name>.json' for 'eodash_catalog' build.",
+    "code": {
+      "Name": "DIATO_diatoms",
+      "Title": "Mass concentration of diatoms in sea water",
+      "Description": "Copernicus Marine BGC monthly plankton concentration.",
+      "Themes": ["Aquaculture"],
+      "CollectionGroup": "Water Biology",
+      "Agency": ["Copernicus Marine Service"],
+      "Resources": [
+        {
+          "EndPoint": "https://wmts.marine.copernicus.eu/teroWmts/OCEANCOLOUR_GLO_BGC_L4_NRT_009_102/cmems_obs-oc_glo_bgc-plankton_nrt_l4-multi-4km_P1M_202411",
+          "Type": "WMTSCapabilities",
+          "Name": "marinedatastore",
+          "LayerId": "OCEANCOLOUR_GLO_BGC_L4_NRT_009_102/cmems_obs-oc_glo_bgc-plankton_nrt_l4-multi-4km_P1M_202411/DIATO",
+          "Query": {
+            "Start": "2021-01-01T00:00:00Z",
+            "End": "2030-01-01T00:00:00Z"
+          },
+          "Dimensions": {
+            "style": "cmap:algae"
+          },
+          "Unit": "mg/m^3"
+        }
+      ],
+      "Process": {
+        "Name": "process_cmems",
+        "JsonForm": "https://raw.githubusercontent.com/gtif-cerulean/assets/main/jsonforms/cmems_jsonform.json",
+        "VegaDefinition": "https://raw.githubusercontent.com/gtif-cerulean/assets/main/chartdefs/DIATO.json",
+        "EndPoints": [
+          {
+            "Identifier": "process_cmems",
+            "Url": "https://example.com/api?dataset_id=cmems_obs-oc_glo_bgc-plankton_nrt_l4-multi-4km_P1M&variables=DIATO&start_datetime={{date_start}}&end_datetime={{date_end}}&minimum_longitude={{bbox.0}}&minimum_latitude={{bbox.1}}&maximum_longitude={{bbox.2}}&maximum_latitude={{bbox.3}}&minimum_depth={{depth}}&maximum_depth={{depth}}",
+            "Type": "application/json"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "collection-post-process-cog-output",
+    "title": "Async EOxHub Processing Execution Collection Returning GeoTIFF Layer Styled with Flatstyle",
+    "category": "collection",
+    "tags": [
+      "process",
+      "pygeoapi",
+      "ogc-api-processes",
+      "geotiff",
+      "eoxhub-workspaces",
+      "image-tiff",
+      "style-output",
+      "cog",
+      "raster"
+    ],
+    "description": "Collection triggering an asynchronous or on-demand OGC Processes on EOxHub Workspaces returning an image/tiff COG layer rendered dynamically with an OpenLayers Style.",
+    "targetContext": "Place in catalog 'collections/<collection-name>.json' for 'eodash_catalog' build.",
+    "code": {
+      "Name": "harshness_calculation",
+      "Title": "Arctic Harshness Index Calculation",
+      "CollectionGroup": "Algorithms",
+      "Description": "On-demand execution of harshness navigation risk algorithm.",
+      "Themes": ["Shipping", "Navigation"],
+      "Agency": ["C-CORE"],
+      "Resources": [
+        {
+          "Name": "Collection-only",
+          "OverwriteBBox": [-179, 55, 179, 89]
+        }
+      ],
+      "Process": {
+        "Name": "harshness",
+        "JsonForm": "https://raw.githubusercontent.com/gtif-cerulean/assets/main/jsonforms/harshness.json",
+        "EndPoints": [
+          {
+            "Identifier": "harshnesscollection",
+            "Url": "https://example.com/processes/execute-create-harshness/execution",
+            "Method": "POST",
+            "EndPoint": "eoxhub_workspaces",
+            "Body": "https://raw.githubusercontent.com/gtif-cerulean/assets/main/body/harshness.json",
+            "Type": "image/tiff",
+            "Flatstyle": "https://raw.githubusercontent.com/gtif-cerulean/assets/main/styles/harshness.json"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "collection-vector-stations-timeseries",
+    "title": "Vector In Situ GeoJSON Stations Collection with TimeSeries Endpoint and templated  feature ID in URL",
+    "category": "collection",
+    "tags": [
+      "vector",
+      "template",
+      "geojson",
+      "time-entries",
+      "process",
+      "vega-chart",
+      "style-url",
+      "point",
+      "feature",
+      "static-file"
+    ],
+    "description": "eodash collection configuration for in situ point station GeoJSON files with static bbox, hosted style URL, and feature-level timeseries process.",
+    "targetContext": "Place in catalog 'collections/<collection-name>.json' for 'eodash_catalog' build.",
+    "code": {
+      "Name": "air-quality-stations",
+      "Title": "Air Pollution Stations",
+      "CollectionGroup": "Air Quality",
+      "Themes": ["Mobility"],
+      "Tags": ["Air Quality", "PM2.5"],
+      "Description": "Consolidated PM2.5 in situ station GeoJSON layer.",
+      "Agency": ["ESA"],
+      "Resources": [
+        {
+          "Name": "GeoJSON source",
+          "Style": "https://raw.githubusercontent.com/gtif-ukif/gtif-ukif-assets/main/collections/GMIF-air-quality/style.json",
+          "Bbox": [-9.7, 41.9, 9.5, 57.2],
+          "TimeEntries": [
+            {
+              "Time": "20250101",
+              "Assets": [
+                {
+                  "Identifier": "air_pollution_stations",
+                  "File": "https://example.com/stations.geojson"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "Process": {
+        "Name": "Station Time Series",
+        "JsonForm": "https://raw.githubusercontent.com/gtif-ukif/gtif-ukif-assets/main/defaults/gmif_air_quality_station_form.json",
+        "VegaDefinition": "https://raw.githubusercontent.com/gtif-ukif/gtif-ukif-assets/main/defaults/gmif_air_quality_station_vega.json",
+        "EndPoints": [
+          {
+            "Identifier": "timeseries",
+            "Url": "https://example.com/timeseries/{{feature}}.json",
+            "Method": "GET",
+            "Type": "application/json"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "collection-arctic-polar-stereographic-baselayers",
+    "title": "STAC Collection with Arctic Stereographic Projection, Custom BaseLayers & Branching Rasterform",
+    "category": "collection",
+    "tags": [
+      "collection",
+      "arctic",
+      "polar",
+      "stereograpic",
+      "north",
+      "EPSG:3413",
+      "UPSArcticWGS84Quad",
+      "baselayers",
+      "rasterform",
+      "branching",
+      "continuous-legend"
+    ],
+    "description": "Complete STAC collection configured for Arctic polar projections (EPSG:3413, UPSArcticWGS84Quad), custom BaseLayers list (XYZ & WMS), and branching dynamic Rasterform with continuous color legend.",
+    "targetContext": "Save under collections/<name>.json in an eodash catalog repository",
+    "code": {
+      "Name": "RCM_eoapi_north_pole",
+      "Title": "RCM scenes - North Pole route",
+      "CollectionGroup": "Satellite Data",
+      "Themes": ["Shipping"],
+      "Description": "RCM Data collection - North Pole route",
+      "Resources": [
+        {
+          "EndPoint": "https://example.com/stac/",
+          "Name": "VEDA",
+          "Type": "tiles",
+          "CollectionId": "collection_id",
+          "ColormapName": "gray",
+          "TileMatrixSet": "UPSArcticWGS84Quad",
+          "Rescale": [0, 0.05],
+          "Assets": ["HH"],
+          "DataProjection": {
+            "name": "EPSG:5041",
+            "def": "+proj=stere +lat_0=90 +lon_0=0 +k=0.994 +x_0=2000000 +y_0=2000000 +datum=WGS84 +units=m +no_defs +type=crs"
+          },
+          "Rasterform": {
+            "jsonform": {
+              "type": "object",
+              "title": "Asset",
+              "options": {
+                "no_additional_properties": true,
+                "keep_oneof_values": false
+              },
+              "anyOf": [
+                {
+                  "title": "HH",
+                  "type": "object",
+                  "properties": {
+                    "assets": {
+                      "type": "string",
+                      "enum": ["HH"],
+                      "default": "HH",
+                      "options": {
+                        "hidden": true
+                      }
+                    },
+                    "vminmax": {
+                      "type": "object",
+                      "title": "Value Range",
+                      "properties": {
+                        "vmin": {
+                          "type": "number",
+                          "default": 0,
+                          "format": "range",
+                          "minimum": 0,
+                          "step": 0.005
+                        },
+                        "vmax": {
+                          "type": "number",
+                          "default": 0.05,
+                          "format": "range",
+                          "maximum": 0.075
+                        }
+                      },
+                      "format": "minmax"
+                    },
+                    "rescale": {
+                      "type": "string",
+                      "template": "{{vminmax.vmin}},{{vminmax.vmax}}",
+                      "watch": {
+                        "vminmax": "vminmax"
+                      },
+                      "options": {
+                        "hidden": true
+                      }
+                    },
+                    "colormap_name": {
+                      "type": "string",
+                      "title": "Colormap",
+                      "default": "gray",
+                      "enum": ["accent", "bone", "gray", "magma", "viridis"]
+                    }
+                  },
+                  "required": ["vminmax", "assets"]
+                },
+                {
+                  "title": "HV",
+                  "type": "object",
+                  "properties": {
+                    "assets": {
+                      "type": "string",
+                      "enum": ["HV"],
+                      "default": "HV",
+                      "options": {
+                        "hidden": true
+                      }
+                    },
+                    "vminmax": {
+                      "type": "object",
+                      "title": "Value Range",
+                      "properties": {
+                        "vmin": {
+                          "type": "number",
+                          "default": 0,
+                          "format": "range",
+                          "minimum": 0,
+                          "step": 0.0005
+                        },
+                        "vmax": {
+                          "type": "number",
+                          "default": 0.005,
+                          "format": "range",
+                          "maximum": 0.0075
+                        }
+                      },
+                      "format": "minmax"
+                    },
+                    "rescale": {
+                      "type": "string",
+                      "template": "{{vminmax.vmin}},{{vminmax.vmax}}",
+                      "watch": {
+                        "vminmax": "vminmax"
+                      },
+                      "options": {
+                        "hidden": true
+                      }
+                    },
+                    "colormap_name": {
+                      "type": "string",
+                      "title": "Colormap",
+                      "default": "gray",
+                      "enum": ["accent", "bone", "gray", "magma", "viridis"]
+                    }
+                  },
+                  "required": ["vminmax", "assets"]
+                }
+              ]
+            },
+            "legend": {
+              "title": "Value Range",
+              "scaleType": "continuous",
+              "tickFormat": ".3f",
+              "domainProperties": ["vmin", "vmax"],
+              "rangeProperty": "colormap_name"
+            }
+          }
+        }
+      ],
+      "Agency": ["ESA"],
+      "MapProjection": {
+        "name": "EPSG:3413",
+        "def": "+proj=stere +lat_0=90 +lat_ts=70 +lon_0=-45 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs +type=crs"
+      },
+      "BaseLayers": [
+        {
+          "id": "cloudless-2025",
+          "name": "EOxCloudless 2025",
+          "url": "https://s2maps-tiles.eu/wmts/1.0.0/s2cloudless-2025_3857/default/g/{z}/{y}/{x}.jpeg",
+          "media_type": "image/jpeg",
+          "protocol": "xyz",
+          "visible": false,
+          "Attribution": "{ EOxCloudless 2025: <a href=\"https://s2maps.eu\" target=\"_blank\">Sentinel-2 cloudless - s2maps.eu</a> by <a href=\"https://eox.at\" target=\"_blank\">EOX IT Services GmbH</a> (Contains modified Copernicus Sentinel data 2025) }"
+        },
+        {
+          "id": "sx-cat_ortho680500",
+          "name": "Terrain Light Stereographic North",
+          "url": "https://example.com/sxcat_maps/wms",
+          "layers": "sx-cat_ortho680500",
+          "visible": true,
+          "protocol": "wms",
+          "DataProjection": {
+            "name": "ORTHO:680500",
+            "def": "+proj=ortho +lat_0=90 +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +units=m +no_defs",
+            "extent": [-6422528, -6422528, 6422528, 6422528]
+          },
+          "Attribution": "{ Terrain light: Data &copy; <a href=\"http://www.openstreetmap.org/copyright\" target=\"_blank\">OpenStreetMap</a> contributors and <a href=\"https://example.com/\" target=\"_blank\">others</a>, Rendering &copy; <a href=\"https://example.com\" target=\"_blank\">EOX</a> }"
+        }
+      ]
+    }
+  },
+  {
+    "id": "collection-sh-byoc-copernicus-cdse",
+    "title": "Sentinel Hub BYOC on CDSE",
+    "category": "collection",
+    "tags": [
+      "sentinel-hub",
+      "byoc",
+      "cdse",
+      "copernicus",
+      "cog",
+      "raster",
+      "sh",
+      "wms",
+      "stac",
+      "copernicus-data-space-ecosystem"
+    ],
+    "description": "Configuration for a Sentinel Hub BYOC layer hosted on CDSE, using standard BYOC type with configured statistics API for getting a chart of time distribution of raster values for a user-drawn area.",
+    "targetContext": "Place in catalog 'collections/<name>.json'. Requires a configuration of env variables SH_INSTANCE_ID, SH_CLIENT_ID and SH_CLIENT_SECRET in the catalog repository build process.",
+    "code": {
+      "Name": "custom-byoc-layer",
+      "Title": "BYOC via CDSE Sentinel Hub",
+      "Resources": [
+        {
+          "EndPoint": "https://sh.dataspace.copernicus.eu",
+          "LayerId": "CUSTOM_LAYER_ID",
+          "Name": "Sentinel Hub",
+          "Type": "byoc",
+          "CollectionId": "00000000-0000-0000-0000-000000000000"
+        }
+      ],
+      "Services": [
+        {
+          "Endpoint": "https://sh.dataspace.copernicus.eu/api/v1/statistics",
+          "Name": "Statistical API",
+          "Type": "byoc",
+          "CollectionId": "00000000-0000-0000-0000-000000000000",
+          "Script": "custom-cog-layer/N1_CO.js"
+        }
+      ]
+    }
+  }
+]
