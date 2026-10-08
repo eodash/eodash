@@ -1,0 +1,9 @@
+{
+  "id": "dashboard-scaffold-webcomponent",
+  "title": "Embedded Web Component Dashboard Project Scaffold",
+  "dataType": "all",
+  "features": ["web-component", "custom-element", "embed", "scaffold"],
+  "tags": ["scaffold", "web-component", "embed", "html", "custom-element"],
+  "description": "Minimal embed configuration for using eodash as a custom element <eo-dashboard> in static websites, CMS, or external frontend apps.",
+  "targetContext": "Embed eodash directly into existing HTML/JS applications via custom element."
+}
