@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { loadTemplateExamples } from "./template-loader.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -8,19 +9,22 @@ const __dirname = path.dirname(__filename);
 let cachedExamples = null;
 
 /**
- * Load examples registry from data/examples.json
+ * Load examples registry from data/examples.json and file-backed templates
  */
 export function getExamples() {
   if (cachedExamples) return cachedExamples;
   const filePath = path.join(__dirname, "../data/examples.json");
+  let jsonExamples = [];
   try {
     const raw = fs.readFileSync(filePath, "utf8");
-    cachedExamples = JSON.parse(raw);
-    return cachedExamples;
+    jsonExamples = JSON.parse(raw);
   } catch (err) {
     console.error("Failed to load examples registry:", err);
-    return [];
   }
+
+  const templateExamples = loadTemplateExamples();
+  cachedExamples = [...jsonExamples, ...templateExamples];
+  return cachedExamples;
 }
 
 /**
