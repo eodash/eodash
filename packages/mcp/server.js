@@ -22,15 +22,11 @@ export function createExpressApp(createServerFn) {
     10,
   );
   const idleTimeoutMs = parseInt(process.env.IDLE_TIMEOUT_MS || "120000", 10);
-  const heartbeatIntervalMs = parseInt(
-    process.env.HEARTBEAT_INTERVAL_MS || "30000",
-    10,
-  );
 
   app.use(cors({ origin: "*" }));
   app.use(httpLogger);
 
-  // Limit concurrent connections globally (max 50) and per IP (max 10), with idle & heartbeat reaper
+  // Limit concurrent connections globally (max 50) and per IP (max 10), with idle timeout
   app.use((req, res, next) => {
     const clientIp = req.ip || req.socket.remoteAddress || "unknown";
 
@@ -88,39 +84,13 @@ export function createExpressApp(createServerFn) {
       }
     });
 
-    // Heartbeat reaper for SSE / event streams
-    let heartbeatTimer = null;
-    const isEventStream = req.headers.accept?.includes("text/event-stream");
-    if (isEventStream) {
-      logger.info({
-        event: "sse_connected",
-        ip: clientIp,
-        active_global: activeGlobalConnections,
-      });
-      heartbeatTimer = setInterval(() => {
-        if (!res.writableEnded && res.writable) {
-          res.write(": keepalive\n\n");
-        } else {
-          clearInterval(heartbeatTimer);
-        }
-      }, heartbeatIntervalMs);
-    }
-
     res.on("close", () => {
-      if (heartbeatTimer) clearInterval(heartbeatTimer);
       activeGlobalConnections = Math.max(0, activeGlobalConnections - 1);
       const count = ipConnections.get(clientIp) || 1;
       if (count <= 1) {
         ipConnections.delete(clientIp);
       } else {
         ipConnections.set(clientIp, count - 1);
-      }
-      if (isEventStream) {
-        logger.info({
-          event: "sse_disconnected",
-          ip: clientIp,
-          active_global: activeGlobalConnections,
-        });
       }
     });
 
