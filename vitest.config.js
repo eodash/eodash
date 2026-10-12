@@ -45,6 +45,7 @@ const alias = {
 
 export default defineConfig({
   test: {
+    fsModuleCache: true,
     ...(isBenchRun && {
       reporters: ["default", new BenchReporter(benchReference)],
       fileParallelism: false,
