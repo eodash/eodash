@@ -104,19 +104,20 @@ function installErrorInterceptors() {
 }
 
 /**
- * Checks if the response has a `contents` property that is a valid JSON string.
- * Such structure is provided by CORS workaround from Whatever-Origin API.
+ * Checks if the response has a `contents` property and a proxy `status.http_code`.
+ * Such structure is provided by CORS proxies like Whatever-Origin API.
  * @param {any} data
  */
 const parseResponseData = (data) => {
-  if (data && typeof data.contents === "string") {
-    try {
-      return JSON.parse(data.contents);
-    } catch (_e) {
-      return data;
-    }
+  if (typeof data?.contents !== "string" || !data.status?.http_code) {
+    return data;
   }
-  return data;
+  try {
+    return JSON.parse(data.contents);
+  } catch {
+    // pass the raw body on so the "not valid JSON" report fires
+    return data.contents;
+  }
 };
 
 /**
@@ -127,6 +128,28 @@ const parseResponseData = (data) => {
  * @param {import("axios").AxiosResponse} response
  */
 function reportParseFailure(response) {
+  if (
+    typeof response.data?.contents === "string" &&
+    response.data.status?.http_code >= 400
+  ) {
+    const status = response.data.status.http_code;
+    const error = new Axios.AxiosError(
+      `Request failed with status code ${status}`,
+      status >= 500
+        ? Axios.AxiosError.ERR_BAD_RESPONSE
+        : Axios.AxiosError.ERR_BAD_REQUEST,
+      response.config,
+      response.request,
+      {
+        ...response,
+        status,
+        statusText: "",
+        data: response.data.contents,
+      },
+    );
+    return reportFetchFailure(error);
+  }
+
   response.data = parseResponseData(response.data);
   const body =
     !response.config.responseType && typeof response.data === "string"
@@ -158,10 +181,6 @@ function reportParseFailure(response) {
 function reportFetchFailure(error) {
   if (!Axios.isAxiosError(error) || Axios.isCancel(error)) {
     throw error;
-  }
-
-  if (error.response) {
-    error.response.data = parseResponseData(error.response.data);
   }
 
   // a timeout also sets `error.request`, so it has to be checked first

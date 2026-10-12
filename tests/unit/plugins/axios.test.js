@@ -168,19 +168,6 @@ describe("described resources", () => {
     expect(errorState.value.severity).toBe("warning");
   });
 
-  test("unwraps data from the 'contents' property if it's a valid JSON string", async () => {
-    const wrappedData = {
-      contents: JSON.stringify({ id: "wrapped" }),
-    };
-    await commands.serveResponses({
-      "wrapped.json": { body: JSON.stringify(wrappedData) },
-    });
-
-    const { data } = await axios.get(url("wrapped"));
-
-    expect(data).toEqual({ id: "wrapped" });
-  });
-
   test.each([
     ["eodash:vegadefinition", "chart definition", "warning"],
     ["eodash:jsonform", "process form definition", "error"],
@@ -257,6 +244,88 @@ describe("aborted requests", () => {
 
     // filters.js matches on this name to keep the previous catalog items
     await expect(request).rejects.toMatchObject({ name: "CanceledError" });
+    expect(errorState.value.message).toBe("");
+  });
+});
+
+describe("proxied responses", () => {
+  test("unwraps a proxied JSON contents and reports nothing", async () => {
+    const wrappedData = {
+      contents: JSON.stringify({ id: "wrapped" }),
+      status: { http_code: 200, url: "https://origin.test" },
+    };
+    await commands.serveResponses({
+      "proxy-ok.json": { body: JSON.stringify(wrappedData) },
+    });
+
+    const { data } = await axios.get(url("proxy-ok"));
+
+    expect(data).toEqual({ id: "wrapped" });
+    expect(errorState.value.message).toBe("");
+  });
+
+  test("rejects and reports the upstream status when the proxy wraps a failure", async () => {
+    const wrappedFailure = {
+      contents: "",
+      status: { http_code: 404, url: "https://origin.test" },
+    };
+    await commands.serveResponses({
+      "proxy-fail.json": { body: JSON.stringify(wrappedFailure) },
+    });
+
+    await expect(axios.get(url("proxy-fail"))).rejects.toMatchObject({
+      isAxiosError: true,
+      response: { status: 404 },
+    });
+
+    expect(errorState.value.message).toContain(
+      "Failed to fetch the proxy-fail.json (404",
+    );
+  });
+
+  test("rejects as 'not valid JSON' when the proxied contents is not JSON", async () => {
+    const wrappedHtml = {
+      contents: "<!doctype html><html><body>Error</body></html>",
+      status: { http_code: 200, url: "https://origin.test" },
+    };
+    await commands.serveResponses({
+      "proxy-html.json": { body: JSON.stringify(wrappedHtml) },
+    });
+
+    await expect(axios.get(url("proxy-html"))).rejects.toThrow();
+
+    expect(errorState.value.message).toBe(
+      "Failed to parse the proxy-html.json (not valid JSON).",
+    );
+    expect(errorState.value.details).toContain("<!doctype html>");
+  });
+
+  test("leaves a body with a string contents but no proxy status untouched", async () => {
+    const plainBody = { contents: "42", id: "plain" };
+    await commands.serveResponses({
+      "plain-contents.json": { body: JSON.stringify(plainBody) },
+    });
+
+    const { data } = await axios.get(url("plain-contents"));
+
+    expect(data).toEqual(plainBody);
+    expect(errorState.value.message).toBe("");
+  });
+
+  test("returns the unwrapped data again when the same proxied url is served from the cache", async () => {
+    const wrappedData = {
+      contents: JSON.stringify({ cached: true }),
+      status: { http_code: 200, url: "https://origin.test" },
+    };
+    await commands.serveResponses({
+      "proxy-cache.json": { body: JSON.stringify(wrappedData) },
+    });
+
+    const first = await axios.get(url("proxy-cache"));
+    expect(first.data).toEqual({ cached: true });
+
+    const second = await axios.get(url("proxy-cache"));
+    expect(second.data).toEqual({ cached: true });
     expect(errorState.value.message).toBe("");
   });
 });
