@@ -354,6 +354,19 @@ describe("eodash MCP Server - HTTP Endpoints", () => {
     expect(body.message).toBe("eodash MCP Server is running");
   });
 
+  it("HEAD / returns 200 OK for load balancer / ingress health probes", async () => {
+    const res = await fetch(`${baseUrl}/`, { method: "HEAD" });
+    expect(res.status).toBe(200);
+  });
+
+  it("GET /metrics returns 200 with Prometheus text format", async () => {
+    const res = await fetch(`${baseUrl}/metrics`);
+    expect(res.status).toBe(200);
+    expect(res.headers.get("content-type")).toContain("text/plain");
+    const text = await res.text();
+    expect(text).toContain("eodash_mcp_");
+  });
+
   it("GET / returns 405 Method Not Allowed per MCP Streamable HTTP spec", async () => {
     const res = await fetch(`${baseUrl}/`);
     expect(res.status).toBe(405);

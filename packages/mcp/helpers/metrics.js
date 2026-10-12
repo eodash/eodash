@@ -1,0 +1,91 @@
+import client from "prom-client";
+
+export const register = new client.Registry();
+
+// Default process metrics with eodash_mcp_ prefix
+client.collectDefaultMetrics({
+  register,
+  prefix: "eodash_mcp_",
+});
+
+// Custom metrics
+export const toolCallsTotal = new client.Counter({
+  name: "eodash_mcp_tool_calls_total",
+  help: "Total number of MCP tool calls executed",
+  labelNames: ["tool", "status"],
+  registers: [register],
+});
+
+export const toolDurationSeconds = new client.Histogram({
+  name: "eodash_mcp_tool_duration_seconds",
+  help: "Duration of MCP tool executions in seconds",
+  labelNames: ["tool"],
+  buckets: [0.01, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10],
+  registers: [register],
+});
+
+export const rpcRequestsTotal = new client.Counter({
+  name: "eodash_mcp_rpc_requests_total",
+  help: "Total number of JSON-RPC requests by method and status",
+  labelNames: ["method", "status"],
+  registers: [register],
+});
+
+export const activeConnections = new client.Gauge({
+  name: "eodash_mcp_active_connections",
+  help: "Current number of active HTTP/SSE connections",
+  registers: [register],
+});
+
+/**
+ * Record an MCP tool execution
+ * @param {string} toolName
+ * @param {"success" | "error" | "failure"} status
+ * @param {number} [durationSeconds]
+ */
+export function recordToolCall(toolName, status, durationSeconds) {
+  toolCallsTotal.inc({ tool: toolName, status });
+  if (typeof durationSeconds === "number" && !Number.isNaN(durationSeconds)) {
+    toolDurationSeconds.observe({ tool: toolName }, durationSeconds);
+  }
+}
+
+/**
+ * Record a JSON-RPC request by method and HTTP status
+ * @param {string} method
+ * @param {"success" | "error"} status
+ */
+export function recordRpcRequest(method, status) {
+  rpcRequestsTotal.inc({ method, status });
+}
+
+/**
+ * Update the active connections gauge
+ * @param {number} count
+ */
+export function setActiveConnections(count) {
+  activeConnections.set(count);
+}
+
+/**
+ * Get Prometheus metrics text output
+ * @returns {Promise<string>}
+ */
+export async function getMetrics() {
+  return register.metrics();
+}
+
+/**
+ * Get content-type for Prometheus metrics response
+ * @returns {string}
+ */
+export function getMetricsContentType() {
+  return register.contentType;
+}
+
+/**
+ * Reset all metrics (for tests)
+ */
+export function _resetMetrics() {
+  register.resetMetrics();
+}

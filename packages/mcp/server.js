@@ -3,6 +3,12 @@ import cors from "cors";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { getMetadata, generateLandingPage } from "./helpers.js";
 import { logger, httpLogger } from "./helpers/logger.js";
+import {
+  recordRpcRequest,
+  setActiveConnections,
+  getMetrics,
+  getMetricsContentType,
+} from "./helpers/metrics.js";
 
 /**
  * Creates and configures the Express HTTP application for the MCP server
@@ -68,6 +74,7 @@ export function createExpressApp(createServerFn) {
     }
 
     activeGlobalConnections += 1;
+    setActiveConnections(activeGlobalConnections);
     ipConnections.set(clientIp, currentCount + 1);
 
     // Idle connection reaper: terminates socket if inactive for idleTimeoutMs
@@ -86,6 +93,7 @@ export function createExpressApp(createServerFn) {
 
     res.on("close", () => {
       activeGlobalConnections = Math.max(0, activeGlobalConnections - 1);
+      setActiveConnections(activeGlobalConnections);
       const count = ipConnections.get(clientIp) || 1;
       if (count <= 1) {
         ipConnections.delete(clientIp);
@@ -138,6 +146,19 @@ export function createExpressApp(createServerFn) {
     res.json({ message: "eodash MCP Server is running" });
   });
 
+  app.head("/", (_req, res) => {
+    res.status(200).end();
+  });
+
+  app.get("/metrics", async (_req, res) => {
+    try {
+      res.setHeader("Content-Type", getMetricsContentType());
+      res.send(await getMetrics());
+    } catch (err) {
+      res.status(500).send(err.message);
+    }
+  });
+
   app.get("/ui", (_req, res) => {
     const { widgetsData, architectureData, examplesCount } = getMetadata();
     const serverInstance = createServerFn();
@@ -170,6 +191,29 @@ export function createExpressApp(createServerFn) {
   });
 
   app.post("/", async (req, res) => {
+    // Inspect JSON-RPC body for logging and metrics enrichment
+    const firstReq = Array.isArray(req.body) ? req.body[0] : req.body;
+    const rpcMethod = firstReq?.method;
+    if (rpcMethod) {
+      req.mcpMethod = Array.isArray(req.body)
+        ? req.body
+            .map((r) => r?.method)
+            .filter(Boolean)
+            .join(",")
+        : rpcMethod;
+      if (firstReq.params?.clientInfo) {
+        const { name, version } = firstReq.params.clientInfo;
+        req.mcpClient = version ? `${name}/${version}` : name;
+      } else if (firstReq.params?.name) {
+        req.mcpTool = firstReq.params.name;
+      }
+
+      res.on("finish", () => {
+        const status = res.statusCode < 400 ? "success" : "error";
+        recordRpcRequest(rpcMethod, status);
+      });
+    }
+
     const origin = req.headers.origin;
     if (origin) {
       try {

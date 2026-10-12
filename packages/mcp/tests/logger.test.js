@@ -1,5 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { logger, httpLogger, instrumentTool } from "../helpers/logger.js";
+import {
+  logger,
+  httpLogger,
+  instrumentTool,
+  sanitizeUrl,
+} from "../helpers/logger.js";
 import express from "express";
 import http from "node:http";
 
@@ -15,6 +20,38 @@ describe("Logger & Observability Infrastructure", () => {
       expect(typeof logger.debug).toBe("function");
       expect(typeof logger.warn).toBe("function");
       expect(typeof logger.error).toBe("function");
+    });
+  });
+
+  describe("URL Sanitization (sanitizeUrl)", () => {
+    it("redacts sensitive query parameters while keeping benign params", () => {
+      const url = "https://example.com/api?api_key=secret123&limit=10&token=tok456";
+      const sanitized = sanitizeUrl(url);
+      expect(sanitized).toContain("api_key=%5BREDACTED%5D");
+      expect(sanitized).toContain("token=%5BREDACTED%5D");
+      expect(sanitized).toContain("limit=10");
+      expect(sanitized).not.toContain("secret123");
+      expect(sanitized).not.toContain("tok456");
+    });
+
+    it("redacts SAS and cloud signature query parameters", () => {
+      const url = "https://blob.core.windows.net/stac/item.json?sp=r&st=2026-01-01&se=2026-01-02&sig=signatureVal";
+      const sanitized = sanitizeUrl(url);
+      expect(sanitized).toContain("sp=%5BREDACTED%5D");
+      expect(sanitized).toContain("sig=%5BREDACTED%5D");
+      expect(sanitized).not.toContain("signatureVal");
+    });
+
+    it("sanitizes relative URLs safely", () => {
+      const url = "/ui?token=mySecretToken&theme=dark";
+      const sanitized = sanitizeUrl(url);
+      expect(sanitized).toBe("/ui?token=%5BREDACTED%5D&theme=dark");
+    });
+
+    it("returns non-sensitive or invalid URLs unchanged", () => {
+      expect(sanitizeUrl("https://example.com/clean/path")).toBe("https://example.com/clean/path");
+      expect(sanitizeUrl(null)).toBe(null);
+      expect(sanitizeUrl("")).toBe("");
     });
   });
 
@@ -43,6 +80,84 @@ describe("Logger & Observability Infrastructure", () => {
             (typeof msg === "string" && msg.includes("/health")),
         );
         expect(healthLogs.length).toBe(0);
+      } finally {
+        await new Promise((resolve) => server.close(resolve));
+      }
+    });
+
+    it("ignores HEAD / and /metrics from request logging", async () => {
+      const app = express();
+      app.use(httpLogger);
+      app.head("/", (_req, res) => res.status(200).end());
+      app.get("/metrics", (_req, res) => res.send("metrics"));
+
+      const server = http.createServer(app);
+      await new Promise((resolve) => server.listen(0, resolve));
+      const port = server.address().port;
+
+      const logSpy = vi.spyOn(logger, "info");
+
+      try {
+        const resHead = await fetch(`http://127.0.0.1:${port}/`, {
+          method: "HEAD",
+        });
+        expect(resHead.status).toBe(200);
+
+        const resMetrics = await fetch(`http://127.0.0.1:${port}/metrics`);
+        expect(resMetrics.status).toBe(200);
+
+        await new Promise((resolve) => setTimeout(resolve, 50));
+
+        const ignoredLogs = logSpy.mock.calls.filter(
+          ([obj, msg]) =>
+            obj?.req?.url === "/metrics" ||
+            (typeof msg === "string" && msg.includes("/metrics")) ||
+            (obj?.req?.method === "HEAD" && obj?.req?.url === "/"),
+        );
+        expect(ignoredLogs.length).toBe(0);
+      } finally {
+        await new Promise((resolve) => server.close(resolve));
+      }
+    });
+
+    it("enriches JSON-RPC request log message with method and tool name", async () => {
+      const app = express();
+      app.use((req, _res, next) => {
+        req.mcpMethod = "tools/call";
+        req.mcpTool = "generate_map_from_stac";
+        next();
+      });
+      app.use(httpLogger);
+      app.post("/", (_req, res) => res.json({ result: "ok" }));
+
+      const server = http.createServer(app);
+      await new Promise((resolve) => server.listen(0, resolve));
+      const port = server.address().port;
+
+      const logSpy = vi.spyOn(logger, "info");
+
+      try {
+        const res = await fetch(`http://127.0.0.1:${port}/`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ method: "tools/call" }),
+        });
+        expect(res.status).toBe(200);
+
+        await new Promise((resolve) => setTimeout(resolve, 50));
+
+        const call = logSpy.mock.calls.find(
+          ([obj, msg]) =>
+            obj?.tool === "generate_map_from_stac" ||
+            (typeof msg === "string" && msg.includes("generate_map_from_stac")),
+        );
+        expect(call).toBeDefined();
+        if (typeof call[1] === "string") {
+          expect(call[1]).toContain("tools/call generate_map_from_stac");
+        } else {
+          expect(call[0].tool).toBe("generate_map_from_stac");
+          expect(call[0].rpc_method).toBe("tools/call");
+        }
       } finally {
         await new Promise((resolve) => server.close(resolve));
       }
@@ -148,8 +263,31 @@ describe("Logger & Observability Infrastructure", () => {
       expect(toolLog.params.stac_object).toBeDefined();
       expect(toolLog.params.stac_object.type).toBe("Feature");
       expect(toolLog.params.stac_object.id).toBe("item-123");
-      expect(typeof toolLog.params.stac_object.size_bytes).toBe("number");
-      expect(toolLog.params.stac_object.size_bytes).toBeGreaterThan(10);
+      expect(toolLog.params.stac_object.has_geometry).toBe(true);
+      expect(toolLog.params.stac_object.has_features).toBe(false);
+    });
+
+    it("redacts sensitive query tokens from tool params.url", async () => {
+      const infoSpy = vi.spyOn(logger, "info");
+      const mockHandler = vi.fn().mockResolvedValue({
+        content: [{ type: "text", text: "{}" }],
+      });
+
+      const wrapped = instrumentTool("generate_map_from_stac", mockHandler);
+      await wrapped({
+        url: "https://planetarycomputer.microsoft.com/api/stac/v1/collections/sentinel-2?token=secret123&sig=abcd&format=json",
+      });
+
+      const toolLog = infoSpy.mock.calls.find(
+        (args) => args[0]?.event === "tool_call",
+      )?.[0];
+
+      expect(toolLog).toBeDefined();
+      expect(toolLog.params.url).toContain("token=%5BREDACTED%5D");
+      expect(toolLog.params.url).toContain("sig=%5BREDACTED%5D");
+      expect(toolLog.params.url).toContain("format=json");
+      expect(toolLog.params.url).not.toContain("secret123");
+      expect(toolLog.params.url).not.toContain("abcd");
     });
 
     it("logs error warning when tool returns isError: true", async () => {

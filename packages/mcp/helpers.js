@@ -25,7 +25,20 @@ export {
   createDummyCollectionForItem,
   selectCatalogIndicator,
 } from "./helpers/stac.js";
-export { logger, httpLogger, instrumentTool } from "./helpers/logger.js";
+export {
+  logger,
+  httpLogger,
+  instrumentTool,
+  sanitizeUrl,
+} from "./helpers/logger.js";
+export {
+  recordToolCall,
+  recordRpcRequest,
+  setActiveConnections,
+  getMetrics,
+  getMetricsContentType,
+  _resetMetrics,
+} from "./helpers/metrics.js";
 import { logger } from "./helpers/logger.js";
 
 const __filename = fileURLToPath(import.meta.url);
