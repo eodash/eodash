@@ -25,7 +25,8 @@ describe("Logger & Observability Infrastructure", () => {
 
   describe("URL Sanitization (sanitizeUrl)", () => {
     it("redacts sensitive query parameters while keeping benign params", () => {
-      const url = "https://example.com/api?api_key=secret123&limit=10&token=tok456";
+      const url =
+        "https://example.com/api?api_key=secret123&limit=10&token=tok456";
       const sanitized = sanitizeUrl(url);
       expect(sanitized).toContain("api_key=%5BREDACTED%5D");
       expect(sanitized).toContain("token=%5BREDACTED%5D");
@@ -35,7 +36,8 @@ describe("Logger & Observability Infrastructure", () => {
     });
 
     it("redacts SAS and cloud signature query parameters", () => {
-      const url = "https://blob.core.windows.net/stac/item.json?sp=r&st=2026-01-01&se=2026-01-02&sig=signatureVal";
+      const url =
+        "https://blob.core.windows.net/stac/item.json?sp=r&st=2026-01-01&se=2026-01-02&sig=signatureVal";
       const sanitized = sanitizeUrl(url);
       expect(sanitized).toContain("sp=%5BREDACTED%5D");
       expect(sanitized).toContain("sig=%5BREDACTED%5D");
@@ -49,7 +51,9 @@ describe("Logger & Observability Infrastructure", () => {
     });
 
     it("returns non-sensitive or invalid URLs unchanged", () => {
-      expect(sanitizeUrl("https://example.com/clean/path")).toBe("https://example.com/clean/path");
+      expect(sanitizeUrl("https://example.com/clean/path")).toBe(
+        "https://example.com/clean/path",
+      );
       expect(sanitizeUrl(null)).toBe(null);
       expect(sanitizeUrl("")).toBe("");
     });

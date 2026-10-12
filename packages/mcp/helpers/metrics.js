@@ -38,12 +38,22 @@ export const activeConnections = new client.Gauge({
 });
 
 /**
+ * Check whether Prometheus metrics are enabled.
+ * Defaults to true; can be opted out via ENABLE_PROMETHEUS_METRICS="false".
+ * @returns {boolean}
+ */
+export function isMetricsEnabled() {
+  return process.env.ENABLE_PROMETHEUS_METRICS !== "false";
+}
+
+/**
  * Record an MCP tool execution
  * @param {string} toolName
  * @param {"success" | "error" | "failure"} status
  * @param {number} [durationSeconds]
  */
 export function recordToolCall(toolName, status, durationSeconds) {
+  if (!isMetricsEnabled()) return;
   toolCallsTotal.inc({ tool: toolName, status });
   if (typeof durationSeconds === "number" && !Number.isNaN(durationSeconds)) {
     toolDurationSeconds.observe({ tool: toolName }, durationSeconds);
@@ -56,6 +66,7 @@ export function recordToolCall(toolName, status, durationSeconds) {
  * @param {"success" | "error"} status
  */
 export function recordRpcRequest(method, status) {
+  if (!isMetricsEnabled()) return;
   rpcRequestsTotal.inc({ method, status });
 }
 
@@ -64,6 +75,7 @@ export function recordRpcRequest(method, status) {
  * @param {number} count
  */
 export function setActiveConnections(count) {
+  if (!isMetricsEnabled()) return;
   activeConnections.set(count);
 }
 
@@ -72,6 +84,9 @@ export function setActiveConnections(count) {
  * @returns {Promise<string>}
  */
 export async function getMetrics() {
+  if (!isMetricsEnabled()) {
+    throw new Error("Prometheus metrics disabled");
+  }
   return register.metrics();
 }
 

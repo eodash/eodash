@@ -8,6 +8,7 @@ import {
   setActiveConnections,
   getMetrics,
   getMetricsContentType,
+  isMetricsEnabled,
 } from "./helpers/metrics.js";
 
 /**
@@ -151,6 +152,9 @@ export function createExpressApp(createServerFn) {
   });
 
   app.get("/metrics", async (_req, res) => {
+    if (!isMetricsEnabled()) {
+      return res.status(404).send("Prometheus metrics disabled");
+    }
     try {
       res.setHeader("Content-Type", getMetricsContentType());
       res.send(await getMetrics());

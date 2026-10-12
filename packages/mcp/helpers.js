@@ -37,6 +37,7 @@ export {
   setActiveConnections,
   getMetrics,
   getMetricsContentType,
+  isMetricsEnabled,
   _resetMetrics,
 } from "./helpers/metrics.js";
 import { logger } from "./helpers/logger.js";

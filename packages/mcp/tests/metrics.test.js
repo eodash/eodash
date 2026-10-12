@@ -1,10 +1,11 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import {
   recordToolCall,
   recordRpcRequest,
   setActiveConnections,
   getMetrics,
   getMetricsContentType,
+  isMetricsEnabled,
   _resetMetrics,
 } from "../helpers/metrics.js";
 
@@ -27,9 +28,15 @@ describe("Prometheus Metrics Infrastructure", () => {
     const metrics = await getMetrics();
 
     expect(metrics).toContain("eodash_mcp_tool_calls_total");
-    expect(metrics).toContain('tool="generate_map_from_stac",status="success"} 1');
-    expect(metrics).toContain('tool="generate_map_from_stac",status="error"} 1');
-    expect(metrics).toContain('tool="validate_catalog_config",status="success"} 1');
+    expect(metrics).toContain(
+      'tool="generate_map_from_stac",status="success"} 1',
+    );
+    expect(metrics).toContain(
+      'tool="generate_map_from_stac",status="error"} 1',
+    );
+    expect(metrics).toContain(
+      'tool="validate_catalog_config",status="success"} 1',
+    );
 
     expect(metrics).toContain("eodash_mcp_tool_duration_seconds_bucket");
     expect(metrics).toContain('tool="generate_map_from_stac"');
@@ -63,5 +70,38 @@ describe("Prometheus Metrics Infrastructure", () => {
     const metrics = await getMetrics();
     expect(metrics).toContain("eodash_mcp_process_cpu_user_seconds_total");
     expect(metrics).toContain("eodash_mcp_nodejs_heap_size_total_bytes");
+  });
+
+  describe("ENABLE_PROMETHEUS_METRICS toggle", () => {
+    afterEach(() => {
+      delete process.env.ENABLE_PROMETHEUS_METRICS;
+    });
+
+    it("is enabled by default and disabled when set to 'false'", () => {
+      delete process.env.ENABLE_PROMETHEUS_METRICS;
+      expect(isMetricsEnabled()).toBe(true);
+
+      process.env.ENABLE_PROMETHEUS_METRICS = "false";
+      expect(isMetricsEnabled()).toBe(false);
+
+      process.env.ENABLE_PROMETHEUS_METRICS = "true";
+      expect(isMetricsEnabled()).toBe(true);
+    });
+
+    it("no-ops recordings and rejects getMetrics when disabled", async () => {
+      process.env.ENABLE_PROMETHEUS_METRICS = "false";
+
+      recordToolCall("generate_map_from_stac", "success", 0.05);
+      recordRpcRequest("tools/call", "success");
+      setActiveConnections(10);
+
+      await expect(getMetrics()).rejects.toThrow("Prometheus metrics disabled");
+
+      // Re-enable and check that no metrics were recorded while disabled
+      process.env.ENABLE_PROMETHEUS_METRICS = "true";
+      const metrics = await getMetrics();
+      expect(metrics).not.toContain("generate_map_from_stac");
+      expect(metrics).not.toContain("tools/call");
+    });
   });
 });
