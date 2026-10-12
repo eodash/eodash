@@ -29,6 +29,8 @@ import { createLayerFromRender } from "./renders.js";
  * @property {import("../http.js").HttpClient} [http]
  * @property {import("../types").LayerConfigHelpers} [layerConfigHelpers]
  * @property {boolean} [stateful] - whether the built item becomes the reader's `item`. Default `true`.
+ * @property {boolean} [mergeAssets] - whether to merge multiple GeoJSON data assets into a single layer.
+ * @property {boolean} [simpleObservationPoints] - whether to use simple circle markers without inlining SVG icons.
  */
 
 /** Link relations supported for layer rendering. */
@@ -72,6 +74,7 @@ export const buildLayers = async (item, context) => {
     renders,
     http,
     layerConfigHelpers,
+    mergeAssets: context.mergeAssets,
   };
 
   log.debug("Building layers", item, title, itemDatetime);

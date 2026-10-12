@@ -116,6 +116,8 @@ export interface IndicatorReader {
     item?: import("./stac").STACItem;
     bbox?: BBox;
     context?: BuildContext;
+    mergeAssets?: boolean;
+    simpleObservationPoints?: boolean;
   }) => Promise<MapConfig>;
 }
 

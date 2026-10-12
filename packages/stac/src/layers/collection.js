@@ -66,11 +66,16 @@ export const getIndicatorLayers = async (
  * @param {object} [options]
  * @param {import("../types").ObservationPointsThemes} [options.themes] - Theme styling options
  * @param {import("@eox/map").EoxLayer[]} [options.currentLayers] - Layers whose interactions are preserved
+ * @param {boolean} [options.simpleStyle] - Whether to use simple circle markers without inlining SVG icons
  * @returns {import("@eox/map").EoxLayer | null} Vector layer definition or null if no points exist
  */
 export const getObservationPointsLayer = (
   collections,
-  { themes = OBSERVATION_POINT_THEMES, currentLayers = [] } = {},
+  {
+    themes = OBSERVATION_POINT_THEMES,
+    currentLayers = [],
+    simpleStyle = false,
+  } = {},
 ) => {
   const features = collections.filter(isObservationPoints).flatMap(
     (collection) =>
@@ -106,7 +111,7 @@ export const getObservationPointsLayer = (
       url: "data:," + encodeURIComponent(JSON.stringify(featureCollection)),
       format: "GeoJSON",
     },
-    style: themeStyle(themes),
+    style: simpleStyle ? SIMPLE_OBSERVATION_POINTS_STYLE : themeStyle(themes),
     interactions: [
       ...(findLayer(currentLayers, OBSERVATION_POINTS_ID)?.interactions ?? []),
     ],
@@ -122,6 +127,16 @@ export const getObservationPointsLayer = (
 export function isObservationPoints(collection) {
   return collection.endpointtype === "GeoDB" || !!collection.locations;
 }
+
+/**
+ * Minimal flat circle style for observation points (single color, no SVG icons).
+ */
+export const SIMPLE_OBSERVATION_POINTS_STYLE = {
+  "circle-radius": 6,
+  "circle-fill-color": "#004170",
+  "circle-stroke-color": "#fff",
+  "circle-stroke-width": 1.5,
+};
 
 /**
  * A flat style per theme, falling through to a plain circle.

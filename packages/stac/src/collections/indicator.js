@@ -40,6 +40,7 @@ export const deduplicateProjections = (projList) => {
  * @param {import("../types").BuildContext} [params.context] - Build context configuration
  * @param {import("../types").ObservationPointsThemes} [params.themes] - Observation points styling
  * @param {import("@eox/map").EoxLayer[]} [params.currentLayers] - Current map layers to preserve interactions
+ * @param {boolean} [params.simpleStyle] - Whether to use simple circle markers without inlining SVG icons
  * @returns {Promise<{ layers: import("@eox/map").EoxLayer[]; projections: import("../types").Projection[]; items: import("../types").STACItem[] }>}
  */
 export const buildIndicatorDataLayers = async ({
@@ -49,6 +50,7 @@ export const buildIndicatorDataLayers = async ({
   context = {},
   themes,
   currentLayers = [],
+  simpleStyle = false,
 }) => {
   const isItem =
     typeof timeOrItem === "object" &&
@@ -117,7 +119,7 @@ export const buildIndicatorDataLayers = async ({
 
   const observationPoints = getObservationPointsLayer(
     readers.map((reader) => reader.stac),
-    { themes, currentLayers },
+    { themes, currentLayers, simpleStyle },
   );
   if (observationPoints) {
     layers.push(observationPoints);
@@ -160,6 +162,8 @@ export const DEFAULT_COLLECTIONS_PALETTE = [
  * @param {Record<string, any> | null} [options.tileMatrixSets] - TileMatrixSet configurations
  * @param {Record<string, Record<string, import("../types").Render>>} [options.renders] - Render configurations
  * @param {import("../types").ObservationPointsThemes} [options.themes] - Marker styling for observation points
+ * @param {boolean} [options.mergeAssets] - Whether to merge multiple GeoJSON data assets into a single layer
+ * @param {boolean} [options.simpleObservationPoints] - Whether to use simple circle markers without inlining SVG icons
  * @returns {Promise<import("../types").IndicatorReader>}
  */
 export const createEodashIndicator = async (url, options = {}) => {
@@ -172,6 +176,8 @@ export const createEodashIndicator = async (url, options = {}) => {
     tileMatrixSets,
     renders,
     themes,
+    mergeAssets,
+    simpleObservationPoints = false,
   } = options;
 
   const http = createHTTPInstance({ client });
@@ -259,12 +265,26 @@ export const createEodashIndicator = async (url, options = {}) => {
       (l) => l.properties?.group === "overlay",
     );
 
+    const effectiveMergeAssets =
+      context.mergeAssets !== undefined ? context.mergeAssets : mergeAssets;
+    const effectiveSimpleObs =
+      context.simpleObservationPoints !== undefined
+        ? context.simpleObservationPoints
+        : simpleObservationPoints;
+
     const dataResult = await buildIndicatorDataLayers({
       readers,
       stac,
       timeOrItem: targetItem ?? resolvedDate,
-      context: { ...context, viewProjection },
+      context: {
+        ...context,
+        viewProjection,
+        ...(effectiveMergeAssets !== undefined && {
+          mergeAssets: effectiveMergeAssets,
+        }),
+      },
       themes,
+      simpleStyle: Boolean(effectiveSimpleObs),
     });
 
     const allLayers = [...baseLayers, ...dataResult.layers, ...overLayers];
@@ -347,10 +367,27 @@ export const createEodashIndicator = async (url, options = {}) => {
      * @param {import("../types").STACItem} [configOptions.item]
      * @param {import("../types").BBox} [configOptions.bbox]
      * @param {import("../types").BuildContext} [configOptions.context]
+     * @param {boolean} [configOptions.mergeAssets]
+     * @param {boolean} [configOptions.simpleObservationPoints]
      * @returns {Promise<import("../types").MapConfig & { timeControl?: { availableDates: string[], minDate?: string, maxDate?: string } }>}
      */
     getMapConfig: async (configOptions = {}) => {
-      const { datetime, item, bbox, context } = configOptions;
+      const {
+        datetime,
+        item,
+        bbox,
+        context = {},
+        mergeAssets: cfgMergeAssets,
+        simpleObservationPoints: cfgSimpleObs,
+      } = configOptions;
+
+      const mergedContext = {
+        ...context,
+        ...(cfgMergeAssets !== undefined && { mergeAssets: cfgMergeAssets }),
+        ...(cfgSimpleObs !== undefined && {
+          simpleObservationPoints: cfgSimpleObs,
+        }),
+      };
 
       /** @type {Date[][] | undefined} */
       let prefetchedDates = undefined;
@@ -382,7 +419,7 @@ export const createEodashIndicator = async (url, options = {}) => {
       const buildResult = await buildLayersInternal(
         datetime,
         item,
-        context,
+        mergedContext,
         prefetchedDates,
       );
 

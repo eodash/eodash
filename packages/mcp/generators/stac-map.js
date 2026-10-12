@@ -208,12 +208,16 @@ export async function buildStacMap(
     viewProjection,
     rasterEndpoint,
     ...(api !== undefined && { api }),
+    mergeAssets: false,
+    simpleObservationPoints: true,
   });
 
   const mapConfig = await indicator.getMapConfig({
     datetime,
     item: resolvedItem,
     bbox,
+    mergeAssets: false,
+    simpleObservationPoints: true,
   });
 
   if (matchedIndicatorInfo) {

@@ -156,6 +156,19 @@ describe("getObservationPointsLayer", () => {
     expect(fallback.style["circle-radius"]).toBe(10);
   });
 
+  test("styles points with simple circle geometries without SVG icons when simpleStyle is true", () => {
+    const layer = getObservationPointsLayer([points({})], {
+      simpleStyle: true,
+    });
+
+    expect(layer?.style).toEqual({
+      "circle-radius": 6,
+      "circle-fill-color": "#004170",
+      "circle-stroke-color": "#fff",
+      "circle-stroke-width": 1.5,
+    });
+  });
+
   test("brands a point with eodash's own themes when none are stated", () => {
     const layer = getObservationPointsLayer([points({})]);
 

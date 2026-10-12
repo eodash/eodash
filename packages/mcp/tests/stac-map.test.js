@@ -1,4 +1,12 @@
-import { describe, it, expect, beforeEach, beforeAll, afterAll, vi } from "vitest";
+import {
+  describe,
+  it,
+  expect,
+  beforeEach,
+  beforeAll,
+  afterAll,
+  vi,
+} from "vitest";
 import { createServer } from "node:http";
 import fs from "node:fs";
 import path from "node:path";
@@ -830,6 +838,76 @@ describe("MCP Protocol Tool - generate_map_from_stac", () => {
         "2025-01-31T23:59:59.999Z",
         "2025-07-31T23:59:59.999Z",
       ]);
+    });
+  });
+
+  describe("Token efficiency: GeoJSON asset merging and observation points styling", () => {
+    it("always preserves individual remote GeoJSON URLs without inline data URIs", async () => {
+      const itemWithMultipleGeoJsons = stacItem({
+        id: "crop_yield_item",
+        properties: { datetime: "2024-01-01T00:00:00Z" },
+        assets: {
+          at: {
+            roles: ["data"],
+            type: "application/geo+json",
+            href: "https://data.example.com/at.geojson",
+            title: "Austria Yield",
+          },
+          hu: {
+            roles: ["data"],
+            type: "application/geo+json",
+            href: "https://data.example.com/hu.geojson",
+            title: "Hungary Yield",
+          },
+        },
+      });
+
+      const config = await buildStacMap({
+        stac_object: itemWithMultipleGeoJsons,
+      });
+      const vectorLayers = config.layers.filter(
+        (l) => l.type === "Vector" && l.source?.type === "Vector",
+      );
+      expect(vectorLayers).toHaveLength(2);
+      expect(vectorLayers[0].source.url).toBe(
+        "https://data.example.com/at.geojson",
+      );
+      expect(vectorLayers[1].source.url).toBe(
+        "https://data.example.com/hu.geojson",
+      );
+      expect(
+        vectorLayers.some((l) =>
+          l.source.url?.includes("data:application/json"),
+        ),
+      ).toBe(false);
+    });
+
+    it("always uses simple circle styling and no inline SVG icons for observation points", async () => {
+      const obsCollection = stacCollection({
+        id: "obs_points_coll",
+        title: "Observation Points Indicator",
+        locations: true,
+        links: [
+          {
+            rel: "child",
+            href: "https://cat/station1.json",
+            latlng: "48.2,16.4",
+            title: "Station Vienna",
+          },
+        ],
+      });
+
+      const config = await buildStacMap({ stac_object: obsCollection });
+      const obsLayer = config.layers.find(
+        (l) => l.properties?.id === "geodb-collection",
+      );
+      expect(obsLayer).toBeDefined();
+      expect(obsLayer.style).toEqual({
+        "circle-radius": 6,
+        "circle-fill-color": "#004170",
+        "circle-stroke-color": "#fff",
+        "circle-stroke-width": 1.5,
+      });
     });
   });
 });
