@@ -38,7 +38,7 @@ import {
   layerControlFormValue,
   layerControlFormValueCompare,
 } from "@/utils/states";
-import { getColFromLayer } from "@eodash/stac/helpers";
+import { findReaderByLayerId } from "@eodash/stac/helpers";
 import { ANALYSIS_GROUP } from "@/eodashSTAC/layers";
 import { updateGeoZarrBands, updateLayerUrl } from "@/eodashSTAC/helpers";
 import { storeToRefs } from "pinia";
@@ -124,7 +124,7 @@ const mapElement = props.map === "second" ? mapCompareEl : mapEl;
 const handleDatetimeUpdate = async (evt) => {
   const { layer, datetime } = evt.detail;
 
-  const ec = getColFromLayer(eodashCols, layer.get("id"));
+  const ec = findReaderByLayerId(eodashCols, layer.get("id"));
   if (!ec) return;
 
   const { layers: updatedLayers, projections } = await ec.updateLayers(
@@ -185,7 +185,7 @@ const onLayerConfigChange = (evt) => {
   // survives a time/item rebuild
   const { layer, jsonformValue } = evt.detail;
   const layerConfig = layer.get("_jsonDefinition")?.properties?.layerConfig;
-  getColFromLayer(eodashCols, layer.get("id"))?.persistLayerConfig(
+  findReaderByLayerId(eodashCols, layer.get("id"))?.persistLayerConfig(
     layerConfig,
     jsonformValue,
   );

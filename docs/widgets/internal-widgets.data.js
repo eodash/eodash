@@ -1,25 +1,13 @@
-import { globSync, readFileSync, existsSync } from "node:fs";
+import { readFileSync, existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { join, dirname } from "node:path";
+import { discoverWidgetNames } from "../../core/node/widgets.js";
 
 const REPO_ROOT = join(dirname(fileURLToPath(import.meta.url)), "../..");
 const DOCS_DIR = join(REPO_ROOT, "docs");
 
-/** Widgets present in widgets/ but intentionally excluded from public docs. */
-const EXCLUDED = new Set(["ExportState", "PopUp"]);
-
 function resolveWidgetNames() {
-  const fileWidgets = globSync("widgets/*.vue", { cwd: REPO_ROOT }).map(
-    (p) => p.replace(/^widgets\//, "").replace(/\.vue$/, ""),
-  );
-
-  const dirWidgets = globSync("widgets/*/index.vue", { cwd: REPO_ROOT }).map(
-    (p) => p.replace(/^widgets\//, "").replace(/\/index\.vue$/, ""),
-  );
-
-  return [...fileWidgets, ...dirWidgets]
-    .filter((name) => !EXCLUDED.has(name))
-    .sort();
+  return discoverWidgetNames(REPO_ROOT);
 }
 
 function resolveRegisteredNames() {
@@ -42,7 +30,7 @@ function assertAllRegistered(widgetNames, registeredNames) {
     .map(
       (n) =>
         `  - "${n}": add an import and \`export const ${n} = ...\` to core/node/typedoc/widgets.ts` +
-        ` so its API page is generated, or add it to EXCLUDED in docs/widgets/internal-widgets.data.js` +
+        ` so its API page is generated, or add it to EXCLUDED_WIDGETS in core/node/widgets.js` +
         ` if it is an internal helper.`,
     )
     .join("\n");

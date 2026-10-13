@@ -10,12 +10,17 @@ export * from "./stac-base";
 
 export {
   createEodashCollection,
+  createEodashIndicator,
+  buildIndicatorDataLayers,
+  normalizeBaseLayers,
   getTooltipProperties,
   getIndicatorLayers,
   getObservationPointsLayer,
+  DEFAULT_COLLECTIONS_PALETTE,
 } from "../index.js";
 
 import type { BoundLegend, STACItem, Projection } from "./stac";
+import type { BBox } from "./stac-base";
 
 /** A style document, extended by what the layer config editor reads off it. */
 export type EodashStyleJson = import("ol/style/flat").FlatStyleLike & {
@@ -87,6 +92,55 @@ export type StaticCollection = ReturnType<
 /** Any collection reader. Narrow it with `reader.kind` where the three differ. */
 export type Reader = APICollection | ParquetCollection | StaticCollection;
 
+/** Composite indicator reader managing multiple collection readers. */
+export interface IndicatorReader {
+  id: string;
+  stac: import("./stac").STACCollection;
+  projection: string;
+  readers: Reader[];
+  getDates: (datetime?: Datetime, bbox?: BBox) => Promise<Date[]>;
+  getLayers: (
+    datetime?: Datetime,
+    context?: BuildContext,
+  ) => Promise<
+    BuiltLayers & { items: import("./stac").STACItem[]; datetime?: string }
+  >;
+  buildLayers: (
+    item: import("./stac").STACItem,
+    context?: BuildContext,
+  ) => Promise<
+    BuiltLayers & { items: import("./stac").STACItem[]; datetime?: string }
+  >;
+  getMapConfig: (options?: {
+    datetime?: Datetime;
+    item?: import("./stac").STACItem;
+    bbox?: BBox;
+    context?: BuildContext;
+  }) => Promise<MapConfig>;
+}
+
+/** Map configuration payload for EOxMap initialization. */
+export interface MapConfig {
+  layers: import("@eox/map").EoxLayer[];
+  center: number[];
+  zoom: number;
+  projection: string;
+  projections: Projection[];
+  datetime?: string;
+  item?: STACItem;
+  timeControl?: {
+    availableDates: string[];
+    minDate?: string;
+    maxDate?: string;
+  };
+  legends?: Array<BoundLegend | Record<string, any>>;
+  indicator?: {
+    id?: string;
+    title?: string;
+    href?: string;
+  };
+}
+
 /** The built layers with the projections they reference. */
 export interface BuiltLayers {
   layers: import("@eox/map").EoxLayer[];
@@ -94,4 +148,8 @@ export interface BuiltLayers {
   projections: Projection[];
   /** The item the layers were built from. */
   item?: STACItem;
+  /** All items if built across multiple collections. */
+  items?: STACItem[];
+  /** Resolved datetime string. */
+  datetime?: string;
 }

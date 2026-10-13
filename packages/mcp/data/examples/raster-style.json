@@ -1,0 +1,322 @@
+[
+  {
+    "id": "raster-cog-ndvi-index-math",
+    "title": "On-the-Fly NDVI Band Math COG Style",
+    "category": "raster-style",
+    "tags": [
+      "cog",
+      "filter",
+      "ndvi",
+      "band-math",
+      "sentinel-2",
+      "raster-style",
+      "interpolate-color",
+      "raster"
+    ],
+    "description": "Calculates Normalized Difference Vegetation Index (B8 - B4)/(B8 + B4) client-side with continuous color interpolation from soil to dense vegetation.",
+    "targetContext": "Host as JSON file on assets endpoint, reference in STAC Item link with 'eox:flatstyle'.",
+    "code": {
+      "color": [
+        "case",
+        ["!=", ["+", ["band", 8], ["band", 4]], 0],
+        [
+          "interpolate",
+          ["linear"],
+          [
+            "/",
+            ["-", ["band", 8], ["band", 4]],
+            ["+", ["band", 8], ["band", 4]]
+          ],
+          -0.2,
+          [165, 0, 38, 1],
+          0,
+          [254, 224, 139, 1],
+          0.2,
+          [217, 239, 139, 1],
+          0.5,
+          [102, 189, 99, 1],
+          0.8,
+          [0, 104, 55, 1]
+        ],
+        ["color", 0, 0, 0, 0]
+      ],
+      "legend": {
+        "title": "Normalized Difference Vegetation Index (NDVI)",
+        "scaleType": "continuous",
+        "domain": [-0.2, 0.8],
+        "range": [
+          "rgba(165, 0, 38, 1)",
+          "rgba(254, 224, 139, 1)",
+          "rgba(217, 239, 139, 1)",
+          "rgba(102, 189, 99, 1)",
+          "rgba(0, 104, 55, 1)"
+        ]
+      }
+    }
+  },
+  {
+    "id": "raster-cog-rgb-composite",
+    "title": "Sentinel-2 True Color RGB COG Style",
+    "category": "raster-style",
+    "tags": [
+      "cog",
+      "sentinel-2",
+      "rgb",
+      "true-color",
+      "raster-style",
+      "rgb-composite",
+      "divisor-variable",
+      "raster"
+    ],
+    "description": "Raster Style combining Bands 4 (Red), 3 (Green), and 2 (Blue) into a true-color satellite image composite with brightness divisor variables.",
+    "targetContext": "Host as JSON file on assets endpoint, reference in STAC Item link with 'eox:flatstyle' or in catalog collection 'Resources[].Style'.",
+    "code": {
+      "variables": {
+        "band1Divisor": 3000,
+        "band2Divisor": 3000,
+        "band3Divisor": 3000
+      },
+      "color": [
+        "case",
+        [">", ["band", 1], 0],
+        [
+          "array",
+          ["/", ["band", 1], ["var", "band1Divisor"]],
+          ["/", ["band", 2], ["var", "band2Divisor"]],
+          ["/", ["band", 3], ["var", "band3Divisor"]],
+          1
+        ],
+        ["color", 0, 0, 0, 0]
+      ]
+    }
+  },
+  {
+    "id": "raster-cog-single-band-normalized",
+    "title": "Single-Band COG Normalized Style with Min/Max Sliders",
+    "category": "raster-style",
+    "tags": [
+      "cog",
+      "geotiff",
+      "raster-style",
+      "client-side-rendering",
+      "interpolate-color",
+      "dynamic-variables",
+      "jsonform",
+      "legend-domainproperties",
+      "raster"
+    ],
+    "description": "OpenLayers Style for single-band GeoTIFF / COG (e.g. SAR Sigma0, DEM Elevation, Temperature) with client-side normalization, colormap interpolation, and reactive min/max sliders.",
+    "targetContext": "Host as JSON file on assets endpoint, reference in STAC Item link with 'eox:flatstyle' or in catalog collection 'Resources[].Style'.",
+    "code": {
+      "legend": {
+        "title": "Sigma0 Backscatter",
+        "range": [
+          "rgba(0, 0, 0, 1)",
+          "rgba(0, 113, 194, 1)",
+          "rgba(255, 255, 255, 1)"
+        ],
+        "domainProperties": ["min", "max"]
+      },
+      "variables": {
+        "min": 0,
+        "max": 1
+      },
+      "color": [
+        "case",
+        ["!=", ["band", 1], 0],
+        [
+          "interpolate",
+          ["linear"],
+          [
+            "/",
+            ["-", ["band", 1], ["var", "min"]],
+            ["-", ["var", "max"], ["var", "min"]]
+          ],
+          0,
+          [0, 0, 0, 1],
+          0.5,
+          [0, 113, 194, 1],
+          1,
+          [255, 255, 255, 1]
+        ],
+        ["color", 0, 0, 0, 0]
+      ],
+      "jsonform": {
+        "type": "object",
+        "title": "Backscatter Contrast",
+        "properties": {
+          "minmax": {
+            "title": "Sigma0 Range",
+            "type": "object",
+            "properties": {
+              "min": {
+                "type": "number",
+                "minimum": 0,
+                "format": "range",
+                "default": 0
+              },
+              "max": {
+                "type": "number",
+                "maximum": 5,
+                "format": "range",
+                "default": 1
+              }
+            },
+            "format": "minmax"
+          }
+        }
+      }
+    }
+  },
+  {
+    "id": "raster-style-multiband-masking",
+    "title": "Multi-Band COG Style with Compound Masking/Filtering and Min/Max Range Form",
+    "category": "raster-style",
+    "tags": [
+      "raster",
+      "cog",
+      "filtering",
+      "analysis",
+      "multiband",
+      "masking",
+      "between",
+      "gtif",
+      "multiband-masking",
+      "jsonform",
+      "domainproperties",
+      "legend"
+    ],
+    "description": "Multi-band OpenLayers WebGL Style evaluating primary band 1 continuous colormap combined with compound logical masking (between) on elevation (band 2) and slope (band 3), fully interactive via format: minmax JSONForm sliders.",
+    "targetContext": "Host as JSON on assets endpoint, reference in STAC Item link with 'eox:flatstyle' or in catalog collection 'Resources[].Style'.",
+    "code": {
+      "legend": {
+        "title": "Wind Power Density",
+        "range": [
+          "rgba(64, 128, 128, 1)",
+          "rgba(128, 192, 192, 1)",
+          "rgba(192, 224, 224, 1)",
+          "rgba(255, 255, 255, 1)",
+          "rgba(255, 192, 128, 1)",
+          "rgba(255, 128, 64, 1)",
+          "rgba(255, 64, 32, 1)"
+        ],
+        "domainProperties": ["powermin", "powermax"]
+      },
+      "variables": {
+        "powermin": 0,
+        "powermax": 1000,
+        "elevationmin": 0,
+        "elevationmax": 4000,
+        "slopemin": 0,
+        "slopemax": 50
+      },
+      "color": [
+        "case",
+        [
+          "all",
+          [">", ["band", 1], 0],
+          [
+            "between",
+            ["band", 2],
+            ["var", "elevationmin"],
+            ["var", "elevationmax"]
+          ],
+          ["between", ["band", 3], ["var", "slopemin"], ["var", "slopemax"]]
+        ],
+        [
+          "interpolate",
+          ["linear"],
+          [
+            "/",
+            ["-", ["band", 1], ["var", "powermin"]],
+            ["-", ["var", "powermax"], ["var", "powermin"]]
+          ],
+          0,
+          [64, 128, 128, 1],
+          0.166,
+          [128, 192, 192, 1],
+          0.333,
+          [192, 224, 224, 1],
+          0.5,
+          [255, 255, 255, 1],
+          0.666,
+          [255, 192, 128, 1],
+          0.833,
+          [255, 128, 64, 1],
+          1,
+          [255, 64, 32, 1]
+        ],
+        ["color", 0, 0, 0, 0]
+      ],
+      "jsonform": {
+        "type": "object",
+        "title": "Data Filters",
+        "properties": {
+          "powerrange": {
+            "title": "Power Density Range",
+            "type": "object",
+            "properties": {
+              "powermin": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 3000,
+                "format": "range",
+                "default": 0
+              },
+              "powermax": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 3000,
+                "format": "range",
+                "default": 1000
+              }
+            },
+            "format": "minmax"
+          },
+          "elevationrange": {
+            "title": "Elevation Range (m)",
+            "type": "object",
+            "properties": {
+              "elevationmin": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 4000,
+                "format": "range",
+                "default": 0
+              },
+              "elevationmax": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 4000,
+                "format": "range",
+                "default": 4000
+              }
+            },
+            "format": "minmax"
+          },
+          "sloperange": {
+            "title": "Slope Range (deg)",
+            "type": "object",
+            "properties": {
+              "slopemin": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 50,
+                "format": "range",
+                "default": 0
+              },
+              "slopemax": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 50,
+                "format": "range",
+                "default": 50
+              }
+            },
+            "format": "minmax"
+          }
+        }
+      }
+    }
+  }
+]

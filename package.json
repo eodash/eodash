@@ -77,6 +77,10 @@
     "test:stac": "vitest run --project stac",
     "test:cli": "vitest run --project cli",
     "test:docker": "node tests/docker/container.test.js",
+    "test:mcp": "vitest run --project mcp",
+    "mcp:generate": "node packages/mcp/generate-metadata.js",
+    "mcp:build": "npm run build --workspace=@eodash/mcp",
+    "mcp:start": "node packages/mcp/dist/index.js --host 0.0.0.0",
     "test:coverage": "vitest run --coverage",
     "docs:dev": "test -d docs/api || npm run docs:generate && vitepress dev docs --port 3333",
     "docs:build": "npm run docs:generate && vitepress build docs",
@@ -119,7 +123,10 @@
   "devDependencies": {
     "@eox/eslint-config": "^2.2.0",
     "@eox/pages-theme-eox": "^1.9.0",
+    "@modelcontextprotocol/sdk": "^1.30.0",
     "@pinia/testing": "^2.0.1",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
     "@types/json-schema": "^7.0.15",
     "@types/mustache": "^4.2.6",
     "@types/node": "^26.6.2",
@@ -129,9 +136,12 @@
     "@vitest/coverage-v8": "^5.0.1",
     "@vitest/ui": "^5.0.1",
     "@vue/devtools-api": "^8.2.1",
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
     "pkg-pr-new": "^0.0.88",
     "prettier": "^3.9.8",
     "rolldown": "^1.2.9",
+    "rollup": "^4.61.1",
     "terminate": "^2.8.0",
     "tsc-alias": "^1.9.5",
     "typedoc": "^0.28.20",
@@ -141,12 +151,13 @@
     "typescript": "^6.0.3",
     "vitest": "^5.0.1",
     "vitest-browser-vue": "^3.1.0",
-    "vue-tsc": "3.3.11"
+    "vue-tsc": "3.3.11",
+    "zod": "^4.4.3"
   },
   "engines": {
     "node": ">=24.0.0"
   },
   "bin": {
-    "eodash": "./dist/node/cli.js"
+    "eodash": "dist/node/cli.js"
   }
 }

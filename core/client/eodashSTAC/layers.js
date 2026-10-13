@@ -1,9 +1,9 @@
-import { getIndicatorLayers, getObservationPointsLayer } from "@eodash/stac";
 import {
-  LAYER_ID_SEPARATOR,
-  getProjectionCode,
-  sanitizeBbox,
-} from "@eodash/stac/helpers";
+  getIndicatorLayers,
+  buildIndicatorDataLayers,
+  normalizeBaseLayers,
+} from "@eodash/stac";
+import { getProjectionCode, sanitizeBbox } from "@eodash/stac/helpers";
 import { assignLayers } from "@/store/actions";
 import {
   dataThemesBrands,
@@ -157,49 +157,13 @@ export const buildIndicatorLayers = async (
     },
   );
 
-  const baseLayers = indicatorLayers.filter(
-    (l) => l.properties?.group === "baselayer",
+  const baseLayers = normalizeBaseLayers(
+    indicatorLayers.filter((l) => l.properties?.group === "baselayer"),
+    baseLayersFallback ?? defaultBaseLayers.value,
   );
   const overLayers = indicatorLayers.filter(
     (l) => l.properties?.group === "overlay",
   );
-  if (baseLayers.length) {
-    let counter = 0;
-    let lastPos = 0;
-    for (let indx = 0; indx < baseLayers.length; indx++) {
-      const bl = baseLayers[indx];
-      //@ts-expect-error properties is optional upstream, always built here
-      if (!("visible" in bl.properties)) {
-        //@ts-expect-error properties is optional upstream, always built here
-        bl.properties.visible = false;
-      }
-
-      //@ts-expect-error properties is optional upstream, always built here
-      if (bl.properties.visible) {
-        counter++;
-        lastPos = indx;
-      }
-    }
-
-    if (counter === 0) {
-      //@ts-expect-error properties is optional upstream, always built here
-      baseLayers[0].properties.visible = true;
-    }
-
-    if (counter > 0) {
-      baseLayers.forEach((bl, indx) => {
-        //@ts-expect-error properties is optional upstream, always built here
-        bl.properties.visible = indx === lastPos;
-      });
-    }
-
-    baseLayers.forEach((bl) => {
-      //@ts-expect-error properties is optional upstream, always built here
-      bl.properties.layerControlExclusive = true;
-    });
-  } else {
-    baseLayers.push(...(baseLayersFallback ?? defaultBaseLayers.value));
-  }
 
   const {
     layers: dataLayers,
@@ -261,51 +225,14 @@ export const assignDataLayers = async (
  * @param {import("@eodash/stac").BuildContext} [options.context] - Build context configuration
  */
 async function buildDataLayers(map, { readers, stac, timeOrItem, context }) {
-  /** @type {import("@eox/map").EoxLayer[]} */
-  const layers = [];
-  /** @type {import("@eodash/stac").Projection[]} */
-  const projections = [];
-  /** @type {import("@eodash/stac").STACItem[]} */
-  const items = [];
-
-  const readerLayers = await Promise.all(
-    readers.map((reader) =>
-      (typeof timeOrItem === "object"
-        ? reader.buildLayers(timeOrItem, context)
-        : reader.getLayers(timeOrItem, context)
-      ).then((built) => {
-        built.layers.forEach((layer) => {
-          if (!layer.properties?.layerControlExclusive) {
-            //@ts-expect-error properties is optional upstream, always built here
-            layer.properties.layerControlExpand = true;
-            //@ts-expect-error properties is optional upstream, always built here
-            layer.properties.layerControlToolsExpand = true;
-          }
-        });
-        return built;
-      }),
-    ),
-  );
-
-  for (const built of readerLayers) {
-    layers.push(...built.layers);
-    projections.push(...built.projections);
-    if (built.item) {
-      items.push(built.item);
-    }
-  }
-
-  applyVisibilityRoles(stac, layers);
-
-  const observationPoints = getObservationPointsLayer(
-    readers.map((reader) => reader.stac),
-    { themes: dataThemesBrands, currentLayers: map?.layers ?? [] },
-  );
-  if (observationPoints) {
-    layers.push(observationPoints);
-  }
-
-  return { layers, projections, items };
+  return buildIndicatorDataLayers({
+    readers,
+    stac: stac ?? undefined,
+    timeOrItem,
+    context,
+    themes: dataThemesBrands,
+    currentLayers: map?.layers ?? [],
+  });
 }
 
 /**
@@ -352,35 +279,4 @@ function layerGroup(id, layers) {
  */
 function groupOrder(id) {
   return GROUPS[id ?? ""]?.order ?? -1;
-}
-
-/**
- * Sets layer visibility and control properties based on link role definitions in the collection.
- *
- * @param {import("@eodash/stac").STACCollection | null} [collection] - STAC collection
- * @param {import("@eox/map").EoxLayer[]} [layers] - Layers to apply roles to
- */
-function applyVisibilityRoles(collection, layers = []) {
-  const visibilityLinks = (collection?.links ?? []).filter(
-    (link) =>
-      Array.isArray(link.roles) &&
-      (link.roles.includes("disable") || link.roles.includes("hidden")),
-  );
-
-  for (const link of visibilityLinks) {
-    const target = layers.find(
-      (layer) =>
-        typeof layer.properties?.id === "string" &&
-        layer.properties.id.split(LAYER_ID_SEPARATOR)[0] === link.id,
-    );
-    if (!target?.properties) {
-      continue;
-    }
-    if (/** @type {string[]} */ (link.roles).includes("disable")) {
-      target.properties.visible = false;
-      target.properties.layerControlExpand = false;
-    } else {
-      target.properties.layerControlHide = true;
-    }
-  }
 }

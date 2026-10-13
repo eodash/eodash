@@ -41,6 +41,30 @@ describe("processImage", () => {
     ]);
   });
 
+  test("builds a static image layer preferring link.title if present", () => {
+    const layers = processImage(
+      [
+        serviceLink("image/png", "scene", "https://x/{{token}}.png", {
+          title: "Custom Image Title",
+        }),
+      ],
+      { token: "abc" },
+      [0, 0, 10, 10],
+    );
+
+    expect(layers).toEqual([
+      {
+        type: "Image",
+        properties: { id: "scene_process", title: "Custom Image Title" },
+        source: {
+          type: "ImageStatic",
+          imageExtent: [0, 0, 10, 10],
+          url: "https://x/abc.png",
+        },
+      },
+    ]);
+  });
+
   test("returns an empty list when no png links match", () => {
     expect(
       processImage([serviceLink("image/tiff", "t", "https://x/t.tif")], {}, []),

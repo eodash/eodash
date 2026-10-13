@@ -57,6 +57,8 @@ The process output is determined by the `service` links returned for the collect
 
 Chart output is shared through the [eodash store](/eodash-store): `EodashProcess` writes `chartSpec` and `chartData`, and `EodashChart` reads them. Map layers are added to the active map.
 
+By default, the display title of the generated results layers on the map is `"Results "` followed by the collection or layer ID. If a `title` property is present on the STAC link, that title is preferred and used as the layer's display title in the layer control instead.
+
 ## Custom endpoints
 
 When a `service` link carries an `endpoint` identifier, eodash routes it to a dedicated handler instead of fetching it directly. These cover backends that need their own request/response handling:

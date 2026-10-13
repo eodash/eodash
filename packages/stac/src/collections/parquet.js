@@ -22,6 +22,7 @@ const FOOTER_BYTES = 1 << 15;
  * @param {string} context.url - Collection URL
  * @param {import("../types").STACCollection} context.stac - Collection metadata
  * @param {import("../http.js").HttpClient} context.http - HTTP client instance
+ * @param {typeof fetch} [context.fetch] - Custom fetch implementation
  * @param {string} [context.color] - Collection layer tint color
  * @param {string} [context.viewProjection] - Map view projection
  * @param {import("../types").BuildContext} [context.rasterOptions] - Raster rendering options
@@ -30,12 +31,14 @@ export const createParquetCollection = ({
   url,
   stac,
   http,
+  fetch: customFetch,
   color,
   viewProjection,
   rasterOptions,
 }) => {
   const mirror = findParquetMirror(stac);
   const href = mirror ? toAbsolute(mirror.href, url) : undefined;
+  const fetchFn = customFetch ?? globalThis.fetch;
 
   /** The mirror's footer, or nothing when the collection has no mirror. */
   const openMirror = cachedRead(async () => {
@@ -44,7 +47,9 @@ export const createParquetCollection = ({
     }
     const file = await asyncBufferFromUrl({
       url: href,
-      byteLength: mirror?.["file:size"] ?? (await fetchByteLength(href)),
+      byteLength:
+        mirror?.["file:size"] ?? (await fetchByteLength(href, fetchFn)),
+      fetch: fetchFn,
     });
     const metadata = await parquetMetadataAsync(file, {
       initialFetchSize: FOOTER_BYTES,
@@ -196,11 +201,12 @@ export const createParquetCollection = ({
  * mid-file, so ask three ways, cheapest first.
  *
  * @param {string} href
+ * @param {typeof fetch} [fetchFn]
  * @returns {Promise<number | undefined>} nothing when the length is unreadable
  */
-async function fetchByteLength(href) {
+async function fetchByteLength(href, fetchFn = globalThis.fetch) {
   // trustworthy only while `Content-Encoding` reads back empty
-  const head = await fetch(href, {
+  const head = await fetchFn(href, {
     method: "HEAD",
     headers: { Range: "bytes=0-0" },
   });
@@ -212,7 +218,7 @@ async function fetchByteLength(href) {
   }
 
   // states the whole size, at the cost of a byte, but is not CORS-safelisted
-  const probe = await fetch(href, { headers: { Range: "bytes=0-0" } });
+  const probe = await fetchFn(href, { headers: { Range: "bytes=0-0" } });
   const declared = Number(
     probe.headers.get("content-range")?.split("/").at(-1),
   );
@@ -222,7 +228,7 @@ async function fetchByteLength(href) {
   }
 
   // last resort: ask for it whole just to read `Content-Length`, then drop it
-  const response = await fetch(href, { headers: { Range: "bytes=0-" } });
+  const response = await fetchFn(href, { headers: { Range: "bytes=0-" } });
   if (response.status !== 206) {
     // ranges went unhonoured, so only the decoded body's length is not a guess
     return (await response.arrayBuffer()).byteLength || undefined;
