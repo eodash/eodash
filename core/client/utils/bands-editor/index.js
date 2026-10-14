@@ -6,6 +6,7 @@ import { generateBandColors } from "./colors";
 import { buildRGBInterface, refreshRGBSlots } from "./rgb.js";
 import {
   buildArithmeticInterface,
+  parseFormulaValue,
   refreshArithmeticSlots,
 } from "./arithmetic.js";
 
@@ -25,6 +26,8 @@ export class BandsEditor extends AbstractEditor {
 
   build() {
     super.build();
+    // bands computed from a watched arithmetic field have nothing to show
+    if (this.schema.watch) return;
     // Determine the format type
     const format = this.schema.format || "bands";
 
@@ -70,6 +73,29 @@ export class BandsEditor extends AbstractEditor {
     } else {
       refreshArithmeticSlots(this);
     }
+  }
+
+  /**
+   * Bands with a `watch` on an arithmetic field follow its formula: the bands
+   * it references, in placeholder order.
+   */
+  onWatchedFieldChange() {
+    super.onWatchedFieldChange();
+    // json-editor sets both, its typings do not declare them
+    const { watched, jsoneditor } = /** @type {any} */ (this);
+    const [path] = Object.values(watched ?? {});
+    const formulaEditor = path && jsoneditor.getEditor(path);
+    if (!(formulaEditor instanceof BandsEditor)) return;
+
+    const variables = parseFormulaValue(
+      formulaEditor,
+      formulaEditor.getValue(),
+    );
+    if (!variables) return;
+    const bands = [...new Set(Object.values(variables))];
+    if (JSON.stringify(bands) === JSON.stringify(this.getValue())) return;
+    this.setValue(bands);
+    this.onChange(true);
   }
 }
 

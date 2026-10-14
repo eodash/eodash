@@ -1,0 +1,234 @@
+{
+  "variables": {
+    "mode": 1,
+    "max": 0.4,
+    "maxA": 0.4,
+    "maxB": 0.1,
+    "maxRatio": 15,
+    "minCrossRatio": 0,
+    "maxCrossRatio": 1
+  },
+  "color": [
+    "case",
+    ["!", [">", ["band", 1], 0]],
+    [0, 0, 0, 0],
+    ["==", ["var", "mode"], 2],
+    [
+      "case",
+      ["!", [">", ["band", 2], 0]],
+      [0, 0, 0, 0],
+      [
+        "color",
+        ["interpolate", ["linear"], ["band", 1], 0, 0, ["var", "maxA"], 255],
+        ["interpolate", ["linear"], ["band", 2], 0, 0, ["var", "maxB"], 255],
+        [
+          "interpolate",
+          ["linear"],
+          ["/", ["band", 1], ["band", 2]],
+          1,
+          0,
+          ["var", "maxRatio"],
+          255
+        ]
+      ]
+    ],
+    ["==", ["var", "mode"], 3],
+    [
+      "case",
+      ["!", [">", ["band", 2], 0]],
+      [0, 0, 0, 0],
+      [
+        "interpolate",
+        ["linear"],
+        ["/", ["band", 1], ["band", 2]],
+        ["var", "minCrossRatio"],
+        [68, 1, 84],
+        ["/", ["+", ["var", "minCrossRatio"], ["var", "maxCrossRatio"]], 2],
+        [33, 145, 140],
+        ["var", "maxCrossRatio"],
+        [253, 231, 37]
+      ]
+    ],
+    [
+      "interpolate",
+      ["linear"],
+      ["band", 1],
+      0,
+      [0, 0, 0],
+      ["var", "max"],
+      [255, 255, 255]
+    ]
+  ],
+  "legend": [
+    {
+      "title": "VH/VV",
+      "boundTo": { "key": "mode", "value": 3 },
+      "domainProperties": ["minCrossRatio", "maxCrossRatio"],
+      "range": ["rgb(68,1,84)", "rgb(33,145,140)", "rgb(253,231,37)"]
+    }
+  ],
+  "jsonform": {
+    "type": "object",
+    "options": { "keep_oneof_values": false, "no_additional_properties": true },
+    "anyOf": [
+      {
+        "type": "object",
+        "title": "Single Polarization",
+        "properties": {
+          "mode": {
+            "type": "integer",
+            "const": 1,
+            "default": 1,
+            "options": { "hidden": true, "enforce_const": true }
+          },
+          "polarization": {
+            "type": "string",
+            "format": "bands-arithmetic",
+            "title": "Polarization",
+            "formulaTemplate": "{{A}}",
+            "default": "vv",
+            "options": {
+              "enum": ["vv", "vh"],
+              "enum_titles": ["VV", "VH"],
+              "colors": ["#003170", "#00ae9d"],
+              "defaultVariables": { "A": "vv" }
+            }
+          },
+          "bands": {
+            "type": "array",
+            "format": "bands",
+            "default": ["vv"],
+            "items": { "type": "string", "enum": ["vv", "vh"] },
+            "watch": { "formula": "polarization" },
+            "options": { "hidden": true }
+          },
+          "max": {
+            "type": "number",
+            "title": "Max",
+            "format": "range",
+            "minimum": 0.01,
+            "maximum": 0.5,
+            "step": 0.005,
+            "default": 0.4
+          }
+        }
+      },
+      {
+        "type": "object",
+        "title": "SAR False Color (VV, VH, VV/VH)",
+        "properties": {
+          "mode": {
+            "type": "integer",
+            "const": 2,
+            "default": 2,
+            "options": { "hidden": true, "enforce_const": true }
+          },
+          "composite": {
+            "type": "string",
+            "format": "bands-arithmetic",
+            "title": "Composite Bands",
+            "formulaTemplate": "{{A}};{{B}};{{A}}/{{B}}",
+            "default": "vv;vh;vv/vh",
+            "options": {
+              "enum": ["vv", "vh"],
+              "enum_titles": ["VV", "VH"],
+              "colors": ["#003170", "#00ae9d"],
+              "defaultVariables": { "A": "vv", "B": "vh" }
+            }
+          },
+          "bands": {
+            "type": "array",
+            "format": "bands",
+            "default": ["vv", "vh"],
+            "items": { "type": "string", "enum": ["vv", "vh"] },
+            "watch": { "formula": "composite" },
+            "options": { "hidden": true }
+          },
+          "maxA": {
+            "type": "number",
+            "title": "Red max (A)",
+            "format": "range",
+            "minimum": 0.01,
+            "maximum": 0.5,
+            "step": 0.005,
+            "default": 0.4
+          },
+          "maxB": {
+            "type": "number",
+            "title": "Green max (B)",
+            "format": "range",
+            "minimum": 0.005,
+            "maximum": 0.5,
+            "step": 0.005,
+            "default": 0.1
+          },
+          "maxRatio": {
+            "type": "number",
+            "title": "Blue max (A/B)",
+            "format": "range",
+            "minimum": 2,
+            "maximum": 30,
+            "step": 1,
+            "default": 15
+          }
+        }
+      },
+      {
+        "type": "object",
+        "title": "Cross-Ratio (VH/VV)",
+        "properties": {
+          "mode": {
+            "type": "integer",
+            "const": 3,
+            "default": 3,
+            "options": { "hidden": true, "enforce_const": true }
+          },
+          "ratio": {
+            "type": "string",
+            "format": "bands-arithmetic",
+            "title": "Ratio",
+            "formulaTemplate": "({{A}})/({{B}})",
+            "default": "(vh)/(vv)",
+            "options": {
+              "enum": ["vv", "vh"],
+              "enum_titles": ["VV", "VH"],
+              "colors": ["#003170", "#00ae9d"],
+              "defaultVariables": { "A": "vh", "B": "vv" }
+            }
+          },
+          "bands": {
+            "type": "array",
+            "format": "bands",
+            "default": ["vh", "vv"],
+            "items": { "type": "string", "enum": ["vv", "vh"] },
+            "watch": { "formula": "ratio" },
+            "options": { "hidden": true }
+          },
+          "crossRatioRange": {
+            "type": "object",
+            "title": "Ratio range",
+            "format": "minmax",
+            "properties": {
+              "minCrossRatio": {
+                "type": "number",
+                "format": "range",
+                "minimum": 0,
+                "maximum": 2,
+                "step": 0.01,
+                "default": 0
+              },
+              "maxCrossRatio": {
+                "type": "number",
+                "format": "range",
+                "minimum": 0,
+                "maximum": 2,
+                "step": 0.01,
+                "default": 1
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}

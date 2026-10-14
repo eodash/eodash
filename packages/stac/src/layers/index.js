@@ -29,6 +29,8 @@ import { createLayerFromRender } from "./renders.js";
  * @property {import("../http.js").HttpClient} [http]
  * @property {import("../types").LayerConfigHelpers} [layerConfigHelpers]
  * @property {boolean} [stateful] - whether the built item becomes the reader's `item`. Default `true`.
+ * @property {boolean} [layerDatetime] - whether layers carry `layerDatetime`. Default `true`.
+ * @property {boolean} [timeControlValues] - whether layers carry `timeControlValues`. Default `true`.
  */
 
 /** Link relations supported for layer rendering. */
@@ -64,6 +66,8 @@ export const buildLayers = async (item, context) => {
     renders,
     http = createHTTPInstance(),
     layerConfigHelpers = createLayerConfigHelpers(),
+    layerDatetime: withLayerDatetime = true,
+    timeControlValues: withTimeControlValues = true,
   } = context;
   const options = {
     viewProjection,
@@ -92,10 +96,17 @@ export const buildLayers = async (item, context) => {
     item.properties?.datetime ??
     item.properties?.start_datetime ??
     itemDatetime;
-  const { layerDatetime, timeControlValues } = extractLayerTimeValues(
-    await getDates(itemDate ?? undefined),
-    itemDate,
-  );
+  // both come from the collection's dates, so the fetch is skipped only when neither is wanted
+  const timeValues =
+    withLayerDatetime || withTimeControlValues
+      ? extractLayerTimeValues(await getDates(itemDate ?? undefined), itemDate)
+      : undefined;
+  const layerDatetime = withLayerDatetime
+    ? timeValues?.layerDatetime
+    : undefined;
+  const timeControlValues = withTimeControlValues
+    ? timeValues?.timeControlValues
+    : undefined;
 
   const dataAssets = Object.keys(item.assets ?? {}).reduce((data, ast) => {
     if (item.assets[ast].roles?.includes("data")) {

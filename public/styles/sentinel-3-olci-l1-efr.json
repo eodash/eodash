@@ -1,0 +1,211 @@
+{
+  "variables": {
+    "gamma": 1.3,
+    "saturation": 0.2,
+    "contrast": 0.1,
+    "minRed": 10,
+    "maxRed": 300,
+    "minGreen": 22,
+    "maxGreen": 345,
+    "minBlue": 36,
+    "maxBlue": 390
+  },
+  "gamma": ["var", "gamma"],
+  "saturation": ["var", "saturation"],
+  "contrast": ["var", "contrast"],
+  "color": [
+    "case",
+    ["!", [">", ["band", 1], 0]],
+    [0, 0, 0, 0],
+    [
+      "color",
+      [
+        "interpolate",
+        ["linear"],
+        ["band", 1],
+        ["var", "minRed"],
+        0,
+        ["var", "maxRed"],
+        255
+      ],
+      [
+        "interpolate",
+        ["linear"],
+        ["band", 2],
+        ["var", "minGreen"],
+        0,
+        ["var", "maxGreen"],
+        255
+      ],
+      [
+        "interpolate",
+        ["linear"],
+        ["band", 3],
+        ["var", "minBlue"],
+        0,
+        ["var", "maxBlue"],
+        255
+      ]
+    ]
+  ],
+  "jsonform": {
+    "type": "object",
+    "title": "Band Configuration",
+    "required": ["bands"],
+    "properties": {
+      "bands": {
+        "title": "Band Combination",
+        "type": "array",
+        "format": "bands",
+        "default": ["oa08_radiance", "oa06_radiance", "oa04_radiance"],
+        "items": {
+          "type": "string",
+          "enum": [
+            "oa01_radiance",
+            "oa02_radiance",
+            "oa03_radiance",
+            "oa04_radiance",
+            "oa05_radiance",
+            "oa06_radiance",
+            "oa07_radiance",
+            "oa08_radiance",
+            "oa09_radiance",
+            "oa10_radiance",
+            "oa11_radiance",
+            "oa12_radiance",
+            "oa13_radiance",
+            "oa14_radiance",
+            "oa15_radiance",
+            "oa16_radiance",
+            "oa17_radiance",
+            "oa18_radiance",
+            "oa19_radiance",
+            "oa20_radiance",
+            "oa21_radiance"
+          ],
+          "options": {
+            "enum_titles": [
+              "Oa01",
+              "Oa02",
+              "Oa03",
+              "Oa04",
+              "Oa05",
+              "Oa06",
+              "Oa07",
+              "Oa08",
+              "Oa09",
+              "Oa10",
+              "Oa11",
+              "Oa12",
+              "Oa13",
+              "Oa14",
+              "Oa15",
+              "Oa16",
+              "Oa17",
+              "Oa18",
+              "Oa19",
+              "Oa20",
+              "Oa21"
+            ]
+          }
+        }
+      },
+      "rescaleRed": {
+        "title": "Red Channel",
+        "type": "object",
+        "format": "minmax",
+        "properties": {
+          "minRed": {
+            "type": "number",
+            "format": "range",
+            "minimum": 0,
+            "maximum": 500,
+            "step": 1,
+            "default": 10
+          },
+          "maxRed": {
+            "type": "number",
+            "format": "range",
+            "minimum": 0,
+            "maximum": 500,
+            "step": 1,
+            "default": 300
+          }
+        }
+      },
+      "rescaleGreen": {
+        "title": "Green Channel",
+        "type": "object",
+        "format": "minmax",
+        "properties": {
+          "minGreen": {
+            "type": "number",
+            "format": "range",
+            "minimum": 0,
+            "maximum": 500,
+            "step": 1,
+            "default": 22
+          },
+          "maxGreen": {
+            "type": "number",
+            "format": "range",
+            "minimum": 0,
+            "maximum": 500,
+            "step": 1,
+            "default": 345
+          }
+        }
+      },
+      "rescaleBlue": {
+        "title": "Blue Channel",
+        "type": "object",
+        "format": "minmax",
+        "properties": {
+          "minBlue": {
+            "type": "number",
+            "format": "range",
+            "minimum": 0,
+            "maximum": 500,
+            "step": 1,
+            "default": 36
+          },
+          "maxBlue": {
+            "type": "number",
+            "format": "range",
+            "minimum": 0,
+            "maximum": 500,
+            "step": 1,
+            "default": 390
+          }
+        }
+      },
+      "gamma": {
+        "type": "number",
+        "title": "Gamma",
+        "format": "range",
+        "minimum": 0.5,
+        "maximum": 3,
+        "step": 0.1,
+        "default": 1.3
+      },
+      "saturation": {
+        "type": "number",
+        "title": "Saturation",
+        "format": "range",
+        "minimum": -1,
+        "maximum": 1,
+        "step": 0.05,
+        "default": 0.2
+      },
+      "contrast": {
+        "type": "number",
+        "title": "Contrast",
+        "format": "range",
+        "minimum": -1,
+        "maximum": 1,
+        "step": 0.05,
+        "default": 0.1
+      }
+    }
+  }
+}
