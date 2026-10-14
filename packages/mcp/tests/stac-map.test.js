@@ -308,6 +308,21 @@ describe("STAC Map Generator - buildStacMap", () => {
       expect(config.indicator?.id).toBe("N2_CO2_mean");
     });
 
+    it("omits indicator metadata when indicator: false", async () => {
+      serveMockData();
+      const catalog = makeCatalog();
+      const config = await buildStacMap(
+        {
+          stac_object: catalog,
+          collection_id: "N2_CO2_mean",
+          indicator: false,
+        },
+        { client },
+      );
+
+      expect(config.indicator).toBeUndefined();
+    });
+
     it("returns timeControl with availableDates, minDate, and maxDate", async () => {
       serveMockData();
       const config = await buildStacMap({ url: INDICATOR_URL }, { client });
@@ -318,6 +333,31 @@ describe("STAC Map Generator - buildStacMap", () => {
       );
       expect(config.timeControl?.minDate).toBeDefined();
       expect(config.timeControl?.maxDate).toBeDefined();
+    });
+
+    it("omits layerDatetime and timeControlValues on layer properties by default", async () => {
+      serveMockData();
+      const config = await buildStacMap({ url: INDICATOR_URL }, { client });
+      const layersWithTime = config.layers.filter(
+        (l) => l.properties?.layerDatetime || l.properties?.timeControlValues,
+      );
+      expect(layersWithTime).toHaveLength(0);
+      expect(config.timeControl).toBeDefined();
+    });
+
+    it("includes layerDatetime and timeControlValues on layer properties when timeControl: true", async () => {
+      serveMockData();
+      const config = await buildStacMap(
+        { url: INDICATOR_URL, timeControl: true },
+        { client },
+      );
+      const layersWithTime = config.layers.filter(
+        (l) => l.properties?.layerDatetime || l.properties?.timeControlValues,
+      );
+      expect(layersWithTime.length).toBeGreaterThan(0);
+      const targetLayer = layersWithTime[0];
+      expect(targetLayer.properties?.layerDatetime).toBeDefined();
+      expect(targetLayer.properties?.timeControlValues).toBeDefined();
     });
 
     it("extracts legend when defined in collection or links", async () => {
@@ -516,6 +556,7 @@ describe("MCP Protocol Tool - generate_map_from_stac", () => {
     expect(tool?.inputSchema?.properties?.bbox).toBeDefined();
     expect(tool?.inputSchema?.properties?.viewProjection).toBeDefined();
     expect(tool?.inputSchema?.properties?.rasterEndpoint).toBeDefined();
+    expect(tool?.inputSchema?.properties?.timeControl).toBeDefined();
   });
 
   it("calls generate_map_from_stac tool via MCP protocol and returns structured JSON", async () => {
@@ -549,6 +590,109 @@ describe("MCP Protocol Tool - generate_map_from_stac", () => {
     expect(mapConfig.center).toBeDefined();
     expect(mapConfig.zoom).toBeDefined();
     expect(mapConfig.item.id).toBe("mcp_direct_item");
+  });
+
+  it("omits layerDatetime/timeControlValues over MCP protocol by default, includes them when timeControl: true", async () => {
+    const mockItem1 = stacItem({
+      id: "i1",
+      properties: { datetime: "2023-01-01T00:00:00Z" },
+      bbox: [10, 40, 15, 45],
+      links: [
+        {
+          rel: "xyz",
+          href: "https://tiles.example.com/{z}/{x}/{y}.png",
+          title: "Base OSM",
+        },
+      ],
+    });
+    const mockItem2 = stacItem({
+      id: "i2",
+      properties: { datetime: "2023-01-10T00:00:00Z" },
+      bbox: [10, 40, 15, 45],
+      links: [
+        {
+          rel: "xyz",
+          href: "https://tiles.example.com/{z}/{x}/{y}.png",
+          title: "Base OSM",
+        },
+      ],
+    });
+
+    const customCollection = {
+      ...makeIndicator(),
+      links: [
+        {
+          rel: "xyz",
+          href: "https://tiles.example.com/{z}/{x}/{y}.png",
+          roles: ["baselayer", "visible"],
+          title: "Base OSM",
+        },
+        {
+          rel: "item",
+          href: "https://example.com/items/i1.json",
+          id: "i1",
+          datetime: "2023-01-01T00:00:00Z",
+        },
+        {
+          rel: "item",
+          href: "https://example.com/items/i2.json",
+          id: "i2",
+          datetime: "2023-01-10T00:00:00Z",
+        },
+      ],
+    };
+
+    const fetchSpy = vi
+      .spyOn(globalThis, "fetch")
+      .mockImplementation(async (reqUrl) => {
+        const u = String(reqUrl);
+        const item = u.includes("i1") ? mockItem1 : mockItem2;
+        return {
+          ok: true,
+          status: 200,
+          headers: new Headers({ "content-type": "application/json" }),
+          json: async () => item,
+          text: async () => JSON.stringify(item),
+        };
+      });
+
+    try {
+      const { client: mcpClient } = await createTestClientServer();
+
+      // Default: timeControl omitted (off)
+      const resDefault = await mcpClient.callTool({
+        name: "generate_map_from_stac",
+        arguments: {
+          stac_object: customCollection,
+        },
+      });
+      expect(resDefault.isError).toBeFalsy();
+      const configDefault = JSON.parse(resDefault.content[0].text);
+      const layersWithTimeDefault = configDefault.layers.filter(
+        (l) =>
+          l.properties?.layerDatetime ||
+          l.properties?.timeControlValues ||
+          l.properties?.timeControlValue,
+      );
+      expect(layersWithTimeDefault).toHaveLength(0);
+
+      // Turned on via timeControl: true
+      const resOn = await mcpClient.callTool({
+        name: "generate_map_from_stac",
+        arguments: {
+          stac_object: customCollection,
+          timeControl: true,
+        },
+      });
+      expect(resOn.isError).toBeFalsy();
+      const configOn = JSON.parse(resOn.content[0].text);
+      const layersWithTimeOn = configOn.layers.filter(
+        (l) => l.properties?.layerDatetime || l.properties?.timeControlValues,
+      );
+      expect(layersWithTimeOn.length).toBeGreaterThan(0);
+    } finally {
+      fetchSpy.mockRestore();
+    }
   });
 
   it("calls generate_map_from_stac tool with fetch mock via vi.spyOn", async () => {
@@ -635,6 +779,63 @@ describe("MCP Protocol Tool - generate_map_from_stac", () => {
       expect(mapConfig.indicator.id).toBe("N2_CO2_mean");
       expect(mapConfig.layers).toBeDefined();
       expect(mapConfig.layers.length).toBeGreaterThanOrEqual(1);
+    } finally {
+      fetchSpy.mockRestore();
+    }
+  });
+
+  it("omits indicator metadata via MCP tool protocol when indicator: false", async () => {
+    const catalogData = {
+      type: "Catalog",
+      id: "test-cat",
+      links: [
+        {
+          rel: "child",
+          href: "https://cat/co2/collection.json",
+          type: "application/json",
+          title: "Carbon Dioxide from OMI (daily)",
+          id: "N2_CO2_mean",
+          tags: ["CO2"],
+        },
+      ],
+    };
+
+    const indicatorData = makeIndicator();
+
+    const fetchSpy = vi
+      .spyOn(globalThis, "fetch")
+      .mockImplementation(async (reqUrl) => {
+        const urlStr = String(reqUrl);
+        if (urlStr.includes("catalog")) {
+          return {
+            ok: true,
+            status: 200,
+            json: async () => catalogData,
+          };
+        }
+        return {
+          ok: true,
+          status: 200,
+          json: async () => indicatorData,
+        };
+      });
+
+    try {
+      const { client: mcpClient } = await createTestClientServer();
+      const res = await mcpClient.callTool({
+        name: "generate_map_from_stac",
+        arguments: {
+          url: "https://example.com/stac/catalog.json",
+          query: "Carbon Dioxide",
+          datetime: "2023-01-01T00:00:00Z",
+          indicator: false,
+        },
+      });
+
+      expect(res.isError).toBeFalsy();
+      const mapConfig = JSON.parse(res.content[0].text);
+      expect(mapConfig.indicator).toBeUndefined();
+      expect(mapConfig.layers).toBeDefined();
     } finally {
       fetchSpy.mockRestore();
     }

@@ -17,7 +17,8 @@ export function registerStacTools(server) {
         "- When given a STAC Catalog: filters child indicators using fuzzy search (`query`) or exact ID (`collection_id`).\n" +
         "- Reads GeoParquet mirrors (items.parquet), TiTiler COGs, WMS, WMTS, and XYZ endpoints.\n" +
         "- Extracts styling legends from STAC metadata (eox:colorlegend, rasterform, style legend).\n" +
-        "- Aggregates date ranges into `timeControl` (availableDates, minDate, maxDate) for time-slider widgets.\n\n" +
+        "- Aggregates date ranges into `timeControl` (availableDates, minDate, maxDate) for time-slider widgets.\n" +
+        "- OPTIONAL TIME CONTROL: `layerDatetime` and `timeControlValues` on layer properties are omitted by default. Set `timeControl: true` if the client intends to include `eox-timecontrol`.\n\n" +
         "LIMITATIONS:\n" +
         "- NO IMAGE RENDERING: Outputs OpenLayers/EOxMap JSON layer configuration; does NOT download tiles or return image pixels.\n" +
         "- AMBIGUITY: If a catalog query matches multiple indicators closely, returns error with structured `candidates` array; retry with `collection_id`.",
@@ -75,6 +76,20 @@ export function registerStacTools(server) {
             .optional()
             .describe(
               "Explicitly specify whether the STAC endpoint is a dynamic STAC API (true) or static catalog (false). Defaults to auto-inferred from URL (.json -> static).",
+            ),
+          timeControl: z
+            .boolean()
+            .optional()
+            .default(false)
+            .describe(
+              "Include layerDatetime and timeControlValues on layer properties. Set to true if the client intends to include eox-timecontrol.",
+            ),
+          indicator: z
+            .boolean()
+            .optional()
+            .default(true)
+            .describe(
+              "Include indicator metadata (id, title, description, href) in the response when resolving from a catalog. Defaults to true. Set to false to omit indicator metadata.",
             ),
         })
         .refine((data) => Boolean(data.url || data.stac_object), {

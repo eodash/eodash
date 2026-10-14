@@ -118,6 +118,7 @@ export interface IndicatorReader {
     context?: BuildContext;
     mergeAssets?: boolean;
     simpleObservationPoints?: boolean;
+    timeControl?: boolean;
   }) => Promise<MapConfig>;
 }
 

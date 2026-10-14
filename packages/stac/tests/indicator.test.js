@@ -290,4 +290,20 @@ describe("createEodashIndicator", () => {
     );
     expect(child1Layer?.properties?.color).toBe("#ff0000");
   });
+
+  test("omits layerDatetime and timeControlValues when timeControl: false", async () => {
+    serveMockData();
+    const indicator = await createEodashIndicator(INDICATOR_URL, {
+      client,
+      timeControl: false,
+    });
+
+    const res = await indicator.getLayers("2023-01-10T00:00:00Z");
+    const child1Layer = res.layers.find((l) =>
+      l.properties?.id?.includes("child1"),
+    );
+    expect(child1Layer?.properties?.layerDatetime).toBeUndefined();
+    expect(child1Layer?.properties?.timeControlValues).toBeUndefined();
+    expect(child1Layer?.properties?.timeControlProperty).toBeUndefined();
+  });
 });

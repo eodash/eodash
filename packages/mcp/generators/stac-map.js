@@ -33,6 +33,8 @@ export {
  * @param {string} [params.viewProjection] - Desired map view projection (e.g. 'EPSG:4326', 'EPSG:3035')
  * @param {string} [params.rasterEndpoint] - Base URL for TiTiler / raster tile rendering
  * @param {boolean} [params.api] - Explicitly specify whether endpoint is STAC API (true) or static (false)
+ * @param {boolean} [params.timeControl] - Include layerDatetime and timeControlValues on layer properties (default: false)
+ * @param {boolean} [params.indicator] - Include retrieved indicator metadata (id, title, description, href) in mapConfig (default: true)
  * @param {object} [options]
  * @param {import("@eodash/stac").HttpClient | import("@eodash/stac/http").AxiosInstance} [options.client] - Optional HTTP client (for hermetic testing)
  * @param {typeof fetch} [options.fetch] - Optional fetch implementation (for hermetic testing)
@@ -49,6 +51,8 @@ export async function buildStacMap(
     viewProjection,
     rasterEndpoint,
     api,
+    timeControl,
+    indicator = true,
   },
   { client, fetch: customFetch } = {},
 ) {
@@ -201,7 +205,9 @@ export async function buildStacMap(
     resolvedCollection = createDummyCollectionForItem(resolvedItem, targetUrl);
   }
 
-  const indicator = await createEodashIndicator(targetUrl, {
+  const enableTimeControl = Boolean(timeControl);
+
+  const indicatorReader = await createEodashIndicator(targetUrl, {
     stac: resolvedCollection,
     client: httpClient,
     fetch: safeFetchFn,
@@ -210,17 +216,19 @@ export async function buildStacMap(
     ...(api !== undefined && { api }),
     mergeAssets: false,
     simpleObservationPoints: true,
+    timeControl: enableTimeControl,
   });
 
-  const mapConfig = await indicator.getMapConfig({
+  const mapConfig = await indicatorReader.getMapConfig({
     datetime,
     item: resolvedItem,
     bbox,
     mergeAssets: false,
     simpleObservationPoints: true,
+    timeControl: enableTimeControl,
   });
 
-  if (matchedIndicatorInfo) {
+  if (matchedIndicatorInfo && indicator !== false) {
     mapConfig.indicator = matchedIndicatorInfo;
   }
 

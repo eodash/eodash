@@ -31,6 +31,7 @@ import { createLayerFromRender } from "./renders.js";
  * @property {boolean} [stateful] - whether the built item becomes the reader's `item`. Default `true`.
  * @property {boolean} [mergeAssets] - whether to merge multiple GeoJSON data assets into a single layer.
  * @property {boolean} [simpleObservationPoints] - whether to use simple circle markers without inlining SVG icons.
+ * @property {boolean} [timeControl] - whether to include layerDatetime and timeControlValues on layer properties. Default `true`.
  */
 
 /** Link relations supported for layer rendering. */
@@ -95,10 +96,10 @@ export const buildLayers = async (item, context) => {
     item.properties?.datetime ??
     item.properties?.start_datetime ??
     itemDatetime;
-  const { layerDatetime, timeControlValues } = extractLayerTimeValues(
-    await getDates(itemDate ?? undefined),
-    itemDate,
-  );
+  const { layerDatetime, timeControlValues } =
+    context.timeControl !== false
+      ? extractLayerTimeValues(await getDates(itemDate ?? undefined), itemDate)
+      : { layerDatetime: undefined, timeControlValues: undefined };
 
   const dataAssets = Object.keys(item.assets ?? {}).reduce((data, ast) => {
     if (item.assets[ast].roles?.includes("data")) {

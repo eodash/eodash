@@ -164,6 +164,7 @@ export const DEFAULT_COLLECTIONS_PALETTE = [
  * @param {import("../types").ObservationPointsThemes} [options.themes] - Marker styling for observation points
  * @param {boolean} [options.mergeAssets] - Whether to merge multiple GeoJSON data assets into a single layer
  * @param {boolean} [options.simpleObservationPoints] - Whether to use simple circle markers without inlining SVG icons
+ * @param {boolean} [options.timeControl] - Whether to include layerDatetime and timeControlValues on layer properties (default: true)
  * @returns {Promise<import("../types").IndicatorReader>}
  */
 export const createEodashIndicator = async (url, options = {}) => {
@@ -178,6 +179,7 @@ export const createEodashIndicator = async (url, options = {}) => {
     themes,
     mergeAssets,
     simpleObservationPoints = false,
+    timeControl = true,
   } = options;
 
   const http = createHTTPInstance({ client });
@@ -271,6 +273,8 @@ export const createEodashIndicator = async (url, options = {}) => {
       context.simpleObservationPoints !== undefined
         ? context.simpleObservationPoints
         : simpleObservationPoints;
+    const effectiveTimeControl =
+      context.timeControl !== undefined ? context.timeControl : timeControl;
 
     const dataResult = await buildIndicatorDataLayers({
       readers,
@@ -281,6 +285,9 @@ export const createEodashIndicator = async (url, options = {}) => {
         viewProjection,
         ...(effectiveMergeAssets !== undefined && {
           mergeAssets: effectiveMergeAssets,
+        }),
+        ...(effectiveTimeControl !== undefined && {
+          timeControl: effectiveTimeControl,
         }),
       },
       themes,
@@ -369,6 +376,7 @@ export const createEodashIndicator = async (url, options = {}) => {
      * @param {import("../types").BuildContext} [configOptions.context]
      * @param {boolean} [configOptions.mergeAssets]
      * @param {boolean} [configOptions.simpleObservationPoints]
+     * @param {boolean} [configOptions.timeControl]
      * @returns {Promise<import("../types").MapConfig & { timeControl?: { availableDates: string[], minDate?: string, maxDate?: string } }>}
      */
     getMapConfig: async (configOptions = {}) => {
@@ -379,6 +387,7 @@ export const createEodashIndicator = async (url, options = {}) => {
         context = {},
         mergeAssets: cfgMergeAssets,
         simpleObservationPoints: cfgSimpleObs,
+        timeControl: cfgTimeControl,
       } = configOptions;
 
       const mergedContext = {
@@ -386,6 +395,9 @@ export const createEodashIndicator = async (url, options = {}) => {
         ...(cfgMergeAssets !== undefined && { mergeAssets: cfgMergeAssets }),
         ...(cfgSimpleObs !== undefined && {
           simpleObservationPoints: cfgSimpleObs,
+        }),
+        ...(cfgTimeControl !== undefined && {
+          timeControl: cfgTimeControl,
         }),
       };
 
