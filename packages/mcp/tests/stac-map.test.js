@@ -94,6 +94,10 @@ const serveMockData = () => {
       bbox: [10, 40, 15, 45],
       links: [
         {
+          rel: "self",
+          href: "https://cat/items/c1_i2.json",
+        },
+        {
           rel: "xyz",
           href: "https://c1.example.com/{z}/{x}/{y}.png",
           title: "Child 1 Tile",
@@ -335,6 +339,29 @@ describe("STAC Map Generator - buildStacMap", () => {
       expect(config.timeControl?.count).toBeGreaterThan(0);
     });
 
+    it("uses rel: alternate link when rel: self is missing under shortContext: true", async () => {
+      const itemWithAlternate = stacItem({
+        id: "item_with_alternate",
+        properties: { datetime: "2023-01-01T00:00:00Z" },
+        links: [
+          {
+            rel: "alternate",
+            href: "https://example.com/items/alternate.json",
+          },
+        ],
+      });
+
+      const config = await buildStacMap({
+        stac_object: itemWithAlternate,
+        shortContext: true,
+      });
+
+      expect(config.item?.id).toBe("item_with_alternate");
+      expect(config.item?.link).toBe(
+        "https://example.com/items/alternate.json",
+      );
+    });
+
     it("preserves full context when shortContext: false", async () => {
       serveMockData();
       const catalog = makeCatalog();
@@ -378,10 +405,10 @@ describe("STAC Map Generator - buildStacMap", () => {
       expect(config.timeControl).toBeDefined();
     });
 
-    it("includes layerDatetime and timeControlValues on layer properties when timeControl: true", async () => {
+    it("includes layerDatetime and timeControlValues on layer properties when layerTimeControl: true", async () => {
       serveMockData();
       const config = await buildStacMap(
-        { url: INDICATOR_URL, timeControl: true },
+        { url: INDICATOR_URL, layerTimeControl: true },
         { client },
       );
       const layersWithTime = config.layers.filter(
@@ -589,7 +616,7 @@ describe("MCP Protocol Tool - generate_map_from_stac", () => {
     expect(tool?.inputSchema?.properties?.bbox).toBeDefined();
     expect(tool?.inputSchema?.properties?.viewProjection).toBeDefined();
     expect(tool?.inputSchema?.properties?.rasterEndpoint).toBeDefined();
-    expect(tool?.inputSchema?.properties?.timeControl).toBeDefined();
+    expect(tool?.inputSchema?.properties?.layerTimeControl).toBeDefined();
   });
 
   it("calls generate_map_from_stac tool via MCP protocol and returns structured JSON", async () => {
@@ -625,7 +652,7 @@ describe("MCP Protocol Tool - generate_map_from_stac", () => {
     expect(mapConfig.item.id).toBe("mcp_direct_item");
   });
 
-  it("omits layerDatetime/timeControlValues over MCP protocol by default, includes them when timeControl: true", async () => {
+  it("omits layerDatetime/timeControlValues over MCP protocol by default, includes them when layerTimeControl: true", async () => {
     const mockItem1 = stacItem({
       id: "i1",
       properties: { datetime: "2023-01-01T00:00:00Z" },
@@ -709,12 +736,12 @@ describe("MCP Protocol Tool - generate_map_from_stac", () => {
       );
       expect(layersWithTimeDefault).toHaveLength(0);
 
-      // Turned on via timeControl: true
+      // Turned on via layerTimeControl: true
       const resOn = await mcpClient.callTool({
         name: "generate_map_from_stac",
         arguments: {
           stac_object: customCollection,
-          timeControl: true,
+          layerTimeControl: true,
         },
       });
       expect(resOn.isError).toBeFalsy();
@@ -1151,6 +1178,10 @@ describe("MCP Protocol Tool - generate_map_from_stac", () => {
         properties: { datetime: "2023-08-15T00:00:00Z" },
         bbox: [0, 10, 20, 30],
         links: [
+          {
+            rel: "self",
+            href: "https://mcp.example.com/items/mcp_compact_item.json",
+          },
           {
             rel: "xyz",
             href: "https://mcp.example.com/{z}/{x}/{y}.png",

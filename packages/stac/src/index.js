@@ -45,7 +45,7 @@ export const createEodashCollection = async (
   const http = createHTTPInstance({ client });
   /** @type {import("./types").STACCollection} */
   const stac = options.stac ?? (await http.get(url));
-  const rasterOptions = {
+  const defaultContext = {
     rasterEndpoint,
     upscalingEndpoints,
     tileMatrixSets,
@@ -59,7 +59,7 @@ export const createEodashCollection = async (
     fetch: customFetch,
     color,
     viewProjection,
-    rasterOptions,
+    defaultContext,
   };
 
   if (api) {

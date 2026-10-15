@@ -11,7 +11,7 @@ import { createCollectionBase } from "./base.js";
  * @param {import("../http.js").HttpClient} context.http - HTTP client instance
  * @param {string} [context.color] - Collection layer tint color
  * @param {string} [context.viewProjection] - Map view projection
- * @param {import("../types").BuildContext} [context.rasterOptions] - Raster rendering options
+ * @param {import("../types").BuildContext} [context.defaultContext] - Default build context applied to layer builds
  */
 export const createStaticCollection = ({
   url,
@@ -19,7 +19,7 @@ export const createStaticCollection = ({
   http,
   color,
   viewProjection,
-  rasterOptions,
+  defaultContext,
 }) => {
   /**
    * Retrieves item links sorted chronologically.
@@ -78,7 +78,7 @@ export const createStaticCollection = ({
       getItem,
       color,
       viewProjection,
-      rasterOptions,
+      defaultContext,
     }),
     {
       /** @type {"static"} */

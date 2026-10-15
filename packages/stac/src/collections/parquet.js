@@ -25,7 +25,7 @@ const FOOTER_BYTES = 1 << 15;
  * @param {typeof fetch} [context.fetch] - Custom fetch implementation
  * @param {string} [context.color] - Collection layer tint color
  * @param {string} [context.viewProjection] - Map view projection
- * @param {import("../types").BuildContext} [context.rasterOptions] - Raster rendering options
+ * @param {import("../types").BuildContext} [context.defaultContext] - Default build context applied to layer builds
  */
 export const createParquetCollection = ({
   url,
@@ -34,7 +34,7 @@ export const createParquetCollection = ({
   fetch: customFetch,
   color,
   viewProjection,
-  rasterOptions,
+  defaultContext,
 }) => {
   const mirror = findParquetMirror(stac);
   const href = mirror ? toAbsolute(mirror.href, url) : undefined;
@@ -183,7 +183,7 @@ export const createParquetCollection = ({
       getItem,
       color,
       viewProjection,
-      rasterOptions,
+      defaultContext,
     }),
     {
       /** @type {"parquet"} */

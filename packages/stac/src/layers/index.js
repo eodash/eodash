@@ -30,7 +30,7 @@ import { createLayerFromRender } from "./renders.js";
  * @property {import("../types").LayerConfigHelpers} [layerConfigHelpers]
  * @property {boolean} [stateful] - whether the built item becomes the reader's `item`. Default `true`.
  * @property {boolean} [mergeAssets] - whether to merge multiple GeoJSON data assets into a single layer. Default `true`.
- * @property {boolean} [timeControl] - whether to include layerDatetime and timeControlValues on layer properties. Default `true`.
+ * @property {boolean} [layerTimeControl] - whether to include layerDatetime and timeControlValues on layer properties. Default `true`.
  * @property {boolean} [observationPointIcons] - whether to render observation point markers with theme SVG icons or simple circles. Default `true`.
  */
 
@@ -97,7 +97,7 @@ export const buildLayers = async (item, context) => {
     item.properties?.start_datetime ??
     itemDatetime;
 
-  const isTimeControlEnabled = context.timeControl !== false;
+  const isTimeControlEnabled = context.layerTimeControl !== false;
 
   const { layerDatetime, timeControlValues } = isTimeControlEnabled
     ? extractLayerTimeValues(await getDates(itemDate ?? undefined), itemDate)

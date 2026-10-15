@@ -128,7 +128,7 @@ export interface MapConfig {
   projection: string;
   projections: Projection[];
   datetime?: string;
-  item?: STACItem | { id: string; link?: string; href?: string };
+  item?: STACItem | { id: string; link?: string };
   timeControl?: {
     availableDates?: string[];
     minDate?: string;

@@ -33,7 +33,7 @@ export {
  * @param {string} [params.viewProjection] - Desired map view projection (e.g. 'EPSG:4326', 'EPSG:3035')
  * @param {string} [params.rasterEndpoint] - Base URL for TiTiler / raster tile rendering
  * @param {boolean} [params.api] - Explicitly specify whether endpoint is STAC API (true) or static (false)
- * @param {boolean} [params.timeControl] - Include layerDatetime and timeControlValues on layer properties (default: false)
+ * @param {boolean} [params.layerTimeControl] - Include layerDatetime and timeControlValues on layer properties (default: false)
  * @param {boolean} [params.shortContext=false] - Shorten contextual output: compacts item to id and link, omits indicator metadata, and reduces timeControl availableDates to date summary (minDate, maxDate, count)
  * @param {object} [options]
  * @param {import("@eodash/stac").HttpClient | import("@eodash/stac/http").AxiosInstance} [options.client] - Optional HTTP client (for hermetic testing)
@@ -51,7 +51,7 @@ export async function buildStacMap(
     viewProjection,
     rasterEndpoint,
     api,
-    timeControl,
+    layerTimeControl,
     shortContext = false,
   },
   { client, fetch: customFetch } = {},
@@ -86,7 +86,7 @@ export async function buildStacMap(
   /** @type {{ id?: string, title?: string, href?: string } | undefined} */
   let matchedIndicatorInfo = undefined;
 
-  // 1. If pre-fetched document provided via stac_object
+  // If pre-fetched document provided via stac_object
   if (inputObject) {
     if (isSTACItem(inputObject)) {
       resolvedItem = /** @type {any} */ (inputObject);
@@ -102,7 +102,7 @@ export async function buildStacMap(
   while (depth < maxDepth) {
     depth += 1;
 
-    // 2. Inspect document: fetch once if URL given without pre-resolved collection or item
+    // Inspect document: fetch once if URL given without pre-resolved collection or item
     // If it is a catalog (or query / collection_id specified), resolve the catalog indicator
     if (currentUrl && !resolvedCollection && !resolvedItem) {
       const res = await httpClient.get(currentUrl).catch(() => null);
@@ -117,7 +117,7 @@ export async function buildStacMap(
       }
     }
 
-    // 3. Auto-infer STAC Catalog: if document is a Catalog, select matching child indicator
+    // Auto-infer STAC Catalog: if document is a Catalog, select matching child indicator
     if (resolvedCollection && isSTACCatalog(resolvedCollection)) {
       // Handle STAC API root catalogs (fetch collections via rel: "data" or "collections" link if child links are missing)
       const collectionsLink = resolvedCollection.links?.find(
@@ -192,7 +192,7 @@ export async function buildStacMap(
     break;
   }
 
-  // 4. Resolve targetUrl: prioritize currentUrl, then collection link, then collection self link, then item self link
+  // Resolve targetUrl: prioritize currentUrl, then collection link, then collection self link, then item self link
   const targetUrl =
     currentUrl ||
     resolvedCollection?.links?.find((l) => l.rel === "self")?.href ||
@@ -200,18 +200,21 @@ export async function buildStacMap(
     resolvedItem?.links?.find((l) => l.rel === "self")?.href ||
     "";
 
-  // 5. If caller only provided an item directly without collection or url, wrap it with a dummy collection
-  if (resolvedItem && !resolvedCollection && !targetUrl) {
+  // If caller provided an item directly without collection, wrap it with a dummy collection unless a collection link exists
+  const hasCollectionLink = Boolean(
+    resolvedItem?.links?.find((l) => l.rel === "collection")?.href,
+  );
+  if (resolvedItem && !resolvedCollection && !hasCollectionLink) {
     resolvedCollection = createDummyCollectionForItem(resolvedItem, targetUrl);
   }
 
-  const enableTimeControl = Boolean(timeControl);
+  const enableTimeControl = Boolean(layerTimeControl);
 
   /** @type {import("@eodash/stac").BuildContext} */
   const buildContext = {
     mergeAssets: false,
     observationPointIcons: false,
-    timeControl: enableTimeControl,
+    layerTimeControl: enableTimeControl,
   };
 
   const indicatorReader = await createEodashIndicator(
@@ -241,13 +244,12 @@ export async function buildStacMap(
 
   if (isShortContext) {
     if (mapConfig.item) {
-      const itemSelfHref =
+      const itemLink =
         mapConfig.item.links?.find((l) => l.rel === "self")?.href ||
-        targetUrl ||
-        "";
+        mapConfig.item.links?.find((l) => l.rel === "alternate")?.href;
       mapConfig.item = {
         id: mapConfig.item.id,
-        link: itemSelfHref,
+        ...(itemLink && { link: itemLink }),
       };
     }
 
