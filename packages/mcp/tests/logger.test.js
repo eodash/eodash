@@ -5,6 +5,7 @@ import {
   instrumentTool,
   sanitizeUrl,
 } from "../helpers/logger.js";
+import { getMetrics, _resetMetrics } from "../helpers/metrics.js";
 import express from "express";
 import http from "node:http";
 
@@ -345,6 +346,22 @@ describe("Logger & Observability Infrastructure", () => {
       expect(failLog.status).toBe("failure");
       expect(failLog.error).toBe("Network timeout");
       expect(failLog.stack).toBeDefined();
+    });
+
+    it("records tool execution metrics to Prometheus registry via instrumentTool", async () => {
+      _resetMetrics();
+      const mockSuccess = vi
+        .fn()
+        .mockResolvedValue({ content: [{ type: "text", text: "ok" }] });
+      const wrapped = instrumentTool("mock_tool_instrument", mockSuccess);
+
+      await wrapped({ foo: "bar" });
+
+      const metrics = await getMetrics();
+      expect(metrics).toContain(
+        'eodash_mcp_tool_calls_total{tool="mock_tool_instrument",status="success"} 1',
+      );
+      expect(metrics).toContain('tool="mock_tool_instrument"');
     });
   });
 });

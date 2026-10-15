@@ -379,6 +379,23 @@ describe("eodash MCP Server - HTTP Endpoints", () => {
     }
   });
 
+  it("GET /metrics reflects JSON-RPC requests processed by live server", async () => {
+    await fetch(`${baseUrl}/`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        jsonrpc: "2.0",
+        method: "ping",
+        id: "ping-metrics-integration-1",
+      }),
+    });
+
+    const res = await fetch(`${baseUrl}/metrics`);
+    expect(res.status).toBe(200);
+    const text = await res.text();
+    expect(text).toContain('eodash_mcp_rpc_requests_total{method="ping"');
+  });
+
   it("GET / returns 405 Method Not Allowed per MCP Streamable HTTP spec", async () => {
     const res = await fetch(`${baseUrl}/`);
     expect(res.status).toBe(405);

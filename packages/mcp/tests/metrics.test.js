@@ -66,6 +66,41 @@ describe("Prometheus Metrics Infrastructure", () => {
     expect(metrics).toContain("eodash_mcp_active_connections 2");
   });
 
+  it("tracks active connections gauge down to 0", async () => {
+    setActiveConnections(3);
+    let metrics = await getMetrics();
+    expect(metrics).toContain("eodash_mcp_active_connections 3");
+
+    setActiveConnections(0);
+    metrics = await getMetrics();
+    expect(metrics).toContain("eodash_mcp_active_connections 0");
+  });
+
+  it("handles tool calls with failure status and omitted or invalid duration", async () => {
+    recordToolCall("generate_map_from_stac", "failure");
+    recordToolCall("generate_map_from_stac", "failure", Number.NaN);
+
+    const metrics = await getMetrics();
+    expect(metrics).toContain(
+      'eodash_mcp_tool_calls_total{tool="generate_map_from_stac",status="failure"} 2',
+    );
+  });
+
+  it("resets metrics cleanly via _resetMetrics", async () => {
+    recordToolCall("custom_tool_test", "success", 0.05);
+    setActiveConnections(4);
+
+    let metrics = await getMetrics();
+    expect(metrics).toContain("custom_tool_test");
+    expect(metrics).toContain("eodash_mcp_active_connections 4");
+
+    _resetMetrics();
+
+    metrics = await getMetrics();
+    expect(metrics).not.toContain("custom_tool_test");
+    expect(metrics).not.toContain("eodash_mcp_active_connections 4");
+  });
+
   it("includes default Node.js process metrics with eodash_mcp_ prefix", async () => {
     const metrics = await getMetrics();
     expect(metrics).toContain("eodash_mcp_process_cpu_user_seconds_total");
