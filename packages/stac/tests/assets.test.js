@@ -97,6 +97,63 @@ describe("layers from assets", () => {
     expect(layer.properties.layerConfig).toBeUndefined();
   });
 
+  test("builds a GeoZarr layer from the misspelled vnd+zarr media type", async () => {
+    const [layer] = await build(
+      makeItem({
+        assets: {
+          data: dataAsset({
+            type: "application/vnd+zarr; version=2; profile=multiscales",
+            href: "https://x.zarr/measurements/reflectance",
+            bands: [{ name: "b04" }],
+          }),
+        },
+      }),
+    );
+
+    expect(layer.source.type).toBe("GeoZarr");
+  });
+
+  test("starts a GeoZarr layer with the bands its style's bands field defaults to", async () => {
+    const [layer] = await build(
+      makeItem({
+        links: [
+          {
+            rel: "style",
+            href: "https://styles/zarr.json",
+            "asset:keys": ["data"],
+          },
+        ],
+        assets: {
+          data: dataAsset({
+            type: "application/vnd.zarr; version=3",
+            href: "https://x.zarr/measurements",
+            bands: [{ name: "Oa08" }],
+          }),
+        },
+      }),
+      {
+        "https://styles/zarr.json": {
+          jsonform: {
+            type: "object",
+            properties: {
+              bands: {
+                type: "array",
+                format: "bands",
+                default: ["oa08_radiance", "oa06_radiance", "oa04_radiance"],
+              },
+            },
+          },
+        },
+      },
+    );
+
+    expect(layer.source.bands).toEqual([
+      "oa08_radiance",
+      "oa06_radiance",
+      "oa04_radiance",
+    ]);
+  });
+
   test("builds a WebGLTile/GeoZarr layer starting with its first band", async () => {
     const [layer] = await build(
       makeItem({

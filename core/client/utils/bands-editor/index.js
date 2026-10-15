@@ -77,14 +77,16 @@ export class BandsEditor extends AbstractEditor {
 
   /**
    * Bands with a `watch` on an arithmetic field follow its formula: the bands
-   * it references, in placeholder order.
+   * it references, each once, in placeholder order. A sibling field named after
+   * a placeholder (`A`, `B`, ...) gets that placeholder's 1-based position in
+   * those bands, so a style can address it as `["band", ["var", "A"]]`.
    */
   onWatchedFieldChange() {
     super.onWatchedFieldChange();
-    // json-editor sets both, its typings do not declare them
-    const { watched, jsoneditor } = /** @type {any} */ (this);
-    const [path] = Object.values(watched ?? {});
-    const formulaEditor = path && jsoneditor.getEditor(path);
+    // json-editor sets these, its typings do not declare them
+    const { watched, jsoneditor, path } = /** @type {any} */ (this);
+    const [formulaPath] = Object.values(watched ?? {});
+    const formulaEditor = formulaPath && jsoneditor.getEditor(formulaPath);
     if (!(formulaEditor instanceof BandsEditor)) return;
 
     const variables = parseFormulaValue(
@@ -93,7 +95,17 @@ export class BandsEditor extends AbstractEditor {
     );
     if (!variables) return;
     const bands = [...new Set(Object.values(variables))];
-    if (JSON.stringify(bands) === JSON.stringify(this.getValue())) return;
+    const parentPath = path.slice(0, path.lastIndexOf("."));
+    let changed = JSON.stringify(bands) !== JSON.stringify(this.getValue());
+    for (const [placeholder, band] of Object.entries(variables)) {
+      const position = bands.indexOf(band) + 1;
+      const sibling = jsoneditor.getEditor(`${parentPath}.${placeholder}`);
+      if (sibling && sibling.getValue() !== position) {
+        sibling.setValue(position);
+        changed = true;
+      }
+    }
+    if (!changed) return;
     this.setValue(bands);
     this.onChange(true);
   }

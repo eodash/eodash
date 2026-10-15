@@ -4,6 +4,8 @@ import EodashItemCatalog from "^/EodashItemCatalog/index.vue";
 import { useSTAcStore } from "@/store/stac";
 import { indicator, mapCompareEl, mapEl } from "@/store/states";
 import { mountAsyncComponent } from "../support/mount";
+import { cleanup } from "vitest-browser-vue";
+import { layerTimeProperties } from "@/utils/states";
 
 vi.mock("@eox/itemfilter", () => ({}));
 
@@ -97,6 +99,26 @@ describe("EodashItemCatalog", () => {
     for (const spy of Object.values(spies)) vi.mocked(spy).mockClear();
     axiosMock.get.mockReset();
     serveCatalogApi();
+  });
+
+  describe("layer time properties", () => {
+    test("turns item-level layer time off while mounted and back on when unmounted", async () => {
+      await mountAsyncComponent(EodashItemCatalog, {
+        initialState: withCollections,
+      });
+
+      expect(layerTimeProperties).toEqual({
+        layerDatetime: false,
+        timeControlValues: false,
+      });
+
+      cleanup();
+
+      expect(layerTimeProperties).toEqual({
+        layerDatetime: true,
+        timeControlValues: true,
+      });
+    });
   });
 
   describe("rendering", () => {

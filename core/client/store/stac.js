@@ -72,6 +72,8 @@ const withLocalStyle = (collection) => {
   if (style && !collection.links.includes(style)) {
     collection.links = [...collection.links, style];
   }
+  // the XYZ and GeoZarr layers show the same data, so only one should be visible at a time
+  if (style) collection["eodash:layerExclusive"] = true;
   return collection;
 };
 

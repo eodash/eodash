@@ -25,7 +25,12 @@
         ["band", 1],
         ["var", "minRed"],
         0,
-        ["var", "maxRed"],
+        [
+          "clamp",
+          ["var", "maxRed"],
+          ["+", ["var", "minRed"], 0.0001],
+          1000000000
+        ],
         255
       ],
       [
@@ -34,7 +39,12 @@
         ["band", 2],
         ["var", "minGreen"],
         0,
-        ["var", "maxGreen"],
+        [
+          "clamp",
+          ["var", "maxGreen"],
+          ["+", ["var", "minGreen"], 0.0001],
+          1000000000
+        ],
         255
       ],
       [
@@ -43,12 +53,26 @@
         ["band", 3],
         ["var", "minBlue"],
         0,
-        ["var", "maxBlue"],
+        [
+          "clamp",
+          ["var", "maxBlue"],
+          ["+", ["var", "minBlue"], 0.0001],
+          1000000000
+        ],
         255
       ]
     ]
   ],
   "jsonform": {
+    "definitions": {
+      "radiance": {
+        "type": "number",
+        "format": "range",
+        "minimum": 0,
+        "maximum": 500,
+        "step": 1
+      }
+    },
     "type": "object",
     "title": "Band Configuration",
     "required": ["bands"],
@@ -106,6 +130,29 @@
               "Oa19",
               "Oa20",
               "Oa21"
+            ],
+            "colors": [
+              "#AA00FF",
+              "#7500FF",
+              "#000DFF",
+              "#00FFFF",
+              "#00FF00",
+              "#B6FF00",
+              "#FF6200",
+              "#FF0000",
+              "#FF0000",
+              "#FF0000",
+              "#C10048",
+              "#C80070",
+              "#C90077",
+              "#CA007A",
+              "#CA007D",
+              "#CC0087",
+              "#CC2BC2",
+              "#C82FD0",
+              "#BD24DB",
+              "#A007F8",
+              "#8B4513"
             ]
           }
         }
@@ -116,19 +163,11 @@
         "format": "minmax",
         "properties": {
           "minRed": {
-            "type": "number",
-            "format": "range",
-            "minimum": 0,
-            "maximum": 500,
-            "step": 1,
+            "$ref": "#/definitions/radiance",
             "default": 10
           },
           "maxRed": {
-            "type": "number",
-            "format": "range",
-            "minimum": 0,
-            "maximum": 500,
-            "step": 1,
+            "$ref": "#/definitions/radiance",
             "default": 300
           }
         }
@@ -139,19 +178,11 @@
         "format": "minmax",
         "properties": {
           "minGreen": {
-            "type": "number",
-            "format": "range",
-            "minimum": 0,
-            "maximum": 500,
-            "step": 1,
+            "$ref": "#/definitions/radiance",
             "default": 22
           },
           "maxGreen": {
-            "type": "number",
-            "format": "range",
-            "minimum": 0,
-            "maximum": 500,
-            "step": 1,
+            "$ref": "#/definitions/radiance",
             "default": 345
           }
         }
@@ -162,19 +193,11 @@
         "format": "minmax",
         "properties": {
           "minBlue": {
-            "type": "number",
-            "format": "range",
-            "minimum": 0,
-            "maximum": 500,
-            "step": 1,
+            "$ref": "#/definitions/radiance",
             "default": 36
           },
           "maxBlue": {
-            "type": "number",
-            "format": "range",
-            "minimum": 0,
-            "maximum": 500,
-            "step": 1,
+            "$ref": "#/definitions/radiance",
             "default": 390
           }
         }
