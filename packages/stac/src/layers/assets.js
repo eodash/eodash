@@ -3,6 +3,11 @@ import { extractRoles, isBaseLayerOrOverlay } from "../helpers/assets.js";
 import { createHTTPInstance } from "../http.js";
 import { mergeGeojsons } from "../helpers/geojson.js";
 import {
+  getDefaultGeoZarrBands,
+  isGeoZarrCube,
+  isRenderableGeoZarrAsset,
+} from "../helpers/geozarr.js";
+import {
   createLayerConfigHelpers,
   getBandsProperty,
 } from "../helpers/layer-config.js";
@@ -72,10 +77,7 @@ export async function createLayersFromAssets(
     ) {
       fgbSources.push(assets[assetId].href);
       fgbIdx.push(idx);
-    } else if (
-      assets[assetId]?.type ==
-      "application/vnd.zarr; version=3; profile=multiscales"
-    ) {
+    } else if (isRenderableGeoZarrAsset(assets[assetId], stacObject)) {
       zarrAssetIds.push(assetId);
       zarrIdx.push(idx);
     } else if (
@@ -216,10 +218,11 @@ export async function createLayersFromAssets(
       );
       const { layerConfig, style } = extractLayerConfig(fetchedStyle);
       const bandsPath = getBandsProperty(layerConfig?.schema);
-      const defaultBands = bandsPath?.reduce(
-        (node, key) => node?.[key],
-        layerConfig?.schema,
-      )?.default ?? ["b04", "b03", "b02"];
+      const defaultBands = getDefaultGeoZarrBands(
+        assets[assetName],
+        bandsPath?.reduce((node, key) => node?.[key], layerConfig?.schema)
+          ?.default,
+      );
 
       let assetLayerId = createAssetID(collectionId, stacObject.id, zarrIdx[i]);
       const isBaseOrOverlay = isBaseLayerOrOverlay(assets[assetName]);
@@ -236,7 +239,9 @@ export async function createLayersFromAssets(
           id: assetLayerId,
           title: assets[assetName]?.title || title,
           ...(!isBaseOrOverlay && { layerConfig }),
-          layerDatetime,
+          ...(!isGeoZarrCube(assets[assetName], stacObject) && {
+            layerDatetime,
+          }),
         },
         source: {
           /** @type {"GeoZarr"} */

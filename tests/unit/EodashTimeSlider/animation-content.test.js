@@ -152,9 +152,10 @@ describe("createAnimationLayers - rendered layers", () => {
 
     await renderFrame();
 
-    expect(reader.getLayers).toHaveBeenCalledWith("2023-06-14", {
-      stateful: false,
-    });
+    expect(reader.getLayers).toHaveBeenCalledWith(
+      "2023-06-14",
+      expect.objectContaining({ stateful: false }),
+    );
   });
 
   test("collapses a layer the collection marks 'disable'", async () => {

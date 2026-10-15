@@ -107,6 +107,7 @@ import { mdiViewDashboard } from "@mdi/js";
 import EodashLayoutSwitcher from "^/EodashLayoutSwitcher.vue";
 import { indicator, mapCompareEl, mapEl, mapPosition } from "@/store/states";
 import axios from "@/plugins/axios";
+import { layerTimeProperties } from "@/utils/states";
 import {
   useInitMosaic,
   renderLatestMosaic,
@@ -315,8 +316,13 @@ if (props.useMosaic) {
   });
 }
 
+// the catalog is the time navigation, so the layers need no item-level time of their own
+layerTimeProperties.layerDatetime = false;
+layerTimeProperties.timeControlValues = false;
 onUnmounted(() => {
   activeSelectedItem.value = undefined;
+  layerTimeProperties.layerDatetime = true;
+  layerTimeProperties.timeControlValues = true;
 });
 
 /** @type {import("vue").Ref<import("@/types").GeoJsonFeature[]>} */

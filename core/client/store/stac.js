@@ -42,6 +42,41 @@ export const eodashCollections = shallowReactive([]);
  */
 export const eodashCompareCollections = shallowReactive([]);
 
+// TODO: remove once the catalog links these styles itself
+/** @type {Record<string, import("@eodash/stac").STACLink>} */
+const LOCAL_STYLES = {
+  "sentinel-1-grd-rtc-staging": {
+    rel: "style",
+    type: "application/json",
+    href: "/styles/sentinel-1-grd-rtc.json",
+    "asset:keys": ["gamma0-rtc-backscatter-asc", "gamma0-rtc-backscatter-desc"],
+  },
+  "sentinel-3-olci-l1-efr-staging": {
+    rel: "style",
+    type: "application/json",
+    href: "/styles/sentinel-3-olci-l1-efr.json",
+    "asset:keys": ["radianceData"],
+  },
+  "sentinel-1-grd-rtc-acquisitions-staging": {
+    rel: "style",
+    type: "application/json",
+    href: "/styles/sentinel-1-grd-rtc.json",
+    "asset:keys": ["gamma0-rtc-backscatter-asc", "gamma0-rtc-backscatter-desc"],
+  },
+};
+// temp
+/** @param {import("@eodash/stac").STACCollection} collection */
+const withLocalStyle = (collection) => {
+  const style = LOCAL_STYLES[collection.id];
+  // the response may be served from the axios cache, so the link can already be there
+  if (style && !collection.links.includes(style)) {
+    collection.links = [...collection.links, style];
+  }
+  // the XYZ and GeoZarr layers show the same data, so only one should be visible at a time
+  if (style) collection["eodash:layerExclusive"] = true;
+  return collection;
+};
+
 export const useSTAcStore = defineStore("stac", () => {
   /**
    * STAC catalog endpoint URL
@@ -238,7 +273,7 @@ export const useSTAcStore = defineStore("stac", () => {
     await axios.get(absoluteUrl.value).then(async (resp) => {
       await updateEodashCollections(
         eodashCollections,
-        resp.data,
+        withLocalStyle(resp.data),
         absoluteUrl.value,
         collectionsPalette,
         isApi.value,
@@ -300,7 +335,7 @@ export const useSTAcStore = defineStore("stac", () => {
     await axios.get(absoluteUrl.value).then(async (resp) => {
       await updateEodashCollections(
         eodashCompareCollections,
-        resp.data,
+        withLocalStyle(resp.data),
         absoluteUrl.value,
         [...collectionsPalette].reverse(),
         isApi.value,

@@ -36,6 +36,15 @@ export const hasRestoredView = ref(false);
  */
 export const shouldZoomToExtent = ref(false);
 
+/**
+ * Which item-level time properties the data layers carry. Turning both off also skips
+ * fetching the collection's dates.
+ */
+export const layerTimeProperties = reactive({
+  layerDatetime: true,
+  timeControlValues: true,
+});
+
 /** whether it's the first load of the app, used to track if there are params in the url */
 export const isFirstLoad = ref(false);
 

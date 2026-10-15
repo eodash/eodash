@@ -1,0 +1,496 @@
+{
+  "variables": {
+    "mode": 2,
+    "A": 1,
+    "B": 2,
+    "C": 1,
+    "D": 2,
+    "min": 0,
+    "max": 0.4,
+    "minA": 0,
+    "maxA": 0.4,
+    "minB": 0,
+    "maxB": 0.1,
+    "minRatio": 1,
+    "maxRatio": 15,
+    "minCrossRatio": 0,
+    "maxCrossRatio": 1
+  },
+  "color": [
+    "case",
+    ["!", [">", ["band", ["var", "A"]], 0]],
+    [0, 0, 0, 0],
+    ["==", ["var", "mode"], 2],
+    [
+      "case",
+      [
+        "!",
+        [
+          "all",
+          [">", ["band", ["var", "B"]], 0],
+          [">", ["band", ["var", "C"]], 0],
+          [">", ["band", ["var", "D"]], 0]
+        ]
+      ],
+      [0, 0, 0, 0],
+      [
+        "color",
+        [
+          "interpolate",
+          ["linear"],
+          ["band", ["var", "A"]],
+          ["var", "minA"],
+          0,
+          [
+            "clamp",
+            ["var", "maxA"],
+            ["+", ["var", "minA"], 0.0001],
+            1000000000
+          ],
+          255
+        ],
+        [
+          "interpolate",
+          ["linear"],
+          ["band", ["var", "B"]],
+          ["var", "minB"],
+          0,
+          [
+            "clamp",
+            ["var", "maxB"],
+            ["+", ["var", "minB"], 0.0001],
+            1000000000
+          ],
+          255
+        ],
+        [
+          "interpolate",
+          ["linear"],
+          ["/", ["band", ["var", "C"]], ["band", ["var", "D"]]],
+          ["var", "minRatio"],
+          0,
+          [
+            "clamp",
+            ["var", "maxRatio"],
+            ["+", ["var", "minRatio"], 0.0001],
+            1000000000
+          ],
+          255
+        ]
+      ]
+    ],
+    ["==", ["var", "mode"], 3],
+    [
+      "case",
+      ["!", [">", ["band", ["var", "B"]], 0]],
+      [0, 0, 0, 0],
+      [
+        "interpolate",
+        ["linear"],
+        ["/", ["band", ["var", "A"]], ["band", ["var", "B"]]],
+        ["var", "minCrossRatio"],
+        [68, 1, 84],
+        [
+          "/",
+          [
+            "+",
+            ["var", "minCrossRatio"],
+            [
+              "clamp",
+              ["var", "maxCrossRatio"],
+              ["+", ["var", "minCrossRatio"], 0.0001],
+              1000000000
+            ]
+          ],
+          2
+        ],
+        [33, 145, 140],
+        [
+          "clamp",
+          ["var", "maxCrossRatio"],
+          ["+", ["var", "minCrossRatio"], 0.0001],
+          1000000000
+        ],
+        [253, 231, 37]
+      ]
+    ],
+    [
+      "color",
+      [
+        "*",
+        255,
+        [
+          "^",
+          [
+            "clamp",
+            [
+              "/",
+              ["-", ["band", ["var", "A"]], ["var", "min"]],
+              [
+                "-",
+                [
+                  "clamp",
+                  ["var", "max"],
+                  ["+", ["var", "min"], 0.0001],
+                  1000000000
+                ],
+                ["var", "min"]
+              ]
+            ],
+            0,
+            1
+          ],
+          0.5
+        ]
+      ],
+      [
+        "*",
+        255,
+        [
+          "^",
+          [
+            "clamp",
+            [
+              "/",
+              ["-", ["band", ["var", "A"]], ["var", "min"]],
+              [
+                "-",
+                [
+                  "clamp",
+                  ["var", "max"],
+                  ["+", ["var", "min"], 0.0001],
+                  1000000000
+                ],
+                ["var", "min"]
+              ]
+            ],
+            0,
+            1
+          ],
+          0.5
+        ]
+      ],
+      [
+        "*",
+        255,
+        [
+          "^",
+          [
+            "clamp",
+            [
+              "/",
+              ["-", ["band", ["var", "A"]], ["var", "min"]],
+              [
+                "-",
+                [
+                  "clamp",
+                  ["var", "max"],
+                  ["+", ["var", "min"], 0.0001],
+                  1000000000
+                ],
+                ["var", "min"]
+              ]
+            ],
+            0,
+            1
+          ],
+          0.5
+        ]
+      ]
+    ]
+  ],
+  "legend": [
+    {
+      "title": "VH/VV",
+      "boundTo": {
+        "key": "mode",
+        "value": 3
+      },
+      "domainProperties": ["minCrossRatio", "maxCrossRatio"],
+      "range": ["rgb(68,1,84)", "rgb(33,145,140)", "rgb(253,231,37)"]
+    }
+  ],
+  "jsonform": {
+    "definitions": {
+      "mode": {
+        "type": "integer",
+        "options": {
+          "hidden": true,
+          "enforce_const": true
+        }
+      },
+      "position": {
+        "type": "integer",
+        "options": {
+          "hidden": true
+        }
+      },
+      "formula": {
+        "type": "string",
+        "format": "bands-arithmetic",
+        "options": {
+          "enum": ["vv", "vh"],
+          "enum_titles": ["VV", "VH"],
+          "colors": ["#003170", "#00ae9d"]
+        }
+      },
+      "bands": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "enum": ["vv", "vh"]
+        },
+        "options": {
+          "hidden": true
+        }
+      },
+      "range": {
+        "type": "number",
+        "format": "range"
+      }
+    },
+    "type": "object",
+    "options": {
+      "keep_oneof_values": false,
+      "no_additional_properties": true
+    },
+    "anyOf": [
+      {
+        "type": "object",
+        "title": "SAR False Color (VV, VH, VV/VH)",
+        "options": {
+          "no_additional_properties": true
+        },
+        "properties": {
+          "mode": {
+            "$ref": "#/definitions/mode",
+            "const": 2,
+            "default": 2
+          },
+          "composite": {
+            "$ref": "#/definitions/formula",
+            "title": "Composite Bands",
+            "formulaTemplate": "{{A}};{{B}};({{C}})/({{D}})",
+            "default": "vv;vh;(vv)/(vh)",
+            "options": {
+              "defaultVariables": {
+                "A": "vv",
+                "B": "vh",
+                "C": "vv",
+                "D": "vh"
+              }
+            }
+          },
+          "bands": {
+            "$ref": "#/definitions/bands",
+            "format": "bands",
+            "default": ["vv", "vh"],
+            "watch": {
+              "formula": "composite"
+            }
+          },
+          "A": {
+            "$ref": "#/definitions/position",
+            "default": 1
+          },
+          "B": {
+            "$ref": "#/definitions/position",
+            "default": 2
+          },
+          "C": {
+            "$ref": "#/definitions/position",
+            "default": 1
+          },
+          "D": {
+            "$ref": "#/definitions/position",
+            "default": 2
+          },
+          "rangeA": {
+            "type": "object",
+            "title": "Red (A)",
+            "format": "minmax",
+            "properties": {
+              "minA": {
+                "$ref": "#/definitions/range",
+                "minimum": 0,
+                "maximum": 0.5,
+                "step": 0.005,
+                "default": 0
+              },
+              "maxA": {
+                "$ref": "#/definitions/range",
+                "minimum": 0,
+                "maximum": 0.5,
+                "step": 0.005,
+                "default": 0.4
+              }
+            }
+          },
+          "rangeB": {
+            "type": "object",
+            "title": "Green (B)",
+            "format": "minmax",
+            "properties": {
+              "minB": {
+                "$ref": "#/definitions/range",
+                "minimum": 0,
+                "maximum": 0.5,
+                "step": 0.005,
+                "default": 0
+              },
+              "maxB": {
+                "$ref": "#/definitions/range",
+                "minimum": 0,
+                "maximum": 0.5,
+                "step": 0.005,
+                "default": 0.1
+              }
+            }
+          },
+          "rangeRatio": {
+            "type": "object",
+            "title": "Blue (C/D)",
+            "format": "minmax",
+            "properties": {
+              "minRatio": {
+                "$ref": "#/definitions/range",
+                "minimum": 0,
+                "maximum": 30,
+                "step": 0.5,
+                "default": 1
+              },
+              "maxRatio": {
+                "$ref": "#/definitions/range",
+                "minimum": 0,
+                "maximum": 30,
+                "step": 0.5,
+                "default": 15
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "object",
+        "title": "Single Polarization",
+        "options": {
+          "no_additional_properties": true
+        },
+        "properties": {
+          "mode": {
+            "$ref": "#/definitions/mode",
+            "const": 1,
+            "default": 1
+          },
+          "polarization": {
+            "$ref": "#/definitions/formula",
+            "title": "Polarization",
+            "formulaTemplate": "{{A}}",
+            "default": "vv",
+            "options": {
+              "defaultVariables": {
+                "A": "vv"
+              }
+            }
+          },
+          "bands": {
+            "$ref": "#/definitions/bands",
+            "format": "bands",
+            "default": ["vv"],
+            "watch": {
+              "formula": "polarization"
+            }
+          },
+          "A": {
+            "$ref": "#/definitions/position",
+            "default": 1
+          },
+          "range": {
+            "type": "object",
+            "title": "Range",
+            "format": "minmax",
+            "properties": {
+              "min": {
+                "$ref": "#/definitions/range",
+                "minimum": 0,
+                "maximum": 1,
+                "step": 0.005,
+                "default": 0
+              },
+              "max": {
+                "$ref": "#/definitions/range",
+                "minimum": 0,
+                "maximum": 1,
+                "step": 0.005,
+                "default": 0.4
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "object",
+        "title": "Cross-Ratio (VH/VV)",
+        "options": {
+          "no_additional_properties": true
+        },
+        "properties": {
+          "mode": {
+            "$ref": "#/definitions/mode",
+            "const": 3,
+            "default": 3
+          },
+          "ratio": {
+            "$ref": "#/definitions/formula",
+            "title": "Ratio",
+            "formulaTemplate": "({{A}})/({{B}})",
+            "default": "(vh)/(vv)",
+            "options": {
+              "defaultVariables": {
+                "A": "vh",
+                "B": "vv"
+              }
+            }
+          },
+          "bands": {
+            "$ref": "#/definitions/bands",
+            "format": "bands",
+            "default": ["vh", "vv"],
+            "watch": {
+              "formula": "ratio"
+            }
+          },
+          "A": {
+            "$ref": "#/definitions/position",
+            "default": 1
+          },
+          "B": {
+            "$ref": "#/definitions/position",
+            "default": 2
+          },
+          "crossRatioRange": {
+            "type": "object",
+            "title": "Ratio range",
+            "format": "minmax",
+            "properties": {
+              "minCrossRatio": {
+                "$ref": "#/definitions/range",
+                "minimum": 0,
+                "maximum": 2,
+                "step": 0.01,
+                "default": 0
+              },
+              "maxCrossRatio": {
+                "$ref": "#/definitions/range",
+                "minimum": 0,
+                "maximum": 2,
+                "step": 0.01,
+                "default": 1
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}

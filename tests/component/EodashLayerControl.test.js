@@ -46,6 +46,9 @@ const layercontrolEl = () => document.querySelector("eox-layercontrol");
  */
 const mapStub = (id = "main") => ({
   id,
+  // eox-map is an element; the widget listens for its "layerschanged"
+  addEventListener: () => {},
+  removeEventListener: () => {},
   layers: /** @type {Record<string, unknown>[]} */ ([]),
   updateComplete: Promise.resolve(),
   getLayerById: () => ({}),
@@ -270,6 +273,27 @@ describe("EodashLayerControl", () => {
       vi.useFakeTimers();
       await emitDatetime("2023-01-10T00:00:00Z");
 
+      expect(busSpy).not.toHaveBeenCalled();
+    });
+
+    test("leaves a time slice inside the layer's own store to eox-layercontrol", async () => {
+      mapEl.value = /** @type {any} */ (mapStub());
+      const updateLayers = seedCollection(analysisResult());
+      await mountControl({ initialState: withStac });
+      const cube = mockOlLayer({ id: "coll;:;i1;:;3857" });
+      cube.set("layerDatetime", {
+        sliceMap: { "2023-01-10T00:00:00.000Z": 1 },
+      });
+
+      vi.useFakeTimers();
+      layercontrolEl()?.dispatchEvent(
+        new CustomEvent("datetime:updated", {
+          detail: { layer: cube, datetime: "2023-01-10T00:00:00.000Z" },
+        }),
+      );
+      await vi.advanceTimersByTimeAsync(600);
+
+      expect(updateLayers).not.toHaveBeenCalled();
       expect(busSpy).not.toHaveBeenCalled();
     });
   });
