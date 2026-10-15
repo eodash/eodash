@@ -2,18 +2,22 @@
 
 Model Context Protocol (MCP) server for `@eodash/eodash`.
 
-Provides intelligent assistance, introspection, type-safe widget definitions, layout orchestration, layer style generation, curated example discovery, catalog validation, and configuration generators for coding agents and developers working on `eodash`-based dashboards.
+Provides assistance, introspection, type-safe widget definitions, layout orchestration, layer style generation, curated example discovery, catalog validation, and configuration generators for coding agents and developers working on `eodash`-based dashboards.
 
 ## Features
 
-- **Widget Introspection & Schema**: Query built-in widgets (`EodashMap`, `EodashItemCatalog`, `EodashItemFilter`, `EodashLayerControl`, `EodashTimeSlider`, `EodashDatePicker`, `EodashProcess`, `EodashChart`, `EodashStacInfo`, `EodashTools`, `EodashLayoutSwitcher`) with structured JSON schemas for complex props (e.g., `EodashMap.btns`), TypeScript signatures, defaults, and usage snippets.
-- **Curated Examples Discovery**: Query working dashboard examples, Vega / Vega-Lite charts (`chart-vega`), layer styles, process forms, and catalog configs filtered by category, tags, and weighted free-text search via Fuse.js.
-- **Catalog Schema Validation**: Validate EODash catalog collections and indicators against official schemas (`collection-schema.json`, `indicator-schema.json`) and domain rules (enforcing URL strings for `Style`, rejecting `Resources[].Flatstyle`, checking `keep_oneof_values: false` on branching JSON-Editor forms).
-- **Custom Widget Guidance**: Detailed guides and code templates for Web Component (`type: "web-component"`), Functional (`defineWidget: (selectedSTAC) => ...`), and IFrame widgets, including direct integration with `@eox/*` components and the reactive Pinia `eodashStore`.
+- **Widget Introspection & Schema**: Query built-in widgets with structured JSON schemas, TypeScript signatures, defaults, and usage snippets.
+- **Curated Examples Discovery**: Query working dashboard examples, Vega / Vega-Lite charts, layer styles, process forms, collection and catalog configs filtered by category, tags, and weighted free-text search.
+- **Catalog Schema Validation**: Validate EODash catalog collections and indicators against [official schemas](https://github.com/eodash/eodash-schemas) and domain rules.
+- **Custom Widget Guidance**: Detailed guides and code templates for Web Component (`type: "web-component"`), Functional (`defineWidget: (selectedSTAC) => ...`), and IFrame widgets, and the reactive Pinia `eodashStore`.
 - **STAC to EOxMap Generation**: Build complete, ready-to-render `<eox-map>` configurations (layers, center, zoom, projection, datetime, timeControl, legend) directly from STAC Catalogs, Indicators, Collections, or Items with fuzzy search, GeoParquet support, and automatic legend/timeline extraction.
-- **Architecture & Layout Reference**: Detailed explanation of the 12-column responsive grid system, coordinate syntax (`"mobile/tablet/desktop"`), built-in templates (`lite`, `explore`, `expert`, `compare`), reactive state flows, and SPA vs `<eo-dash>` web component deployments.
+- **Architecture & Layout Reference**: Detailed explanation of the responsive grid system, coordinate syntax (`"mobile/tablet/desktop"`), built-in templates (`lite`, `explore`, `expert`, `compare`), reactive state flows, and SPA vs `<eo-dash>` web component deployments.
 
 ## Setup & Running
+
+To use the MCP without installing anything locally, you can point your coding agent to the hosted endpoint: [https://eodash.mcp.eox.at](https://eodash.mcp.eox.at)
+
+Otherwise:
 
 ### 1. Build Metadata
 
@@ -115,26 +119,4 @@ The `generate_map_from_stac` tool translates any STAC resource into a complete `
 
 ```bash
 npm run test:mcp
-```
-
-## Project Structure
-
-```
-packages/mcp/
-├── index.js                  # Server startup & CLI argument parser
-├── server.js                 # Express app & Streamable HTTP transport
-├── helpers.js                # Shared utilities & metadata loaders
-├── generate-metadata.js      # Metadata build script & CLI
-├── helpers/                  # Template, landing page, and guide helpers
-├── metadata/                 # AST & TypeDoc extractors for widgets/stores
-├── tools/                    # MCP tool registrations & Zod input schemas
-│   ├── widgets.js            # list_widgets, get_widget_details, get_custom_widget_guide
-│   ├── architecture.js       # get_eodash_architecture
-│   ├── discovery.js          # find_examples, validate_catalog_config
-│   └── stac.js               # generate_map_from_stac
-├── generators/               # Example discovery, catalog validation, and STAC map engines
-│   ├── examples.js           # find_examples query engine
-│   ├── validator.js          # validate_catalog_config schema engine
-│   └── stac-map.js           # buildStacMap & STAC catalog inference engine
-└── data/                     # Generated metadata & example JSON artifacts
 ```
