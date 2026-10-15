@@ -1,22 +1,28 @@
-import client from "prom-client";
+import {
+  Registry,
+  Counter,
+  Histogram,
+  Gauge,
+  collectDefaultMetrics,
+} from "@prometheus-io/client";
 
-export const register = new client.Registry();
+export const register = new Registry();
 
 // Default process metrics with eodash_mcp_ prefix
-client.collectDefaultMetrics({
+collectDefaultMetrics({
   register,
   prefix: "eodash_mcp_",
 });
 
 // Custom metrics
-export const toolCallsTotal = new client.Counter({
+export const toolCallsTotal = new Counter({
   name: "eodash_mcp_tool_calls_total",
   help: "Total number of MCP tool calls executed",
   labelNames: ["tool", "status"],
   registers: [register],
 });
 
-export const toolDurationSeconds = new client.Histogram({
+export const toolDurationSeconds = new Histogram({
   name: "eodash_mcp_tool_duration_seconds",
   help: "Duration of MCP tool executions in seconds",
   labelNames: ["tool"],
@@ -24,14 +30,14 @@ export const toolDurationSeconds = new client.Histogram({
   registers: [register],
 });
 
-export const rpcRequestsTotal = new client.Counter({
+export const rpcRequestsTotal = new Counter({
   name: "eodash_mcp_rpc_requests_total",
   help: "Total number of JSON-RPC requests by method and status",
   labelNames: ["method", "status"],
   registers: [register],
 });
 
-export const activeConnections = new client.Gauge({
+export const activeConnections = new Gauge({
   name: "eodash_mcp_active_connections",
   help: "Current number of active HTTP/SSE connections",
   registers: [register],
