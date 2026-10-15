@@ -17,7 +17,8 @@ export function registerStacTools(server) {
         "- When given a STAC Catalog: filters child indicators using fuzzy search (`query`) or exact ID (`collection_id`).\n" +
         "- Reads GeoParquet mirrors (items.parquet), TiTiler COGs, WMS, WMTS, and XYZ endpoints.\n" +
         "- Extracts styling legends from STAC metadata (eox:colorlegend, rasterform, style legend).\n" +
-        "- Aggregates date ranges into `timeControl` (availableDates, minDate, maxDate) for time-slider widgets.\n\n" +
+        "- Aggregates date ranges into `timeControl` (availableDates, minDate, maxDate) for time-slider widgets.\n" +
+        "- OPTIONAL LAYER TIME CONTROL: `layerDatetime` and `timeControlValues` on layer properties are omitted by default. Set `layerTimeControl: true` if the client intends to include `eox-timecontrol`.\n\n" +
         "LIMITATIONS:\n" +
         "- NO IMAGE RENDERING: Outputs OpenLayers/EOxMap JSON layer configuration; does NOT download tiles or return image pixels.\n" +
         "- AMBIGUITY: If a catalog query matches multiple indicators closely, returns error with structured `candidates` array; retry with `collection_id`.",
@@ -76,6 +77,20 @@ export function registerStacTools(server) {
             .describe(
               "Explicitly specify whether the STAC endpoint is a dynamic STAC API (true) or static catalog (false). Defaults to auto-inferred from URL (.json -> static).",
             ),
+          layerTimeControl: z
+            .boolean()
+            .optional()
+            .default(false)
+            .describe(
+              "Include layerDatetime and timeControlValues on layer properties. Set to true if the client intends to include eox-timecontrol.",
+            ),
+          shortContext: z
+            .boolean()
+            .optional()
+            .default(false)
+            .describe(
+              "Shorten contextual output to reduce response size: compacts item to id and link, omits indicator metadata, and reduces timeControl availableDates to a date summary (minDate, maxDate, count). Defaults to false.",
+            ),
         })
         .refine((data) => Boolean(data.url || data.stac_object), {
           message: "Either 'url' or 'stac_object' must be provided.",
@@ -89,7 +104,7 @@ export function registerStacTools(server) {
           content: [
             {
               type: "text",
-              text: JSON.stringify(result, null, 2),
+              text: JSON.stringify(result),
             },
           ],
         };
@@ -100,15 +115,11 @@ export function registerStacTools(server) {
             content: [
               {
                 type: "text",
-                text: JSON.stringify(
-                  {
-                    error: "Ambiguous query",
-                    message: err.message,
-                    candidates: err.candidates,
-                  },
-                  null,
-                  2,
-                ),
+                text: JSON.stringify({
+                  error: "Ambiguous query",
+                  message: err.message,
+                  candidates: err.candidates,
+                }),
               },
             ],
           };

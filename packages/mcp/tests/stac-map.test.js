@@ -94,6 +94,10 @@ const serveMockData = () => {
       bbox: [10, 40, 15, 45],
       links: [
         {
+          rel: "self",
+          href: "https://cat/items/c1_i2.json",
+        },
+        {
           rel: "xyz",
           href: "https://c1.example.com/{z}/{x}/{y}.png",
           title: "Child 1 Tile",
@@ -308,6 +312,77 @@ describe("STAC Map Generator - buildStacMap", () => {
       expect(config.indicator?.id).toBe("N2_CO2_mean");
     });
 
+    it("shortens context when shortContext: true (reduced item, omitted indicator, date summary)", async () => {
+      serveMockData();
+      const catalog = makeCatalog();
+      const config = await buildStacMap(
+        {
+          stac_object: catalog,
+          collection_id: "N2_CO2_mean",
+          shortContext: true,
+        },
+        { client },
+      );
+
+      expect(config.indicator).toBeUndefined();
+      expect(config.item).toBeDefined();
+      expect(config.item?.id).toBe("c1_i2");
+      expect(config.item?.link).toBeDefined();
+      // Assets and geometry should not be on the reduced item
+      expect(/** @type {any} */ (config.item).assets).toBeUndefined();
+      expect(/** @type {any} */ (config.item).properties).toBeUndefined();
+
+      expect(config.timeControl).toBeDefined();
+      expect(config.timeControl?.availableDates).toBeUndefined();
+      expect(config.timeControl?.minDate).toBeDefined();
+      expect(config.timeControl?.maxDate).toBeDefined();
+      expect(config.timeControl?.count).toBeGreaterThan(0);
+    });
+
+    it("uses rel: alternate link when rel: self is missing under shortContext: true", async () => {
+      const itemWithAlternate = stacItem({
+        id: "item_with_alternate",
+        properties: { datetime: "2023-01-01T00:00:00Z" },
+        links: [
+          {
+            rel: "alternate",
+            href: "https://example.com/items/alternate.json",
+          },
+        ],
+      });
+
+      const config = await buildStacMap({
+        stac_object: itemWithAlternate,
+        shortContext: true,
+      });
+
+      expect(config.item?.id).toBe("item_with_alternate");
+      expect(config.item?.link).toBe(
+        "https://example.com/items/alternate.json",
+      );
+    });
+
+    it("preserves full context when shortContext: false", async () => {
+      serveMockData();
+      const catalog = makeCatalog();
+      const config = await buildStacMap(
+        {
+          stac_object: catalog,
+          collection_id: "N2_CO2_mean",
+          shortContext: false,
+        },
+        { client },
+      );
+
+      expect(config.indicator).toBeDefined();
+      expect(config.indicator?.id).toBe("N2_CO2_mean");
+      expect(config.item?.id).toBe("c1_i2");
+      // Full item should keep assets
+      expect(/** @type {any} */ (config.item).assets).toBeDefined();
+      expect(config.timeControl?.availableDates).toBeDefined();
+      expect(config.timeControl?.availableDates?.length).toBeGreaterThan(0);
+    });
+
     it("returns timeControl with availableDates, minDate, and maxDate", async () => {
       serveMockData();
       const config = await buildStacMap({ url: INDICATOR_URL }, { client });
@@ -318,6 +393,31 @@ describe("STAC Map Generator - buildStacMap", () => {
       );
       expect(config.timeControl?.minDate).toBeDefined();
       expect(config.timeControl?.maxDate).toBeDefined();
+    });
+
+    it("omits layerDatetime and timeControlValues on layer properties by default", async () => {
+      serveMockData();
+      const config = await buildStacMap({ url: INDICATOR_URL }, { client });
+      const layersWithTime = config.layers.filter(
+        (l) => l.properties?.layerDatetime || l.properties?.timeControlValues,
+      );
+      expect(layersWithTime).toHaveLength(0);
+      expect(config.timeControl).toBeDefined();
+    });
+
+    it("includes layerDatetime and timeControlValues on layer properties when layerTimeControl: true", async () => {
+      serveMockData();
+      const config = await buildStacMap(
+        { url: INDICATOR_URL, layerTimeControl: true },
+        { client },
+      );
+      const layersWithTime = config.layers.filter(
+        (l) => l.properties?.layerDatetime || l.properties?.timeControlValues,
+      );
+      expect(layersWithTime.length).toBeGreaterThan(0);
+      const targetLayer = layersWithTime[0];
+      expect(targetLayer.properties?.layerDatetime).toBeDefined();
+      expect(targetLayer.properties?.timeControlValues).toBeDefined();
     });
 
     it("extracts legend when defined in collection or links", async () => {
@@ -516,6 +616,7 @@ describe("MCP Protocol Tool - generate_map_from_stac", () => {
     expect(tool?.inputSchema?.properties?.bbox).toBeDefined();
     expect(tool?.inputSchema?.properties?.viewProjection).toBeDefined();
     expect(tool?.inputSchema?.properties?.rasterEndpoint).toBeDefined();
+    expect(tool?.inputSchema?.properties?.layerTimeControl).toBeDefined();
   });
 
   it("calls generate_map_from_stac tool via MCP protocol and returns structured JSON", async () => {
@@ -549,6 +650,109 @@ describe("MCP Protocol Tool - generate_map_from_stac", () => {
     expect(mapConfig.center).toBeDefined();
     expect(mapConfig.zoom).toBeDefined();
     expect(mapConfig.item.id).toBe("mcp_direct_item");
+  });
+
+  it("omits layerDatetime/timeControlValues over MCP protocol by default, includes them when layerTimeControl: true", async () => {
+    const mockItem1 = stacItem({
+      id: "i1",
+      properties: { datetime: "2023-01-01T00:00:00Z" },
+      bbox: [10, 40, 15, 45],
+      links: [
+        {
+          rel: "xyz",
+          href: "https://tiles.example.com/{z}/{x}/{y}.png",
+          title: "Base OSM",
+        },
+      ],
+    });
+    const mockItem2 = stacItem({
+      id: "i2",
+      properties: { datetime: "2023-01-10T00:00:00Z" },
+      bbox: [10, 40, 15, 45],
+      links: [
+        {
+          rel: "xyz",
+          href: "https://tiles.example.com/{z}/{x}/{y}.png",
+          title: "Base OSM",
+        },
+      ],
+    });
+
+    const customCollection = {
+      ...makeIndicator(),
+      links: [
+        {
+          rel: "xyz",
+          href: "https://tiles.example.com/{z}/{x}/{y}.png",
+          roles: ["baselayer", "visible"],
+          title: "Base OSM",
+        },
+        {
+          rel: "item",
+          href: "https://example.com/items/i1.json",
+          id: "i1",
+          datetime: "2023-01-01T00:00:00Z",
+        },
+        {
+          rel: "item",
+          href: "https://example.com/items/i2.json",
+          id: "i2",
+          datetime: "2023-01-10T00:00:00Z",
+        },
+      ],
+    };
+
+    const fetchSpy = vi
+      .spyOn(globalThis, "fetch")
+      .mockImplementation(async (reqUrl) => {
+        const u = String(reqUrl);
+        const item = u.includes("i1") ? mockItem1 : mockItem2;
+        return {
+          ok: true,
+          status: 200,
+          headers: new Headers({ "content-type": "application/json" }),
+          json: async () => item,
+          text: async () => JSON.stringify(item),
+        };
+      });
+
+    try {
+      const { client: mcpClient } = await createTestClientServer();
+
+      // Default: timeControl omitted (off)
+      const resDefault = await mcpClient.callTool({
+        name: "generate_map_from_stac",
+        arguments: {
+          stac_object: customCollection,
+        },
+      });
+      expect(resDefault.isError).toBeFalsy();
+      const configDefault = JSON.parse(resDefault.content[0].text);
+      const layersWithTimeDefault = configDefault.layers.filter(
+        (l) =>
+          l.properties?.layerDatetime ||
+          l.properties?.timeControlValues ||
+          l.properties?.timeControlValue,
+      );
+      expect(layersWithTimeDefault).toHaveLength(0);
+
+      // Turned on via layerTimeControl: true
+      const resOn = await mcpClient.callTool({
+        name: "generate_map_from_stac",
+        arguments: {
+          stac_object: customCollection,
+          layerTimeControl: true,
+        },
+      });
+      expect(resOn.isError).toBeFalsy();
+      const configOn = JSON.parse(resOn.content[0].text);
+      const layersWithTimeOn = configOn.layers.filter(
+        (l) => l.properties?.layerDatetime || l.properties?.timeControlValues,
+      );
+      expect(layersWithTimeOn.length).toBeGreaterThan(0);
+    } finally {
+      fetchSpy.mockRestore();
+    }
   });
 
   it("calls generate_map_from_stac tool with fetch mock via vi.spyOn", async () => {
@@ -635,6 +839,63 @@ describe("MCP Protocol Tool - generate_map_from_stac", () => {
       expect(mapConfig.indicator.id).toBe("N2_CO2_mean");
       expect(mapConfig.layers).toBeDefined();
       expect(mapConfig.layers.length).toBeGreaterThanOrEqual(1);
+    } finally {
+      fetchSpy.mockRestore();
+    }
+  });
+
+  it("omits indicator metadata via MCP tool protocol when shortContext: true", async () => {
+    const catalogData = {
+      type: "Catalog",
+      id: "test-cat",
+      links: [
+        {
+          rel: "child",
+          href: "https://cat/co2/collection.json",
+          type: "application/json",
+          title: "Carbon Dioxide from OMI (daily)",
+          id: "N2_CO2_mean",
+          tags: ["CO2"],
+        },
+      ],
+    };
+
+    const indicatorData = makeIndicator();
+
+    const fetchSpy = vi
+      .spyOn(globalThis, "fetch")
+      .mockImplementation(async (reqUrl) => {
+        const urlStr = String(reqUrl);
+        if (urlStr.includes("catalog")) {
+          return {
+            ok: true,
+            status: 200,
+            json: async () => catalogData,
+          };
+        }
+        return {
+          ok: true,
+          status: 200,
+          json: async () => indicatorData,
+        };
+      });
+
+    try {
+      const { client: mcpClient } = await createTestClientServer();
+      const res = await mcpClient.callTool({
+        name: "generate_map_from_stac",
+        arguments: {
+          url: "https://example.com/stac/catalog.json",
+          query: "Carbon Dioxide",
+          datetime: "2023-01-01T00:00:00Z",
+          shortContext: true,
+        },
+      });
+
+      expect(res.isError).toBeFalsy();
+      const mapConfig = JSON.parse(res.content[0].text);
+      expect(mapConfig.indicator).toBeUndefined();
+      expect(mapConfig.layers).toBeDefined();
     } finally {
       fetchSpy.mockRestore();
     }
@@ -838,6 +1099,114 @@ describe("MCP Protocol Tool - generate_map_from_stac", () => {
         "2025-01-31T23:59:59.999Z",
         "2025-07-31T23:59:59.999Z",
       ]);
+    });
+  });
+
+  describe("Token efficiency: GeoJSON asset merging and observation points styling", () => {
+    it("always preserves individual remote GeoJSON URLs without inline data URIs", async () => {
+      const itemWithMultipleGeoJsons = stacItem({
+        id: "crop_yield_item",
+        properties: { datetime: "2024-01-01T00:00:00Z" },
+        assets: {
+          at: {
+            roles: ["data"],
+            type: "application/geo+json",
+            href: "https://data.example.com/at.geojson",
+            title: "Austria Yield",
+          },
+          hu: {
+            roles: ["data"],
+            type: "application/geo+json",
+            href: "https://data.example.com/hu.geojson",
+            title: "Hungary Yield",
+          },
+        },
+      });
+
+      const config = await buildStacMap({
+        stac_object: itemWithMultipleGeoJsons,
+      });
+      const vectorLayers = config.layers.filter(
+        (l) => l.type === "Vector" && l.source?.type === "Vector",
+      );
+      expect(vectorLayers).toHaveLength(2);
+      expect(vectorLayers[0].source.url).toBe(
+        "https://data.example.com/at.geojson",
+      );
+      expect(vectorLayers[1].source.url).toBe(
+        "https://data.example.com/hu.geojson",
+      );
+      expect(
+        vectorLayers.some((l) =>
+          l.source.url?.includes("data:application/json"),
+        ),
+      ).toBe(false);
+    });
+
+    it("always uses simple circle styling and no inline SVG icons for observation points", async () => {
+      const obsCollection = stacCollection({
+        id: "obs_points_coll",
+        title: "Observation Points Indicator",
+        locations: true,
+        links: [
+          {
+            rel: "child",
+            href: "https://cat/station1.json",
+            latlng: "48.2,16.4",
+            title: "Station Vienna",
+          },
+        ],
+      });
+
+      const config = await buildStacMap({ stac_object: obsCollection });
+      const obsLayer = config.layers.find(
+        (l) => l.properties?.id === "geodb-collection",
+      );
+      expect(obsLayer).toBeDefined();
+      expect(obsLayer.style).toEqual({
+        "circle-radius": 6,
+        "circle-fill-color": "#004170",
+        "circle-stroke-color": "#fff",
+        "circle-stroke-width": 1.5,
+      });
+    });
+
+    it("returns compact JSON without pretty-print indentation over MCP protocol", async () => {
+      const { client: mcpClient } = await createTestClientServer();
+      const customItem = stacItem({
+        id: "mcp_compact_item",
+        properties: { datetime: "2023-08-15T00:00:00Z" },
+        bbox: [0, 10, 20, 30],
+        links: [
+          {
+            rel: "self",
+            href: "https://mcp.example.com/items/mcp_compact_item.json",
+          },
+          {
+            rel: "xyz",
+            href: "https://mcp.example.com/{z}/{x}/{y}.png",
+            title: "MCP Tile",
+          },
+        ],
+      });
+
+      const res = await mcpClient.callTool({
+        name: "generate_map_from_stac",
+        arguments: {
+          stac_object: customItem,
+          shortContext: true,
+        },
+      });
+
+      expect(res.isError).toBeFalsy();
+      const rawText = res.content[0].text;
+      // Should not contain pretty-print 2-space indentation with newlines
+      expect(rawText).not.toContain('{\n  "layers"');
+      const parsed = JSON.parse(rawText);
+      expect(parsed.layers).toBeDefined();
+      expect(parsed.item?.id).toBe("mcp_compact_item");
+      expect(parsed.item?.link).toBeDefined();
+      expect(parsed.item?.assets).toBeUndefined();
     });
   });
 });
