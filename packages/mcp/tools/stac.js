@@ -84,12 +84,12 @@ export function registerStacTools(server) {
             .describe(
               "Include layerDatetime and timeControlValues on layer properties. Set to true if the client intends to include eox-timecontrol.",
             ),
-          indicator: z
+          shortContext: z
             .boolean()
             .optional()
-            .default(true)
+            .default(false)
             .describe(
-              "Include indicator metadata (id, title, description, href) in the response when resolving from a catalog. Defaults to true. Set to false to omit indicator metadata.",
+              "Shorten contextual output to reduce response size: compacts item to id and link, omits indicator metadata, and reduces timeControl availableDates to a date summary (minDate, maxDate, count). Defaults to false.",
             ),
         })
         .refine((data) => Boolean(data.url || data.stac_object), {
@@ -104,7 +104,7 @@ export function registerStacTools(server) {
           content: [
             {
               type: "text",
-              text: JSON.stringify(result, null, 2),
+              text: JSON.stringify(result),
             },
           ],
         };
@@ -115,15 +115,11 @@ export function registerStacTools(server) {
             content: [
               {
                 type: "text",
-                text: JSON.stringify(
-                  {
-                    error: "Ambiguous query",
-                    message: err.message,
-                    candidates: err.candidates,
-                  },
-                  null,
-                  2,
-                ),
+                text: JSON.stringify({
+                  error: "Ambiguous query",
+                  message: err.message,
+                  candidates: err.candidates,
+                }),
               },
             ],
           };

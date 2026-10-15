@@ -156,9 +156,9 @@ describe("getObservationPointsLayer", () => {
     expect(fallback.style["circle-radius"]).toBe(10);
   });
 
-  test("styles points with simple circle geometries without SVG icons when simpleStyle is true", () => {
+  test("styles points with simple circle geometries without SVG icons when observationPointIcons is false", () => {
     const layer = getObservationPointsLayer([points({})], {
-      simpleStyle: true,
+      observationPointIcons: false,
     });
 
     expect(layer?.style).toEqual({

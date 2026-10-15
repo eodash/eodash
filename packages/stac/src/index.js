@@ -22,9 +22,14 @@ import { createStaticCollection } from "./collections/static.js";
  * @param {Record<string, any> | null} [options.tileMatrixSets] - TileMatrixSet configurations keyed by projection
  * @param {Record<string, Record<string, import("./types").Render>>} [options.renders] - Render configurations mapped by collection ID
  * @param {import("./types").STACCollection} [options.stac] - The collection document, for a caller that has already read it
+ * @param {import("./types").BuildContext} [buildContext] - Default build context applied to layer builds
  * @returns {Promise<import("./types").Reader>}
  */
-export const createEodashCollection = async (url, options = {}) => {
+export const createEodashCollection = async (
+  url,
+  options = {},
+  buildContext = {},
+) => {
   const {
     api = false,
     maxItems,
@@ -45,6 +50,7 @@ export const createEodashCollection = async (url, options = {}) => {
     upscalingEndpoints,
     tileMatrixSets,
     renders,
+    ...buildContext,
   };
   const context = {
     url,

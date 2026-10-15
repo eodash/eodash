@@ -34,7 +34,7 @@ export {
  * @param {string} [params.rasterEndpoint] - Base URL for TiTiler / raster tile rendering
  * @param {boolean} [params.api] - Explicitly specify whether endpoint is STAC API (true) or static (false)
  * @param {boolean} [params.timeControl] - Include layerDatetime and timeControlValues on layer properties (default: false)
- * @param {boolean} [params.indicator] - Include retrieved indicator metadata (id, title, description, href) in mapConfig (default: true)
+ * @param {boolean} [params.shortContext=false] - Shorten contextual output: compacts item to id and link, omits indicator metadata, and reduces timeControl availableDates to date summary (minDate, maxDate, count)
  * @param {object} [options]
  * @param {import("@eodash/stac").HttpClient | import("@eodash/stac/http").AxiosInstance} [options.client] - Optional HTTP client (for hermetic testing)
  * @param {typeof fetch} [options.fetch] - Optional fetch implementation (for hermetic testing)
@@ -52,7 +52,7 @@ export async function buildStacMap(
     rasterEndpoint,
     api,
     timeControl,
-    indicator = true,
+    shortContext = false,
   },
   { client, fetch: customFetch } = {},
 ) {
@@ -207,29 +207,57 @@ export async function buildStacMap(
 
   const enableTimeControl = Boolean(timeControl);
 
-  const indicatorReader = await createEodashIndicator(targetUrl, {
-    stac: resolvedCollection,
-    client: httpClient,
-    fetch: safeFetchFn,
-    viewProjection,
-    rasterEndpoint,
-    ...(api !== undefined && { api }),
+  /** @type {import("@eodash/stac").BuildContext} */
+  const buildContext = {
     mergeAssets: false,
-    simpleObservationPoints: true,
+    observationPointIcons: false,
     timeControl: enableTimeControl,
-  });
+  };
+
+  const indicatorReader = await createEodashIndicator(
+    targetUrl,
+    {
+      stac: resolvedCollection,
+      client: httpClient,
+      fetch: safeFetchFn,
+      viewProjection,
+      rasterEndpoint,
+      ...(api !== undefined && { api }),
+    },
+    buildContext,
+  );
 
   const mapConfig = await indicatorReader.getMapConfig({
     datetime,
     item: resolvedItem,
     bbox,
-    mergeAssets: false,
-    simpleObservationPoints: true,
-    timeControl: enableTimeControl,
   });
 
-  if (matchedIndicatorInfo && indicator !== false) {
+  const isShortContext = Boolean(shortContext);
+
+  if (matchedIndicatorInfo && !isShortContext) {
     mapConfig.indicator = matchedIndicatorInfo;
+  }
+
+  if (isShortContext) {
+    if (mapConfig.item) {
+      const itemSelfHref =
+        mapConfig.item.links?.find((l) => l.rel === "self")?.href ||
+        targetUrl ||
+        "";
+      mapConfig.item = {
+        id: mapConfig.item.id,
+        link: itemSelfHref,
+      };
+    }
+
+    if (mapConfig.timeControl) {
+      mapConfig.timeControl = {
+        minDate: mapConfig.timeControl.minDate,
+        maxDate: mapConfig.timeControl.maxDate,
+        count: mapConfig.timeControl.availableDates?.length ?? 0,
+      };
+    }
   }
 
   // Extract legends from built layers if present (eox:colorlegend, style legend, rasterform legend, or image asset)

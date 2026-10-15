@@ -104,7 +104,7 @@ The `generate_map_from_stac` tool translates any STAC resource into a complete `
 - **Legend Extraction**: Reads color legend definitions directly from STAC layer styling metadata (`eox:colorlegend`, `layerLegend`, or rasterform/style legend configurations) without URL parsing.
 - **Temporal Aggregation**: Collects available time steps into `timeControl: { availableDates, minDate, maxDate }` for direct use with `EodashTimeSlider`.
 - **Optional Layer Time Controls**: By default, `layerDatetime` and `timeControlValues` on layer properties are omitted. Pass `timeControl: true` when the client intends to include `eox-timecontrol`.
-- **Indicator Metadata**: Includes `indicator: { id, title, description, href }` context when resolving from a catalog. Callers can opt out by setting `indicator: false`.
+- **Shortened Contextual Output**: Pass `shortContext: true` (default `false`) to reduce response payload size by compacting the echoed STAC item to its `id` and `link`, omitting catalog indicator metadata, and reducing `timeControl` dates to a summary (`minDate`, `maxDate`, `count`). Output JSON is compact.
 
 ### Limitations
 

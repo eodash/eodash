@@ -308,19 +308,52 @@ describe("STAC Map Generator - buildStacMap", () => {
       expect(config.indicator?.id).toBe("N2_CO2_mean");
     });
 
-    it("omits indicator metadata when indicator: false", async () => {
+    it("shortens context when shortContext: true (reduced item, omitted indicator, date summary)", async () => {
       serveMockData();
       const catalog = makeCatalog();
       const config = await buildStacMap(
         {
           stac_object: catalog,
           collection_id: "N2_CO2_mean",
-          indicator: false,
+          shortContext: true,
         },
         { client },
       );
 
       expect(config.indicator).toBeUndefined();
+      expect(config.item).toBeDefined();
+      expect(config.item?.id).toBe("c1_i2");
+      expect(config.item?.link).toBeDefined();
+      // Assets and geometry should not be on the reduced item
+      expect(/** @type {any} */ (config.item).assets).toBeUndefined();
+      expect(/** @type {any} */ (config.item).properties).toBeUndefined();
+
+      expect(config.timeControl).toBeDefined();
+      expect(config.timeControl?.availableDates).toBeUndefined();
+      expect(config.timeControl?.minDate).toBeDefined();
+      expect(config.timeControl?.maxDate).toBeDefined();
+      expect(config.timeControl?.count).toBeGreaterThan(0);
+    });
+
+    it("preserves full context when shortContext: false", async () => {
+      serveMockData();
+      const catalog = makeCatalog();
+      const config = await buildStacMap(
+        {
+          stac_object: catalog,
+          collection_id: "N2_CO2_mean",
+          shortContext: false,
+        },
+        { client },
+      );
+
+      expect(config.indicator).toBeDefined();
+      expect(config.indicator?.id).toBe("N2_CO2_mean");
+      expect(config.item?.id).toBe("c1_i2");
+      // Full item should keep assets
+      expect(/** @type {any} */ (config.item).assets).toBeDefined();
+      expect(config.timeControl?.availableDates).toBeDefined();
+      expect(config.timeControl?.availableDates?.length).toBeGreaterThan(0);
     });
 
     it("returns timeControl with availableDates, minDate, and maxDate", async () => {
@@ -784,7 +817,7 @@ describe("MCP Protocol Tool - generate_map_from_stac", () => {
     }
   });
 
-  it("omits indicator metadata via MCP tool protocol when indicator: false", async () => {
+  it("omits indicator metadata via MCP tool protocol when shortContext: true", async () => {
     const catalogData = {
       type: "Catalog",
       id: "test-cat",
@@ -828,7 +861,7 @@ describe("MCP Protocol Tool - generate_map_from_stac", () => {
           url: "https://example.com/stac/catalog.json",
           query: "Carbon Dioxide",
           datetime: "2023-01-01T00:00:00Z",
-          indicator: false,
+          shortContext: true,
         },
       });
 
@@ -1109,6 +1142,40 @@ describe("MCP Protocol Tool - generate_map_from_stac", () => {
         "circle-stroke-color": "#fff",
         "circle-stroke-width": 1.5,
       });
+    });
+
+    it("returns compact JSON without pretty-print indentation over MCP protocol", async () => {
+      const { client: mcpClient } = await createTestClientServer();
+      const customItem = stacItem({
+        id: "mcp_compact_item",
+        properties: { datetime: "2023-08-15T00:00:00Z" },
+        bbox: [0, 10, 20, 30],
+        links: [
+          {
+            rel: "xyz",
+            href: "https://mcp.example.com/{z}/{x}/{y}.png",
+            title: "MCP Tile",
+          },
+        ],
+      });
+
+      const res = await mcpClient.callTool({
+        name: "generate_map_from_stac",
+        arguments: {
+          stac_object: customItem,
+          shortContext: true,
+        },
+      });
+
+      expect(res.isError).toBeFalsy();
+      const rawText = res.content[0].text;
+      // Should not contain pretty-print 2-space indentation with newlines
+      expect(rawText).not.toContain('{\n  "layers"');
+      const parsed = JSON.parse(rawText);
+      expect(parsed.layers).toBeDefined();
+      expect(parsed.item?.id).toBe("mcp_compact_item");
+      expect(parsed.item?.link).toBeDefined();
+      expect(parsed.item?.assets).toBeUndefined();
     });
   });
 });

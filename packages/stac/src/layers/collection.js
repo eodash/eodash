@@ -66,7 +66,7 @@ export const getIndicatorLayers = async (
  * @param {object} [options]
  * @param {import("../types").ObservationPointsThemes} [options.themes] - Theme styling options
  * @param {import("@eox/map").EoxLayer[]} [options.currentLayers] - Layers whose interactions are preserved
- * @param {boolean} [options.simpleStyle] - Whether to use simple circle markers without inlining SVG icons
+ * @param {boolean} [options.observationPointIcons=true] - Whether to use SVG theme icons (true) or simple circle markers (false)
  * @returns {import("@eox/map").EoxLayer | null} Vector layer definition or null if no points exist
  */
 export const getObservationPointsLayer = (
@@ -74,7 +74,7 @@ export const getObservationPointsLayer = (
   {
     themes = OBSERVATION_POINT_THEMES,
     currentLayers = [],
-    simpleStyle = false,
+    observationPointIcons = true,
   } = {},
 ) => {
   const features = collections.filter(isObservationPoints).flatMap(
@@ -111,7 +111,9 @@ export const getObservationPointsLayer = (
       url: "data:," + encodeURIComponent(JSON.stringify(featureCollection)),
       format: "GeoJSON",
     },
-    style: simpleStyle ? SIMPLE_OBSERVATION_POINTS_STYLE : themeStyle(themes),
+    style: observationPointIcons
+      ? themeStyle(themes)
+      : SIMPLE_OBSERVATION_POINTS_STYLE,
     interactions: [
       ...(findLayer(currentLayers, OBSERVATION_POINTS_ID)?.interactions ?? []),
     ],
