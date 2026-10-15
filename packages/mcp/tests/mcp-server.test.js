@@ -354,6 +354,48 @@ describe("eodash MCP Server - HTTP Endpoints", () => {
     expect(body.message).toBe("eodash MCP Server is running");
   });
 
+  it("HEAD / returns 200 OK for load balancer / ingress health probes", async () => {
+    const res = await fetch(`${baseUrl}/`, { method: "HEAD" });
+    expect(res.status).toBe(200);
+  });
+
+  it("GET /metrics returns 200 with Prometheus text format", async () => {
+    const res = await fetch(`${baseUrl}/metrics`);
+    expect(res.status).toBe(200);
+    expect(res.headers.get("content-type")).toContain("text/plain");
+    const text = await res.text();
+    expect(text).toContain("eodash_mcp_");
+  });
+
+  it("GET /metrics returns 404 when ENABLE_PROMETHEUS_METRICS is 'false'", async () => {
+    process.env.ENABLE_PROMETHEUS_METRICS = "false";
+    try {
+      const res = await fetch(`${baseUrl}/metrics`);
+      expect(res.status).toBe(404);
+      const text = await res.text();
+      expect(text).toContain("Prometheus metrics disabled");
+    } finally {
+      delete process.env.ENABLE_PROMETHEUS_METRICS;
+    }
+  });
+
+  it("GET /metrics reflects JSON-RPC requests processed by live server", async () => {
+    await fetch(`${baseUrl}/`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        jsonrpc: "2.0",
+        method: "ping",
+        id: "ping-metrics-integration-1",
+      }),
+    });
+
+    const res = await fetch(`${baseUrl}/metrics`);
+    expect(res.status).toBe(200);
+    const text = await res.text();
+    expect(text).toContain('eodash_mcp_rpc_requests_total{method="ping"');
+  });
+
   it("GET / returns 405 Method Not Allowed per MCP Streamable HTTP spec", async () => {
     const res = await fetch(`${baseUrl}/`);
     expect(res.status).toBe(405);
