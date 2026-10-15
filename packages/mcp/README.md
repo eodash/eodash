@@ -45,8 +45,26 @@ npx @eodash/mcp --port 3001
 ```
 
 - Operates in stateless MCP mode (`sessionIdGenerator: undefined`, `enableJsonResponse: true`), returning direct JSON-RPC responses over HTTP POST without session state or open SSE streams.
-- Open `http://localhost:3001` in your browser to view the interactive server landing page and tool catalog.
+- Open `http://localhost:3001/ui` in your browser to view the interactive server landing page and tool catalog.
 - Health check endpoint: `http://localhost:3001/health`.
+- Prometheus metrics endpoint: `http://localhost:3001/metrics`.
+
+### Observability & Prometheus Metrics
+
+When running in HTTP mode, `@eodash/mcp` exposes Prometheus metrics at `GET /metrics`.
+
+#### Metrics Exposed
+
+- `eodash_mcp_tool_calls_total`: Total number of MCP tool executions labeled by `tool` and `status` (`success`, `error`, `failure`).
+- `eodash_mcp_tool_duration_seconds`: Histogram measuring execution duration of MCP tools in seconds.
+- `eodash_mcp_rpc_requests_total`: Total JSON-RPC requests labeled by `method` and `status` (`success`, `error`). Unrecognized methods are clamped to `other` to protect against cardinality attacks.
+- `eodash_mcp_active_connections`: Current number of active HTTP connections.
+- `eodash_mcp_process_*` / `eodash_mcp_nodejs_*`: Default Node.js process and runtime metrics (CPU, heap, event loop).
+
+#### Environment Variables
+
+- `ENABLE_PROMETHEUS_METRICS`: Set to `"false"` to disable metrics collection and return 404 on `/metrics`. Enabled by default (`"true"`).
+- Default process metrics collection only initializes when metrics are enabled and the HTTP server is started.
 
 ### 3. MCP Client Configuration
 

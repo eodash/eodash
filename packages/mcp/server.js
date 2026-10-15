@@ -9,6 +9,7 @@ import {
   getMetrics,
   getMetricsContentType,
   isMetricsEnabled,
+  initDefaultMetrics,
 } from "./helpers/metrics.js";
 
 /**
@@ -17,6 +18,10 @@ import {
  */
 export function createExpressApp(createServerFn) {
   const app = express();
+
+  if (isMetricsEnabled()) {
+    initDefaultMetrics();
+  }
 
   let activeGlobalConnections = 0;
   const ipConnections = new Map();

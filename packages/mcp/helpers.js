@@ -38,6 +38,8 @@ export {
   getMetrics,
   getMetricsContentType,
   isMetricsEnabled,
+  initDefaultMetrics,
+  KNOWN_RPC_METHODS,
   _resetMetrics,
 } from "./helpers/metrics.js";
 import { logger } from "./helpers/logger.js";

@@ -56,6 +56,17 @@ describe("Prometheus Metrics Infrastructure", () => {
     expect(metrics).toContain('method="tools/call",status="error"} 1');
   });
 
+  it("clamps unknown or dynamic RPC methods to 'other'", async () => {
+    recordRpcRequest("random_rpc_12345", "error");
+    recordRpcRequest("undefined_dynamic_method", "success");
+
+    const metrics = await getMetrics();
+    expect(metrics).toContain('method="other",status="error"} 1');
+    expect(metrics).toContain('method="other",status="success"} 1');
+    expect(metrics).not.toContain("random_rpc_12345");
+    expect(metrics).not.toContain("undefined_dynamic_method");
+  });
+
   it("tracks active connections gauge", async () => {
     setActiveConnections(5);
     let metrics = await getMetrics();

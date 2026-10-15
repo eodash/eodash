@@ -8,11 +8,40 @@ import {
 
 export const register = new Registry();
 
-// Default process metrics with eodash_mcp_ prefix
-collectDefaultMetrics({
-  register,
-  prefix: "eodash_mcp_",
-});
+let defaultMetricsInitialized = false;
+
+/**
+ * Known JSON-RPC / MCP methods.
+ * Any unlisted method is categorized as "other".
+ */
+export const KNOWN_RPC_METHODS = new Set([
+  "initialize",
+  "notifications/initialized",
+  "notifications/cancelled",
+  "ping",
+  "tools/list",
+  "tools/call",
+  "resources/list",
+  "resources/read",
+  "resources/templates/list",
+  "prompts/list",
+  "prompts/get",
+  "logging/setLevel",
+  "completion/complete",
+]);
+
+/**
+ * Initialize collection of default Node.js process metrics with eodash_mcp_ prefix.
+ * Only runs if Prometheus metrics are enabled and runs once.
+ */
+export function initDefaultMetrics() {
+  if (!isMetricsEnabled() || defaultMetricsInitialized) return;
+  collectDefaultMetrics({
+    register,
+    prefix: "eodash_mcp_",
+  });
+  defaultMetricsInitialized = true;
+}
 
 // Custom metrics
 export const toolCallsTotal = new Counter({
@@ -67,13 +96,18 @@ export function recordToolCall(toolName, status, durationSeconds) {
 }
 
 /**
- * Record a JSON-RPC request by method and HTTP status
+ * Record a JSON-RPC request by method and HTTP status.
+ * Unrecognized or dynamic methods are clamped to "other".
  * @param {string} method
  * @param {"success" | "error"} status
  */
 export function recordRpcRequest(method, status) {
   if (!isMetricsEnabled()) return;
-  rpcRequestsTotal.inc({ method, status });
+  const safeMethod =
+    typeof method === "string" && KNOWN_RPC_METHODS.has(method)
+      ? method
+      : "other";
+  rpcRequestsTotal.inc({ method: safeMethod, status });
 }
 
 /**
@@ -93,6 +127,7 @@ export async function getMetrics() {
   if (!isMetricsEnabled()) {
     throw new Error("Prometheus metrics disabled");
   }
+  initDefaultMetrics();
   return register.metrics();
 }
 
