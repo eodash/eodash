@@ -104,6 +104,23 @@ function installErrorInterceptors() {
 }
 
 /**
+ * Checks if the response has a `contents` property and a proxy `status.http_code`.
+ * Such structure is provided by CORS proxies like Whatever-Origin API.
+ * @param {any} data
+ */
+const parseResponseData = (data) => {
+  if (typeof data?.contents !== "string" || !data.status?.http_code) {
+    return data;
+  }
+  try {
+    return JSON.parse(data.contents);
+  } catch {
+    // pass the raw body on so the "not valid JSON" report fires
+    return data.contents;
+  }
+};
+
+/**
  * axios swallows `JSON.parse` failures and hands back the raw string, so a
  * malformed file reaches callers as a success. Skipped when the caller asked
  * for a non-JSON `responseType`.
@@ -111,6 +128,29 @@ function installErrorInterceptors() {
  * @param {import("axios").AxiosResponse} response
  */
 function reportParseFailure(response) {
+  if (
+    typeof response.data?.contents === "string" &&
+    response.data.status?.http_code >= 400
+  ) {
+    const status = response.data.status.http_code;
+    const error = new Axios.AxiosError(
+      `Request failed with status code ${status}`,
+      status >= 500
+        ? Axios.AxiosError.ERR_BAD_RESPONSE
+        : Axios.AxiosError.ERR_BAD_REQUEST,
+      response.config,
+      response.request,
+      {
+        ...response,
+        status,
+        statusText: "",
+        data: response.data.contents,
+      },
+    );
+    return reportFetchFailure(error);
+  }
+
+  response.data = parseResponseData(response.data);
   const body =
     !response.config.responseType && typeof response.data === "string"
       ? response.data

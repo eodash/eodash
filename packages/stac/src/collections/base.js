@@ -16,7 +16,7 @@ import { buildLayers } from "../layers/index.js";
  * @param {(datetime?: import("../types").Datetime, bbox?: import("../types").BBox) => Promise<import("../types").STACItem | undefined>} parts.getItem
  * @param {string} [parts.color]
  * @param {string} [parts.viewProjection]
- * @param {import("../types").BuildContext} [parts.rasterOptions] - Default raster configuration applied to layer builds
+ * @param {import("../types").BuildContext} [parts.defaultContext] - Default build context applied to layer builds
  */
 export const createCollectionBase = ({
   stac,
@@ -25,7 +25,7 @@ export const createCollectionBase = ({
   getItem,
   color,
   viewProjection,
-  rasterOptions,
+  defaultContext,
 }) => {
   const layerConfigHelpers = createLayerConfigHelpers();
 
@@ -39,7 +39,7 @@ export const createCollectionBase = ({
    * @returns {Parameters<typeof buildLayers>[1]}
    */
   const getBuildContext = (buildCtx) => ({
-    ...rasterOptions,
+    ...defaultContext,
     ...buildCtx,
     color: buildCtx.color ?? color,
     viewProjection: buildCtx.viewProjection ?? viewProjection,

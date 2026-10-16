@@ -117,7 +117,11 @@ export const buildIndicatorDataLayers = async ({
 
   const observationPoints = getObservationPointsLayer(
     readers.map((reader) => reader.stac),
-    { themes, currentLayers },
+    {
+      themes,
+      currentLayers,
+      observationPointIcons: context.observationPointIcons ?? true,
+    },
   );
   if (observationPoints) {
     layers.push(observationPoints);
@@ -160,9 +164,14 @@ export const DEFAULT_COLLECTIONS_PALETTE = [
  * @param {Record<string, any> | null} [options.tileMatrixSets] - TileMatrixSet configurations
  * @param {Record<string, Record<string, import("../types").Render>>} [options.renders] - Render configurations
  * @param {import("../types").ObservationPointsThemes} [options.themes] - Marker styling for observation points
+ * @param {import("../types").BuildContext} [defaultContext] - Default build context applied to layer builds
  * @returns {Promise<import("../types").IndicatorReader>}
  */
-export const createEodashIndicator = async (url, options = {}) => {
+export const createEodashIndicator = async (
+  url,
+  options = {},
+  defaultContext = {},
+) => {
   const {
     client,
     fetch: customFetch,
@@ -173,6 +182,8 @@ export const createEodashIndicator = async (url, options = {}) => {
     renders,
     themes,
   } = options;
+
+  const readerDefaults = { ...defaultContext };
 
   const http = createHTTPInstance({ client });
   /** @type {import("../types").STACCollection} */
@@ -199,18 +210,22 @@ export const createEodashIndicator = async (url, options = {}) => {
 
   const readers = await Promise.all(
     collectionUrls.map((cu, idx) =>
-      createEodashCollection(cu, {
-        api: isApi,
-        client,
-        fetch: customFetch,
-        color: palette[idx % palette.length],
-        viewProjection,
-        ...(cu === url && { stac }),
-        rasterEndpoint,
-        upscalingEndpoints,
-        tileMatrixSets,
-        renders,
-      }),
+      createEodashCollection(
+        cu,
+        {
+          api: isApi,
+          client,
+          fetch: customFetch,
+          color: palette[idx % palette.length],
+          viewProjection,
+          ...(cu === url && { stac }),
+          rasterEndpoint,
+          upscalingEndpoints,
+          tileMatrixSets,
+          renders,
+        },
+        readerDefaults,
+      ),
     ),
   );
 
@@ -259,11 +274,17 @@ export const createEodashIndicator = async (url, options = {}) => {
       (l) => l.properties?.group === "overlay",
     );
 
+    const mergedContext = {
+      ...readerDefaults,
+      ...context,
+      viewProjection,
+    };
+
     const dataResult = await buildIndicatorDataLayers({
       readers,
       stac,
       timeOrItem: targetItem ?? resolvedDate,
-      context: { ...context, viewProjection },
+      context: mergedContext,
       themes,
     });
 
@@ -342,15 +363,12 @@ export const createEodashIndicator = async (url, options = {}) => {
     /**
      * Builds complete EOxMap configuration including layers, center, zoom, and projections.
      *
-     * @param {object} [configOptions]
-     * @param {import("../types").Datetime} [configOptions.datetime]
-     * @param {import("../types").STACItem} [configOptions.item]
-     * @param {import("../types").BBox} [configOptions.bbox]
-     * @param {import("../types").BuildContext} [configOptions.context]
+     * @param {import("../types").BuildContext & { datetime?: import("../types").Datetime, item?: import("../types").STACItem, bbox?: import("../types").BBox }} [config]
      * @returns {Promise<import("../types").MapConfig & { timeControl?: { availableDates: string[], minDate?: string, maxDate?: string } }>}
      */
-    getMapConfig: async (configOptions = {}) => {
-      const { datetime, item, bbox, context } = configOptions;
+    getMapConfig: async (config = {}) => {
+      const { datetime, item, bbox, ...buildContext } = config;
+      const mergedContext = { ...buildContext };
 
       /** @type {Date[][] | undefined} */
       let prefetchedDates = undefined;
@@ -382,7 +400,7 @@ export const createEodashIndicator = async (url, options = {}) => {
       const buildResult = await buildLayersInternal(
         datetime,
         item,
-        context,
+        mergedContext,
         prefetchedDates,
       );
 
