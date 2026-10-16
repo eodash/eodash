@@ -111,12 +111,13 @@ export interface IndicatorReader {
   ) => Promise<
     BuiltLayers & { items: import("./stac").STACItem[]; datetime?: string }
   >;
-  getMapConfig: (options?: {
-    datetime?: Datetime;
-    item?: import("./stac").STACItem;
-    bbox?: BBox;
-    context?: BuildContext;
-  }) => Promise<MapConfig>;
+  getMapConfig: (
+    options?: {
+      datetime?: Datetime;
+      item?: import("./stac").STACItem;
+      bbox?: BBox;
+    } & BuildContext,
+  ) => Promise<MapConfig>;
 }
 
 /** Map configuration payload for EOxMap initialization. */
@@ -127,16 +128,18 @@ export interface MapConfig {
   projection: string;
   projections: Projection[];
   datetime?: string;
-  item?: STACItem;
+  item?: STACItem | { id: string; link?: string };
   timeControl?: {
-    availableDates: string[];
+    availableDates?: string[];
     minDate?: string;
     maxDate?: string;
+    count?: number;
   };
   legends?: Array<BoundLegend | Record<string, any>>;
   indicator?: {
     id?: string;
     title?: string;
+    description?: string;
     href?: string;
   };
 }

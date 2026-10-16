@@ -33,12 +33,13 @@ const dataAsset = (asset) => ({ roles: ["data"], ...asset });
 /**
  * @param {import("../src/types").STACItem} item
  * @param {Record<string, any>} [extras] url -> data the build reads (geojson bodies)
+ * @param {import("../src/types").BuildContext} [context]
  * @returns {Promise<any[]>}
  */
-const build = async (item, extras = {}) => {
+const build = async (item, extras = {}, context = {}) => {
   serveUrls(client, { [COLLECTION_URL]: stacCollection(), ...extras });
   const col = await createEodashCollection(COLLECTION_URL, { client });
-  return (await col.buildLayers(item)).layers;
+  return (await col.buildLayers(item, context)).layers;
 };
 
 describe("layers from assets", () => {
@@ -213,6 +214,34 @@ describe("layers from assets", () => {
     expect(layers).toHaveLength(1);
     expect(layers[0].source.type).toBe("Vector");
     expect(layers[0].source.url).toContain("data:application/json");
+  });
+
+  test("keeps multiple geo+json data assets as separate remote URL layers when mergeAssets: false", async () => {
+    const layers = await build(
+      makeItem({
+        assets: {
+          a: dataAsset({
+            type: "application/geo+json",
+            href: "https://a.geojson",
+          }),
+          b: dataAsset({
+            type: "application/geo+json",
+            href: "https://b.geojson",
+          }),
+        },
+      }),
+      {},
+      { mergeAssets: false },
+    );
+
+    expect(layers).toHaveLength(2);
+    expect(layers[0].source.type).toBe("Vector");
+    expect(layers[0].source.url).toBe("https://a.geojson");
+    expect(layers[1].source.type).toBe("Vector");
+    expect(layers[1].source.url).toBe("https://b.geojson");
+    // Should NOT fetch geojson bodies since it does not merge them
+    expect(client.get).not.toHaveBeenCalledWith("https://a.geojson");
+    expect(client.get).not.toHaveBeenCalledWith("https://b.geojson");
   });
 
   test("expands a geodb response's multi-geometries into one feature each", async () => {
