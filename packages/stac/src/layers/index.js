@@ -29,7 +29,7 @@ import { createLayerFromRender } from "./renders.js";
  * @property {import("../http.js").HttpClient} [http]
  * @property {import("../types").LayerConfigHelpers} [layerConfigHelpers]
  * @property {boolean} [stateful] - whether the built item becomes the reader's `item`. Default `true`.
- * @property {boolean} [layerDatetime] - whether layers carry `layerDatetime`. Default `true`.
+ * @property {boolean | "currentStep"} [layerDatetime] - whether layers carry `layerDatetime`; `"currentStep"` keeps only the item's own step, on GeoZarr layers. Default `true`.
  * @property {boolean} [timeControlValues] - whether layers carry `timeControlValues`. Default `true`.
  * @property {boolean} [mergeAssets] - whether to merge multiple GeoJSON data assets into a single layer. Default `true`.
  * @property {boolean} [observationPointIcons] - whether to render observation point markers with theme SVG icons or simple circles. Default `true`.
@@ -79,6 +79,7 @@ export const buildLayers = async (item, context) => {
     http,
     layerConfigHelpers,
     mergeAssets: context.mergeAssets,
+    timeControlValues: withTimeControlValues,
   };
 
   log.debug("Building layers", item, title, itemDatetime);
@@ -101,12 +102,16 @@ export const buildLayers = async (item, context) => {
     itemDatetime;
   // both come from the collection's dates, so the fetch is skipped only when neither is wanted
   const timeValues =
-    withLayerDatetime || withTimeControlValues
+    withLayerDatetime === true || withTimeControlValues
       ? extractLayerTimeValues(await getDates(itemDate ?? undefined), itemDate)
       : undefined;
-  const layerDatetime = withLayerDatetime
-    ? timeValues?.layerDatetime
-    : undefined;
+  const layerDatetime =
+    withLayerDatetime === true ? timeValues?.layerDatetime : undefined;
+  // GeoZarr stores own their time axis, so their layers only name the slice to open
+  const currentStep =
+    withLayerDatetime && item.properties?.datetime
+      ? new Date(item.properties.datetime).toISOString()
+      : undefined;
   const timeControlValues = withTimeControlValues
     ? timeValues?.timeControlValues
     : undefined;
@@ -163,7 +168,7 @@ export const buildLayers = async (item, context) => {
       layerDatetime,
       extraProperties,
       collection,
-      options,
+      { ...options, currentStep },
     ),
     ...(rasterEndpoint
       ? [

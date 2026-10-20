@@ -4,7 +4,6 @@ import { createHTTPInstance } from "../http.js";
 import { mergeGeojsons } from "../helpers/geojson.js";
 import {
   getDefaultGeoZarrBands,
-  isGeoZarrCube,
   isRenderableGeoZarrAsset,
 } from "../helpers/geozarr.js";
 import {
@@ -29,6 +28,8 @@ import { addTooltipInteraction, resolveStyle } from "../helpers/style.js";
  * @param {import("../http.js").HttpClient} [options.http]
  * @param {import("../types").LayerConfigHelpers} [options.layerConfigHelpers]
  * @param {boolean} [options.mergeAssets]
+ * @param {boolean} [options.timeControlValues] - whether layers carry `timeControlValues`. Default `true`.
+ * @param {string} [options.currentStep] - the item's own step, the only `layerDatetime` GeoZarr layers carry
  * @returns {Promise<{ layers: import("@eox/map").EoxLayer[], projections: import("../types").Projection[] }>}
  **/
 export async function createLayersFromAssets(
@@ -45,6 +46,8 @@ export async function createLayersFromAssets(
     http = createHTTPInstance(),
     layerConfigHelpers = createLayerConfigHelpers(),
     mergeAssets,
+    timeControlValues: withTimeControlValues = true,
+    currentStep,
   } = options;
   const shouldMergeAssets =
     mergeAssets !== undefined
@@ -242,9 +245,10 @@ export async function createLayersFromAssets(
           id: assetLayerId,
           title: assets[assetName]?.title || title,
           ...(!isBaseOrOverlay && { layerConfig }),
-          ...(!isGeoZarrCube(assets[assetName], stacObject) && {
-            layerDatetime,
-          }),
+          // eox-map fills unset layer time from the store's time axis: we name the slice to open,
+          // and `false` keeps the store's slices off the global timeline
+          ...(currentStep && { layerDatetime: { currentStep } }),
+          ...(!withTimeControlValues && { timeControlValues: false }),
         },
         source: {
           /** @type {"GeoZarr"} */

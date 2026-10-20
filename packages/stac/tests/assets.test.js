@@ -306,31 +306,16 @@ describe("layers from assets", () => {
         },
       });
 
-    test("a cube leaves layerDatetime to eox-map and keeps the item's time control values", async () => {
-      const [layer] = await build(
-        zarrItem({
-          "cube:dimensions": {
-            x: { type: "spatial" },
-            y: { type: "spatial" },
-            time: { type: "temporal" },
-          },
-        }),
-        datedCollection,
-      );
+    test("a zarr layer names only the item's own step and keeps the item's time control values", async () => {
+      const [layer] = await build(zarrItem(), datedCollection);
 
-      expect(layer.properties.layerDatetime).toBeUndefined();
+      expect(layer.properties.layerDatetime).toEqual({
+        currentStep: "2024-01-01T00:00:00.000Z",
+      });
       expect(layer.properties.timeControlValues).toEqual([
         { date: "2024-01-01T00:00:00.000Z" },
         { date: "2025-01-01T00:00:00.000Z" },
       ]);
-    });
-
-    test("a zarr item without a temporal dimension keeps its layerDatetime", async () => {
-      const [layer] = await build(zarrItem(), datedCollection);
-
-      expect(layer.properties.layerDatetime.currentStep).toBe(
-        "2024-01-01T00:00:00.000Z",
-      );
     });
   });
 
