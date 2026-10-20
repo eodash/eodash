@@ -46,9 +46,6 @@ const layercontrolEl = () => document.querySelector("eox-layercontrol");
  */
 const mapStub = (id = "main") => ({
   id,
-  // eox-map is an element; the widget listens for its "layerschanged"
-  addEventListener: () => {},
-  removeEventListener: () => {},
   layers: /** @type {Record<string, unknown>[]} */ ([]),
   updateComplete: Promise.resolve(),
   getLayerById: () => ({}),

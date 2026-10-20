@@ -2,7 +2,6 @@
   <span class="d-flex flex-column">
     <eox-layercontrol
       v-if="showControls"
-      ref="layerControl"
       :key="mapElement"
       :style="cssVars"
       :for="mapElement"
@@ -31,8 +30,7 @@
 <script setup>
 import "color-legend-element";
 import "@eox/timecontrol";
-import { computed, useTemplateRef } from "vue";
-import { useEventListener } from "@vueuse/core";
+import { computed } from "vue";
 import { mapEl, mapCompareEl } from "@/store/states";
 import { assignLayers } from "@/store/actions";
 import { registerProjections } from "@/eodashSTAC/projection";
@@ -117,24 +115,6 @@ const showControls = computed(() => {
 const eodashCols =
   props.map === "second" ? eodashCompareCollections : eodashCollections;
 const mapElement = props.map === "second" ? mapCompareEl : mapEl;
-
-const layerControl = useTemplateRef("layerControl");
-
-// TODO: remove once eox-layercontrol re-renders its tools when eox-map sets
-// a GeoZarr layer's `layerDatetime` after reading the store's time axis.
-const refreshTools = () =>
-  layerControl.value?.shadowRoot
-    ?.querySelectorAll("eox-layercontrol-layer-tools")
-    .forEach((/** @type {any} */ el) => el.requestUpdate());
-// `layerschanged` fires right after eox-map creates the layers, before their async setup
-useEventListener(mapElement, "layerschanged", () => {
-  for (const layer of mapElement.value?.map.getAllLayers() ?? []) {
-    // @ts-expect-error eox-map's custom layer property is not in OL's event types
-    layer.un("change:layerDatetime", refreshTools);
-    // @ts-expect-error eox-map's custom layer property is not in OL's event types
-    layer.on("change:layerDatetime", refreshTools);
-  }
-});
 
 /** @param {CustomEvent<{layer:import('ol/layer').Layer; datetime:string;}>} evt */
 const handleDatetimeUpdate = async (evt) => {
