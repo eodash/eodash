@@ -39,6 +39,7 @@ export const shouldZoomToExtent = ref(false);
 /**
  * Which item-level time properties the data layers carry. Turning both off also skips
  * fetching the collection's dates.
+ * @type {import("@/types").LayerTimeProperties}
  */
 export const layerTimeProperties = reactive({
   layerDatetime: true,

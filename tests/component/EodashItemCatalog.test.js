@@ -6,6 +6,9 @@ import { indicator, mapCompareEl, mapEl } from "@/store/states";
 import { mountAsyncComponent } from "../support/mount";
 import { cleanup } from "vitest-browser-vue";
 import { layerTimeProperties } from "@/utils/states";
+import { createEodashCollection } from "@eodash/stac";
+import { ANALYSIS_GROUP, buildIndicatorLayers } from "@/eodashSTAC/layers";
+import { stacCollection, stacItem } from "../support/stac";
 
 vi.mock("@eox/itemfilter", () => ({}));
 
@@ -108,7 +111,7 @@ describe("EodashItemCatalog", () => {
       });
 
       expect(layerTimeProperties).toEqual({
-        layerDatetime: false,
+        layerDatetime: "currentStep",
         timeControlValues: false,
       });
 
@@ -118,6 +121,56 @@ describe("EodashItemCatalog", () => {
         layerDatetime: true,
         timeControlValues: true,
       });
+    });
+
+    test("keeps the layers' time control values when timeControlValues is set", async () => {
+      await mountAsyncComponent(EodashItemCatalog, {
+        props: { timeControlValues: true },
+        initialState: withCollections,
+      });
+
+      expect(layerTimeProperties.timeControlValues).toBe(true);
+    });
+
+    test("gives GeoZarr layers only the item's own step and no timeline, and other layers no layer time", async () => {
+      await mountAsyncComponent(EodashItemCatalog, {
+        initialState: withCollections,
+      });
+      const collection = stacCollection();
+      const reader = await createEodashCollection(
+        "https://stac/collections/coll",
+        { client: axiosMock, stac: collection },
+      );
+
+      const { layers } = await buildIndicatorLayers(null, {
+        readers: [reader],
+        stac: collection,
+        timeOrItem: stacItem({
+          links: [{ rel: "xyz", href: "https://xyz/{z}/{x}/{y}" }],
+          assets: {
+            data: {
+              roles: ["data"],
+              type: "application/vnd.zarr; version=3",
+              href: "https://zarr/store.zarr/descending",
+              bands: [{ name: "vv" }],
+            },
+          },
+        }),
+      });
+      /** @type {import("@eox/map").EoxLayer[]} */
+      const dataLayers = /** @type {any} */ (
+        layers.find((layer) => layer.properties?.id === ANALYSIS_GROUP)
+      ).layers;
+      const geoZarr = dataLayers.find((l) => l.source?.type === "GeoZarr");
+      const xyz = dataLayers.find((l) => l.source?.type === "XYZ");
+
+      expect(geoZarr?.properties?.layerDatetime).toEqual({
+        currentStep: "2026-01-01T00:00:00.000Z",
+      });
+      expect(geoZarr?.properties?.timeControlValues).toBe(false);
+      expect(xyz?.properties).toBeDefined();
+      expect(xyz?.properties?.layerDatetime).toBeUndefined();
+      expect(xyz?.properties?.timeControlValues).toBeUndefined();
     });
   });
 

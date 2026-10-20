@@ -224,6 +224,14 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  /**
+   * Whether data layers carry the collection's dates for a global time control.
+   * Off by default, since the catalog is the time navigation.
+   */
+  timeControlValues: {
+    type: Boolean,
+    default: false,
+  },
   mosaicIndicators: {
     /** @type {import("vue").PropType<string[]>} */
     type: Array,
@@ -316,9 +324,9 @@ if (props.useMosaic) {
   });
 }
 
-// the catalog is the time navigation, so the layers need no item-level time of their own
-layerTimeProperties.layerDatetime = false;
-layerTimeProperties.timeControlValues = false;
+// the catalog is the time navigation, so the layers keep only the selected item's own step
+layerTimeProperties.layerDatetime = "currentStep";
+layerTimeProperties.timeControlValues = props.timeControlValues;
 onUnmounted(() => {
   activeSelectedItem.value = undefined;
   layerTimeProperties.layerDatetime = true;
