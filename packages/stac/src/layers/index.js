@@ -31,6 +31,8 @@ import { createLayerFromRender } from "./renders.js";
  * @property {boolean} [stateful] - whether the built item becomes the reader's `item`. Default `true`.
  * @property {boolean} [layerDatetime] - whether layers carry `layerDatetime`. Default `true`.
  * @property {boolean} [timeControlValues] - whether layers carry `timeControlValues`. Default `true`.
+ * @property {boolean} [mergeAssets] - whether to merge multiple GeoJSON data assets into a single layer. Default `true`.
+ * @property {boolean} [observationPointIcons] - whether to render observation point markers with theme SVG icons or simple circles. Default `true`.
  */
 
 /** Link relations supported for layer rendering. */
@@ -76,6 +78,7 @@ export const buildLayers = async (item, context) => {
     renders,
     http,
     layerConfigHelpers,
+    mergeAssets: context.mergeAssets,
   };
 
   log.debug("Building layers", item, title, itemDatetime);
@@ -168,7 +171,12 @@ export const buildLayers = async (item, context) => {
             rasterEndpoint,
             collection,
             item,
-            { ...extraProperties, ...(layerDatetime && { layerDatetime }) },
+            {
+              ...extraProperties,
+              ...(layerDatetime && {
+                layerDatetime,
+              }),
+            },
             options,
           ),
         ]

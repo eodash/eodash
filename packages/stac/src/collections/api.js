@@ -15,7 +15,7 @@ const DATE_FIELDS =
  * @param {import("../http.js").HttpClient} context.http - HTTP client instance
  * @param {string} [context.color] - Collection layer tint color
  * @param {string} [context.viewProjection] - Map view projection
- * @param {import("../types").BuildContext} [context.rasterOptions] - Raster rendering options
+ * @param {import("../types").BuildContext} [context.defaultContext] - Default build context applied to layer builds
  * @param {number} [context.maxItems=1000] - Maximum items returned per search query
  */
 export const createAPICollection = ({
@@ -24,7 +24,7 @@ export const createAPICollection = ({
   http,
   color,
   viewProjection,
-  rasterOptions,
+  defaultContext,
   maxItems = 1000,
 }) => {
   const searchUrl =
@@ -174,7 +174,7 @@ export const createAPICollection = ({
       getItem,
       color,
       viewProjection,
-      rasterOptions,
+      defaultContext,
     }),
     {
       /** @type {"api"} */

@@ -28,6 +28,7 @@ import { addTooltipInteraction, resolveStyle } from "../helpers/style.js";
  * @param {object} [options]
  * @param {import("../http.js").HttpClient} [options.http]
  * @param {import("../types").LayerConfigHelpers} [options.layerConfigHelpers]
+ * @param {boolean} [options.mergeAssets]
  * @returns {Promise<{ layers: import("@eox/map").EoxLayer[], projections: import("../types").Projection[] }>}
  **/
 export async function createLayersFromAssets(
@@ -43,7 +44,12 @@ export async function createLayersFromAssets(
   const {
     http = createHTTPInstance(),
     layerConfigHelpers = createLayerConfigHelpers(),
+    mergeAssets,
   } = options;
+  const shouldMergeAssets =
+    mergeAssets !== undefined
+      ? mergeAssets
+      : stacObject?.["eodash:merge_assets"] !== false;
   const { extractLayerConfig } = layerConfigHelpers;
   log.debug("Creating layers from assets");
   /** @type {import("@eox/map").EoxLayer[]} */
@@ -173,10 +179,7 @@ export async function createLayersFromAssets(
       }
       log.debug("Creating WebGLTile layer from GeoTIFF", assetLayerId);
       log.debug("Configured Sources", geoTIFFSources);
-      const sources =
-        stacObject?.["eodash:merge_assets"] !== false
-          ? geoTIFFSources
-          : [geotiffSource];
+      const sources = shouldMergeAssets ? geoTIFFSources : [geotiffSource];
       const layer = {
         /** @type {"WebGLTile"} */
         type: "WebGLTile",
@@ -203,7 +206,7 @@ export async function createLayersFromAssets(
       extractRoles(layer.properties, assets[assetName]);
       addTooltipInteraction(layer, style);
       jsonArray.push(layer);
-      if (stacObject?.["eodash:merge_assets"] !== false) break;
+      if (shouldMergeAssets) break;
     }
   }
 
@@ -286,10 +289,9 @@ export async function createLayersFromAssets(
         projections.push(assetProjection);
       }
       const projection = getProjectionCode(assetProjection) || "EPSG:4326";
-      const geoJSONURL =
-        stacObject?.["eodash:merge_assets"] === false
-          ? geoJsonSource
-          : await mergeGeojsons(geoJsonSources, http);
+      const geoJSONURL = !shouldMergeAssets
+        ? geoJsonSource
+        : await mergeGeojsons(geoJsonSources, http);
 
       const layer = {
         /** @type {"Vector"} */
@@ -326,7 +328,7 @@ export async function createLayersFromAssets(
       extractRoles(layer.properties, assets[assetName]);
       addTooltipInteraction(layer, style);
       jsonArray.push(layer);
-      if (stacObject?.["eodash:merge_assets"] !== false) break;
+      if (shouldMergeAssets) break;
     }
   }
   if (fgbSources.length) {
@@ -352,10 +354,7 @@ export async function createLayersFromAssets(
       }
       const projection = getProjectionCode(assetProjection) || "EPSG:4326";
       const urlsObject = {
-        url:
-          stacObject?.["eodash:merge_assets"] === false
-            ? fgbSource
-            : fgbSources,
+        url: !shouldMergeAssets ? fgbSource : fgbSources,
       };
       const layer = {
         /** @type {"Vector"} */
@@ -388,7 +387,7 @@ export async function createLayersFromAssets(
       extractRoles(layer.properties, assets[assetName]);
       addTooltipInteraction(layer, style);
       jsonArray.push(layer);
-      if (stacObject?.["eodash:merge_assets"] !== false) break;
+      if (shouldMergeAssets) break;
     }
   }
 

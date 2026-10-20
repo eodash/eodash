@@ -290,4 +290,44 @@ describe("createEodashIndicator", () => {
     );
     expect(child1Layer?.properties?.color).toBe("#ff0000");
   });
+
+  test("omits layerDatetime and timeControlValues when both are false in reader defaults", async () => {
+    serveMockData();
+    const indicator = await createEodashIndicator(
+      INDICATOR_URL,
+      { client },
+      { layerDatetime: false, timeControlValues: false },
+    );
+
+    const res = await indicator.getLayers("2023-01-10T00:00:00Z");
+    const child1Layer = res.layers.find((l) =>
+      l.properties?.id?.includes("child1"),
+    );
+    expect(child1Layer?.properties?.layerDatetime).toBeUndefined();
+    expect(child1Layer?.properties?.timeControlValues).toBeUndefined();
+    expect(child1Layer?.properties?.timeControlProperty).toBeUndefined();
+
+    // MapConfig inherits reader defaults
+    const mapConfig = await indicator.getMapConfig();
+    const mapChildLayer = mapConfig.layers.find((l) =>
+      l.properties?.id?.includes("child1"),
+    );
+    expect(mapChildLayer?.properties?.layerDatetime).toBeUndefined();
+    expect(mapChildLayer?.properties?.timeControlValues).toBeUndefined();
+  });
+
+  test("accepts BuildContext directly in getMapConfig overrides", async () => {
+    serveMockData();
+    const indicator = await createEodashIndicator(INDICATOR_URL, { client });
+
+    const mapConfig = await indicator.getMapConfig({
+      layerDatetime: false,
+      timeControlValues: false,
+    });
+    const mapChildLayer = mapConfig.layers.find((l) =>
+      l.properties?.id?.includes("child1"),
+    );
+    expect(mapChildLayer?.properties?.layerDatetime).toBeUndefined();
+    expect(mapChildLayer?.properties?.timeControlValues).toBeUndefined();
+  });
 });
