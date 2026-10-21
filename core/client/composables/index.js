@@ -24,6 +24,7 @@ import { toAbsolute } from "@eodash/stac/helpers";
 import axios from "@/plugins/axios";
 import { storeToRefs } from "pinia";
 import { bboxToCenterZoom, sanitizeBbox } from "@eodash/stac/helpers";
+import { transform } from "ol/proj";
 /**
 /** @type {import('@/types').Eodash | null}*/
 
@@ -168,10 +169,7 @@ export const useURLSearchParametersSync = () => {
       if (x && y && z) {
         log.debug("Coordinates found, applying map position", x, y, z);
         mapPosition.value = [x, y, z];
-        if (mapEl.value) {
-          mapEl.value.center = [x, y];
-          mapEl.value.zoom = z;
-        }
+        moveMap([x, y], z);
       }
 
       const urlDatetime = searchParams.get("datetime");
@@ -271,10 +269,7 @@ export const useURLSearchParametersSync = () => {
           mapEl.value?.map?.getSize?.(),
         );
         mapPosition.value = [center[0], center[1], zoom];
-        if (mapEl.value) {
-          mapEl.value.center = center;
-          mapEl.value.zoom = zoom;
-        }
+        moveMap(center, zoom);
       } else if (!(x && y && z)) {
         hasRestoredView.value = false;
       }
@@ -527,4 +522,24 @@ export function useAdoptStyles(keyWords = ["vuetify"]) {
     stops.forEach((stop) => stop());
     stops = [];
   });
+}
+
+/**
+ * Sets the main map view without animating. A restore is initial positioning,
+ * and a fly-to gets cancelled by the first layer write (eox-map resets the
+ * view zoom limits), leaving the map where it was.
+ *
+ * @param {number[]} center - [lon, lat]
+ * @param {number} zoom
+ */
+function moveMap(center, zoom) {
+  const view = mapEl.value?.map.getView();
+  if (!view) {
+    return;
+  }
+  // Sets the OpenLayers view directly, bypassing eox-map's `center`/`zoom`
+  // setters, which animate once EodashMap sets `animationOptions`. eox-map's own
+  // `center`/`zoom` properties go stale; nothing reads them.
+  view.setCenter(transform(center, "EPSG:4326", view.getProjection()));
+  view.setZoom(zoom);
 }

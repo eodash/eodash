@@ -72,7 +72,7 @@ const analysisResult = () => {
 };
 
 /**
- * Register a fake eodash collection that getColFromLayer resolves by id.
+ * Register a fake eodash collection that findReaderByLayerId resolves by id.
  * @param {Record<string, any>[] | undefined} updatedLayers updateLayers result.
  * @param {any[]} [collections] Singleton to seed (main or compare).
  * @returns {import("vitest").Mock} The updateLayers spy.

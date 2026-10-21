@@ -326,7 +326,6 @@ export type StacEndpoint =
       endpoint: string;
       api?: boolean;
       rasterEndpoint?: string;
-      vectorEndpoint?: string;
       supportedUpscalingEndpoints?: Array<
         | string
         | {

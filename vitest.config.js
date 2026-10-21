@@ -45,6 +45,7 @@ const alias = {
 
 export default defineConfig({
   test: {
+    fsModuleCache: true,
     ...(isBenchRun && {
       reporters: ["default", new BenchReporter(benchReference)],
       fileParallelism: false,
@@ -60,6 +61,17 @@ export default defineConfig({
       reportOnFailure: true,
     },
     projects: [
+      {
+        resolve: { alias },
+        test: {
+          name: "mcp",
+          include: ["packages/mcp/tests/**/*.test.js"],
+          globalSetup: ["packages/mcp/tests/setup.js"],
+          environment: "node",
+          testTimeout: 60 * 1000,
+          benchmark: { include: [] },
+        },
+      },
       {
         resolve: { alias },
         test: {

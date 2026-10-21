@@ -68,7 +68,7 @@ describe("EodashChart", () => {
 
   test("preserves autosize fit-x and applies fit-x-layout classes only for image charts", async () => {
     chartData.value = [{ x: 1 }];
-    
+
     // 1. Test image chart with fit-x (should apply layout classes and dynamic height)
     chartSpec.value = { mark: "image", autosize: "fit-x" };
     await mountComponent(EodashChart);

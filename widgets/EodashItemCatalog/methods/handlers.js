@@ -99,7 +99,7 @@ export const createOnFilterHandler = ({
 /**
  * Creates a select event handler that highlights the item and updates map data layers.
  *
- * @param {ReturnType<typeof import("@/store/stac.js").useSTAcStore>} store
+ * @param {ReturnType<typeof import("@/store/stac").useSTAcStore>} store
  * @param {boolean} enableCompare
  * @param {import("vue").Ref<import("@eox/map").EOxMap | null>} mapElement
  */

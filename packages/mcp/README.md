@@ -1,0 +1,140 @@
+# @eodash/mcp
+
+Model Context Protocol (MCP) server for `@eodash/eodash`.
+
+Provides assistance, introspection, type-safe widget definitions, layout orchestration, layer style generation, curated example discovery, catalog validation, and configuration generators for coding agents and developers working on `eodash`-based dashboards.
+
+## Features
+
+- **Widget Introspection & Schema**: Query built-in widgets with structured JSON schemas, TypeScript signatures, defaults, and usage snippets.
+- **Curated Examples Discovery**: Query working dashboard examples, Vega / Vega-Lite charts, layer styles, process forms, collection and catalog configs filtered by category, tags, and weighted free-text search.
+- **Catalog Schema Validation**: Validate EODash catalog collections and indicators against [official schemas](https://github.com/eodash/eodash-schemas) and domain rules.
+- **Custom Widget Guidance**: Detailed guides and code templates for Web Component (`type: "web-component"`), Functional (`defineWidget: (selectedSTAC) => ...`), and IFrame widgets, and the reactive Pinia `eodashStore`.
+- **STAC to EOxMap Generation**: Build complete, ready-to-render `<eox-map>` configurations (layers, center, zoom, projection, datetime, timeControl, legend) directly from STAC Catalogs, Indicators, Collections, or Items with fuzzy search, GeoParquet support, and automatic legend/timeline extraction.
+- **Architecture & Layout Reference**: Detailed explanation of the responsive grid system, coordinate syntax (`"mobile/tablet/desktop"`), built-in templates (`lite`, `explore`, `expert`, `compare`), reactive state flows, and SPA vs `<eo-dash>` web component deployments.
+
+## Setup & Running
+
+To use the MCP without installing anything locally, you can point your coding agent to the hosted endpoint: [https://eodash.mcp.eox.at](https://eodash.mcp.eox.at)
+
+Otherwise:
+
+### 1. Build Metadata
+
+Generate widget and architecture metadata from the codebase:
+
+```bash
+npm run mcp:generate
+```
+
+### 2. Run Server
+
+#### STDIO Mode (Recommended for Local Clients & IDEs)
+
+```bash
+# Run over stdio:
+node packages/mcp/dist/index.js --stdio
+# or via npx / bin:
+npx @eodash/mcp --stdio
+```
+
+#### HTTP / SSE Mode
+
+```bash
+npm run mcp:start
+# or custom port / host:
+node packages/mcp/dist/index.js --port 3001 --host 127.0.0.1
+# or globally / via bin:
+npx @eodash/mcp --port 3001
+```
+
+- Operates in stateless MCP mode (`sessionIdGenerator: undefined`, `enableJsonResponse: true`), returning direct JSON-RPC responses over HTTP POST without session state or open SSE streams.
+- Open `http://localhost:3001/ui` in your browser to view the interactive server landing page and tool catalog.
+- Health check endpoint: `http://localhost:3001/health`.
+- Prometheus metrics endpoint: `http://localhost:3001/metrics`.
+
+### Observability & Prometheus Metrics
+
+When running in HTTP mode, `@eodash/mcp` exposes Prometheus metrics at `GET /metrics`.
+
+#### Metrics Exposed
+
+- `eodash_mcp_tool_calls_total`: Total number of MCP tool executions labeled by `tool` and `status` (`success`, `error`, `failure`).
+- `eodash_mcp_tool_duration_seconds`: Histogram measuring execution duration of MCP tools in seconds.
+- `eodash_mcp_rpc_requests_total`: Total JSON-RPC requests labeled by `method` and `status` (`success`, `error`). Unrecognized methods are clamped to `other` to protect against cardinality attacks.
+- `eodash_mcp_active_connections`: Current number of active HTTP connections.
+- `eodash_mcp_process_*` / `eodash_mcp_nodejs_*`: Default Node.js process and runtime metrics (CPU, heap, event loop).
+
+#### Environment Variables
+
+- `ENABLE_PROMETHEUS_METRICS`: Set to `"false"` to disable metrics collection and return 404 on `/metrics`. Enabled by default (`"true"`).
+- Default process metrics collection only initializes when metrics are enabled and the HTTP server is started.
+
+### 3. MCP Client Configuration
+
+Connect your MCP client (Claude Desktop, Cursor, Pi MCP adapter, MCP Inspector, or custom agents):
+
+#### Claude Desktop Configuration (`claude_desktop_config.json`) - STDIO
+
+```json
+{
+  "mcpServers": {
+    "eodash": {
+      "command": "npx",
+      "args": ["-y", "@eodash/mcp", "--stdio"]
+    }
+  }
+}
+```
+
+#### Claude Desktop Configuration (`claude_desktop_config.json`) - HTTP
+
+```json
+{
+  "mcpServers": {
+    "eodash": {
+      "url": "http://localhost:3001"
+    }
+  }
+}
+```
+
+## Registered Tools
+
+| Tool                      | Description                                                                                                                                                |
+| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `list_widgets`            | List all built-in eodash widgets with category, background capability, prop count, store bindings, and filter by capability tags or free-text search.      |
+| `get_widget_details`      | Get full TypeScript props, JSON schemas for complex props, defaults, store bindings, STAC extensions, and usage snippets for a specific widget.            |
+| `get_custom_widget_guide` | Detailed guides and templates for Web Component, Functional, and IFrame custom widgets.                                                                    |
+| `get_eodash_architecture` | Architecture reference covering the 12-column grid, templates, Pinia store states, and deployment modes.                                                   |
+| `find_examples`           | Search and discover working eodash dashboard scaffolds, configs, Vega charts, layer styles, and catalog configs with category and tag filters via Fuse.js. |
+| `validate_catalog_config` | Validate catalog collection and indicator configurations against official eodash schemas and domain rules.                                                 |
+| `generate_map_from_stac`  | Build complete EOxMap layer and view configuration (layers, center, zoom, timeControl, legend) from a STAC catalog, indicator, collection, or item.        |
+
+## STAC Mapping Tool (`generate_map_from_stac`)
+
+The `generate_map_from_stac` tool translates any STAC resource into a complete `<eox-map>` configuration JSON object.
+
+### Capabilities
+
+- **Document Hierarchy Auto-Inference**: Automatically detects whether the provided STAC resource is a Catalog, Indicator Collection, Data Collection, or standalone STAC Item.
+- **Catalog Navigation & Indicator Selection**:
+  - When a root STAC Catalog is supplied, use `query` (e.g. `'Carbon Dioxide'`, `'NO2'`) to fuzzy-search child indicators by title, subtitle, tags, themes, ID, or description via Fuse.js.
+  - Or supply `collection_id` (e.g. `'N2_CO2_mean'`) to directly target a specific collection.
+- **Diverse Data Backends**: Resolves GeoParquet collection mirrors (`items.parquet`), TiTiler raster COGs, WMS, WMTS, and XYZ tile layers.
+- **Composite Map Assembly**: Automatically bundles default baselayers (Terrain, Cloudless, OSM), data layers, and overlay labels with group tagging and exclusive visibility.
+- **Legend Extraction**: Reads color legend definitions directly from STAC layer styling metadata (`eox:colorlegend`, `layerLegend`, or rasterform/style legend configurations) without URL parsing.
+- **Temporal Aggregation**: Collects available time steps into `timeControl: { availableDates, minDate, maxDate }` for direct use with `EodashTimeSlider`.
+- **Optional Layer Time Controls**: By default, `layerDatetime` and `timeControlValues` on layer properties are omitted. Pass `layerTimeControl: true` when the client intends to include `eox-timecontrol`.
+- **Shortened Contextual Output**: Pass `shortContext: true` (default `false`) to reduce response payload size by compacting the echoed STAC item to its `id` and `link`, omitting catalog indicator metadata, and reducing `timeControl` dates to a summary (`minDate`, `maxDate`, `count`). Output JSON is compact.
+
+### Limitations
+
+- **No Image Rendering**: Outputs OpenLayers/EOxMap layer definitions; does not download raster tiles or render PNG pixels.
+- **Ambiguity Clarification**: If a catalog query matches multiple indicators closely, the tool returns an error with a structured `candidates` array (`id`, `title`, `description`, `score`) so the caller can clarify with `collection_id`.
+
+## Running Tests
+
+```bash
+npm run test:mcp
+```

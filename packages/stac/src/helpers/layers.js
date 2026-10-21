@@ -209,10 +209,112 @@ export const createAssetID = (collectionId, itemId, index) => {
  * @param {string} [layerId]
  * @returns {Reader | undefined}
  */
-export const getColFromLayer = (readers, layerId) => {
+export const findReaderByLayerId = (readers, layerId) => {
   if (!layerId) {
     return undefined;
   }
-  const [collectionId] = layerId.split(LAYER_ID_SEPARATOR);
-  return readers.find((reader) => reader.stac?.id === collectionId);
+  const prefix = layerId.split(LAYER_ID_SEPARATOR)[0];
+  return readers.find((reader) => reader.stac?.id === prefix);
+};
+
+/**
+ * Applies link visibility roles to layer properties based on link role definitions in the collection.
+ *
+ * @param {import("../types").STACCollection | null | undefined} collection - STAC collection
+ * @param {import("@eox/map").EoxLayer[]} [layers] - Layers to apply roles to
+ */
+export const applyVisibilityRoles = (collection, layers = []) => {
+  const visibilityLinks = (collection?.links ?? []).filter(
+    (link) =>
+      Array.isArray(link.roles) &&
+      (link.roles.includes("disable") || link.roles.includes("hidden")),
+  );
+
+  for (const link of visibilityLinks) {
+    const targets = layers.filter(
+      (layer) =>
+        typeof layer.properties?.id === "string" &&
+        layer.properties.id.split(LAYER_ID_SEPARATOR)[0] === link.id,
+    );
+    for (const target of targets) {
+      if (!target?.properties) {
+        continue;
+      }
+      if (/** @type {string[]} */ (link.roles).includes("disable")) {
+        target.properties.visible = false;
+        target.properties.layerControlExpand = false;
+      } else {
+        target.properties.layerControlHide = true;
+      }
+    }
+  }
+};
+
+/**
+ * Default fallback base layer (OpenStreetMap) when no baselayer links are provided by STAC.
+ * @type {import("@eox/map").EoxLayer[]}
+ */
+export const DEFAULT_BASE_LAYERS = [
+  {
+    type: "Tile",
+    properties: {
+      id: "osm",
+      title: "OpenStreetMap",
+      group: "baselayer",
+      visible: true,
+      layerControlExclusive: true,
+    },
+    source: {
+      type: "OSM",
+    },
+  },
+];
+
+/**
+ * Normalizes baselayer visibility and exclusivity on a set of base layers.
+ *
+ * @param {import("@eox/map").EoxLayer[]} baseLayers
+ * @param {import("@eox/map").EoxLayer[]} [fallbackBaseLayers]
+ * @returns {import("@eox/map").EoxLayer[]}
+ */
+export const normalizeBaseLayers = (
+  baseLayers,
+  fallbackBaseLayers = DEFAULT_BASE_LAYERS,
+) => {
+  if (baseLayers.length) {
+    const layers = baseLayers.map((bl) => ({
+      ...bl,
+      properties: { ...(bl.properties || {}) },
+    }));
+    let counter = 0;
+    let lastPos = 0;
+    for (let indx = 0; indx < layers.length; indx++) {
+      const bl = layers[indx];
+      if (!("visible" in bl.properties)) {
+        bl.properties.visible = false;
+      }
+
+      if (bl.properties.visible) {
+        counter++;
+        lastPos = indx;
+      }
+    }
+
+    if (counter === 0) {
+      layers[0].properties.visible = true;
+    }
+
+    if (counter > 0) {
+      layers.forEach((bl, indx) => {
+        bl.properties.visible = indx === lastPos;
+      });
+    }
+
+    layers.forEach((bl) => {
+      bl.properties.layerControlExclusive = true;
+    });
+    return /** @type {import("@eox/map").EoxLayer[]} */ (layers);
+  }
+
+  return [...fallbackBaseLayers];
 };

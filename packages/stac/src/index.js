@@ -14,6 +14,7 @@ import { createStaticCollection } from "./collections/static.js";
  * @param {boolean} [options.api=false] - Whether the collection uses a STAC API endpoint
  * @param {number} [options.maxItems] - Maximum items to retrieve per search query
  * @param {import("./http.js").AxiosInstance} [options.client] - Custom HTTP client instance
+ * @param {typeof fetch} [options.fetch] - Custom fetch implementation (e.g. for SSRF-protected binary range requests)
  * @param {string} [options.color] - Color assigned to layers generated from this collection
  * @param {string} [options.viewProjection] - Map view projection code used to namespace layer identifiers
  * @param {string} [options.rasterEndpoint] - Base URL for raster tile rendering
@@ -21,13 +22,19 @@ import { createStaticCollection } from "./collections/static.js";
  * @param {Record<string, any> | null} [options.tileMatrixSets] - TileMatrixSet configurations keyed by projection
  * @param {Record<string, Record<string, import("./types").Render>>} [options.renders] - Render configurations mapped by collection ID
  * @param {import("./types").STACCollection} [options.stac] - The collection document, for a caller that has already read it
+ * @param {import("./types").BuildContext} [buildContext] - Default build context applied to layer builds
  * @returns {Promise<import("./types").Reader>}
  */
-export const createEodashCollection = async (url, options = {}) => {
+export const createEodashCollection = async (
+  url,
+  options = {},
+  buildContext = {},
+) => {
   const {
     api = false,
     maxItems,
     client,
+    fetch: customFetch,
     color,
     viewProjection,
     rasterEndpoint,
@@ -38,13 +45,22 @@ export const createEodashCollection = async (url, options = {}) => {
   const http = createHTTPInstance({ client });
   /** @type {import("./types").STACCollection} */
   const stac = options.stac ?? (await http.get(url));
-  const rasterOptions = {
+  const defaultContext = {
     rasterEndpoint,
     upscalingEndpoints,
     tileMatrixSets,
     renders,
+    ...buildContext,
   };
-  const context = { url, stac, http, color, viewProjection, rasterOptions };
+  const context = {
+    url,
+    stac,
+    http,
+    fetch: customFetch,
+    color,
+    viewProjection,
+    defaultContext,
+  };
 
   if (api) {
     return createAPICollection({ ...context, maxItems });
@@ -76,6 +92,12 @@ export const getTooltipProperties = async (item, { client } = {}) => {
   ];
 };
 
+export {
+  createEodashIndicator,
+  buildIndicatorDataLayers,
+  normalizeBaseLayers,
+  DEFAULT_COLLECTIONS_PALETTE,
+} from "./collections/indicator.js";
 export {
   getIndicatorLayers,
   getObservationPointsLayer,

@@ -1,0 +1,79 @@
+[
+  {
+    "id": "stac-item-web-map-links-roles",
+    "title": "STAC Item with Web Map Links, Roles (baselayer/overlay/data)",
+    "category": "stac-item",
+    "tags": [
+      "stac-item",
+      "web-map-link",
+      "roles",
+      "baselayer",
+      "overlay",
+      "stac-api",
+      "visualization",
+      "xyz",
+      "raster"
+    ],
+    "description": "Standard STAC Item link structure following web-map-links extension with 'roles' controlling layer group ('baselayer', 'overlay', 'data') and initial visibility ('visible').",
+    "targetContext": "Returned by STAC API /collections/{collectionId}/items endpoint or static catalog Item JSON.",
+    "code": {
+      "type": "Feature",
+      "stac_version": "1.0.0",
+      "id": "sentinel-2-mosaic-2025",
+      "properties": {
+        "datetime": "2025-06-01T00:00:00Z"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [-180, -85],
+            [180, -85],
+            [180, 85],
+            [-180, 85],
+            [-180, -85]
+          ]
+        ]
+      },
+      "links": [
+        {
+          "rel": "xyz",
+          "href": "https://s2maps-tiles.eu/wmts/1.0.0/osm_3857/default/g/{z}/{y}/{x}.jpeg",
+          "type": "image/jpeg",
+          "title": "OSM Background",
+          "roles": ["baselayer", "visible"]
+        },
+        {
+          "rel": "xyz",
+          "href": "https://tiles.example.com/{z}/{x}/{y}.png?rescale={{rescale}}&colormap_name={{colormap_name}}",
+          "type": "image/png",
+          "title": "Sentinel-2 NDVI Mosaic",
+          "roles": ["data", "visible"],
+          "eodash:rasterform": {
+            "legend": {
+              "rangeProperty": "colormap_name",
+              "domainProperties": ["min", "max"]
+            },
+            "jsonform": {
+              "type": "object",
+              "properties": {
+                "colormap_name": {
+                  "type": "string",
+                  "enum": ["viridis", "rdylgn"],
+                  "default": "rdylgn"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "assets": {
+        "thumbnail": {
+          "href": "https://assets.example.com/thumbnails/mosaic.jpg",
+          "type": "image/jpeg",
+          "roles": ["thumbnail"]
+        }
+      }
+    }
+  }
+]
