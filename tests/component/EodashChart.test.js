@@ -76,8 +76,16 @@ describe("EodashChart", () => {
     await expect.poll(() => chartEl()?.spec?.autosize).toBe("fit-x");
     expect(typeof chartEl()?.spec?.height).toBe("number");
     expect(chartEl()?.spec?.height).toBeGreaterThan(0);
-    expect(document.querySelector(".eodash-chart-wrapper")?.classList.contains("fit-x-layout")).toBe(true);
-    expect(document.querySelector(".chart-frame")?.classList.contains("fit-x-layout")).toBe(true);
+    expect(
+      document
+        .querySelector(".eodash-chart-wrapper")
+        ?.classList.contains("fit-x-layout"),
+    ).toBe(true);
+    expect(
+      document
+        .querySelector(".chart-frame")
+        ?.classList.contains("fit-x-layout"),
+    ).toBe(true);
 
     // 2. Test standard non-image chart with fit-x (should bypass layout classes and keep container height)
     chartSpec.value = { mark: "line", autosize: "fit-x" };
@@ -85,8 +93,16 @@ describe("EodashChart", () => {
 
     await expect.poll(() => chartEl()?.spec?.autosize).toBe("fit-x");
     expect(chartEl()?.spec?.height).toBe("container");
-    expect(document.querySelector(".eodash-chart-wrapper")?.classList.contains("fit-x-layout")).toBe(false);
-    expect(document.querySelector(".chart-frame")?.classList.contains("fit-x-layout")).toBe(false);
+    expect(
+      document
+        .querySelector(".eodash-chart-wrapper")
+        ?.classList.contains("fit-x-layout"),
+    ).toBe(false);
+    expect(
+      document
+        .querySelector(".chart-frame")
+        ?.classList.contains("fit-x-layout"),
+    ).toBe(false);
   });
 
   test("binds the chart data to eox-chart's dataValues", async () => {

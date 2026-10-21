@@ -83,20 +83,14 @@ export async function createLayersFromAssets(
       assets[assetId]?.type?.includes("application/geo+json") &&
       assets[assetId]?.href?.includes("http")
     ) {
-      const styles = await resolveStyle(
-        stacObject,
-        collection,
-        http,
-        undefined,
-        assetName,
-      );
+      const styles = await resolveAssetStyle(assetName);
       const { layerConfig } = extractLayerConfig(styles);
       let href = assets[assetId].href;
       if (layerConfig) {
         const mockLayer = {
           type: "Vector",
           source: { url: href },
-          properties: { layerConfig }
+          properties: { layerConfig },
         };
         applyRasterFormValue(mockLayer);
         href = mockLayer.source.url;
@@ -107,20 +101,14 @@ export async function createLayersFromAssets(
       assets[assetId]?.type?.includes("application/vnd.flatgeobuf") &&
       assets[assetId]?.href?.includes("http")
     ) {
-      const styles = await resolveStyle(
-        stacObject,
-        collection,
-        http,
-        undefined,
-        assetName,
-      );
+      const styles = await resolveAssetStyle(assetName);
       const { layerConfig } = extractLayerConfig(styles);
       let href = assets[assetId].href;
       if (layerConfig) {
         const mockLayer = {
           type: "Vector",
           source: { url: href },
-          properties: { layerConfig }
+          properties: { layerConfig },
         };
         applyRasterFormValue(mockLayer);
         href = mockLayer.source.url;
@@ -309,13 +297,7 @@ export async function createLayersFromAssets(
   if (geoJsonSources.length) {
     for (const [i, geoJsonSource] of geoJsonSources.entries()) {
       const assetName = assetIds[geoJsonIdx[i]];
-      const styles = await resolveStyle(
-        stacObject,
-        collection,
-        http,
-        undefined,
-        assetName,
-      );
+      const styles = await resolveAssetStyle(assetName);
       let { layerConfig, style } = extractLayerConfig(styles);
       let assetLayerId = createAssetID(
         collectionId,
@@ -379,13 +361,7 @@ export async function createLayersFromAssets(
   if (fgbSources.length) {
     for (const [i, fgbSource] of fgbSources.entries()) {
       const assetName = assetIds[fgbIdx[i]];
-      const styles = await resolveStyle(
-        stacObject,
-        collection,
-        http,
-        undefined,
-        assetName,
-      );
+      const styles = await resolveAssetStyle(assetName);
       let { layerConfig, style } = extractLayerConfig(styles);
       let assetLayerId = createAssetID(collectionId, stacObject.id, fgbIdx[i]);
       const isBaseOrOverlay = isBaseLayerOrOverlay(assets[assetName]);

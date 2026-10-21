@@ -18,7 +18,12 @@ export const toAbsolute = (href, baseUrl) =>
 export function extractUrlKeys(schema, value) {
   /** @type {Record<string, any>} */
   const results = {};
-  if (!schema || typeof schema !== "object" || !value || typeof value !== "object") {
+  if (
+    !schema ||
+    typeof schema !== "object" ||
+    !value ||
+    typeof value !== "object"
+  ) {
     return results;
   }
 
@@ -28,7 +33,7 @@ export function extractUrlKeys(schema, value) {
         const subValue = value[key];
         if (typeof propDef.url_key === "string") {
           results[propDef.url_key] = subValue;
-         }
+        }
         Object.assign(results, extractUrlKeys(propDef, subValue));
       }
     }
@@ -61,7 +66,11 @@ export function extractDefaultUrlKeys(schema) {
   if (schema.properties) {
     for (const [_, propDef] of Object.entries(schema.properties)) {
       if (propDef && typeof propDef === "object") {
-        if (typeof propDef.url_key === "string" && propDef.default !== undefined && propDef.default !== null) {
+        if (
+          typeof propDef.url_key === "string" &&
+          propDef.default !== undefined &&
+          propDef.default !== null
+        ) {
           results[propDef.url_key] = propDef.default;
         }
         Object.assign(results, extractDefaultUrlKeys(propDef));

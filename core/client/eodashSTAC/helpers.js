@@ -66,7 +66,10 @@ function appendQueryParams(url, params) {
  */
 export function updateLayerUrl(olLayer, jsonformValue) {
   const jsonLayer = olLayer.get("_jsonDefinition");
-  if (!jsonLayer || (jsonLayer.type !== "VectorTile" && jsonLayer.type !== "Vector")) {
+  if (
+    !jsonLayer ||
+    (jsonLayer.type !== "VectorTile" && jsonLayer.type !== "Vector")
+  ) {
     return false;
   }
 
@@ -79,7 +82,11 @@ export function updateLayerUrl(olLayer, jsonformValue) {
 
   let originalUrl = olLayer.get("originalUrl") || jsonLayer.source?.url;
 
-  if (!originalUrl || typeof originalUrl !== "string" || originalUrl.startsWith("data:")) {
+  if (
+    !originalUrl ||
+    typeof originalUrl !== "string" ||
+    originalUrl.startsWith("data:")
+  ) {
     return false;
   }
 

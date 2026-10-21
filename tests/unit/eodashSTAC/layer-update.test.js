@@ -99,9 +99,9 @@ describe("updateLayerUrl", () => {
     const nonSupported = mockOlLayer({
       jsonDefinition: { type: "WebGLTile", source: { url: "https://x" } },
     });
-    expect(updateLayerUrl(/** @type {any} */ (nonSupported), { flood: 1 })).toBe(
-      false,
-    );
+    expect(
+      updateLayerUrl(/** @type {any} */ (nonSupported), { flood: 1 }),
+    ).toBe(false);
 
     const noKeys = mockOlLayer({
       jsonDefinition: vtDefinition("https://x", {}),
