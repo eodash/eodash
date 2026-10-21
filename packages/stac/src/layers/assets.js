@@ -4,6 +4,7 @@ import { createHTTPInstance } from "../http.js";
 import { mergeGeojsons } from "../helpers/geojson.js";
 import {
   getDefaultGeoZarrBands,
+  getGeoZarrLayerDatetime,
   isRenderableGeoZarrAsset,
 } from "../helpers/geozarr.js";
 import {
@@ -29,7 +30,7 @@ import { addTooltipInteraction, resolveStyle } from "../helpers/style.js";
  * @param {import("../types").LayerConfigHelpers} [options.layerConfigHelpers]
  * @param {boolean} [options.mergeAssets]
  * @param {boolean} [options.timeControlValues] - whether layers carry `timeControlValues`. Default `true`.
- * @param {string} [options.currentStep] - the item's own step, the only `layerDatetime` GeoZarr layers carry
+ * @param {string} [options.currentStep] - the item's own step, which GeoZarr cubes carry instead of the item-level `layerDatetime`
  * @returns {Promise<{ layers: import("@eox/map").EoxLayer[], projections: import("../types").Projection[] }>}
  **/
 export async function createLayersFromAssets(
@@ -238,6 +239,13 @@ export async function createLayersFromAssets(
 
       log.debug("Creating WebGLTile layer from GeoZarr", assetLayerId);
 
+      const geoZarrLayerDatetime = getGeoZarrLayerDatetime(
+        assets[assetName],
+        stacObject,
+        layerDatetime,
+        currentStep,
+      );
+
       const layer = {
         /** @type {"WebGLTile"} */
         type: "WebGLTile",
@@ -245,9 +253,8 @@ export async function createLayersFromAssets(
           id: assetLayerId,
           title: assets[assetName]?.title || title,
           ...(!isBaseOrOverlay && { layerConfig }),
-          // eox-map fills unset layer time from the store's time axis: we name the slice to open,
-          // and `false` keeps the store's slices off the global timeline
-          ...(currentStep && { layerDatetime: { currentStep } }),
+          ...(geoZarrLayerDatetime && { layerDatetime: geoZarrLayerDatetime }),
+          // left unset, eox-map fills the global timeline with the store's slices
           ...(!withTimeControlValues && { timeControlValues: false }),
         },
         source: {

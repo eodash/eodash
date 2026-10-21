@@ -63,6 +63,29 @@ export const isGeoZarrCube = (asset, stacObject) => {
 };
 
 /**
+ * The `layerDatetime` a GeoZarr layer starts with. A cube's slider comes from its store's
+ * time axis, which eox-map reads, so the layer only names the slice to open; any other
+ * zarr asset gets the item-level `layerDatetime` like every other layer, and falls back to
+ * the step alone when the build wants no item-level time. STAC cannot tell whether a
+ * non-cube store has a time axis; if it has, eox-map still swaps in its slices.
+ *
+ * @param {import("../types").STACAsset} asset
+ * @param {import("../types").STACItem | import("../types").STACCollection} stacObject
+ * @param {Record<string, unknown>} [layerDatetime] - the item-level `layerDatetime`, if the build wants it
+ * @param {string} [currentStep] - the item's own step
+ * @returns {Record<string, unknown> | undefined}
+ */
+export const getGeoZarrLayerDatetime = (
+  asset,
+  stacObject,
+  layerDatetime,
+  currentStep,
+) => {
+  if (layerDatetime && !isGeoZarrCube(asset, stacObject)) return layerDatetime;
+  return currentStep ? { currentStep } : undefined;
+};
+
+/**
  * Whether the datacube extension declares none of the asset's bands a `data` variable.
  *
  * @param {import("../types").STACAsset} asset
