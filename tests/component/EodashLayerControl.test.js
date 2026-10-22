@@ -326,9 +326,9 @@ describe("EodashLayerControl", () => {
         jsonformValue: { flood: 30 },
       });
 
-      expect(source.setUrl).toHaveBeenCalledWith(
-        "https://vt/tiles?flood_percent=30",
-      );
+      await expect
+        .poll(() => source.setUrl)
+        .toHaveBeenCalledWith("https://vt/tiles?flood_percent=30");
     });
   });
 });
