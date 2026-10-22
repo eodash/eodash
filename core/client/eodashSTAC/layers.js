@@ -225,11 +225,16 @@ export const assignDataLayers = async (
  * @param {import("@eodash/stac").BuildContext} [options.context] - Build context configuration
  */
 async function buildDataLayers(map, { readers, stac, timeOrItem, context }) {
+  const { layerExtent } = useSTAcStore();
   return buildIndicatorDataLayers({
     readers,
     stac: stac ?? undefined,
     timeOrItem,
-    context,
+    context: {
+      layerExtent,
+      transformExtent,
+      ...context,
+    },
     themes: dataThemesBrands,
     currentLayers: map?.layers ?? [],
   });

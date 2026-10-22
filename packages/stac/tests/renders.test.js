@@ -64,6 +64,17 @@ describe("layers from the render extension", () => {
     expect(layer.source.url.split("?")[1]).toBe("assets=b04&rescale=0,100&");
   });
 
+  test("clips the layer to the item's footprint when layerExtent is set, so TiTiler gets no requests outside it", async () => {
+    const viewExtent = [1, 2, 3, 4];
+    const layers = await build(
+      { renders: { ndvi: { assets: ["b04"] } } },
+      { layerExtent: true, transformExtent: () => viewExtent },
+      { ...RASTER_ITEM, bbox: [10, 47, 11, 48] },
+    );
+
+    expect(renderLayer(layers).extent).toBe(viewExtent);
+  });
+
   test("takes the raster endpoint from the reader", async () => {
     serveUrls(client, {
       [COLLECTION_URL]: stacCollection({
