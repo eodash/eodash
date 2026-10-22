@@ -216,7 +216,7 @@ describe("EodashItemCatalog", () => {
   });
 
   describe("seam wiring (default map)", () => {
-    test("passes store, compare flag and the primary map to the select handler", async () => {
+    test("passes store, compare flag, the primary map and the catalog endpoint to the select handler", async () => {
       await mountAsyncComponent(EodashItemCatalog, {
         initialState: withCollections,
       });
@@ -226,6 +226,7 @@ describe("EodashItemCatalog", () => {
         store,
         false,
         mapEl,
+        expect.objectContaining({ value: store.stacEndpoint }),
       );
     });
 
@@ -324,6 +325,7 @@ describe("EodashItemCatalog", () => {
         store,
         true,
         mapCompareEl,
+        expect.objectContaining({ value: store.stacEndpoint }),
       );
       expect(spies.useSearchOnMapMove).toHaveBeenCalledWith(
         expect.anything(),

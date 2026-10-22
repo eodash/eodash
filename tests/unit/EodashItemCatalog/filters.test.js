@@ -5,6 +5,7 @@ import {
   createExternalFilter,
   createFilterProperties,
   createSubtitleProperty,
+  resolveSearchFields,
 } from "^/EodashItemCatalog/methods/filters";
 import { indicator, mapEl } from "@/store/states";
 import { useSTAcStore } from "@/store/stac";
@@ -463,5 +464,65 @@ describe("createExternalFilter", () => {
 
     const items = await request([], {}).fetchFn("https://stac/search");
     expect(items).toEqual([]);
+  });
+
+  test("asks the search for only the fields it was given", () => {
+    const request = createExternalFilter(
+      [],
+      false,
+      false,
+      ref([]),
+      ref(""),
+      25,
+      undefined,
+      "https://stac",
+      "id,properties,-links",
+    );
+
+    const { url } = request([], {});
+    expect(new URL(url).searchParams.get("fields")).toBe(
+      "id,properties,-links",
+    );
+  });
+});
+
+describe("resolveSearchFields", () => {
+  const FIELDS_CONFORMANCE =
+    "https://api.stacspec.org/v1.0.0/item-search#fields";
+
+  beforeEach(() => {
+    axiosMock.get.mockReset();
+  });
+
+  test("drops what the catalog never shows, keeping the assets its accessors read", async () => {
+    axiosMock.get.mockResolvedValue({
+      data: { conformsTo: [FIELDS_CONFORMANCE] },
+    });
+
+    const fields = await resolveSearchFields("https://stac", [
+      "id",
+      undefined,
+      "assets.thumbnail.href",
+    ]);
+
+    expect(axiosMock.get).toHaveBeenCalledWith("https://stac/conformance");
+    expect(fields).toBe(
+      "type,id,bbox,geometry,collection,properties,assets.thumbnail.href,-links",
+    );
+  });
+
+  test("asks for full items from an API without the fields extension", async () => {
+    axiosMock.get.mockResolvedValue({ data: { conformsTo: [] } });
+
+    expect(await resolveSearchFields("https://stac", ["id"])).toBeUndefined();
+  });
+
+  test("asks for full items when an accessor is a function, whose reads are unknown", async () => {
+    const fields = await resolveSearchFields("https://stac", [
+      (item) => item.links[0].href,
+    ]);
+
+    expect(fields).toBeUndefined();
+    expect(axiosMock.get).not.toHaveBeenCalled();
   });
 });

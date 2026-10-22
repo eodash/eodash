@@ -88,6 +88,7 @@ import { useSTAcStore } from "@/store/stac";
 import {
   createExternalFilter,
   createSubtitleProperty,
+  resolveSearchFields,
 } from "./methods/filters";
 import { useCatalogConfig } from "./composables/useCatalogConfig";
 import {
@@ -324,9 +325,19 @@ const currentItems = ref([]);
 
 const items = currentItems.value;
 
+const searchFields = catalogEndpoint.value
+  ? await resolveSearchFields(catalogEndpoint.value, [
+      props.titleProperty,
+      props.subTitleProperty,
+      props.imageProperty,
+    ])
+  : undefined;
+
 if (catalogEndpoint.value) {
   await axios
-    .get(catalogEndpoint.value + `/search?limit=${props.searchLimit}`)
+    .get(catalogEndpoint.value + "/search", {
+      params: { limit: props.searchLimit, fields: searchFields },
+    })
     .then((res) => (currentItems.value = res.data.features));
 }
 
@@ -377,6 +388,7 @@ const externalFilterHandler = createExternalFilter(
   props.searchLimit,
   activeSelectedItem,
   catalogEndpoint,
+  searchFields,
 );
 
 watch(activeSelectedItem, (item) => {
@@ -466,6 +478,7 @@ const onSelectItem = createOnSelectHandler(
   store,
   props.enableCompare,
   mapElement,
+  catalogEndpoint,
 );
 
 useRenderItemsFeatures(

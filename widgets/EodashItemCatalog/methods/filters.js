@@ -140,6 +140,46 @@ export const createFilterProperties = (filtersConfig, datetimeFilter) => {
 };
 
 /**
+ * The `fields` parameter trimming search results to what the catalog shows.
+ * None without the fields extension or with a function accessor.
+ *
+ * @param {string} endpoint
+ * @param {(import("../types").ItemAccessor | undefined)[]} accessors
+ * @returns {Promise<string | undefined>}
+ */
+export const resolveSearchFields = async (endpoint, accessors) => {
+  if (accessors.some((accessor) => typeof accessor === "function")) {
+    return undefined;
+  }
+  /** @type {string[]} */
+  const conformsTo = await axios
+    .get(`${endpoint}/conformance`)
+    .then((res) => res.data.conformsTo ?? [])
+    .catch((error) => {
+      console.warn("[eodash] Failed to read the API conformance", error);
+      return [];
+    });
+  if (!conformsTo.some((uri) => uri.endsWith("item-search#fields"))) {
+    return undefined;
+  }
+  const assetPaths = accessors.flatMap((accessor) =>
+    typeof accessor === "string" && accessor.startsWith("assets.")
+      ? [accessor]
+      : [],
+  );
+  return [
+    "type",
+    "id",
+    "bbox",
+    "geometry",
+    "collection",
+    "properties",
+    ...assetPaths,
+    "-links",
+  ].join(",");
+};
+
+/**
  * Builds a STAC API search URL from the given filter parameters.
  *
  * @param {import("@/types").ItemFilterFilters} filters
@@ -148,6 +188,7 @@ export const createFilterProperties = (filtersConfig, datetimeFilter) => {
  * @param {number} searchLimit
  * @param {string} [sortBy]
  * @param {string | null} [stacEndpoint]
+ * @param {string} [fields] - {@link resolveSearchFields}
  * @returns {string}
  */
 export const buildSearchUrl = (
@@ -157,6 +198,7 @@ export const buildSearchUrl = (
   searchLimit,
   sortBy,
   stacEndpoint,
+  fields,
 ) => {
   const store = useSTAcStore();
   const endpoint = stacEndpoint || store.stacEndpoint;
@@ -194,6 +236,9 @@ export const buildSearchUrl = (
   }
 
   params.append("limit", searchLimit.toString());
+  if (fields) {
+    params.append("fields", fields);
+  }
 
   return `${endpoint}/search?${params.toString()}`;
 };
@@ -209,6 +254,7 @@ export const buildSearchUrl = (
  * @param {number} searchLimit
  * @param {import("vue").Ref<import("@eodash/stac").STACItem | null | undefined>} [selectedItemRef]
  * @param {import("vue").Ref<string | null> | string | null} [stacEndpoint]
+ * @param {string} [fields] - {@link resolveSearchFields}
  */
 export const createExternalFilter = (
   propsFilters,
@@ -219,6 +265,7 @@ export const createExternalFilter = (
   searchLimit,
   selectedItemRef,
   stacEndpoint,
+  fields,
 ) => {
   const hasCustomDatetime = propsFilters.some((f) => f.property === "datetime");
   const effectiveDatetimeFilter = datetimeFilter || hasCustomDatetime;
@@ -235,6 +282,7 @@ export const createExternalFilter = (
       searchLimit,
       sortBy.value,
       typeof stacEndpoint === "object" ? stacEndpoint?.value : stacEndpoint,
+      fields,
     ),
     /** @param {string} url */
     fetchFn: async (url) => {
