@@ -1,3 +1,4 @@
+import { describe, it } from "vitest";
 import { chromium } from "playwright";
 
 const BASE_URL = process.env.CONTAINER_TEST_URL || "http://localhost:8080";
@@ -242,7 +243,16 @@ async function runContainerTest() {
   console.log(`[test:docker] Test passed for ${BASE_URL}!`);
 }
 
-runContainerTest().catch((err) => {
-  console.error("[test:docker] Container test failed:", err);
-  process.exit(1);
+const shouldRun =
+  Boolean(process.env.CONTAINER_TEST_URL) ||
+  process.env.npm_lifecycle_event === "test:docker";
+
+describe("docker container", () => {
+  it.runIf(shouldRun)(
+    "serves the app and runtime configuration",
+    async () => {
+      await runContainerTest();
+    },
+    120_000,
+  );
 });
