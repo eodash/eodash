@@ -1,4 +1,4 @@
-import { onUnmounted, watch } from "vue";
+import { onUnmounted, toRaw, watch } from "vue";
 import { inView } from "ol/layer/Layer";
 import { loading } from "@/store/states";
 
@@ -37,6 +37,7 @@ export const useMapLoading = (mapElement, compareMapElement) => {
    */
   const postRenderHandler = ({ map, frameState }) => {
     if (!frameState) return;
+    map = toRaw(map);
     const { tileQueue, layerStatesArray, viewState } = frameState;
     const isLoading =
       tileQueue.getTilesLoading() > 0 ||
@@ -57,15 +58,27 @@ export const useMapLoading = (mapElement, compareMapElement) => {
     endHandler();
   };
 
-  /** @param {import("@eox/map").EOxMap | null} newMapEl */
-  const watcherHandler = (newMapEl) => {
-    if (!newMapEl) return;
+  /**
+   * @param {import("@eox/map").EOxMap | null} newMapEl
+   * @param {import("@eox/map").EOxMap | null} [oldMapEl]
+   */
+  const watcherHandler = (newMapEl, oldMapEl) => {
+    if (oldMapEl?.map) {
+      const oldMap = toRaw(oldMapEl.map);
+      oldMap.un("postrender", postRenderHandler);
+      if (loadingMaps.has(oldMap)) {
+        loadingMaps.delete(oldMap);
+        endHandler();
+      }
+    }
+    if (!newMapEl?.map) return;
 
-    const hasPostRenderListener = newMapEl.map
+    const newMap = toRaw(newMapEl.map);
+    const hasPostRenderListener = newMap
       .getListeners("postrender")
       ?.some((listener) => listener === postRenderHandler);
     if (!hasPostRenderListener) {
-      newMapEl.map.on("postrender", postRenderHandler);
+      newMap.on("postrender", postRenderHandler);
     }
   };
   const stopMainWatcher = watch(mapElement, watcherHandler, {
@@ -76,8 +89,8 @@ export const useMapLoading = (mapElement, compareMapElement) => {
   });
 
   onUnmounted(() => {
-    mapElement.value?.map.un("postrender", postRenderHandler);
-    compareMapElement.value?.map.un("postrender", postRenderHandler);
+    toRaw(mapElement.value?.map)?.un("postrender", postRenderHandler);
+    toRaw(compareMapElement.value?.map)?.un("postrender", postRenderHandler);
     stopMainWatcher();
     stopCompareWatcher();
     loading.activeLoads = Math.max(0, loading.activeLoads - localLoads);

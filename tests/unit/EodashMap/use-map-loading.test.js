@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import { render } from "vitest-browser-vue";
-import { h, ref } from "vue";
+import { h, nextTick, ref } from "vue";
 import Map from "ol/Map";
 import MapEvent from "ol/MapEvent";
 import { useMapLoading } from "^/EodashMap/methods";
@@ -98,6 +98,28 @@ describe("useMapLoading", () => {
     renderFrame(map, { queued: 1 });
 
     await unmount();
+
+    expect(loading.activeLoads).toBe(0);
+  });
+
+  test("cleans up loading state when compare map is removed", async () => {
+    const mainMap = new Map({});
+    const compareMap = new Map({});
+    const mainRef = ref(/** @type {any} */ ({ map: mainMap }));
+    const compareRef = ref(/** @type {any} */ ({ map: compareMap }));
+
+    await render({
+      setup() {
+        useMapLoading(mainRef, compareRef);
+        return () => h("div");
+      },
+    });
+
+    renderFrame(compareMap, { queued: 5 });
+    expect(loading.activeLoads).toBe(1);
+
+    compareRef.value = null;
+    await nextTick();
 
     expect(loading.activeLoads).toBe(0);
   });
