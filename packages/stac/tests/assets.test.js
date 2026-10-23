@@ -1,5 +1,9 @@
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import { createEodashCollection } from "../src/index.js";
+import {
+  isGeoZarrCube,
+  isRenderableGeoZarrAsset,
+} from "../src/helpers/geozarr.js";
 import { serveUrls, stacCollection } from "../../../tests/support/stac.js";
 
 // The layer shape each data asset type is built into. Which assets qualify at
@@ -243,6 +247,37 @@ describe("layers from assets", () => {
     ).toEqual([["vv"]]);
   });
 
+  test("rejects an asset when auxiliary cube:variables is on the STAC collection", () => {
+    const col = stacCollection({
+      "cube:variables": {
+        border_mask: { variable_type: "auxiliary" },
+      },
+    });
+    const asset = dataAsset({
+      type: "application/vnd.zarr; version=3",
+      href: "https://x.zarr/descending",
+      bands: [{ name: "border_mask" }],
+    });
+    expect(isRenderableGeoZarrAsset(asset, col)).toBe(false);
+  });
+
+  test("asset cube:variables takes priority over STAC object cube:variables", () => {
+    const item = makeItem({
+      properties: {
+        "cube:variables": {
+          band1: { variable_type: "auxiliary" },
+        },
+      },
+    });
+    const asset = dataAsset({
+      type: "application/vnd.zarr; version=3",
+      href: "https://x.zarr",
+      "cube:variables": { band1: { type: "data" } },
+      bands: [{ name: "band1" }],
+    });
+    expect(isRenderableGeoZarrAsset(asset, item)).toBe(true);
+  });
+
   test("builds no layer from a zarr asset inside another zarr asset's group, unless that is the store root", async () => {
     const zarr = { type: "application/vnd.zarr; version=3" };
     const layers = await build(
@@ -325,6 +360,30 @@ describe("layers from assets", () => {
         { date: "2024-01-01T00:00:00.000Z" },
         { date: "2025-01-01T00:00:00.000Z" },
       ]);
+    });
+
+    test("recognizes a cube when cube:dimensions is on the STAC collection", () => {
+      const col = stacCollection({
+        "cube:dimensions": {
+          time: { type: "temporal" },
+        },
+      });
+      expect(isGeoZarrCube(dataAsset({}), col)).toBe(true);
+    });
+
+    test("asset cube:dimensions takes priority over STAC object cube:dimensions", () => {
+      const col = stacCollection({
+        "cube:dimensions": {
+          time: { type: "temporal" },
+        },
+      });
+      const spatialOnlyAsset = dataAsset({
+        "cube:dimensions": {
+          x: { type: "spatial" },
+          y: { type: "spatial" },
+        },
+      });
+      expect(isGeoZarrCube(spatialOnlyAsset, col)).toBe(false);
     });
 
     test("a zarr item that is no cube gets the item's dates like any other layer", async () => {

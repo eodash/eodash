@@ -51,8 +51,8 @@ export const isGeoZarrCube = (asset, stacObject) => {
   const dimensions =
     asset["cube:dimensions"] ??
     (stacObject.type === "Feature"
-      ? stacObject.properties["cube:dimensions"]
-      : undefined);
+      ? stacObject.properties?.["cube:dimensions"]
+      : stacObject["cube:dimensions"]);
   return (
     typeof dimensions === "object" &&
     dimensions !== null &&
@@ -96,8 +96,8 @@ function hasOnlyAuxiliaryBands(asset, stacObject) {
   const variables =
     asset["cube:variables"] ??
     (stacObject.type === "Feature"
-      ? stacObject.properties["cube:variables"]
-      : undefined);
+      ? stacObject.properties?.["cube:variables"]
+      : stacObject["cube:variables"]);
   if (!variables || !Array.isArray(asset.bands)) return false;
   const byName = new Map(Object.entries(variables));
   return asset.bands.every(({ name }) => {
