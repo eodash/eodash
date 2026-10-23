@@ -29,6 +29,7 @@ import { createHTTPInstance } from "../http.js";
  * @param {Record<string, any> | null} [options.tileMatrixSets]
  * @param {import("../http.js").HttpClient} [options.http]
  * @param {import("../types").LayerConfigHelpers} [options.layerConfigHelpers]
+ * @param {number[]} [options.extent] - the item's bbox in the view projection
  * @returns {Promise<{ layers: import("@eox/map").EoxLayer[], projections: import("../types").Projection[] }>}
  */
 export const createLayerFromRender = async (
@@ -43,6 +44,7 @@ export const createLayerFromRender = async (
     tileMatrixSets = null,
     http = createHTTPInstance(),
     layerConfigHelpers = createLayerConfigHelpers(),
+    extent,
   } = options;
   const { extractLayerConfig, applyRasterFormValue } = layerConfigHelpers;
   /** @type {import("../types").Projection[]} */
@@ -138,6 +140,7 @@ export const createLayerFromRender = async (
     const json = {
       /** @type {"Tile"} */
       type: "Tile",
+      ...(extent && { extent }),
       properties: {
         id: createLayerID(
           collection.id,

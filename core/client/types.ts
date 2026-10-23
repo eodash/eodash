@@ -372,6 +372,8 @@ export type Eodash = {
      * `renders`.
      */
     renders?: Record<string, Record<string, Render>>;
+    /** Clips item tile layers to the item's `bbox`. Only for catalogs with accurate bboxes. */
+    layerExtent?: boolean;
   };
   /** Root STAC catalog endpoint */
   stacEndpoint: StacEndpoint;
