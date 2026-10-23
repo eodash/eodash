@@ -54,7 +54,7 @@ export async function createLayersFromAssets(
     mergeAssets !== undefined
       ? mergeAssets
       : stacObject?.["eodash:merge_assets"] !== false;
-  const { extractLayerConfig } = layerConfigHelpers;
+  const { extractLayerConfig, applyRasterFormValue } = layerConfigHelpers;
   log.debug("Creating layers from assets");
   /** @type {import("@eox/map").EoxLayer[]} */
   const jsonArray = [];
@@ -71,21 +71,58 @@ export async function createLayersFromAssets(
   const zarrAssetIds = [];
   const zarrIdx = [];
   const assetIds = [];
+  /** @type {Map<string, ReturnType<typeof resolveStyle>>} */
+  const assetStyles = new Map();
+  /** @param {string} assetName */
+  const resolveAssetStyle = (assetName) => {
+    if (!assetStyles.has(assetName)) {
+      assetStyles.set(
+        assetName,
+        resolveStyle(stacObject, collection, http, undefined, assetName),
+      );
+    }
+    return assetStyles.get(assetName);
+  };
 
   for (const [idx, assetId] of Object.keys(assets).entries()) {
     assetIds.push(assetId);
+    const assetName = assetId;
 
     if (
       assets[assetId]?.type?.includes("application/geo+json") &&
       assets[assetId]?.href?.includes("http")
     ) {
-      geoJsonSources.push(assets[assetId].href);
+      const styles = await resolveAssetStyle(assetName);
+      const { layerConfig } = extractLayerConfig(styles);
+      let href = assets[assetId].href;
+      if (layerConfig) {
+        const mockLayer = {
+          type: "Vector",
+          source: { url: href },
+          properties: { layerConfig },
+        };
+        applyRasterFormValue(mockLayer);
+        href = mockLayer.source.url;
+      }
+      geoJsonSources.push(href);
       geoJsonIdx.push(idx);
     } else if (
       assets[assetId]?.type?.includes("application/vnd.flatgeobuf") &&
       assets[assetId]?.href?.includes("http")
     ) {
-      fgbSources.push(assets[assetId].href);
+      const styles = await resolveAssetStyle(assetName);
+      const { layerConfig } = extractLayerConfig(styles);
+      let href = assets[assetId].href;
+      if (layerConfig) {
+        const mockLayer = {
+          type: "Vector",
+          source: { url: href },
+          properties: { layerConfig },
+        };
+        applyRasterFormValue(mockLayer);
+        href = mockLayer.source.url;
+      }
+      fgbSources.push(href);
       fgbIdx.push(idx);
     } else if (isRenderableGeoZarrAsset(assets[assetId], stacObject)) {
       zarrAssetIds.push(assetId);
@@ -276,13 +313,7 @@ export async function createLayersFromAssets(
   if (geoJsonSources.length) {
     for (const [i, geoJsonSource] of geoJsonSources.entries()) {
       const assetName = assetIds[geoJsonIdx[i]];
-      const styles = await resolveStyle(
-        stacObject,
-        collection,
-        http,
-        undefined,
-        assetName,
-      );
+      const styles = await resolveAssetStyle(assetName);
       let { layerConfig, style } = extractLayerConfig(styles);
       let assetLayerId = createAssetID(
         collectionId,
@@ -338,6 +369,7 @@ export async function createLayersFromAssets(
       layer.properties = { ...layer.properties, ...(extraProperties ?? {}) };
       extractRoles(layer.properties, assets[assetName]);
       addTooltipInteraction(layer, style);
+      applyRasterFormValue(layer);
       jsonArray.push(layer);
       if (shouldMergeAssets) break;
     }
@@ -345,13 +377,7 @@ export async function createLayersFromAssets(
   if (fgbSources.length) {
     for (const [i, fgbSource] of fgbSources.entries()) {
       const assetName = assetIds[fgbIdx[i]];
-      const styles = await resolveStyle(
-        stacObject,
-        collection,
-        http,
-        undefined,
-        assetName,
-      );
+      const styles = await resolveAssetStyle(assetName);
       let { layerConfig, style } = extractLayerConfig(styles);
       let assetLayerId = createAssetID(collectionId, stacObject.id, fgbIdx[i]);
       const isBaseOrOverlay = isBaseLayerOrOverlay(assets[assetName]);
@@ -397,6 +423,7 @@ export async function createLayersFromAssets(
       layer.properties = { ...layer.properties, ...(extraProperties ?? {}) };
       extractRoles(layer.properties, assets[assetName]);
       addTooltipInteraction(layer, style);
+      applyRasterFormValue(layer);
       jsonArray.push(layer);
       if (shouldMergeAssets) break;
     }
