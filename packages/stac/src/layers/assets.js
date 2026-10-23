@@ -3,6 +3,11 @@ import { extractRoles, isBaseLayerOrOverlay } from "../helpers/assets.js";
 import { createHTTPInstance } from "../http.js";
 import { mergeGeojsons } from "../helpers/geojson.js";
 import {
+  getDefaultGeoZarrBands,
+  getGeoZarrLayerDatetime,
+  isRenderableGeoZarrAsset,
+} from "../helpers/geozarr.js";
+import {
   createLayerConfigHelpers,
   getBandsProperty,
 } from "../helpers/layer-config.js";
@@ -24,6 +29,8 @@ import { addTooltipInteraction, resolveStyle } from "../helpers/style.js";
  * @param {import("../http.js").HttpClient} [options.http]
  * @param {import("../types").LayerConfigHelpers} [options.layerConfigHelpers]
  * @param {boolean} [options.mergeAssets]
+ * @param {boolean} [options.timeControlValues] - whether layers carry `timeControlValues`. Default `true`.
+ * @param {string} [options.currentStep] - the item's own step, which GeoZarr cubes carry instead of the item-level `layerDatetime`
  * @returns {Promise<{ layers: import("@eox/map").EoxLayer[], projections: import("../types").Projection[] }>}
  **/
 export async function createLayersFromAssets(
@@ -40,6 +47,8 @@ export async function createLayersFromAssets(
     http = createHTTPInstance(),
     layerConfigHelpers = createLayerConfigHelpers(),
     mergeAssets,
+    timeControlValues: withTimeControlValues = true,
+    currentStep,
   } = options;
   const shouldMergeAssets =
     mergeAssets !== undefined
@@ -115,10 +124,7 @@ export async function createLayersFromAssets(
       }
       fgbSources.push(href);
       fgbIdx.push(idx);
-    } else if (
-      assets[assetId]?.type ==
-      "application/vnd.zarr; version=3; profile=multiscales"
-    ) {
+    } else if (isRenderableGeoZarrAsset(assets[assetId], stacObject)) {
       zarrAssetIds.push(assetId);
       zarrIdx.push(idx);
     } else if (
@@ -256,10 +262,11 @@ export async function createLayersFromAssets(
       );
       const { layerConfig, style } = extractLayerConfig(fetchedStyle);
       const bandsPath = getBandsProperty(layerConfig?.schema);
-      const defaultBands = bandsPath?.reduce(
-        (node, key) => node?.[key],
-        layerConfig?.schema,
-      )?.default ?? ["b04", "b03", "b02"];
+      const defaultBands = getDefaultGeoZarrBands(
+        assets[assetName],
+        bandsPath?.reduce((node, key) => node?.[key], layerConfig?.schema)
+          ?.default,
+      );
 
       let assetLayerId = createAssetID(collectionId, stacObject.id, zarrIdx[i]);
       const isBaseOrOverlay = isBaseLayerOrOverlay(assets[assetName]);
@@ -269,6 +276,13 @@ export async function createLayersFromAssets(
 
       log.debug("Creating WebGLTile layer from GeoZarr", assetLayerId);
 
+      const geoZarrLayerDatetime = getGeoZarrLayerDatetime(
+        assets[assetName],
+        stacObject,
+        layerDatetime,
+        currentStep,
+      );
+
       const layer = {
         /** @type {"WebGLTile"} */
         type: "WebGLTile",
@@ -276,7 +290,9 @@ export async function createLayersFromAssets(
           id: assetLayerId,
           title: assets[assetName]?.title || title,
           ...(!isBaseOrOverlay && { layerConfig }),
-          layerDatetime,
+          ...(geoZarrLayerDatetime && { layerDatetime: geoZarrLayerDatetime }),
+          // left unset, eox-map fills the global timeline with the store's slices
+          ...(!withTimeControlValues && { timeControlValues: false }),
         },
         source: {
           /** @type {"GeoZarr"} */

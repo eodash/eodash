@@ -214,7 +214,8 @@ export async function buildStacMap(
   const buildContext = {
     mergeAssets: false,
     observationPointIcons: false,
-    layerTimeControl: enableTimeControl,
+    layerDatetime: enableTimeControl,
+    timeControlValues: enableTimeControl,
   };
 
   const indicatorReader = await createEodashIndicator(
