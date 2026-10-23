@@ -88,6 +88,16 @@ export default defineConfig({
       {
         resolve: { alias },
         test: {
+          name: "docker",
+          include: ["tests/docker/**/*.test.js"],
+          benchmark: { include: [] },
+          environment: "node",
+          testTimeout: 5 * 60 * 1000,
+        },
+      },
+      {
+        resolve: { alias },
+        test: {
           name: "stac",
           include: ["packages/stac/tests/**/*.test.js"],
           benchmark: { include: [] },
