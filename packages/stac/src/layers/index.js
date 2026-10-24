@@ -1,5 +1,6 @@
 import log from "loglevel";
 import { extractRoles } from "../helpers/assets.js";
+import { bboxToViewExtent } from "../helpers/bbox.js";
 import { extractLayerTimeValues } from "../helpers/datetime.js";
 import {
   createLayerConfigHelpers,
@@ -33,6 +34,8 @@ import { createLayerFromRender } from "./renders.js";
  * @property {boolean} [timeControlValues] - whether layers carry `timeControlValues`. Default `true`.
  * @property {boolean} [mergeAssets] - whether to merge multiple GeoJSON data assets into a single layer. Default `true`.
  * @property {boolean} [observationPointIcons] - whether to render observation point markers with theme SVG icons or simple circles. Default `true`.
+ * @property {boolean} [layerExtent] - whether the tile layers of an item's links and renders carry the item's bbox as their `extent`, so no tiles are requested or drawn outside it. Needs `transformExtent`. Default `false`.
+ * @property {import("../types").TransformExtent} [transformExtent] - e.g. eox-map's; this package has no projection library.
  */
 
 /** Link relations supported for layer rendering. */
@@ -68,6 +71,8 @@ export const buildLayers = async (item, context) => {
     renders,
     http = createHTTPInstance(),
     layerConfigHelpers = createLayerConfigHelpers(),
+    layerExtent = false,
+    transformExtent,
     layerDatetime: withLayerDatetime = true,
     timeControlValues: withTimeControlValues = true,
   } = context;
@@ -79,6 +84,9 @@ export const buildLayers = async (item, context) => {
     http,
     layerConfigHelpers,
     mergeAssets: context.mergeAssets,
+    extent: layerExtent
+      ? bboxToViewExtent(item.bbox, viewProjection, transformExtent)
+      : undefined,
     timeControlValues: withTimeControlValues,
   };
 

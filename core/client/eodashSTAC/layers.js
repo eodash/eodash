@@ -226,11 +226,19 @@ export const assignDataLayers = async (
  * @param {import("@eodash/stac").BuildContext} [options.context] - Build context configuration
  */
 async function buildDataLayers(map, { readers, stac, timeOrItem, context }) {
+  const { layerExtent } = useSTAcStore();
   return buildIndicatorDataLayers({
     readers,
     stac: stac ?? undefined,
     timeOrItem,
-    context: { ...layerTimeProperties, ...context },
+    context: {
+      layerExtent,
+      transformExtent,
+      // @ts-expect-error eox-map types this as ProjectionLike, it is a code here
+      viewProjection: getProjectionCode(map?.projection) || "EPSG:3857",
+      ...layerTimeProperties,
+      ...context,
+    },
     themes: dataThemesBrands,
     currentLayers: map?.layers ?? [],
   });

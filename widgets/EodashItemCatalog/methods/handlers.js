@@ -1,4 +1,6 @@
 import { inAndOut } from "ol/easing";
+import { unref } from "vue";
+import axios from "@/plugins/axios";
 import { renderItemsFeatures } from "./map";
 import { eodashCollections, eodashCompareCollections } from "@/store/stac";
 import {
@@ -102,8 +104,14 @@ export const createOnFilterHandler = ({
  * @param {ReturnType<typeof import("@/store/stac").useSTAcStore>} store
  * @param {boolean} enableCompare
  * @param {import("vue").Ref<import("@eox/map").EOxMap | null>} mapElement
+ * @param {import("vue").MaybeRef<string | null>} endpoint - the catalog's STAC API, for fetching a trimmed result in full
  */
-export const createOnSelectHandler = (store, enableCompare, mapElement) => {
+export const createOnSelectHandler = (
+  store,
+  enableCompare,
+  mapElement,
+  endpoint,
+) => {
   const readers = enableCompare ? eodashCompareCollections : eodashCollections;
   const updateEvent = enableCompare
     ? "compareLayers:updated"
@@ -143,29 +151,37 @@ export const createOnSelectHandler = (store, enableCompare, mapElement) => {
       },
     );
 
+    // a search trimmed by `fields` returns no links, which a full STAC item always has
+    const fullItem = item.links ? item : await fetchItem(unref(endpoint), item);
+    if (!fullItem) return;
+
     if (enableCompare) {
-      if (store.selectedCompareStac?.id === item.collection) {
-        store.selectedCompareItem = item;
+      if (store.selectedCompareStac?.id === fullItem.collection) {
+        store.selectedCompareItem = fullItem;
         await assignDataLayers(mapElement.value, {
           readers,
           stac: store.selectedCompareStac,
-          timeOrItem: item,
+          timeOrItem: fullItem,
           event: itemEvent,
         });
       } else {
-        await store.loadSelectedCompareSTAC(item.collection, false, item);
+        await store.loadSelectedCompareSTAC(
+          fullItem.collection,
+          false,
+          fullItem,
+        );
       }
     } else {
-      if (store.selectedStac?.id === item.collection) {
-        store.selectedItem = item;
+      if (store.selectedStac?.id === fullItem.collection) {
+        store.selectedItem = fullItem;
         await assignDataLayers(mapElement.value, {
           readers,
           stac: store.selectedStac,
-          timeOrItem: item,
+          timeOrItem: fullItem,
           event: itemEvent,
         });
       } else {
-        await store.loadSelectedSTAC(item.collection, false, item);
+        await store.loadSelectedSTAC(fullItem.collection, false, fullItem);
       }
     }
   };
@@ -197,3 +213,18 @@ export const createOnMouseLeaveResult = (mapElement) => {
     mapElement.value?.selectInteractions["stac-item-hover"]?.highlightById([]);
   };
 };
+
+/**
+ * @param {string | null} endpoint
+ * @param {import("@eodash/stac").STACItem} item
+ * @returns {Promise<import("@eodash/stac").STACItem | undefined>}
+ */
+async function fetchItem(endpoint, item) {
+  const url = `${endpoint}/collections/${encodeURIComponent(item.collection ?? "")}/items/${encodeURIComponent(item.id)}`;
+  try {
+    return (await axios.get(url)).data;
+  } catch (error) {
+    console.error("[eodash] Failed to fetch the selected item", url, error);
+    return undefined;
+  }
+}

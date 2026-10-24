@@ -73,6 +73,29 @@ The `brand` object configures the dashboard's visual identity: name, colors, fon
 
 See the [Branding](/branding) guide for the full set of brand options.
 
+## options
+
+Optional behavior overrides for STAC reading and layer rendering:
+
+- `renders` - TiTiler render presets keyed by collection ID and render name, following the STAC `renders` extension shape, used when a collection does not declare its own `renders`.
+- `layerExtent` - when `true`, clips item tile layers to the item's `bbox` so no tiles outside the footprint are requested. Enable only for catalogs with accurate item bounding boxes.
+
+```js
+{
+  options: {
+    layerExtent: true,
+    renders: {
+      "sentinel-2-l2a": {
+        true_color: {
+          title: "True Color",
+          assets: ["visual"],
+        },
+      },
+    },
+  },
+}
+```
+
 ## templates
 
 A [`Template`](/api/Configuration/interfaces/Template.html) describes the grid: an optional `background` and `loading` widget, the `gap` between cells, and the `widgets` array that fills it. Each entry places a [widget](/widgets/) on the grid and supplies its properties.
