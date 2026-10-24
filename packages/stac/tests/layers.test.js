@@ -427,6 +427,28 @@ describe("building layers", () => {
       );
     });
 
+    test("leaves out each time property its context turns off", async () => {
+      serve({
+        links: datedLinks([
+          "2024-01-01T00:00:00.000Z",
+          "2025-01-01T00:00:00.000Z",
+        ]),
+      });
+      const item = xyzItem({
+        properties: { datetime: "2024-01-01T00:00:00.000Z" },
+      });
+
+      const [noDatetime] = await buildFrom(item, { layerDatetime: false });
+      const [noTime] = await buildFrom(item, {
+        layerDatetime: false,
+        timeControlValues: false,
+      });
+
+      expect(noDatetime.properties.layerDatetime).toBeUndefined();
+      expect(noDatetime.properties.timeControlValues).toHaveLength(2);
+      expect(noTime.properties.timeControlValues).toBeUndefined();
+    });
+
     test("omits layerDatetime when only one date is available", async () => {
       serve({ links: datedLinks(["2024-01-01T00:00:00.000Z"]) });
 

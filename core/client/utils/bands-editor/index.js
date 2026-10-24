@@ -6,6 +6,7 @@ import { generateBandColors } from "./colors";
 import { buildRGBInterface, refreshRGBSlots } from "./rgb.js";
 import {
   buildArithmeticInterface,
+  parseFormulaValue,
   refreshArithmeticSlots,
 } from "./arithmetic.js";
 
@@ -25,6 +26,8 @@ export class BandsEditor extends AbstractEditor {
 
   build() {
     super.build();
+    // bands computed from a watched arithmetic field have nothing to show
+    if (this.schema.watch) return;
     // Determine the format type
     const format = this.schema.format || "bands";
 
@@ -70,6 +73,41 @@ export class BandsEditor extends AbstractEditor {
     } else {
       refreshArithmeticSlots(this);
     }
+  }
+
+  /**
+   * Bands with a `watch` on an arithmetic field follow its formula: the bands
+   * it references, each once, in placeholder order. A sibling field named after
+   * a placeholder (`A`, `B`, ...) gets that placeholder's 1-based position in
+   * those bands, so a style can address it as `["band", ["var", "A"]]`.
+   */
+  onWatchedFieldChange() {
+    super.onWatchedFieldChange();
+    // json-editor sets these, its typings do not declare them
+    const { watched, jsoneditor, path } = /** @type {any} */ (this);
+    const [formulaPath] = Object.values(watched ?? {});
+    const formulaEditor = formulaPath && jsoneditor.getEditor(formulaPath);
+    if (!(formulaEditor instanceof BandsEditor)) return;
+
+    const variables = parseFormulaValue(
+      formulaEditor,
+      formulaEditor.getValue(),
+    );
+    if (!variables) return;
+    const bands = [...new Set(Object.values(variables))];
+    const parentPath = path.slice(0, path.lastIndexOf("."));
+    let changed = JSON.stringify(bands) !== JSON.stringify(this.getValue());
+    for (const [placeholder, band] of Object.entries(variables)) {
+      const position = bands.indexOf(band) + 1;
+      const sibling = jsoneditor.getEditor(`${parentPath}.${placeholder}`);
+      if (sibling && sibling.getValue() !== position) {
+        sibling.setValue(position);
+        changed = true;
+      }
+    }
+    if (!changed) return;
+    this.setValue(bands);
+    this.onChange(true);
   }
 }
 

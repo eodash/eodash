@@ -1,5 +1,9 @@
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import { createEodashCollection } from "../src/index.js";
+import {
+  isGeoZarrCube,
+  isRenderableGeoZarrAsset,
+} from "../src/helpers/geozarr.js";
 import { serveUrls, stacCollection } from "../../../tests/support/stac.js";
 
 // The layer shape each data asset type is built into. Which assets qualify at
@@ -98,13 +102,71 @@ describe("layers from assets", () => {
     expect(layer.properties.layerConfig).toBeUndefined();
   });
 
-  test("builds a WebGLTile/GeoZarr layer with default bands", async () => {
+  test("builds a GeoZarr layer from the misspelled vnd+zarr media type", async () => {
+    const [layer] = await build(
+      makeItem({
+        assets: {
+          data: dataAsset({
+            type: "application/vnd+zarr; version=2; profile=multiscales",
+            href: "https://x.zarr/measurements/reflectance",
+            bands: [{ name: "b04" }],
+          }),
+        },
+      }),
+    );
+
+    expect(layer.source.type).toBe("GeoZarr");
+  });
+
+  test("starts a GeoZarr layer with the bands its style's bands field defaults to", async () => {
+    const [layer] = await build(
+      makeItem({
+        links: [
+          {
+            rel: "style",
+            href: "https://styles/zarr.json",
+            "asset:keys": ["data"],
+          },
+        ],
+        assets: {
+          data: dataAsset({
+            type: "application/vnd.zarr; version=3",
+            href: "https://x.zarr/measurements",
+            bands: [{ name: "Oa08" }],
+          }),
+        },
+      }),
+      {
+        "https://styles/zarr.json": {
+          jsonform: {
+            type: "object",
+            properties: {
+              bands: {
+                type: "array",
+                format: "bands",
+                default: ["oa08_radiance", "oa06_radiance", "oa04_radiance"],
+              },
+            },
+          },
+        },
+      },
+    );
+
+    expect(layer.source.bands).toEqual([
+      "oa08_radiance",
+      "oa06_radiance",
+      "oa04_radiance",
+    ]);
+  });
+
+  test("builds a WebGLTile/GeoZarr layer starting with its first band", async () => {
     const [layer] = await build(
       makeItem({
         assets: {
           data: dataAsset({
             type: "application/vnd.zarr; version=3; profile=multiscales",
             href: "https://x.zarr",
+            bands: [{ name: "vv" }, { name: "vh" }],
           }),
         },
       }),
@@ -113,7 +175,242 @@ describe("layers from assets", () => {
     expect(layer.type).toBe("WebGLTile");
     expect(layer.source.type).toBe("GeoZarr");
     expect(layer.source.url).toBe("https://x.zarr");
+    expect(layer.source.bands).toEqual(["vv"]);
+  });
+
+  test("starts a GeoZarr layer with the red, green and blue bands by common name", async () => {
+    const [layer] = await build(
+      makeItem({
+        assets: {
+          data: dataAsset({
+            type: "application/vnd.zarr; version=3; profile=multiscales",
+            href: "https://x.zarr",
+            bands: [
+              { name: "b01", "eo:common_name": "coastal" },
+              { name: "b02", "eo:common_name": "blue" },
+              { name: "b03", "eo:common_name": "green" },
+              { name: "b04", "eo:common_name": "red" },
+            ],
+          }),
+        },
+      }),
+    );
+
     expect(layer.source.bands).toEqual(["b04", "b03", "b02"]);
+  });
+
+  test("builds no layer from a zarr asset with the data-mask role", async () => {
+    const layers = await build(
+      makeItem({
+        assets: {
+          mask: dataAsset({
+            type: "application/vnd.zarr; version=3",
+            href: "https://x.zarr/descending",
+            roles: ["data", "data-mask"],
+            bands: [{ name: "border_mask" }],
+          }),
+        },
+      }),
+    );
+
+    expect(layers.some((layer) => layer.source?.type === "GeoZarr")).toBe(
+      false,
+    );
+  });
+
+  test("builds no layer from a zarr asset whose bands the datacube declares auxiliary", async () => {
+    const zarr = {
+      type: "application/vnd.zarr; version=3",
+      href: "https://x.zarr/descending",
+    };
+    const layers = await build(
+      makeItem({
+        type: "Feature",
+        properties: {
+          // EOPF writes `variable_type`, the spec `type`
+          "cube:variables": {
+            vv: { type: "data" },
+            border_mask: { variable_type: "auxiliary" },
+          },
+        },
+        assets: {
+          mask: dataAsset({ ...zarr, bands: [{ name: "border_mask" }] }),
+          gamma0: dataAsset({ ...zarr, bands: [{ name: "vv" }] }),
+        },
+      }),
+    );
+
+    expect(
+      layers
+        .filter((layer) => layer.source?.type === "GeoZarr")
+        .map((layer) => layer.source.bands),
+    ).toEqual([["vv"]]);
+  });
+
+  test("rejects an asset when auxiliary cube:variables is on the STAC collection", () => {
+    const col = stacCollection({
+      "cube:variables": {
+        border_mask: { variable_type: "auxiliary" },
+      },
+    });
+    const asset = dataAsset({
+      type: "application/vnd.zarr; version=3",
+      href: "https://x.zarr/descending",
+      bands: [{ name: "border_mask" }],
+    });
+    expect(isRenderableGeoZarrAsset(asset, col)).toBe(false);
+  });
+
+  test("asset cube:variables takes priority over STAC object cube:variables", () => {
+    const item = makeItem({
+      properties: {
+        "cube:variables": {
+          band1: { variable_type: "auxiliary" },
+        },
+      },
+    });
+    const asset = dataAsset({
+      type: "application/vnd.zarr; version=3",
+      href: "https://x.zarr",
+      "cube:variables": { band1: { type: "data" } },
+      bands: [{ name: "band1" }],
+    });
+    expect(isRenderableGeoZarrAsset(asset, item)).toBe(true);
+  });
+
+  test("builds no layer from a zarr asset inside another zarr asset's group, unless that is the store root", async () => {
+    const zarr = { type: "application/vnd.zarr; version=3" };
+    const layers = await build(
+      makeItem({
+        links: [{ rel: "store", href: "https://x.zarr" }],
+        assets: {
+          // S2: an auxiliary asset at the store root, the real group below it
+          aot: dataAsset({
+            ...zarr,
+            href: "https://x.zarr/",
+            bands: [{ name: "aot" }],
+          }),
+          // S3: a group, plus one of its arrays as an asset of its own
+          radiance: dataAsset({
+            ...zarr,
+            href: "https://x.zarr/measurements",
+            bands: [{ name: "oa01" }],
+          }),
+          oa01: dataAsset({
+            ...zarr,
+            href: "https://x.zarr/measurements/r0/oa01",
+            bands: [{ name: "oa01" }],
+          }),
+        },
+      }),
+    );
+
+    expect(
+      layers
+        .filter((layer) => layer.source?.type === "GeoZarr")
+        .map((layer) => layer.source.url),
+    ).toEqual(["https://x.zarr/", "https://x.zarr/measurements"]);
+  });
+
+  describe("GeoZarr time", () => {
+    // two dated items, so the build has time values to hand out
+    const datedCollection = {
+      [COLLECTION_URL]: stacCollection({
+        links: ["2024-01-01T00:00:00.000Z", "2025-01-01T00:00:00.000Z"].map(
+          (datetime, i) => ({
+            rel: "item",
+            href: `https://cat/items/i${i}.json`,
+            id: `i${i}`,
+            datetime,
+          }),
+        ),
+      }),
+    };
+
+    /** @param {Record<string, any>} [properties] */
+    const zarrItem = (properties = {}) =>
+      makeItem({
+        type: "Feature",
+        properties: { datetime: "2024-01-01T00:00:00.000Z", ...properties },
+        assets: {
+          data: dataAsset({
+            type: "application/vnd.zarr; version=3",
+            href: "https://x.zarr/descending",
+            bands: [{ name: "vv" }],
+          }),
+        },
+      });
+
+    test("a cube names only the item's own step and keeps the item's time control values", async () => {
+      const [layer] = await build(
+        zarrItem({
+          "cube:dimensions": {
+            x: { type: "spatial" },
+            y: { type: "spatial" },
+            time: { type: "temporal" },
+          },
+        }),
+        datedCollection,
+      );
+
+      expect(layer.properties.layerDatetime).toEqual({
+        currentStep: "2024-01-01T00:00:00.000Z",
+      });
+      expect(layer.properties.timeControlValues).toEqual([
+        { date: "2024-01-01T00:00:00.000Z" },
+        { date: "2025-01-01T00:00:00.000Z" },
+      ]);
+    });
+
+    test("recognizes a cube when cube:dimensions is on the STAC collection", () => {
+      const col = stacCollection({
+        "cube:dimensions": {
+          time: { type: "temporal" },
+        },
+      });
+      expect(isGeoZarrCube(dataAsset({}), col)).toBe(true);
+    });
+
+    test("asset cube:dimensions takes priority over STAC object cube:dimensions", () => {
+      const col = stacCollection({
+        "cube:dimensions": {
+          time: { type: "temporal" },
+        },
+      });
+      const spatialOnlyAsset = dataAsset({
+        "cube:dimensions": {
+          x: { type: "spatial" },
+          y: { type: "spatial" },
+        },
+      });
+      expect(isGeoZarrCube(spatialOnlyAsset, col)).toBe(false);
+    });
+
+    test("a zarr item that is no cube gets the item's dates like any other layer", async () => {
+      const [layer] = await build(zarrItem(), datedCollection);
+
+      expect(layer.properties.layerDatetime).toMatchObject({
+        controlValues: ["2024-01-01T00:00:00.000Z", "2025-01-01T00:00:00.000Z"],
+        currentStep: "2024-01-01T00:00:00.000Z",
+      });
+    });
+  });
+
+  test("builds no layer from a zarr asset without bands", async () => {
+    const layers = await build(
+      makeItem({
+        assets: {
+          data: dataAsset({
+            type: "application/vnd.zarr; version=3",
+            href: "https://x.zarr",
+          }),
+        },
+      }),
+    );
+
+    expect(layers.some((layer) => layer.source?.type === "GeoZarr")).toBe(
+      false,
+    );
   });
 
   test("builds a Vector/GeoJSON layer from a single geo+json data asset", async () => {

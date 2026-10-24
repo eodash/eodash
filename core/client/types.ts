@@ -634,6 +634,17 @@ export interface DatePickerControlValue {
 }
 
 /**
+ * Item-level time properties the data layers carry, passed to `@eodash/stac` builds.
+ * @ignore
+ */
+export type LayerTimeProperties = Required<
+  Pick<
+    import("@eodash/stac").BuildContext,
+    "layerDatetime" | "timeControlValues"
+  >
+>;
+
+/**
  * Recursively optional variant of `T`, for config objects that are deep-merged
  * onto a complete base.
  * @ignore
