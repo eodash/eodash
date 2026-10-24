@@ -182,7 +182,8 @@ export const createLayersFromLinks = async (
       projections.push(wmtsLinkProjection);
     }
 
-    const rasterForm = isBaseLayerOrOverlay(wmtsLink)
+    const isBaseOrOverlay = isBaseLayerOrOverlay(wmtsLink);
+    const rasterForm = isBaseOrOverlay
       ? undefined
       : await resolveRasterForm(wmtsLink);
     const { layerConfig } = extractLayerConfig({}, rasterForm, "tileUrl");
@@ -207,7 +208,7 @@ export const createLayersFromLinks = async (
     json = {
       /** @type {"Tile"} */
       type: "Tile",
-      ...(extent && !isBaseLayerOrOverlay(wmtsLink) && { extent }),
+      ...(extent && !isBaseOrOverlay && { extent }),
       properties: {
         id: linkId,
         title: wmtsLink.title || title || item.id,
@@ -348,8 +349,9 @@ export const createLayersFromLinks = async (
       projections.push(tilejsonProjection);
     }
     const projectionCode = getProjectionCode(tilejsonProjection || "EPSG:3857");
+    const isBaseOrOverlay = isBaseLayerOrOverlay(tilejsonLink);
     // base layers and overlays are built without a layerConfig
-    const rasterForm = isBaseLayerOrOverlay(tilejsonLink)
+    const rasterForm = isBaseOrOverlay
       ? undefined
       : await resolveRasterForm(tilejsonLink);
     const { layerConfig } = extractLayerConfig({}, rasterForm, "tileUrl");
@@ -365,7 +367,7 @@ export const createLayersFromLinks = async (
     const json = {
       /** @type {"Tile"} */
       type: "Tile",
-      ...(extent && !isBaseLayerOrOverlay(tilejsonLink) && { extent }),
+      ...(extent && !isBaseOrOverlay && { extent }),
       properties: {
         id: linkId,
         title: tilejsonLink.title || title || item.id,

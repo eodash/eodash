@@ -1,4 +1,5 @@
 import { inAndOut } from "ol/easing";
+import { unref } from "vue";
 import axios from "@/plugins/axios";
 import { renderItemsFeatures } from "./map";
 import { eodashCollections, eodashCompareCollections } from "@/store/stac";
@@ -103,7 +104,7 @@ export const createOnFilterHandler = ({
  * @param {ReturnType<typeof import("@/store/stac").useSTAcStore>} store
  * @param {boolean} enableCompare
  * @param {import("vue").Ref<import("@eox/map").EOxMap | null>} mapElement
- * @param {import("vue").Ref<string | null>} endpoint - the catalog's STAC API, for fetching a trimmed result in full
+ * @param {import("vue").MaybeRef<string | null>} endpoint - the catalog's STAC API, for fetching a trimmed result in full
  */
 export const createOnSelectHandler = (
   store,
@@ -151,7 +152,7 @@ export const createOnSelectHandler = (
     );
 
     // a search trimmed by `fields` returns no links, which a full STAC item always has
-    const fullItem = item.links ? item : await fetchItem(endpoint.value, item);
+    const fullItem = item.links ? item : await fetchItem(unref(endpoint), item);
     if (!fullItem) return;
 
     if (enableCompare) {
