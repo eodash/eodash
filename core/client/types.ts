@@ -372,6 +372,8 @@ export type Eodash = {
      * `renders`.
      */
     renders?: Record<string, Record<string, Render>>;
+    /** Clips item tile layers to the item's `bbox`. Only for catalogs with accurate bboxes. */
+    layerExtent?: boolean;
   };
   /** Root STAC catalog endpoint */
   stacEndpoint: StacEndpoint;
@@ -632,6 +634,17 @@ export interface DatePickerControlValue {
   color?: string;
   timeControlValues: { date: string }[];
 }
+
+/**
+ * Item-level time properties the data layers carry, passed to `@eodash/stac` builds.
+ * @ignore
+ */
+export type LayerTimeProperties = Required<
+  Pick<
+    import("@eodash/stac").BuildContext,
+    "layerDatetime" | "timeControlValues"
+  >
+>;
 
 /**
  * Recursively optional variant of `T`, for config objects that are deep-merged

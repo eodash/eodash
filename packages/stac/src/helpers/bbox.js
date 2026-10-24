@@ -34,6 +34,27 @@ export const bboxToCenterZoom = (
 };
 
 /**
+ * Reprojects a lon/lat bbox into the view projection. A bbox crossing the
+ * antimeridian has no single extent.
+ *
+ * @param {number[] | undefined} bbox - 2D or 3D, in EPSG:4326
+ * @param {string | undefined} viewProjection
+ * @param {import("../types").TransformExtent | undefined} transformExtent
+ * @returns {number[] | undefined}
+ */
+export const bboxToViewExtent = (bbox, viewProjection, transformExtent) => {
+  if (!transformExtent || !bbox) return undefined;
+  const [west, south, east, north] =
+    bbox.length === 6 ? [bbox[0], bbox[1], bbox[3], bbox[4]] : bbox;
+  if (west > east) return undefined;
+  return transformExtent(
+    [west, south, east, north],
+    "EPSG:4326",
+    viewProjection || "EPSG:3857",
+  );
+};
+
+/**
  * Normalizes bounding box coordinates within standard longitude (-180 to 180) and latitude (-90 to 90) limits.
  *
  * @param {number[]} bbox

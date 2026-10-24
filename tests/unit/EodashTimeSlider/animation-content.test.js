@@ -152,9 +152,27 @@ describe("createAnimationLayers - rendered layers", () => {
 
     await renderFrame();
 
-    expect(reader.getLayers).toHaveBeenCalledWith("2023-06-14", {
-      stateful: false,
+    expect(reader.getLayers).toHaveBeenCalledWith(
+      "2023-06-14",
+      expect.objectContaining({ stateful: false }),
+    );
+  });
+
+  test("passes the map's projection to data layer building", async () => {
+    setMap({
+      layers: [],
+      projection: "EPSG:3035",
+      getLayerById: () => null,
     });
+    const reader = stubReader("collA", [{ properties: { id: "a" } }]);
+    useReaders(reader);
+
+    await renderFrame();
+
+    expect(reader.getLayers).toHaveBeenCalledWith(
+      "2023-06-14",
+      expect.objectContaining({ viewProjection: "EPSG:3035" }),
+    );
   });
 
   test("collapses a layer the collection marks 'disable'", async () => {

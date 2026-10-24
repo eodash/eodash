@@ -30,7 +30,11 @@ const timecontrol = () => document.querySelector("eox-timecontrol");
 const seedMultiItems = () =>
   eodashCollections.push(
     /** @type {any} */ ({
-      stac: { links: [{ rel: "item" }, { rel: "item" }] },
+      stac: {},
+      getDates: async () => [
+        new Date(START),
+        new Date("2023-06-16T00:00:00.000Z"),
+      ],
       getLayers: async () => ({ layers: [], projections: [] }),
     }),
   );
@@ -57,20 +61,26 @@ describe("EodashTimeSlider", () => {
     await expect.poll(() => timecontrol()).toBeNull();
   });
 
-  test("renders the time control when a collection has multiple item links", async () => {
+  test("renders the time control when a collection has multiple dates", async () => {
     seedMultiItems();
     await mountComponent(EodashTimeSlider);
 
     await expect.poll(() => timecontrol()).toBeTruthy();
   });
 
-  test("renders the time control when a collection has an items link", async () => {
+  test("renders nothing when collection reader has only one distinct datetime via getDates", async () => {
     eodashCollections.push(
-      /** @type {any} */ ({ stac: { links: [{ rel: "items" }] } }),
+      /** @type {any} */ ({
+        stac: { links: [] },
+        getDates: async () => [
+          new Date("2023-01-01T00:00:00Z"),
+          new Date("2023-01-01T00:00:00Z"),
+        ],
+      }),
     );
     await mountComponent(EodashTimeSlider);
 
-    await expect.poll(() => timecontrol()).toBeTruthy();
+    await expect.poll(() => timecontrol()).toBeNull();
   });
 
   test("passes initDate derived from datetime and the default animate flag", async () => {

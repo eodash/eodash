@@ -58,7 +58,7 @@ function escapeRegExp(str) {
  * @returns {Record<string, string> | null} Variable assignments, or null if
  * the value doesn't match the template
  */
-function parseFormulaValue(editor, value) {
+export function parseFormulaValue(editor, value) {
   const bands = editor.bands ?? [];
   if (!value || !bands.length) return null;
 

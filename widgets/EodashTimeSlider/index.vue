@@ -93,13 +93,21 @@ watch(selectedStac, () => {
 /** @type {import("vue").Ref<import("@/types").ItemFilterFilters>} */
 const currentFilters = ref({});
 
-const hasMultipleItems = computed(() => {
-  return eodashCollections.some((ec) => {
-    const itemLinks = ec.stac?.links.filter((l) => l.rel === "item");
-    const itemsLink = ec.stac?.links.some((l) => l.rel === "items");
-    return (itemLinks && itemLinks.length > 1) || itemsLink;
-  });
-});
+const hasMultipleItems = ref(false);
+
+watch(
+  () => [...eodashCollections],
+  async (collections) => {
+    const results = await Promise.all(
+      collections.map(async (ec) => {
+        const dates = await ec?.getDates?.();
+        return dates && new Set(dates.map(Number)).size > 1;
+      }),
+    );
+    hasMultipleItems.value = results.some(Boolean);
+  },
+  { immediate: true },
+);
 
 const { mosaicEndpoint } = useMosaicState();
 

@@ -88,6 +88,7 @@ import { useSTAcStore } from "@/store/stac";
 import {
   createExternalFilter,
   createSubtitleProperty,
+  resolveSearchFields,
 } from "./methods/filters";
 import { useCatalogConfig } from "./composables/useCatalogConfig";
 import {
@@ -107,6 +108,7 @@ import { mdiViewDashboard } from "@mdi/js";
 import EodashLayoutSwitcher from "^/EodashLayoutSwitcher.vue";
 import { indicator, mapCompareEl, mapEl, mapPosition } from "@/store/states";
 import axios from "@/plugins/axios";
+import { layerTimeProperties } from "@/utils/states";
 import {
   useInitMosaic,
   renderLatestMosaic,
@@ -223,6 +225,14 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  /**
+   * Whether data layers carry the collection's dates for a global time control.
+   * Off by default, since the catalog is the time navigation.
+   */
+  timeControlValues: {
+    type: Boolean,
+    default: false,
+  },
   mosaicIndicators: {
     /** @type {import("vue").PropType<string[]>} */
     type: Array,
@@ -315,8 +325,13 @@ if (props.useMosaic) {
   });
 }
 
+// the catalog is the time navigation, so the layers keep only the selected item's own step
+layerTimeProperties.layerDatetime = "currentStep";
+layerTimeProperties.timeControlValues = props.timeControlValues;
 onUnmounted(() => {
   activeSelectedItem.value = undefined;
+  layerTimeProperties.layerDatetime = true;
+  layerTimeProperties.timeControlValues = true;
 });
 
 /** @type {import("vue").Ref<import("@/types").GeoJsonFeature[]>} */
@@ -324,9 +339,19 @@ const currentItems = ref([]);
 
 const items = currentItems.value;
 
+const searchFields = catalogEndpoint.value
+  ? await resolveSearchFields(catalogEndpoint.value, [
+      props.titleProperty,
+      props.subTitleProperty,
+      props.imageProperty,
+    ])
+  : undefined;
+
 if (catalogEndpoint.value) {
   await axios
-    .get(catalogEndpoint.value + `/search?limit=${props.searchLimit}`)
+    .get(catalogEndpoint.value + "/search", {
+      params: { limit: props.searchLimit, fields: searchFields },
+    })
     .then((res) => (currentItems.value = res.data.features));
 }
 
@@ -377,6 +402,7 @@ const externalFilterHandler = createExternalFilter(
   props.searchLimit,
   activeSelectedItem,
   catalogEndpoint,
+  searchFields,
 );
 
 watch(activeSelectedItem, (item) => {
@@ -466,6 +492,7 @@ const onSelectItem = createOnSelectHandler(
   store,
   props.enableCompare,
   mapElement,
+  catalogEndpoint,
 );
 
 useRenderItemsFeatures(

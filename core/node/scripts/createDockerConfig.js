@@ -5,21 +5,9 @@
  */
 import fs from "fs";
 import path from "path";
+import { fileURLToPath } from "url";
 
-const dirname =
-  process.argv[process.argv.findIndex((arg) => arg === "--dir") + 1];
-const runtimePath = path.join(dirname, "/config.js");
-const runtimeConfigEnv = process.env.EODASH_RUNTIME_CONFIG;
-
-if (runtimeConfigEnv) {
-  updateEnvRuntimeConfig(runtimeConfigEnv, dirname).finally(() => {
-    process.exit(0);
-  });
-}
-
-fs.writeFileSync(runtimePath, createRuntimeConfig(), { encoding: "utf-8" });
-
-function createRuntimeConfig(
+export function createRuntimeConfig(
   stacEndpointEnv = process.env.STAC_ENDPOINT,
   apiEnv = process.env.API,
   brandEnv = process.env.BRAND,
@@ -33,15 +21,12 @@ const manifest = await fetch("./.vite/manifest.json").then(async res=> await res
 const fileConfig = manifest["templates/index.js"]
 
 const importedModule = await import("./" + fileConfig.file)
-.then(m => m.default || m)
-const key = Object.keys(importedModule)[0]
-const getBaseConfig = importedModule[key].getBaseConfig
-const baseConfig = importedModule[key].default
+const getBaseConfig = importedModule.getBaseConfig || importedModule.default
 
-const lite = baseConfig.templates.lite
-const expert = baseConfig.templates.expert
-const compare = baseConfig.templates.compare
-const explore = baseConfig.templates.explore
+const lite = importedModule.lite
+const expert = importedModule.expert
+const compare = importedModule.compare
+const explore = importedModule.explore
 
 const baseTemplates = { lite, expert, compare, explore }
 
@@ -81,28 +66,33 @@ config.templates = Object.fromEntries(templateKeys.map(key => [key, baseTemplate
 export default config
 
 async function fetchBrand(workspaceId = "eox"){
+  if (!workspaceId) {
+    return { primary: "#002742", secondary: "#0071C2" }
+  }
   const theme = await import("https://hub-brands.eox.at/" + workspaceId + "/config.mjs")
-  .then(m => m.config.theme).catch(e => {
+  .then(m => m.config?.theme).catch(e => {
     console.warn("[eodash] Could not load brand config for workspace:", workspaceId, e)
   })
   return {
-    primary: theme?.primary_color,
-    secondary: theme?.secondary_color ?? theme?.primary_color
+    primary: theme?.primary_color ?? "#002742",
+    secondary: theme?.secondary_color ?? theme?.primary_color ?? "#0071C2"
   }
 }
 
   `;
 }
-async function updateEnvRuntimeConfig(
+
+export async function updateEnvRuntimeConfig(
   runtimeConfigEnv = process.env.EODASH_RUNTIME_CONFIG,
   baseDir = "/usr/share/nginx/html",
 ) {
   if (!runtimeConfigEnv) {
-    return;
+    return 0;
   }
 
-  // pattern matching the  minified variable
-  const pattern = /\w+\.EODASH_RUNTIME_CONFIG/g;
+  // pattern matching the minified variable, inlined object, or process.env
+  const pattern = /(?:\{\}|(?:\b[\w$]+\.)*[\w$]+)\.EODASH_RUNTIME_CONFIG/g;
+  let updatedCount = 0;
 
   const processFile = (filePath) => {
     const content = fs.readFileSync(filePath, "utf-8");
@@ -112,6 +102,7 @@ async function updateEnvRuntimeConfig(
         JSON.stringify(runtimeConfigEnv),
       );
       fs.writeFileSync(filePath, updated, "utf-8");
+      updatedCount++;
       console.log(`[eodash] Updated EODASH_RUNTIME_CONFIG in: ${filePath}`);
     }
   };
@@ -129,4 +120,34 @@ async function updateEnvRuntimeConfig(
   };
 
   walkDir(baseDir);
+
+  if (updatedCount === 0) {
+    console.warn(
+      `[eodash] Debug Info: EODASH_RUNTIME_CONFIG was set to "${runtimeConfigEnv}", but no matching pattern was found in built files at "${baseDir}". App may fall back to baseConfig.`,
+    );
+  }
+
+  return updatedCount;
+}
+
+const isDirectExecution =
+  process.argv[1] &&
+  fileURLToPath(import.meta.url) === path.resolve(process.argv[1]);
+
+if (isDirectExecution) {
+  const dirIndex = process.argv.findIndex((arg) => arg === "--dir");
+  const dirname = dirIndex !== -1 ? process.argv[dirIndex + 1] : undefined;
+
+  if (dirname) {
+    const runtimePath = path.join(dirname, "/config.js");
+    const runtimeConfigEnv = process.env.EODASH_RUNTIME_CONFIG;
+
+    fs.writeFileSync(runtimePath, createRuntimeConfig(), {
+      encoding: "utf-8",
+    });
+
+    if (runtimeConfigEnv) {
+      await updateEnvRuntimeConfig(runtimeConfigEnv, dirname);
+    }
+  }
 }

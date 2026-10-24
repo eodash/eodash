@@ -44,6 +44,8 @@ const QUERYABLES = {
 
 /** @type {Record<string, any>} */
 const routes = {
+  // Read once by the catalog, to decide whether searches can be trimmed.
+  "/conformance": { conformsTo: [] },
   // Pulled in by baseConfig on every boot.
   "/defaults/colormaps.json": {},
   "/defaults/tmsRegistry.json": {},
