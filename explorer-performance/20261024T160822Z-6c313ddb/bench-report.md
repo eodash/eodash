@@ -1,0 +1,111 @@
+### Benchmarks
+
+Previous run → this run. Baseline [`e880fd7aa750ebb66202660e5accf4435a08b5d7`](https://github.com/eodash/eodash/commit/e880fd7aa750ebb66202660e5accf4435a08b5d7), 2026-10-24T15:20:45.905Z.
+
+- explore item: selecting a catalog item renders its layer
+- date snap: moving the date rebuilds all six collections' layers
+- layer datetime: changing one layer's date replaces only that layer
+- links=1, links=10, links=100: scales with the number of layers a collection contributes
+- poi selection: selecting a POI indicator builds the observation points layer
+- select indicator: loads a multi-collection indicator and its widgets
+- vector rendering, geotiff rendering: draws a styled layer of each source type
+- mosaic scrub: scrubbing the time range rebuilds the mosaic layer
+- mirrored selection: selecting a mirrored indicator decodes its items and builds a layer
+
+| benchmark | hz | min | p50 | mean | p75 | p99 | rme | samples | median Δ |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| explore item | 138.2 → 157.2 | 6.0 → 4.4 | 6.9 → 6.7 | 7.6 → 6.6 | 8.2 → 7.3 | 15.7 → 8.7 | ±15.03% → ±8.71% | 20 → 20 | = |
+| date snap | 111.4 → 111.7 | 5.7 → 7.2 | 9.0 → 8.4 | 9.8 → 9.3 | 11.1 → 10.8 | 18.7 → 13.9 | ±15.53% → ±10.27% | 20 → 20 | = |
+| layer datetime | 89.0 → 106.8 | 8.8 → 8.5 | 11.4 → 8.7 | 14.8 → 9.6 | 12.6 → 9.6 | 57.9 → 13.5 | ±41.78% → ±8.15% | 20 → 20 | -23.7% |
+| links=1 | 62.3 → 70.4 | 13.2 → 13.1 | 17.0 → 13.3 | 16.2 → 14.4 | 17.1 → 15.5 | 17.3 → 17.2 | ±4.31% → ±5.17% | 20 → 20 | -21.5% |
+| links=10 | 61.9 → 69.7 | 13.5 → 13.4 | 17.1 → 13.8 | 16.3 → 14.4 | 17.3 → 14.5 | 18.1 → 16.9 | ±4.65% → ±4.06% | 20 → 20 | -19.6% |
+| links=100 | 53.7 → 54.7 | 16.8 → 15.7 | 18.5 → 18.8 | 18.7 → 18.4 | 19.2 → 19.5 | 21.1 → 19.8 | ±2.82% → ±3.65% | 20 → 20 | = |
+| poi selection | 25.0 → 20.8 | 32.5 → 31.9 | 41.8 → 56.2 | 41.1 → 51.8 | 43.4 → 61.1 | 60.1 → 71.9 | ±8.26% → ±12.43% | 20 → 20 | +34.3% |
+| select indicator | 14.8 → 16.8 | 37.9 → 39.1 | 71.9 → 61.6 | 76.5 → 61.9 | 87.3 → 72.1 | 160.3 → 79.7 | ±18.29% → ±9.34% | 20 → 20 | = |
+| vector rendering | 15.0 → 16.8 | 50.6 → 45.3 | 66.8 → 61.6 | 68.3 → 60.6 | 72.3 → 64.6 | 91.8 → 81.6 | ±7.91% → ±6.80% | 20 → 20 | = |
+| mosaic scrub | 3.3 → 3.3 | 305.2 → 305.0 | 305.3 → 305.1 | 305.3 → 305.2 | 305.4 → 305.2 | 305.6 → 305.6 | ±0.02% → ±0.03% | 20 → 20 | -0.1% |
+| geotiff rendering | 2.2 → 2.2 | 400.2 → 425.3 | 449.9 → 443.9 | 448.7 → 448.3 | 456.3 → 458.5 | 486.4 → 521.1 | ±2.22% → ±2.78% | 20 → 20 | = |
+| mirrored selection | 1.0 → 1.2 | 912.2 → 790.9 | 972.8 → 831.3 | 981.9 → 847.9 | 1008.4 → 863.9 | 1125.4 → 965.3 | ±2.53% → ±2.72% | 20 → 20 | -14.5% |
+
+Per run. A range means the runs differ. **Bold** where they do, or where this run did more than the baseline.
+
+| benchmark | requests | fetches | bytes |
+| --- | --- | --- | --- |
+| explore item | 0 → 0 | 0 → 0 | 0 → 0 |
+| date snap | 6 → 6 | 0 → 0 | 0 → 0 |
+| layer datetime | 1 → 1 | 0 → 0 | 0 → 0 |
+| links=1 | 3 → 3 | 0 → 0 | 0 → 0 |
+| links=10 | 3 → 3 | 0 → 0 | 0 → 0 |
+| links=100 | 3 → 3 | 0 → 0 | 0 → 0 |
+| poi selection | 2 → 2 | 1 → 1 | 0 → 0 |
+| select indicator | 7 → 7 | 1 → 1 | 0 → 0 |
+| vector rendering | 4 → 4 | 1 → 1 | 1123K → 1123K |
+| mosaic scrub | 1 → 1 | 0 → 0 | 0 → 0 |
+| geotiff rendering | 4 → 4 | 0 → 0 | 0 → 0 |
+| **mirrored selection** | **2 → 2** | **6 → 6** | **338K–644K → 338K–644K** |
+
+<details><summary>urls, totals over 20 runs</summary>
+
+| benchmark | url | requests | fetches | bytes | status |
+| --- | --- | --- | --- | --- | --- |
+| explore item | none | | | | |
+| date snap | `/stac/items/item-000003.json` | 20 | 0 | 0 | mocked |
+|  | `/stac/items/item-000006.json` | 20 | 0 | 0 | mocked |
+|  | `/stac/items/item-000009.json` | 20 | 0 | 0 | mocked |
+|  | `/stac/items/item-000012.json` | 20 | 0 | 0 | mocked |
+|  | `/stac/items/item-000015.json` | 20 | 0 | 0 | mocked |
+|  | `/stac/items/item-000018.json` | 20 | 0 | 0 | mocked |
+| layer datetime | `/stac/items/item-000003.json` | 20 | 0 | 0 | mocked |
+| links=1 | `/stac/indicators/sub-0001.json` | 20 | 0 | 0 | mocked |
+|  | `/stac/collections/sub-0001.json` | 20 | 0 | 0 | mocked |
+|  | `/stac/items/item-000006.json` | 20 | 0 | 0 | mocked |
+| links=10 | `/stac/indicators/sub-0010.json` | 20 | 0 | 0 | mocked |
+|  | `/stac/collections/sub-0010.json` | 20 | 0 | 0 | mocked |
+|  | `/stac/items/item-000009.json` | 20 | 0 | 0 | mocked |
+| links=100 | `/stac/indicators/sub-0100.json` | 20 | 0 | 0 | mocked |
+|  | `/stac/collections/sub-0100.json` | 20 | 0 | 0 | mocked |
+|  | `/stac/items/item-000012.json` | 20 | 0 | 0 | mocked |
+| poi selection | `/stac/indicators/pois.json` | 20 | 20 | 0 | mocked, 404 |
+|  | `/stac/collections/pois.json` | 20 | 0 | 0 | mocked |
+| select indicator | `/stac/indicators/multi.json` | 20 | 20 | 0 | mocked, 404 |
+|  | `/stac/collections/multi-c0.json` | 20 | 0 | 0 | mocked |
+|  | `/stac/collections/multi-c1.json` | 20 | 0 | 0 | mocked |
+|  | `/stac/collections/multi-c2.json` | 20 | 0 | 0 | mocked |
+|  | `/stac/items/item-000003.json` | 20 | 0 | 0 | mocked |
+|  | `/stac/items/item-000006.json` | 20 | 0 | 0 | mocked |
+|  | `/stac/items/item-000009.json` | 20 | 0 | 0 | mocked |
+| vector rendering | `/stac/indicators/styled-vector.json` | 20 | 0 | 0 | mocked |
+|  | `/stac/collections/styled-vector.json` | 20 | 0 | 0 | mocked |
+|  | `/stac/items/item-000009.json` | 20 | 0 | 0 | mocked |
+|  | `/styled-vector-style.json` | 20 | 0 | 0 | mocked |
+|  | `/tests/support/assets/stormtracker.geojson` | 0 | 20 | 22467K | 200 |
+| mosaic scrub | `/raster/collections/mosaicked/WebMercatorQuad/tilejson.json` | 20 | 0 | 0 | mocked |
+| geotiff rendering | `/stac/indicators/styled-geotiff.json` | 20 | 0 | 0 | mocked |
+|  | `/stac/collections/styled-geotiff.json` | 20 | 0 | 0 | mocked |
+|  | `/stac/items/item-000006.json` | 20 | 0 | 0 | mocked |
+|  | `/styled-geotiff-style.json` | 20 | 0 | 0 | mocked |
+| mirrored selection | `/stac/indicators/mirrored.json` | 20 | 20 | 0 | mocked, 404 |
+|  | `/stac/collections/mirrored.json` | 20 | 0 | 0 | mocked |
+|  | `/tests/support/assets/mirror.parquet` | 0 | 100 | 11041K | 206 |
+
+</details>
+
+<details><summary>Glossary</summary>
+
+| column | meaning |
+| --- | --- |
+| hz | runs per second |
+| min | fastest sample |
+| p50 | median; what the last column compares |
+| mean | average |
+| p75 | 75th percentile |
+| p99 | 99th percentile |
+| rme | relative margin of error |
+| samples | timed iterations |
+| median Δ | change in the median (p50) when it leaves the middle two thirds of the baseline's samples; `=` inside |
+| requests | requests the application issued through its HTTP client per run; the tests resolve them from fixtures (`mocked`), so nothing is transferred |
+| fetches | requests the browser issued over the network per run: tiles, data files, anything the tests do not intercept |
+| bytes | encoded body size of the responses; 0 where the origin sends no `timing-allow-origin` header |
+| status | `mocked` where the tests resolved the request; HTTP codes where the browser fetched it; both where the application did both |
+
+</details>
