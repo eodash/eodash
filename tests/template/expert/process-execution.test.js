@@ -91,7 +91,16 @@ describe("expert template - process execution (predictive maintenance)", () => {
 
   test("clicking the chart throws no error and keeps the time", async () => {
     const before = datetime.value;
-    await userEvent.click(ctx.query("eox-chart"));
+    // on slow runners the chart can still be re-rendering after the re-execution
+    const chart = await vi.waitFor(
+      () => {
+        const el = ctx.query("eox-chart");
+        if (!el) throw new Error("chart not rendered");
+        return el;
+      },
+      { timeout: TIMEOUT },
+    );
+    await userEvent.click(chart);
     expect(ctx.query(".v-alert")).toBeNull();
     expect(datetime.value).toBe(before);
   });

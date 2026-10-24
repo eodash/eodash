@@ -39,7 +39,16 @@ export function renderItemsFeatures(
       url:
         "data:application/geo+json," +
         encodeURIComponent(
-          JSON.stringify({ type: "FeatureCollection", features }),
+          JSON.stringify({
+            type: "FeatureCollection",
+            // id for click/highlight, properties for tooltips and styles; assets and links are not needed
+            features: features.map(({ id, geometry, properties }) => ({
+              type: "Feature",
+              id,
+              geometry,
+              properties,
+            })),
+          }),
         ),
       format: "GeoJSON",
       projection: "EPSG:4326",

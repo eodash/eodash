@@ -9,6 +9,7 @@ import {
   dataThemesBrands,
   defaultBaseLayers,
   hasRestoredView,
+  layerTimeProperties,
   shouldZoomToExtent,
 } from "@/utils/states";
 import { useSTAcStore } from "@/store/stac";
@@ -233,6 +234,7 @@ async function buildDataLayers(map, { readers, stac, timeOrItem, context }) {
     context: {
       layerExtent,
       transformExtent,
+      ...layerTimeProperties,
       ...context,
     },
     themes: dataThemesBrands,

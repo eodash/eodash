@@ -3,8 +3,9 @@
     <eox-layercontrol
       v-if="showControls"
       :key="mapElement"
-      v-bind="config"
+      :style="cssVars"
       :for="mapElement"
+      .tools="tools"
       .colormapRegistry="colormapRegistry"
       .showLayerZoomState="true"
       .customEditorInterfaces="bandsEditorInterface"
@@ -97,11 +98,6 @@ const props = defineProps({
   },
 });
 
-const config = {
-  tools: props.tools,
-  style: props.cssVars,
-};
-
 const enableLayoutSwitcher = computed(
   () => !!props.layoutTarget && !!props.layoutIcon,
 );
@@ -123,6 +119,8 @@ const mapElement = props.map === "second" ? mapCompareEl : mapEl;
 /** @param {CustomEvent<{layer:import('ol/layer').Layer; datetime:string;}>} evt */
 const handleDatetimeUpdate = async (evt) => {
   const { layer, datetime } = evt.detail;
+  // a time slice inside the layer's own store, which eox-layercontrol already switched
+  if (layer.get("layerDatetime")?.sliceMap) return;
 
   const ec = findReaderByLayerId(eodashCols, layer.get("id"));
   if (!ec) return;

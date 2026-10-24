@@ -30,8 +30,9 @@ import { createLayerFromRender } from "./renders.js";
  * @property {import("../http.js").HttpClient} [http]
  * @property {import("../types").LayerConfigHelpers} [layerConfigHelpers]
  * @property {boolean} [stateful] - whether the built item becomes the reader's `item`. Default `true`.
+ * @property {boolean | "currentStep"} [layerDatetime] - whether layers carry `layerDatetime`; `"currentStep"` keeps only the item's own step, on GeoZarr layers. Default `true`.
+ * @property {boolean} [timeControlValues] - whether layers carry `timeControlValues`. Default `true`.
  * @property {boolean} [mergeAssets] - whether to merge multiple GeoJSON data assets into a single layer. Default `true`.
- * @property {boolean} [layerTimeControl] - whether to include layerDatetime and timeControlValues on layer properties. Default `true`.
  * @property {boolean} [observationPointIcons] - whether to render observation point markers with theme SVG icons or simple circles. Default `true`.
  * @property {boolean} [layerExtent] - whether the tile layers of an item's links and renders carry the item's bbox as their `extent`, so no tiles are requested or drawn outside it. Needs `transformExtent`. Default `false`.
  * @property {import("../types").TransformExtent} [transformExtent] - e.g. eox-map's; this package has no projection library.
@@ -72,6 +73,8 @@ export const buildLayers = async (item, context) => {
     layerConfigHelpers = createLayerConfigHelpers(),
     layerExtent = false,
     transformExtent,
+    layerDatetime: withLayerDatetime = true,
+    timeControlValues: withTimeControlValues = true,
   } = context;
   const options = {
     viewProjection,
@@ -84,6 +87,7 @@ export const buildLayers = async (item, context) => {
     extent: layerExtent
       ? bboxToViewExtent(item.bbox, viewProjection, transformExtent)
       : undefined,
+    timeControlValues: withTimeControlValues,
   };
 
   log.debug("Building layers", item, title, itemDatetime);
@@ -104,12 +108,21 @@ export const buildLayers = async (item, context) => {
     item.properties?.datetime ??
     item.properties?.start_datetime ??
     itemDatetime;
-
-  const isTimeControlEnabled = context.layerTimeControl !== false;
-
-  const { layerDatetime, timeControlValues } = isTimeControlEnabled
-    ? extractLayerTimeValues(await getDates(itemDate ?? undefined), itemDate)
-    : { layerDatetime: undefined, timeControlValues: undefined };
+  // both come from the collection's dates, so the fetch is skipped only when neither is wanted
+  const timeValues =
+    withLayerDatetime === true || withTimeControlValues
+      ? extractLayerTimeValues(await getDates(itemDate ?? undefined), itemDate)
+      : undefined;
+  const layerDatetime =
+    withLayerDatetime === true ? timeValues?.layerDatetime : undefined;
+  // GeoZarr stores own their time axis, so their layers only name the slice to open
+  const currentStep =
+    withLayerDatetime && item.properties?.datetime
+      ? new Date(item.properties.datetime).toISOString()
+      : undefined;
+  const timeControlValues = withTimeControlValues
+    ? timeValues?.timeControlValues
+    : undefined;
 
   const dataAssets = Object.keys(item.assets ?? {}).reduce((data, ast) => {
     if (item.assets[ast].roles?.includes("data")) {
@@ -163,7 +176,7 @@ export const buildLayers = async (item, context) => {
       layerDatetime,
       extraProperties,
       collection,
-      options,
+      { ...options, currentStep },
     ),
     ...(rasterEndpoint
       ? [
@@ -183,8 +196,11 @@ export const buildLayers = async (item, context) => {
       : []),
   ]);
 
+  const layers = built.flatMap((result) => result.layers);
   return {
-    layers: built.flatMap((result) => result.layers),
+    layers: collection["eodash:layerExclusive"]
+      ? showTopLayerOnly(layers)
+      : layers,
     projections: [
       ...projections,
       ...built.flatMap((result) => result.projections),
@@ -231,6 +247,28 @@ async function buildStacLayer(
     item.links.find((link) => link.rel === "self") ?? item,
   );
   return json;
+}
+
+/**
+ * eox-layercontrol enforces exclusive layers only when one is toggled, so an
+ * exclusive collection starts with just its top data layer visible: the last
+ * one, which the map draws on top and the layer control lists first. Base
+ * layers and overlays keep their own visibility.
+ *
+ * @param {import("@eox/map").EoxLayer[]} layers
+ * @returns {import("@eox/map").EoxLayer[]}
+ */
+function showTopLayerOnly(layers) {
+  /** @param {import("@eox/map").EoxLayer} layer */
+  const isData = (layer) =>
+    !["baselayer", "overlay"].includes(layer.properties?.group);
+  const top = layers.findLastIndex(isData);
+  // @ts-expect-error properties is optional upstream, always built here
+  return layers.map((layer, i) =>
+    i === top || !isData(layer)
+      ? layer
+      : { ...layer, properties: { ...layer.properties, visible: false } },
+  );
 }
 
 export * from "./assets.js";
