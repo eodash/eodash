@@ -47,6 +47,7 @@ const collection = await createEodashCollection(url, {
 - `rasterEndpoint`: Base URL for a TiTiler instance. Without this endpoint, STAC Render extension entries do not produce raster layers.
 - `upscalingEndpoints`: TiTiler endpoints used when an item requests upscaled tiles.
 - `tileMatrixSets`: Custom TileMatrixSet definitions used for projection lookups.
+- `layerExtent`: When `true`, clips item tile layers to the item's `bbox` in the view projection so no tiles are requested outside its footprint.
 
 ## The Reader API
 

@@ -73,6 +73,12 @@ export const useSTAcStore = defineStore("stac", () => {
   const configRenders = {};
 
   /**
+   * Whether item tile layers carry the item's bbox as their extent, from the
+   * eodash configuration.
+   */
+  const layerExtent = ref(false);
+
+  /**
    * Registry of colormap ranges
    * @type {import("vue").Ref<Record<string, string[]> | null>}
    */
@@ -119,12 +125,14 @@ export const useSTAcStore = defineStore("stac", () => {
    * Initializes the store by assigning the STAC endpoint.
    * @param {import("@/types").StacEndpoint} endpoint
    * @param {Record<string, Record<string, import("@eodash/stac").Render>>} [renders] - `options.renders` from the eodash configuration
+   * @param {boolean} [withLayerExtent] - `options.layerExtent` from the eodash configuration
    */
-  function init(endpoint, renders) {
+  function init(endpoint, renders, withLayerExtent = false) {
     if (!endpoint) {
       throw new Error("STAC endpoint is not defined");
     }
     Object.assign(configRenders, renders);
+    layerExtent.value = withLayerExtent;
 
     if (typeof endpoint === "string") {
       stacEndpoint.value = endpoint;
@@ -365,6 +373,7 @@ export const useSTAcStore = defineStore("stac", () => {
     stacEndpoint,
     rasterEndpoint,
     configRenders,
+    layerExtent,
     isApi,
     stac,
     init,

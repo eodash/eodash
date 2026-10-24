@@ -502,6 +502,48 @@ describe("building layers", () => {
     });
   });
 
+  test("clips an item's data tile layers to its bbox in the map's projection, never its base layers", async () => {
+    serve({ links: [] });
+    const viewExtent = [1, 2, 3, 4];
+    const transformExtent = vi.fn(() => viewExtent);
+    const item = xyzItem({
+      bbox: [10, 47, 11, 48],
+      links: [
+        { rel: "xyz", href: "https://xyz/{z}/{x}/{y}", title: "XYZ" },
+        { rel: "xyz", href: "https://base/{z}/{x}/{y}", roles: ["baselayer"] },
+      ],
+    });
+
+    const layers = await buildFrom(item, {
+      layerExtent: true,
+      transformExtent,
+      viewProjection: "EPSG:3035",
+    });
+
+    const base = layers.find((l) => l.properties.group === "baselayer");
+    const data = layers.find((l) => l.properties.group !== "baselayer");
+    expect(transformExtent).toHaveBeenCalledWith(
+      [10, 47, 11, 48],
+      "EPSG:4326",
+      "EPSG:3035",
+    );
+    expect(data.extent).toBe(viewExtent);
+    // a base layer covers the world, not the item
+    expect(base.extent).toBeUndefined();
+  });
+
+  test("keeps layers unclipped unless asked, since an item's bbox may be inaccurate", async () => {
+    serve({ links: [] });
+    const transformExtent = vi.fn(() => [1, 2, 3, 4]);
+
+    const [layer] = await buildFrom(xyzItem({ bbox: [10, 47, 11, 48] }), {
+      transformExtent,
+    });
+
+    expect(transformExtent).not.toHaveBeenCalled();
+    expect(layer.extent).toBeUndefined();
+  });
+
   describe("the STAC fallback", () => {
     test("hands an item nothing else renders to eox-map as a STAC layer", async () => {
       serve({ links: [] });

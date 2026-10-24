@@ -94,6 +94,7 @@ const collectionOf = (/** @type {string} */ id) =>
   });
 
 const routes = {
+  "/conformance": { conformsTo: [] },
   "/defaults/colormaps.json": {},
   "/defaults/tmsRegistry.json": {},
   "/collections": { collections: [collectionOf(COLLECTION_ID)] },

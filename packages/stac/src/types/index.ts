@@ -60,6 +60,13 @@ export interface TemporalExtent {
   end: Date;
 }
 
+/** Reprojects an extent between two projection codes, e.g. eox-map's `transformExtent`. */
+export type TransformExtent = (
+  extent: number[],
+  source: string,
+  destination: string,
+) => number[];
+
 /** Marker styling per theme, keyed by theme name. */
 export type ObservationPointsThemes = Record<
   string,
