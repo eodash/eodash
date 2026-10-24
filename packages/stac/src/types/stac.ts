@@ -307,9 +307,17 @@ export interface FlatGeobufAsset extends BaseSTACAsset {
   type: `${string}application/vnd.flatgeobuf${string}`;
 }
 
-/** A zarr store holding a multiscale pyramid; without the profile it is a single array. */
+/** A `bands` entry of a zarr asset; `name` is the array inside the asset's group. */
+export interface ZarrBand {
+  name: string;
+  "eo:common_name"?: string;
+  [k: string]: unknown;
+}
+
+/** A zarr group, single- or multiscale; the version and profile params are not trusted. */
 export interface GeoZarrAsset extends BaseSTACAsset {
-  type: "application/vnd.zarr; version=3; profile=multiscales";
+  type: `application/vnd${"." | "+"}zarr${string}`;
+  bands?: ZarrBand[];
 }
 
 export interface GeoTIFFAsset extends BaseSTACAsset {
