@@ -97,6 +97,8 @@ export async function renderMosaic(mosaicEndpoint, params) {
       mosaicLayers[0].properties.timeControlValues = timeControlValues;
       //@ts-expect-error properties is optional upstream, always built here
       mosaicLayers[0].properties.timeControlProperty = "TIME";
+      //@ts-expect-error properties is optional upstream, always built here
+      mosaicLayers[0].properties.collectionId = selectedStac.id;
     }
   }
 
