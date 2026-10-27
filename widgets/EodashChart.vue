@@ -201,7 +201,12 @@ function updateWidth() {
   const el = containerEl.value;
   if (el) {
     const frame = el.querySelector(".chart-frame");
-    containerWidth.value = (frame ? frame.clientWidth : el.clientWidth) || 400;
+    const newWidth = Math.round(
+      (frame ? frame.clientWidth : el.clientWidth) || 400,
+    );
+    if (Math.abs(containerWidth.value - newWidth) >= 1) {
+      containerWidth.value = newWidth;
+    }
   }
 }
 
@@ -277,13 +282,18 @@ onMounted(() => {
             #vis {
               min-height: 100px !important;
               flex: 1 1 auto !important;
+              width: 100% !important;
+              height: 100% !important;
+              overflow: hidden !important;
             }
             :host, .vega-embed {
               display: flex !important;
               flex-direction: column !important;
               height: 100% !important;
+              width: 100% !important;
               padding: 0 !important;
               margin: 0 !important;
+              overflow: hidden !important;
             }
             .vega-bindings {
               flex: 0 0 auto !important;
@@ -302,7 +312,9 @@ onMounted(() => {
               display: none !important;
             }
             .vega-embed > canvas, .vega-embed > svg {
-              height: 100% !important;
+              flex: 1 1 auto !important;
+              min-height: 0 !important;
+              max-height: 100% !important;
               max-width: 100% !important;
               object-fit: contain;
             }
@@ -368,7 +380,7 @@ function toggleLayout() {
 
 <style>
 /* Force the outer dashboard panel wrapping this component to utilize 100% height in fullscreen mode */
-.bg-surface:has(.eodash-chart-wrapper) {
+.bg-surface:not(:has(.eodash-process-container)):has(.eodash-chart-wrapper) {
   height: 100%;
   display: flex;
   flex-direction: column;
@@ -400,6 +412,7 @@ function toggleLayout() {
   min-height: 180px; /* Prevent chart from becoming unusably small */
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 .chart-frame.fit-x-layout {
   height: auto !important;
@@ -415,6 +428,9 @@ function toggleLayout() {
 eox-chart {
   flex-grow: 1;
   min-height: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
 }
 eox-chart.fit-x-layout {
   height: var(--fit-height) !important;

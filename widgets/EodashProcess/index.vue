@@ -304,6 +304,12 @@ eox-jsonform {
   flex-direction: column;
 }
 
+.eodash-process-content > .eodash-chart-wrapper {
+  height: auto;
+  flex: 1 1 0;
+  min-height: 180px;
+}
+
 .eodash-process-actions {
   text-align: right;
   padding: 4px 12px;
