@@ -99,14 +99,12 @@ describe("expert template - feature selection in large geojsons", () => {
         }),
       );
 
-    // The handler is debounced and drops the event while the app is still
-    // settling, so redispatch on each attempt, slower than that debounce.
     mapWrites = 0;
+    changeDatetime();
     await vi.waitFor(
       () => {
         const id = layerId();
         if (!id || id === initialId) {
-          changeDatetime();
           throw new Error("layer not rebuilt");
         }
         if (drawtoolsLayerId(ctx.container) !== id) {
@@ -116,7 +114,7 @@ describe("expert template - feature selection in large geojsons", () => {
           throw new Error("rebuilt features not loaded");
         }
       },
-      { timeout: TIMEOUT, interval: 1000 },
+      { timeout: TIMEOUT },
     );
     const rebuiltId = layerId();
     if (!rebuiltId) throw new Error("no data layer after rebuild");
