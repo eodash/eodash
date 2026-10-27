@@ -5,6 +5,7 @@
     ref="eoxTimecontrol"
     .for="mapEl"
     title-key="title"
+    layer-id-key="collectionId"
     class="pa-4"
     .externalMapRendering="true"
     .animate="animate"
@@ -81,7 +82,13 @@ const endDate = new Date(startDate.getTime() + 24 * 60 * 60 * 1000);
 const selectedRange = /** @type {import("vue").Ref<[string, string]>} */ (
   ref([startDate, endDate].map((d) => d.toISOString()))
 );
-const initDate = [startDate.toISOString().split("T")[0]];
+const store = useSTAcStore();
+const { selectedStac, stacEndpoint } = storeToRefs(store);
+
+const initDate = ref(datetime.value ? [datetime.value.split("T")[0]] : null);
+watch(selectedStac, () => {
+  initDate.value = datetime.value ? [datetime.value.split("T")[0]] : null;
+});
 
 /** @type {import("vue").Ref<import("@/types").ItemFilterFilters>} */
 const currentFilters = ref({});
@@ -102,8 +109,6 @@ watch(
   { immediate: true },
 );
 
-const store = useSTAcStore();
-const { selectedStac, stacEndpoint } = storeToRefs(store);
 const { mosaicEndpoint } = useMosaicState();
 
 const isMosaicEnabled = computed(() => useMosaic && !!mosaicEndpoint.value);

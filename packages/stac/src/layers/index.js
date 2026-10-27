@@ -147,6 +147,7 @@ export const buildLayers = async (item, context) => {
   const extraProperties = {
     ...extractLayerLegend(collection),
     ...(color && { color }),
+    collectionId: collection.id,
     ...(timeControlValues && {
       timeControlValues,
       timeControlProperty: "TIME",
