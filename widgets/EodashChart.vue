@@ -197,14 +197,17 @@ const dynamicFitHeight = computed(() => {
   return Math.round(containerWidth.value * aspectRatio.value);
 });
 
+let isDispatchingResize = false;
+
 function updateWidth() {
+  if (isDispatchingResize) return;
   const el = containerEl.value;
   if (el) {
     const frame = el.querySelector(".chart-frame");
     const newWidth = Math.round(
       (frame ? frame.clientWidth : el.clientWidth) || 400,
     );
-    if (Math.abs(containerWidth.value - newWidth) >= 1) {
+    if (Math.abs(containerWidth.value - newWidth) > 2) {
       containerWidth.value = newWidth;
     }
   }
@@ -245,7 +248,9 @@ watch(
       // Force a browser-level resize event after the chart mounts.
       // This tells Vega to re-read the container dimensions once the CSS has finished painting.
       setTimeout(() => {
+        isDispatchingResize = true;
         window.dispatchEvent(new Event("resize"));
+        isDispatchingResize = false;
       }, 150);
     });
   },

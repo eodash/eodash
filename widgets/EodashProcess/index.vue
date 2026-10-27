@@ -300,6 +300,7 @@ eox-jsonform {
 .eodash-process-content {
   flex-grow: 1;
   overflow-y: auto;
+  scrollbar-gutter: stable;
   display: flex;
   flex-direction: column;
 }
