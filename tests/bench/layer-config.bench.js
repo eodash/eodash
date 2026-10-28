@@ -59,6 +59,14 @@ describe("geozarr bands", () => {
       dropOnRed(otherRed);
       await waitUntil(() => isOnRed(otherRed), "the first drag never landed");
 
+      // The first source swap lets eox-map finish its GeoZarr init; that and the
+      // control's first 1000ms throttle both write the initial bands back.
+      await waitUntil(
+        () => olLayer.get("band") !== undefined,
+        "the geozarr init never finished",
+      );
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
       const benchmark = defineBenchmark(ctx, "geozarr bands", {
         reset: async () => {
           dropOnRed(otherRed);
