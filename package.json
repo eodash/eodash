@@ -88,7 +88,7 @@
     "docs:generate": "npm run build:cli && npm run build:types && npm run build:types --workspaces --if-present && typedoc --options typedoc.config.json"
   },
   "dependencies": {
-    "@eodash/stac": "^0.1.0",
+    "@eodash/stac": "^0.2.0",
     "@eox/chart": "^1.2.1",
     "@eox/drawtools": "^1.6.0",
     "@eox/feedback": "^1.2.1",
