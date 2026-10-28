@@ -5,5 +5,10 @@
     "packages/mcp": {},
     "packages/stac": {}
   },
+  "plugins": [
+    {
+      "type": "node-workspace"
+    }
+  ],
   "release-type": "node"
 }
