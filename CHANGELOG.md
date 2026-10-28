@@ -20,6 +20,7 @@
 * Render GeoZarr dimensions ([#498](https://github.com/eodash/eodash/issues/498)) ([e880fd7](https://github.com/eodash/eodash/commit/e880fd7aa750ebb66202660e5accf4435a08b5d7))
 * **stac:** extract the STAC reader into @eodash/stac ([#449](https://github.com/eodash/eodash/issues/449)) ([6c76240](https://github.com/eodash/eodash/commit/6c762401a4e35131e58d22198b8ce0040e3278db))
 * Vector source GeoJSON re-fetch with url_key ([#486](https://github.com/eodash/eodash/issues/486)) ([c20e0bd](https://github.com/eodash/eodash/commit/c20e0bd5461962e8a2351fc787a8c67562753b5f))
+* Introduce `layerExtent` in `BuildCtx` & enhance explore template performance  ([#500](https://github.com/eodash/eodash/issues/500)) ([c8936b4](https://github.com/eodash/eodash/commit/c8936b4d9007b126fd6b12aa581fd85401f6f55c))
 
 
 ### Bug Fixes
@@ -27,11 +28,10 @@
 * chart endless flicker between two sizes due to scroll ([#503](https://github.com/eodash/eodash/issues/503)) ([51a754d](https://github.com/eodash/eodash/commit/51a754d9dab23ffb452e56598f729cdead4d8547))
 * click on point or blank space in vega chart does not break anymore([#466](https://github.com/eodash/eodash/issues/466)) ([25259a2](https://github.com/eodash/eodash/commit/25259a2078d3c88882a6f56bba1d96c0b434c9a6))
 * docker image generation with runtime config ([#467](https://github.com/eodash/eodash/issues/467)) ([00be46d](https://github.com/eodash/eodash/commit/00be46d9aa84b7497bf6c84f2b1baf04e71cf47f))
-* Introduce `layerExtent` in `BuildCtx` & enhance explore template performance  ([#500](https://github.com/eodash/eodash/issues/500)) ([c8936b4](https://github.com/eodash/eodash/commit/c8936b4d9007b126fd6b12aa581fd85401f6f55c))
 * map move race condition on initial load ([#485](https://github.com/eodash/eodash/issues/485)) ([2528caa](https://github.com/eodash/eodash/commit/2528caa1a963541eb38bc38fb458a2bc39db94f6))
 * mcp prometheus /metrics, logging sanitation and improvements ([#494](https://github.com/eodash/eodash/issues/494)) ([2717b4e](https://github.com/eodash/eodash/commit/2717b4e90bbc57d33f7a2820ed4728d4013b2595))
 * timecontrol display &gt;1 different dates ([#499](https://github.com/eodash/eodash/issues/499)) ([5d744b6](https://github.com/eodash/eodash/commit/5d744b6e98449a234f694780241549e632aabec2))
-* timecontrol no reset on slider drag ([#501](https://github.com/eodash/eodash/issues/501)) ([18e2b95](https://github.com/eodash/eodash/commit/18e2b950cca051f268cd073f4ea25b29478f1279))
+* timecontrol no reset on slider drag via **collectionId** passed to layers properties and used as key ([#501](https://github.com/eodash/eodash/issues/501)) ([18e2b95](https://github.com/eodash/eodash/commit/18e2b950cca051f268cd073f4ea25b29478f1279))
 * token exhaustion and payload bloat in generate_map_from_stac ([#495](https://github.com/eodash/eodash/issues/495)) ([a537a5f](https://github.com/eodash/eodash/commit/a537a5ff6898ee9596f4b4230abe27d5898f1f92))
 
 ## [5.9.0](https://github.com/eodash/eodash/compare/eodash-v5.8.0...eodash-v5.9.0) (2026-08-13)
