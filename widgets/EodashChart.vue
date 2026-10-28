@@ -201,7 +201,12 @@ function updateWidth() {
   const el = containerEl.value;
   if (el) {
     const frame = el.querySelector(".chart-frame");
-    containerWidth.value = (frame ? frame.clientWidth : el.clientWidth) || 400;
+    const newWidth = Math.round(
+      (frame ? frame.clientWidth : el.clientWidth) || 400,
+    );
+    if (Math.abs(containerWidth.value - newWidth) > 2) {
+      containerWidth.value = newWidth;
+    }
   }
 }
 
@@ -368,7 +373,7 @@ function toggleLayout() {
 
 <style>
 /* Force the outer dashboard panel wrapping this component to utilize 100% height in fullscreen mode */
-.bg-surface:has(.eodash-chart-wrapper) {
+.bg-surface:not(:has(.eodash-process-container)):has(.eodash-chart-wrapper) {
   height: 100%;
   display: flex;
   flex-direction: column;

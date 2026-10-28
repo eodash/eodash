@@ -229,4 +229,26 @@ describe("EodashChart", () => {
 
     await expect.element(screen.getByText("Maximize")).toBeVisible();
   });
+
+  test("updates dynamic fit height on resize event when container dimensions change", async () => {
+    chartData.value = [{ x: 1 }];
+    chartSpec.value = { mark: "image", autosize: "fit-x" };
+    await mountComponent(EodashChart);
+
+    await expect.poll(() => chartEl()).toBeTruthy();
+    const frame = /** @type {HTMLElement} */ (
+      document.querySelector(".chart-frame")
+    );
+
+    Object.defineProperty(frame, "clientWidth", {
+      configurable: true,
+      value: 300,
+    });
+
+    window.dispatchEvent(new Event("resize"));
+
+    await expect
+      .poll(() => chartEl()?.style.getPropertyValue("--fit-height"))
+      .toBe(`${Math.round(300 * 1.414)}px`);
+  });
 });

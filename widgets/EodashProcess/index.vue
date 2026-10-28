@@ -300,8 +300,20 @@ eox-jsonform {
 .eodash-process-content {
   flex-grow: 1;
   overflow-y: auto;
+  scrollbar-gutter: stable;
   display: flex;
   flex-direction: column;
+}
+
+.eodash-process-content > .eodash-chart-wrapper:not(.fit-x-layout) {
+  height: auto;
+  flex: 1 1 0;
+  min-height: 180px;
+}
+
+.eodash-process-content > .eodash-chart-wrapper.fit-x-layout {
+  height: auto !important;
+  flex: none;
 }
 
 .eodash-process-actions {
