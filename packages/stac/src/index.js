@@ -76,20 +76,27 @@ export const createEodashCollection = async (
 /**
  * Extracts and deduplicates tooltip definitions from an item's linked style documents.
  *
- * @param {import("./types").STACItem} item - The STAC Item containing style links
+ * @param {import("./types").STACItem | import("./types").STACCollection} stacObject - The STAC Item or Collection
  * @param {object} [options]
  * @param {import("./http.js").AxiosInstance} [options.client] - Custom HTTP client for fetching styles
  * @returns {Promise<NonNullable<import("./types").EodashStyleJson["tooltip"]>>}
  */
-export const getTooltipProperties = async (item, { client } = {}) => {
-  const styles = await fetchAllStyles(item, createHTTPInstance({ client }));
-  return [
-    ...new Map(
-      styles
-        .flatMap((style) => style.tooltip ?? [])
-        .map((entry) => [entry.id, entry]),
-    ).values(),
-  ];
+export const getTooltipProperties = async (stacObject, { client } = {}) => {
+  const styles = await fetchAllStyles(
+    stacObject,
+    createHTTPInstance({ client }),
+  );
+  const tooltips = styles.flatMap((style) => style.tooltip ?? []);
+  if (
+    stacObject &&
+    /** @type {any} */ (
+      stacObject.locations ||
+        /** @type {any} */ (stacObject).endpointtype === "GeoDB"
+    )
+  ) {
+    tooltips.unshift({ id: "title", title: "Location" });
+  }
+  return [...new Map(tooltips.map((entry) => [entry.id, entry])).values()];
 };
 
 export {

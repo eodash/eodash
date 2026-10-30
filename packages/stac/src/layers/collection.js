@@ -6,6 +6,9 @@ import { createHTTPInstance } from "../http.js";
 import { createLayersFromAssets } from "./assets.js";
 import { createLayersFromLinks } from "./links.js";
 
+/** Standard tooltip definition for observation point markers. */
+export const OBSERVATION_POINTS_TOOLTIP = [{ id: "title", title: "Location" }];
+
 /** Standard layer identifier for observation points. */
 const OBSERVATION_POINTS_ID = "geodb-collection";
 
@@ -100,6 +103,9 @@ export const getObservationPointsLayer = (
     features,
   };
 
+  const existingInteractions =
+    findLayer(currentLayers, OBSERVATION_POINTS_ID)?.interactions ?? [];
+
   return {
     type: "Vector",
     properties: {
@@ -115,7 +121,19 @@ export const getObservationPointsLayer = (
       ? themeStyle(themes)
       : SIMPLE_OBSERVATION_POINTS_STYLE,
     interactions: [
-      ...(findLayer(currentLayers, OBSERVATION_POINTS_ID)?.interactions ?? []),
+      ...existingInteractions,
+      ...(existingInteractions.length === 0
+        ? [
+            /** @type {import("@eox/map/types/types").EOxInteraction} */ ({
+              type: "select",
+              options: {
+                id: `${OBSERVATION_POINTS_ID}_selectInteraction`,
+                active: true,
+                condition: "pointermove",
+              },
+            }),
+          ]
+        : []),
     ],
   };
 };
@@ -138,6 +156,7 @@ export const SIMPLE_OBSERVATION_POINTS_STYLE = {
   "circle-fill-color": "#004170",
   "circle-stroke-color": "#fff",
   "circle-stroke-width": 1.5,
+  tooltip: OBSERVATION_POINTS_TOOLTIP,
 };
 
 /**
@@ -146,23 +165,26 @@ export const SIMPLE_OBSERVATION_POINTS_STYLE = {
  * @param {import("../types").ObservationPointsThemes} themes
  */
 function themeStyle(themes) {
-  return [
-    ...Object.entries(themes).map(([theme, { color, icon }], index) => ({
-      ...(index !== 0 && { else: true }),
-      filter: ["==", ["get", "themes", 0], theme],
-      style: { "icon-src": markerIcon(color, icon) },
-    })),
-    {
-      else: true,
-      style: {
-        "circle-radius": 10,
-        "circle-fill-color": "#00417077",
-        "circle-stroke-color": "#004170",
-        "fill-color": "#00417077",
-        "stroke-color": "#004170",
+  return Object.assign(
+    [
+      ...Object.entries(themes).map(([theme, { color, icon }], index) => ({
+        ...(index !== 0 && { else: true }),
+        filter: ["==", ["get", "themes", 0], theme],
+        style: { "icon-src": markerIcon(color, icon) },
+      })),
+      {
+        else: true,
+        style: {
+          "circle-radius": 10,
+          "circle-fill-color": "#00417077",
+          "circle-stroke-color": "#004170",
+          "fill-color": "#00417077",
+          "stroke-color": "#004170",
+        },
       },
-    },
-  ];
+    ],
+    { tooltip: OBSERVATION_POINTS_TOOLTIP },
+  );
 }
 
 /**

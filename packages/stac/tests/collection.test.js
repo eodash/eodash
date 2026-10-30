@@ -123,7 +123,8 @@ describe("getObservationPointsLayer", () => {
   });
 
   test("carries what a tooltip needs onto every point", () => {
-    const { features } = decodeSource(getObservationPointsLayer([points({})]));
+    const layer = getObservationPointsLayer([points({})]);
+    const { features } = decodeSource(layer);
 
     expect(features[0].properties).toMatchObject({
       collection_id: "coll",
@@ -131,6 +132,19 @@ describe("getObservationPointsLayer", () => {
       themes: ["air"],
       title: "Vienna",
     });
+
+    expect(layer?.interactions).toHaveLength(1);
+    expect(layer?.interactions?.[0]).toMatchObject({
+      type: "select",
+      options: {
+        id: "geodb-collection_selectInteraction",
+        active: true,
+        condition: "pointermove",
+      },
+    });
+
+    const style = /** @type {Record<string, any>} */ (layer?.style);
+    expect(style.tooltip).toEqual([{ id: "title", title: "Location" }]);
   });
 
   test("ignores a collection whose items are times rather than places", () => {
@@ -161,7 +175,7 @@ describe("getObservationPointsLayer", () => {
       observationPointIcons: false,
     });
 
-    expect(layer?.style).toEqual({
+    expect(layer?.style).toMatchObject({
       "circle-radius": 6,
       "circle-fill-color": "#004170",
       "circle-stroke-color": "#fff",

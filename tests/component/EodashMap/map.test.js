@@ -250,6 +250,19 @@ describe("EodashMap", () => {
         mainTooltip()?.propertyTransform({ key: "unknown", value: "1" }),
       ).toEqual({ key: "adapted", value: "x" });
     });
+
+    test("formats location title on hover when declared in tooltipProperties", async () => {
+      seed.main = [{ id: "title", title: "Location" }];
+      await mountAsyncComponent(EodashMap);
+
+      await expect.poll(() => mainTooltip()?.propertyTransform).toBeTruthy();
+      expect(
+        mainTooltip()?.propertyTransform({
+          key: "title",
+          value: "Brandenburg",
+        }),
+      ).toEqual({ key: "Location", value: "Brandenburg" });
+    });
   });
 
   describe("buttons gating", () => {
