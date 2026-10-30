@@ -100,10 +100,6 @@ export const buildLayers = async (item, context) => {
     projections.push(indicatorProjection);
   }
 
-  if (isObservationPoints(collection)) {
-    return { layers: [], projections };
-  }
-
   const itemDate =
     item.properties?.datetime ??
     item.properties?.start_datetime ??
@@ -134,6 +130,10 @@ export const buildLayers = async (item, context) => {
   const isSupported =
     item.links.some((link) => RENDERABLE_RELS.includes(link.rel)) ||
     Object.keys(dataAssets).length;
+
+  if (isObservationPoints(collection) && !isSupported) {
+    return { layers: [], projections };
+  }
 
   if (!isSupported) {
     return {
