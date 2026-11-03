@@ -395,5 +395,63 @@
         }
       ]
     }
+  },
+  {
+    "id": "collection-tipg-vector-tiles-process-chart",
+    "title": "Dynamic tiPg (eoAPI) Vector Tile Collection with Time-Series Process and Vega Chart",
+    "category": "collection",
+    "tags": [
+      "tipg",
+      "eoapi",
+      "vector",
+      "mvt",
+      "vector-tiles",
+      "timeseries",
+      "vega-chart",
+      "process",
+      "postgis",
+      "ogc-api-features"
+    ],
+    "description": "Dynamic eodash collection using a tiPg (eoAPI) resource to automatically discover timestamps, generate daily Mapbox Vector Tiles (MVT), and query feature-level time-series for Vega-Lite charts.",
+    "targetContext": "Place in catalog 'collections/<collection-name>.json' for 'eodash_catalog' build.",
+    "code": {
+      "Name": "mobility_daily_traffic",
+      "Title": "Daily Traffic Volume",
+      "CollectionGroup": "Mobility Transition",
+      "Themes": ["mobility-transition"],
+      "Tags": ["mobility", "traffic"],
+      "Description": "Dynamic daily traffic volume layer served via tiPg MVT vector tiles and interactive feature timeseries.",
+      "Provider": [
+        {
+          "Name": "AIT Center for Transport Technologies",
+          "Url": "https://www.ait.ac.at/en/about-the-ait/center/center-for-transport-technologies"
+        }
+      ],
+      "Resources": [
+        {
+          "Name": "tipg",
+          "EndPoint": "https://eoapi.workspace.gtif-eox.hub-otc.eox.at/vector/",
+          "CollectionId": "public.mobility_traffic_daily",
+          "TilesCollection": "public.mobility_daily_geometries_for_date",
+          "TimesCollection": "public.timeseries_mobility_daily_by_id?target_id=1",
+          "TimeParameter": "date",
+          "Style": "https://workspace-ui-public.gtif-austria.hub-otc.eox.at/api/public/share/public-4wazei3y-02/WR-09-Human-Mobility-Data/test/style_daily_volume.json",
+          "Bbox": [15, 47.69, 17.7, 48.5]
+        }
+      ],
+      "Process": {
+        "Name": "timeseries",
+        "JsonForm": "https://workspace-ui-public.gtif-austria.hub-otc.eox.at/api/public/share/public-4wazei3y-02/WR-09-Human-Mobility-Data/test/form_daily_volume.json",
+        "VegaDefinition": "https://workspace-ui-public.gtif-austria.hub-otc.eox.at/api/public/share/public-4wazei3y-02/WR-09-Human-Mobility-Data/test/chart_daily_volume.json",
+        "EndPoints": [
+          {
+            "Identifier": "timeseries",
+            "Url": "https://eoapi.workspace.gtif-eox.hub-otc.eox.at/vector/collections/public.timeseries_mobility_daily_by_id/items?target_id={{feature.values_.unique_id }}&f=json&limit=10000&geom-column=#.json",
+            "Type": "application/json",
+            "Method": "GET"
+          }
+        ]
+      }
+    }
   }
 ]
