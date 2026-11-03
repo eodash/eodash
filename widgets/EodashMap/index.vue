@@ -470,7 +470,9 @@ const tooltipPropertyTransform = (map) => {
     }
     return {
       key: tooltipProp.title || tooltipProp.id,
-      value: param.value + " " + (tooltipProp.appendix || ""),
+      value: tooltipProp.appendix
+        ? `${param.value} ${tooltipProp.appendix}`
+        : String(param.value),
     };
   };
 };

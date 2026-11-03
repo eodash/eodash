@@ -104,15 +104,23 @@ export const useUpdateTooltipProperties = (
 
     const tooltips = [];
     for (const ec of eodashCols) {
-      if (!ec.item) {
-        continue;
+      // Inspection of ec.stac is required to register observation point location
+      // tooltips ({ id: "title", title: "Location" }), as the "locations: true" property
+      // lives on the STAC Collection rather than on individual STAC Items.
+      if (ec.stac) {
+        tooltips.push(
+          ...(await getTooltipProperties(ec.stac, { client: axios })),
+        );
       }
-      // the app's cached client, or every event refetches the styles
-      tooltips.push(
-        ...(await getTooltipProperties(ec.item, { client: axios })),
-      );
+      if (ec.item) {
+        tooltips.push(
+          ...(await getTooltipProperties(ec.item, { client: axios })),
+        );
+      }
     }
-    tooltipProperties.value = tooltips;
+    tooltipProperties.value = [
+      ...new Map(tooltips.map((entry) => [entry.id, entry])).values(),
+    ];
     log.debug("Updated tooltip properties", tooltipProperties.value);
   });
 };
