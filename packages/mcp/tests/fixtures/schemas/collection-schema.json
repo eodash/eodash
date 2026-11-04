@@ -1,6 +1,8 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema",
   "$id": "https://eodash.github.io/eodash-schemas/catalog/collection-schema.json",
+  "format": "categories",
+  "basicCategoryTitle": "General",
   "properties": {
     "Name": {
       "type": "string",
@@ -12,7 +14,18 @@
       "minLength": 1
     },
     "Description": {
-      "type": "string"
+      "type": "string",
+      "format": "markdown",
+      "options": {
+        "resolver": "ace",
+        "markdownToolbar": true,
+        "ace": {
+          "highlightActiveLine": true,
+          "fontSize": 14,
+          "maxLines": 50,
+          "minLines": 10
+        }
+      }
     },
     "Themes": {
       "type": "array",
@@ -3079,6 +3092,144 @@
               }
             },
             "required": ["Name", "EndPoint", "CoverageId"]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "Name": {
+                "readOnly": true,
+                "type": "string",
+                "const": "tipg"
+              },
+              "EndPoint": {
+                "type": "string"
+              },
+              "CollectionId": {
+                "type": "string"
+              },
+              "TilesCollection": {
+                "type": "string"
+              },
+              "TimesCollection": {
+                "type": "string"
+              },
+              "LocationsCollection": {
+                "type": "string"
+              },
+              "TimeseriesCollection": {
+                "type": "string"
+              },
+              "TimeParameter": {
+                "type": "string"
+              },
+              "Aggregation": {
+                "type": "string",
+                "enum": ["day", "month", "year"]
+              },
+              "QueryParam": {
+                "type": "string"
+              },
+              "DataProjection": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "def": {
+                        "type": "string"
+                      },
+                      "extent": {
+                        "type": "array",
+                        "items": {
+                          "type": "number"
+                        },
+                        "minItems": 4,
+                        "maxItems": 4
+                      }
+                    },
+                    "required": ["name"]
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ]
+              },
+              "Style": {
+                "type": "string"
+              },
+              "Bbox": {
+                "anyOf": [
+                  {
+                    "type": "array",
+                    "format": "bounding-box"
+                  },
+                  {
+                    "type": "array",
+                    "minItems": 4,
+                    "maxItems": 4,
+                    "items": {
+                      "type": "number"
+                    }
+                  }
+                ]
+              },
+              "OverwriteBBox": {
+                "anyOf": [
+                  {
+                    "type": "array",
+                    "format": "bounding-box"
+                  },
+                  {
+                    "type": "array",
+                    "minItems": 4,
+                    "maxItems": 4,
+                    "items": {
+                      "type": "number"
+                    }
+                  }
+                ]
+              },
+              "InputData": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "Identifier": {
+                      "type": "string"
+                    },
+                    "Url": {
+                      "type": "string"
+                    },
+                    "Type": {
+                      "type": "string",
+                      "enum": ["XYZ", "WMS"]
+                    },
+                    "Layers": {
+                      "type": "string"
+                    },
+                    "TimeDelta": {
+                      "type": "integer"
+                    },
+                    "DateFormat": {
+                      "type": "string"
+                    },
+                    "SiteMapping": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "required": ["Identifier", "Url", "Type"]
+                }
+              }
+            },
+            "required": ["Name", "EndPoint", "CollectionId"]
           },
           {
             "type": "object",
