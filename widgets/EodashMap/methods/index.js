@@ -1,5 +1,9 @@
 import { onMounted, onUnmounted, watch } from "vue";
-import { getTooltipProperties } from "@eodash/stac";
+import {
+  getTooltipProperties,
+  isObservationPoints,
+  OBSERVATION_POINTS_TOOLTIP,
+} from "@eodash/stac";
 import axios from "@/plugins/axios";
 import log from "loglevel";
 import { useOnLayersUpdate } from "@/composables";
@@ -104,13 +108,8 @@ export const useUpdateTooltipProperties = (
 
     const tooltips = [];
     for (const ec of eodashCols) {
-      // Inspection of ec.stac is required to register observation point location
-      // tooltips ({ id: "title", title: "Location" }), as the "locations: true" property
-      // lives on the STAC Collection rather than on individual STAC Items.
-      if (ec.stac) {
-        tooltips.push(
-          ...(await getTooltipProperties(ec.stac, { client: axios })),
-        );
+      if (ec.stac && isObservationPoints(ec.stac)) {
+        tooltips.push(...OBSERVATION_POINTS_TOOLTIP);
       }
       if (ec.item) {
         tooltips.push(

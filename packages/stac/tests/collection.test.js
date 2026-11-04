@@ -140,11 +140,12 @@ describe("getObservationPointsLayer", () => {
         id: "geodb-collection_selectInteraction",
         active: true,
         condition: "pointermove",
+        style: {
+          "stroke-color": "#335267",
+          "stroke-width": 2,
+        },
       },
     });
-
-    const style = /** @type {Record<string, any>} */ (layer?.style);
-    expect(style.tooltip).toEqual([{ id: "title", title: "Location" }]);
   });
 
   test("ignores a collection whose items are times rather than places", () => {

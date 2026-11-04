@@ -108,4 +108,6 @@ export {
 export {
   getIndicatorLayers,
   getObservationPointsLayer,
+  isObservationPoints,
+  OBSERVATION_POINTS_TOOLTIP,
 } from "./layers/collection.js";
