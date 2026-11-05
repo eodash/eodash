@@ -123,13 +123,28 @@ describe("getObservationPointsLayer", () => {
   });
 
   test("carries what a tooltip needs onto every point", () => {
-    const { features } = decodeSource(getObservationPointsLayer([points({})]));
+    const layer = getObservationPointsLayer([points({})]);
+    const { features } = decodeSource(layer);
 
     expect(features[0].properties).toMatchObject({
       collection_id: "coll",
       geoDBID: "gdb",
       themes: ["air"],
       title: "Vienna",
+    });
+
+    expect(layer?.interactions).toHaveLength(1);
+    expect(layer?.interactions?.[0]).toMatchObject({
+      type: "select",
+      options: {
+        id: "geodb-collection_selectInteraction",
+        active: true,
+        condition: "pointermove",
+        style: {
+          "stroke-color": "#335267",
+          "stroke-width": 2,
+        },
+      },
     });
   });
 
@@ -161,7 +176,7 @@ describe("getObservationPointsLayer", () => {
       observationPointIcons: false,
     });
 
-    expect(layer?.style).toEqual({
+    expect(layer?.style).toMatchObject({
       "circle-radius": 6,
       "circle-fill-color": "#004170",
       "circle-stroke-color": "#fff",

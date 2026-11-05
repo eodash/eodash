@@ -16,6 +16,8 @@ export {
   getTooltipProperties,
   getIndicatorLayers,
   getObservationPointsLayer,
+  isObservationPoints,
+  OBSERVATION_POINTS_TOOLTIP,
   DEFAULT_COLLECTIONS_PALETTE,
 } from "../index.js";
 
