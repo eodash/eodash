@@ -25,6 +25,12 @@ export const createLayerConfigHelpers = () => {
   };
 };
 
+const createEmptyJsonform = () => ({
+  type: "object",
+  title: "",
+  properties: {},
+});
+
 /**
  * Extracts layerConfig from a style JSON and restores persisted form values.
  *
@@ -48,22 +54,27 @@ function extractLayerConfig(state, style, rasterJsonform, layerConfigType) {
   }
 
   if (rasterJsonform) {
+    const jsonform =
+      rasterJsonform.jsonform ??
+      (rasterJsonform.legend ? createEmptyJsonform() : undefined);
     return {
-      layerConfig: {
-        schema: restorePersistedSchema(
-          rasterJsonform.jsonform,
-          state,
-          "tileUrl",
-        ),
-        legend: rasterJsonform.legend,
-        type: "tileUrl",
-      },
+      layerConfig: jsonform
+        ? {
+            schema: restorePersistedSchema(jsonform, state, "tileUrl"),
+            legend: rasterJsonform.legend,
+            type: "tileUrl",
+          }
+        : undefined,
       style,
     };
   }
 
   /** @type {import("../types").EodashLayerConfig | undefined} */
   let layerConfig = undefined;
+
+  if (style?.legend && !style?.jsonform) {
+    style.jsonform = createEmptyJsonform();
+  }
 
   if (style?.jsonform) {
     // Explicitly set legend only if jsonform is configured

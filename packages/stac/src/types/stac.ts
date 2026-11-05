@@ -95,7 +95,7 @@ type ColorLegend =
 
 /** Document behind `eodash:rasterform`: the controls a raster layer exposes. */
 export interface RasterForm {
-  jsonform: Record<string, unknown>;
+  jsonform?: Record<string, unknown>;
   legend?: BoundLegend;
 }
 
