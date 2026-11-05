@@ -152,6 +152,7 @@ describe("processCharts", () => {
     });
 
     expect(spec.data.values).toEqual([{ x: 1, y: 2 }]);
+    expect(spec.data["eodash:resolvedUrl"]).toBe("https://x/data.json");
   });
 
   test("POSTs the rendered body template and injects the response", async () => {

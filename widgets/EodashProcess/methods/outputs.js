@@ -208,6 +208,9 @@ async function injectVegaInlineData(
     (spec.data).values = await axios.get(dataUrl).then((resp) => {
       return resp.data;
     });
+    // Record the resolved URL so export can prefer data.url over huge inline values
+    /** @type {Record<string, any>} */ (spec.data)["eodash:resolvedUrl"] =
+      dataUrl;
   } else if (link.method == "POST") {
     // get body template to be used in POST request, check first if available
     if (!link.body) {
