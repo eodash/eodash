@@ -1,8 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema",
   "$id": "https://eodash.github.io/eodash-schemas/catalog/collection-schema.json",
-  "format": "categories",
-  "basicCategoryTitle": "General",
   "properties": {
     "Name": {
       "type": "string",
@@ -14,18 +12,7 @@
       "minLength": 1
     },
     "Description": {
-      "type": "string",
-      "format": "markdown",
-      "options": {
-        "resolver": "ace",
-        "markdownToolbar": true,
-        "ace": {
-          "highlightActiveLine": true,
-          "fontSize": 14,
-          "maxLines": 50,
-          "minLines": 10
-        }
-      }
+      "type": "string"
     },
     "Themes": {
       "type": "array",
