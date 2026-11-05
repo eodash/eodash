@@ -37,7 +37,7 @@
           {{ removeUnneededProperties(getLayers(), layerControlFormValue) }}
         </div>
 
-        <div v-if="chartSpec" class="mb-4">
+        <div v-if="dialog && chartSpec" class="mb-4">
           <p class="text-body-2 mb-2">
             <strong>Chart Spec (for export)</strong>
           </p>
@@ -138,7 +138,19 @@ const getChartExportCode = () => {
   const preTag =
     "## Chart Example <!" + '--{as="eox-chart" style="height: 400px;" spec=';
   const endTag = " }-->";
-  const escapedSpec = base64EncodeSpec(chartSpec.value);
+  let specToExport = chartSpec.value;
+  if (
+    specToExport?.data &&
+    typeof specToExport.data === "object" &&
+    "eodash:resolvedUrl" in specToExport.data
+  ) {
+    specToExport = JSON.parse(JSON.stringify(specToExport));
+    const resolvedUrl = /** @type {Record<string, any>} */ (specToExport.data)[
+      "eodash:resolvedUrl"
+    ];
+    specToExport.data = { url: resolvedUrl };
+  }
+  const escapedSpec = base64EncodeSpec(specToExport);
   return `${preTag}'${escapedSpec}'${endTag}`;
 };
 

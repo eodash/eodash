@@ -77,6 +77,26 @@ describe("ExportState", () => {
       .toBeInTheDocument();
   });
 
+  test("exports chart spec with data.url when eodash:resolvedUrl is present", async () => {
+    chartSpec.value = /** @type {any} */ ({
+      mark: "line",
+      data: {
+        values: [{ a: 1 }, { a: 2 }],
+        "eodash:resolvedUrl": "https://example.com/items.json",
+      },
+    });
+    const { screen } = await mountComponent(ExportState, {
+      props: { modelValue: true, getLayers: layers },
+    });
+
+    await screen.getByText("copy as chart").click();
+
+    await expect.poll(() => writeText).toHaveBeenCalled();
+    const [text] = writeText.mock.calls[0];
+    expect(text).toContain("https://example.com/items.json");
+    expect(text).not.toContain('"values":');
+  });
+
   test("renders the cleaned layers configuration from getLayers", async () => {
     await mountComponent(ExportState, {
       props: { modelValue: true, getLayers: layers },
