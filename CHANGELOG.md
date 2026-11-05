@@ -1,6 +1,23 @@
 # Changelog
 
 
+## [5.10.1](https://github.com/eodash/eodash/compare/eodash-v5.10.0...eodash-v5.10.1) (2026-11-05)
+
+
+### Bug Fixes
+
+* auto-create empty jsonform for legend-only styles and rasterforms ([#512](https://github.com/eodash/eodash/issues/512)) ([d753bb0](https://github.com/eodash/eodash/commit/d753bb097d99ba7bbc411bef23266af875f30782))
+* compact export spec for single GET charts and lazy encode ([#510](https://github.com/eodash/eodash/issues/510)) ([b18c38a](https://github.com/eodash/eodash/commit/b18c38ae8726433bedf5a233de762486e763ee5b))
+* EodashDatePicker pass new props to eox-timecontrol-picker ([#513](https://github.com/eodash/eodash/issues/513)) ([2bc53b9](https://github.com/eodash/eodash/commit/2bc53b9df3f8630eef3afddfaf10148092a9364c))
+* vector tile layers locations and tooltips ([#508](https://github.com/eodash/eodash/issues/508)) ([6ab2932](https://github.com/eodash/eodash/commit/6ab2932bccea1b366a05890051e1df31b2c3ffcb))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @eodash/stac bumped from ^0.2.0 to ^0.2.1
+
 ## [5.10.0](https://github.com/eodash/eodash/compare/eodash-v5.9.0...eodash-v5.10.0) (2026-10-28)
 
 
