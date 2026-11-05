@@ -32,6 +32,19 @@ widget: {
 }
 ```
 
+Customize time display and popup item details:
+
+```js
+widget: {
+  name: "EodashDatePicker",
+  properties: {
+    showTime: true,
+    timeFormat: "YYYY-MM-DD HH:mm",
+    itemTitleKey: "title",
+  },
+}
+```
+
 <!-- @widget-props -->
 
 ## See also
