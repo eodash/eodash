@@ -49,6 +49,10 @@
           .showDots="true"
           .showItems="showItems"
           .popup="toggleCalendar"
+          .showTime="showTime"
+          .timeFormat="timeFormat"
+          .itemTitleKey="itemTitleKey"
+          .propertyTransform="propertyTransform"
         ></eox-timecontrol-picker>
       </div>
     </eox-timecontrol>
@@ -67,21 +71,63 @@ import { useTransparentPanel } from "@/composables";
 import { storeToRefs } from "pinia";
 
 const props = defineProps({
+  /**
+   * Hide the step arrows next to the date input field.
+   */
   hideArrows: {
     type: Boolean,
     default: false,
   },
+  /**
+   * Hide the date input field.
+   */
   hideInputField: {
     type: Boolean,
     default: false,
   },
+  /**
+   * When true, keeps calendar closed until hovered or clicked (compact mode).
+   */
   toggleCalendar: {
     type: Boolean,
     default: false,
   },
+  /**
+   * Whether to show items list in the calendar popup.
+   */
   showItems: {
     type: Boolean,
     default: true,
+  },
+  /**
+   * Whether to show time in the calendar popup items.
+   */
+  showTime: {
+    type: Boolean,
+    default: true,
+  },
+  /**
+   * Format string used for time display.
+   */
+  timeFormat: {
+    type: String,
+    default: "YYYY-MM-DD HH:mm",
+  },
+  /**
+   * Property key on timeline items used as the primary title in popup cards.
+   */
+  itemTitleKey: {
+    type: String,
+    default: undefined,
+  },
+  /**
+   * Transformation function for popup card items.
+   */
+  propertyTransform: {
+    type: /** @type {import("vue").PropType<((item: import("@eox/timecontrol/types/types").TimeControlPopupItem) => import("@eox/timecontrol/types/types").TimeControlPopupItem | string | null | false) | null>} */ (
+      Function
+    ),
+    default: () => null,
   },
 });
 
