@@ -1,5 +1,9 @@
 import { onMounted, onUnmounted, watch } from "vue";
-import { getTooltipProperties } from "@eodash/stac";
+import {
+  getTooltipProperties,
+  isObservationPoints,
+  OBSERVATION_POINTS_TOOLTIP,
+} from "@eodash/stac";
 import axios from "@/plugins/axios";
 import log from "loglevel";
 import { useOnLayersUpdate } from "@/composables";
@@ -104,15 +108,18 @@ export const useUpdateTooltipProperties = (
 
     const tooltips = [];
     for (const ec of eodashCols) {
-      if (!ec.item) {
-        continue;
+      if (ec.stac && isObservationPoints(ec.stac)) {
+        tooltips.push(...OBSERVATION_POINTS_TOOLTIP);
       }
-      // the app's cached client, or every event refetches the styles
-      tooltips.push(
-        ...(await getTooltipProperties(ec.item, { client: axios })),
-      );
+      if (ec.item) {
+        tooltips.push(
+          ...(await getTooltipProperties(ec.item, { client: axios })),
+        );
+      }
     }
-    tooltipProperties.value = tooltips;
+    tooltipProperties.value = [
+      ...new Map(tooltips.map((entry) => [entry.id, entry])).values(),
+    ];
     log.debug("Updated tooltip properties", tooltipProperties.value);
   });
 };

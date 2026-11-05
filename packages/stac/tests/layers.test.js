@@ -604,5 +604,22 @@ describe("building layers", () => {
 
       expect(await buildFrom(place({}))).toEqual([]);
     });
+
+    test("builds vector tile layer when item carries a vector-tile link even if collection has locations", async () => {
+      serve({ links: [], collection: { locations: true } });
+      const col = await reader();
+      const vtItem = place({
+        links: [
+          {
+            rel: "vector-tile",
+            href: "https://tipg/tiles/{z}/{x}/{y}",
+            title: "Dynamic Layer",
+          },
+        ],
+      });
+      const built = await col.buildLayers(/** @type {any} */ (vtItem));
+      expect(built.layers).toHaveLength(1);
+      expect(built.layers[0].type).toBe("VectorTile");
+    });
   });
 });

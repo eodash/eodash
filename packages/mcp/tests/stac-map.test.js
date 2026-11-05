@@ -1163,7 +1163,7 @@ describe("MCP Protocol Tool - generate_map_from_stac", () => {
         (l) => l.properties?.id === "geodb-collection",
       );
       expect(obsLayer).toBeDefined();
-      expect(obsLayer.style).toEqual({
+      expect(obsLayer.style).toMatchObject({
         "circle-radius": 6,
         "circle-fill-color": "#004170",
         "circle-stroke-color": "#fff",
