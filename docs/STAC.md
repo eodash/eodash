@@ -240,7 +240,7 @@ The core of this extension is the ability to define style `variables` that can b
 
 - **`variables`**: A key-value map where style properties can be defined as variables.
 - **`jsonform`**: A [EOxJSONForm](https://eox-a.github.io/EOxElements/?path=/docs/elements-eox-jsonform--docs) JSON Schema that defines a form. This form is rendered in the UI, allowing users to modify the `variables` at runtime.
-- **`legend`**: Configuration for displaying a layer's legend. Supports dynamic scale updates via `domainProperties` (linking to form sliders) and dynamic colorscale updates via `rangeProperty` (linking to form selectors).
+- **`legend`**: Configuration for displaying a layer's legend. Supports dynamic scale updates via `domainProperties` (linking to form sliders) and dynamic colorscale updates via `rangeProperty` (linking to form selectors). If defined without a `jsonform`, an empty form schema is automatically created so the legend displays in EOxElements.
 - **`tooltip`**: Configuration for defining interactive tooltips that appear on feature hover or click.
 
 ```ts

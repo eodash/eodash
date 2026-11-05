@@ -88,7 +88,7 @@ map.layers = layers;
 
 ### Layer Config Forms
 
-Layers built from a style with a `jsonform` or an `eodash:rasterform` include a `layerConfig` object that [eox-layercontrol](https://eox-a.github.io/EOxElements/?path=/docs/elements-eox-layercontrol--docs) renders as an interactive configuration form.
+Layers built from a style with a `jsonform`, a `legend`, or an `eodash:rasterform` include a `layerConfig` object that [eox-layercontrol](https://eox-a.github.io/EOxElements/?path=/docs/elements-eox-layercontrol--docs) renders as an interactive configuration form. When a style or rasterform provides only a `legend` without an explicit `jsonform`, an empty form schema is automatically created so the legend displays in EOxElements without requiring manual boilerplate.
 
 When a user edits the form, report the new value back using `persistLayerConfig` (typically from eox-layercontrol's `layerConfig:change` event handler). The reader retains these values so user configurations persist across datetime changes.
 
