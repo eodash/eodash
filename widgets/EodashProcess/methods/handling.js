@@ -426,6 +426,11 @@ export const loadPOiIndicator = () => {
   );
   stacStore.loadSelectedSTAC(link?.href);
   if (comparePoi.value) {
+    if (!compareIndicator.value) {
+      compareIndicator.value =
+        new URLSearchParams(window.location.search).get("compareindicator") ??
+        "";
+    }
     if (compareIndicator.value) {
       const comparelink = stacStore.stac?.find(
         (link) => useGetSubCodeId(link) === compareIndicator.value,

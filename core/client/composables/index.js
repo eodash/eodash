@@ -3,6 +3,8 @@
 
 import {
   activeTemplate,
+  compareIndicator,
+  comparePoi,
   currentCompareUrl,
   currentUrl,
   datetime,
@@ -150,6 +152,40 @@ export const useUpdateTheme = (themeName, themeDefinition = {}) => {
   return theme;
 };
 
+/**
+ * Resolves the absolute URL for a POI link inside an indicator STAC collection.
+ *
+ * @param {import("@eodash/stac").STACLink} match
+ * @param {string} poiValue
+ * @param {string | null} [stacEndpoint]
+ * @returns {Promise<string | null>}
+ */
+const resolvePoiUrl = async (match, poiValue, stacEndpoint) => {
+  const indicatorUrl = toAbsolute(match.href, stacEndpoint ?? "");
+  /** @type {import("@eodash/stac").STACCollection} */
+  const indicatorStac = await axios.get(indicatorUrl).then((resp) => resp.data);
+  const poiMatch = indicatorStac?.links?.find(
+    (link) =>
+      link.rel === "service" &&
+      link.type === "application/json; profile=collection",
+  );
+  if (!poiMatch) {
+    return null;
+  }
+  /** @type {string | Record<string, string>} */
+  let viewForMustache = poiValue;
+  const tokens = mustache.parse(poiMatch.href);
+  const keyToken = tokens.find(
+    (token) => token[0] === "name" && token[1] !== ".",
+  );
+  if (keyToken) {
+    const keyName = keyToken[1];
+    viewForMustache = { [keyName]: poiValue };
+  }
+  const poiUrl = mustache.render(poiMatch.href, viewForMustache);
+  return toAbsolute(poiUrl, indicatorUrl);
+};
+
 /** Composable that syncs store and URLSearchParameters */
 export const useURLSearchParametersSync = () => {
   onMounted(async () => {
@@ -195,42 +231,15 @@ export const useURLSearchParametersSync = () => {
             if (match) {
               log.debug("Found match, loading stac item", match);
               if (searchParams.has("poi")) {
-                const indicatorUrl = toAbsolute(
-                  match.href,
-                  store.stacEndpoint ?? "",
-                );
-                // fetch indicator stac collection without rendering it
-                /** @type {import("@eodash/stac").STACCollection} */
-                const indicatorStac = await axios
-                  .get(indicatorUrl)
-                  .then((resp) => resp.data);
                 poi.value = searchParams.get("poi") ?? "";
-                // find the process link
-                const poiMatch = indicatorStac?.links.find(
-                  (link) =>
-                    link.rel === "service" &&
-                    link.type === "application/json; profile=collection",
+                indicator.value = value;
+                const poiAbsoluteUrl = await resolvePoiUrl(
+                  match,
+                  poi.value,
+                  store.stacEndpoint,
                 );
-                if (poiMatch) {
-                  log.debug("Found poi match, setting poi", poiMatch);
-                  // render poi value into the link href
-                  /** @type {any} */
-                  let viewForMustache = poi.value;
-                  const tokens = mustache.parse(poiMatch.href);
-                  const keyToken = tokens.find(
-                    (token) => token[0] === "name" && token[1] !== ".",
-                  );
-                  // Construct the view object
-                  if (keyToken) {
-                    const keyName = keyToken[1];
-                    viewForMustache = { [keyName]: poi.value };
-                  }
-                  /** @type {string} */
-                  const poiUrl = mustache.render(
-                    poiMatch.href,
-                    viewForMustache,
-                  );
-                  const poiAbsoluteUrl = toAbsolute(poiUrl, indicatorUrl);
+                if (poiAbsoluteUrl) {
+                  log.debug("Found poi match, setting poi", poiAbsoluteUrl);
                   await store.loadSelectedSTAC(poiAbsoluteUrl, true);
                 }
               } else if (store.isApi && searchParams.has("item")) {
@@ -254,6 +263,40 @@ export const useURLSearchParametersSync = () => {
                 );
               }
             }
+            break;
+          }
+          case "compareindicator": {
+            log.debug("Found compareindicator key in url");
+            const match = store.stac?.find(
+              (link) => useGetSubCodeId(link) == value,
+            );
+            if (match) {
+              log.debug("Found match, loading compare stac item", match);
+              if (searchParams.has("comparepoi")) {
+                comparePoi.value = searchParams.get("comparepoi") ?? "";
+                compareIndicator.value = value;
+                const poiAbsoluteUrl = await resolvePoiUrl(
+                  match,
+                  comparePoi.value,
+                  store.stacEndpoint,
+                );
+                if (poiAbsoluteUrl) {
+                  log.debug(
+                    "Found compare poi match, setting compare poi",
+                    poiAbsoluteUrl,
+                  );
+                  await store.loadSelectedCompareSTAC(poiAbsoluteUrl, true);
+                }
+              } else {
+                await store.loadSelectedCompareSTAC(
+                  /** @type {string} */ (store.isApi ? match.id : match.href),
+                );
+              }
+            }
+            break;
+          }
+          case "poi":
+          case "comparepoi": {
             break;
           }
 
@@ -281,7 +324,16 @@ export const useURLSearchParametersSync = () => {
 
     const { selectedItem } = storeToRefs(useSTAcStore());
     watch(
-      [indicator, mapPosition, datetime, activeTemplate, poi, selectedItem],
+      [
+        indicator,
+        mapPosition,
+        datetime,
+        activeTemplate,
+        poi,
+        selectedItem,
+        compareIndicator,
+        comparePoi,
+      ],
       ([
         updatedIndicator,
         updatedMapPosition,
@@ -289,11 +341,15 @@ export const useURLSearchParametersSync = () => {
         updatedTemplate,
         updatedPoi,
         updatedItem,
+        updatedCompareIndicator,
+        updatedComparePoi,
       ]) => {
         if ("URLSearchParams" in window) {
           const searchParams = new URLSearchParams(window.location.search);
           if (updatedIndicator !== "") {
             searchParams.set("indicator", updatedIndicator);
+          } else if (searchParams.has("indicator")) {
+            searchParams.delete("indicator");
           }
 
           if (updatedMapPosition && updatedMapPosition.length === 3) {
@@ -321,6 +377,22 @@ export const useURLSearchParametersSync = () => {
             searchParams.set("item", itemId);
           } else if (searchParams.has("item")) {
             searchParams.delete("item");
+          }
+
+          if (!updatedCompareIndicator) {
+            if (searchParams.has("compareindicator")) {
+              searchParams.delete("compareindicator");
+            }
+          } else {
+            searchParams.set("compareindicator", updatedCompareIndicator);
+          }
+
+          if (!updatedComparePoi) {
+            if (searchParams.has("comparepoi")) {
+              searchParams.delete("comparepoi");
+            }
+          } else {
+            searchParams.set("comparepoi", updatedComparePoi);
           }
 
           const newRelativePathQuery =
