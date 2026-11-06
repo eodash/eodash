@@ -211,14 +211,32 @@ watch(
       return;
     }
 
+    // Both maps keep their readers; shared collections need only one calendar entry.
+    const compareCollections = eodashCompareCollections.filter(
+      (compareReader) =>
+        !eodashCollections.some((primaryReader) =>
+          hasSameCollectionId(primaryReader, compareReader),
+        ),
+    );
     controlValues.value = [
       ...(await fetchCollectionsDates(eodashCollections)),
-      ...(await fetchCollectionsDates(eodashCompareCollections, " (compare)")),
+      ...(await fetchCollectionsDates(compareCollections, " (compare)")),
     ];
     revision.value++;
   },
   { immediate: true },
 );
+
+/**
+ * Compare collection IDs within the active catalog, not titles or self links.
+ *
+ * @param {import("@eodash/stac").Reader} primaryReader
+ * @param {import("@eodash/stac").Reader} compareReader
+ * @returns {boolean}
+ */
+function hasSameCollectionId(primaryReader, compareReader) {
+  return !!primaryReader.id && primaryReader.id === compareReader.id;
+}
 
 /**
  *
