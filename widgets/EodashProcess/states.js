@@ -6,8 +6,21 @@ import { ref } from "vue";
  *  @type {import("vue").Ref<import("./types").AsyncJob[]>}
  */
 export const jobs = ref([]);
+
 /**
  * The list of jobs results from the server for the compare map
  * @type {import("vue").Ref<import("./types").AsyncJob[]>}
  */
 export const compareJobs = ref([]);
+
+/**
+ * Active process form values for URL synchronization
+ * @type {import("vue").Ref<Record<string, any> | null>}
+ */
+export const activeProcessFormValue = ref(null);
+
+/**
+ * Active compare process form values for URL synchronization
+ * @type {import("vue").Ref<Record<string, any> | null>}
+ */
+export const activeCompareProcessFormValue = ref(null);

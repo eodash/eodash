@@ -50,7 +50,7 @@ import "@eox/drawtools";
 import "@eox/jsonform";
 import { useSTAcStore } from "@/store/stac";
 import { storeToRefs } from "pinia";
-import { computed, ref, useTemplateRef, watch } from "vue";
+import { computed, nextTick, ref, useTemplateRef, watch } from "vue";
 import ProcessList from "./ProcessList.vue";
 import EodashChart from "../EodashChart.vue";
 import { handleProcesses } from "./methods/handling";
@@ -66,7 +66,16 @@ import {
   areChartsSeparateLayout,
 } from "@/store/states";
 import { download, getDrawToolsProperties } from "./methods/utils";
-import { compareJobs, jobs } from "./states";
+import {
+  compareJobs,
+  jobs,
+  activeProcessFormValue,
+  activeCompareProcessFormValue,
+} from "./states";
+import {
+  restoredCompareProcessState,
+  restoredProcessState,
+} from "@/utils/states";
 import { mdiCogPlayOutline, mdiDownloadCircleOutline } from "@mdi/js";
 
 const { enableCompare, vegaEmbedOptions } = defineProps({
@@ -95,6 +104,16 @@ const jsonformEl =
 
 // Inject custom styles into the eox-jsonform shadow DOM to make eox-drawtools inline
 watch(jsonformEl, (el) => {
+  if (el) {
+    const onFormChange = () => {
+      const current = /** @type {any} */ (el).value || {};
+      const targetState = enableCompare
+        ? activeCompareProcessFormValue
+        : activeProcessFormValue;
+      targetState.value = { ...current };
+    };
+    el.addEventListener("change", onFormChange);
+  }
   if (el && el.shadowRoot) {
     const styleId = "eodash-drawtools-inline-style";
     if (!el.shadowRoot.getElementById(styleId)) {
@@ -216,6 +235,39 @@ useInitProcess({
   loading,
   isPolling,
 });
+
+// Seed restored values onto schema defaults when present
+watch(
+  [
+    jsonformSchema,
+    () =>
+      enableCompare
+        ? restoredCompareProcessState.value
+        : restoredProcessState.value,
+  ],
+  ([schema, restored]) => {
+    if (
+      schema &&
+      restored &&
+      typeof restored === "object" &&
+      Object.keys(restored).length
+    ) {
+      if (schema.properties) {
+        for (const [key, val] of Object.entries(restored)) {
+          if (schema.properties[key]) {
+            schema.properties[key].default = val;
+          }
+        }
+      }
+      if (autoExec.value || schema?.options?.execute) {
+        nextTick(() => {
+          startProcess().catch(() => {});
+        });
+      }
+    }
+  },
+  { immediate: true },
+);
 
 const downloadResults = () => {
   processResults.value.forEach((result) => {

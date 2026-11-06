@@ -12,6 +12,8 @@
       toolsAsList="true"
       @datetime:updated="debouncedHandleDateTime"
       @layerConfig:change="onLayerConfigChange"
+      @layerchange="onLayerControlChange"
+      @change="onLayerControlChange"
     >
       <span
         slot="layerstitle"
@@ -38,6 +40,8 @@ import { eodashCollections, eodashCompareCollections } from "@/store/stac";
 import {
   layerControlFormValue,
   layerControlFormValueCompare,
+  layerStateChangeTrigger,
+  layerStateChangeTriggerCompare,
 } from "@/utils/states";
 import { findReaderByLayerId } from "@eodash/stac/helpers";
 import { ANALYSIS_GROUP } from "@/eodashSTAC/layers";
@@ -115,6 +119,14 @@ const showControls = computed(() => {
 const eodashCols =
   props.map === "second" ? eodashCompareCollections : eodashCollections;
 const mapElement = props.map === "second" ? mapCompareEl : mapEl;
+
+const onLayerControlChange = () => {
+  if (props.map === "second") {
+    layerStateChangeTriggerCompare.value++;
+  } else {
+    layerStateChangeTrigger.value++;
+  }
+};
 
 /** @param {CustomEvent<{layer:import('ol/layer').Layer; datetime:string;}>} evt */
 const handleDatetimeUpdate = async (evt) => {
@@ -197,8 +209,10 @@ const onLayerConfigChange = (evt) => {
 
   if (props.map === "second") {
     layerControlFormValueCompare.value = evt.detail.jsonformValue;
+    layerStateChangeTriggerCompare.value++;
   } else {
     layerControlFormValue.value = evt.detail.jsonformValue;
+    layerStateChangeTrigger.value++;
   }
 };
 </script>

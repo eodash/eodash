@@ -50,6 +50,31 @@ export const layerTimeProperties = reactive({
 export const isFirstLoad = ref(false);
 
 /**
+ * Restored LayerControl state overrides from URL query parameters.
+ * Keys are shortened layer IDs; values contain changed properties: { v?: boolean, o?: number, t?: string, c?: Record<string, any> }.
+ * @type {import("vue").Ref<Record<string, { v?: boolean; o?: number; t?: string; c?: Record<string, any> }> | null>}
+ */
+export const restoredLayersState = ref(null);
+
+/**
+ * Restored LayerControl state overrides for the compare map from URL query parameters.
+ * @type {import("vue").Ref<Record<string, { v?: boolean; o?: number; t?: string; c?: Record<string, any> }> | null>}
+ */
+export const restoredCompareLayersState = ref(null);
+
+/**
+ * Restored process jsonform values from URL query parameters.
+ * @type {import("vue").Ref<Record<string, any> | null>}
+ */
+export const restoredProcessState = ref(null);
+
+/**
+ * Restored process jsonform values for compare panel from URL query parameters.
+ * @type {import("vue").Ref<Record<string, any> | null>}
+ */
+export const restoredCompareProcessState = ref(null);
+
+/**
  * Current value of the layer control JSON form for the latest layer the user interacted with.
  * @type {import("vue").Ref<Record<string, any> | undefined>}
  */
@@ -60,6 +85,12 @@ export const layerControlFormValue = ref({});
  * @type {import("vue").Ref<Record<string, any> | undefined>}
  */
 export const layerControlFormValueCompare = ref({});
+
+/**
+ * Trigger counter for layer state changes (visibility, opacity, datetime, config).
+ */
+export const layerStateChangeTrigger = ref(0);
+export const layerStateChangeTriggerCompare = ref(0);
 
 /**
  * STAC indicators color palette, defaults to Bank-Wong palette

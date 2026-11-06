@@ -1,8 +1,44 @@
 import log from "loglevel";
-import { collectionsPalette } from "./states";
+import {
+  collectionsPalette,
+  restoredCompareLayersState,
+  restoredLayersState,
+} from "./states";
 import { createEodashIndicator } from "@eodash/stac";
 import { axios } from "@/plugins/axios";
 import WebFontLoader from "webfontloader";
+import { findReaderByLayerId } from "@eodash/stac/helpers";
+
+/**
+ * Applies restored layerConfig overrides from URL query parameters to collection readers.
+ *
+ * @param {import("@eodash/stac").Reader[]} readers
+ * @param {boolean} [compare=false]
+ */
+export const applyRestoredLayerConfigsToReaders = (
+  readers,
+  compare = false,
+) => {
+  const state = compare
+    ? restoredCompareLayersState.value
+    : restoredLayersState.value;
+  if (!state || !readers?.length) return;
+
+  for (const [key, override] of Object.entries(state)) {
+    if (!override?.c) continue;
+    const reader = findReaderByLayerId(readers, key);
+    if (reader?.persistLayerConfig) {
+      reader.persistLayerConfig(
+        /** @type {any} */ ({ type: "style" }),
+        override.c,
+      );
+      reader.persistLayerConfig(
+        /** @type {any} */ ({ type: "tileUrl" }),
+        override.c,
+      );
+    }
+  }
+};
 
 /**
  * Loads font in the app using `webfontloader`
@@ -179,6 +215,11 @@ export const updateEodashCollections = async (
     colors,
     ...rasterOptions,
   });
+
+  applyRestoredLayerConfigsToReaders(
+    indicator.readers,
+    isAPI === undefined ? false : colors[0] !== collectionsPalette[0],
+  );
 
   eodashCollections.splice(0, eodashCollections.length, ...indicator.readers);
 };

@@ -9,6 +9,7 @@ import {
   currentUrl,
   datetime,
   indicator,
+  mapCompareEl,
   mapEl,
   mapPosition,
   poi,
@@ -19,7 +20,18 @@ import { useSTAcStore } from "@/store/stac";
 import log from "loglevel";
 import { eodashKey, eoxLayersKey } from "@/utils/keys";
 import { useEventBus, useMutationObserver } from "@vueuse/core";
-import { hasRestoredView, isFirstLoad } from "@/utils/states";
+import {
+  hasRestoredView,
+  isFirstLoad,
+  layerControlFormValue,
+  layerControlFormValueCompare,
+  layerStateChangeTrigger,
+  layerStateChangeTriggerCompare,
+  restoredCompareLayersState,
+  restoredCompareProcessState,
+  restoredLayersState,
+  restoredProcessState,
+} from "@/utils/states";
 import { setCollectionsPalette } from "@/utils";
 import mustache from "mustache";
 import { toAbsolute } from "@eodash/stac/helpers";
@@ -27,6 +39,13 @@ import axios from "@/plugins/axios";
 import { storeToRefs } from "pinia";
 import { bboxToCenterZoom, sanitizeBbox } from "@eodash/stac/helpers";
 import { transform } from "ol/proj";
+import { decodeParam, encodeParam } from "@/utils/url-param-codec";
+import { computeMapLayersDelta } from "@/utils/layer-delta-helpers";
+import {
+  activeCompareProcessFormValue,
+  activeProcessFormValue,
+} from "^/EodashProcess/states";
+import { roundCoords } from "@/utils/process-state-helpers";
 /**
 /** @type {import('@/types').Eodash | null}*/
 
@@ -217,6 +236,23 @@ export const useURLSearchParametersSync = () => {
         }
       }
 
+      if (searchParams.has("layers")) {
+        restoredLayersState.value = decodeParam(searchParams.get("layers"));
+      }
+      if (searchParams.has("comparelayers")) {
+        restoredCompareLayersState.value = decodeParam(
+          searchParams.get("comparelayers"),
+        );
+      }
+      if (searchParams.has("process")) {
+        restoredProcessState.value = decodeParam(searchParams.get("process"));
+      }
+      if (searchParams.has("compareprocess")) {
+        restoredCompareProcessState.value = decodeParam(
+          searchParams.get("compareprocess"),
+        );
+      }
+
       for (const [key, value] of searchParams) {
         switch (key) {
           case "template": {
@@ -296,7 +332,11 @@ export const useURLSearchParametersSync = () => {
             break;
           }
           case "poi":
-          case "comparepoi": {
+          case "comparepoi":
+          case "layers":
+          case "comparelayers":
+          case "process":
+          case "compareprocess": {
             break;
           }
 
@@ -333,6 +373,10 @@ export const useURLSearchParametersSync = () => {
         selectedItem,
         compareIndicator,
         comparePoi,
+        layerStateChangeTrigger,
+        layerStateChangeTriggerCompare,
+        activeProcessFormValue,
+        activeCompareProcessFormValue,
       ],
       ([
         updatedIndicator,
@@ -343,6 +387,10 @@ export const useURLSearchParametersSync = () => {
         updatedItem,
         updatedCompareIndicator,
         updatedComparePoi,
+        _trigger,
+        _triggerCompare,
+        updatedProcessForm,
+        updatedCompareProcessForm,
       ]) => {
         if ("URLSearchParams" in window) {
           const searchParams = new URLSearchParams(window.location.search);
@@ -393,6 +441,69 @@ export const useURLSearchParametersSync = () => {
             }
           } else {
             searchParams.set("comparepoi", updatedComparePoi);
+          }
+
+          // LayerControl main delta
+          if (mapEl.value) {
+            const layersDelta = computeMapLayersDelta(
+              mapEl.value,
+              layerControlFormValue.value,
+            );
+            const encodedLayers = encodeParam(layersDelta);
+            if (encodedLayers) {
+              searchParams.set("layers", encodedLayers);
+            } else if (searchParams.has("layers")) {
+              searchParams.delete("layers");
+            }
+          }
+
+          // LayerControl compare delta
+          if (mapCompareEl.value && updatedCompareIndicator) {
+            const compareLayersDelta = computeMapLayersDelta(
+              mapCompareEl.value,
+              layerControlFormValueCompare.value,
+            );
+            const encodedCompareLayers = encodeParam(compareLayersDelta);
+            if (encodedCompareLayers) {
+              searchParams.set("comparelayers", encodedCompareLayers);
+            } else if (searchParams.has("comparelayers")) {
+              searchParams.delete("comparelayers");
+            }
+          } else if (searchParams.has("comparelayers")) {
+            searchParams.delete("comparelayers");
+          }
+
+          // Process main delta
+          if (updatedProcessForm && Object.keys(updatedProcessForm).length) {
+            const cleanProcess = roundCoords(updatedProcessForm);
+            const encodedProcess = encodeParam(cleanProcess);
+            if (encodedProcess) {
+              searchParams.set("process", encodedProcess);
+            } else if (searchParams.has("process")) {
+              searchParams.delete("process");
+            }
+          } else if (searchParams.has("process") && !updatedIndicator) {
+            searchParams.delete("process");
+          }
+
+          // Process compare delta
+          if (
+            updatedCompareProcessForm &&
+            Object.keys(updatedCompareProcessForm).length &&
+            updatedCompareIndicator
+          ) {
+            const cleanCompareProcess = roundCoords(updatedCompareProcessForm);
+            const encodedCompareProcess = encodeParam(cleanCompareProcess);
+            if (encodedCompareProcess) {
+              searchParams.set("compareprocess", encodedCompareProcess);
+            } else if (searchParams.has("compareprocess")) {
+              searchParams.delete("compareprocess");
+            }
+          } else if (
+            searchParams.has("compareprocess") &&
+            !updatedCompareIndicator
+          ) {
+            searchParams.delete("compareprocess");
           }
 
           const newRelativePathQuery =
