@@ -10,8 +10,11 @@ import {
   defaultBaseLayers,
   hasRestoredView,
   layerTimeProperties,
+  restoredCompareLayersState,
+  restoredLayersState,
   shouldZoomToExtent,
 } from "@/utils/states";
+import { applyRestoredLayerProperties } from "@/utils/layer-state-helpers";
 import { useSTAcStore } from "@/store/stac";
 import {
   registerProjections,
@@ -178,13 +181,23 @@ export const buildIndicatorLayers = async (
     (layer) => layer.type === "Group" && layer.properties?.id === CATALOG_GROUP,
   );
 
+  const fullLayers = [
+    layerGroup(BASE_LAYERS_GROUP, baseLayers),
+    ...(footprints ? [footprints] : []),
+    layerGroup(ANALYSIS_GROUP, dataLayers),
+    ...(overLayers.length ? [layerGroup(OVERLAY_GROUP, overLayers)] : []),
+  ];
+
+  const restored =
+    map?.id === "compare"
+      ? restoredCompareLayersState.value
+      : restoredLayersState.value;
+  if (restored) {
+    applyRestoredLayerProperties(fullLayers, restored);
+  }
+
   return {
-    layers: [
-      layerGroup(BASE_LAYERS_GROUP, baseLayers),
-      ...(footprints ? [footprints] : []),
-      layerGroup(ANALYSIS_GROUP, dataLayers),
-      ...(overLayers.length ? [layerGroup(OVERLAY_GROUP, overLayers)] : []),
-    ],
+    layers: fullLayers,
     items,
   };
 };
@@ -209,6 +222,14 @@ export const assignDataLayers = async (
     stac,
     timeOrItem,
   });
+
+  const restored =
+    map?.id === "compare"
+      ? restoredCompareLayersState.value
+      : restoredLayersState.value;
+  if (restored) {
+    applyRestoredLayerProperties(layers, restored);
+  }
 
   await registerProjections(projections);
   await assignGroupLayers(map, ANALYSIS_GROUP, layers, event);

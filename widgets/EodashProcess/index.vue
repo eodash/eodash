@@ -66,7 +66,19 @@ import {
   areChartsSeparateLayout,
 } from "@/store/states";
 import { download, getDrawToolsProperties } from "./methods/utils";
-import { compareJobs, jobs } from "./states";
+import {
+  compareJobs,
+  jobs,
+  activeProcessFormValue,
+  activeCompareProcessFormValue,
+  baselineProcessDefaults,
+  baselineCompareProcessDefaults,
+} from "./states";
+import { extractSchemaDefaults } from "@/utils/process-state-helpers";
+import {
+  restoredCompareProcessState,
+  restoredProcessState,
+} from "@/utils/states";
 import { mdiCogPlayOutline, mdiDownloadCircleOutline } from "@mdi/js";
 
 const { enableCompare, vegaEmbedOptions } = defineProps({
@@ -95,6 +107,17 @@ const jsonformEl =
 
 // Inject custom styles into the eox-jsonform shadow DOM to make eox-drawtools inline
 watch(jsonformEl, (el) => {
+  if (el) {
+    const onFormChange = () => {
+      const current =
+        /** @type {{ value?: Record<string, any> } | null} */ (el)?.value || {};
+      const targetState = enableCompare
+        ? activeCompareProcessFormValue
+        : activeProcessFormValue;
+      targetState.value = { ...current };
+    };
+    el.addEventListener("change", onFormChange);
+  }
   if (el && el.shadowRoot) {
     const styleId = "eodash-drawtools-inline-style";
     if (!el.shadowRoot.getElementById(styleId)) {
@@ -216,6 +239,42 @@ useInitProcess({
   loading,
   isPolling,
 });
+
+// Seed restored values onto schema defaults when present
+watch(
+  [
+    jsonformSchema,
+    () =>
+      enableCompare
+        ? restoredCompareProcessState.value
+        : restoredProcessState.value,
+  ],
+  ([schema, restored]) => {
+    if (schema) {
+      const defaults = extractSchemaDefaults(schema);
+      if (enableCompare) {
+        baselineCompareProcessDefaults.value = defaults;
+      } else {
+        baselineProcessDefaults.value = defaults;
+      }
+    }
+    if (
+      schema &&
+      restored &&
+      typeof restored === "object" &&
+      Object.keys(restored).length
+    ) {
+      if (schema.properties) {
+        for (const [key, val] of Object.entries(restored)) {
+          if (schema.properties[key]) {
+            schema.properties[key].default = val;
+          }
+        }
+      }
+    }
+  },
+  { immediate: true },
+);
 
 const downloadResults = () => {
   processResults.value.forEach((result) => {

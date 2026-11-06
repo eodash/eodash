@@ -416,10 +416,6 @@ export const onChartClick = async (evt) => {
  * Loads the main indicator of a Point of Interest (POI)
  */
 export const loadPOiIndicator = () => {
-  if (!indicator.value) {
-    indicator.value =
-      new URLSearchParams(window.location.search).get("indicator") ?? "";
-  }
   const stacStore = useSTAcStore();
   const link = stacStore.stac?.find(
     (link) => useGetSubCodeId(link) === indicator.value,
