@@ -27,18 +27,14 @@ export function extractSchemaDefaults(schema) {
 }
 
 /**
- * Recursively rounds numbers inside geometries/arrays/objects to a given precision (default 5 decimals).
+ * Sanitizes form values for serialization by stripping internal properties and normalizing feature objects.
  *
  * @param {any} val
- * @param {number} [decimals=5]
  * @returns {any}
  */
-export function roundCoords(val, decimals = 5) {
-  if (typeof val === "number") {
-    return Number(val.toFixed(decimals));
-  }
+export function sanitizeFormValue(val) {
   if (Array.isArray(val)) {
-    return val.map((v) => roundCoords(v, decimals));
+    return val.map((v) => sanitizeFormValue(v));
   }
   if (val && typeof val === "object") {
     // If it's a native OL feature or has getProperties/ol_uid, convert to a plain serializable form
@@ -52,7 +48,7 @@ export function roundCoords(val, decimals = 5) {
     const res = {};
     for (const [k, v] of Object.entries(val)) {
       if (k.startsWith("_") || typeof v === "function") continue;
-      res[k] = roundCoords(v, decimals);
+      res[k] = sanitizeFormValue(v);
     }
     return res;
   }
@@ -72,7 +68,7 @@ export function diffFormValues(current, baseline) {
   const delta = {};
   for (const [key, val] of Object.entries(current)) {
     if (key.startsWith("_")) continue;
-    const cleanVal = roundCoords(val);
+    const cleanVal = sanitizeFormValue(val);
     const baseVal = baseline ? baseline[key] : undefined;
 
     if (JSON.stringify(cleanVal) !== JSON.stringify(baseVal)) {

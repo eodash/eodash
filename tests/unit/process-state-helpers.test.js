@@ -3,7 +3,7 @@ import {
   diffFormValues,
   extractSchemaDefaults,
   mergeFormDelta,
-  roundCoords,
+  sanitizeFormValue,
 } from "@/utils/process-state-helpers";
 
 describe("process-state-helpers", () => {
@@ -30,9 +30,9 @@ describe("process-state-helpers", () => {
     });
   });
 
-  test("rounds coordinates properly", () => {
-    const coords = [12.3456789, 45.6789123];
-    expect(roundCoords(coords, 4)).toEqual([12.3457, 45.6789]);
+  test("preserves exact coordinates in form values without rounding", () => {
+    const coords = [12.34567891234, 45.67891234567];
+    expect(sanitizeFormValue(coords)).toEqual([12.34567891234, 45.67891234567]);
   });
 
   test("computes delta between form values and baseline", () => {
@@ -43,13 +43,13 @@ describe("process-state-helpers", () => {
     const current = {
       date_start: "2024-01-01", // unchanged
       num: 10, // changed
-      bbox: [10.123456, 20.123456, 11.123456, 21.123456],
+      bbox: [10.123456789, 20.123456789, 11.123456789, 21.123456789],
     };
 
     const delta = diffFormValues(current, baseline);
     expect(delta).toEqual({
       num: 10,
-      bbox: [10.12346, 20.12346, 11.12346, 21.12346],
+      bbox: [10.123456789, 20.123456789, 11.123456789, 21.123456789],
     });
   });
 
