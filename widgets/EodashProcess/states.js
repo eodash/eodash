@@ -24,3 +24,15 @@ export const activeProcessFormValue = ref(null);
  * @type {import("vue").Ref<Record<string, any> | null>}
  */
 export const activeCompareProcessFormValue = ref(null);
+
+/**
+ * Baseline schema default values for computing form deltas
+ * @type {import("vue").Ref<Record<string, any> | null>}
+ */
+export const baselineProcessDefaults = ref(null);
+
+/**
+ * Baseline schema default values for compare process
+ * @type {import("vue").Ref<Record<string, any> | null>}
+ */
+export const baselineCompareProcessDefaults = ref(null);

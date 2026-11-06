@@ -75,14 +75,14 @@ export const restoredProcessState = ref(null);
 export const restoredCompareProcessState = ref(null);
 
 /**
- * Current value of the layer control JSON form for the latest layer the user interacted with.
- * @type {import("vue").Ref<Record<string, any> | undefined>}
+ * Current value of the layer control JSON form, keyed by layer ID.
+ * @type {import("vue").Ref<Record<string, Record<string, any>>>}
  */
 export const layerControlFormValue = ref({});
 
 /**
- * Current value of the layer control JSON form for the latest layer the user interacted with.
- * @type {import("vue").Ref<Record<string, any> | undefined>}
+ * Current value of the layer control JSON form for compare map, keyed by layer ID.
+ * @type {import("vue").Ref<Record<string, Record<string, any>>>}
  */
 export const layerControlFormValueCompare = ref({});
 

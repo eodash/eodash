@@ -113,6 +113,11 @@ export function applyRestoredLayerProperties(layers, restoredState) {
       layer.opacity = override.o;
       modified = true;
     }
+
+    if (override.t && layer.properties?.layerDatetime) {
+      layer.properties.layerDatetime.currentStep = override.t;
+      modified = true;
+    }
   }
   return modified;
 }

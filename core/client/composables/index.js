@@ -44,8 +44,10 @@ import { computeMapLayersDelta } from "@/utils/layer-delta-helpers";
 import {
   activeCompareProcessFormValue,
   activeProcessFormValue,
+  baselineCompareProcessDefaults,
+  baselineProcessDefaults,
 } from "^/EodashProcess/states";
-import { roundCoords } from "@/utils/process-state-helpers";
+import { diffFormValues } from "@/utils/process-state-helpers";
 /**
 /** @type {import('@/types').Eodash | null}*/
 
@@ -205,6 +207,63 @@ const resolvePoiUrl = async (match, poiValue, stacEndpoint) => {
   return toAbsolute(poiUrl, indicatorUrl);
 };
 
+/**
+ * Loads the selected STAC indicator or collection, handling POI resolution and API items.
+ *
+ * @param {object} params
+ * @param {import("@eodash/stac").STACLink} params.match
+ * @param {URLSearchParams} params.searchParams
+ * @param {ReturnType<typeof useSTAcStore>} params.store
+ * @param {string} [params.poiParam="poi"]
+ * @param {boolean} [params.isCompare=false]
+ * @returns {Promise<number[] | undefined>} item extent if restored
+ */
+const loadIndicatorFromUrl = async ({
+  match,
+  searchParams,
+  store,
+  poiParam = "poi",
+  isCompare = false,
+}) => {
+  let itemBbox;
+  const targetPoi = isCompare ? comparePoi : poi;
+  const targetIndicator = isCompare ? compareIndicator : indicator;
+  const loader = isCompare
+    ? store.loadSelectedCompareSTAC
+    : store.loadSelectedSTAC;
+
+  if (searchParams.has(poiParam)) {
+    targetPoi.value = searchParams.get(poiParam) ?? "";
+    targetIndicator.value = useGetSubCodeId(match);
+    const poiAbsoluteUrl = await resolvePoiUrl(
+      match,
+      targetPoi.value,
+      store.stacEndpoint,
+    );
+    if (poiAbsoluteUrl) {
+      log.debug(`Found ${poiParam} match, setting poi`, poiAbsoluteUrl);
+      await loader(poiAbsoluteUrl, true);
+    }
+  } else if (!isCompare && store.isApi && searchParams.has("item")) {
+    const itemId = searchParams.get("item");
+    const itemUrl = `${store.stacEndpoint}/collections/${match.id}/items/${itemId}`;
+    /** @type {import("@eodash/stac").STACItem | null} */
+    const item = await axios
+      .get(itemUrl)
+      .then((resp) => resp.data)
+      .catch(() => null);
+    await store.loadSelectedSTAC(
+      /** @type {string} */ (match.id),
+      false,
+      item ?? undefined,
+    );
+    itemBbox = /** @type {any} */ (item)?.bbox;
+  } else {
+    await loader(/** @type {string} */ (store.isApi ? match.id : match.href));
+  }
+  return itemBbox;
+};
+
 /** Composable that syncs store and URLSearchParameters */
 export const useURLSearchParametersSync = () => {
   onMounted(async () => {
@@ -266,38 +325,13 @@ export const useURLSearchParametersSync = () => {
             );
             if (match) {
               log.debug("Found match, loading stac item", match);
-              if (searchParams.has("poi")) {
-                poi.value = searchParams.get("poi") ?? "";
-                indicator.value = value;
-                const poiAbsoluteUrl = await resolvePoiUrl(
-                  match,
-                  poi.value,
-                  store.stacEndpoint,
-                );
-                if (poiAbsoluteUrl) {
-                  log.debug("Found poi match, setting poi", poiAbsoluteUrl);
-                  await store.loadSelectedSTAC(poiAbsoluteUrl, true);
-                }
-              } else if (store.isApi && searchParams.has("item")) {
-                // Restore a specific catalog item within the collection
-                const itemId = searchParams.get("item");
-                const itemUrl = `${store.stacEndpoint}/collections/${match.id}/items/${itemId}`;
-                /** @type {import("@eodash/stac").STACItem | null} */
-                const item = await axios
-                  .get(itemUrl)
-                  .then((resp) => resp.data)
-                  .catch(() => null);
-                await store.loadSelectedSTAC(
-                  /** @type {string} */ (match.id),
-                  false,
-                  item ?? undefined,
-                );
-                itemBbox = /** @type {any} */ (item)?.bbox;
-              } else {
-                await store.loadSelectedSTAC(
-                  /** @type {string} */ (store.isApi ? match.id : match.href),
-                );
-              }
+              itemBbox = await loadIndicatorFromUrl({
+                match,
+                searchParams,
+                store,
+                poiParam: "poi",
+                isCompare: false,
+              });
             }
             break;
           }
@@ -308,26 +342,13 @@ export const useURLSearchParametersSync = () => {
             );
             if (match) {
               log.debug("Found match, loading compare stac item", match);
-              if (searchParams.has("comparepoi")) {
-                comparePoi.value = searchParams.get("comparepoi") ?? "";
-                compareIndicator.value = value;
-                const poiAbsoluteUrl = await resolvePoiUrl(
-                  match,
-                  comparePoi.value,
-                  store.stacEndpoint,
-                );
-                if (poiAbsoluteUrl) {
-                  log.debug(
-                    "Found compare poi match, setting compare poi",
-                    poiAbsoluteUrl,
-                  );
-                  await store.loadSelectedCompareSTAC(poiAbsoluteUrl, true);
-                }
-              } else {
-                await store.loadSelectedCompareSTAC(
-                  /** @type {string} */ (store.isApi ? match.id : match.href),
-                );
-              }
+              await loadIndicatorFromUrl({
+                match,
+                searchParams,
+                store,
+                poiParam: "comparepoi",
+                isCompare: true,
+              });
             }
             break;
           }
@@ -443,67 +464,67 @@ export const useURLSearchParametersSync = () => {
             searchParams.set("comparepoi", updatedComparePoi);
           }
 
-          // LayerControl main delta
+          /**
+           * Updates or removes an encoded parameter in searchParams.
+           * @param {string} param
+           * @param {unknown} data
+           * @param {boolean} [shouldKeep=true]
+           */
+          const syncEncodedParam = (param, data, shouldKeep = true) => {
+            const encoded = shouldKeep && data ? encodeParam(data) : "";
+            if (encoded) {
+              searchParams.set(param, encoded);
+            } else if (searchParams.has(param)) {
+              searchParams.delete(param);
+            }
+          };
+
+          // LayerControl main & compare deltas
           if (mapEl.value) {
-            const layersDelta = computeMapLayersDelta(
-              mapEl.value,
-              layerControlFormValue.value,
+            syncEncodedParam(
+              "layers",
+              computeMapLayersDelta(mapEl.value, layerControlFormValue.value),
             );
-            const encodedLayers = encodeParam(layersDelta);
-            if (encodedLayers) {
-              searchParams.set("layers", encodedLayers);
-            } else if (searchParams.has("layers")) {
-              searchParams.delete("layers");
-            }
           }
-
-          // LayerControl compare delta
           if (mapCompareEl.value && updatedCompareIndicator) {
-            const compareLayersDelta = computeMapLayersDelta(
-              mapCompareEl.value,
-              layerControlFormValueCompare.value,
+            syncEncodedParam(
+              "comparelayers",
+              computeMapLayersDelta(
+                mapCompareEl.value,
+                layerControlFormValueCompare.value,
+              ),
             );
-            const encodedCompareLayers = encodeParam(compareLayersDelta);
-            if (encodedCompareLayers) {
-              searchParams.set("comparelayers", encodedCompareLayers);
-            } else if (searchParams.has("comparelayers")) {
-              searchParams.delete("comparelayers");
-            }
-          } else if (searchParams.has("comparelayers")) {
-            searchParams.delete("comparelayers");
+          } else {
+            syncEncodedParam("comparelayers", null, false);
           }
 
-          // Process main delta
+          // Process main & compare deltas
           if (updatedProcessForm && Object.keys(updatedProcessForm).length) {
-            const cleanProcess = roundCoords(updatedProcessForm);
-            const encodedProcess = encodeParam(cleanProcess);
-            if (encodedProcess) {
-              searchParams.set("process", encodedProcess);
-            } else if (searchParams.has("process")) {
-              searchParams.delete("process");
-            }
-          } else if (searchParams.has("process") && !updatedIndicator) {
-            searchParams.delete("process");
+            syncEncodedParam(
+              "process",
+              diffFormValues(
+                updatedProcessForm,
+                baselineProcessDefaults.value || {},
+              ),
+            );
+          } else if (!updatedIndicator) {
+            syncEncodedParam("process", null, false);
           }
 
-          // Process compare delta
           if (
             updatedCompareProcessForm &&
             Object.keys(updatedCompareProcessForm).length &&
             updatedCompareIndicator
           ) {
-            const cleanCompareProcess = roundCoords(updatedCompareProcessForm);
-            const encodedCompareProcess = encodeParam(cleanCompareProcess);
-            if (encodedCompareProcess) {
-              searchParams.set("compareprocess", encodedCompareProcess);
-            } else if (searchParams.has("compareprocess")) {
-              searchParams.delete("compareprocess");
-            }
-          } else if (
-            searchParams.has("compareprocess") &&
-            !updatedCompareIndicator
-          ) {
-            searchParams.delete("compareprocess");
+            syncEncodedParam(
+              "compareprocess",
+              diffFormValues(
+                updatedCompareProcessForm,
+                baselineCompareProcessDefaults.value || {},
+              ),
+            );
+          } else if (!updatedCompareIndicator) {
+            syncEncodedParam("compareprocess", null, false);
           }
 
           const newRelativePathQuery =

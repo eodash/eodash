@@ -11,7 +11,19 @@ import { flattenLayers, toShortLayerKey } from "./layer-state-helpers";
  * @param {Record<string, any>} [formValue]
  * @returns {Record<string, { v?: boolean; o?: number; t?: string; c?: Record<string, any> }>}
  */
-export function computeMapLayersDelta(mapElement, formValue = {}) {
+/**
+ * Computes layer control property deltas for a map compared to default values.
+ * Only records properties that differ from defaults:
+ * - v: boolean (visibility) if not default
+ * - o: number (opacity) if not 1
+ * - t: string (datetime) if different from layer's default step
+ * - c: Record<string, any> (form values for layerConfig)
+ *
+ * @param {import("@eox/map").EOxMap | null} mapElement
+ * @param {Record<string, Record<string, any>>} [layerFormValues={}]
+ * @returns {Record<string, { v?: boolean; o?: number; t?: string; c?: Record<string, any> }>}
+ */
+export function computeMapLayersDelta(mapElement, layerFormValues = {}) {
   /** @type {Record<string, { v?: boolean; o?: number; t?: string; c?: Record<string, any> }>} */
   const delta = {};
   if (!mapElement?.layers) {
@@ -27,13 +39,21 @@ export function computeMapLayersDelta(mapElement, formValue = {}) {
     /** @type {{ v?: boolean; o?: number; t?: string; c?: Record<string, any> }} */
     const layerEntry = {};
 
-    // 1. Visibility: default is typically true unless explicitly marked false or role invisible
-    if (layerDef.properties?.visible === false || layerDef.visible === false) {
-      layerEntry.v = false;
+    const olLayer = mapElement.getLayerById?.(id);
+
+    // 1. Visibility: compare with default roles or original properties
+    const currentVisible =
+      olLayer?.getVisible?.() ??
+      layerDef.visible ??
+      layerDef.properties?.visible;
+    const defaultVisible =
+      layerDef.properties?.defaultVisible ??
+      !layerDef.properties?.roles?.includes("invisible");
+    if (currentVisible !== undefined && currentVisible !== defaultVisible) {
+      layerEntry.v = currentVisible;
     }
 
     // 2. Opacity: default is 1
-    const olLayer = mapElement.getLayerById?.(id);
     const opacity = olLayer?.getOpacity?.() ?? layerDef.opacity;
     if (
       opacity !== undefined &&
@@ -54,16 +74,14 @@ export function computeMapLayersDelta(mapElement, formValue = {}) {
       layerEntry.t = currentStep;
     }
 
+    // 4. Config: match by full layer id or shortKey
+    const configVal = layerFormValues[id] || layerFormValues[shortKey];
+    if (configVal && Object.keys(configVal).length > 0) {
+      layerEntry.c = configVal;
+    }
+
     if (Object.keys(layerEntry).length > 0) {
       delta[shortKey] = layerEntry;
-    }
-  }
-
-  // Include layerConfig formValues if any
-  if (formValue && Object.keys(formValue).length > 0) {
-    for (const [_key, val] of Object.entries(delta)) {
-      val.c = formValue;
-      break;
     }
   }
 

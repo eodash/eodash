@@ -207,12 +207,21 @@ const onLayerConfigChange = (evt) => {
     jsonformValue,
   );
 
-  if (props.map === "second") {
-    layerControlFormValueCompare.value = evt.detail.jsonformValue;
-    layerStateChangeTriggerCompare.value++;
-  } else {
-    layerControlFormValue.value = evt.detail.jsonformValue;
-    layerStateChangeTrigger.value++;
+  const layerId = layer.get("id");
+  if (layerId) {
+    if (props.map === "second") {
+      layerControlFormValueCompare.value = {
+        ...layerControlFormValueCompare.value,
+        [layerId]: evt.detail.jsonformValue,
+      };
+      layerStateChangeTriggerCompare.value++;
+    } else {
+      layerControlFormValue.value = {
+        ...layerControlFormValue.value,
+        [layerId]: evt.detail.jsonformValue,
+      };
+      layerStateChangeTrigger.value++;
+    }
   }
 };
 </script>

@@ -50,7 +50,7 @@ import "@eox/drawtools";
 import "@eox/jsonform";
 import { useSTAcStore } from "@/store/stac";
 import { storeToRefs } from "pinia";
-import { computed, nextTick, ref, useTemplateRef, watch } from "vue";
+import { computed, ref, useTemplateRef, watch } from "vue";
 import ProcessList from "./ProcessList.vue";
 import EodashChart from "../EodashChart.vue";
 import { handleProcesses } from "./methods/handling";
@@ -71,7 +71,10 @@ import {
   jobs,
   activeProcessFormValue,
   activeCompareProcessFormValue,
+  baselineProcessDefaults,
+  baselineCompareProcessDefaults,
 } from "./states";
+import { extractSchemaDefaults } from "@/utils/process-state-helpers";
 import {
   restoredCompareProcessState,
   restoredProcessState,
@@ -106,7 +109,8 @@ const jsonformEl =
 watch(jsonformEl, (el) => {
   if (el) {
     const onFormChange = () => {
-      const current = /** @type {any} */ (el).value || {};
+      const current =
+        /** @type {{ value?: Record<string, any> } | null} */ (el)?.value || {};
       const targetState = enableCompare
         ? activeCompareProcessFormValue
         : activeProcessFormValue;
@@ -246,6 +250,14 @@ watch(
         : restoredProcessState.value,
   ],
   ([schema, restored]) => {
+    if (schema) {
+      const defaults = extractSchemaDefaults(schema);
+      if (enableCompare) {
+        baselineCompareProcessDefaults.value = defaults;
+      } else {
+        baselineProcessDefaults.value = defaults;
+      }
+    }
     if (
       schema &&
       restored &&
@@ -258,11 +270,6 @@ watch(
             schema.properties[key].default = val;
           }
         }
-      }
-      if (autoExec.value || schema?.options?.execute) {
-        nextTick(() => {
-          startProcess().catch(() => {});
-        });
       }
     }
   },
