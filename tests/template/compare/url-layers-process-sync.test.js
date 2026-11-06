@@ -11,8 +11,8 @@ describe("url-state-sync: layers and process parameters", () => {
   test("restores layer visibility and opacity from url", async () => {
     const layersDelta = {
       [INDICATOR_ID]: {
-        v: false,
-        o: 0.45,
+        visible: false,
+        opacity: 0.45,
       },
     };
     const encodedLayers = encodeParam(layersDelta);
@@ -52,8 +52,8 @@ describe("url-state-sync: layers and process parameters", () => {
 
     const compareLayersDelta = {
       [COMPARE_ID]: {
-        v: false,
-        o: 0.6,
+        visible: false,
+        opacity: 0.6,
       },
     };
     const compareProcessDelta = {
@@ -152,7 +152,7 @@ describe("url-state-sync: layers and process parameters", () => {
       const matchKey = Object.keys(decoded).find(
         (k) => k.startsWith(INDICATOR_ID) || INDICATOR_ID.startsWith(k),
       );
-      expect(decoded[matchKey]).toMatchObject({ v: false, o: 0.3 });
+      expect(decoded[matchKey]).toMatchObject({ visible: false, opacity: 0.3 });
     } finally {
       ctx.app.unmount();
     }

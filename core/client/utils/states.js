@@ -51,14 +51,14 @@ export const isFirstLoad = ref(false);
 
 /**
  * Restored LayerControl state overrides from URL query parameters.
- * Keys are shortened layer IDs; values contain changed properties: { v?: boolean, o?: number, t?: string, c?: Record<string, any> }.
- * @type {import("vue").Ref<Record<string, { v?: boolean; o?: number; t?: string; c?: Record<string, any> }> | null>}
+ * Keys are shortened layer IDs; values contain changed properties: { visible?: boolean; opacity?: number; datetime?: string; config?: Record<string, any> }.
+ * @type {import("vue").Ref<Record<string, { visible?: boolean; opacity?: number; datetime?: string; config?: Record<string, any> }> | null>}
  */
 export const restoredLayersState = ref(null);
 
 /**
  * Restored LayerControl state overrides for the compare map from URL query parameters.
- * @type {import("vue").Ref<Record<string, { v?: boolean; o?: number; t?: string; c?: Record<string, any> }> | null>}
+ * @type {import("vue").Ref<Record<string, { visible?: boolean; opacity?: number; datetime?: string; config?: Record<string, any> }> | null>}
  */
 export const restoredCompareLayersState = ref(null);
 

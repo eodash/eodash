@@ -65,11 +65,11 @@ export function flattenLayers(layers) {
 }
 
 /**
- * Traverses a layer tree and applies restored state (v: visibility, o: opacity)
+ * Traverses a layer tree and applies restored state (visible, opacity, datetime)
  * to any layer matching the restored state map.
  *
  * @param {Array<Record<string, any>>} layers
- * @param {Record<string, { v?: boolean; o?: number; t?: string; c?: Record<string, any> }> | null} restoredState
+ * @param {Record<string, { visible?: boolean; opacity?: number; datetime?: string; config?: Record<string, any> }> | null} restoredState
  * @returns {boolean} true if any layer was modified
  */
 export function applyRestoredLayerProperties(layers, restoredState) {
@@ -102,20 +102,20 @@ export function applyRestoredLayerProperties(layers, restoredState) {
       continue;
     }
 
-    if (override.v !== undefined) {
+    if (override.visible !== undefined) {
       layer.properties = layer.properties || {};
-      layer.properties.visible = override.v;
-      layer.visible = override.v;
+      layer.properties.visible = override.visible;
+      layer.visible = override.visible;
       modified = true;
     }
 
-    if (override.o !== undefined) {
-      layer.opacity = override.o;
+    if (override.opacity !== undefined) {
+      layer.opacity = override.opacity;
       modified = true;
     }
 
-    if (override.t && layer.properties?.layerDatetime) {
-      layer.properties.layerDatetime.currentStep = override.t;
+    if (override.datetime && layer.properties?.layerDatetime) {
+      layer.properties.layerDatetime.currentStep = override.datetime;
       modified = true;
     }
   }

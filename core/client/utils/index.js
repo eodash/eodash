@@ -25,7 +25,8 @@ export const applyRestoredLayerConfigsToReaders = (
   if (!state || !readers?.length) return;
 
   for (const [key, override] of Object.entries(state)) {
-    if (!override?.c) continue;
+    const config = override?.config;
+    if (!config) continue;
     const reader = findReaderByLayerId(readers, key);
     if (reader?.persistLayerConfig) {
       reader.persistLayerConfig(
@@ -33,14 +34,14 @@ export const applyRestoredLayerConfigsToReaders = (
           type: "style",
           schema: {},
         }),
-        override.c,
+        config,
       );
       reader.persistLayerConfig(
         /** @type {import("@eodash/stac").EodashLayerConfig} */ ({
           type: "tileUrl",
           schema: {},
         }),
-        override.c,
+        config,
       );
     }
   }
