@@ -1,5 +1,9 @@
+import base64EncodeSpec from "@eox/chart/src/methods/encode/encode-spec-b64.js";
+import parseSpec from "@eox/chart/src/methods/decode/parse-spec.js";
+
 /**
  * Base64url encode and decode utilities for compact URL parameters.
+ * Delegates to @eox/chart's base64EncodeSpec and parseSpec, converting to URL-safe base64.
  */
 
 /**
@@ -11,17 +15,13 @@ export function encodeParam(data) {
   if (data === null || data === undefined) {
     return "";
   }
-  const jsonStr = typeof data === "string" ? data : JSON.stringify(data);
-  if (!jsonStr || jsonStr === "{}" || jsonStr === "[]") {
+  if (typeof data === "object" && Object.keys(data).length === 0) {
     return "";
   }
   try {
-    const bytes = new TextEncoder().encode(jsonStr);
-    let binary = "";
-    for (let i = 0; i < bytes.length; i++) {
-      binary += String.fromCharCode(bytes[i]);
-    }
-    const b64 = btoa(binary);
+    const b64 = base64EncodeSpec(
+      /** @type {import("vega-embed").VisualizationSpec} */ (data),
+    );
     return b64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
   } catch (err) {
     console.error("[eodash] Failed to base64url encode parameter:", err);
@@ -44,13 +44,7 @@ export function decodeParam(str) {
     while (base64.length % 4) {
       base64 += "=";
     }
-    const binary = atob(base64);
-    const bytes = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i++) {
-      bytes[i] = binary.charCodeAt(i);
-    }
-    const decoded = new TextDecoder().decode(bytes);
-    return JSON.parse(decoded);
+    return /** @type {T} */ (parseSpec(base64));
   } catch (err) {
     console.warn("[eodash] Failed to decode base64url parameter:", err);
     return null;

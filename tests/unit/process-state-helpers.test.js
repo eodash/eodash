@@ -1,35 +1,11 @@
 import { describe, expect, test } from "vitest";
 import {
   diffFormValues,
-  extractSchemaDefaults,
   mergeFormDelta,
   sanitizeFormValue,
 } from "@/utils/process-state-helpers";
 
 describe("process-state-helpers", () => {
-  const schema = {
-    type: "object",
-    properties: {
-      date_start: { type: "string", default: "2024-01-01" },
-      num: { type: "number", default: 5 },
-      nested: {
-        type: "object",
-        properties: {
-          inner: { type: "string", default: "init" },
-        },
-      },
-    },
-  };
-
-  test("extracts schema defaults correctly", () => {
-    const defaults = extractSchemaDefaults(schema);
-    expect(defaults).toEqual({
-      date_start: "2024-01-01",
-      num: 5,
-      nested: { inner: "init" },
-    });
-  });
-
   test("preserves exact coordinates in form values without rounding", () => {
     const coords = [12.34567891234, 45.67891234567];
     expect(sanitizeFormValue(coords)).toEqual([12.34567891234, 45.67891234567]);

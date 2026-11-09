@@ -74,7 +74,6 @@ import {
   baselineProcessDefaults,
   baselineCompareProcessDefaults,
 } from "./states";
-import { extractSchemaDefaults } from "@/utils/process-state-helpers";
 import {
   restoredCompareProcessState,
   restoredProcessState,
@@ -108,9 +107,17 @@ const jsonformEl =
 // Inject custom styles into the eox-jsonform shadow DOM to make eox-drawtools inline
 watch(jsonformEl, (el) => {
   if (el) {
+    // Capture initial form values as baseline schema defaults directly from jsonform
+    const targetBaseline = enableCompare
+      ? baselineCompareProcessDefaults
+      : baselineProcessDefaults;
+    const form = /** @type {{ value?: Record<string, any> } | null} */ (el);
+    if (!targetBaseline.value && form?.value) {
+      targetBaseline.value = { ...form.value };
+    }
+
     const onFormChange = () => {
-      const current =
-        /** @type {{ value?: Record<string, any> } | null} */ (el)?.value || {};
+      const current = form?.value || {};
       const targetState = enableCompare
         ? activeCompareProcessFormValue
         : activeProcessFormValue;
@@ -250,14 +257,6 @@ watch(
         : restoredProcessState.value,
   ],
   ([schema, restored]) => {
-    if (schema) {
-      const defaults = extractSchemaDefaults(schema);
-      if (enableCompare) {
-        baselineCompareProcessDefaults.value = defaults;
-      } else {
-        baselineProcessDefaults.value = defaults;
-      }
-    }
     if (
       schema &&
       restored &&

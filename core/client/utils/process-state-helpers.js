@@ -1,30 +1,6 @@
 /**
- * Utilities for extracting, diffing, and serializing process jsonform values.
+ * Utilities for diffing and serializing process jsonform values.
  */
-
-/**
- * Extracts default values from a jsonform schema.
- *
- * @param {Record<string, any> | null | undefined} schema
- * @returns {Record<string, any>}
- */
-export function extractSchemaDefaults(schema) {
-  if (!schema || typeof schema !== "object") return {};
-  /** @type {Record<string, any>} */
-  const defaults = {};
-  if (schema.properties) {
-    for (const [key, prop] of Object.entries(schema.properties)) {
-      if (prop && typeof prop === "object") {
-        if (prop.default !== undefined) {
-          defaults[key] = JSON.parse(JSON.stringify(prop.default));
-        } else if (prop.type === "object" && prop.properties) {
-          defaults[key] = extractSchemaDefaults(prop);
-        }
-      }
-    }
-  }
-  return defaults;
-}
 
 /**
  * Sanitizes form values for serialization by stripping internal properties and normalizing feature objects.

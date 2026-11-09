@@ -1,4 +1,5 @@
-import { flattenLayers, toShortLayerKey } from "./layer-state-helpers";
+import { getFlatLayers, toShortLayerKey } from "./layer-state-helpers";
+import { getLayerCollectionPrefix } from "@eodash/stac/helpers";
 
 /**
  * Computes layer control property deltas for a map compared to default values.
@@ -19,11 +20,12 @@ export function computeMapLayersDelta(mapElement, layerFormValues = {}) {
     return delta;
   }
 
-  const layers = flattenLayers(mapElement.layers);
+  const layers = getFlatLayers(mapElement.layers, mapElement);
   for (const layerDef of layers) {
     const id = layerDef?.properties?.id;
     if (!id) continue;
     const shortKey = toShortLayerKey(id);
+    const prefix = getLayerCollectionPrefix(id);
 
     /** @type {{ visible?: boolean; opacity?: number; datetime?: string; config?: Record<string, any> }} */
     const layerEntry = {};
@@ -63,8 +65,11 @@ export function computeMapLayersDelta(mapElement, layerFormValues = {}) {
       layerEntry.datetime = currentStep;
     }
 
-    // 4. Config: match by full layer id or shortKey
-    const configVal = layerFormValues[id] || layerFormValues[shortKey];
+    // 4. Config: match by full layer id, shortKey, or collection prefix
+    const configVal =
+      layerFormValues[id] ||
+      layerFormValues[shortKey] ||
+      layerFormValues[prefix];
     if (configVal && Object.keys(configVal).length > 0) {
       layerEntry.config = configVal;
     }
