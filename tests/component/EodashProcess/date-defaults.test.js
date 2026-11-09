@@ -16,6 +16,7 @@ import {
 import { useSTAcStore } from "@/store/stac";
 import { eoxLayersKey } from "@/utils/keys";
 import axios from "@/plugins/axios";
+import { handleProcesses } from "^/EodashProcess/methods/handling";
 import { mountComponent } from "../../support/mount";
 
 // Keep eodash schema fetching and lifecycle real, but assert at the external
@@ -29,6 +30,10 @@ vi.mock("^/EodashChart.vue", () => ({
 vi.mock("^/EodashProcess/ProcessList.vue", () => ({
   default: { template: "<div />" },
 }));
+vi.mock("^/EodashProcess/methods/handling", async (importOriginal) => ({
+  ...(await importOriginal()),
+  handleProcesses: vi.fn().mockResolvedValue(undefined),
+}));
 vi.mock("@/eodashSTAC/layers", () => ({
   assignDataLayers: vi.fn(),
   updateIndicatorLayers: vi.fn(),
@@ -41,10 +46,73 @@ function dateSchema() {
   return {
     type: "object",
     properties: {
-      date_start: { type: "string", format: "date", default: "2000-01-01" },
-      date_end: { type: "string", format: "date", default: "2000-12-31" },
+      date_start: { type: "string", format: "date" },
+      date_end: { type: "string", format: "date" },
     },
   };
+}
+
+/**
+ * @param {string} location
+ * @returns {import("json-schema").JSONSchema7}
+ */
+function configuredDateSchema(location) {
+  const defaults = { date_start: "2000-01-01", date_end: "2000-12-31" };
+  if (location === "single field") {
+    return {
+      type: "object",
+      properties: {
+        date: { type: "string", format: "date", default: "2000-06-01" },
+      },
+    };
+  }
+  if (location === "nested parent") {
+    return {
+      type: "object",
+      properties: { period: { ...dateSchema(), default: defaults } },
+    };
+  }
+  const schema = dateSchema();
+  schema.properties = {
+    date_start: {
+      type: "string",
+      format: "date",
+      default: defaults.date_start,
+    },
+    date_end: { type: "string", format: "date", default: defaults.date_end },
+  };
+  if (location === "parent") {
+    // Parent values deliberately differ from field defaults: both must survive.
+    schema.default = { date_start: "2001-01-01", date_end: "2001-12-31" };
+  }
+  return schema;
+}
+
+const configuredCases = [
+  "field",
+  "single field",
+  "parent",
+  "nested parent",
+].flatMap((location) =>
+  [false, true].map((compare) => ({ location, compare })),
+);
+
+/**
+ * Simulate only the external form's schema -> value boundary. The component
+ * receives configured defaults without loading or validating JSONEditor.
+ * @param {import("json-schema").JSONSchema7} schema
+ * @returns {import("json-schema").JSONSchema7Type | undefined}
+ */
+function configuredFormValue(schema) {
+  if (schema.default !== undefined) return schema.default;
+  if (schema.type !== "object") return undefined;
+  return Object.fromEntries(
+    Object.entries(schema.properties ?? {}).flatMap(([name, property]) => {
+      if (typeof property === "boolean") return [];
+      const value = configuredFormValue(property);
+      return value === undefined ? [] : [[name, value]];
+    }),
+  );
 }
 
 /** @param {string} start @param {string} end */
@@ -90,6 +158,7 @@ async function readyForm() {
 describe("processing date prefill wiring", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    vi.mocked(handleProcesses).mockClear();
     datetime.value = "2024-06-01T00:00:00Z";
     poi.value = "";
     comparePoi.value = "";
@@ -135,7 +204,7 @@ describe("processing date prefill wiring", () => {
     const schema = {
       type: "object",
       properties: {
-        date: { type: "string", format: "date", default: "2000-01-01" },
+        date: { type: "string", format: "date" },
       },
     };
     vi.spyOn(axios, "get").mockResolvedValue({ data: schema });
@@ -152,8 +221,144 @@ describe("processing date prefill wiring", () => {
     expect(element.schema).toMatchObject({
       properties: { date: { default: "2024-06-01" } },
     });
-    expect(schema.properties.date.default).toBe("2000-01-01");
+    expect(schema.properties.date).not.toHaveProperty("default");
   });
+
+  test.each([false, true])(
+    "infers only the missing endpoint when the start is configured (compare=%s)",
+    async (compare) => {
+      const schema = dateSchema();
+      schema.properties.date_start = {
+        type: "string",
+        format: "date",
+        default: "2000-01-01",
+      };
+      const original = structuredClone(schema);
+      vi.spyOn(axios, "get").mockResolvedValue({ data: schema });
+      const { map } = processMap(compare);
+      (compare ? mapCompareEl : mapEl).value =
+        /** @type {import("@eox/map").EOxMap} */ (/** @type {unknown} */ (map));
+      await mountComponent(EodashProcess, {
+        props: { enableCompare: compare },
+        initialState: {
+          stac: {
+            selectedStac: collection("2024-01-01", "2024-12-31"),
+            selectedCompareStac: collection("2023-01-01", "2023-12-31"),
+          },
+        },
+      });
+
+      expect((await readyForm()).schema).toMatchObject({
+        properties: {
+          date_start: { default: "2000-01-01" },
+          date_end: { default: compare ? "2023-12-31" : "2024-12-31" },
+        },
+      });
+      expect(schema).toEqual(original);
+    },
+  );
+
+  test.each(configuredCases)(
+    "retains configured $location defaults in the form schema (compare=$compare)",
+    async ({ location, compare }) => {
+      const schema = configuredDateSchema(location);
+      const original = structuredClone(schema);
+      vi.spyOn(axios, "get").mockResolvedValue({ data: schema });
+      const { map } = processMap(compare);
+      (compare ? mapCompareEl : mapEl).value =
+        /** @type {import("@eox/map").EOxMap} */ (/** @type {unknown} */ (map));
+      await mountComponent(EodashProcess, {
+        props: { enableCompare: compare },
+        initialState: {
+          stac: {
+            selectedStac: collection("2024-01-01", "2024-12-31"),
+            selectedCompareStac: collection("2023-01-01", "2023-12-31"),
+          },
+        },
+      });
+
+      expect((await readyForm()).schema).toEqual(original);
+      expect(schema).toEqual(original);
+    },
+  );
+
+  test.each(configuredCases)(
+    "preserves configured $location defaults across re-initialization (compare=$compare)",
+    async ({ location, compare }) => {
+      const schema = configuredDateSchema(location);
+      const original = structuredClone(schema);
+      vi.spyOn(axios, "get").mockResolvedValue({ data: schema });
+      const { map } = processMap(compare);
+      (compare ? mapCompareEl : mapEl).value =
+        /** @type {import("@eox/map").EOxMap} */ (/** @type {unknown} */ (map));
+      await mountComponent(EodashProcess, {
+        props: { enableCompare: compare },
+        initialState: {
+          stac: {
+            selectedStac: collection("2024-01-01", "2024-12-31"),
+            selectedCompareStac: collection("2023-01-01", "2023-12-31"),
+          },
+        },
+      });
+      expect((await readyForm()).schema).toEqual(original);
+
+      const store = useSTAcStore();
+      store[compare ? "selectedCompareStac" : "selectedStac"] =
+        /** @type {import("@eodash/stac").STACCollection} */ (
+          /** @type {unknown} */ (collection("2022-01-01", "2022-12-31"))
+        );
+      datetime.value = "2022-07-01T00:00:00Z";
+      useEventBus(eoxLayersKey).emit(
+        compare ? "compareLayers:updated" : "layers:updated",
+      );
+      await expect.poll(() => axios.get).toHaveBeenCalledTimes(2);
+      await flushPromises();
+      expect((await readyForm()).schema).toEqual(original);
+      expect(schema).toEqual(original);
+    },
+  );
+
+  test.each(configuredCases)(
+    "auto-executes with configured $location values (compare=$compare)",
+    async ({ location, compare }) => {
+      const schema = {
+        ...configuredDateSchema(location),
+        options: { execute: true },
+      };
+      const expectedValues = configuredFormValue(schema);
+      vi.spyOn(axios, "get").mockResolvedValue({ data: schema });
+      const { map } = processMap(compare);
+      (compare ? mapCompareEl : mapEl).value =
+        /** @type {import("@eox/map").EOxMap} */ (/** @type {unknown} */ (map));
+      await mountComponent(EodashProcess, {
+        props: { enableCompare: compare },
+        initialState: {
+          stac: {
+            selectedStac: collection("2024-01-01", "2024-12-31"),
+            selectedCompareStac: collection("2023-01-01", "2023-12-31"),
+          },
+        },
+      });
+      const element = await readyForm();
+      // This is the external jsonform boundary, not JSONEditor's implementation.
+      Object.assign(element, {
+        value: configuredFormValue(element.schema),
+        editor: { validate: vi.fn(() => []) },
+      });
+      await flushPromises();
+      expect(handleProcesses).not.toHaveBeenCalled();
+      element.dispatchEvent(new Event("change"));
+      await expect.poll(() => handleProcesses).toHaveBeenCalledTimes(1);
+      const [options] = vi.mocked(handleProcesses).mock.calls[0];
+      expect(options.jsonformEl.value?.value).toEqual(expectedValues);
+      expect(options.jsonformSchema.value).toEqual(schema);
+      expect(options.selectedStac.value?.id).toBe(
+        compare ? "2023-01-01/2023-12-31" : "2024-01-01/2024-12-31",
+      );
+      expect(options.mapElement).toBe(map);
+      expect(axios.get).toHaveBeenCalledExactlyOnceWith("/process-form.json");
+    },
+  );
 
   test("recalculates defaults when the selected collection changes", async () => {
     vi.spyOn(axios, "get").mockResolvedValue({ data: dateSchema() });

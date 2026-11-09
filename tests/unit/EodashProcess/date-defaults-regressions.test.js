@@ -8,7 +8,6 @@ import { prefillProcessDates } from "^/EodashProcess/methods/date-defaults.js";
 const dateField = (overrides = {}) => ({
   type: "string",
   format: "date",
-  default: "2000-01-01",
   ...overrides,
 });
 
@@ -127,7 +126,6 @@ describe("prefillProcessDates formatted native bound regressions", () => {
       properties: {
         date: dateField({
           format: "datetime-local",
-          default: "2000-01-01T00:00:00",
           options: { inputAttributes: { min: "2024-01-05T12:34:56.789" } },
         }),
       },
@@ -170,36 +168,26 @@ describe("prefillProcessDates formatted native bound regressions", () => {
     });
   });
 
-  test("keeps an unformatted minute-precision default when formatting would fall below min", () => {
+  test("adds no date-only default when formatting would fall below a sub-day min", () => {
     /** @type {FormSchema} */
     const schema = {
       type: "object",
       properties: {
-        date: {
-          type: "string",
-          default: "2000-01-01T00:00",
+        date: dateField({
           options: { inputAttributes: { min: "2024-01-05T12:34:56" } },
-        },
+        }),
       },
     };
     const result = prefillProcessDates(schema, null, "2024-01-02T00:00:00Z");
     expect(result).toEqual(schema);
-    expect(result).toMatchObject({
-      properties: { date: { default: "2000-01-01T00:00" } },
-    });
+    expect(result.properties?.date).not.toHaveProperty("default");
   });
 
-  test("keeps both range defaults when one formatted bound would fall below min", () => {
+  test("adds neither range default when one formatted bound would fall below min", () => {
     const schema = rangeForm(
-      {
-        type: "string",
-        default: "2000-01-01T00:00",
+      dateField({
         options: { inputAttributes: { min: "2024-01-05T12:34:56" } },
-      },
-      {
-        type: "string",
-        default: "2000-01-02T00:00",
-      },
+      }),
     );
     /** @type {Collection} */
     const context = {
@@ -211,7 +199,8 @@ describe("prefillProcessDates formatted native bound regressions", () => {
     };
     const result = prefillProcessDates(schema, context, "2024-01-02T00:00:00Z");
     expect(result).toEqual(schema);
-    expectRange(result, "2000-01-01T00:00", "2000-01-02T00:00");
+    expect(result.properties?.start_date).not.toHaveProperty("default");
+    expect(result.properties?.end_date).not.toHaveProperty("default");
   });
 
   test("preserves date-only formatting and native date bounds", () => {

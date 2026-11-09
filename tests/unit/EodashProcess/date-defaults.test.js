@@ -12,7 +12,6 @@ const END = "2024-01-10T00:00:00.000Z";
 const dateField = (overrides = {}) => ({
   type: "string",
   format: "date",
-  default: "2000-01-01",
   ...overrides,
 });
 
@@ -82,26 +81,33 @@ describe("prefillProcessDates field recognition", () => {
     );
   });
 
+  test("infers date-only defaults for unformatted date-named fields", () => {
+    expectRange(
+      prefillProcessDates(
+        rangeForm({ type: "string" }, { type: "string" }),
+        collection(),
+        SELECTED,
+      ),
+      "2024-01-05",
+      "2024-01-10",
+    );
+  });
+
   test.each([
-    ["2000-01-01", "2024-01-05", "2024-01-10"],
-    ["2000-01-01T00:00", "2024-01-05T12:34", "2024-01-10T00:00"],
-    ["2000-01-01T00:00:00", "2024-01-05T12:34:56", "2024-01-10T00:00:00"],
-    ["2000-01-01T01:00:00+01:00", SELECTED, END],
+    "2000-01-01",
+    "2000-01-01T00:00",
+    "2000-01-01T00:00:00",
+    "2000-01-01T01:00:00+01:00",
   ])(
-    "preserves unformatted date-name precision from %s",
-    (original, start, end) => {
-      expectRange(
-        prefillProcessDates(
-          rangeForm(
-            { type: "string", default: original },
-            { type: "string", default: original },
-          ),
-          collection(),
-          SELECTED,
-        ),
-        start,
-        end,
+    "preserves an explicit unformatted date default exactly: %s",
+    (original) => {
+      const schema = rangeForm(
+        { type: "string", default: original },
+        { type: "string", default: original },
       );
+      const result = prefillProcessDates(schema, collection(), SELECTED);
+      expect(result).toEqual(schema);
+      expectRange(result, original, original);
     },
   );
 
@@ -119,7 +125,7 @@ describe("prefillProcessDates field recognition", () => {
     "does not infer an unformatted date from %s",
     (name) => {
       const schema = objectForm({
-        [name]: { type: "string", default: "original" },
+        [name]: { type: "string" },
       });
       expect(prefillProcessDates(schema, collection(), SELECTED)).toEqual(
         schema,
@@ -166,7 +172,7 @@ describe("prefillProcessDates field recognition", () => {
 });
 
 describe("prefillProcessDates schema traversal", () => {
-  test("updates root and nested object defaults that would override property defaults", () => {
+  test("preserves root and nested object defaults instead of inferring conflicting property defaults", () => {
     const schema = {
       ...rangeForm(),
       default: {
@@ -193,31 +199,13 @@ describe("prefillProcessDates schema traversal", () => {
       },
     };
     const original = structuredClone(schema);
-    const dates = { start_date: "2024-01-05", end_date: "2024-01-10" };
     const result = prefillProcessDates(
       /** @type {FormSchema} */ (schema),
       collection(),
       SELECTED,
     );
 
-    expectRange(result, dates.start_date, dates.end_date);
-    expect(result).toMatchObject({
-      default: {
-        ...dates,
-        label: "root label",
-        nested: { ...dates, label: "parent nested label" },
-      },
-      properties: {
-        label: { default: "property label" },
-        nested: {
-          default: { ...dates, label: "nested label" },
-          properties: {
-            start_date: { default: dates.start_date },
-            end_date: { default: dates.end_date },
-          },
-        },
-      },
-    });
+    expect(result).toEqual(original);
     expect(schema).toEqual(original);
   });
 
@@ -294,7 +282,7 @@ describe("prefillProcessDates schema traversal", () => {
 
 describe("prefillProcessDates temporal context", () => {
   test.each([undefined, null])(
-    "preserves defaults for missing selected datetime %j",
+    "adds no defaults for missing selected datetime %j",
     (selected) => {
       const schema = rangeForm();
       // @ts-expect-error Missing runtime inputs must be ignored despite the required signature.
@@ -310,7 +298,7 @@ describe("prefillProcessDates temporal context", () => {
     "2024-02-30",
     "2024-13-01",
     "2024-01-01T25:00:00Z",
-  ])("preserves defaults for invalid selected datetime %s", (selected) => {
+  ])("adds no defaults for invalid selected datetime %s", (selected) => {
     const schema = rangeForm();
     expect(prefillProcessDates(schema, collection(), selected)).toEqual(schema);
   });
@@ -511,7 +499,7 @@ describe("prefillProcessDates constraints and immutability", () => {
     { pattern: "^2000-" },
     { pattern: "[" },
   ])(
-    "preserves both defaults when a field constraint cannot be satisfied: %j",
+    "adds neither default when a field constraint cannot be satisfied: %j",
     (constraint) => {
       const schema = rangeForm(dateField(constraint));
       expect(prefillProcessDates(schema, collection(), SELECTED)).toEqual(

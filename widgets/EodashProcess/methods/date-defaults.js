@@ -93,23 +93,12 @@ function formatDate(time, schema) {
     return iso.endsWith(".000Z") ? iso.slice(0, 19) : iso.slice(0, -1);
   }
   if (schema.format === "date-time") return iso;
-  // Unformatted strings keep an existing ISO default's date/time precision.
-  if (typeof schema.default === "string" && !schema.format) {
-    if (
-      schema.default.includes("T") &&
-      parseDate(schema.default) !== undefined
-    ) {
-      return /(?:Z|[+-]\d{2}:\d{2})$/.test(schema.default)
-        ? iso
-        : iso.slice(0, schema.default.length);
-    }
-  }
   return iso.slice(0, 10);
 }
 
 /**
  * Respect native date input bounds and string constraints. A failed constraint
- * leaves the original default intact, rather than generating an invalid form.
+ * leaves the missing default unset, rather than generating an invalid form.
  * @param {DateSchema} schema
  * @param {number} time
  * @param {number | undefined} start
@@ -153,33 +142,76 @@ function constrainedDate(schema, time, start, end) {
 }
 
 /**
- * Object-level defaults can override individual property defaults in JSONEditor.
- * Patch only inferred dates, leaving unrelated configured defaults intact.
+ * Find configured values at a data path, including defaults in composed schemas.
+ * Parent-object defaults take precedence.
+ * @param {DateSchema} node
+ * @param {string[]} path
+ * @returns {(import("json-schema").JSONSchema7Type | undefined)[]}
+ */
+function configuredDefaults(node, path) {
+  if (Object.hasOwn(node, "default")) {
+    let value = node.default;
+    let missing = false;
+    for (const name of path) {
+      if (!value || typeof value !== "object" || Array.isArray(value)) {
+        return [undefined];
+      }
+      if (!Object.hasOwn(value, name)) {
+        missing = true;
+        break;
+      }
+      value = value[name];
+    }
+    if (!missing) return [value];
+  }
+
+  /** @type {(import("json-schema").JSONSchema7Type | undefined)[]} */
+  const values = [];
+  const [name, ...rest] = path;
+  const property = name === undefined ? undefined : node.properties?.[name];
+  if (property && typeof property !== "boolean") {
+    values.push(...configuredDefaults(property, rest));
+  }
+  for (const alternatives of [node.allOf, node.anyOf, node.oneOf]) {
+    for (const alternative of alternatives ?? []) {
+      if (typeof alternative !== "boolean") {
+        values.push(...configuredDefaults(alternative, path));
+      }
+    }
+  }
+  return values;
+}
+
+/**
+ * Object-level defaults can mask individual property defaults in JSONEditor.
+ * Fill only missing entries, never replace a configured value or subtree.
  * @param {import("json-schema").JSONSchema7Object} defaults
  * @param {import("json-schema").JSONSchema7Object} dates
  * @returns {import("json-schema").JSONSchema7Object}
  */
-function mergeDateDefaults(defaults, dates) {
+function fillMissingDefaults(defaults, dates) {
   for (const [name, value] of Object.entries(dates)) {
-    if (value && typeof value === "object" && !Array.isArray(value)) {
-      const previous = defaults[name];
-      defaults[name] = mergeDateDefaults(
-        previous && typeof previous === "object" && !Array.isArray(previous)
-          ? previous
-          : {},
-        value,
-      );
-    } else {
+    if (!Object.hasOwn(defaults, name)) {
       defaults[name] = value;
+    } else if (value && typeof value === "object" && !Array.isArray(value)) {
+      const previous = defaults[name];
+      if (
+        previous &&
+        typeof previous === "object" &&
+        !Array.isArray(previous)
+      ) {
+        fillMissingDefaults(previous, value);
+      }
     }
   }
   return defaults;
 }
 
 /**
- * Prefill likely processing date inputs on a cloned schema. Ambiguous sibling
- * fields are untouched. Nested objects and explicit alternative schemas are
- * handled independently; references and array item defaults are not expanded.
+ * Prefill missing processing date defaults on a cloned schema. Explicit schema
+ * defaults and ambiguous sibling fields are untouched. Nested objects and
+ * explicit alternative schemas are examined; references and array item defaults
+ * are not expanded.
  *
  * @param {DateSchema} schema
  * @param {TemporalCollection | null | undefined} collection
@@ -232,9 +264,10 @@ export function prefillProcessDates(schema, collection, selectedDatetime) {
 
   /**
    * @param {DateSchema} node
+   * @param {string[]} path
    * @returns {import("json-schema").JSONSchema7Object}
    */
-  function visit(node) {
+  function visit(node, path) {
     /** @type {import("json-schema").JSONSchema7Object} */
     const dates = {};
     /** @type {DateField[]} */
@@ -244,7 +277,7 @@ export function prefillProcessDates(schema, collection, selectedDatetime) {
       const field = /** @type {DateSchema} */ (property);
       const role = inferRole(name, field);
       if (role) fields.push({ name, schema: field, role });
-      const nestedDates = visit(field);
+      const nestedDates = visit(field, [...path, name]);
       if (Object.keys(nestedDates).length) dates[name] = nestedDates;
     }
     const starts = fields.filter((field) => field.role === "start");
@@ -255,30 +288,52 @@ export function prefillProcessDates(schema, collection, selectedDatetime) {
       start !== undefined &&
       end !== undefined
     ) {
-      const first = constrainedDate(
-        starts[0].schema,
-        nearEnd ? start : current,
-        start,
-        end,
+      const firstDefaults = configuredDefaults(schema, [
+        ...path,
+        starts[0].name,
+      ]);
+      const lastDefaults = configuredDefaults(schema, [...path, ends[0].name]);
+      const first = firstDefaults.length
+        ? undefined
+        : constrainedDate(
+            starts[0].schema,
+            nearEnd ? start : current,
+            start,
+            end,
+          );
+      const last = lastDefaults.length
+        ? undefined
+        : constrainedDate(ends[0].schema, end, start, end);
+      const firstTimes = (firstDefaults.length ? firstDefaults : [first]).map(
+        parseDate,
       );
-      const last = constrainedDate(ends[0].schema, end, start, end);
-      // Assign both or neither; incompatible field bounds must not invert or
-      // collapse a guessed range, including after date-only formatting.
-      const firstTime = parseDate(first);
-      const lastTime = parseDate(last);
+      const lastTimes = (lastDefaults.length ? lastDefaults : [last]).map(
+        parseDate,
+      );
+      // Validate the effective pair without clamping configured endpoints
       if (
-        first &&
-        last &&
-        firstTime !== undefined &&
-        lastTime !== undefined &&
-        firstTime < lastTime
+        firstTimes.every(
+          (firstTime) =>
+            firstTime !== undefined &&
+            lastTimes.every(
+              (lastTime) => lastTime !== undefined && firstTime < lastTime,
+            ),
+        )
       ) {
-        starts[0].schema.default = first;
-        ends[0].schema.default = last;
-        dates[starts[0].name] = first;
-        dates[ends[0].name] = last;
+        if (first !== undefined) {
+          starts[0].schema.default = first;
+          dates[starts[0].name] = first;
+        }
+        if (last !== undefined) {
+          ends[0].schema.default = last;
+          dates[ends[0].name] = last;
+        }
       }
-    } else if (fields.length === 1 && fields[0].role === "single") {
+    } else if (
+      fields.length === 1 &&
+      fields[0].role === "single" &&
+      !configuredDefaults(schema, [...path, fields[0].name]).length
+    ) {
       const value = constrainedDate(fields[0].schema, current, start, end);
       if (value) {
         fields[0].schema.default = value;
@@ -290,16 +345,16 @@ export function prefillProcessDates(schema, collection, selectedDatetime) {
       typeof node.default === "object" &&
       !Array.isArray(node.default)
     ) {
-      mergeDateDefaults(node.default, dates);
+      fillMissingDefaults(node.default, dates);
     }
     for (const alternatives of [node.allOf, node.anyOf, node.oneOf]) {
       for (const alternative of alternatives ?? []) {
-        if (typeof alternative !== "boolean") visit(alternative);
+        if (typeof alternative !== "boolean") visit(alternative, path);
       }
     }
     return dates;
   }
 
-  visit(form);
+  visit(form, []);
   return form;
 }

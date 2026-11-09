@@ -34,7 +34,7 @@ widget: {
 
 ## Inputs
 
-The form is whatever the collection's `eodash:jsonform` schema describes - eodash renders the schema as-is, so the available inputs are defined by the dataset, not by the widget see [STAC processing](/STAC#processing). On top of standard JSON Schema fields, two things are eodash-specific:
+The form is whatever the collection's `eodash:jsonform` schema describes. The available inputs are defined by the dataset, not by the widget; eodash only supplies inferred date defaults where none are configured. See [STAC processing](/STAC#processing). On top of standard JSON Schema fields, two things are eodash-specific:
 
 - **Spatial selection.** A schema field can declare a drawtools input, which lets the user draw on the map. The supported geometries are **bounding box**, **point**, **polygon**, and **feature selection** (clicking existing features of a layer). The drawn geometry is written back into the form value.
 - **Schema options.**
@@ -53,13 +53,11 @@ The panel makes a best-effort guess at date inputs using their existing property
   "properties": {
     "beginDate": {
       "type": "string",
-      "format": "date",
-      "default": "2024-01-01"
+      "format": "date"
     },
     "endDate": {
       "type": "string",
-      "format": "date",
-      "default": "2024-12-31"
+      "format": "date"
     }
   }
 }
@@ -69,13 +67,15 @@ Names are split at underscores, hyphens, and camel-case boundaries, then matched
 
 - **Start:** `start`, `begin`, `beginning`, or `from`.
 - **End:** `end`, `finish`, `stop`, or `to`.
-- **Date hints:** `date`, `time`, or `datetime`. Unformatted string fields need one of these hints. A `date`, `date-time`, or `datetime-local` format is sufficient evidence by itself, so formatted fields named `from` and `to` also work. Substrings such as `runtime`, `timeout`, and `weekend` do not count as hints.
+- **Date hints:** `date`, `time`, or `datetime`. Unformatted string fields need one of these hints. A `date`, `date-time`, or `datetime-local` format is sufficient evidence by itself, so formatted fields named `from` and `to` also work.
 
-Exactly one start and one end input in the same object form a range. The initial range is the collection temporal extent. 
+Explicit schema defaults always take precedence, including field defaults, values in parent-object defaults, and defaults declared in `allOf`, `anyOf`, or `oneOf` branches.
 
-A single date input uses the selected dashboard datetime, constrained by the collection extent. Nested objects and explicit `allOf`, `anyOf`, or `oneOf` branches are examined independently; references and array items are not expanded.
+When both defaults are missing, the initial range runs from the selected dashboard datetime, constrained by the collection extent, to the collection end. It falls back to the full extent if fewer than two observations, or if the selected date is at or beyond the collection end.
 
-Date-only inputs receive `YYYY-MM-DD`; `date-time` inputs receive UTC ISO datetimes, and `datetime-local` inputs receive the corresponding UTC components without a timezone suffix. Unformatted inputs keep an existing valid ISO default's date/time precision, or use date-only values otherwise.
+A single date input without a configured default uses the selected datetime, constrained by the collection extent. Nested objects and explicit `allOf`, `anyOf`, or `oneOf` branches are examined; references and array items are not expanded.
+
+Inferred date-only and unformatted inputs receive `YYYY-MM-DD`; `date-time` inputs receive UTC ISO datetimes, and `datetime-local` inputs receive the corresponding UTC components without a timezone suffix, preserving nonzero milliseconds. Guesses must satisfy native `min`/`max` input bounds and string constraints after formatting.
 
 ## Outputs
 
