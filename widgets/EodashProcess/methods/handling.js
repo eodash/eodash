@@ -14,6 +14,7 @@ import {
   chartSpec,
   compareChartData,
   compareChartSpec,
+  datetime,
 } from "@/store/states";
 import { processCharts, processLayers, processSTAC } from "./outputs";
 import { handleLayersCustomEndpoints } from "./custom-endpoints/layers";
@@ -23,6 +24,7 @@ import { LAYER_ID_SEPARATOR } from "@eodash/stac/helpers";
 import axios from "@/plugins/axios";
 import { useGetSubCodeId } from "@/composables";
 import { getLayers, getCompareLayers, setDatetime } from "@/store/actions";
+import { prefillProcessDates } from "./date-defaults";
 
 /**
  * Fetch and set the jsonform schema to initialize the process
@@ -89,7 +91,11 @@ export async function initProcess({
     processResults,
     enableCompare,
   });
-  jsonformSchema.value = newJsonForm;
+  jsonformSchema.value = prefillProcessDates(
+    newJsonForm,
+    selectedStac.value,
+    datetime.value,
+  );
 }
 
 /**

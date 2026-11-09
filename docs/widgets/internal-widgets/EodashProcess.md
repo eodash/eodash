@@ -43,6 +43,40 @@ The form is whatever the collection's `eodash:jsonform` schema describes - eodas
 - **Vega options.**
   - `eodash:disableClickDateToMap` - when set to `true` in the Vega spec, disables updating the global dashboard datetime on chart item click.
 
+## Initial processing dates
+
+The panel makes a best-effort guess at date inputs using their existing property names and formats. No additional schema fields are required. For example, both `date_start` / `date_end` and `beginDate` / `endDate` are recognized:
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "beginDate": {
+      "type": "string",
+      "format": "date",
+      "default": "2024-01-01"
+    },
+    "endDate": {
+      "type": "string",
+      "format": "date",
+      "default": "2024-12-31"
+    }
+  }
+}
+```
+
+Names are split at underscores, hyphens, and camel-case boundaries, then matched case-insensitively as whole words:
+
+- **Start:** `start`, `begin`, `beginning`, or `from`.
+- **End:** `end`, `finish`, `stop`, or `to`.
+- **Date hints:** `date`, `time`, or `datetime`. Unformatted string fields need one of these hints. A `date`, `date-time`, or `datetime-local` format is sufficient evidence by itself, so formatted fields named `from` and `to` also work. Substrings such as `runtime`, `timeout`, and `weekend` do not count as hints.
+
+Exactly one start and one end input in the same object form a range. The initial range is the collection temporal extent. 
+
+A single date input uses the selected dashboard datetime, constrained by the collection extent. Nested objects and explicit `allOf`, `anyOf`, or `oneOf` branches are examined independently; references and array items are not expanded.
+
+Date-only inputs receive `YYYY-MM-DD`; `date-time` inputs receive UTC ISO datetimes, and `datetime-local` inputs receive the corresponding UTC components without a timezone suffix. Unformatted inputs keep an existing valid ISO default's date/time precision, or use date-only values otherwise.
+
 ## Outputs
 
 The process output is determined by the `service` links returned for the collection, matched on the link `type`:
