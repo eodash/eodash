@@ -4,7 +4,9 @@ import {
   findLayersByLayerPrefix,
   replaceLayer,
 } from "../helpers/layers.js";
+import { resolveRenders } from "../helpers/renders.js";
 import { buildLayers } from "../layers/index.js";
+import { createLayerFromMosaic } from "../layers/mosaic.js";
 
 /**
  * Creates the base collection reader implementing standard layer and item handling.
@@ -28,6 +30,7 @@ export const createCollectionBase = ({
   defaultContext,
 }) => {
   const layerConfigHelpers = createLayerConfigHelpers();
+  const rasterEndpoint = defaultContext?.rasterEndpoint;
 
   /** @type {import("../types").STACItem | undefined} */
   let builtItem;
@@ -77,6 +80,23 @@ export const createCollectionBase = ({
      * Persists the current layer configuration editor state.
      */
     persistLayerConfig: layerConfigHelpers.persistLayerConfig,
+
+    ...(rasterEndpoint &&
+      resolveRenders(stac, defaultContext?.renders) && {
+        /**
+         * Builds the collection's mosaic layer through the raster endpoint.
+         *
+         * @param {Record<string, string> | null} [query] - TileJSON query, e.g. `datetime` or a cql2 `filter`
+         * @param {import("../layers/index.js").BuildContext} [context]
+         */
+        buildMosaicLayer: (query, context = {}) =>
+          createLayerFromMosaic(
+            rasterEndpoint,
+            stac,
+            query,
+            getBuildContext(context),
+          ),
+      }),
 
     /**
      * Builds map layers from a specified STAC item.
