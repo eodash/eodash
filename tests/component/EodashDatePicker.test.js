@@ -2,8 +2,13 @@ import { beforeEach, describe, expect, test, vi } from "vitest";
 import { userEvent } from "vitest/browser";
 import EodashDatePicker from "^/EodashDatePicker.vue";
 import { datetime } from "@/store/states";
-import { eodashCollections, eodashCompareCollections } from "@/store/stac";
+import {
+  eodashCollections,
+  eodashCompareCollections,
+  useSTAcStore,
+} from "@/store/stac";
 import { mountComponent, stubCustomElement } from "../support/mount";
+import { createDatePickerReader } from "../support/datepicker-reader";
 
 // Keep the web-component tags (isCustomElement) so property bindings still work.
 vi.mock("@eox/timecontrol", () => ({}));
@@ -299,6 +304,152 @@ describe("EodashDatePicker", () => {
       );
 
       expect(calls.hide).toBe(0);
+    });
+  });
+
+  describe("comparison collections", () => {
+    const mountComparison = () =>
+      mountComponent(EodashDatePicker, {
+        initialState: {
+          stac: {
+            selectedStac: { id: "indicator" },
+            selectedCompareStac: { id: "compare-indicator" },
+          },
+        },
+      });
+
+    test("shows a shared collection once and preserves primary labels and colors", async () => {
+      const primary = createDatePickerReader("shared", "Shared collection");
+      const compare = createDatePickerReader("shared", "Shared collection", {
+        color: "#0000ff",
+      });
+      eodashCollections.push(primary);
+      eodashCompareCollections.push(compare);
+
+      await mountComparison();
+
+      await expect
+        .poll(() => timecontrol()?.controlValues)
+        .toEqual([
+          {
+            id: "shared",
+            title: "Shared collection",
+            color: primary.color,
+            timeControlValues: [{ date: "2024-06-15T00:00:00.000Z" }],
+          },
+        ]);
+      expect(timecontrol()?.getAttribute("layer-id-key")).toBe("title");
+      expect(compare.getDates).not.toHaveBeenCalled();
+      expect(eodashCompareCollections).toEqual([compare]);
+      expect(picker()?.style.getPropertyValue("--dot-color-1")).toBe(
+        primary.color,
+      );
+    });
+
+    test("keeps distinct comparison collections and omits only the overlap", async () => {
+      eodashCollections.push(
+        createDatePickerReader("primary", "Primary collection"),
+        createDatePickerReader("shared", "Shared collection"),
+      );
+      const duplicate = createDatePickerReader("shared", "Shared collection");
+      eodashCompareCollections.push(
+        duplicate,
+        createDatePickerReader("compare", "Comparison collection"),
+      );
+
+      await mountComparison();
+
+      await expect
+        .poll(() => timecontrol()?.controlValues?.map(({ id }) => id))
+        .toEqual(["primary", "shared", "compare (compare)"]);
+      expect(duplicate.getDates).not.toHaveBeenCalled();
+    });
+
+    test.each([
+      {
+        name: "matching self links",
+        primarySelf: "https://example.test/collections/shared.json",
+        compareSelf: "https://example.test/collections/shared.json",
+      },
+      {
+        name: "different self links",
+        primarySelf: "https://example.test/primary.json",
+        compareSelf: "https://example.test/compare.json",
+      },
+      {
+        name: "relative and absolute self links",
+        primarySelf: "./shared.json",
+        compareSelf: "https://example.test/collections/shared.json",
+      },
+      {
+        name: "a missing self link",
+        primarySelf: "https://example.test/collections/shared.json",
+        compareSelf: undefined,
+      },
+    ])(
+      "deduplicates equal collection IDs with $name",
+      async ({ primarySelf, compareSelf }) => {
+        eodashCollections.push(
+          createDatePickerReader("shared", "Shared collection", {
+            self: primarySelf,
+          }),
+        );
+        const compare = createDatePickerReader("shared", "Shared collection", {
+          self: compareSelf,
+        });
+        eodashCompareCollections.push(compare);
+
+        await mountComparison();
+
+        await expect
+          .poll(() => timecontrol()?.controlValues?.map(({ id }) => id))
+          .toEqual(["shared"]);
+        expect(compare.getDates).not.toHaveBeenCalled();
+      },
+    );
+
+    test("rebuilds entries when comparison changes or is cleared", async () => {
+      eodashCollections.push(
+        createDatePickerReader("shared", "Shared collection"),
+      );
+      eodashCompareCollections.push(
+        createDatePickerReader("shared", "Shared collection"),
+      );
+      await mountComparison();
+      await expect.poll(() => timecontrol()?.controlValues).toHaveLength(1);
+      const store = useSTAcStore();
+
+      eodashCompareCollections.splice(
+        0,
+        1,
+        createDatePickerReader("other", "Other collection"),
+      );
+      store.selectedCompareStac = { ...store.selectedCompareStac, id: "other" };
+
+      await expect
+        .poll(() => timecontrol()?.controlValues?.map(({ id }) => id))
+        .toEqual(["shared", "other (compare)"]);
+
+      eodashCompareCollections.splice(
+        0,
+        1,
+        createDatePickerReader("shared", "Shared collection"),
+      );
+      store.selectedCompareStac = {
+        ...store.selectedCompareStac,
+        id: "shared",
+      };
+
+      await expect
+        .poll(() => timecontrol()?.controlValues?.map(({ id }) => id))
+        .toEqual(["shared"]);
+
+      eodashCompareCollections.splice(0);
+      store.selectedCompareStac = null;
+
+      await expect
+        .poll(() => timecontrol()?.controlValues?.map(({ id }) => id))
+        .toEqual(["shared"]);
     });
   });
 

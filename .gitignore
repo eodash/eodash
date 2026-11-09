@@ -4,6 +4,9 @@ node_modules
 tsconfig.tsbuildinfo
 .eodash
 
+# Local session tracking
+session-*.md
+
 # local env files
 .env.local
 .env.*.local
