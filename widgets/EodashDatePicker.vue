@@ -1,5 +1,5 @@
 <template>
-  <div v-show="!hasSingleDate" ref="rootRef" class="datePicker">
+  <div v-show="!hideDatePicker" ref="rootRef" class="datePicker">
     <eox-timecontrol
       :key="revision"
       ref="timecontrolRef"
@@ -203,19 +203,23 @@ watch(datetime, (iso) => {
 /** @type {import("vue").Ref<import("@/types").DatePickerControlValue[]>} */
 const controlValues = ref([]);
 
-const hasSingleDate = computed(
-  () =>
+const { selectedCompareStac, selectedStac } = storeToRefs(useSTAcStore());
+
+const hideDatePicker = computed(() => {
+  if (!selectedStac.value && !selectedCompareStac.value) return false;
+
+  // Static/process-only collections can have an extent but no dated items.
+  return (
     new Set(
       controlValues.value.flatMap((collection) =>
         collection.timeControlValues.map(({ date }) => date),
       ),
-    ).size === 1,
-);
+    ).size <= 1
+  );
+});
 
 // eox only derives its items in `firstUpdated`, so a change needs a remount.
 const revision = ref(0);
-
-const { selectedCompareStac, selectedStac } = storeToRefs(useSTAcStore());
 
 watch(
   [selectedStac, selectedCompareStac],
