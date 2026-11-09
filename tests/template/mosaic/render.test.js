@@ -95,7 +95,8 @@ describe("mosaic template", () => {
           "",
         { timeout: TIMEOUT },
       )
-      .toBe(`${INDICATOR_ID};:;mosaic`);
+      // the id carries the query, so each time range is a new layer
+      .toMatch(`${INDICATOR_ID};:;mosaic;:;datetime=`);
 
     // // Two by the current division of labour: the map writes base and overlay,
     // // then the time slider mounts and the mosaic writes the analysis group. A

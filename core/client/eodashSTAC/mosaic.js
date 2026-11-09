@@ -1,11 +1,5 @@
 import axios from "@/plugins/axios";
-import {
-  datetime,
-  indicator,
-  isGlobe,
-  mapEl,
-  mapPosition,
-} from "@/store/states";
+import { datetime, isGlobe, mapEl, mapPosition } from "@/store/states";
 import { ANALYSIS_GROUP, assignGroupLayers } from "@/eodashSTAC/layers";
 import {
   computed,
@@ -21,19 +15,9 @@ import {
   useDebounceFn,
   useEventBus,
 } from "@vueuse/core";
-import { useEodash, useOnLayersUpdate } from "@/composables";
+import { useOnLayersUpdate } from "@/composables";
 import { registerProjection } from "@/store/actions";
-import {
-  encodeURLObject,
-  LAYER_ID_SEPARATOR,
-  extractLayerTimeValues,
-  getProjectionCode,
-  normalizeNodata,
-  normalizeRescale,
-  resolveRenders,
-  resolveTmsByProjection,
-  tmsToTileGridOptions,
-} from "@eodash/stac/helpers";
+import { extractLayerTimeValues } from "@eodash/stac/helpers";
 import { useSTAcStore } from "@/store/stac";
 import { eodashCollections } from "@/store/stac";
 import log from "loglevel";
@@ -76,37 +60,45 @@ export const useMosaicState = createSharedComposable(() => {
 });
 
 /**
- * Builds and renders the mosaic layer on the map.
- * @param {string} mosaicEndpoint - TileJSON endpoint URL for the mosaic
+ * Builds the mosaic layer through the selected collection's reader and renders it on the map.
  * @param {Record<string, string> | null} [params] - Query parameters for the TileJSON request
  */
-export async function renderMosaic(mosaicEndpoint, params) {
-  const mosaicLayers = await createMosaicLayers(mosaicEndpoint, params);
-
-  if (!mosaicLayers.length) {
+export async function renderMosaic(params) {
+  const { selectedStac } = useSTAcStore();
+  const eodashCol = eodashCollections.find((ec) => ec.id === selectedStac?.id);
+  const { layer, projection } =
+    (await eodashCol?.buildMosaicLayer?.(params)) ?? {};
+  if (!eodashCol || !layer) {
     return;
   }
+  await registerProjection(projection);
 
-  const { selectedStac } = useSTAcStore();
-  if (selectedStac) {
-    const eodashCol = eodashCollections.find((ec) => ec.id === selectedStac.id);
-    const dates = (await eodashCol?.getDates()) ?? [];
-    const { timeControlValues } = extractLayerTimeValues(dates, datetime.value);
-    if (timeControlValues) {
-      //@ts-expect-error properties is optional upstream, always built here
-      mosaicLayers[0].properties.timeControlValues = timeControlValues;
-      //@ts-expect-error properties is optional upstream, always built here
-      mosaicLayers[0].properties.timeControlProperty = "TIME";
-      //@ts-expect-error properties is optional upstream, always built here
-      mosaicLayers[0].properties.collectionId = selectedStac.id;
-    }
+  const { latestLayer, visibilityThreshold } = useMosaicState();
+  layer.minZoom = visibilityThreshold.value;
+  //@ts-expect-error properties is optional upstream, always built here
+  layer.properties.layerControlToolsExpand = true;
+
+  const dates = (await eodashCol.getDates()) ?? [];
+  const { timeControlValues } = extractLayerTimeValues(dates, datetime.value);
+  if (timeControlValues) {
+    //@ts-expect-error properties is optional upstream, always built here
+    layer.properties.timeControlValues = timeControlValues;
+    //@ts-expect-error properties is optional upstream, always built here
+    layer.properties.timeControlProperty = "TIME";
+    //@ts-expect-error properties is optional upstream, always built here
+    layer.properties.collectionId = eodashCol.id;
   }
 
-  assignGroupLayers(mapEl.value, ANALYSIS_GROUP, mosaicLayers);
-  const { latestLayer } = useMosaicState();
-  latestLayer.value = mosaicLayers[0];
+  assignGroupLayers(mapEl.value, ANALYSIS_GROUP, [layer]);
+  latestLayer.value = layer;
   //@ts-expect-error source is optional upstream, always built here
-  log.debug("[eodash] Mosaic layer rendered.", mosaicLayers[0].source.url);
+  log.debug("[eodash] Mosaic layer rendered.", layer.source.url);
+
+  // every query builds a new layer, which starts visible on the globe
+  await nextTick();
+  toggleMosaicVisibility(
+    mapPosition.value[2] ?? mapEl.value?.map?.getView()?.getZoom() ?? 0,
+  );
 }
 
 /**
@@ -140,7 +132,7 @@ export async function updateMosaicLayer(
   const queryParams = Object.keys(params).length > 0 ? params : null;
   const { query } = useMosaicState();
   query.value = queryParams;
-  await renderMosaic(mosaicEndpoint, queryParams);
+  await renderMosaic(queryParams);
 }
 
 /**
@@ -150,19 +142,6 @@ export function renderLatestMosaic() {
   const { latestLayer } = useMosaicState();
   if (!latestLayer.value) return;
   assignGroupLayers(mapEl.value, ANALYSIS_GROUP, [latestLayer.value]);
-}
-
-/**
- * Initializes and displays the mosaic layer for a given time range.
- * @param {string} mosaicEndpoint - TileJSON endpoint URL
- * @param {[string, string] | undefined} timeRange - Start and end datetime strings
- */
-export async function initMosaic(mosaicEndpoint, timeRange) {
-  await updateMosaicLayer(mosaicEndpoint, { timeRange });
-  await nextTick();
-  const zoom =
-    mapPosition.value[2] ?? mapEl.value?.map?.getView()?.getZoom() ?? 0;
-  toggleMosaicVisibility(zoom);
 }
 
 /**
@@ -176,6 +155,8 @@ export function useInitMosaic(mosaicEndpoint, timeRange, indicators) {
 
   const store = useSTAcStore();
   const { isItemView, latestLayer, query, hasDataInView } = useMosaicState();
+  // render the inital mosaic
+  const scheduleMosaicUpdate = useScheduleMosaicUpdate();
 
   function shouldInitiate() {
     if (isItemView.value) return false;
@@ -195,15 +176,15 @@ export function useInitMosaic(mosaicEndpoint, timeRange, indicators) {
 
   const stopQueryWatch = watch(query, () => scheduleMosaicDataCheck());
 
-  onMounted(async () => {
+  onMounted(() => {
     if (!shouldInitiate()) return;
-    initMosaic(mosaicEndpoint, timeRange?.value);
+    scheduleMosaicUpdate(mosaicEndpoint, timeRange?.value);
   });
 
   useOnLayersUpdate((evt) => {
     if (evt !== "layers:updated") return;
     if (!shouldInitiate()) return;
-    initMosaic(mosaicEndpoint, timeRange?.value);
+    scheduleMosaicUpdate(mosaicEndpoint, timeRange?.value);
   });
 
   onUnmounted(() => {
@@ -233,94 +214,6 @@ export const useScheduleMosaicUpdate = createSharedComposable(() =>
     300,
   ),
 );
-
-/**
- * Creates the Tile XYZ layer definition for the mosaic.
- * @param {string} mosaicEndpoint - TileJSON endpoint URL
- * @param {Record<string, string> | null} [params] - Query parameters for TileJSON request
- * @returns {Promise<import("@eox/map/src/layers").EOxLayerType<"Tile", "XYZ">[]>}
- */
-async function createMosaicLayers(mosaicEndpoint, params) {
-  const { selectedStac } = useSTAcStore();
-  const renders = resolveRenders(selectedStac, useEodash()?.options?.renders);
-  const preset = renders ? Object.values(renders)[0] : undefined;
-  if (!preset) {
-    console.warn(
-      "[eodash] No render preset (collection `renders` nor `options.renders`) for the mosaic layer.",
-    );
-    return [];
-  }
-
-  const store = useSTAcStore();
-
-  const projection =
-    /** @type {string | number | {name: string, def: string} | undefined} */ (
-      preset.projection
-    ) ?? "EPSG:3857";
-  const projectionCode = getProjectionCode(projection);
-  await registerProjection(projection);
-
-  const tms = resolveTmsByProjection(
-    projectionCode,
-    store.tileMatrixSetRegistry,
-  );
-  const tmsId = tms?.id || "WebMercatorQuad";
-
-  const renderParamsStr = encodeURLObject({
-    // TiTiler treats assets and expression as mutually exclusive band selection
-    assets: preset.expression ? undefined : preset.assets,
-    expression: preset.expression,
-    nodata: normalizeNodata(preset.nodata),
-    resampling: preset.resampling,
-    color_formula: preset.color_formula,
-    colormap: preset.colormap,
-    colormap_name: preset.colormap_name,
-    rescale: normalizeRescale(preset.rescale),
-  });
-
-  const tileParams = new URLSearchParams({
-    tilesize: `${preset.tilesize ?? "512"}`,
-    ...params,
-  });
-  const tileJsonUrl = `${mosaicEndpoint.replace("/WebMercatorQuad/", `/${tmsId}/`)}?${renderParamsStr}${tileParams.toString()}`;
-
-  const tileJSON = await axios
-    .get(tileJsonUrl)
-    .then((res) => res.data)
-    .catch((err) => {
-      console.error("Failed to fetch mosaic TileJSON", err);
-      return null;
-    });
-  if (!tileJSON?.tiles?.[0]) {
-    console.warn("[eodash] No tile URL found in mosaic TileJSON response.");
-    return [];
-  }
-
-  const layer = {
-    type: /** @type {const} */ ("Tile"),
-    minZoom: useMosaicState().visibilityThreshold.value,
-    properties: {
-      id: `${indicator.value}${LAYER_ID_SEPARATOR}mosaic`,
-      title: "Mosaic Layer",
-    },
-    source: {
-      type: /** @type {const} */ ("XYZ"),
-      url: tileJSON.tiles[0],
-      projection: projectionCode,
-    },
-  };
-  const tileSize = preset.tilesize || 512;
-  // @ts-expect-error tileGrid is added here and supported in eox-map layer definition
-  layer.source.tileGrid = {
-    tileSize,
-  };
-  if (tms) {
-    const tmsOptions = tmsToTileGridOptions(tms, [tileSize, tileSize]);
-    // @ts-expect-error tileGrid supported in eox-map
-    layer.source.tileGrid = { ...layer.source.tileGrid, ...tmsOptions };
-  }
-  return [layer];
-}
 
 /**
  * Converts a datetime input into an ISO date string (YYYY-MM-DD).

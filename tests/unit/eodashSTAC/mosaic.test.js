@@ -1,26 +1,23 @@
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import { createPinia, setActivePinia } from "pinia";
+import { createEodashCollection } from "@eodash/stac";
 import {
   checkMosaicDataInView,
   normalizeGlobeZoom,
   updateMosaicLayer,
   useMosaicState,
+  useScheduleMosaicUpdate,
 } from "@/eodashSTAC/mosaic";
 import { useSTAcStore } from "@/store/stac";
-import {
-  datetime,
-  indicator,
-  isGlobe,
-  mapEl,
-  mapPosition,
-} from "@/store/states";
+import { datetime, isGlobe, mapEl, mapPosition } from "@/store/states";
 import { eodashCollections } from "@/store/stac";
 import { provideEodash } from "../../support/fixtures";
+import { analysisGroup } from "../../support/layers";
+import { stacCollection } from "../../support/stac";
 
 const axiosMock = vi.hoisted(() => ({ get: vi.fn() }));
 vi.mock("@/plugins/axios", () => ({ default: axiosMock, axios: axiosMock }));
 
-// createMosaicLayers calls useEodash().
 provideEodash();
 
 // One pinia for the whole file: useMosaicState is a shared composable whose
@@ -31,17 +28,68 @@ const state = useMosaicState();
 
 const RENDERS = {
   first: { assets: ["b04"], rescale: [0, 100], tilesize: 256 },
-  second: { assets: ["b08"] },
 };
 
+/** @type {import("@/types").ItemFilterFilters} */
+const CLOUD_FILTER = {
+  cloud: {
+    key: "properties.eo:cloud_cover",
+    type: "range",
+    state: { min: 5, max: 20 },
+    min: 0,
+    max: 100,
+  },
+};
+
+const COLLECTION_URL = "https://cat/collections/coll";
+const TILES = "https://tiles/{z}/{x}/{y}";
 const ENDPOINT =
   "https://raster/collections/coll/WebMercatorQuad/tilejson.json";
 
-/** @returns {URL} The tilejson URL of the last axios.get call. */
-const lastRequestedUrl = () => new URL(axiosMock.get.mock.calls.at(-1)?.[0]);
+/**
+ * Stands in for eox-map with only what the mosaic touches.
+ * @param {Record<string, any>} [over]
+ * @returns {import("@eox/map").EOxMap}
+ */
+const fakeMap = (over = {}) =>
+  /** @type {any} */ ({ layers: [], globeConfig: {}, ...over });
+
+/** Reads the collection through a reader that knows the raster endpoint. */
+const readCollection = () => {
+  axiosMock.get.mockImplementation((/** @type {string} */ url) => {
+    if (url === COLLECTION_URL) {
+      return Promise.resolve({ data: stacCollection({ renders: RENDERS }) });
+    }
+    if (url.includes("/tilejson.json")) {
+      return Promise.resolve({ data: { tiles: [TILES] } });
+    }
+    return Promise.reject(new Error(`unmocked url ${url}`));
+  });
+  return createEodashCollection(COLLECTION_URL, {
+    client: axiosMock,
+    rasterEndpoint: "https://raster",
+  });
+};
+
+/** Selects the collection the way the store does on load. */
+const selectCollection = async () => {
+  const reader = await readCollection();
+  eodashCollections.splice(0, eodashCollections.length, reader);
+  store.selectedStac = reader.stac;
+};
+
+/** @returns {string[]} The TileJSON urls requested so far. */
+const tileJsonRequests = () =>
+  axiosMock.get.mock.calls
+    .map(([url]) => url)
+    .filter((url) => url.includes("/tilejson.json"));
+
+/** @returns {URL} The TileJSON url requested last. */
+const lastRequestedUrl = () => new URL(tileJsonRequests().at(-1) ?? "");
 
 describe("mosaic", () => {
   beforeEach(() => {
+    vi.useRealTimers();
     vi.restoreAllMocks();
     axiosMock.get.mockReset();
     store.selectedStac = null;
@@ -51,109 +99,39 @@ describe("mosaic", () => {
     state.isItemView.value = false;
     state.visibilityThreshold.value = 8;
     state.hasDataInView.value = true;
-    indicator.value = "ind";
     isGlobe.value = false;
-    mapEl.value = null;
+    mapEl.value = fakeMap();
     mapPosition.value = [0, 0, 10];
     datetime.value = "2023-06-15T00:00:00.000Z";
     eodashCollections.splice(0);
   });
 
   describe("updateMosaicLayer", () => {
-    test("warns and renders nothing without a render preset", async () => {
-      const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
-      store.selectedStac = /** @type {any} */ ({ id: "coll" });
+    test("renders nothing without a reader for the selected collection", async () => {
+      store.selectedStac = (await readCollection()).stac;
 
       await updateMosaicLayer(ENDPOINT, {});
 
-      expect(warn).toHaveBeenCalledWith(
-        expect.stringContaining("No render preset"),
-      );
-      expect(axiosMock.get).not.toHaveBeenCalled();
+      expect(tileJsonRequests()).toEqual([]);
       expect(state.latestLayer.value).toBeNull();
     });
 
-    test("XYZ layer uses matched TMS from registry and updates TiTiler URL", async () => {
-      const customTms = {
-        CustomTMS: {
-          id: "CustomTMS",
-          crs: "http://www.opengis.net/def/crs/EPSG/0/3035",
-          tileMatrices: [
-            {
-              id: "0",
-              cellSize: 100,
-              pointOfOrigin: [0, 0],
-              matrixWidth: 1,
-              matrixHeight: 1,
-              tileWidth: 512,
-              tileHeight: 512,
-            },
-          ],
-        },
-      };
-      store.tileMatrixSetRegistry = customTms;
-      store.selectedStac = /** @type {any} */ ({
-        id: "coll",
-        renders: {
-          first: { ...RENDERS.first, projection: "EPSG:3035" },
-        },
-      });
-      mapEl.value = /** @type {any} */ ({
-        layers: [],
-        registerProjectionFromCode: vi.fn(),
-      });
-      axiosMock.get.mockResolvedValue({
-        data: { tiles: ["https://tiles/{z}/{x}/{y}"] },
-      });
+    test("renders the reader's layer into the AnalysisGroup, hidden below the threshold and with its tools open", async () => {
+      await selectCollection();
 
       await updateMosaicLayer(ENDPOINT, {});
 
-      // TiTiler URL should use CustomTMS instead of WebMercatorQuad
-      const requestedUrl = lastRequestedUrl().toString();
-      expect(requestedUrl).toContain("/CustomTMS/");
-      expect(requestedUrl).not.toContain("/WebMercatorQuad/");
-
-      const layer = /** @type {any} */ (state.latestLayer.value);
-      expect(layer.source.tileGrid).toBeDefined();
-      expect(layer.source.tileGrid.matrixIds).toEqual(["0"]);
-      expect(layer.source.projection).toBe("EPSG:3035");
-    });
-
-    test("builds the tile layer from the first render preset only", async () => {
-      store.selectedStac = /** @type {any} */ ({
-        id: "coll",
-        renders: RENDERS,
+      const layer = state.latestLayer.value;
+      expect(layer).toMatchObject({
+        minZoom: 8,
+        properties: { layerControlToolsExpand: true },
+        source: { url: TILES },
       });
-      mapEl.value = /** @type {any} */ ({
-        layers: [],
-        registerProjectionFromCode: vi.fn(),
-      });
-      axiosMock.get.mockResolvedValue({
-        data: { tiles: ["https://tiles/{z}/{x}/{y}"] },
-      });
-
-      await updateMosaicLayer(ENDPOINT, {});
-
-      const params = lastRequestedUrl().searchParams;
-      expect(params.get("assets")).toBe("b04");
-      expect(params.get("tilesize")).toBe("256");
-      expect([...params.values()]).not.toContain("b08");
-
-      const layer = /** @type {any} */ (state.latestLayer.value);
-      expect(layer.source.url).toBe("https://tiles/{z}/{x}/{y}");
-      expect(layer.properties.id).toBe("ind;:;mosaic");
-      expect(layer.minZoom).toBe(8);
-      // Written into the AnalysisGroup and reassigned onto the map.
-      expect(mapEl.value?.layers[0].properties?.id).toBe("AnalysisGroup");
-      expect(mapEl.value?.layers?.[0]?.layers).toEqual([layer]);
+      expect(analysisGroup(mapEl.value ?? undefined)?.layers).toEqual([layer]);
     });
 
     test("collapses an equal-day time range to a single datetime", async () => {
-      store.selectedStac = /** @type {any} */ ({
-        id: "coll",
-        renders: RENDERS,
-      });
-      axiosMock.get.mockResolvedValue({ data: { tiles: ["https://t"] } });
+      await selectCollection();
 
       await updateMosaicLayer(ENDPOINT, {
         timeRange: ["2023-06-15T00:00:00Z", "2023-06-15T23:59:00Z"],
@@ -166,11 +144,7 @@ describe("mosaic", () => {
     });
 
     test("sends a from/to datetime for a multi-day range", async () => {
-      store.selectedStac = /** @type {any} */ ({
-        id: "coll",
-        renders: RENDERS,
-      });
-      axiosMock.get.mockResolvedValue({ data: { tiles: ["https://t"] } });
+      await selectCollection();
 
       await updateMosaicLayer(ENDPOINT, {
         timeRange: ["2023-06-15T00:00:00Z", "2023-06-20T00:00:00Z"],
@@ -182,23 +156,9 @@ describe("mosaic", () => {
     });
 
     test("translates filters into a cql2-text filter param", async () => {
-      store.selectedStac = /** @type {any} */ ({
-        id: "coll",
-        renders: RENDERS,
-      });
-      axiosMock.get.mockResolvedValue({ data: { tiles: ["https://t"] } });
+      await selectCollection();
 
-      await updateMosaicLayer(ENDPOINT, {
-        filters: /** @type {any} */ ({
-          cloud: {
-            key: "properties.eo:cloud_cover",
-            type: "range",
-            state: { min: 5, max: 20 },
-            min: 0,
-            max: 100,
-          },
-        }),
-      });
+      await updateMosaicLayer(ENDPOINT, { filters: CLOUD_FILTER });
 
       const params = lastRequestedUrl().searchParams;
       expect(params.get("filter")).toBe(
@@ -207,20 +167,59 @@ describe("mosaic", () => {
       expect(params.get("filter-lang")).toBe("cql2-text");
     });
 
-    test("warns and keeps no layer when the TileJSON has no tile url", async () => {
-      const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
-      store.selectedStac = /** @type {any} */ ({
-        id: "coll",
-        renders: RENDERS,
+    test("replaces the previous time range's layer instead of stacking it", async () => {
+      await selectCollection();
+
+      await updateMosaicLayer(ENDPOINT, {
+        timeRange: ["2023-06-15T00:00:00Z", "2023-06-20T00:00:00Z"],
       });
-      axiosMock.get.mockResolvedValue({ data: {} });
+      const june = state.latestLayer.value;
+      await updateMosaicLayer(ENDPOINT, {
+        timeRange: ["2023-07-15T00:00:00Z", "2023-07-20T00:00:00Z"],
+      });
+
+      const layers = analysisGroup(mapEl.value ?? undefined)?.layers;
+      expect(layers).toEqual([state.latestLayer.value]);
+      expect(layers?.[0]?.properties?.id).not.toBe(june?.properties?.id);
+    });
+
+    test("hides the layer on the globe right after rendering it below the threshold", async () => {
+      const setVisible = vi.fn();
+      mapEl.value = fakeMap({ getLayerById: () => ({ setVisible }) });
+      isGlobe.value = true;
+      // camera altitude equivalent to zoom 2
+      mapPosition.value = [0, 0, 21_050_000];
+      await selectCollection();
 
       await updateMosaicLayer(ENDPOINT, {});
 
-      expect(warn).toHaveBeenCalledWith(
-        expect.stringContaining("No tile URL found"),
+      expect(setVisible).toHaveBeenLastCalledWith(false);
+    });
+  });
+
+  describe("useScheduleMosaicUpdate", () => {
+    test("collapses a burst of updates into one render with the last call's query", async () => {
+      await selectCollection();
+      vi.useFakeTimers();
+      const schedule = useScheduleMosaicUpdate();
+
+      schedule(ENDPOINT, ["2023-06-15T00:00:00Z", "2023-06-16T00:00:00Z"]);
+      schedule(ENDPOINT, ["2023-06-15T00:00:00Z", "2023-06-16T00:00:00Z"]);
+      schedule(
+        ENDPOINT,
+        ["2023-06-15T00:00:00Z", "2023-06-20T00:00:00Z"],
+        CLOUD_FILTER,
       );
-      expect(state.latestLayer.value).toBeNull();
+      await vi.advanceTimersByTimeAsync(300);
+      vi.useRealTimers();
+      await vi.waitFor(() => expect(state.latestLayer.value).not.toBeNull());
+
+      expect(tileJsonRequests()).toHaveLength(1);
+      const params = lastRequestedUrl().searchParams;
+      expect(params.get("datetime")).toBe("2023-06-15/2023-06-20");
+      expect(params.get("filter")).toBe(
+        '"eo:cloud_cover" >= 5 AND "eo:cloud_cover" <= 20',
+      );
     });
   });
 
@@ -231,23 +230,23 @@ describe("mosaic", () => {
 
     test("converts globe altitude via the eox-map formula", () => {
       isGlobe.value = true;
-      mapEl.value = /** @type {any} */ ({ globeConfig: {} });
       expect(normalizeGlobeZoom(21_050_000)).toBe(2);
 
-      mapEl.value = /** @type {any} */ ({ globeConfig: { useHighLOD: true } });
+      mapEl.value = fakeMap({ globeConfig: { useHighLOD: true } });
       expect(normalizeGlobeZoom(21_050_000)).toBe(1);
     });
   });
 
   describe("checkMosaicDataInView", () => {
-    const seedEndpoint = () => {
+    const seedEndpoint = async () => {
       store.rasterEndpoint = "https://raster";
-      store.selectedStac = /** @type {any} */ ({ id: "coll" });
+      store.selectedStac = (await readCollection()).stac;
+      axiosMock.get.mockReset();
     };
 
     test("assumes data below the visibility threshold without a request", async () => {
-      seedEndpoint();
-      mapEl.value = /** @type {any} */ ({ lonLatExtent: [0, 0, 1, 1] });
+      await seedEndpoint();
+      mapEl.value = fakeMap({ lonLatExtent: [0, 0, 1, 1] });
       mapPosition.value = [0, 0, 4];
       state.hasDataInView.value = false;
 
@@ -258,8 +257,8 @@ describe("mosaic", () => {
     });
 
     test("queries the bbox assets endpoint with the active mosaic query", async () => {
-      seedEndpoint();
-      mapEl.value = /** @type {any} */ ({ lonLatExtent: [0, 0, 1, 1] });
+      await seedEndpoint();
+      mapEl.value = fakeMap({ lonLatExtent: [0, 0, 1, 1] });
       state.query.value = { filter: "cloud <= 20", "filter-lang": "cql2-text" };
       axiosMock.get.mockResolvedValue({ data: [] });
 
@@ -273,8 +272,8 @@ describe("mosaic", () => {
     });
 
     test("keeps data-in-view true when assets exist or the request fails", async () => {
-      seedEndpoint();
-      mapEl.value = /** @type {any} */ ({ lonLatExtent: [0, 0, 1, 1] });
+      await seedEndpoint();
+      mapEl.value = fakeMap({ lonLatExtent: [0, 0, 1, 1] });
 
       axiosMock.get.mockResolvedValue({ data: [{ asset: "a" }] });
       await checkMosaicDataInView();
