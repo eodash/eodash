@@ -224,6 +224,68 @@ describe("processing date prefill wiring", () => {
     expect(schema.properties.date).not.toHaveProperty("default");
   });
 
+  test.each(
+    ["start_date", "end_date"].flatMap((name) =>
+      [false, true].flatMap((compare) =>
+        ["missing", "field", "parent"].map((preset) => ({
+          name,
+          compare,
+          preset,
+        })),
+      ),
+    ),
+  )(
+    "handles standalone $name in a ship-detection form with a $preset default (compare=$compare)",
+    async ({ name, compare, preset }) => {
+      const schema = {
+        type: "object",
+        properties: {
+          bbox: {
+            type: "array",
+            format: "bounding-box",
+            options: {
+              drawtools: { for: "eox-map#main", projection: "EPSG:4326" },
+            },
+          },
+          [name]: { title: "Select date", type: "string", format: "date" },
+          threshold: { type: "number", default: 0.5, minimum: 0, maximum: 1 },
+        },
+        ...(preset === "parent" ? { default: { [name]: "2000-01-01" } } : {}),
+      };
+      if (preset === "field")
+        Object.assign(schema.properties[name], { default: "2000-01-01" });
+      const original = structuredClone(schema);
+      vi.spyOn(axios, "get").mockResolvedValue({ data: schema });
+      const { map } = processMap(compare);
+      (compare ? mapCompareEl : mapEl).value =
+        /** @type {import("@eox/map").EOxMap} */ (/** @type {unknown} */ (map));
+      await mountComponent(EodashProcess, {
+        props: { enableCompare: compare },
+        initialState: {
+          stac: {
+            selectedStac: collection("2024-01-01", "2024-12-31"),
+            selectedCompareStac: collection("2023-01-01", "2023-12-31"),
+          },
+        },
+      });
+      const element = await readyForm();
+      if (preset === "parent") {
+        expect(element.schema.default).toEqual({ [name]: "2000-01-01" });
+        expect(element.schema.properties[name]).not.toHaveProperty("default");
+      } else {
+        expect(element.schema.properties[name].default).toBe(
+          preset === "field"
+            ? "2000-01-01"
+            : compare
+              ? "2023-12-31"
+              : "2024-06-01",
+        );
+      }
+      expect(element.schema.properties.threshold.default).toBe(0.5);
+      expect(schema).toEqual(original);
+    },
+  );
+
   test.each([false, true])(
     "infers only the missing endpoint when the start is configured (compare=%s)",
     async (compare) => {

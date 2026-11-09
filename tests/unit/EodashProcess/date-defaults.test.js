@@ -158,17 +158,10 @@ describe("prefillProcessDates field recognition", () => {
     },
     { first_date: dateField(), second_date: dateField() },
     { start_end_date: dateField() },
-    { start_date: dateField() },
-    { end_date: dateField() },
-  ])(
-    "leaves ambiguous or incomplete date roles unchanged: %j",
-    (properties) => {
-      const schema = objectForm(properties);
-      expect(prefillProcessDates(schema, collection(), SELECTED)).toEqual(
-        schema,
-      );
-    },
-  );
+  ])("leaves ambiguous date roles unchanged: %j", (properties) => {
+    const schema = objectForm(properties);
+    expect(prefillProcessDates(schema, collection(), SELECTED)).toEqual(schema);
+  });
 });
 
 describe("prefillProcessDates schema traversal", () => {

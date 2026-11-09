@@ -7,7 +7,7 @@
  * @typedef {object} TemporalCollection
  * @property {import("@eodash/stac").STACLink[]} [links]
  * @property {{ temporal?: { interval?: (string | null)[][] } }} [extent]
- * @typedef {"start" | "end" | "single"} DateRole
+ * @typedef {"start" | "end" | "single" | "ambiguous"} DateRole
  * @typedef {{ name: string; schema: DateSchema; role: DateRole }} DateField
  */
 
@@ -50,7 +50,7 @@ function parseDate(value) {
 
 /**
  * Only whole words count: runtime, timeout and weekend are not date hints.
- * Explicit non-date formats, computed and fixed fields are left alone.
+ * Classify fixed inputs too, so they still count when detecting a single date.
  * @param {string} name
  * @param {DateSchema} schema
  * @returns {DateRole | undefined}
@@ -58,11 +58,6 @@ function parseDate(value) {
 function inferRole(name, schema) {
   if (
     schema.type !== "string" ||
-    schema.readOnly ||
-    schema.const !== undefined ||
-    schema.enum ||
-    schema.template ||
-    schema.watch ||
     (schema.format && !DATE_FORMATS.has(schema.format))
   ) {
     return undefined;
@@ -76,10 +71,42 @@ function inferRole(name, schema) {
   const start = words.some((word) => START_WORDS.has(word));
   const end = words.some((word) => END_WORDS.has(word));
   const date = words.some((word) => DATE_WORDS.has(word));
-  if ((!schema.format && !date) || (start && end)) return undefined;
+  if (!schema.format && !date) return undefined;
+  if (start && end) return "ambiguous";
   if (start) return "start";
   if (end) return "end";
   return "single";
+}
+
+/**
+ * Count distinct date inputs at a data path across composed schema fragments.
+ * Fixed and ambiguous date fields still prevent an apparent singleton.
+ * @param {DateSchema} node
+ * @param {string[]} path
+ * @returns {Set<string>}
+ */
+function dateInputNames(node, path) {
+  /** @type {Set<string>} */
+  const names = new Set();
+  const [name, ...rest] = path;
+  if (name === undefined) {
+    for (const [key, field] of Object.entries(node.properties ?? {})) {
+      if (typeof field !== "boolean" && inferRole(key, field)) names.add(key);
+    }
+  } else {
+    const field = node.properties?.[name];
+    if (field && typeof field !== "boolean") {
+      for (const key of dateInputNames(field, rest)) names.add(key);
+    }
+  }
+  for (const alternatives of [node.allOf, node.anyOf, node.oneOf]) {
+    for (const alternative of alternatives ?? []) {
+      if (typeof alternative !== "boolean") {
+        for (const key of dateInputNames(alternative, path)) names.add(key);
+      }
+    }
+  }
+  return names;
 }
 
 /**
@@ -276,7 +303,17 @@ export function prefillProcessDates(schema, collection, selectedDatetime) {
       if (typeof property === "boolean") continue;
       const field = /** @type {DateSchema} */ (property);
       const role = inferRole(name, field);
-      if (role) fields.push({ name, schema: field, role });
+      if (
+        role &&
+        role !== "ambiguous" &&
+        !field.readOnly &&
+        field.const === undefined &&
+        !field.enum &&
+        !field.template &&
+        !field.watch
+      ) {
+        fields.push({ name, schema: field, role });
+      }
       const nestedDates = visit(field, [...path, name]);
       if (Object.keys(nestedDates).length) dates[name] = nestedDates;
     }
@@ -331,7 +368,7 @@ export function prefillProcessDates(schema, collection, selectedDatetime) {
       }
     } else if (
       fields.length === 1 &&
-      fields[0].role === "single" &&
+      dateInputNames(schema, path).size === 1 &&
       !configuredDefaults(schema, [...path, fields[0].name]).length
     ) {
       const value = constrainedDate(fields[0].schema, current, start, end);
