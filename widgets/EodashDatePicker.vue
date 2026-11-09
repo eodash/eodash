@@ -1,5 +1,5 @@
 <template>
-  <div ref="rootRef" class="datePicker">
+  <div v-show="!hasSingleDate" ref="rootRef" class="datePicker">
     <eox-timecontrol
       :key="revision"
       ref="timecontrolRef"
@@ -60,7 +60,14 @@
 </template>
 <script setup>
 import "@eox/timecontrol";
-import { watch, ref, customRef, onUnmounted, useTemplateRef } from "vue";
+import {
+  computed,
+  watch,
+  ref,
+  customRef,
+  onUnmounted,
+  useTemplateRef,
+} from "vue";
 import { useSTAcStore } from "@/store/stac";
 import { datetime } from "@/store/states";
 import { mdiPageFirst, mdiPageLast } from "@mdi/js";
@@ -195,6 +202,15 @@ watch(datetime, (iso) => {
 
 /** @type {import("vue").Ref<import("@/types").DatePickerControlValue[]>} */
 const controlValues = ref([]);
+
+const hasSingleDate = computed(
+  () =>
+    new Set(
+      controlValues.value.flatMap((collection) =>
+        collection.timeControlValues.map(({ date }) => date),
+      ),
+    ).size === 1,
+);
 
 // eox only derives its items in `firstUpdated`, so a change needs a remount.
 const revision = ref(0);
