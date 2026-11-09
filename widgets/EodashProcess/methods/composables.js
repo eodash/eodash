@@ -10,6 +10,7 @@ import { getCompareLayers, getLayers } from "@/store/actions";
  * @param {object} params
  * @param {import("vue").Ref<import("@eodash/stac").STACCollection | null>} params.selectedStac
  * @param {import("vue").Ref<Record<string,any> | null>} params.jsonformSchema
+ * @param {Readonly<import("vue").ShallowRef<import("@eox/jsonform").EOxJSONForm | null>>} params.jsonformEl
  * @param {import("vue").Ref<any[]>} params.processResults
  * @param {import("vue").Ref<boolean>} params.isProcessed
  * @param {import("vue").Ref<boolean>} params.loading
@@ -19,6 +20,7 @@ import { getCompareLayers, getLayers } from "@/store/actions";
 export const useInitProcess = ({
   selectedStac,
   jsonformSchema,
+  jsonformEl,
   isProcessed,
   processResults,
   loading,
@@ -68,6 +70,15 @@ export const useInitProcess = ({
           !mapElement.value?.selectInteractions?.[
             "SelectLayerClickInteraction"
           ];
+        const willRemount =
+          selectionStripped ||
+          JSON.stringify(newJsonForm) !== JSON.stringify(jsonformSchema.value);
+        const currentValue = jsonformEl.value?.value;
+        if (willRemount && currentValue && typeof currentValue === "object") {
+          // A time-based drawtools layer can force a new form instance. Carry
+          // current values across that remount instead of restoring defaults.
+          newJsonForm.default = JSON.parse(JSON.stringify(currentValue));
+        }
         if (selectionStripped) {
           jsonformSchema.value = null;
           await nextTick();
