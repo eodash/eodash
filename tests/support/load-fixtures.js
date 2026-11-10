@@ -15,7 +15,8 @@ const EOPF_COLLECTION = "sentinel-2-l2a";
 const EOPF_ITEM =
   "S2B_MSIL2A_20260917T142959_N0512_R139_T26WMD_20260917T152722";
 const ZARR_TYPE = "application/vnd.zarr; version=3; profile=multiscales";
-const GTIF = "https://gtif-austria.github.io/public-catalog/GTIF-Austria";
+const TEST_CATALOG =
+  "https://eoxhub-workspaces.github.io/eoxhub-test-catalog/catalog";
 
 /**
  * @template T
@@ -81,13 +82,12 @@ const loadGeozarrFixture = async () => {
 };
 
 /**
- * A styled COG from GTIF-Austria. Items are published only as a parquet
- * mirror, so the first row is the fixture. The path carries the parent and the
- * child id, which differ wherever a container holds more than one collection.
+ * A styled COG from the eoxhub test catalog. Items are published only as a
+ * parquet mirror, so the first row is the fixture.
  * @param {string} collectionPath
  */
 const loadGeoTiffFixture = async (collectionPath) => {
-  const collectionUrl = `${GTIF}/${collectionPath}`;
+  const collectionUrl = `${TEST_CATALOG}/${collectionPath}`;
   const collection = await fetchJson(
     `the ${collectionPath} collection`,
     `${collectionUrl}/collection.json`,
@@ -122,5 +122,5 @@ const loadGeoTiffFixture = async (collectionPath) => {
 /** Keyed as the tests `inject` them. */
 export const loadFixtures = async () => ({
   geozarrFixture: await loadGeozarrFixture(),
-  geotiffFixture: await loadGeoTiffFixture("wr02solar/WR-02-Solar-Nature"),
+  geotiffFixture: await loadGeoTiffFixture("bench_styled_geotiff"),
 });
