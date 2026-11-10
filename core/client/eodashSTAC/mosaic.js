@@ -84,7 +84,7 @@ export async function renderMosaic(params) {
   }
   await registerProjection(projection);
 
-  const { latestLayer, visibilityThreshold } = useMosaicState();
+  const { latestLayer, visibilityThreshold, isItemView } = useMosaicState();
   layer.minZoom = visibilityThreshold.value;
   //@ts-expect-error properties is optional upstream, always built here
   layer.properties.layerControlToolsExpand = true;
@@ -100,8 +100,9 @@ export async function renderMosaic(params) {
     layer.properties.collectionId = eodashCol.id;
   }
 
-  assignGroupLayers(mapEl.value, ANALYSIS_GROUP, [layer]);
   latestLayer.value = layer;
+  if (isItemView.value) return;
+  assignGroupLayers(mapEl.value, ANALYSIS_GROUP, [layer]);
   //@ts-expect-error source is optional upstream, always built here
   log.debug("[eodash] Mosaic layer rendered.", layer.source.url);
 
@@ -178,6 +179,7 @@ export function useInitMosaic(mosaicEndpoint, timeRange, indicators) {
   });
 
   onUnmounted(() => {
+    scheduleMosaicUpdate.cancel();
     latestLayer.value = null;
     query.value = null;
     hasDataInView.value = true;
@@ -188,8 +190,6 @@ export function useInitMosaic(mosaicEndpoint, timeRange, indicators) {
 
 /**
  * Shared debounced function to schedule mosaic layer updates.
- *
- * @returns {(mosaicEndpoint: string | undefined | null, timeRange: [string, string] | undefined, filters?: import("@/types").ItemFilterFilters) => void}
  */
 export const useScheduleMosaicUpdate = createSharedComposable(() =>
   useDebounceFn(
@@ -261,10 +261,10 @@ export function normalizeGlobeZoom(rawZ) {
 export async function checkMosaicDataInView() {
   const { hasDataInView, query, mosaicEndpoint, visibilityThreshold } =
     useMosaicState();
-  const extent = mapEl.value?.lonLatExtent;
+  // eox-map cannot transform the 2D extent while the globe is shown
+  const extent = isGlobe.value ? undefined : mapEl.value?.lonLatExtent;
   if (
     !extent ||
-    isGlobe.value ||
     !mosaicEndpoint.value ||
     normalizeGlobeZoom(mapPosition.value[2] ?? 0) < visibilityThreshold.value
   ) {
@@ -296,21 +296,26 @@ export async function checkMosaicDataInView() {
 /** Debounced check for asset presence in the viewport. */
 const scheduleMosaicDataCheck = useDebounceFn(checkMosaicDataInView, 300);
 
+// flag to manage visibility on zoom on the globe
+let hiddenOnGlobe = false;
 /**
- * Toggles mosaic layer visibility in 3D globe mode based on altitude threshold.
+ * Hides the mosaic layer on the globe below the altitude threshold, and undoes
+ * that hide once back in 2D.
  * @param {number} zoomLevel - Current zoom level or altitude
  * @param {number} [threshold] - Optional visibility threshold override
  */
 function toggleMosaicVisibility(zoomLevel, threshold) {
-  if (!isGlobe.value) return;
   const { latestLayer, visibilityThreshold } = useMosaicState();
   if (!latestLayer.value) return;
-
-  //@ts-expect-error properties is optional upstream, always built here
-  const layerId = /** @type {string} */ (latestLayer.value.properties.id);
+  const layerId = /** @type {string} */ (latestLayer.value.properties?.id);
   const layer = mapEl.value?.getLayerById(layerId);
   if (!layer) return;
 
-  const eqZoom = normalizeGlobeZoom(zoomLevel);
-  layer.setVisible(eqZoom >= (threshold ?? visibilityThreshold.value));
+  if (!isGlobe.value) {
+    if (hiddenOnGlobe) layer.setVisible(true);
+    hiddenOnGlobe = false;
+    return;
+  }
+  hiddenOnGlobe = normalizeGlobeZoom(zoomLevel) < (threshold ?? visibilityThreshold.value);
+  layer.setVisible(!hiddenOnGlobe);
 }

@@ -1,10 +1,13 @@
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import { createPinia, setActivePinia } from "pinia";
+import { render } from "vitest-browser-vue";
+import { h, nextTick, ref } from "vue";
 import { createEodashCollection } from "@eodash/stac";
 import {
   checkMosaicDataInView,
   normalizeGlobeZoom,
   updateMosaicLayer,
+  useInitMosaic,
   useMosaicState,
   useScheduleMosaicUpdate,
 } from "@/eodashSTAC/mosaic";
@@ -199,6 +202,22 @@ describe("mosaic", () => {
       expect(layers?.[0]?.properties?.id).not.toBe(june?.properties?.id);
     });
 
+    test("does not render over an item selected while the mosaic was building", async () => {
+      await selectCollection();
+      const tileJson = Promise.withResolvers();
+      const served = axiosMock.get.getMockImplementation();
+      axiosMock.get.mockImplementation((/** @type {string} */ url) =>
+        url.includes("/tilejson.json") ? tileJson.promise : served?.(url),
+      );
+
+      const rendering = updateMosaicLayer(ENDPOINT, { timeRange: JUNE });
+      state.isItemView.value = true;
+      tileJson.resolve({ data: { tiles: [TILES] } });
+      await rendering;
+
+      expect(analysisGroup(mapEl.value ?? undefined)).toBeUndefined();
+    });
+
     test("hides the layer on the globe right after rendering it below the threshold", async () => {
       const setVisible = vi.fn();
       mapEl.value = fakeMap({ getLayerById: () => ({ setVisible }) });
@@ -233,6 +252,48 @@ describe("mosaic", () => {
     });
   });
 
+  describe("useInitMosaic", () => {
+    test("drops the initial render when the widget unmounts before it runs", async () => {
+      await selectCollection();
+      vi.useFakeTimers();
+      const widget = await render({
+        setup() {
+          useInitMosaic(ENDPOINT, ref(JUNE));
+          return () => h("div");
+        },
+      });
+
+      await widget.unmount();
+      await vi.advanceTimersByTimeAsync(300);
+
+      expect(tileJsonRequests()).toEqual([]);
+    });
+
+    test("shows the mosaic again after leaving the globe zoomed out and zooming in on the 2D map", async () => {
+      const setVisible = vi.fn();
+      mapEl.value = fakeMap({ getLayerById: () => ({ setVisible }) });
+      isGlobe.value = true;
+      // camera altitude equivalent to zoom 2
+      mapPosition.value = [0, 0, 21_050_000];
+      await selectCollection();
+      const widget = await render({
+        setup() {
+          useInitMosaic(ENDPOINT, ref(JUNE));
+          return () => h("div");
+        },
+      });
+      await updateMosaicLayer(ENDPOINT, {});
+      expect(setVisible).toHaveBeenLastCalledWith(false);
+
+      isGlobe.value = false;
+      mapPosition.value = [0, 0, 10];
+      await nextTick();
+
+      expect(setVisible).toHaveBeenLastCalledWith(true);
+      await widget.unmount();
+    });
+  });
+
   describe("normalizeGlobeZoom", () => {
     test("passes the raw value through in 2D", () => {
       expect(normalizeGlobeZoom(42)).toBe(42);
@@ -261,6 +322,23 @@ describe("mosaic", () => {
       state.hasDataInView.value = false;
 
       await checkMosaicDataInView();
+
+      expect(state.hasDataInView.value).toBe(true);
+      expect(axiosMock.get).not.toHaveBeenCalled();
+    });
+
+    test("on the globe, skips the check without reading the 2D extent eox-map cannot transform", async () => {
+      await seedEndpoint();
+      isGlobe.value = true;
+      mapEl.value = fakeMap();
+      Object.defineProperty(mapEl.value, "lonLatExtent", {
+        get() {
+          throw new Error("No transform available between EPSG:4326 and globe");
+        },
+      });
+      state.hasDataInView.value = false;
+
+      await expect(checkMosaicDataInView()).resolves.toBeUndefined();
 
       expect(state.hasDataInView.value).toBe(true);
       expect(axiosMock.get).not.toHaveBeenCalled();
