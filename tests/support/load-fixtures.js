@@ -83,7 +83,8 @@ const loadGeozarrFixture = async () => {
 
 /**
  * A styled COG from the eoxhub test catalog. Items are published only as a
- * parquet mirror, so the first row is the fixture.
+ * parquet mirror, so the first row is the fixture. The path carries the parent
+ * and the child id, as the catalog wraps a top-level collection in a parent.
  * @param {string} collectionPath
  */
 const loadGeoTiffFixture = async (collectionPath) => {
@@ -122,5 +123,7 @@ const loadGeoTiffFixture = async (collectionPath) => {
 /** Keyed as the tests `inject` them. */
 export const loadFixtures = async () => ({
   geozarrFixture: await loadGeozarrFixture(),
-  geotiffFixture: await loadGeoTiffFixture("bench_styled_geotiff"),
+  geotiffFixture: await loadGeoTiffFixture(
+    "bench_styled_geotiff/bench_styled_geotiff",
+  ),
 });
