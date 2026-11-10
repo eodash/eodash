@@ -609,6 +609,16 @@ export type ItemFilterFilter =
 /** Itemfilter filter map keyed by filter key. */
 export type ItemFilterFilters = Record<string, ItemFilterFilter>;
 
+/**
+ * What the mosaic's TileJSON query is built from; the time slider, the item
+ * filters and the initial render each set only part of it.
+ * @ignore
+ */
+export type MosaicQueryInput = {
+  timeRange?: [string, string];
+  filters?: ItemFilterFilters;
+};
+
 /** @ignore */
 export type Render = import("@eodash/stac").Render;
 /**

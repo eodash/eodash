@@ -40,6 +40,12 @@ const CLOUD_FILTER = {
     max: 100,
   },
 };
+const CLOUD_CQL = '"eo:cloud_cover" >= 5 AND "eo:cloud_cover" <= 20';
+
+/** @type {[string, string]} */
+const JUNE = ["2023-06-15T00:00:00Z", "2023-06-20T00:00:00Z"];
+/** @type {[string, string]} */
+const JULY = ["2023-07-15T00:00:00Z", "2023-07-20T00:00:00Z"];
 
 const COLLECTION_URL = "https://cat/collections/coll";
 const TILES = "https://tiles/{z}/{x}/{y}";
@@ -130,53 +136,63 @@ describe("mosaic", () => {
       expect(analysisGroup(mapEl.value ?? undefined)?.layers).toEqual([layer]);
     });
 
-    test("collapses an equal-day time range to a single datetime", async () => {
-      await selectCollection();
-
-      await updateMosaicLayer(ENDPOINT, {
+    /** @type {{ range: string; timeRange: [string, string]; datetime: string }[]} */
+    const DATETIME_CASES = [
+      {
+        range: "an equal-day range",
         timeRange: ["2023-06-15T00:00:00Z", "2023-06-15T23:59:00Z"],
-      });
+        datetime: "2023-06-15",
+      },
+      { range: "a multi-day range", timeRange: JUNE, datetime: "2023-06-15/2023-06-20" },
+    ];
 
-      expect(lastRequestedUrl().searchParams.get("datetime")).toBe(
-        "2023-06-15",
-      );
-      expect(state.query.value).toEqual({ datetime: "2023-06-15" });
-    });
+    test.each(DATETIME_CASES)(
+      "sends $datetime for $range",
+      async ({ timeRange, datetime }) => {
+        await selectCollection();
 
-    test("sends a from/to datetime for a multi-day range", async () => {
+        await updateMosaicLayer(ENDPOINT, { timeRange });
+
+        expect(lastRequestedUrl().searchParams.get("datetime")).toBe(datetime);
+        expect(state.query.value).toEqual({ datetime });
+      },
+    );
+
+    test("keeps the part an update leaves out: the catalog sends no time range, the initial render no filters", async () => {
       await selectCollection();
-
-      await updateMosaicLayer(ENDPOINT, {
-        timeRange: ["2023-06-15T00:00:00Z", "2023-06-20T00:00:00Z"],
-      });
-
-      expect(lastRequestedUrl().searchParams.get("datetime")).toBe(
-        "2023-06-15/2023-06-20",
-      );
-    });
-
-    test("translates filters into a cql2-text filter param", async () => {
-      await selectCollection();
+      await updateMosaicLayer(ENDPOINT, { timeRange: JUNE });
 
       await updateMosaicLayer(ENDPOINT, { filters: CLOUD_FILTER });
-
-      const params = lastRequestedUrl().searchParams;
-      expect(params.get("filter")).toBe(
-        '"eo:cloud_cover" >= 5 AND "eo:cloud_cover" <= 20',
+      expect(Object.fromEntries(lastRequestedUrl().searchParams)).toMatchObject(
+        {
+          datetime: "2023-06-15/2023-06-20",
+          filter: CLOUD_CQL,
+          "filter-lang": "cql2-text",
+        },
       );
-      expect(params.get("filter-lang")).toBe("cql2-text");
+
+      await updateMosaicLayer(ENDPOINT, { timeRange: JULY });
+      expect(Object.fromEntries(lastRequestedUrl().searchParams)).toMatchObject(
+        { datetime: "2023-07-15/2023-07-20", filter: CLOUD_CQL },
+      );
+    });
+
+    test("starts from scratch after a reset, so a remounted widget does not inherit the filters", async () => {
+      await selectCollection();
+      await updateMosaicLayer(ENDPOINT, { filters: CLOUD_FILTER });
+
+      state.query.value = null;
+      await updateMosaicLayer(ENDPOINT, { timeRange: JUNE });
+
+      expect(lastRequestedUrl().searchParams.has("filter")).toBe(false);
     });
 
     test("replaces the previous time range's layer instead of stacking it", async () => {
       await selectCollection();
 
-      await updateMosaicLayer(ENDPOINT, {
-        timeRange: ["2023-06-15T00:00:00Z", "2023-06-20T00:00:00Z"],
-      });
+      await updateMosaicLayer(ENDPOINT, { timeRange: JUNE });
       const june = state.latestLayer.value;
-      await updateMosaicLayer(ENDPOINT, {
-        timeRange: ["2023-07-15T00:00:00Z", "2023-07-20T00:00:00Z"],
-      });
+      await updateMosaicLayer(ENDPOINT, { timeRange: JULY });
 
       const layers = analysisGroup(mapEl.value ?? undefined)?.layers;
       expect(layers).toEqual([state.latestLayer.value]);
@@ -205,11 +221,7 @@ describe("mosaic", () => {
 
       schedule(ENDPOINT, ["2023-06-15T00:00:00Z", "2023-06-16T00:00:00Z"]);
       schedule(ENDPOINT, ["2023-06-15T00:00:00Z", "2023-06-16T00:00:00Z"]);
-      schedule(
-        ENDPOINT,
-        ["2023-06-15T00:00:00Z", "2023-06-20T00:00:00Z"],
-        CLOUD_FILTER,
-      );
+      schedule(ENDPOINT, JUNE, CLOUD_FILTER);
       await vi.advanceTimersByTimeAsync(300);
       vi.useRealTimers();
       await vi.waitFor(() => expect(state.latestLayer.value).not.toBeNull());
@@ -217,9 +229,7 @@ describe("mosaic", () => {
       expect(tileJsonRequests()).toHaveLength(1);
       const params = lastRequestedUrl().searchParams;
       expect(params.get("datetime")).toBe("2023-06-15/2023-06-20");
-      expect(params.get("filter")).toBe(
-        '"eo:cloud_cover" >= 5 AND "eo:cloud_cover" <= 20',
-      );
+      expect(params.get("filter")).toBe(CLOUD_CQL);
     });
   });
 
@@ -259,7 +269,7 @@ describe("mosaic", () => {
     test("queries the bbox assets endpoint with the active mosaic query", async () => {
       await seedEndpoint();
       mapEl.value = fakeMap({ lonLatExtent: [0, 0, 1, 1] });
-      state.query.value = { filter: "cloud <= 20", "filter-lang": "cql2-text" };
+      state.query.value = { filters: CLOUD_FILTER };
       axiosMock.get.mockResolvedValue({ data: [] });
 
       await checkMosaicDataInView();
@@ -267,7 +277,7 @@ describe("mosaic", () => {
       const url = new URL(axiosMock.get.mock.calls[0][0]);
       expect(url.pathname).toBe("/collections/coll/bbox/0,0,1,1/assets");
       expect(url.searchParams.get("limit")).toBe("1");
-      expect(url.searchParams.get("filter")).toBe("cloud <= 20");
+      expect(url.searchParams.get("filter")).toBe(CLOUD_CQL);
       expect(state.hasDataInView.value).toBe(false);
     });
 

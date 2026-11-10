@@ -31,8 +31,19 @@ const mosaicReturnToOverviewKey = Symbol("mosaic:return-to-overview");
 export const useMosaicState = createSharedComposable(() => {
   /** @type {import("vue").ShallowRef<import("@eox/map").EoxLayer | null>} */
   const latestLayer = shallowRef(null);
-  /** @type {import("vue").Ref<Record<string, string> | null>} */
-  const query = ref(null);
+  /** @type {import("vue").ShallowRef<import("@/types").MosaicQueryInput>} */
+  const queryInput = shallowRef({});
+  // reads the TileJSON params; takes the input they are built from
+  const query = computed({
+    get: () => buildMosaicQuery(queryInput.value),
+    /** @param {import("@/types").MosaicQueryInput | null} input - null resets, a part left out keeps its last value */
+    set: (input) => {
+      queryInput.value = input ? {
+            timeRange: input.timeRange ?? queryInput.value.timeRange,
+            filters: input.filters ?? queryInput.value.filters,
+          } : {};
+    },
+  });
   /** @type {import("vue").Ref<number>} */
   const visibilityThreshold = ref(8);
   /** @type {import("vue").Ref<boolean>} */
@@ -104,35 +115,14 @@ export async function renderMosaic(params) {
 /**
  * Updates the mosaic layer using temporal and item filters.
  * @param {string | undefined | null} mosaicEndpoint - TileJSON endpoint URL
- * @param {{ timeRange?: [string, string]; filters?: import("@/types").ItemFilterFilters }} [queries] - Filter parameters
+ * @param {import("@/types").MosaicQueryInput} [queries] - Filter parameters
  */
-export async function updateMosaicLayer(
-  mosaicEndpoint,
-  { timeRange, filters } = {},
-) {
+export async function updateMosaicLayer(mosaicEndpoint, queries = {}) {
   if (!mosaicEndpoint) return;
 
-  /** @type {Record<string, string>} */
-  const params = {};
-
-  if (timeRange && Array.isArray(timeRange) && timeRange.length === 2) {
-    const start = timeToDate(timeRange[0]);
-    const end = timeToDate(timeRange[1]);
-    if (start && end) {
-      params.datetime = start === end ? start : `${start}/${end}`;
-    }
-  }
-
-  const cqlFilter = buildCqlFilter(filters);
-  if (cqlFilter) {
-    params.filter = cqlFilter;
-    params["filter-lang"] = "cql2-text";
-  }
-
-  const queryParams = Object.keys(params).length > 0 ? params : null;
   const { query } = useMosaicState();
-  query.value = queryParams;
-  await renderMosaic(queryParams);
+  query.value = queries;
+  await renderMosaic(query.value);
 }
 
 /**
@@ -214,6 +204,32 @@ export const useScheduleMosaicUpdate = createSharedComposable(() =>
     300,
   ),
 );
+
+/**
+ * Builds the TileJSON query of the mosaic from its time range and item filters.
+ * @param {import("@/types").MosaicQueryInput} input
+ * @returns {Record<string, string> | null}
+ */
+function buildMosaicQuery({ timeRange, filters }) {
+  /** @type {Record<string, string>} */
+  const params = {};
+
+  if (timeRange && Array.isArray(timeRange) && timeRange.length === 2) {
+    const start = timeToDate(timeRange[0]);
+    const end = timeToDate(timeRange[1]);
+    if (start && end) {
+      params.datetime = start === end ? start : `${start}/${end}`;
+    }
+  }
+
+  const cqlFilter = buildCqlFilter(filters);
+  if (cqlFilter) {
+    params.filter = cqlFilter;
+    params["filter-lang"] = "cql2-text";
+  }
+
+  return Object.keys(params).length > 0 ? params : null;
+}
 
 /**
  * Converts a datetime input into an ISO date string (YYYY-MM-DD).
