@@ -61,7 +61,12 @@ const ENDPOINT =
  * @returns {import("@eox/map").EOxMap}
  */
 const fakeMap = (over = {}) =>
-  /** @type {any} */ ({ layers: [], globeConfig: {}, ...over });
+  /** @type {any} */ ({
+    layers: [],
+    globeConfig: {},
+    getLayerById: () => undefined,
+    ...over,
+  });
 
 /** Reads the collection through a reader that knows the raster endpoint. */
 const readCollection = () => {
@@ -188,18 +193,6 @@ describe("mosaic", () => {
       await updateMosaicLayer(ENDPOINT, { timeRange: JUNE });
 
       expect(lastRequestedUrl().searchParams.has("filter")).toBe(false);
-    });
-
-    test("replaces the previous time range's layer instead of stacking it", async () => {
-      await selectCollection();
-
-      await updateMosaicLayer(ENDPOINT, { timeRange: JUNE });
-      const june = state.latestLayer.value;
-      await updateMosaicLayer(ENDPOINT, { timeRange: JULY });
-
-      const layers = analysisGroup(mapEl.value ?? undefined)?.layers;
-      expect(layers).toEqual([state.latestLayer.value]);
-      expect(layers?.[0]?.properties?.id).not.toBe(june?.properties?.id);
     });
 
     test("does not render over an item selected while the mosaic was building", async () => {

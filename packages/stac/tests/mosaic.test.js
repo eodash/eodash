@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import { createEodashCollection } from "../src/index.js";
-import { findReaderByLayerId } from "../src/helpers/layers.js";
 import { stacCollection } from "../../../tests/support/stac.js";
 
 // The mosaic layer a reader builds from its collection's first render preset,
@@ -111,37 +110,30 @@ describe("the mosaic layer of a collection", () => {
     expect(projection).toBe("EPSG:3857");
   });
 
-  test("sends the query along and keys the layer id by it: the same query is the same layer, another query another one", async () => {
+  test("sends the query along and keeps one layer id for every query, so the map updates the layer in place", async () => {
     const col = await reader();
-    /** @param {Record<string, string>} query */
-    const idOf = async (query) =>
-      (await col.buildMosaicLayer?.(query))?.layer?.properties?.id;
+    const filter = `"eo:cloud_cover" <= 20`;
 
-    const june = await idOf({ datetime: "2023-06-15" });
+    const june = await col.buildMosaicLayer?.({ datetime: "2023-06-15" });
+    const filtered = await col.buildMosaicLayer?.({
+      datetime: "2023-07-15",
+      filter,
+      "filter-lang": "cql2-text",
+    });
 
-    expect(requestedTileJson().searchParams.get("datetime")).toBe(
-      "2023-06-15",
-    );
-    expect(june).toBe("coll;:;mosaic;:;datetime=2023-06-15");
-    expect(await idOf({ datetime: "2023-06-15" })).toBe(june);
-    expect(await idOf({ datetime: "2023-07-15" })).not.toBe(june);
+    const params = requestedTileJson().searchParams;
+    expect(params.get("datetime")).toBe("2023-07-15");
+    expect(params.get("filter")).toBe(filter);
+    expect(june?.layer?.properties?.id).toBe("coll;:;mosaic");
+    expect(filtered?.layer?.properties?.id).toBe("coll;:;mosaic");
   });
 
-  test("keeps a cql2 filter in the id parseable, so the layer still leads back to its collection", async () => {
+  test("takes the raster endpoint of the call's context over the reader's default", async () => {
     const col = await reader();
 
-    const { layer } =
-      (await col.buildMosaicLayer?.({
-        filter: `"eo:cloud_cover" <= 20 AND "x" = 'a;:;b'`,
-        "filter-lang": "cql2-text",
-      })) ?? {};
+    await col.buildMosaicLayer?.(null, { rasterEndpoint: "https://other" });
 
-    const id = layer?.properties?.id ?? "";
-    expect(id.split(";:;")).toHaveLength(3);
-    expect(findReaderByLayerId([col], id)).toBe(col);
-    expect(requestedTileJson().searchParams.get("filter")).toBe(
-      `"eo:cloud_cover" <= 20 AND "x" = 'a;:;b'`,
-    );
+    expect(requestedTileJson().origin).toBe("https://other");
   });
 
   test("an expression replaces the assets, which TiTiler treats as exclusive", async () => {

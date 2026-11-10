@@ -92,14 +92,11 @@ export const createLayerFromMosaic = async (
   );
   const { layerConfig } = extractLayerConfig({}, rasterForm);
 
-  // a new query gets a new layer, so the layer control does not keep editing the previous source
-  const queryKey = new URLSearchParams(query ?? {}).toString();
-
   const layer = {
     /** @type {"Tile"} */
     type: "Tile",
     properties: {
-      id: `${collection.id}${LAYER_ID_SEPARATOR}mosaic${queryKey && `${LAYER_ID_SEPARATOR}${queryKey}`}`,
+      id: `${collection.id}${LAYER_ID_SEPARATOR}mosaic`,
       title: "Mosaic Layer",
       ...(layerConfig && { layerConfig }),
     },

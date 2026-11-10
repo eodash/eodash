@@ -106,7 +106,7 @@ export async function renderMosaic(params) {
   //@ts-expect-error source is optional upstream, always built here
   log.debug("[eodash] Mosaic layer rendered.", layer.source.url);
 
-  // every query builds a new layer, which starts visible on the globe
+  // the first render creates the layer visible, also on the globe below the threshold
   await nextTick();
   toggleMosaicVisibility(
     mapPosition.value[2] ?? mapEl.value?.map?.getView()?.getZoom() ?? 0,

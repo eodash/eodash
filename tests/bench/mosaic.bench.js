@@ -13,7 +13,6 @@ import { mdiMapSearch } from "@mdi/js";
 import { fromLonLat } from "ol/proj";
 import { describe, expect, test, vi } from "vitest";
 import { buildCatalog, BBOX, DATES, xyzLink } from "../support/catalog";
-import { analysisGroup } from "../support/layers";
 import { MAP_ONLY } from "../support/template";
 import {
   defineBenchmark,
@@ -207,10 +206,7 @@ describe("mosaic", () => {
 
       const mosaicUrl = () =>
         query("eox-map")
-          // the id carries the query, so read the current one off the group
-          .getLayerById(
-            analysisGroup(query("eox-map"))?.layers?.[0]?.properties?.id ?? "",
-          )
+          .getLayerById(`${INDICATOR_ID};:;mosaic`)
           ?.getSource()
           ?.getUrls()?.[0] ?? "";
       /** @param {string[]} range */

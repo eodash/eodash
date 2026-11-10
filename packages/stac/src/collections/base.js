@@ -89,13 +89,15 @@ export const createCollectionBase = ({
          * @param {Record<string, string> | null} [query] - TileJSON query, e.g. `datetime` or a cql2 `filter`
          * @param {import("../layers/index.js").BuildContext} [context]
          */
-        buildMosaicLayer: (query, context = {}) =>
-          createLayerFromMosaic(
-            rasterEndpoint,
+        buildMosaicLayer: (query, context = {}) => {
+          const ctx = getBuildContext(context);
+          return createLayerFromMosaic(
+            ctx.rasterEndpoint ?? rasterEndpoint,
             stac,
             query,
-            getBuildContext(context),
-          ),
+            ctx,
+          );
+        },
       }),
 
     /**
