@@ -59,7 +59,11 @@ export async function initProcess({
   }
 
   if (!updatedJsonform && isPoiAlive) {
-    jsonformSchema.value = null;
+    // If the POI collection doesn't declare a jsonform of its own, preserve the existing
+    // jsonformSchema if one is already attached (e.g. from the parent indicator).
+    if (!jsonformSchema.value) {
+      jsonformSchema.value = null;
+    }
     return;
   }
 

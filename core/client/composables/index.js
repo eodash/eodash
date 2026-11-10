@@ -235,6 +235,8 @@ const loadIndicatorFromUrl = async ({
   if (searchParams.has(poiParam)) {
     targetPoi.value = searchParams.get(poiParam) ?? "";
     targetIndicator.value = useGetSubCodeId(match);
+    // First load the parent indicator STAC so readers, jsonform, and indicator context are established
+    await loader(/** @type {string} */ (store.isApi ? match.id : match.href));
     const poiAbsoluteUrl = await resolvePoiUrl(
       match,
       targetPoi.value,
@@ -499,7 +501,11 @@ export const useURLSearchParametersSync = () => {
           }
 
           // Process main & compare deltas
-          if (updatedProcessForm && Object.keys(updatedProcessForm).length) {
+          if (
+            updatedIndicator &&
+            updatedProcessForm &&
+            Object.keys(updatedProcessForm).length
+          ) {
             syncEncodedParam(
               "process",
               diffFormValues(
@@ -507,14 +513,14 @@ export const useURLSearchParametersSync = () => {
                 baselineProcessDefaults.value || {},
               ),
             );
-          } else if (!updatedIndicator) {
+          } else {
             syncEncodedParam("process", null, false);
           }
 
           if (
+            updatedCompareIndicator &&
             updatedCompareProcessForm &&
-            Object.keys(updatedCompareProcessForm).length &&
-            updatedCompareIndicator
+            Object.keys(updatedCompareProcessForm).length
           ) {
             syncEncodedParam(
               "compareprocess",
@@ -523,7 +529,7 @@ export const useURLSearchParametersSync = () => {
                 baselineCompareProcessDefaults.value || {},
               ),
             );
-          } else if (!updatedCompareIndicator) {
+          } else {
             syncEncodedParam("compareprocess", null, false);
           }
 

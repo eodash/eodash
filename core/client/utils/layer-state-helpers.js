@@ -46,20 +46,13 @@ export function layerMatchesKey(fullLayerId, key) {
 }
 
 /**
- * Flattens an array of layers, delegating to mapElement.getFlatLayersArray if available,
- * or walking groups recursively.
+ * Flattens an array of layers, walking groups recursively.
  *
  * @param {Array<Record<string, any>>} layers
- * @param {import("@eox/map").EOxMap | null} [mapElement]
  * @returns {Array<Record<string, any>>}
  */
-export function getFlatLayers(layers, mapElement) {
+export function getFlatLayers(layers) {
   if (!Array.isArray(layers)) return [];
-  if (mapElement?.getFlatLayersArray) {
-    return /** @type {Array<Record<string, any>>} */ (
-      mapElement.getFlatLayersArray(/** @type {any} */ (layers))
-    );
-  }
   const result = [];
   for (const layer of layers) {
     if (layer?.type === "Group" && Array.isArray(layer.layers)) {
@@ -76,14 +69,9 @@ export function getFlatLayers(layers, mapElement) {
  *
  * @param {Array<Record<string, any>>} layers
  * @param {Record<string, { visible?: boolean; opacity?: number; datetime?: string; config?: Record<string, any> }> | null} restoredState
- * @param {import("@eox/map").EOxMap | null} [mapElement]
  * @returns {boolean} true if any layer was modified
  */
-export function applyRestoredLayerProperties(
-  layers,
-  restoredState,
-  mapElement = null,
-) {
+export function applyRestoredLayerProperties(layers, restoredState) {
   if (
     !restoredState ||
     !Object.keys(restoredState).length ||
@@ -92,7 +80,7 @@ export function applyRestoredLayerProperties(
     return false;
   }
   let modified = false;
-  const flatLayers = getFlatLayers(layers, mapElement);
+  const flatLayers = getFlatLayers(layers);
 
   for (const layer of flatLayers) {
     const id = layer?.properties?.id;

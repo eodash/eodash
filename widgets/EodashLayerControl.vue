@@ -32,7 +32,7 @@
 <script setup>
 import "color-legend-element";
 import "@eox/timecontrol";
-import { computed } from "vue";
+import { computed, onMounted, onUnmounted } from "vue";
 import { mapEl, mapCompareEl } from "@/store/states";
 import { assignLayers } from "@/store/actions";
 import { registerProjections } from "@/eodashSTAC/projection";
@@ -127,6 +127,23 @@ const onLayerControlChange = () => {
     layerStateChangeTrigger.value++;
   }
 };
+
+onMounted(() => {
+  // Listen for opacity changes which bubble as input events on native range inputs
+  const el = mapElement.value;
+  if (el) {
+    el.addEventListener("change", onLayerControlChange);
+    el.addEventListener("input", onLayerControlChange);
+  }
+});
+
+onUnmounted(() => {
+  const el = mapElement.value;
+  if (el) {
+    el.removeEventListener("change", onLayerControlChange);
+    el.removeEventListener("input", onLayerControlChange);
+  }
+});
 
 /** @param {CustomEvent<{layer:import('ol/layer').Layer; datetime:string;}>} evt */
 const handleDatetimeUpdate = async (evt) => {

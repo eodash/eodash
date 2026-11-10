@@ -50,7 +50,7 @@ import "@eox/drawtools";
 import "@eox/jsonform";
 import { useSTAcStore } from "@/store/stac";
 import { storeToRefs } from "pinia";
-import { computed, ref, useTemplateRef, watch } from "vue";
+import { computed, onUnmounted, ref, useTemplateRef, watch } from "vue";
 import ProcessList from "./ProcessList.vue";
 import EodashChart from "../EodashChart.vue";
 import { handleProcesses } from "./methods/handling";
@@ -334,6 +334,18 @@ const startProcess = async () => {
   if (isAsync.value) updateJobsStatus(currentJobs, currentIndicator.value);
 };
 useAutoExec(autoExec, jsonformEl, jsonformSchema, startProcess);
+
+onUnmounted(() => {
+  if (enableCompare) {
+    activeCompareProcessFormValue.value = null;
+    baselineCompareProcessDefaults.value = null;
+    restoredCompareProcessState.value = null;
+  } else {
+    activeProcessFormValue.value = null;
+    baselineProcessDefaults.value = null;
+    restoredProcessState.value = null;
+  }
+});
 </script>
 <style>
 eox-jsonform {

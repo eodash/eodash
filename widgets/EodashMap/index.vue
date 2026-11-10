@@ -384,6 +384,9 @@ onMounted(async () => {
 
   if (props.enableCompare) {
     mapCompareEl.value = compareMap.value;
+    if (compareMap.value && eoxMap.value) {
+      /** @type {any} */ (compareMap.value).sync = eoxMap.value;
+    }
     // a compare collection is only ever chosen after this, so the compare map
     // opens on the configured background
     assignGroupLayers(compareMap.value, BASE_LAYERS_GROUP, props.baseLayers);
@@ -419,6 +422,11 @@ onMounted(async () => {
     timeOrItem: store.selectedItem ?? datetime.value,
     event: "layers:updated",
   });
+
+  // Re-sync compare map after main map has configured its projection and view
+  if (props.enableCompare && compareMap.value && eoxMap.value) {
+    /** @type {any} */ (compareMap.value).sync = eoxMap.value;
+  }
 });
 
 // sync map loading with the global loading state

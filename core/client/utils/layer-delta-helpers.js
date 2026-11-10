@@ -20,7 +20,7 @@ export function computeMapLayersDelta(mapElement, layerFormValues = {}) {
     return delta;
   }
 
-  const layers = getFlatLayers(mapElement.layers, mapElement);
+  const layers = getFlatLayers(mapElement.layers);
   for (const layerDef of layers) {
     const id = layerDef?.properties?.id;
     if (!id) continue;
