@@ -151,7 +151,11 @@ describe("mosaic", () => {
         timeRange: ["2023-06-15T00:00:00Z", "2023-06-15T23:59:00Z"],
         datetime: "2023-06-15",
       },
-      { range: "a multi-day range", timeRange: JUNE, datetime: "2023-06-15/2023-06-20" },
+      {
+        range: "a multi-day range",
+        timeRange: JUNE,
+        datetime: "2023-06-15/2023-06-20",
+      },
     ];
 
     test.each(DATETIME_CASES)(

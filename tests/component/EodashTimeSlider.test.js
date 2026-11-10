@@ -3,7 +3,7 @@ import EodashTimeSlider from "^/EodashTimeSlider/index.vue";
 import { createAnimationLayers } from "^/EodashTimeSlider/methods";
 import { datetime, mapEl } from "@/store/states";
 import { eodashCollections } from "@/store/stac";
-import { mountComponent } from "../support/mount";
+import { mountAsyncComponent } from "../support/mount";
 
 // Keep the web-component tags (isCustomElement) so event bindings still work.
 vi.mock("@eox/timecontrol", () => ({}));
@@ -56,14 +56,14 @@ describe("EodashTimeSlider", () => {
   });
 
   test("renders nothing when no collection has multiple items", async () => {
-    await mountComponent(EodashTimeSlider);
+    await mountAsyncComponent(EodashTimeSlider);
 
     await expect.poll(() => timecontrol()).toBeNull();
   });
 
   test("renders the time control when a collection has multiple dates", async () => {
     seedMultiItems();
-    await mountComponent(EodashTimeSlider);
+    await mountAsyncComponent(EodashTimeSlider);
 
     await expect.poll(() => timecontrol()).toBeTruthy();
   });
@@ -78,14 +78,14 @@ describe("EodashTimeSlider", () => {
         ],
       }),
     );
-    await mountComponent(EodashTimeSlider);
+    await mountAsyncComponent(EodashTimeSlider);
 
     await expect.poll(() => timecontrol()).toBeNull();
   });
 
   test("passes initDate derived from datetime and the default animate flag", async () => {
     seedMultiItems();
-    await mountComponent(EodashTimeSlider);
+    await mountAsyncComponent(EodashTimeSlider);
 
     await expect.poll(() => timecontrol()?.initDate).toEqual(["2023-06-15"]);
     expect(timecontrol()?.animate).toBe(true);
@@ -93,14 +93,16 @@ describe("EodashTimeSlider", () => {
 
   test("forwards a disabled animate flag", async () => {
     seedMultiItems();
-    await mountComponent(EodashTimeSlider, { props: { animate: false } });
+    await mountAsyncComponent(EodashTimeSlider, { props: { animate: false } });
 
     await expect.poll(() => timecontrol()?.animate).toBe(false);
   });
 
   test("renders the item filter only when filters are configured", async () => {
     seedMultiItems();
-    await mountComponent(EodashTimeSlider, { props: { filters: FILTER_PROP } });
+    await mountAsyncComponent(EodashTimeSlider, {
+      props: { filters: FILTER_PROP },
+    });
 
     await expect
       .poll(() => document.querySelector("eox-itemfilter"))
@@ -109,7 +111,7 @@ describe("EodashTimeSlider", () => {
 
   test("omits the item filter when no filters are configured", async () => {
     seedMultiItems();
-    await mountComponent(EodashTimeSlider);
+    await mountAsyncComponent(EodashTimeSlider);
     await expect.poll(() => timecontrol()).toBeTruthy();
 
     expect(document.querySelector("eox-itemfilter")).toBeNull();
@@ -117,7 +119,7 @@ describe("EodashTimeSlider", () => {
 
   test("sets datetime to the item closest to the selected from-date", async () => {
     seedMultiItems();
-    await mountComponent(EodashTimeSlider);
+    await mountAsyncComponent(EodashTimeSlider);
     await expect.poll(() => timecontrol()).toBeTruthy();
 
     timecontrol()?.dispatchEvent(
@@ -139,7 +141,7 @@ describe("EodashTimeSlider", () => {
 
   test("leaves datetime untouched when the selection has no items", async () => {
     seedMultiItems();
-    await mountComponent(EodashTimeSlider);
+    await mountAsyncComponent(EodashTimeSlider);
     await expect.poll(() => timecontrol()).toBeTruthy();
 
     timecontrol()?.dispatchEvent(
@@ -152,7 +154,7 @@ describe("EodashTimeSlider", () => {
   test("schedules a mosaic update instead of moving datetime when mosaic is enabled", async () => {
     mosaic.mosaicEndpoint.value = "https://mosaic";
     seedMultiItems();
-    await mountComponent(EodashTimeSlider, { props: { useMosaic: true } });
+    await mountAsyncComponent(EodashTimeSlider, { props: { useMosaic: true } });
     await expect.poll(() => timecontrol()).toBeTruthy();
 
     timecontrol()?.dispatchEvent(
@@ -175,7 +177,7 @@ describe("EodashTimeSlider", () => {
   test("schedules a mosaic update on filter change when mosaic is enabled", async () => {
     mosaic.mosaicEndpoint.value = "https://mosaic";
     seedMultiItems();
-    await mountComponent(EodashTimeSlider, {
+    await mountAsyncComponent(EodashTimeSlider, {
       props: { useMosaic: true, filters: FILTER_PROP },
     });
     await expect
@@ -202,9 +204,36 @@ describe("EodashTimeSlider", () => {
     );
   });
 
+  test("seeds the mosaic with the last three days of the collection's data, not the extent end", async () => {
+    mosaic.mosaicEndpoint.value = "https://mosaic";
+    datetime.value = "2023-12-31T00:00:00.000Z";
+    eodashCollections.push(
+      /** @type {any} */ ({
+        id: "coll",
+        stac: {},
+        getDates: async () => [
+          new Date(START),
+          new Date("2023-06-20T00:00:00.000Z"),
+        ],
+      }),
+    );
+    await mountAsyncComponent(EodashTimeSlider, {
+      props: { useMosaic: true },
+      initialState: { stac: { selectedStac: { id: "coll" } } },
+    });
+
+    expect(mosaic.useInitMosaic.mock.lastCall?.[1].value).toEqual([
+      "2023-06-18T00:00:00.000Z",
+      "2023-06-20T00:00:00.000Z",
+    ]);
+    await expect.poll(() => timecontrol()?.initDate).toEqual(["2023-06-20"]);
+  });
+
   test("ignores filter changes when mosaic is disabled", async () => {
     seedMultiItems();
-    await mountComponent(EodashTimeSlider, { props: { filters: FILTER_PROP } });
+    await mountAsyncComponent(EodashTimeSlider, {
+      props: { filters: FILTER_PROP },
+    });
     await expect
       .poll(() => document.querySelector("eox-itemfilter"))
       .toBeTruthy();
@@ -222,7 +251,7 @@ describe("EodashTimeSlider", () => {
     seedMultiItems();
     const mapLayers = [{ layers: [], date: "2023-06-15" }];
     vi.mocked(createAnimationLayers).mockResolvedValue(mapLayers);
-    await mountComponent(EodashTimeSlider, {
+    await mountAsyncComponent(EodashTimeSlider, {
       initialState: { stac: { stacEndpoint: "https://stac" } },
     });
     await expect
@@ -241,7 +270,7 @@ describe("EodashTimeSlider", () => {
 
   test("does nothing on export without a stac endpoint", async () => {
     seedMultiItems();
-    await mountComponent(EodashTimeSlider);
+    await mountAsyncComponent(EodashTimeSlider);
     await expect
       .poll(() => document.querySelector("eox-timecontrol-timelapse"))
       .toBeTruthy();
@@ -261,7 +290,7 @@ describe("EodashTimeSlider", () => {
     seedMultiItems();
     vi.mocked(createAnimationLayers).mockResolvedValue([]);
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
-    await mountComponent(EodashTimeSlider, {
+    await mountAsyncComponent(EodashTimeSlider, {
       initialState: { stac: { stacEndpoint: "https://stac" } },
     });
     await expect

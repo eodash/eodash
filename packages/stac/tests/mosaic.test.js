@@ -89,9 +89,7 @@ describe("the mosaic layer of a collection", () => {
 
   test("is only offered with a raster endpoint and a render preset", async () => {
     expect((await reader({ reader: {} })).buildMosaicLayer).toBeUndefined();
-    expect(
-      (await reader({ collection: {} })).buildMosaicLayer,
-    ).toBeUndefined();
+    expect((await reader({ collection: {} })).buildMosaicLayer).toBeUndefined();
     expect((await reader()).buildMosaicLayer).toBeTypeOf("function");
   });
 
@@ -101,7 +99,9 @@ describe("the mosaic layer of a collection", () => {
     const { layer, projection } = (await col.buildMosaicLayer?.(null)) ?? {};
 
     const url = requestedTileJson();
-    expect(url.pathname).toBe("/collections/coll/WebMercatorQuad/tilejson.json");
+    expect(url.pathname).toBe(
+      "/collections/coll/WebMercatorQuad/tilejson.json",
+    );
     expect(url.searchParams.get("assets")).toBe("b04");
     expect(url.searchParams.get("tilesize")).toBe("256");
     expect([...url.searchParams.values()]).not.toContain("b08");
@@ -172,16 +172,19 @@ describe("the mosaic layer of a collection", () => {
   test.each([
     ["has no tile url", {}],
     ["request fails", new Error("502")],
-  ])("builds nothing, without throwing, when the TileJSON %s", async (_, tilejson) => {
-    vi.spyOn(console, "warn").mockImplementation(() => {});
-    vi.spyOn(console, "error").mockImplementation(() => {});
-    const col = await reader({ tilejson });
+  ])(
+    "builds nothing, without throwing, when the TileJSON %s",
+    async (_, tilejson) => {
+      vi.spyOn(console, "warn").mockImplementation(() => {});
+      vi.spyOn(console, "error").mockImplementation(() => {});
+      const col = await reader({ tilejson });
 
-    await expect(col.buildMosaicLayer?.(null)).resolves.toEqual({
-      layer: undefined,
-      projection: undefined,
-    });
-  });
+      await expect(col.buildMosaicLayer?.(null)).resolves.toEqual({
+        layer: undefined,
+        projection: undefined,
+      });
+    },
+  );
 
   test("carries no layer config without a raster form", async () => {
     const col = await reader();

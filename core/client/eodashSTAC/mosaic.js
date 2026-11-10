@@ -38,10 +38,12 @@ export const useMosaicState = createSharedComposable(() => {
     get: () => buildMosaicQuery(queryInput.value),
     /** @param {import("@/types").MosaicQueryInput | null} input - null resets, a part left out keeps its last value */
     set: (input) => {
-      queryInput.value = input ? {
+      queryInput.value = input
+        ? {
             timeRange: input.timeRange ?? queryInput.value.timeRange,
             filters: input.filters ?? queryInput.value.filters,
-          } : {};
+          }
+        : {};
     },
   });
   /** @type {import("vue").Ref<number>} */
@@ -77,9 +79,14 @@ export const useMosaicState = createSharedComposable(() => {
 export async function renderMosaic(params) {
   const { selectedStac } = useSTAcStore();
   const eodashCol = eodashCollections.find((ec) => ec.id === selectedStac?.id);
-  const { layer, projection } =
-    (await eodashCol?.buildMosaicLayer?.(params)) ?? {};
-  if (!eodashCol || !layer) {
+  if (!eodashCol?.buildMosaicLayer) {
+    console.warn(
+      `[eodash] no mosaic for "${selectedStac?.id}": the collection needs a raster endpoint and render presets`,
+    );
+    return;
+  }
+  const { layer, projection } = await eodashCol.buildMosaicLayer(params);
+  if (!layer) {
     return;
   }
   await registerProjection(projection);
@@ -316,6 +323,7 @@ function toggleMosaicVisibility(zoomLevel, threshold) {
     hiddenOnGlobe = false;
     return;
   }
-  hiddenOnGlobe = normalizeGlobeZoom(zoomLevel) < (threshold ?? visibilityThreshold.value);
+  hiddenOnGlobe =
+    normalizeGlobeZoom(zoomLevel) < (threshold ?? visibilityThreshold.value);
   layer.setVisible(!hiddenOnGlobe);
 }

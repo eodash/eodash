@@ -116,9 +116,11 @@ describe("the open branch of a persisted raster form", () => {
   });
 
   test("between branches with the same keys, keeps the first one", () => {
-    expect(
-      branchesAfterRebuild({ ...NDI, rescale: "0,1" }),
-    ).toEqual(["expression", "bands", "ratio"]);
+    expect(branchesAfterRebuild({ ...NDI, rescale: "0,1" })).toEqual([
+      "expression",
+      "bands",
+      "ratio",
+    ]);
   });
 
   test("on an equal match, prefers the branch with the fewest properties the value lacks", () => {
@@ -129,9 +131,7 @@ describe("the open branch of a persisted raster form", () => {
       },
     };
 
-    expect(branchesAfterRebuild({ a: "1", b: "2" }, form)?.[0]).toBe(
-      "narrow",
-    );
+    expect(branchesAfterRebuild({ a: "1", b: "2" }, form)?.[0]).toBe("narrow");
   });
 
   test("seeds the saved values into the reopened branch, nested objects included", () => {

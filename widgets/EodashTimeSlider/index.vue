@@ -76,16 +76,30 @@ const { animate, useMosaic, mosaicIndicators } = defineProps({
 /** @type {import("vue").ShallowRef<HTMLElement>} */
 const timesliderEl = useTemplateRef("eoxTimecontrol");
 
-const startDate = new Date(datetime.value);
-const endDate = new Date(startDate.getTime() + 24 * 60 * 60 * 1000);
-
-const selectedRange = /** @type {import("vue").Ref<[string, string]>} */ (
-  ref([startDate, endDate].map((d) => d.toISOString()))
-);
 const store = useSTAcStore();
 const { selectedStac, stacEndpoint } = storeToRefs(store);
 
-const initDate = ref(datetime.value ? [datetime.value.split("T")[0]] : null);
+const DAY = 24 * 60 * 60 * 1000;
+// datetime is the extent end, which can lie past the data
+const latest = useMosaic
+  ? (
+      await eodashCollections
+        .find((ec) => ec.id === selectedStac.value?.id)
+        ?.getDates()
+    )?.at(-1)
+  : undefined;
+const end = latest ?? new Date(new Date(datetime.value).getTime() + DAY);
+
+const selectedRange = /** @type {import("vue").Ref<[string, string]>} */ (
+  ref(
+    [new Date(end.getTime() - (latest ? 2 : 1) * DAY), end].map((d) =>
+      d.toISOString(),
+    ),
+  )
+);
+
+const seedDate = latest?.toISOString() ?? datetime.value;
+const initDate = ref(seedDate ? [seedDate.split("T")[0]] : null);
 watch(selectedStac, () => {
   initDate.value = datetime.value ? [datetime.value.split("T")[0]] : null;
 });
