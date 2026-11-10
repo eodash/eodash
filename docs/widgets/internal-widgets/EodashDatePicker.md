@@ -2,7 +2,7 @@
 
 A calendar for picking the global date, built on [`eox-timecontrol`](https://eox-a.github.io/EOxElements/?path=/docs/elements-eox-timecontrol--docs). Every date with data gets a dot, coloured per collection, compare side included. Picking a date updates the global [`datetime`](/eodash-store) that map layers follow.
 
-The date field steps through available dates one at a time. The buttons on either side jump straight to the oldest or latest.
+The date field steps through available dates one at a time. The buttons on either side jump straight to the oldest or latest. When a collection is selected, the entire picker is hidden unless the active collections, including the compare side, provide at least two distinct timestamps. This also hides navigation for static or process-only collections that have a temporal extent but no dated items.
 
 ## Example
 

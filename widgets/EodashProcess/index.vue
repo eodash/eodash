@@ -241,6 +241,7 @@ useInitProcess({
   selectedStac: currentSelectedStac,
   mapElement,
   jsonformSchema,
+  jsonformEl,
   isProcessed,
   processResults,
   loading,
