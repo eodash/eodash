@@ -118,19 +118,6 @@ export const globeLayer = (mapEl, id) =>
   mapEl.globe?.planet?.getLayerByName(id);
 
 /**
- * Whether a vector layer on the globe has something OpenGlobus draws. A native
- * og `Vector` draws polygons and lines but no point geometries (type 1).
- * @param {any} layer
- */
-export const drawsVector = (layer) =>
-  layer
-    .getEntities()
-    .some(
-      (/** @type {any} */ entity) =>
-        entity.geometry && entity.geometry.getType() !== 1,
-    );
-
-/**
  * The first match of `selector` under `root`, through nested shadow roots.
  * Throws when there is none, so a moved control fails with its selector.
  * @param {Element | Document} root

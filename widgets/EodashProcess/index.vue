@@ -1,5 +1,8 @@
 <template>
-  <div ref="container" class="eodash-process-container">
+  <p v-if="isGlobe" class="pa-4 text-body-2">
+    Processing is available in the 2D map.
+  </p>
+  <div v-show="!isGlobe" ref="container" class="eodash-process-container">
     <div class="eodash-process-content">
       <ProcessList :map-element="mapElement" :enable-compare="enableCompare" />
       <eox-jsonform
@@ -64,6 +67,7 @@ import {
   chartSpec,
   compareChartSpec,
   areChartsSeparateLayout,
+  isGlobe,
 } from "@/store/states";
 import { download, getDrawToolsProperties } from "./methods/utils";
 import { compareJobs, jobs } from "./states";

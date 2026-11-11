@@ -1,4 +1,4 @@
-import { assignLayers, getLayers, setActiveTemplate } from "@/store/actions";
+import { setActiveTemplate } from "@/store/actions";
 import { useSTAcStore } from "@/store/stac";
 import {
   activeTemplate,
@@ -14,51 +14,12 @@ export const switchGlobe = () => {
   if (!mapEl.value) {
     return;
   }
-  if (!isGlobe.value) {
-    assignLayers(mapEl.value, addCorsAnonym([...getLayers()]));
-  }
   // exit using the selected collection's projection
   mapEl.value.projection = isGlobe.value
     ? availableMapProjection.value || "EPSG:3857"
     : "globe";
   isGlobe.value = !isGlobe.value;
 };
-
-/**
- *
- * @param {import("@eox/map").EoxLayer[]} layers - eox map layers
- * @returns {import("@eox/map").EoxLayer[]} anonymized Cors
- */
-function addCorsAnonym(layers) {
-  return /** @type {import("@eox/map").EoxLayer[]} */ (
-    layers.map((layer) => {
-      if (layer.type === "Group") {
-        layer.layers = addCorsAnonym([...(layer.layers ?? [])]);
-        return layer;
-      }
-      // check if not mapbox style as a fix for ts error
-      if (layer.type === "MapboxStyle") {
-        return layer;
-      }
-
-      return {
-        ...layer,
-        ...("source" in layer && {
-          source: {
-            ...layer.source,
-            crossOrigin: "anonymous",
-          },
-          ...(layer.sources && {
-            sources: layer.sources.map((source) => ({
-              ...source,
-              crossOrigin: "anonymous",
-            })),
-          }),
-        }),
-      };
-    })
-  );
-}
 
 export const onMapZoomOut = () => {
   const map = mapEl.value?.map;

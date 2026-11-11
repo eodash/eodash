@@ -1,51 +1,27 @@
 import { afterAll, beforeAll, describe, expect, test } from "vitest";
+import { page } from "vitest/browser";
 import {
   chooseIndicator,
-  drawsVector,
   enterGlobe,
-  globeLayer,
+  leaveGlobe,
   until,
 } from "../../support/globe";
-import { processGroup } from "../../support/layers";
-import {
-  bootExpert,
-  drawtoolsLayerId,
-  selectFeature,
-  targetFeatures,
-} from "../../support/template";
+import { bootExpert } from "../../support/template";
 
-// Diagnostic: a feature-selection process with the globe on (point 06 in
-// .agents/globe-investigation/). The process selects from a GeoJSON of point
-// features; eox-map swaps URL GeoJSON to a native OpenGlobus vector once its
-// own fetch resolves, and OpenGlobus draws no point geometries.
+// Processing is disabled in 3D: drawing and feature picking only work on the
+// 2D map. The panel shows a note instead and keeps the form for the way back.
 
 const STAC_ENDPOINT =
   "https://eoxhub-workspaces.github.io/eoxhub-test-catalog/catalog/catalog.json";
 const PROCESS_ID = "predictive_maintenance";
 const PROCESS_TITLE = "Transport Infrastructure Predictive Maintenance";
-// Process execution fetches the timeseries/reference services over the network.
-const PROCESS_TIMEOUT = 1000 * 20;
+const NOTE = "Processing is available in the 2D map.";
 
-describe("expert globe - process execution", () => {
+describe("expert globe - processing", () => {
   /** @type {Awaited<ReturnType<typeof bootExpert>>} */
   let ctx;
   /** @type {any} */
   let mapEl;
-
-  const resultLayerId = () =>
-    processGroup(mapEl)?.layers.find((l) =>
-      l.properties?.id.includes("_process"),
-    )?.properties?.id;
-
-  /**
-   * The globe layer of a URL GeoJSON, once eox-map swapped it to a vector.
-   * @param {string | undefined} id
-   */
-  const nativeVector = (id) =>
-    until(
-      () => globeLayer(mapEl, id)?.instanceName === "Vector",
-      `native vector for ${id}`,
-    ).then(() => globeLayer(mapEl, id));
 
   beforeAll(async () => {
     ctx = await bootExpert({ endpoint: STAC_ENDPOINT });
@@ -55,41 +31,23 @@ describe("expert globe - process execution", () => {
       () => ctx.store.selectedStac?.id === PROCESS_ID,
       `${PROCESS_ID} selected`,
     );
-    await until(
-      () => targetFeatures(ctx.container).length,
-      "process features loaded",
-    );
-    await enterGlobe(ctx.container, mapEl);
+    await until(() => ctx.query("eox-jsonform"), "process form");
   });
 
   afterAll(() => ctx?.app.unmount());
 
-  test("the features the process selects from stay on the map", async () => {
-    // entering 3D re-assigns every layer, which reloads this source
-    await until(
-      () => targetFeatures(ctx.container).length,
-      "process features after entry",
-    );
+  test("the processing panel shows a note instead of the form in 3D", async () => {
+    await enterGlobe(ctx.container, mapEl);
+
+    await expect.element(page.getByText(NOTE)).toBeVisible();
+    expect(ctx.query(".eodash-process-container")).not.toBeVisible();
   });
 
-  // waits for eox-map: point features are not drawn on the globe
-  test.skip("the features the process selects from are drawn on the globe", async () => {
-    const layer = await nativeVector(drawtoolsLayerId(ctx.container));
-    expect(drawsVector(layer)).toBe(true);
-  });
+  test("leaving 3D brings the form back", async () => {
+    await leaveGlobe(ctx.container, mapEl);
 
-  // The select event stands in for a map click, so this covers the process run
-  // with the globe on, not picking a feature on the globe.
-  test("selecting a feature executes the process and renders the chart", async () => {
-    selectFeature(ctx.container, 0);
-    await until(() => ctx.query("eox-chart"), "chart", PROCESS_TIMEOUT);
-    expect(ctx.query(".v-alert")).toBeNull();
-  });
-
-  // waits for eox-map: point features are not drawn on the globe
-  test.skip("the process result is drawn on the globe", async () => {
-    await until(resultLayerId, "result layer", PROCESS_TIMEOUT);
-    const layer = await nativeVector(resultLayerId());
-    expect(drawsVector(layer)).toBe(true);
+    await expect.element(page.getByText(NOTE)).not.toBeInTheDocument();
+    expect(ctx.query(".eodash-process-container")).toBeVisible();
+    expect(ctx.query("eox-jsonform")).toBeTruthy();
   });
 });
