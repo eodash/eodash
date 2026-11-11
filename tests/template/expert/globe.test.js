@@ -33,7 +33,8 @@ const NEXT_ID = "client_side_rendering";
 const NEXT_TITLE = "Client Side Rendering Example";
 
 /** @param {any} mapEl @param {string | undefined} id */
-const olUrl = (mapEl, id) => mapEl.getLayerById(id)?.getSource()?.getUrls()?.[0];
+const olUrl = (mapEl, id) =>
+  mapEl.getLayerById(id)?.getSource()?.getUrls()?.[0];
 
 /**
  * The indicator's base layers. Indicators bring their own; the template's only

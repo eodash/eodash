@@ -30,7 +30,10 @@ const ITEMS = ["item-a", "item-b", "item-c"].map((id, index) =>
   }),
 );
 
-const COLLECTION = stacCollection({ id: COLLECTION_ID, title: "Test Collection" });
+const COLLECTION = stacCollection({
+  id: COLLECTION_ID,
+  title: "Test Collection",
+});
 
 /** @type {Record<string, any>} */
 const routes = {
@@ -151,9 +154,9 @@ describe("explore globe - catalog", () => {
   test.skip("the footprints on the globe follow the new results", async () => {
     // the map updates the footprints in place, which the globe does not see
     // (points 01, 02); depends on the search above
-    await expect.poll(footprintCount, { timeout: TIMEOUT }).toBeLessThan(
-      ITEMS.length,
-    );
+    await expect
+      .poll(footprintCount, { timeout: TIMEOUT })
+      .toBeLessThan(ITEMS.length);
     await expect
       .poll(globeFootprintCount, { timeout: TIMEOUT })
       .toBe(footprintCount());
@@ -163,9 +166,7 @@ describe("explore globe - catalog", () => {
     await leaveGlobe(ctx.container, mapEl);
 
     expect(leftGlobe(mapEl)).toBe(true);
-    await expect
-      .poll(footprintCount, { timeout: TIMEOUT })
-      .toBeGreaterThan(0);
+    await expect.poll(footprintCount, { timeout: TIMEOUT }).toBeGreaterThan(0);
     expect(ctx.query(".v-alert")).toBeNull();
   });
 });

@@ -41,7 +41,9 @@ export const useHandleMapMoveEnd = (mapElement, mapPosition) => {
     if (!lonLat) return;
     const { lon, lat, height } = lonLat;
     // eox-map's altitude-to-zoom formula, so `mapPosition` holds a zoom in 3D too
-    const zoom = Math.log2(21_050_000 / height) + (mapElement.value?.globeConfig?.useHighLOD ? 1 : 2);
+    const zoom =
+      Math.log2(21_050_000 / height) +
+      (mapElement.value?.globeConfig?.useHighLOD ? 1 : 2);
     if (![lon, lat, zoom].some(Number.isNaN)) {
       mapPosition.value = [lon, lat, zoom];
     }
