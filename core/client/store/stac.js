@@ -258,6 +258,7 @@ export const useSTAcStore = defineStore("stac", () => {
           viewProjection:
             getProjectionCode(getProjection(resp.data)) || "EPSG:3857",
         },
+        false,
       );
       selectedItem.value = /** @type {any} */ (stacItem) ?? undefined;
       selectedStac.value = resp.data;
@@ -322,6 +323,7 @@ export const useSTAcStore = defineStore("stac", () => {
           // the main map's view defines the compare map's projection too
           viewProjection: availableMapProjection.value || "EPSG:3857",
         },
+        true,
       );
       selectedCompareItem.value = /** @type {any} */ (stacItem) ?? undefined;
       selectedCompareStac.value = resp.data;

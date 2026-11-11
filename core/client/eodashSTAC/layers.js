@@ -188,19 +188,28 @@ export const buildIndicatorLayers = async (
     ...(overLayers.length ? [layerGroup(OVERLAY_GROUP, overLayers)] : []),
   ];
 
-  const restored =
-    map?.id === "compare"
-      ? restoredCompareLayersState.value
-      : restoredLayersState.value;
-  if (restored) {
-    applyRestoredLayerProperties(fullLayers, restored);
-  }
+  applyRestoredPropertiesForMap(map, fullLayers);
 
   return {
     layers: fullLayers,
     items,
   };
 };
+
+/**
+ * Helper to apply restored layer properties according to the map instance.
+ * @param {import("@eox/map").EOxMap | null} map
+ * @param {import("@eox/map").EoxLayer[]} layers
+ */
+function applyRestoredPropertiesForMap(map, layers) {
+  const restored =
+    map?.id === "compare"
+      ? restoredCompareLayersState.value
+      : restoredLayersState.value;
+  if (restored) {
+    applyRestoredLayerProperties(layers, restored);
+  }
+}
 
 /**
  * Rebuilds and assigns data layers for the given datetime or STAC item.
@@ -223,13 +232,7 @@ export const assignDataLayers = async (
     timeOrItem,
   });
 
-  const restored =
-    map?.id === "compare"
-      ? restoredCompareLayersState.value
-      : restoredLayersState.value;
-  if (restored) {
-    applyRestoredLayerProperties(layers, restored);
-  }
+  applyRestoredPropertiesForMap(map, layers);
 
   await registerProjections(projections);
   await assignGroupLayers(map, ANALYSIS_GROUP, layers, event);

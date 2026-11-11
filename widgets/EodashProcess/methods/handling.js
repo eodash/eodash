@@ -20,7 +20,7 @@ import { processCharts, processLayers, processSTAC } from "./outputs";
 import { handleLayersCustomEndpoints } from "./custom-endpoints/layers";
 import { handleChartCustomEndpoints } from "./custom-endpoints/chart";
 import { useSTAcStore } from "@/store/stac";
-import { LAYER_ID_SEPARATOR } from "@eodash/stac/helpers";
+import { LAYER_ID_SEPARATOR, toAbsolute } from "@eodash/stac/helpers";
 import axios from "@/plugins/axios";
 import { useGetSubCodeId } from "@/composables";
 import { getLayers, getCompareLayers, setDatetime } from "@/store/actions";
@@ -58,9 +58,31 @@ export async function initProcess({
       .then((resp) => resp.data);
   }
 
+  // If a POI collection doesn't carry a jsonform of its own, check if the parent indicator declares one
   if (!updatedJsonform && isPoiAlive) {
-    // If the POI collection doesn't declare a jsonform of its own, preserve the existing
-    // jsonformSchema if one is already attached (e.g. from the parent indicator).
+    const parentIndicatorId = enableCompare
+      ? compareIndicator.value
+      : indicator.value;
+    const store = useSTAcStore();
+    const parentLink = store.stac?.find(
+      (l) => useGetSubCodeId(l) === parentIndicatorId,
+    );
+    if (parentLink?.href) {
+      const parentUrl = toAbsolute(parentLink.href, store.stacEndpoint ?? "");
+      const parentStac = await axios
+        .get(parentUrl)
+        .then((resp) => resp.data)
+        .catch(() => null);
+      if (parentStac?.["eodash:jsonform"]) {
+        updatedJsonform = await axios
+          .get(parentStac["eodash:jsonform"])
+          .then((resp) => resp.data)
+          .catch(() => null);
+      }
+    }
+  }
+
+  if (!updatedJsonform && isPoiAlive) {
     if (!jsonformSchema.value) {
       jsonformSchema.value = null;
     }

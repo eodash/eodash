@@ -213,6 +213,7 @@ export const updateEodashCollections = async (
   colors,
   isAPI,
   rasterOptions = {},
+  isCompare = false,
 ) => {
   // init eodash collections via indicator reader
   const indicator = await createEodashIndicator(absoluteUrl, {
@@ -223,10 +224,7 @@ export const updateEodashCollections = async (
     ...rasterOptions,
   });
 
-  applyRestoredLayerConfigsToReaders(
-    indicator.readers,
-    isAPI === undefined ? false : colors[0] !== collectionsPalette[0],
-  );
+  applyRestoredLayerConfigsToReaders(indicator.readers, isCompare);
 
   eodashCollections.splice(0, eodashCollections.length, ...indicator.readers);
 };

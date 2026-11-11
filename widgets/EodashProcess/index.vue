@@ -95,6 +95,7 @@ import {
   restoredCompareProcessState,
   restoredProcessState,
 } from "@/utils/states";
+import { diffFormValues } from "@/utils/process-state-helpers";
 import {
   mdiCogPlayOutline,
   mdiDownloadCircleOutline,
@@ -358,9 +359,23 @@ const startProcess = async () => {
   if (isAsync.value) updateJobsStatus(currentJobs, currentIndicator.value);
 };
 const hasCustomProcessState = computed(() => {
-  if (typeof window === "undefined") return false;
-  const param = enableCompare ? "compareprocess" : "process";
-  return new URLSearchParams(window.location.search).has(param);
+  const targetRestored = enableCompare
+    ? restoredCompareProcessState.value
+    : restoredProcessState.value;
+  if (targetRestored && Object.keys(targetRestored).length) return true;
+
+  const targetActive = enableCompare
+    ? activeCompareProcessFormValue.value
+    : activeProcessFormValue.value;
+  const targetBaseline = enableCompare
+    ? baselineCompareProcessDefaults.value
+    : baselineProcessDefaults.value;
+
+  if (targetActive && Object.keys(targetActive).length) {
+    const delta = diffFormValues(targetActive, targetBaseline || {});
+    return Object.keys(delta).length > 0;
+  }
+  return false;
 });
 
 const resetProcessCustomization = () => {

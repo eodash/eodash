@@ -384,8 +384,8 @@ onMounted(async () => {
 
   if (props.enableCompare) {
     mapCompareEl.value = compareMap.value;
-    if (compareMap.value && eoxMap.value) {
-      /** @type {any} */ (compareMap.value).sync = eoxMap.value;
+    if (compareMap.value) {
+      compareMap.value.sync = "#main";
     }
     // a compare collection is only ever chosen after this, so the compare map
     // opens on the configured background
@@ -424,8 +424,8 @@ onMounted(async () => {
   });
 
   // Re-sync compare map after main map has configured its projection and view
-  if (props.enableCompare && compareMap.value && eoxMap.value) {
-    /** @type {any} */ (compareMap.value).sync = eoxMap.value;
+  if (props.enableCompare && compareMap.value) {
+    compareMap.value.sync = "#main";
   }
 });
 

@@ -66,6 +66,7 @@ import { updateGeoZarrBands, updateLayerUrl } from "@/eodashSTAC/helpers";
 import { storeToRefs } from "pinia";
 import { useSTAcStore } from "@/store/stac";
 import { bandsEditorInterface } from "@/utils/bands-editor";
+import { computeMapLayersDelta } from "@/utils/layer-delta-helpers";
 import EodashLayoutSwitcher from "^/EodashLayoutSwitcher.vue";
 import { mdiRestore, mdiViewDashboard } from "@mdi/js";
 
@@ -146,9 +147,27 @@ const onLayerControlChange = () => {
 };
 
 const hasCustomLayerState = computed(() => {
-  if (typeof window === "undefined") return false;
-  const param = props.map === "second" ? "comparelayers" : "layers";
-  return new URLSearchParams(window.location.search).has(param);
+  if (props.map === "second") {
+    // Reads reactive triggers and states so Vue tracks changes dynamically
+    void layerStateChangeTriggerCompare.value;
+    if (restoredCompareLayersState.value) return true;
+    if (!mapCompareEl.value) return false;
+    const delta = computeMapLayersDelta(
+      mapCompareEl.value,
+      layerControlFormValueCompare.value,
+      baselineCompareLayerConfigDefaults.value,
+    );
+    return Object.keys(delta).length > 0;
+  }
+  void layerStateChangeTrigger.value;
+  if (restoredLayersState.value) return true;
+  if (!mapEl.value) return false;
+  const delta = computeMapLayersDelta(
+    mapEl.value,
+    layerControlFormValue.value,
+    baselineLayerConfigDefaults.value,
+  );
+  return Object.keys(delta).length > 0;
 });
 
 const resetLayersCustomization = async () => {

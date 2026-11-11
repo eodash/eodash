@@ -1,7 +1,6 @@
 import { describe, expect, test } from "vitest";
 import {
   diffFormValues,
-  mergeFormDelta,
   sanitizeFormValue,
 } from "@/utils/process-state-helpers";
 
@@ -26,16 +25,6 @@ describe("process-state-helpers", () => {
     expect(delta).toEqual({
       num: 10,
       bbox: [10.123456789, 20.123456789, 11.123456789, 21.123456789],
-    });
-  });
-
-  test("merges delta into target", () => {
-    const target = { a: 1, b: { c: 2 } };
-    const delta = { b: { d: 3 }, e: 4 };
-    expect(mergeFormDelta(target, delta)).toEqual({
-      a: 1,
-      b: { c: 2, d: 3 },
-      e: 4,
     });
   });
 });

@@ -323,7 +323,7 @@ export const useURLSearchParametersSync = () => {
           case "indicator": {
             log.debug("Found indicator key in url");
             const match = store.stac?.find(
-              (link) => useGetSubCodeId(link) == value,
+              (link) => useGetSubCodeId(link) === value,
             );
             if (match) {
               log.debug("Found match, loading stac item", match);
@@ -340,7 +340,7 @@ export const useURLSearchParametersSync = () => {
           case "compareindicator": {
             log.debug("Found compareindicator key in url");
             const match = store.stac?.find(
-              (link) => useGetSubCodeId(link) == value,
+              (link) => useGetSubCodeId(link) === value,
             );
             if (match) {
               log.debug("Found match, loading compare stac item", match);

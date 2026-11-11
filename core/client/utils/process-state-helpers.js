@@ -53,30 +53,3 @@ export function diffFormValues(current, baseline) {
   }
   return delta;
 }
-
-/**
- * Deep merges delta values into a target schema's defaults or form value.
- *
- * @param {Record<string, any>} target
- * @param {Record<string, any>} delta
- * @returns {Record<string, any>}
- */
-export function mergeFormDelta(target, delta) {
-  if (!delta || typeof delta !== "object") return target;
-  const merged = { ...(target || {}) };
-  for (const [key, val] of Object.entries(delta)) {
-    if (
-      val &&
-      typeof val === "object" &&
-      !Array.isArray(val) &&
-      merged[key] &&
-      typeof merged[key] === "object" &&
-      !Array.isArray(merged[key])
-    ) {
-      merged[key] = mergeFormDelta(merged[key], val);
-    } else {
-      merged[key] = val;
-    }
-  }
-  return merged;
-}

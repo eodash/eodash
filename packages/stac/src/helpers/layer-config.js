@@ -50,7 +50,11 @@ function extractLayerConfig(state, style, rasterJsonform, layerConfigType) {
 
   if (style?.variables) {
     // Apply saved style variables
-    style.variables = applyStyleVariables(state, style.variables);
+    style.variables = applyStyleVariables(
+      state,
+      style.variables,
+      style.jsonform || rasterJsonform?.jsonform,
+    );
   }
 
   if (rasterJsonform) {
@@ -227,24 +231,6 @@ function restorePersistedSchema(schema, state, type) {
 }
 
 /**
- * Applies persisted style variables onto a style configuration.
- *
- * @param {FormValues} state
- * @param {Record<string, any>} [variables]
- * @returns {Record<string, any> | undefined}
- */
-function applyStyleVariables(state, variables) {
-  const cached = getCachedConfig(state, "style");
-  if (!cached || !variables) return variables;
-  const values = flattenFormValues(cached);
-  const merged = { ...variables };
-  for (const key of Object.keys(merged)) {
-    if (key in values) merged[key] = values[key];
-  }
-  return merged;
-}
-
-/**
  * Evaluates template properties defined on a schema (using mustache) against current form values.
  *
  * @param {Record<string, any>} schema
@@ -261,7 +247,7 @@ function evaluateTemplateProperties(schema, values) {
       propDef &&
       typeof propDef === "object" &&
       typeof propDef.template === "string" &&
-      result[key] === undefined
+      (result[key] === undefined || result[key] === null || result[key] === "")
     ) {
       try {
         result[key] = mustache.render(propDef.template, values);
@@ -274,6 +260,28 @@ function evaluateTemplateProperties(schema, values) {
     }
   }
   return result;
+}
+
+/**
+ * Applies persisted style variables onto a style configuration.
+ *
+ * @param {FormValues} state
+ * @param {Record<string, any>} [variables]
+ * @param {Record<string, any>} [schema]
+ * @returns {Record<string, any> | undefined}
+ */
+function applyStyleVariables(state, variables, schema) {
+  const cached = getCachedConfig(state, "style");
+  if (!cached || !variables) return variables;
+  const rawValues = schema
+    ? evaluateTemplateProperties(schema, cached)
+    : cached;
+  const values = flattenFormValues(rawValues);
+  const merged = { ...variables };
+  for (const key of Object.keys(merged)) {
+    if (key in values) merged[key] = values[key];
+  }
+  return merged;
 }
 
 /**
