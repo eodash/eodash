@@ -265,7 +265,9 @@ export const useSTAcStore = defineStore("stac", () => {
       indicator.value = isPoi
         ? indicator.value
         : useGetSubCodeId(selectedStac.value);
-      poi.value = isPoi ? (selectedStac.value?.id ?? "") : "";
+      poi.value = isPoi
+        ? useGetSubCodeId(selectedStac.value) || selectedStac.value?.id || ""
+        : "";
 
       // no time of its own means the collection's most recent data. Selecting
       // an indicator clears `datetime` so that it lands here.
@@ -326,7 +328,11 @@ export const useSTAcStore = defineStore("stac", () => {
       compareIndicator.value = isPOI
         ? compareIndicator.value
         : useGetSubCodeId(selectedCompareStac.value);
-      comparePoi.value = isPOI ? (selectedCompareStac.value?.id ?? "") : "";
+      comparePoi.value = isPOI
+        ? useGetSubCodeId(selectedCompareStac.value) ||
+          selectedCompareStac.value?.id ||
+          ""
+        : "";
 
       if (!datetime.value) {
         datetime.value = getLatestDatetime(resp.data).toISOString();

@@ -16,31 +16,48 @@
       </EodashChart>
     </div>
     <div
-      v-if="showExecBtn || (processResults.length && isProcessed && !isAsync)"
-      class="eodash-process-actions"
+      v-if="
+        showExecBtn ||
+        (processResults.length && isProcessed && !isAsync) ||
+        hasCustomProcessState
+      "
+      class="eodash-process-actions d-flex justify-space-between align-center"
     >
-      <v-btn
-        v-if="showExecBtn"
-        :loading="loading"
-        style="margin-right: 8px"
-        :append-icon="[mdiCogPlayOutline]"
-        density="comfortable"
-        size="small"
-        @click="startProcess"
-      >
-        Execute
-      </v-btn>
-      <v-btn
-        v-if="processResults.length && isProcessed && !isAsync"
-        color="primary"
-        style="margin-right: 8px"
-        :append-icon="[mdiDownloadCircleOutline]"
-        size="small"
-        density="comfortable"
-        @click="downloadResults"
-      >
-        Download
-      </v-btn>
+      <div>
+        <v-btn
+          v-if="hasCustomProcessState"
+          v-tooltip="'Reset process form to default'"
+          :icon="[mdiRestore]"
+          density="comfortable"
+          size="small"
+          variant="text"
+          @click="resetProcessCustomization"
+        />
+      </div>
+      <div>
+        <v-btn
+          v-if="showExecBtn"
+          :loading="loading"
+          style="margin-right: 8px"
+          :append-icon="[mdiCogPlayOutline]"
+          density="comfortable"
+          size="small"
+          @click="startProcess"
+        >
+          Execute
+        </v-btn>
+        <v-btn
+          v-if="processResults.length && isProcessed && !isAsync"
+          color="primary"
+          style="margin-right: 8px"
+          :append-icon="[mdiDownloadCircleOutline]"
+          size="small"
+          density="comfortable"
+          @click="downloadResults"
+        >
+          Download
+        </v-btn>
+      </div>
     </div>
   </div>
 </template>
@@ -78,7 +95,11 @@ import {
   restoredCompareProcessState,
   restoredProcessState,
 } from "@/utils/states";
-import { mdiCogPlayOutline, mdiDownloadCircleOutline } from "@mdi/js";
+import {
+  mdiCogPlayOutline,
+  mdiDownloadCircleOutline,
+  mdiRestore,
+} from "@mdi/js";
 
 const { enableCompare, vegaEmbedOptions } = defineProps({
   enableCompare: {
@@ -298,11 +319,14 @@ const startProcess = async () => {
   const drawToolsProperties = getDrawToolsProperties(jsonformSchema.value);
 
   const anyDrawtoolPropertyEmpty = drawToolsProperties.some(
-    (drawToolsProperty) =>
-      //@ts-expect-error jsonfrom.value is not typed
-      Array.isArray(jsonformEl.value?.value[drawToolsProperty]) &&
-      //@ts-expect-error jsonfrom.value is not typed
-      !jsonformEl.value?.value[drawToolsProperty].length,
+    (drawToolsProperty) => {
+      //@ts-expect-error jsonform.value is not typed
+      const val = jsonformEl.value?.value?.[drawToolsProperty];
+      if (Array.isArray(val) && !val.length) return true;
+      if (typeof val === "string" && val.trim() === "") return true;
+      if (!val) return true;
+      return false;
+    },
   );
 
   if (anyDrawtoolPropertyEmpty) {
@@ -333,6 +357,31 @@ const startProcess = async () => {
   isProcessed.value = true;
   if (isAsync.value) updateJobsStatus(currentJobs, currentIndicator.value);
 };
+const hasCustomProcessState = computed(() => {
+  if (typeof window === "undefined") return false;
+  const param = enableCompare ? "compareprocess" : "process";
+  return new URLSearchParams(window.location.search).has(param);
+});
+
+const resetProcessCustomization = () => {
+  const targetRestored = enableCompare
+    ? restoredCompareProcessState
+    : restoredProcessState;
+  const targetActive = enableCompare
+    ? activeCompareProcessFormValue
+    : activeProcessFormValue;
+  const targetBaseline = enableCompare
+    ? baselineCompareProcessDefaults
+    : baselineProcessDefaults;
+
+  targetRestored.value = null;
+  targetActive.value = null;
+
+  if (jsonformEl.value?.editor && targetBaseline.value) {
+    jsonformEl.value.editor.setValue({ ...targetBaseline.value });
+  }
+};
+
 useAutoExec(autoExec, jsonformEl, jsonformSchema, startProcess);
 
 onUnmounted(() => {

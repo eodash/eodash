@@ -75,6 +75,18 @@ export const restoredProcessState = ref(null);
 export const restoredCompareProcessState = ref(null);
 
 /**
+ * Baseline layerConfig default form values captured on initial mount, keyed by layer ID.
+ * @type {import("vue").Ref<Record<string, Record<string, any>>>}
+ */
+export const baselineLayerConfigDefaults = ref({});
+
+/**
+ * Baseline layerConfig default form values for compare map, keyed by layer ID.
+ * @type {import("vue").Ref<Record<string, Record<string, any>>>}
+ */
+export const baselineCompareLayerConfigDefaults = ref({});
+
+/**
  * Current value of the layer control JSON form, keyed by layer ID.
  * @type {import("vue").Ref<Record<string, Record<string, any>>>}
  */

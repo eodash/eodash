@@ -21,6 +21,8 @@ import log from "loglevel";
 import { eodashKey, eoxLayersKey } from "@/utils/keys";
 import { useEventBus, useMutationObserver } from "@vueuse/core";
 import {
+  baselineCompareLayerConfigDefaults,
+  baselineLayerConfigDefaults,
   hasRestoredView,
   isFirstLoad,
   layerControlFormValue,
@@ -235,8 +237,6 @@ const loadIndicatorFromUrl = async ({
   if (searchParams.has(poiParam)) {
     targetPoi.value = searchParams.get(poiParam) ?? "";
     targetIndicator.value = useGetSubCodeId(match);
-    // First load the parent indicator STAC so readers, jsonform, and indicator context are established
-    await loader(/** @type {string} */ (store.isApi ? match.id : match.href));
     const poiAbsoluteUrl = await resolvePoiUrl(
       match,
       targetPoi.value,
@@ -485,7 +485,11 @@ export const useURLSearchParametersSync = () => {
           if (mapEl.value) {
             syncEncodedParam(
               "layers",
-              computeMapLayersDelta(mapEl.value, layerControlFormValue.value),
+              computeMapLayersDelta(
+                mapEl.value,
+                layerControlFormValue.value,
+                baselineLayerConfigDefaults.value,
+              ),
             );
           }
           if (mapCompareEl.value && updatedCompareIndicator) {
@@ -494,6 +498,7 @@ export const useURLSearchParametersSync = () => {
               computeMapLayersDelta(
                 mapCompareEl.value,
                 layerControlFormValueCompare.value,
+                baselineCompareLayerConfigDefaults.value,
               ),
             );
           } else {

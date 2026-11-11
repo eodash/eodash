@@ -25,10 +25,21 @@ export const applyRestoredLayerConfigsToReaders = (
   if (!state || !readers?.length) return;
 
   for (const [key, override] of Object.entries(state)) {
-    const config = override?.config;
-    if (!config) continue;
+    const rawConfig = override?.config;
+    if (!rawConfig) continue;
     const reader = findReaderByLayerId(readers, key);
     if (reader?.persistLayerConfig) {
+      const config = { ...rawConfig };
+      // If vminmax is present, recompute rescale if not defined
+      if (
+        config.vminmax &&
+        config.vminmax.vmin !== undefined &&
+        config.vminmax.vmax !== undefined &&
+        !config.rescale
+      ) {
+        config.rescale = `${config.vminmax.vmin},${config.vminmax.vmax}`;
+      }
+
       reader.persistLayerConfig(
         /** @type {import("@eodash/stac").EodashLayerConfig} */ ({
           type: "style",

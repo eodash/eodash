@@ -14,12 +14,25 @@
       @layerConfig:change="onLayerConfigChange"
       @layerchange="onLayerControlChange"
       @change="onLayerControlChange"
+      @input="onLayerControlChange"
     >
       <span
         slot="layerstitle"
-        class="d-flex justify-space-between ma-2 pa-2 flex-shrink-0"
+        class="d-flex justify-space-between align-center ma-2 pa-2 flex-shrink-0"
       >
-        <h4 v-if="title">{{ title }}</h4>
+        <span class="d-flex align-center">
+          <h4 v-if="title">{{ title }}</h4>
+          <v-btn
+            v-if="hasCustomLayerState"
+            v-tooltip="'Reset layers to default'"
+            :icon="[mdiRestore]"
+            density="compact"
+            size="small"
+            variant="text"
+            class="ml-1"
+            @click="resetLayersCustomization"
+          />
+        </span>
         <EodashLayoutSwitcher
           v-if="enableLayoutSwitcher"
           :target="layoutTarget"
@@ -32,25 +45,29 @@
 <script setup>
 import "color-legend-element";
 import "@eox/timecontrol";
-import { computed, onMounted, onUnmounted } from "vue";
+import { computed } from "vue";
 import { mapEl, mapCompareEl } from "@/store/states";
 import { assignLayers } from "@/store/actions";
 import { registerProjections } from "@/eodashSTAC/projection";
 import { eodashCollections, eodashCompareCollections } from "@/store/stac";
 import {
+  baselineCompareLayerConfigDefaults,
+  baselineLayerConfigDefaults,
   layerControlFormValue,
   layerControlFormValueCompare,
   layerStateChangeTrigger,
   layerStateChangeTriggerCompare,
+  restoredCompareLayersState,
+  restoredLayersState,
 } from "@/utils/states";
 import { findReaderByLayerId } from "@eodash/stac/helpers";
-import { ANALYSIS_GROUP } from "@/eodashSTAC/layers";
+import { ANALYSIS_GROUP, updateIndicatorLayers } from "@/eodashSTAC/layers";
 import { updateGeoZarrBands, updateLayerUrl } from "@/eodashSTAC/helpers";
 import { storeToRefs } from "pinia";
 import { useSTAcStore } from "@/store/stac";
 import { bandsEditorInterface } from "@/utils/bands-editor";
 import EodashLayoutSwitcher from "^/EodashLayoutSwitcher.vue";
-import { mdiViewDashboard } from "@mdi/js";
+import { mdiRestore, mdiViewDashboard } from "@mdi/js";
 
 if (!customElements.get("eox-layercontrol")) {
   await import("@eox/layercontrol");
@@ -128,22 +145,40 @@ const onLayerControlChange = () => {
   }
 };
 
-onMounted(() => {
-  // Listen for opacity changes which bubble as input events on native range inputs
-  const el = mapElement.value;
-  if (el) {
-    el.addEventListener("change", onLayerControlChange);
-    el.addEventListener("input", onLayerControlChange);
-  }
+const hasCustomLayerState = computed(() => {
+  if (typeof window === "undefined") return false;
+  const param = props.map === "second" ? "comparelayers" : "layers";
+  return new URLSearchParams(window.location.search).has(param);
 });
 
-onUnmounted(() => {
-  const el = mapElement.value;
-  if (el) {
-    el.removeEventListener("change", onLayerControlChange);
-    el.removeEventListener("input", onLayerControlChange);
+const resetLayersCustomization = async () => {
+  const store = useSTAcStore();
+  if (props.map === "second") {
+    restoredCompareLayersState.value = null;
+    layerControlFormValueCompare.value = {};
+    layerStateChangeTriggerCompare.value++;
+    if (store.selectedCompareStac && mapCompareEl.value) {
+      await updateIndicatorLayers(mapCompareEl.value, {
+        readers: eodashCompareCollections,
+        stac: store.selectedCompareStac,
+        timeOrItem: store.selectedCompareItem ?? undefined,
+        event: "compareLayers:updated",
+      });
+    }
+  } else {
+    restoredLayersState.value = null;
+    layerControlFormValue.value = {};
+    layerStateChangeTrigger.value++;
+    if (store.selectedStac && mapEl.value) {
+      await updateIndicatorLayers(mapEl.value, {
+        readers: eodashCollections,
+        stac: store.selectedStac,
+        timeOrItem: store.selectedItem ?? undefined,
+        event: "layers:updated",
+      });
+    }
   }
-});
+};
 
 /** @param {CustomEvent<{layer:import('ol/layer').Layer; datetime:string;}>} evt */
 const handleDatetimeUpdate = async (evt) => {
@@ -226,6 +261,15 @@ const onLayerConfigChange = (evt) => {
 
   const layerId = layer.get("id");
   if (layerId) {
+    const targetBaseline =
+      props.map === "second"
+        ? baselineCompareLayerConfigDefaults
+        : baselineLayerConfigDefaults;
+    // Capture the first emitted form values as baseline defaults for delta diffing
+    if (!targetBaseline.value[layerId]) {
+      targetBaseline.value[layerId] = { ...evt.detail.jsonformValue };
+    }
+
     if (props.map === "second") {
       layerControlFormValueCompare.value = {
         ...layerControlFormValueCompare.value,
