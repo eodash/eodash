@@ -12,23 +12,23 @@ export const switchGlobe = () => {
   if (!isGlobe.value) {
     // tmp: we remove the vector layers from the globe until
     // we have better support for them
-    const layers = addCorsAnonym([...getLayers()])
-      .filter((layer) => layer.type !== "Vector")
-      .map((layer) => {
-        if (layer.type === "Group") {
-          return {
-            ...layer,
-            layers: layer.layers.filter((l) => l.type !== "Vector"),
-          };
-        }
-        return layer;
-      });
+    const layers = addCorsAnonym([...getLayers()]);
+    // .filter((layer) => layer.type !== "Vector")
+    // .map((layer) => {
+    //   if (layer.type === "Group") {
+    //     return {
+    //       ...layer,
+    //       layers: layer.layers.filter((l) => l.type !== "Vector"),
+    //     };
+    //   }
+    //   return layer;
+    // });
     assignLayers(mapEl.value, layers);
   }
   mapEl.value.projection = isGlobe.value ? "EPSG:3857" : "globe";
-  if (isGlobe.value) {
-    showAllPanels();
-  } else hideAllPanels();
+  // if (isGlobe.value) {
+  //   showAllPanels();
+  // } else hideAllPanels();
   isGlobe.value = !isGlobe.value;
 };
 

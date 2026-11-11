@@ -4,13 +4,15 @@
 import { changeMapProjection, registerProjection } from "@/store/actions";
 import log from "loglevel";
 import { getProjection, getProjectionCode } from "@eodash/stac/helpers";
-import { availableMapProjection } from "@/store/states";
+import { availableMapProjection, isGlobe } from "@/store/states";
 
 /**
  * Updates map projection from a collection's spatial metadata.
  * @param {import("@eodash/stac").STACCollection} [STAcCollection] - STAC collection
  */
 export const setMapProjFromCol = async (STAcCollection) => {
+  // any 2D projection written to eox-map switches it out of the globe
+  if (isGlobe.value) return;
   log.debug("Checking for available map projection in indicator");
   const projection = getProjection(STAcCollection);
   if (projection) {
