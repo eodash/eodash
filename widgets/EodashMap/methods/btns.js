@@ -1,6 +1,11 @@
-import { assignLayers, getLayers, setActiveTemplate } from "@/store/actions";
+import { setActiveTemplate } from "@/store/actions";
 import { useSTAcStore } from "@/store/stac";
-import { activeTemplate, isGlobe, mapEl } from "@/store/states";
+import {
+  activeTemplate,
+  availableMapProjection,
+  isGlobe,
+  mapEl,
+} from "@/store/states";
 import { easeOut } from "ol/easing.js";
 import { storeToRefs } from "pinia";
 import { ref } from "vue";
@@ -9,105 +14,12 @@ export const switchGlobe = () => {
   if (!mapEl.value) {
     return;
   }
-  if (!isGlobe.value) {
-    // tmp: we remove the vector layers from the globe until
-    // we have better support for them
-    const layers = addCorsAnonym([...getLayers()])
-      .filter((layer) => layer.type !== "Vector")
-      .map((layer) => {
-        if (layer.type === "Group") {
-          return {
-            ...layer,
-            layers: layer.layers.filter((l) => l.type !== "Vector"),
-          };
-        }
-        return layer;
-      });
-    assignLayers(mapEl.value, layers);
-  }
-  mapEl.value.projection = isGlobe.value ? "EPSG:3857" : "globe";
-  if (isGlobe.value) {
-    showAllPanels();
-  } else hideAllPanels();
+  // exit using the selected collection's projection
+  mapEl.value.projection = isGlobe.value
+    ? availableMapProjection.value || "EPSG:3857"
+    : "globe";
   isGlobe.value = !isGlobe.value;
 };
-
-function getRoot() {
-  const eodashComponent = document.querySelector("eo-dash");
-  return eodashComponent ? eodashComponent.shadowRoot : document;
-}
-
-function hideAllPanels() {
-  const root = getRoot();
-  const allPanels = root?.querySelectorAll(
-    "eox-layout-item:not([class='bg-panel'])",
-  );
-
-  allPanels?.forEach((panel) => {
-    if (!panel || !(panel instanceof HTMLElement)) {
-      return;
-    }
-    panel.style.display = "none";
-  });
-
-  const mapButtons = root?.querySelector(".map-buttons");
-  if (mapButtons instanceof HTMLElement) {
-    mapButtons.style.padding = "1rem";
-  }
-}
-
-function showAllPanels() {
-  const root = getRoot();
-  const allPanels = root?.querySelectorAll(
-    "eox-layout-item:not([class='bg-panel'])",
-  );
-  allPanels?.forEach((panel) => {
-    if (!panel || !(panel instanceof HTMLElement)) {
-      return;
-    }
-    panel.style.display = "";
-  });
-
-  const mapButtons = root?.querySelector(".map-buttons");
-  if (mapButtons instanceof HTMLElement) {
-    mapButtons.style.padding = "";
-  }
-}
-/**
- *
- * @param {import("@eox/map").EoxLayer[]} layers - eox map layers
- * @returns {import("@eox/map").EoxLayer[]} anonymized Cors
- */
-function addCorsAnonym(layers) {
-  return /** @type {import("@eox/map").EoxLayer[]} */ (
-    layers.map((layer) => {
-      if (layer.type === "Group") {
-        layer.layers = addCorsAnonym([...(layer.layers ?? [])]);
-        return layer;
-      }
-      // check if not mapbox style as a fix for ts error
-      if (layer.type === "MapboxStyle") {
-        return layer;
-      }
-
-      return {
-        ...layer,
-        ...("source" in layer && {
-          source: {
-            ...layer.source,
-            crossOrigin: "anonymous",
-          },
-          ...(layer.sources && {
-            sources: layer.sources.map((source) => ({
-              ...source,
-              crossOrigin: "anonymous",
-            })),
-          }),
-        }),
-      };
-    })
-  );
-}
 
 export const onMapZoomOut = () => {
   const map = mapEl.value?.map;

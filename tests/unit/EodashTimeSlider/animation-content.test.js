@@ -161,7 +161,8 @@ describe("createAnimationLayers - rendered layers", () => {
   test("passes the map's projection to data layer building", async () => {
     setMap({
       layers: [],
-      projection: "EPSG:3035",
+      // the view projection; `projection` reads "globe" in 3D
+      OLprojection: "EPSG:3035",
       getLayerById: () => null,
     });
     const reader = stubReader("collA", [{ properties: { id: "a" } }]);
