@@ -13,6 +13,7 @@ import {
   shouldZoomToExtent,
 } from "@/utils/states";
 import { useSTAcStore } from "@/store/stac";
+import { isGlobe } from "@/store/states";
 import {
   registerProjections,
   setMapProjFromCol,
@@ -25,6 +26,17 @@ export const CATALOG_GROUP = "CatalogGroup";
 export const ANALYSIS_GROUP = "AnalysisGroup";
 export const PROCESS_GROUP = "ProcessGroup";
 export const OVERLAY_GROUP = "OverlayGroup";
+
+// base layers in other projections, e.g. polar stereographic, cover part of
+// the globe and leave the rest white
+const GLOBE_PROJECTIONS = ["EPSG:3857", "EPSG:4326", "CRS:84"];
+
+/**
+ * The main map's base layers before the globe dropped the ones that do not
+ * cover it, restored when leaving the globe.
+ * @type {import("@eox/map").EoxLayer[]}
+ */
+let baseLayers2D = [];
 
 /**
  * @typedef {object} LayerGroupDefinition
@@ -63,6 +75,27 @@ export const assignGroupLayers = (map, id, layers, event) =>
   assignLayers(map, patchGroupLayers(map?.layers ?? [], id, layers), event);
 
 /**
+ * Drops the base layers that do not cover the globe, keeping them for
+ * {@link restoreBaseLayers2D}.
+ *
+ * @param {import("@eox/map").EOxMap} map - Main map instance
+ */
+export const assignGlobeBaseLayers = (map) =>
+  assignGroupLayers(
+    map,
+    BASE_LAYERS_GROUP,
+    globeBaseLayers(groupLayers(map.layers, BASE_LAYERS_GROUP)),
+  );
+
+/**
+ * Brings back the base layers the globe dropped.
+ *
+ * @param {import("@eox/map").EOxMap} map - Main map instance
+ */
+export const restoreBaseLayers2D = (map) =>
+  assignGroupLayers(map, BASE_LAYERS_GROUP, baseLayers2D);
+
+/**
  * Builds and assigns all base, data, and overlay layers for a selected indicator.
  *
  * @param {import("@eox/map").EOxMap | null} map - Map instance
@@ -90,7 +123,18 @@ export const updateIndicatorLayers = async (
     stac,
     timeOrItem,
   });
-  await assignLayers(map, layers, event);
+  // here, not in `buildIndicatorLayers`: the timelapse builds layers in 3D too
+  await assignLayers(
+    map,
+    isGlobe.value && map?.id === "main"
+      ? patchGroupLayers(
+          layers,
+          BASE_LAYERS_GROUP,
+          globeBaseLayers(groupLayers(layers, BASE_LAYERS_GROUP)),
+        )
+      : layers,
+    event,
+  );
   zoomToCollection(map, stac);
 
   return items;
@@ -279,6 +323,40 @@ function layerGroup(id, layers) {
     properties: { id, ...GROUPS[id]?.properties },
     layers,
   };
+}
+
+/**
+ * Keeps `baseLayers` for leaving the globe and returns the ones in a world
+ * projection, with one of them visible.
+ *
+ * @param {import("@eox/map").EoxLayer[]} baseLayers
+ * @returns {import("@eox/map").EoxLayer[]}
+ */
+function globeBaseLayers(baseLayers) {
+  // a copy: eox-map keeps writing visibility into the definitions it was given
+  baseLayers2D = normalizeBaseLayers(baseLayers, defaultBaseLayers.value);
+  return normalizeBaseLayers(
+    baseLayers.filter((layer) =>
+      GLOBE_PROJECTIONS.includes(
+        // @ts-expect-error eox-map types this as ProjectionLike, it is a code here
+        ("source" in layer && getProjectionCode(layer.source?.projection)) ||
+          "EPSG:3857",
+      ),
+    ),
+    defaultBaseLayers.value,
+  );
+}
+
+/**
+ * The layers of the group `id` within `layers`.
+ *
+ * @param {import("@eox/map").EoxLayer[]} layers
+ * @param {string} id
+ * @returns {import("@eox/map").EoxLayer[]}
+ */
+function groupLayers(layers, id) {
+  const group = layers.find((layer) => layer.properties?.id === id);
+  return group && "layers" in group ? group.layers : [];
 }
 
 /**

@@ -312,6 +312,8 @@ export const normalizeBaseLayers = (
 
     layers.forEach((bl) => {
       bl.properties.layerControlExclusive = true;
+      // eox-map updates an existing layer from this, not from `properties`
+      bl.visible = bl.properties.visible;
     });
     return /** @type {import("@eox/map").EoxLayer[]} */ (layers);
   }

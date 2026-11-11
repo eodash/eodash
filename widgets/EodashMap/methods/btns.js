@@ -1,3 +1,7 @@
+import {
+  assignGlobeBaseLayers,
+  restoreBaseLayers2D,
+} from "@/eodashSTAC/layers";
 import { setActiveTemplate } from "@/store/actions";
 import { useSTAcStore } from "@/store/stac";
 import {
@@ -14,10 +18,15 @@ export const switchGlobe = () => {
   if (!mapEl.value) {
     return;
   }
-  // exit using the selected collection's projection
-  mapEl.value.projection = isGlobe.value
-    ? availableMapProjection.value || "EPSG:3857"
-    : "globe";
+  if (isGlobe.value) {
+    // exit using the selected collection's projection
+    mapEl.value.projection = availableMapProjection.value || "EPSG:3857";
+    restoreBaseLayers2D(mapEl.value);
+  } else {
+    // before entering, so the globe never builds the dropped layers
+    assignGlobeBaseLayers(mapEl.value);
+    mapEl.value.projection = "globe";
+  }
   isGlobe.value = !isGlobe.value;
 };
 
