@@ -2,7 +2,6 @@ import { beforeEach, describe, expect, test, vi } from "vitest";
 import { createPinia, setActivePinia } from "pinia";
 import {
   checkMosaicDataInView,
-  normalizeGlobeZoom,
   updateMosaicLayer,
   useMosaicState,
 } from "@/eodashSTAC/mosaic";
@@ -221,21 +220,6 @@ describe("mosaic", () => {
         expect.stringContaining("No tile URL found"),
       );
       expect(state.latestLayer.value).toBeNull();
-    });
-  });
-
-  describe("normalizeGlobeZoom", () => {
-    test("passes the raw value through in 2D", () => {
-      expect(normalizeGlobeZoom(42)).toBe(42);
-    });
-
-    test("converts globe altitude via the eox-map formula", () => {
-      isGlobe.value = true;
-      mapEl.value = /** @type {any} */ ({ globeConfig: {} });
-      expect(normalizeGlobeZoom(21_050_000)).toBe(2);
-
-      mapEl.value = /** @type {any} */ ({ globeConfig: { useHighLOD: true } });
-      expect(normalizeGlobeZoom(21_050_000)).toBe(1);
     });
   });
 

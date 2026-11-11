@@ -91,9 +91,7 @@ export async function enterGlobe(root, mapEl) {
 export async function leaveGlobe(root, mapEl) {
   const button = globeButton(root, "switch to 2D");
   if (!button) throw new Error("no 2D button");
-  // A DOM click: in 3D the buttons move to the column of the right-hand
-  // panels, which cover them (recorded by its own test).
-  button.click();
+  await userEvent.click(button);
   await until(
     () => mapEl.shadowRoot.querySelector("#map")?.style.display === "",
     "2D map shown",

@@ -152,7 +152,7 @@ export const buildIndicatorLayers = async (
     {
       client: axios,
       // @ts-expect-error eox-map types this as ProjectionLike, it is a code here
-      viewProjection: getProjectionCode(map?.projection) || "EPSG:3857",
+      viewProjection: getProjectionCode(map?.OLprojection) || "EPSG:3857",
       tileMatrixSets: tileMatrixSetRegistry,
       upscalingEndpoints: supportedUpscalingEndpoints,
     },
@@ -235,7 +235,7 @@ async function buildDataLayers(map, { readers, stac, timeOrItem, context }) {
       layerExtent,
       transformExtent,
       // @ts-expect-error eox-map types this as ProjectionLike, it is a code here
-      viewProjection: getProjectionCode(map?.projection) || "EPSG:3857",
+      viewProjection: getProjectionCode(map?.OLprojection) || "EPSG:3857",
       ...layerTimeProperties,
       ...context,
     },

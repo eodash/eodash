@@ -10,6 +10,7 @@ import {
   areChartsSeparateLayout,
   chartData,
   compareChartData,
+  isGlobe,
 } from "@/store/states";
 import {
   eodashCollections,
@@ -87,6 +88,8 @@ export const registerProjection = async (projection) => {
  * @param {string | number | { name: string, def: string }} [projection]
  */
 export const changeMapProjection = async (projection) => {
+  // a 2D projection would exit the globe; `switchGlobe` applies it on exit
+  if (isGlobe.value) return;
   let code = getProjectionCode(projection);
 
   if (!code) {
@@ -99,7 +102,7 @@ export const changeMapProjection = async (projection) => {
     await registerProjection(projection);
   }
 
-  code = mapEl.value?.getAttribute("projection") === code ? "EPSG:3857" : code;
+  code = mapEl.value?.OLprojection === code ? "EPSG:3857" : code;
   mapEl.value?.setAttribute("projection", code);
   mapCompareEl.value?.setAttribute("projection", code);
 };

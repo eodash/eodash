@@ -59,7 +59,6 @@ const mosaicState = vi.hoisted(() => ({
 }));
 vi.mock("@/eodashSTAC/mosaic", () => ({
   useMosaicState: () => mosaicState,
-  normalizeGlobeZoom: (/** @type {number} */ z) => z,
 }));
 
 const stubs = { ExportState: true, PopUp: true, EodashItemFilter: true };

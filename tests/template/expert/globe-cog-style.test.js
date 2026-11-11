@@ -92,7 +92,8 @@ describe("expert globe - COG styles", () => {
       .toEqual([vmin, vmax]);
   });
 
-  test("the `band <= 0` mask reaches the globe", () => {
+  // waits for eox-map: style masks are dropped for the globe
+  test.skip("the `band <= 0` mask reaches the globe", () => {
     // in 2D the heating layer is fully masked; on the globe it is one flat
     // colour while the mask is dropped (points 08, 09)
     const options = renderOptions("heating_degree_days");
@@ -101,7 +102,8 @@ describe("expert globe - COG styles", () => {
     );
   });
 
-  test("the Kelvin offset in the style reaches the globe", () => {
+  // waits for eox-map: style arithmetic is dropped for the globe
+  test.skip("the Kelvin offset in the style reaches the globe", () => {
     // OpenGlobus applies arithmetic through `single.expression`; without it the
     // Kelvin band is compared with a Celsius range (point 08)
     expect(

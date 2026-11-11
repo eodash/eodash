@@ -335,18 +335,6 @@ function timeToDate(time) {
 }
 
 /**
- * Normalizes map zoom level across 2D map and 3D globe camera altitudes.
- *
- * @param {number} rawZ - Raw zoom level or camera altitude
- * @returns {number} Normalized zoom level
- */
-export function normalizeGlobeZoom(rawZ) {
-  if (!isGlobe.value) return rawZ;
-  const zoomFactor = mapEl.value?.globeConfig?.useHighLOD ? 1 : 2;
-  return Math.log2(21_050_000 / rawZ) + zoomFactor;
-}
-
-/**
  * Checks whether features or assets exist within the current 2D map viewport.
  */
 export async function checkMosaicDataInView() {
@@ -357,7 +345,7 @@ export async function checkMosaicDataInView() {
     !extent ||
     isGlobe.value ||
     !mosaicEndpoint.value ||
-    normalizeGlobeZoom(mapPosition.value[2] ?? 0) < visibilityThreshold.value
+    (mapPosition.value[2] ?? 0) < visibilityThreshold.value
   ) {
     hasDataInView.value = true;
     return;
@@ -388,8 +376,8 @@ export async function checkMosaicDataInView() {
 const scheduleMosaicDataCheck = useDebounceFn(checkMosaicDataInView, 300);
 
 /**
- * Toggles mosaic layer visibility in 3D globe mode based on altitude threshold.
- * @param {number} zoomLevel - Current zoom level or altitude
+ * Toggles mosaic layer visibility in 3D globe mode based on the zoom threshold.
+ * @param {number} zoomLevel - Current zoom level
  * @param {number} [threshold] - Optional visibility threshold override
  */
 function toggleMosaicVisibility(zoomLevel, threshold) {
@@ -402,6 +390,5 @@ function toggleMosaicVisibility(zoomLevel, threshold) {
   const layer = mapEl.value?.getLayerById(layerId);
   if (!layer) return;
 
-  const eqZoom = normalizeGlobeZoom(zoomLevel);
-  layer.setVisible(eqZoom >= (threshold ?? visibilityThreshold.value));
+  layer.setVisible(zoomLevel >= (threshold ?? visibilityThreshold.value));
 }
