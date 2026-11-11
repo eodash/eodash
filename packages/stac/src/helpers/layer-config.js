@@ -245,6 +245,38 @@ function applyStyleVariables(state, variables) {
 }
 
 /**
+ * Evaluates template properties defined on a schema (using mustache) against current form values.
+ *
+ * @param {Record<string, any>} schema
+ * @param {Record<string, any>} values
+ * @returns {Record<string, any>}
+ */
+function evaluateTemplateProperties(schema, values) {
+  if (!schema?.properties || !values || typeof values !== "object") {
+    return values;
+  }
+  const result = { ...values };
+  for (const [key, propDef] of Object.entries(schema.properties)) {
+    if (
+      propDef &&
+      typeof propDef === "object" &&
+      typeof propDef.template === "string" &&
+      result[key] === undefined
+    ) {
+      try {
+        result[key] = mustache.render(propDef.template, values);
+      } catch (e) {
+        log.warn(
+          `[eodash] failed to render schema template for property ${key}:`,
+          e,
+        );
+      }
+    }
+  }
+  return result;
+}
+
+/**
  * Applies persisted tileUrl/style values to a layer's source params or URL.
  *
  * @param {FormValues} state
@@ -269,7 +301,10 @@ function applyRasterFormValue(state, layer) {
       typeof source.url === "string" &&
       !source.url.startsWith("data:")
     ) {
-      const value = getCachedConfig(state, type);
+      const rawValue = getCachedConfig(state, type);
+      const value = rawValue
+        ? evaluateTemplateProperties(schema, rawValue)
+        : rawValue;
       /** @type {Record<string, any>} */
       const queryParamsToInject = {};
 
@@ -290,8 +325,11 @@ function applyRasterFormValue(state, layer) {
 
   // 2. Original raster tileUrl logic
   if (type === "tileUrl") {
-    const value = getCachedConfig(state, "tileUrl");
-    if (!value || !Object.keys(value).length) return;
+    const rawValue = getCachedConfig(state, "tileUrl");
+    if (!rawValue || !Object.keys(rawValue).length) return;
+    const value = layerConfig.schema
+      ? evaluateTemplateProperties(layerConfig.schema, rawValue)
+      : rawValue;
     if (source.params) {
       Object.assign(source.params, flattenFormValues(value));
       return;
