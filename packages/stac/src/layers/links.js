@@ -155,7 +155,7 @@ export const createLayersFromLinks = async (
       // @ts-expect-error no type for eox-map
       json.source.params["VERSION"] = wmsLink["wms:version"];
     }
-    extractRoles(json.properties, wmsLink);
+    extractRoles(json, wmsLink);
     if ("wms:dimensions" in wmsLink) {
       Object.assign(json.source.params, wmsLink["wms:dimensions"]);
     }
@@ -228,7 +228,7 @@ export const createLayersFromLinks = async (
         dimensions: dimensionsWithoutStyle,
       },
     };
-    extractRoles(json.properties, wmtsLink);
+    extractRoles(json, wmtsLink);
     if (extraProperties !== null) {
       json.properties = {
         ...json.properties,
@@ -310,7 +310,7 @@ export const createLayersFromLinks = async (
       json.preload = Infinity;
     }
 
-    extractRoles(json.properties, xyzLink);
+    extractRoles(json, xyzLink);
     if (extraProperties !== null) {
       json.properties = {
         ...json.properties,
@@ -393,7 +393,7 @@ export const createLayersFromLinks = async (
     if (Number.isFinite(tileJSON.minzoom)) json.minZoom = tileJSON.minzoom;
     if (Number.isFinite(tileJSON.maxzoom)) json.maxZoom = tileJSON.maxzoom;
 
-    extractRoles(json.properties, tilejsonLink);
+    extractRoles(json, tilejsonLink);
     if (extraProperties !== null) {
       json.properties = {
         ...json.properties,
@@ -472,7 +472,7 @@ export const createLayersFromLinks = async (
       ...(!style?.variables && { style }),
     };
     addTooltipInteraction(json, style);
-    extractRoles(json.properties, vectorTileLink);
+    extractRoles(json, vectorTileLink);
     if (extraProperties !== null) {
       json.properties = {
         ...json.properties,
@@ -530,7 +530,7 @@ export const createLayersFromLinks = async (
       },
       interactions: [],
     };
-    extractRoles(json.properties, mapboxStyleDocumentLink);
+    extractRoles(json, mapboxStyleDocumentLink);
     if (extraProperties !== null) {
       json.properties = {
         ...json.properties,

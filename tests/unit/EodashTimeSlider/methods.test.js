@@ -64,19 +64,19 @@ describe("anonimizeLayersCORS", () => {
 
 describe("restoreLayersVisibility", () => {
   test("flips visible:false to true", () => {
-    const layers = [{ properties: { id: "a", visible: false } }];
+    const layers = [{ visible: false, properties: { id: "a" } }];
     restoreLayersVisibility(layers);
-    expect(layers[0].properties.visible).toBe(true);
+    expect(layers[0].visible).toBe(true);
   });
 
   test("leaves visible:true and unset visibility untouched", () => {
     const layers = [
-      { properties: { id: "a", visible: true } },
+      { visible: true, properties: { id: "a" } },
       { properties: { id: "b" } },
     ];
     restoreLayersVisibility(layers);
-    expect(layers[0].properties.visible).toBe(true);
-    expect(layers[1].properties).not.toHaveProperty("visible");
+    expect(layers[0].visible).toBe(true);
+    expect(layers[1]).not.toHaveProperty("visible");
   });
 
   test("recurses into group layers", () => {
@@ -84,11 +84,11 @@ describe("restoreLayersVisibility", () => {
       {
         type: "Group",
         properties: { id: "g" },
-        layers: [{ properties: { id: "child", visible: false } }],
+        layers: [{ visible: false, properties: { id: "child" } }],
       },
     ];
     restoreLayersVisibility(layers);
-    expect(layers[0].layers[0].properties.visible).toBe(true);
+    expect(layers[0].layers[0].visible).toBe(true);
   });
 });
 
@@ -181,7 +181,8 @@ describe("createAnimationLayers (static catalog)", () => {
           layers: [
             {
               type: "Tile",
-              properties: { id: "data", visible: false },
+              visible: false,
+              properties: { id: "data" },
               source: {},
             },
           ],
@@ -201,7 +202,7 @@ describe("createAnimationLayers (static catalog)", () => {
     expect(result).toHaveLength(2);
     expect(result.map((r) => r.date)).toEqual(["2023-06-14", "2023-06-15"]);
     const data = result[0].layers[0].layers[0];
-    expect(data.properties.visible).toBe(true);
+    expect(data.visible).toBe(true);
     expect(data.source.crossOrigin).toBe("anonymous");
     expect(buildIndicatorLayers).toHaveBeenCalledWith(
       null,

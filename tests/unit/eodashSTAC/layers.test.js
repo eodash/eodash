@@ -125,12 +125,14 @@ describe("globe base layers", () => {
   const baseLayers = (worldVisible) => [
     {
       type: "Tile",
-      properties: { id: WORLD_ID, visible: worldVisible },
+      visible: worldVisible,
+      properties: { id: WORLD_ID },
       source: { type: "XYZ", url: "https://tiles.test/{z}/{y}/{x}.png" },
     },
     {
       type: "Tile",
-      properties: { id: POLAR_ID, visible: !worldVisible },
+      visible: !worldVisible,
+      properties: { id: POLAR_ID },
       source: {
         type: "TileWMS",
         url: "https://wms.test/wms",

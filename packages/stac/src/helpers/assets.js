@@ -10,25 +10,25 @@ export const isBaseLayerOrOverlay = (linkOrAsset) => {
 };
 
 /**
- * Translates STAC roles ("visible", "invisible", "overlay", "baselayer") into properties.
- * Modifies the properties object in-place and returns it.
+ * Translates STAC roles ("visible", "invisible", "overlay", "baselayer") into
+ * the layer's visibility and group. Modifies the layer in-place and returns it.
  *
- * @param {Record<string,any>} properties
+ * @param {Record<string,any>} layer
  * @param {import("../types").STACLink | import("../types").STACAsset} linkOrAsset
  */
-export const extractRoles = (properties, linkOrAsset) => {
+export const extractRoles = (layer, linkOrAsset) => {
   const roles = /** @type {string[]} */ (linkOrAsset.roles);
   roles?.forEach((role) => {
     if (role === "visible") {
-      properties.visible = true;
+      layer.visible = true;
     } else if (role === "invisible") {
-      properties.visible = false;
+      layer.visible = false;
     }
     if (role === "overlay" || role === "baselayer") {
-      properties.group = role;
+      layer.properties.group = role;
     }
   });
-  return properties;
+  return layer;
 };
 
 /**

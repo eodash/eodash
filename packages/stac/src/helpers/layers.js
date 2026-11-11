@@ -241,7 +241,7 @@ export const applyVisibilityRoles = (collection, layers = []) => {
         continue;
       }
       if (/** @type {string[]} */ (link.roles).includes("disable")) {
-        target.properties.visible = false;
+        target.visible = false;
         target.properties.layerControlExpand = false;
       } else {
         target.properties.layerControlHide = true;
@@ -257,11 +257,11 @@ export const applyVisibilityRoles = (collection, layers = []) => {
 export const DEFAULT_BASE_LAYERS = [
   {
     type: "Tile",
+    visible: true,
     properties: {
       id: "osm",
       title: "OpenStreetMap",
       group: "baselayer",
-      visible: true,
       layerControlExclusive: true,
     },
     source: {
@@ -290,30 +290,28 @@ export const normalizeBaseLayers = (
     let lastPos = 0;
     for (let indx = 0; indx < layers.length; indx++) {
       const bl = layers[indx];
-      if (!("visible" in bl.properties)) {
-        bl.properties.visible = false;
+      if (!("visible" in bl)) {
+        bl.visible = false;
       }
 
-      if (bl.properties.visible) {
+      if (bl.visible) {
         counter++;
         lastPos = indx;
       }
     }
 
     if (counter === 0) {
-      layers[0].properties.visible = true;
+      layers[0].visible = true;
     }
 
     if (counter > 0) {
       layers.forEach((bl, indx) => {
-        bl.properties.visible = indx === lastPos;
+        bl.visible = indx === lastPos;
       });
     }
 
     layers.forEach((bl) => {
       bl.properties.layerControlExclusive = true;
-      // eox-map updates an existing layer from this, not from `properties`
-      bl.visible = bl.properties.visible;
     });
     return /** @type {import("@eox/map").EoxLayer[]} */ (layers);
   }

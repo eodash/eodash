@@ -168,7 +168,7 @@ function removeUnneededProperties(layers, formValues = {}) {
    */
   const processLayer = (layer) => {
     // If the layer (or group) is explicitly marked as not visible, skip it and all children
-    if (layer.properties?.visible === false) {
+    if (layer.visible === false) {
       return [];
     }
 
@@ -205,15 +205,8 @@ function removeUnneededProperties(layers, formValues = {}) {
       }
     }
 
-    const {
-      id,
-      title,
-      mapboxStyle,
-      projection,
-      applyOptions,
-      layerConfig,
-      visible,
-    } = clonedLayer.properties || {};
+    const { id, title, mapboxStyle, projection, applyOptions, layerConfig } =
+      clonedLayer.properties || {};
 
     // If style was not at root but in properties (layerConfig), move it to root early
     if (!clonedLayer.style && layerConfig?.style) {
@@ -239,7 +232,6 @@ function removeUnneededProperties(layers, formValues = {}) {
       ...(mapboxStyle && { mapboxStyle }),
       ...(projection && { projection }),
       ...(applyOptions && { applyOptions }),
-      ...(visible !== undefined && { visible }),
     };
 
     if (clonedLayer["interactions"]) {

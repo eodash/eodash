@@ -182,23 +182,23 @@ describe("layer helpers", () => {
       };
       const layers = [
         {
+          visible: true,
           properties: {
             id: "collA;:;item1;:;layer1",
-            visible: true,
             layerControlExpand: true,
           },
         },
         {
+          visible: true,
           properties: {
             id: "collA;:;item1;:;layer2",
-            visible: true,
             layerControlExpand: true,
           },
         },
         {
+          visible: true,
           properties: {
             id: "collB;:;item1;:;layer1",
-            visible: true,
             layerControlExpand: true,
           },
         },
@@ -206,11 +206,11 @@ describe("layer helpers", () => {
 
       applyVisibilityRoles(collection, layers);
 
-      expect(layers[0].properties.visible).toBe(false);
+      expect(layers[0].visible).toBe(false);
       expect(layers[0].properties.layerControlExpand).toBe(false);
-      expect(layers[1].properties.visible).toBe(false);
+      expect(layers[1].visible).toBe(false);
       expect(layers[1].properties.layerControlExpand).toBe(false);
-      expect(layers[2].properties.visible).toBe(true);
+      expect(layers[2].visible).toBe(true);
       expect(layers[2].properties.layerControlExpand).toBe(true);
     });
 
@@ -245,8 +245,8 @@ describe("layer helpers", () => {
     test("enforces exclusivity and sets first layer visible when none visible", () => {
       const base = [{ properties: { id: "b1" } }, { properties: { id: "b2" } }];
       const result = normalizeBaseLayers(/** @type {any} */ (base));
-      expect(result[0].properties.visible).toBe(true);
-      expect(result[1].properties.visible).toBe(false);
+      expect(result[0].visible).toBe(true);
+      expect(result[1].visible).toBe(false);
       expect(result.every((l) => l.properties.layerControlExclusive)).toBe(
         true,
       );
@@ -254,18 +254,18 @@ describe("layer helpers", () => {
 
     test("keeps only the last visible layer active when multiple are visible", () => {
       const base = [
-        { properties: { id: "b1", visible: true } },
-        { properties: { id: "b2", visible: true } },
+        { visible: true, properties: { id: "b1" } },
+        { visible: true, properties: { id: "b2" } },
       ];
       const result = normalizeBaseLayers(/** @type {any} */ (base));
-      expect(result[0].properties.visible).toBe(false);
-      expect(result[1].properties.visible).toBe(true);
+      expect(result[0].visible).toBe(false);
+      expect(result[1].visible).toBe(true);
     });
 
     test("does not mutate the base layer array passed to normalizeBaseLayers", () => {
       const original = [
-        { properties: { id: "b1", visible: true } },
-        { properties: { id: "b2", visible: true } },
+        { visible: true, properties: { id: "b1" } },
+        { visible: true, properties: { id: "b2" } },
       ];
       const copy = JSON.parse(JSON.stringify(original));
       normalizeBaseLayers(/** @type {any} */ (original));

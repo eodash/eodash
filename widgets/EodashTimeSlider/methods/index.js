@@ -207,8 +207,8 @@ export function getHiddenLayers(layers) {
  */
 export function restoreLayersVisibility(layers) {
   for (const layer of layers) {
-    if (layer.properties && layer.properties.visible === false) {
-      layer.properties.visible = true;
+    if (layer.visible === false) {
+      layer.visible = true;
     }
 
     if (layer.type === "Group" && Array.isArray(layer.layers)) {
