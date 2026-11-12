@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.1](https://github.com/eodash/eodash/compare/mcp-v1.1.0...mcp-v1.1.1) (2026-11-12)
+
+
+### Bug Fixes
+
+* vector tile layers locations and tooltips ([#508](https://github.com/eodash/eodash/issues/508)) ([6ab2932](https://github.com/eodash/eodash/commit/6ab2932bccea1b366a05890051e1df31b2c3ffcb))
+
 ## [1.1.0](https://github.com/eodash/eodash/compare/mcp-v1.0.0...mcp-v1.1.0) (2026-10-28)
 
 
