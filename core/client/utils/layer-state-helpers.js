@@ -30,22 +30,6 @@ export function toShortLayerKey(layerId) {
 }
 
 /**
- * Checks whether a full layerId matches a shortened layer key or collection prefix.
- *
- * @param {string} fullLayerId
- * @param {string} key
- * @returns {boolean}
- */
-export function layerMatchesKey(fullLayerId, key) {
-  if (!fullLayerId || !key) return false;
-  return (
-    fullLayerId === key ||
-    toShortLayerKey(fullLayerId) === key ||
-    getLayerCollectionPrefix(fullLayerId) === key
-  );
-}
-
-/**
  * Flattens an array of layers, walking groups recursively.
  *
  * @param {Array<Record<string, any>>} layers

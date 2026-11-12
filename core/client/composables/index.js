@@ -410,8 +410,8 @@ export const useURLSearchParametersSync = () => {
         updatedItem,
         updatedCompareIndicator,
         updatedComparePoi,
-        _trigger,
-        _triggerCompare,
+        _layerStateChangeTrigger,
+        _layerStateChangeTriggerCompare,
         updatedProcessForm,
         updatedCompareProcessForm,
       ]) => {

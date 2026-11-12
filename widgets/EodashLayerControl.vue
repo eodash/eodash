@@ -138,64 +138,70 @@ const eodashCols =
   props.map === "second" ? eodashCompareCollections : eodashCollections;
 const mapElement = props.map === "second" ? mapCompareEl : mapEl;
 
+const isSecondMap = computed(() => props.map === "second");
+
+/**
+ * Returns the relevant refs and element targets based on whether the widget is for the second (compare) map.
+ * @param {boolean} isCompare
+ */
+const getMapLayerContext = (isCompare) => {
+  return isCompare
+    ? {
+        trigger: layerStateChangeTriggerCompare,
+        restoredState: restoredCompareLayersState,
+        mapElement: mapCompareEl.value,
+        formValue: layerControlFormValueCompare,
+        baselineDefaults: baselineCompareLayerConfigDefaults.value,
+        collections: eodashCompareCollections,
+        stac: useSTAcStore().selectedCompareStac,
+        timeOrItem: useSTAcStore().selectedCompareItem ?? undefined,
+        /** @type {import("@/types").LayersEventBusKeys} */
+        updateEvent: "compareLayers:updated",
+      }
+    : {
+        trigger: layerStateChangeTrigger,
+        restoredState: restoredLayersState,
+        mapElement: mapEl.value,
+        formValue: layerControlFormValue,
+        baselineDefaults: baselineLayerConfigDefaults.value,
+        collections: eodashCollections,
+        stac: useSTAcStore().selectedStac,
+        timeOrItem: useSTAcStore().selectedItem ?? undefined,
+        /** @type {import("@/types").LayersEventBusKeys} */
+        updateEvent: "layers:updated",
+      };
+};
+
 const onLayerControlChange = () => {
-  if (props.map === "second") {
-    layerStateChangeTriggerCompare.value++;
-  } else {
-    layerStateChangeTrigger.value++;
-  }
+  const ctx = getMapLayerContext(isSecondMap.value);
+  ctx.trigger.value++;
 };
 
 const hasCustomLayerState = computed(() => {
-  if (props.map === "second") {
-    // Reads reactive triggers and states so Vue tracks changes dynamically
-    void layerStateChangeTriggerCompare.value;
-    if (restoredCompareLayersState.value) return true;
-    if (!mapCompareEl.value) return false;
-    const delta = computeMapLayersDelta(
-      mapCompareEl.value,
-      layerControlFormValueCompare.value,
-      baselineCompareLayerConfigDefaults.value,
-    );
-    return Object.keys(delta).length > 0;
-  }
-  void layerStateChangeTrigger.value;
-  if (restoredLayersState.value) return true;
-  if (!mapEl.value) return false;
+  const ctx = getMapLayerContext(isSecondMap.value);
+  void ctx.trigger.value;
+  if (ctx.restoredState.value) return true;
+  if (!ctx.mapElement) return false;
   const delta = computeMapLayersDelta(
-    mapEl.value,
-    layerControlFormValue.value,
-    baselineLayerConfigDefaults.value,
+    ctx.mapElement,
+    ctx.formValue.value,
+    ctx.baselineDefaults,
   );
   return Object.keys(delta).length > 0;
 });
 
 const resetLayersCustomization = async () => {
-  const store = useSTAcStore();
-  if (props.map === "second") {
-    restoredCompareLayersState.value = null;
-    layerControlFormValueCompare.value = {};
-    layerStateChangeTriggerCompare.value++;
-    if (store.selectedCompareStac && mapCompareEl.value) {
-      await updateIndicatorLayers(mapCompareEl.value, {
-        readers: eodashCompareCollections,
-        stac: store.selectedCompareStac,
-        timeOrItem: store.selectedCompareItem ?? undefined,
-        event: "compareLayers:updated",
-      });
-    }
-  } else {
-    restoredLayersState.value = null;
-    layerControlFormValue.value = {};
-    layerStateChangeTrigger.value++;
-    if (store.selectedStac && mapEl.value) {
-      await updateIndicatorLayers(mapEl.value, {
-        readers: eodashCollections,
-        stac: store.selectedStac,
-        timeOrItem: store.selectedItem ?? undefined,
-        event: "layers:updated",
-      });
-    }
+  const ctx = getMapLayerContext(isSecondMap.value);
+  ctx.restoredState.value = null;
+  ctx.formValue.value = {};
+  ctx.trigger.value++;
+  if (ctx.stac && ctx.mapElement) {
+    await updateIndicatorLayers(ctx.mapElement, {
+      readers: ctx.collections,
+      stac: ctx.stac,
+      timeOrItem: ctx.timeOrItem,
+      event: ctx.updateEvent,
+    });
   }
 };
 

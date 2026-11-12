@@ -45,7 +45,9 @@ export function computeMapLayersDelta(
       layerDef.properties?.visible;
     const defaultVisible =
       layerDef.properties?.defaultVisible ??
-      !layerDef.properties?.roles?.includes("invisible");
+      (layerDef.properties?.roles?.includes("invisible")
+        ? false
+        : !layerDef.properties?.roles?.includes("invisible"));
     if (currentVisible !== undefined && currentVisible !== defaultVisible) {
       layerEntry.visible = currentVisible;
     }

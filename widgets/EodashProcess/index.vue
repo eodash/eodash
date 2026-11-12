@@ -95,7 +95,10 @@ import {
   restoredCompareProcessState,
   restoredProcessState,
 } from "@/utils/states";
-import { diffFormValues } from "@/utils/process-state-helpers";
+import {
+  diffFormValues,
+  extractSchemaDefaults,
+} from "@/utils/process-state-helpers";
 import {
   mdiCogPlayOutline,
   mdiDownloadCircleOutline,
@@ -129,7 +132,7 @@ const jsonformEl =
 // Inject custom styles into the eox-jsonform shadow DOM to make eox-drawtools inline
 watch(jsonformEl, (el) => {
   if (el) {
-    // Capture initial form values as baseline schema defaults directly from jsonform
+    // Capture initial form values as fallback baseline defaults if not already captured from schema
     const targetBaseline = enableCompare
       ? baselineCompareProcessDefaults
       : baselineProcessDefaults;
@@ -270,7 +273,7 @@ useInitProcess({
   isPolling,
 });
 
-// Seed restored values onto schema defaults when present
+// Seed restored values onto schema defaults when present, while capturing true baseline schema defaults
 watch(
   [
     jsonformSchema,
@@ -280,8 +283,17 @@ watch(
         : restoredProcessState.value,
   ],
   ([schema, restored]) => {
+    if (!schema) return;
+
+    const targetBaseline = enableCompare
+      ? baselineCompareProcessDefaults
+      : baselineProcessDefaults;
+    // Capture clean baseline defaults from the untouched schema if not yet recorded
+    if (!targetBaseline.value && schema.properties) {
+      targetBaseline.value = extractSchemaDefaults(schema);
+    }
+
     if (
-      schema &&
       restored &&
       typeof restored === "object" &&
       Object.keys(restored).length

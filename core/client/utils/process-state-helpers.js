@@ -53,3 +53,21 @@ export function diffFormValues(current, baseline) {
   }
   return delta;
 }
+
+/**
+ * Extracts default values from a JSON form schema's properties.
+ *
+ * @param {Record<string, any> | null | undefined} schema
+ * @returns {Record<string, any>}
+ */
+export function extractSchemaDefaults(schema) {
+  if (!schema?.properties || typeof schema.properties !== "object") return {};
+  /** @type {Record<string, any>} */
+  const defaults = {};
+  for (const [key, propDef] of Object.entries(schema.properties)) {
+    if (propDef && typeof propDef === "object" && "default" in propDef) {
+      defaults[key] = propDef.default;
+    }
+  }
+  return defaults;
+}
