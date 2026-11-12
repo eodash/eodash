@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.2.1](https://github.com/eodash/eodash/compare/stac-v0.2.0...stac-v0.2.1) (2026-11-12)
+
+
+### Features
+
+* Migrate mosaic layer creation to `@eodash/stac` and integrate Collection rasterform ([#518](https://github.com/eodash/eodash/issues/518)) ([2c245b9](https://github.com/eodash/eodash/commit/2c245b9bc376783753255bab7a170801c9bff320))
+
+
+### Bug Fixes
+
+* auto-create empty jsonform for legend-only styles and rasterforms ([#512](https://github.com/eodash/eodash/issues/512)) ([d753bb0](https://github.com/eodash/eodash/commit/d753bb097d99ba7bbc411bef23266af875f30782))
+* vector tile layers locations and tooltips ([#508](https://github.com/eodash/eodash/issues/508)) ([6ab2932](https://github.com/eodash/eodash/commit/6ab2932bccea1b366a05890051e1df31b2c3ffcb))
+
 ## [0.2.0](https://github.com/eodash/eodash/compare/stac-v0.1.0...stac-v0.2.0) (2026-10-28)
 
 
