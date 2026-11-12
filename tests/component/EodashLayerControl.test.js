@@ -310,11 +310,13 @@ describe("EodashLayerControl", () => {
       await mountControl({ initialState: withStac });
 
       emitConfigChange({
-        layer: mockOlLayer(),
+        layer: mockOlLayer({ id: "coll;:;item;:;asset;:;EPSG:3857" }),
         jsonformValue: { flood: 30 },
       });
 
-      expect(layerControlFormValue.value).toEqual({ flood: 30 });
+      expect(layerControlFormValue.value).toEqual({
+        "coll;:;item;:;asset;:;EPSG:3857": { flood: 30 },
+      });
       expect(layerControlFormValueCompare.value).toEqual({});
     });
 
@@ -326,13 +328,60 @@ describe("EodashLayerControl", () => {
       });
 
       emitConfigChange({
-        layer: mockOlLayer(),
+        layer: mockOlLayer({ id: "cmp;:;item;:;asset;:;EPSG:3857" }),
         jsonformValue: { flood: 30 },
       });
 
-      expect(layerControlFormValueCompare.value).toEqual({ flood: 30 });
+      expect(layerControlFormValueCompare.value).toEqual({
+        "cmp;:;item;:;asset;:;EPSG:3857": { flood: 30 },
+      });
       expect(layerControlFormValue.value).toEqual({});
     });
+
+    test.each(["first", "second"])(
+      "preserves other layer values when updating the %s map",
+      async (map) => {
+        const isCompare = map === "second";
+        if (isCompare) {
+          mapCompareEl.value = /** @type {any} */ (mapStub("compare"));
+        } else {
+          mapEl.value = /** @type {any} */ (mapStub());
+        }
+        await mountControl({
+          props: { map },
+          initialState: isCompare
+            ? { stac: { selectedCompareStac: { id: "cmp" } } }
+            : withStac,
+        });
+
+        const firstId = "coll;:;item;:;first;:;EPSG:3857";
+        const secondId = "coll;:;item;:;second;:;EPSG:3857";
+        emitConfigChange({
+          layer: mockOlLayer({ id: firstId }),
+          jsonformValue: { flood: 10 },
+        });
+        emitConfigChange({
+          layer: mockOlLayer({ id: secondId }),
+          jsonformValue: { flood: 20 },
+        });
+        emitConfigChange({
+          layer: mockOlLayer({ id: firstId }),
+          jsonformValue: { flood: 30 },
+        });
+
+        const target = isCompare
+          ? layerControlFormValueCompare
+          : layerControlFormValue;
+        const other = isCompare
+          ? layerControlFormValue
+          : layerControlFormValueCompare;
+        expect(target.value).toEqual({
+          [firstId]: { flood: 30 },
+          [secondId]: { flood: 20 },
+        });
+        expect(other.value).toEqual({});
+      },
+    );
 
     test("routes the change through the real url-injection helper", async () => {
       mapEl.value = /** @type {any} */ (mapStub());

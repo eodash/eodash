@@ -67,12 +67,17 @@ describe("expert template - process execution (predictive maintenance)", () => {
 
   test("clicking another feature re-executes the process", async () => {
     const specBefore = chartSpec.value;
+    const chartBefore = ctx.query("eox-chart");
     selectFeature(ctx.container, 1);
     await vi.waitFor(
       () => {
-        if (chartSpec.value === specBefore) {
-          throw new Error("chart not recreated");
-        }
+        // A reset to null is not a completed execution. The chart widget
+        // also waits for nextTick before passing the new spec to eox-chart.
+        expect(chartSpec.value).toBeTruthy();
+        expect(chartSpec.value).not.toBe(specBefore);
+        const chart = ctx.query("eox-chart");
+        expect(chart).toBeTruthy();
+        expect(chart).not.toBe(chartBefore);
       },
       { timeout: TIMEOUT },
     );

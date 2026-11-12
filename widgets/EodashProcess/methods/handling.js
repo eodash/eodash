@@ -83,9 +83,7 @@ export async function initProcess({
   }
 
   if (!updatedJsonform && isPoiAlive) {
-    if (!jsonformSchema.value) {
-      jsonformSchema.value = null;
-    }
+    jsonformSchema.value = null;
     return;
   }
 

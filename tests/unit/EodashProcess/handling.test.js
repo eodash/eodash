@@ -11,6 +11,8 @@ import {
   compareChartData,
   compareChartSpec,
   comparePoi,
+  compareIndicator,
+  indicator,
   datetime,
   mapCompareEl,
   mapEl,
@@ -25,6 +27,7 @@ import {
 } from "./fixtures";
 import axios from "@/plugins/axios";
 import { useSTAcStore } from "@/store/stac";
+import { provideEodash } from "../../support/fixtures";
 
 const outputs = vi.hoisted(() => ({
   processCharts: vi.fn(),
@@ -202,6 +205,70 @@ describe("initProcess", () => {
     expect(p.jsonformSchema.value).toBeNull();
     expect(p.loading.value).toBe(true); // untouched — no resetProcess in this branch
   });
+
+  test.each([false, true])(
+    "inherits the parent schema for a POI (compare=%s)",
+    async (enableCompare) => {
+      provideEodash();
+      const store = useSTAcStore();
+      store.stacEndpoint = "https://example.org/catalog.json";
+      store.stac = [
+        { id: "parent", rel: "child", href: "./parent/collection.json" },
+      ];
+      const targetPoi = enableCompare ? comparePoi : poi;
+      const targetIndicator = enableCompare ? compareIndicator : indicator;
+      targetPoi.value = "child";
+      targetIndicator.value = "parent";
+      const get = vi
+        .spyOn(axios, "get")
+        .mockResolvedValueOnce({
+          data: { "eodash:jsonform": "https://example.org/form.json" },
+        })
+        .mockResolvedValueOnce({ data: S_SCALAR });
+      const p = params({ enableCompare });
+
+      await initProcess(p);
+
+      expect(get).toHaveBeenNthCalledWith(
+        1,
+        "https://example.org/parent/collection.json",
+      );
+      expect(get).toHaveBeenNthCalledWith(2, "https://example.org/form.json");
+      expect(p.jsonformSchema.value).toEqual(S_SCALAR);
+      expect(p.loading.value).toBe(false);
+    },
+  );
+
+  test.each([false, true])(
+    "clears a stale schema when the POI parent has no form (compare=%s)",
+    async (enableCompare) => {
+      provideEodash();
+      const store = useSTAcStore();
+      store.stacEndpoint = "https://example.org/catalog.json";
+      store.stac = [
+        { id: "parent", rel: "child", href: "./parent/collection.json" },
+      ];
+      const targetPoi = enableCompare ? comparePoi : poi;
+      const targetIndicator = enableCompare ? compareIndicator : indicator;
+      targetPoi.value = "child";
+      targetIndicator.value = "parent";
+      const get = vi.spyOn(axios, "get").mockResolvedValue({ data: {} });
+      const p = params({
+        enableCompare,
+        jsonformSchema: ref({ old: true }),
+      });
+
+      await initProcess(p);
+
+      expect(get).toHaveBeenCalledExactlyOnceWith(
+        "https://example.org/parent/collection.json",
+      );
+      expect(p.jsonformSchema.value).toBeNull();
+      expect(p.loading.value).toBe(true);
+      expect(p.isPolling.value).toBe(true);
+      expect(p.processResults.value).toEqual([1]);
+    },
+  );
 
   test("fully resets when there is neither a schema nor a POI", async () => {
     poi.value = "";
