@@ -31,14 +31,16 @@ jobs:
       - name: Publish released packages on NPM 📦
         run: |
           set -euo pipefail
-          for path in $(jq -r '.[]' <<< '${{ steps.release.outputs.paths_released }}'); do
+          # root last: it depends on the workspace versions published here
+          for path in $(jq -r 'sort_by(. == ".") | .[]' <<< '${{ steps.release.outputs.paths_released }}'); do
             echo "publishing $path"
             (cd "$path" && npm publish)
           done
         if: ${{ steps.release.outputs.releases_created == 'true' }}
       - name: Build and publish package 🚀
+        # publishing the workspaces in the same run makes the app preview depend on their previews, not the npm releases
         run: |
-          npx pkg-pr-new publish --comment=update
+          npx pkg-pr-new publish --comment=update . ./packages/*
         if: ${{ !steps.release.outputs.release_created }}
       - name: Login to ghcr 🔧
         uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4
