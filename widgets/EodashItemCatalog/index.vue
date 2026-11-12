@@ -502,7 +502,7 @@ useRenderItemsFeatures(
   props.stacItemsStyle,
   props.stacItemsInteractionStyle,
 );
-useSearchOnMapMove(itemfilterEl, props.bboxFilter, mapElement);
+useSearchOnMapMove(itemfilterEl, props.bboxFilter);
 useRenderOnFeatureClick(itemfilterEl, mapElement, onSelectItem);
 useInitMosaic(
   props.useMosaic ? mosaicEndpoint.value : null,

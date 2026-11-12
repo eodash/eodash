@@ -1,6 +1,6 @@
 import { useOnLayersUpdate } from "@/composables";
 import { onMounted, onUnmounted, watch } from "vue";
-import { tooltipAdapter } from "@/store/states";
+import { mapPosition, tooltipAdapter } from "@/store/states";
 import { CATALOG_GROUP, assignGroupLayers } from "@/eodashSTAC/layers";
 
 /**
@@ -102,34 +102,22 @@ export function renderItemsFeatures(
 }
 
 /**
+ * Trigger a search after the map moves. `mapPosition` follows the 2D view, the
+ * compare map (it shares that view) and the globe camera.
+ *
  * @param {import("vue").Ref<any>} itemFilter
  * @param {boolean} bboxFilter
- * @param {import("vue").Ref<import("@eox/map").EOxMap | null>} mapElement
  */
-export const useSearchOnMapMove = (itemFilter, bboxFilter, mapElement) => {
+export const useSearchOnMapMove = (itemFilter, bboxFilter) => {
   if (!bboxFilter) {
     return;
   }
   /** @type {NodeJS.Timeout} */
   let timeout;
-  const handler = () => {
+  watch(mapPosition, () => {
     clearTimeout(timeout);
-    timeout = setTimeout(() => {
-      if (mapElement.value?.projection == "globe") {
-        return;
-      }
-      itemFilter.value?.search();
-    }, 500);
-  };
-
-  watch(
-    mapElement,
-    (map, _, onCleanup) => {
-      map?.map.on("moveend", handler);
-      onCleanup(() => map?.map.un("moveend", handler));
-    },
-    { immediate: true },
-  );
+    timeout = setTimeout(() => itemFilter.value?.search(), 500);
+  });
 };
 /**
  *

@@ -341,7 +341,7 @@ describe("EodashItemCatalog", () => {
       );
     });
 
-    test("wires search-on-map-move with the bbox flag and the primary map", async () => {
+    test("wires search-on-map-move with the bbox flag", async () => {
       await mountAsyncComponent(EodashItemCatalog, {
         initialState: withCollections,
       });
@@ -349,7 +349,6 @@ describe("EodashItemCatalog", () => {
       expect(spies.useSearchOnMapMove).toHaveBeenCalledWith(
         expect.anything(),
         true,
-        mapEl,
       );
     });
 
@@ -401,11 +400,6 @@ describe("EodashItemCatalog", () => {
         true,
         mapCompareEl,
         expect.objectContaining({ value: store.stacEndpoint }),
-      );
-      expect(spies.useSearchOnMapMove).toHaveBeenCalledWith(
-        expect.anything(),
-        true,
-        mapCompareEl,
       );
       expect(spies.useRenderOnFeatureClick).toHaveBeenCalledWith(
         expect.anything(),

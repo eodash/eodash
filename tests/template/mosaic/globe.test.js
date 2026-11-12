@@ -101,13 +101,16 @@ describe("mosaic globe", () => {
 
   afterAll(() => ctx?.app.unmount());
 
-  test("the globe holds the mosaic layer with the map's tiles", () => {
-    expect(globeLayer(mapEl, MOSAIC_LAYER_ID)?.url).toBe(olUrl());
+  test("the globe holds the mosaic layer with the map's tiles", async () => {
+    // the slider can re-initialise the mosaic after entering 3D
+    await expect.poll(() => globeLayer(mapEl, MOSAIC_LAYER_ID)?.url, {
+        timeout: TIMEOUT,
+      })
+      .toBe(olUrl());
   });
 
-  // waits for eox-map: same-id source changes do not reach the globe
-  test.skip("a new time range on the slider reloads the mosaic on the globe", async () => {
-    // same layer id, new tile url: the globe keeps the old url (point 02)
+  test("a new time range on the slider reloads the mosaic on the globe", async () => {
+    // same layer id, new tile url
     const before = olUrl();
     ctx.query("eox-timecontrol").dispatchEvent(
       new CustomEvent("select", {
@@ -123,10 +126,9 @@ describe("mosaic globe", () => {
       .toBe(olUrl());
   });
 
-  // waits for eox-map: `lonLatExtent` throws in 3D
-  test.skip("the time range change raises no error alert", async () => {
-    // the mosaic data check reads the map's lon/lat extent, which eox-map
-    // cannot compute in 3D (point 07); give its 300 ms debounce time to run
+  test("the time range change raises no error alert", async () => {
+    // the mosaic data check reads the map's lon/lat extent in 3D too; give its
+    // 300 ms debounce time to run
     await new Promise((resolve) => setTimeout(resolve, 1000));
     expect(ctx.query(".v-alert")).toBeNull();
   });

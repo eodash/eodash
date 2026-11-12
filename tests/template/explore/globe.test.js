@@ -136,10 +136,8 @@ describe("explore globe - catalog", () => {
       .toBeTruthy();
   });
 
-  // waits for eox-map: `lonLatExtent` throws in 3D
-  test.skip("a new search runs in 3D", async () => {
-    // What a filter change triggers. The search reads the map's lon/lat extent,
-    // which eox-map cannot compute in 3D (point 07).
+  test("a new search runs in 3D", async () => {
+    // What a filter change triggers. The search reads the map's lon/lat extent.
     routes["/search"] = { type: "FeatureCollection", features: [ITEMS[0]] };
     ctx.query("eox-itemfilter").search();
 
@@ -150,10 +148,8 @@ describe("explore globe - catalog", () => {
       .toBeLessThan(ITEMS.length);
   });
 
-  // waits for eox-map: in-place source updates do not reach the globe
-  test.skip("the footprints on the globe follow the new results", async () => {
-    // the map updates the footprints in place, which the globe does not see
-    // (points 01, 02); depends on the search above
+  test("the footprints on the globe follow the new results", async () => {
+    // the map updates the footprints in place; depends on the search above
     await expect
       .poll(footprintCount, { timeout: TIMEOUT })
       .toBeLessThan(ITEMS.length);

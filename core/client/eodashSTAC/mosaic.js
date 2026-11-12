@@ -343,7 +343,6 @@ export async function checkMosaicDataInView() {
   const extent = mapEl.value?.lonLatExtent;
   if (
     !extent ||
-    isGlobe.value ||
     !mosaicEndpoint.value ||
     (mapPosition.value[2] ?? 0) < visibilityThreshold.value
   ) {
