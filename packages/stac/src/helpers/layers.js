@@ -31,38 +31,49 @@ export const findLayer = (layers, layer) => {
 };
 
 /**
- * Finds all layers matching the collection prefix of a reference layer.
+ * Returns the collection ID prefix from a layer object or layer ID string.
+ *
+ * @param {string | import("@eox/map").EoxLayer | undefined} layerOrId
+ * @returns {string}
+ */
+export const getLayerCollectionPrefix = (layerOrId) => {
+  if (!layerOrId) return "";
+  const id =
+    typeof layerOrId === "string" ? layerOrId : layerOrId.properties?.id;
+  return typeof id === "string" ? id.split(LAYER_ID_SEPARATOR)[0] : "";
+};
+
+/**
+ * Finds all layers matching the collection prefix of a reference layer or prefix string.
  *
  * @param {import("@eox/map").EoxLayer[]} layers
- * @param {import("@eox/map").EoxLayer | undefined} referenceLayer - Reference layer containing the prefix
+ * @param {import("@eox/map").EoxLayer | string | undefined} referenceLayer - Reference layer containing the prefix, or prefix string
  * @returns {import("@eox/map").EoxLayer[]} Matching layer objects
  */
 export const findLayersByLayerPrefix = (layers, referenceLayer) => {
   if (!layers || !referenceLayer) {
     return [];
   }
-  const refId = referenceLayer?.properties?.id;
-
+  const refId =
+    typeof referenceLayer === "string"
+      ? referenceLayer
+      : referenceLayer?.properties?.id;
   if (typeof refId !== "string" || !refId.includes(LAYER_ID_SEPARATOR)) {
     throw new Error(
       `Reference layer ID must contain a '${LAYER_ID_SEPARATOR}' separator.`,
     );
   }
-
-  const prefix = refId.split(LAYER_ID_SEPARATOR)[0];
+  const prefix = getLayerCollectionPrefix(referenceLayer);
+  if (!prefix) {
+    return [];
+  }
   const matches = [];
 
   for (const layer of layers) {
     if (layer.type === "Group" && Array.isArray(layer.layers)) {
       matches.push(...findLayersByLayerPrefix(layer.layers, referenceLayer));
-    } else {
-      const id = layer?.properties?.id;
-      if (
-        typeof id === "string" &&
-        id.split(LAYER_ID_SEPARATOR)[0] === prefix
-      ) {
-        matches.push(layer);
-      }
+    } else if (getLayerCollectionPrefix(layer) === prefix) {
+      matches.push(layer);
     }
   }
 
@@ -202,18 +213,18 @@ export const createAssetID = (collectionId, itemId, index) => {
 };
 
 /**
- * Resolves the collection reader corresponding to a given layer ID.
+ * Resolves the collection reader corresponding to a given layer ID or layer object.
  *
  * @template {{ stac?: import("../types").STACCollection }} Reader
  * @param {Reader[]} readers
- * @param {string} [layerId]
+ * @param {string | import("@eox/map").EoxLayer} [layerOrId]
  * @returns {Reader | undefined}
  */
-export const findReaderByLayerId = (readers, layerId) => {
-  if (!layerId) {
+export const findReaderByLayerId = (readers, layerOrId) => {
+  const prefix = getLayerCollectionPrefix(layerOrId);
+  if (!prefix) {
     return undefined;
   }
-  const prefix = layerId.split(LAYER_ID_SEPARATOR)[0];
   return readers.find((reader) => reader.stac?.id === prefix);
 };
 

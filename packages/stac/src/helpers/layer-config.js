@@ -50,7 +50,11 @@ function extractLayerConfig(state, style, rasterJsonform, layerConfigType) {
 
   if (style?.variables) {
     // Apply saved style variables
-    style.variables = applyStyleVariables(state, style.variables);
+    style.variables = applyStyleVariables(
+      state,
+      style.variables,
+      style.jsonform || rasterJsonform?.jsonform,
+    );
   }
 
   if (rasterJsonform) {
@@ -230,16 +234,52 @@ function restorePersistedSchema(schema, state, type) {
 }
 
 /**
+ * Evaluates template properties defined on a schema (using mustache) against current form values.
+ *
+ * @param {Record<string, any>} schema
+ * @param {Record<string, any>} values
+ * @returns {Record<string, any>}
+ */
+function evaluateTemplateProperties(schema, values) {
+  if (!schema?.properties || !values || typeof values !== "object") {
+    return values;
+  }
+  const result = { ...values };
+  for (const [key, propDef] of Object.entries(schema.properties)) {
+    if (
+      propDef &&
+      typeof propDef === "object" &&
+      typeof propDef.template === "string" &&
+      (result[key] === undefined || result[key] === null || result[key] === "")
+    ) {
+      try {
+        result[key] = mustache.render(propDef.template, values);
+      } catch (e) {
+        log.warn(
+          `[eodash] failed to render schema template for property ${key}:`,
+          e,
+        );
+      }
+    }
+  }
+  return result;
+}
+
+/**
  * Applies persisted style variables onto a style configuration.
  *
  * @param {FormValues} state
  * @param {Record<string, any>} [variables]
+ * @param {Record<string, any>} [schema]
  * @returns {Record<string, any> | undefined}
  */
-function applyStyleVariables(state, variables) {
+function applyStyleVariables(state, variables, schema) {
   const cached = getCachedConfig(state, "style");
   if (!cached || !variables) return variables;
-  const values = flattenFormValues(cached);
+  const rawValues = schema
+    ? evaluateTemplateProperties(schema, cached)
+    : cached;
+  const values = flattenFormValues(rawValues);
   const merged = { ...variables };
   for (const key of Object.keys(merged)) {
     if (key in values) merged[key] = values[key];
@@ -272,7 +312,10 @@ function applyRasterFormValue(state, layer) {
       typeof source.url === "string" &&
       !source.url.startsWith("data:")
     ) {
-      const value = getCachedConfig(state, type);
+      const rawValue = getCachedConfig(state, type);
+      const value = rawValue
+        ? evaluateTemplateProperties(schema, rawValue)
+        : rawValue;
       /** @type {Record<string, any>} */
       const queryParamsToInject = {};
 
@@ -293,8 +336,11 @@ function applyRasterFormValue(state, layer) {
 
   // 2. Original raster tileUrl logic
   if (type === "tileUrl") {
-    const value = getCachedConfig(state, "tileUrl");
-    if (!value || !Object.keys(value).length) return;
+    const rawValue = getCachedConfig(state, "tileUrl");
+    if (!rawValue || !Object.keys(rawValue).length) return;
+    const value = layerConfig.schema
+      ? evaluateTemplateProperties(layerConfig.schema, rawValue)
+      : rawValue;
     if (source.params) {
       Object.assign(source.params, flattenFormValues(value));
       return;

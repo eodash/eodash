@@ -16,31 +16,48 @@
       </EodashChart>
     </div>
     <div
-      v-if="showExecBtn || (processResults.length && isProcessed && !isAsync)"
-      class="eodash-process-actions"
+      v-if="
+        showExecBtn ||
+        (processResults.length && isProcessed && !isAsync) ||
+        hasCustomProcessState
+      "
+      class="eodash-process-actions d-flex justify-space-between align-center"
     >
-      <v-btn
-        v-if="showExecBtn"
-        :loading="loading"
-        style="margin-right: 8px"
-        :append-icon="[mdiCogPlayOutline]"
-        density="comfortable"
-        size="small"
-        @click="startProcess"
-      >
-        Execute
-      </v-btn>
-      <v-btn
-        v-if="processResults.length && isProcessed && !isAsync"
-        color="primary"
-        style="margin-right: 8px"
-        :append-icon="[mdiDownloadCircleOutline]"
-        size="small"
-        density="comfortable"
-        @click="downloadResults"
-      >
-        Download
-      </v-btn>
+      <div>
+        <v-btn
+          v-if="hasCustomProcessState"
+          v-tooltip="'Reset process form to default'"
+          :icon="[mdiRestore]"
+          density="comfortable"
+          size="small"
+          variant="text"
+          @click="resetProcessCustomization"
+        />
+      </div>
+      <div>
+        <v-btn
+          v-if="showExecBtn"
+          :loading="loading"
+          style="margin-right: 8px"
+          :append-icon="[mdiCogPlayOutline]"
+          density="comfortable"
+          size="small"
+          @click="startProcess"
+        >
+          Execute
+        </v-btn>
+        <v-btn
+          v-if="processResults.length && isProcessed && !isAsync"
+          color="primary"
+          style="margin-right: 8px"
+          :append-icon="[mdiDownloadCircleOutline]"
+          size="small"
+          density="comfortable"
+          @click="downloadResults"
+        >
+          Download
+        </v-btn>
+      </div>
     </div>
   </div>
 </template>
@@ -50,7 +67,7 @@ import "@eox/drawtools";
 import "@eox/jsonform";
 import { useSTAcStore } from "@/store/stac";
 import { storeToRefs } from "pinia";
-import { computed, ref, useTemplateRef, watch } from "vue";
+import { computed, onUnmounted, ref, useTemplateRef, watch } from "vue";
 import ProcessList from "./ProcessList.vue";
 import EodashChart from "../EodashChart.vue";
 import { handleProcesses } from "./methods/handling";
@@ -66,8 +83,27 @@ import {
   areChartsSeparateLayout,
 } from "@/store/states";
 import { download, getDrawToolsProperties } from "./methods/utils";
-import { compareJobs, jobs } from "./states";
-import { mdiCogPlayOutline, mdiDownloadCircleOutline } from "@mdi/js";
+import {
+  compareJobs,
+  jobs,
+  activeProcessFormValue,
+  activeCompareProcessFormValue,
+  baselineProcessDefaults,
+  baselineCompareProcessDefaults,
+} from "./states";
+import {
+  restoredCompareProcessState,
+  restoredProcessState,
+} from "@/utils/states";
+import {
+  diffFormValues,
+  extractSchemaDefaults,
+} from "@/utils/process-state-helpers";
+import {
+  mdiCogPlayOutline,
+  mdiDownloadCircleOutline,
+  mdiRestore,
+} from "@mdi/js";
 
 const { enableCompare, vegaEmbedOptions } = defineProps({
   enableCompare: {
@@ -95,6 +131,25 @@ const jsonformEl =
 
 // Inject custom styles into the eox-jsonform shadow DOM to make eox-drawtools inline
 watch(jsonformEl, (el) => {
+  if (el) {
+    // Capture initial form values as fallback baseline defaults if not already captured from schema
+    const targetBaseline = enableCompare
+      ? baselineCompareProcessDefaults
+      : baselineProcessDefaults;
+    const form = /** @type {{ value?: Record<string, any> } | null} */ (el);
+    if (!targetBaseline.value && form?.value) {
+      targetBaseline.value = { ...form.value };
+    }
+
+    const onFormChange = () => {
+      const current = form?.value || {};
+      const targetState = enableCompare
+        ? activeCompareProcessFormValue
+        : activeProcessFormValue;
+      targetState.value = { ...current };
+    };
+    el.addEventListener("change", onFormChange);
+  }
   if (el && el.shadowRoot) {
     const styleId = "eodash-drawtools-inline-style";
     if (!el.shadowRoot.getElementById(styleId)) {
@@ -218,6 +273,43 @@ useInitProcess({
   isPolling,
 });
 
+// Seed restored values onto schema defaults when present, while capturing true baseline schema defaults
+watch(
+  [
+    jsonformSchema,
+    () =>
+      enableCompare
+        ? restoredCompareProcessState.value
+        : restoredProcessState.value,
+  ],
+  ([schema, restored]) => {
+    if (!schema) return;
+
+    const targetBaseline = enableCompare
+      ? baselineCompareProcessDefaults
+      : baselineProcessDefaults;
+    // Capture clean baseline defaults from the untouched schema if not yet recorded
+    if (!targetBaseline.value && schema.properties) {
+      targetBaseline.value = extractSchemaDefaults(schema);
+    }
+
+    if (
+      restored &&
+      typeof restored === "object" &&
+      Object.keys(restored).length
+    ) {
+      if (schema.properties) {
+        for (const [key, val] of Object.entries(restored)) {
+          if (schema.properties[key]) {
+            schema.properties[key].default = val;
+          }
+        }
+      }
+    }
+  },
+  { immediate: true },
+);
+
 const downloadResults = () => {
   processResults.value.forEach((result) => {
     if (!result) {
@@ -240,11 +332,14 @@ const startProcess = async () => {
   const drawToolsProperties = getDrawToolsProperties(jsonformSchema.value);
 
   const anyDrawtoolPropertyEmpty = drawToolsProperties.some(
-    (drawToolsProperty) =>
-      //@ts-expect-error jsonfrom.value is not typed
-      Array.isArray(jsonformEl.value?.value[drawToolsProperty]) &&
-      //@ts-expect-error jsonfrom.value is not typed
-      !jsonformEl.value?.value[drawToolsProperty].length,
+    (drawToolsProperty) => {
+      //@ts-expect-error jsonform.value is not typed
+      const val = jsonformEl.value?.value?.[drawToolsProperty];
+      if (Array.isArray(val) && !val.length) return true;
+      if (typeof val === "string" && val.trim() === "") return true;
+      if (!val) return true;
+      return false;
+    },
   );
 
   if (anyDrawtoolPropertyEmpty) {
@@ -275,7 +370,58 @@ const startProcess = async () => {
   isProcessed.value = true;
   if (isAsync.value) updateJobsStatus(currentJobs, currentIndicator.value);
 };
+const hasCustomProcessState = computed(() => {
+  const targetRestored = enableCompare
+    ? restoredCompareProcessState.value
+    : restoredProcessState.value;
+  if (targetRestored && Object.keys(targetRestored).length) return true;
+
+  const targetActive = enableCompare
+    ? activeCompareProcessFormValue.value
+    : activeProcessFormValue.value;
+  const targetBaseline = enableCompare
+    ? baselineCompareProcessDefaults.value
+    : baselineProcessDefaults.value;
+
+  if (targetActive && Object.keys(targetActive).length) {
+    const delta = diffFormValues(targetActive, targetBaseline || {});
+    return Object.keys(delta).length > 0;
+  }
+  return false;
+});
+
+const resetProcessCustomization = () => {
+  const targetRestored = enableCompare
+    ? restoredCompareProcessState
+    : restoredProcessState;
+  const targetActive = enableCompare
+    ? activeCompareProcessFormValue
+    : activeProcessFormValue;
+  const targetBaseline = enableCompare
+    ? baselineCompareProcessDefaults
+    : baselineProcessDefaults;
+
+  targetRestored.value = null;
+  targetActive.value = null;
+
+  if (jsonformEl.value?.editor && targetBaseline.value) {
+    jsonformEl.value.editor.setValue({ ...targetBaseline.value });
+  }
+};
+
 useAutoExec(autoExec, jsonformEl, jsonformSchema, startProcess);
+
+onUnmounted(() => {
+  if (enableCompare) {
+    activeCompareProcessFormValue.value = null;
+    baselineCompareProcessDefaults.value = null;
+    restoredCompareProcessState.value = null;
+  } else {
+    activeProcessFormValue.value = null;
+    baselineProcessDefaults.value = null;
+    restoredProcessState.value = null;
+  }
+});
 </script>
 <style>
 eox-jsonform {

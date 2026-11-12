@@ -10,8 +10,11 @@ import {
   defaultBaseLayers,
   hasRestoredView,
   layerTimeProperties,
+  restoredCompareLayersState,
+  restoredLayersState,
   shouldZoomToExtent,
 } from "@/utils/states";
+import { applyRestoredLayerProperties } from "@/utils/layer-state-helpers";
 import { useSTAcStore } from "@/store/stac";
 import {
   registerProjections,
@@ -178,16 +181,35 @@ export const buildIndicatorLayers = async (
     (layer) => layer.type === "Group" && layer.properties?.id === CATALOG_GROUP,
   );
 
+  const fullLayers = [
+    layerGroup(BASE_LAYERS_GROUP, baseLayers),
+    ...(footprints ? [footprints] : []),
+    layerGroup(ANALYSIS_GROUP, dataLayers),
+    ...(overLayers.length ? [layerGroup(OVERLAY_GROUP, overLayers)] : []),
+  ];
+
+  applyRestoredPropertiesForMap(map, fullLayers);
+
   return {
-    layers: [
-      layerGroup(BASE_LAYERS_GROUP, baseLayers),
-      ...(footprints ? [footprints] : []),
-      layerGroup(ANALYSIS_GROUP, dataLayers),
-      ...(overLayers.length ? [layerGroup(OVERLAY_GROUP, overLayers)] : []),
-    ],
+    layers: fullLayers,
     items,
   };
 };
+
+/**
+ * Helper to apply restored layer properties according to the map instance.
+ * @param {import("@eox/map").EOxMap | null} map
+ * @param {import("@eox/map").EoxLayer[]} layers
+ */
+function applyRestoredPropertiesForMap(map, layers) {
+  const restored =
+    map?.id === "compare"
+      ? restoredCompareLayersState.value
+      : restoredLayersState.value;
+  if (restored) {
+    applyRestoredLayerProperties(layers, restored);
+  }
+}
 
 /**
  * Rebuilds and assigns data layers for the given datetime or STAC item.
@@ -209,6 +231,8 @@ export const assignDataLayers = async (
     stac,
     timeOrItem,
   });
+
+  applyRestoredPropertiesForMap(map, layers);
 
   await registerProjections(projections);
   await assignGroupLayers(map, ANALYSIS_GROUP, layers, event);
