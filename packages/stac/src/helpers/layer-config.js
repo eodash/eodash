@@ -223,7 +223,10 @@ function restorePersistedSchema(schema, state, type) {
   if (schema?.options?.persist_state === false) return schema;
   const cached = getCachedConfig(state, type);
   if (!cached || !Object.keys(cached).length) return schema;
-  return seedSchemaDefaults(schema, flattenFormValues(cached));
+  return seedSchemaDefaults(
+    openPersistedBranch(schema, cached),
+    flattenFormValues(cached),
+  );
 }
 
 /**
@@ -386,4 +389,37 @@ export function getBandsProperty(schema, format = "bands") {
   }
 
   return undefined;
+}
+
+/**
+ * Moves the oneOf/anyOf branch covering most of the persisted value's keys to
+ * index 0, since json-editor opens the first branch when it rebuilds the form.
+ *
+ * @param {Record<string, any>} schema
+ * @param {Record<string, any>} value
+ * @returns {Record<string, any>}
+ */
+function openPersistedBranch(schema, value) {
+  const combinator = ["oneOf", "anyOf"].find((c) => Array.isArray(schema[c]));
+  if (!combinator) return schema;
+  /** @type {Record<string, any>[]} */
+  const branches = schema[combinator];
+  // the same fit json-editor uses: most defined properties, then fewest missing
+  const fits = branches.map((branch) => {
+    const keys = Object.keys(branch.properties ?? {});
+    const match = keys.filter((key) => value[key] !== undefined).length;
+    return { match, extra: keys.length - match };
+  });
+  const index = fits.reduce(
+    (best, fit, i) =>
+      fit.match > fits[best].match ||
+      (fit.match === fits[best].match && fit.extra < fits[best].extra)
+        ? i
+        : best,
+    0,
+  );
+  return {
+    ...schema,
+    [combinator]: [branches[index], ...branches.filter((_, i) => i !== index)],
+  };
 }

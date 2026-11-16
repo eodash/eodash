@@ -51,7 +51,7 @@ const collection = await createEodashCollection(url, {
 
 ## The Reader API
 
-Every reader provides methods to inspect available items and datetimes (`getItems`, `getDates`, `getItem`, `getTemporalExtent`) and generate map layer configurations (`getLayers`, `buildLayers`, `updateLayers`). Readers for STAC API collections also provide `search` (with the collection ID pre-applied) and accept an optional `bbox` to narrow spatial queries.
+Every reader provides methods to inspect available items and datetimes (`getItems`, `getDates`, `getItem`, `getTemporalExtent`) and generate map layer configurations (`getLayers`, `buildLayers`, `updateLayers`, and `buildMosaicLayer` when the collection has a raster endpoint and uses the render extension). Readers for STAC API collections also provide `search` (with the collection ID pre-applied) and accept an optional `bbox` to narrow spatial queries.
 
 See [`Reader`](/api/@eodash/stac/type-aliases/Reader) for the complete interface. The `kind` property indicates whether the collection resolved to `"static"`, `"parquet"`, or `"api"`.
 
@@ -91,6 +91,18 @@ map.layers = layers;
 Layers built from a style with a `jsonform`, a `legend`, or an `eodash:rasterform` include a `layerConfig` object that [eox-layercontrol](https://eox-a.github.io/EOxElements/?path=/docs/elements-eox-layercontrol--docs) renders as an interactive configuration form. When a style or rasterform provides only a `legend` without an explicit `jsonform`, an empty form schema is automatically created so the legend displays in EOxElements without requiring manual boilerplate.
 
 When a user edits the form, report the new value back using `persistLayerConfig` (typically from eox-layercontrol's `layerConfig:change` event handler). The reader retains these values so user configurations persist across datetime changes.
+
+### Mosaic Layer
+
+Readers created with a `rasterEndpoint` for a collection with render presets also provide `buildMosaicLayer`. It renders the whole collection as one layer through the raster endpoint's collection mosaic, using the first render extension field preset. It accepts TileJSON queries to narrow it, mainly `datetime` range and/or a cql2 `filter`:
+
+```js
+const { layer, projection } = await collection.buildMosaicLayer?.({
+  datetime: "2026-09-28/2026-09-30",
+});
+```
+
+It carries the collection's `eodash:rasterform` like item layers, and values saved with `persistLayerConfig` are re-applied on every rebuild. When the TileJSON request fails, `layer` and `projection` are `undefined`.
 
 ## Authentication
 
