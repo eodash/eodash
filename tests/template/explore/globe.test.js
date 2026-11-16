@@ -165,9 +165,7 @@ describe("explore globe - catalog", () => {
       const n = getFootprintCount();
       return n > 0 && n < ITEMS.length && n;
     }, "new footprints");
-    await expect
-      .poll(globeFootprintCount, { timeout: TIMEOUT })
-      .toBe(count);
+    await expect.poll(globeFootprintCount, { timeout: TIMEOUT }).toBe(count);
   });
 
   test("switching back to 2D tears the globe down and keeps the footprints", async () => {

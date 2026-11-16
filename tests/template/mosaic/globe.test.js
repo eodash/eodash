@@ -1,5 +1,4 @@
 import { afterAll, beforeAll, describe, expect, test, vi } from "vitest";
-import { mapPosition } from "@/store/states";
 import { fromLonLat } from "ol/proj";
 import {
   BBOX,
@@ -103,7 +102,8 @@ describe("mosaic globe", () => {
 
   test("the globe holds the mosaic layer with the map's tiles", async () => {
     // the slider can re-initialise the mosaic after entering 3D
-    await expect.poll(() => globeLayer(mapEl, MOSAIC_LAYER_ID)?.url, {
+    await expect
+      .poll(() => globeLayer(mapEl, MOSAIC_LAYER_ID)?.url, {
         timeout: TIMEOUT,
       })
       .toBe(olUrl());
@@ -133,30 +133,9 @@ describe("mosaic globe", () => {
     expect(ctx.query(".v-alert")).toBeNull();
   });
 
-  test("zooming out past the threshold hides the mosaic on the globe", async () => {
-    // camera altitude at the visibility threshold, zoom 8: 21_050_000 / 2 ** 6
-    const thresholdAltitude = 328_906;
-    // Flown directly: a single wheel step in a new direction is ignored by
-    // OpenGlobus (point 17). The app reads the zoom from the camera's moveend,
-    // checked first.
-    const target = mapEl.globe.planet.camera.getLonLat().clone();
-    target.height = thresholdAltitude * 3;
-    mapEl.globe.planet.flyLonLat(target);
-    await expect
-      .poll(() => mapPosition.value[2] ?? 99, { timeout: TIMEOUT })
-      .toBeLessThan(8);
-
-    // no optional chaining: a missing layer must not count as hidden
-    await expect
-      .poll(() => mapEl.getLayerById(MOSAIC_LAYER_ID).getVisible(), {
-        timeout: TIMEOUT,
-      })
-      .toBe(false);
-    await expect
-      .poll(() => globeLayer(mapEl, MOSAIC_LAYER_ID)?.getVisibility(), {
-        timeout: TIMEOUT,
-      })
-      .toBe(false);
+  test("the globe gets the mosaic's zoom threshold", () => {
+    // the globe skips the mosaic tiles below it, like the 2D map (point 19)
+    expect(globeLayer(mapEl, MOSAIC_LAYER_ID).minZoom).toBeGreaterThan(0);
   });
 
   test("the url keeps a map zoom, not the camera altitude", () => {

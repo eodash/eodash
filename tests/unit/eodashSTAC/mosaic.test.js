@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import { createPinia, setActivePinia } from "pinia";
 import { render } from "vitest-browser-vue";
-import { h, nextTick, ref } from "vue";
+import { h, ref } from "vue";
 import { createEodashCollection } from "@eodash/stac";
 import {
   checkMosaicDataInView,
@@ -213,19 +213,6 @@ describe("mosaic", () => {
 
       expect(analysisGroup(mapEl.value ?? undefined)).toBeUndefined();
     });
-
-    test("hides the layer on the globe right after rendering it below the threshold", async () => {
-      const setVisible = vi.fn();
-      mapEl.value = fakeMap({ getLayerById: () => ({ setVisible }) });
-      isGlobe.value = true;
-      // below the threshold; `mapPosition` holds a zoom in 3D too
-      mapPosition.value = [0, 0, 2];
-      await selectCollection();
-
-      await updateMosaicLayer(ENDPOINT, {});
-
-      expect(setVisible).toHaveBeenLastCalledWith(false);
-    });
   });
 
   describe("useScheduleMosaicUpdate", () => {
@@ -264,32 +251,7 @@ describe("mosaic", () => {
 
       expect(tileJsonRequests()).toEqual([]);
     });
-
-    test("shows the mosaic again after leaving the globe zoomed out and zooming in on the 2D map", async () => {
-      const setVisible = vi.fn();
-      mapEl.value = fakeMap({ getLayerById: () => ({ setVisible }) });
-      isGlobe.value = true;
-      // below the threshold; `mapPosition` holds a zoom in 3D too
-      mapPosition.value = [0, 0, 2];
-      await selectCollection();
-      const widget = await render({
-        setup() {
-          useInitMosaic(ENDPOINT, ref(JUNE));
-          return () => h("div");
-        },
-      });
-      await updateMosaicLayer(ENDPOINT, {});
-      expect(setVisible).toHaveBeenLastCalledWith(false);
-
-      isGlobe.value = false;
-      mapPosition.value = [0, 0, 10];
-      await nextTick();
-
-      expect(setVisible).toHaveBeenLastCalledWith(true);
-      await widget.unmount();
-    });
   });
-
 
   describe("checkMosaicDataInView", () => {
     const seedEndpoint = async () => {
@@ -310,21 +272,17 @@ describe("mosaic", () => {
       expect(axiosMock.get).not.toHaveBeenCalled();
     });
 
-    test("on the globe, skips the check without reading the 2D extent eox-map cannot transform", async () => {
+    test("on the globe, checks the extent the globe shows", async () => {
       await seedEndpoint();
       isGlobe.value = true;
-      mapEl.value = fakeMap();
-      Object.defineProperty(mapEl.value, "lonLatExtent", {
-        get() {
-          throw new Error("No transform available between EPSG:4326 and globe");
-        },
-      });
-      state.hasDataInView.value = false;
+      mapEl.value = fakeMap({ lonLatExtent: [0, 0, 1, 1] });
+      axiosMock.get.mockResolvedValue({ data: [] });
 
-      await expect(checkMosaicDataInView()).resolves.toBeUndefined();
+      await checkMosaicDataInView();
 
-      expect(state.hasDataInView.value).toBe(true);
-      expect(axiosMock.get).not.toHaveBeenCalled();
+      const url = new URL(axiosMock.get.mock.calls[0][0]);
+      expect(url.pathname).toBe("/collections/coll/bbox/0,0,1,1/assets");
+      expect(state.hasDataInView.value).toBe(false);
     });
 
     test("queries the bbox assets endpoint with the active mosaic query", async () => {

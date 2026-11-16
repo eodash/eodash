@@ -1,15 +1,7 @@
 import axios from "@/plugins/axios";
-import { datetime, isGlobe, mapEl, mapPosition } from "@/store/states";
+import { datetime, mapEl, mapPosition } from "@/store/states";
 import { ANALYSIS_GROUP, assignGroupLayers } from "@/eodashSTAC/layers";
-import {
-  computed,
-  nextTick,
-  onMounted,
-  onUnmounted,
-  ref,
-  shallowRef,
-  watch,
-} from "vue";
+import { computed, onMounted, onUnmounted, ref, shallowRef, watch } from "vue";
 import {
   createSharedComposable,
   useDebounceFn,
@@ -112,12 +104,6 @@ export async function renderMosaic(params) {
   assignGroupLayers(mapEl.value, ANALYSIS_GROUP, [layer]);
   //@ts-expect-error source is optional upstream, always built here
   log.debug("[eodash] Mosaic layer rendered.", layer.source.url);
-
-  // the first render creates the layer visible, also on the globe below the threshold
-  await nextTick();
-  toggleMosaicVisibility(
-    mapPosition.value[2] ?? mapEl.value?.map?.getView()?.getZoom() ?? 0,
-  );
 }
 
 /**
@@ -164,13 +150,7 @@ export function useInitMosaic(mosaicEndpoint, timeRange, indicators) {
     return true;
   }
 
-  const stopWatcher = watch(mapPosition, (updatedPos, oldPos) => {
-    scheduleMosaicDataCheck();
-    const [_oldX, _oldY, oldZ] = oldPos;
-    const [_x, _y, z] = updatedPos;
-    if (!z || z === oldZ) return;
-    toggleMosaicVisibility(z);
-  });
+  const stopWatcher = watch(mapPosition, () => scheduleMosaicDataCheck());
 
   const stopQueryWatch = watch(query, () => scheduleMosaicDataCheck());
 
@@ -289,26 +269,3 @@ export async function checkMosaicDataInView() {
 
 /** Debounced check for asset presence in the viewport. */
 const scheduleMosaicDataCheck = useDebounceFn(checkMosaicDataInView, 300);
-
-// flag to manage visibility on zoom on the globe
-let hiddenOnGlobe = false;
-/**
- * Toggles mosaic layer visibility in 3D globe mode based on the zoom threshold.
- * @param {number} zoomLevel - Current zoom level
- * @param {number} [threshold] - Optional visibility threshold override
- */
-function toggleMosaicVisibility(zoomLevel, threshold) {
-  const { latestLayer, visibilityThreshold } = useMosaicState();
-  if (!latestLayer.value) return;
-  const layerId = /** @type {string} */ (latestLayer.value.properties?.id);
-  const layer = mapEl.value?.getLayerById(layerId);
-  if (!layer) return;
-
-  if (!isGlobe.value) {
-    if (hiddenOnGlobe) layer.setVisible(true);
-    hiddenOnGlobe = false;
-    return;
-  }
-  hiddenOnGlobe = zoomLevel < (threshold ?? visibilityThreshold.value);
-  layer.setVisible(!hiddenOnGlobe);
-}
