@@ -242,11 +242,8 @@ async function buildStacLayer(
     },
     style,
   };
-  extractRoles(
-    json.properties,
-    //@ts-expect-error using the item incase no self link is found
-    item.links.find((link) => link.rel === "self") ?? item,
-  );
+  //@ts-expect-error using the item incase no self link is found
+  extractRoles(json, item.links.find((link) => link.rel === "self") ?? item);
   return json;
 }
 
@@ -264,11 +261,8 @@ function showTopLayerOnly(layers) {
   const isData = (layer) =>
     !["baselayer", "overlay"].includes(layer.properties?.group);
   const top = layers.findLastIndex(isData);
-  // @ts-expect-error properties is optional upstream, always built here
   return layers.map((layer, i) =>
-    i === top || !isData(layer)
-      ? layer
-      : { ...layer, properties: { ...layer.properties, visible: false } },
+    i === top || !isData(layer) ? layer : { ...layer, visible: false },
   );
 }
 

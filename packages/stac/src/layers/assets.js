@@ -244,7 +244,7 @@ export async function createLayersFromAssets(
       if (extraProperties) {
         layer.properties = { ...layer.properties, ...extraProperties };
       }
-      extractRoles(layer.properties, assets[assetName]);
+      extractRoles(layer, assets[assetName]);
       addTooltipInteraction(layer, style);
       jsonArray.push(layer);
       if (shouldMergeAssets) break;
@@ -305,7 +305,7 @@ export async function createLayersFromAssets(
       if (extraProperties) {
         layer.properties = { ...layer.properties, ...extraProperties };
       }
-      extractRoles(layer.properties, assets[assetName]);
+      extractRoles(layer, assets[assetName]);
       jsonArray.push(layer);
     }
   }
@@ -367,7 +367,7 @@ export async function createLayersFromAssets(
         interactions: [],
       };
       layer.properties = { ...layer.properties, ...(extraProperties ?? {}) };
-      extractRoles(layer.properties, assets[assetName]);
+      extractRoles(layer, assets[assetName]);
       addTooltipInteraction(layer, style);
       applyRasterFormValue(layer);
       jsonArray.push(layer);
@@ -421,7 +421,7 @@ export async function createLayersFromAssets(
         interactions: [],
       };
       layer.properties = { ...layer.properties, ...(extraProperties ?? {}) };
-      extractRoles(layer.properties, assets[assetName]);
+      extractRoles(layer, assets[assetName]);
       addTooltipInteraction(layer, style);
       applyRasterFormValue(layer);
       jsonArray.push(layer);

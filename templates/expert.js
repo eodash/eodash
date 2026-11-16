@@ -27,12 +27,12 @@ export default {
         baseLayers: [
           /** @type {any} */ ({
             type: "Tile",
+            visible: true,
             properties: {
               id: "terrain-light;:;EPSG:3857",
               title: "Terrain Light",
               roles: ["baselayer", "visible"],
               group: "baselayer",
-              visible: true,
               layerControlExclusive: true,
             },
             source: {

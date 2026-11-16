@@ -14,10 +14,10 @@ vi.mock("@eox/chart", () => ({
 const layers = () => [
   {
     type: "Tile",
+    visible: true,
     properties: {
       id: "layer-1",
       title: "My Layer",
-      visible: true,
       // noise under properties
       internalToken: "should-not-leak",
       debugState: { foo: "bar" },
@@ -107,7 +107,7 @@ describe("ExportState", () => {
       .toContain("layer-1");
 
     const config = document.querySelector(".code-block")?.textContent ?? "";
-    // kept: id/title/visible
+    // kept: visible, and id/title under properties
     expect(config).toContain("My Layer");
     expect(config).toContain("visible");
     // stripped: everything else under properties

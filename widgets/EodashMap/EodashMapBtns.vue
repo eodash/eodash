@@ -33,7 +33,7 @@
     <ExportState v-if="exportMap" v-model="showMapState" />
 
     <button
-      v-if="changeProjection && !!availableMapProjection"
+      v-if="changeProjection && !!availableMapProjection && !isGlobe"
       class="primary small circle small-elevate"
       @click="changeMapProjection(availableMapProjection)"
     >
@@ -175,7 +175,7 @@ import {
   mapPosition,
   poi,
 } from "@/store/states";
-import { useMosaicState, normalizeGlobeZoom } from "@/eodashSTAC/mosaic";
+import { useMosaicState } from "@/eodashSTAC/mosaic";
 import {
   mdiCompare,
   mdiCompareRemove,
@@ -324,8 +324,7 @@ const showItemViewHint = computed(
 
 const showZoomHint = computed(() => {
   if (!latestLayer.value || isItemView.value) return false;
-  const rawZ = mapPosition.value?.[2] ?? 4;
-  return normalizeGlobeZoom(rawZ) < visibilityThreshold.value;
+  return (mapPosition.value?.[2] ?? 4) < visibilityThreshold.value;
 });
 
 const showNoDataHint = computed(

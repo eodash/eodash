@@ -59,7 +59,6 @@ const mosaicState = vi.hoisted(() => ({
 }));
 vi.mock("@/eodashSTAC/mosaic", () => ({
   useMosaicState: () => mosaicState,
-  normalizeGlobeZoom: (/** @type {number} */ z) => z,
 }));
 
 const stubs = { ExportState: true, PopUp: true, EodashItemFilter: true };
@@ -143,12 +142,14 @@ describe("EodashMapBtns", () => {
       expect(btnByTooltip("Zoom in")).toBeFalsy();
     });
 
-    test("hides zoom, compare and shows the 2D label in globe mode", async () => {
+    test("hides zoom, compare, projection and shows the 2D label in globe mode", async () => {
       isGlobe.value = true;
       await mountBtns();
 
       expect(btnByTooltip("Zoom in")).toBeFalsy();
       expect(btnByTooltip("Compare mode")).toBeFalsy();
+      // its projection write would leave the globe behind eodash's back
+      expect(btnByTooltip("Change map projection")).toBeFalsy();
       expect(btnByTooltip("switch to 2D")).toBeTruthy();
     });
 

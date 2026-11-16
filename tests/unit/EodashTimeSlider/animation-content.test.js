@@ -161,7 +161,8 @@ describe("createAnimationLayers - rendered layers", () => {
   test("passes the map's projection to data layer building", async () => {
     setMap({
       layers: [],
-      projection: "EPSG:3035",
+      // the view projection; `projection` reads "globe" in 3D
+      OLprojection: "EPSG:3035",
       getLayerById: () => null,
     });
     const reader = stubReader("collA", [{ properties: { id: "a" } }]);
@@ -189,7 +190,7 @@ describe("createAnimationLayers - rendered layers", () => {
     expect(layer.properties.layerControlExpand).toBe(false);
     // an exported frame shows every layer, so the role's `visible: false` is
     // deliberately restored on the way out
-    expect(layer.properties.visible).toBe(true);
+    expect(layer.visible).toBe(true);
   });
 
   test("hides a layer the collection marks 'hidden' from the layer control", async () => {
@@ -295,7 +296,7 @@ describe("createAnimationLayers - rendered layers", () => {
 
   test("does not mutate the shared base layers it fell back to", async () => {
     const configured = [
-      { type: "Tile", properties: { id: "osm", visible: false }, source: {} },
+      { type: "Tile", visible: false, properties: { id: "osm" }, source: {} },
     ];
     useDefaultBaseLayers(configured);
     useReaders(stubReader("a", [{ properties: { id: "a" } }]));
@@ -304,7 +305,7 @@ describe("createAnimationLayers - rendered layers", () => {
 
     // the frame is anonymized and made visible; the app's copy is not
     expect(base.layers[0].source.crossOrigin).toBe("anonymous");
-    expect(configured[0].properties.visible).toBe(false);
+    expect(configured[0].visible).toBe(false);
     expect(configured[0].source).toEqual({});
   });
 });

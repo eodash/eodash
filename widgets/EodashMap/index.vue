@@ -45,7 +45,7 @@
       <!-- prettier-ignore -->
       <EodashMapBtns
         :style="{
-          gridColumn: (indicator || compareIndicator || poi) && !isGlobe ? responsiveX : '12',
+          gridColumn: (indicator || compareIndicator || poi) ? responsiveX : '12',
           gridRow: responsiveY,
         }"
         :exportMap="(indicator || compareIndicator || poi) ? btnsProps.exportMap : false"
@@ -88,7 +88,6 @@ import {
   indicator,
   compareIndicator,
   poi,
-  isGlobe,
   tooltipAdapter,
 } from "@/store/states";
 import { storeToRefs } from "pinia";
