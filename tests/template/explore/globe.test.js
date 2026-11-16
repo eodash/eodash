@@ -75,6 +75,17 @@ describe("explore globe - catalog", () => {
     mapEl.getLayerById(FOOTPRINTS_ID)?.getSource()?.getFeatures()?.length ?? 0;
 
   /**
+   * Footprints the map was given. In 3D the hidden 2D map never loads its
+   * source, so its feature count cannot be read there.
+   */
+  const getFootprintCount = () => {
+    const url = mapEl.getLayerById(FOOTPRINTS_ID)?.getSource()?.getUrl();
+    if (!url) return 0;
+    const json = decodeURIComponent(url.slice(url.indexOf(",") + 1));
+    return JSON.parse(json).features.length;
+  };
+
+  /**
    * Footprints drawn on the globe. eox-map draws the footprint GeoJSON as a
    * native vector once its own fetch of the data url resolved.
    */
@@ -150,12 +161,13 @@ describe("explore globe - catalog", () => {
 
   test("the footprints on the globe follow the new results", async () => {
     // the map updates the footprints in place; depends on the search above
-    await expect
-      .poll(footprintCount, { timeout: TIMEOUT })
-      .toBeLessThan(ITEMS.length);
+    const count = await until(() => {
+      const n = getFootprintCount();
+      return n > 0 && n < ITEMS.length && n;
+    }, "new footprints");
     await expect
       .poll(globeFootprintCount, { timeout: TIMEOUT })
-      .toBe(footprintCount());
+      .toBe(count);
   });
 
   test("switching back to 2D tears the globe down and keeps the footprints", async () => {
