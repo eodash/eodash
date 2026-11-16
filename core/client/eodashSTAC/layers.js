@@ -3,10 +3,13 @@ import {
   buildIndicatorDataLayers,
   normalizeBaseLayers,
 } from "@eodash/stac";
-import { getProjectionCode, sanitizeBbox } from "@eodash/stac/helpers";
+import {
+  getProjectionCode,
+  sanitizeBbox,
+  OBSERVATION_POINT_THEMES,
+} from "@eodash/stac/helpers";
 import { assignLayers } from "@/store/actions";
 import {
-  dataThemesBrands,
   defaultBaseLayers,
   hasRestoredView,
   layerTimeProperties,
@@ -263,7 +266,7 @@ async function buildDataLayers(map, { readers, stac, timeOrItem, context }) {
       ...layerTimeProperties,
       ...context,
     },
-    themes: dataThemesBrands,
+    themes: OBSERVATION_POINT_THEMES,
     currentLayers: map?.layers ?? [],
   });
 }

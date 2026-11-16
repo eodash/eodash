@@ -2,6 +2,7 @@ import { useOnLayersUpdate } from "@/composables";
 import { onMounted, onUnmounted, watch } from "vue";
 import { tooltipAdapter } from "@/store/states";
 import { CATALOG_GROUP, assignGroupLayers } from "@/eodashSTAC/layers";
+import { assignLayers } from "@/store/actions";
 
 /**
  *
@@ -164,6 +165,16 @@ export const useRenderItemsFeatures = (
       hoverProperties.value,
       stacItemsStyle,
       stacItemsInteractionStyle,
+    );
+  });
+
+  // indicator rebuilds keep the footprints group, so the catalog removes its own on the way out
+  onUnmounted(() => {
+    const map = mapElement.value;
+    if (!map) return;
+    assignLayers(
+      map,
+      map.layers.filter((layer) => layer.properties?.id !== CATALOG_GROUP),
     );
   });
 };

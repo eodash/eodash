@@ -56,13 +56,21 @@ vi.mock("^/EodashItemCatalog/methods/handlers", () => ({
   createOnMouseEnterResult: spies.createOnMouseEnterResult,
   createOnMouseLeaveResult: spies.createOnMouseLeaveResult,
 }));
-vi.mock("^/EodashItemCatalog/methods/map", () => ({
-  useSearchOnMapMove: spies.useSearchOnMapMove,
-  useRenderItemsFeatures: spies.useRenderItemsFeatures,
-  useHoverTooltip: spies.useHoverTooltip,
-  useRenderOnFeatureClick: spies.useRenderOnFeatureClick,
-  renderItemsFeatures: spies.renderItemsFeatures,
-}));
+vi.mock("^/EodashItemCatalog/methods/map", async (importOriginal) => {
+  /** @type {typeof import("^/EodashItemCatalog/methods/map")} */
+  const actual = await importOriginal();
+  // the footprints lifecycle runs for real, the other map seams stay spied
+  spies.useRenderItemsFeatures.mockImplementation(
+    actual.useRenderItemsFeatures,
+  );
+  return {
+    useSearchOnMapMove: spies.useSearchOnMapMove,
+    useRenderItemsFeatures: spies.useRenderItemsFeatures,
+    useHoverTooltip: spies.useHoverTooltip,
+    useRenderOnFeatureClick: spies.useRenderOnFeatureClick,
+    renderItemsFeatures: spies.renderItemsFeatures,
+  };
+});
 vi.mock("@/eodashSTAC/mosaic", () => ({
   useMosaicState: () => ({
     isItemView: { value: false },
@@ -339,6 +347,29 @@ describe("EodashItemCatalog", () => {
         undefined,
         undefined,
       );
+    });
+
+    test("takes its item footprints off the map when it unmounts, e.g. on a layout switch", async () => {
+      // a stand-in for eox-map with what the footprints touch
+      mapEl.value = /** @type {any} */ ({
+        layers: [
+          { type: "Group", properties: { id: ANALYSIS_GROUP }, layers: [] },
+        ],
+        selectInteractions: {},
+        removeSelect: vi.fn(),
+        addOrUpdateLayer: vi.fn(),
+      });
+      await mountAsyncComponent(EodashItemCatalog, {
+        initialState: withCollections,
+      });
+      /** @returns {(string | undefined)[]} */
+      const groupIds = () =>
+        mapEl.value?.layers.map((layer) => layer.properties?.id) ?? [];
+      expect(groupIds()).toContain("CatalogGroup");
+
+      cleanup();
+
+      expect(groupIds()).toEqual([ANALYSIS_GROUP]);
     });
 
     test("wires search-on-map-move with the bbox flag and the primary map", async () => {
