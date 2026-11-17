@@ -123,7 +123,7 @@ A Collection is rendered as observation points when either:
 When configured for observation points, eodash:
 1. Searches for `latlng` properties in the Collection's child or Item links
 2. Creates a GeoJSON FeatureCollection from these coordinates
-3. Styles the points based on the Collection's `themes` property (built-in themes defined in `OBSERVATION_POINT_THEMES`, extensible via `options.observationPointThemes` in dashboard configuration)
+3. Styles the points based on the Collection's `themes` property
 
 The `latlng` property should contain coordinates in the format `"latitude,longitude"` (comma-separated string):
 
