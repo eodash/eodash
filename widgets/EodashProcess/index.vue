@@ -240,11 +240,11 @@ const startProcess = async () => {
   const drawToolsProperties = getDrawToolsProperties(jsonformSchema.value);
 
   const anyDrawtoolPropertyEmpty = drawToolsProperties.some(
-    (drawToolsProperty) =>
+    (drawToolsProperty) => {
       //@ts-expect-error jsonfrom.value is not typed
-      Array.isArray(jsonformEl.value?.value[drawToolsProperty]) &&
-      //@ts-expect-error jsonfrom.value is not typed
-      !jsonformEl.value?.value[drawToolsProperty].length,
+      const val = jsonformEl.value?.value?.[drawToolsProperty];
+      return !val || (Array.isArray(val) && !val.length);
+    },
   );
 
   if (anyDrawtoolPropertyEmpty) {

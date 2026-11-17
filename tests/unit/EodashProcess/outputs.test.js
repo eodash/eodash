@@ -3,7 +3,9 @@ import {
   processCharts,
   processImage,
   processLayers,
+  processSTAC,
 } from "^/EodashProcess/methods/outputs";
+import { useSTAcStore } from "@/store/stac";
 import {
   L_CHART_CSV,
   L_CHART_JSON_GET,
@@ -320,5 +322,45 @@ describe("processCharts", () => {
 
     expect(customEndpointsHandler).toHaveBeenCalled();
     expect(spec.data.values).toEqual([{ custom: 1 }]);
+  });
+});
+
+describe("processSTAC", () => {
+  test("skips loading POI when required template parameter is empty", async () => {
+    const store = useSTAcStore();
+    const loadSelectedSTAC = vi
+      .spyOn(store, "loadSelectedSTAC")
+      .mockResolvedValue();
+
+    await processSTAC(
+      [
+        serviceLink(
+          "application/json; profile=collection",
+          "locations",
+          "./heatgrid_lst/{{feature}}/collection.json",
+          { endpoint: "STAC" },
+        ),
+      ],
+      { feature: "" },
+    );
+
+    expect(loadSelectedSTAC).not.toHaveBeenCalled();
+
+    await processSTAC(
+      [
+        serviceLink(
+          "application/json; profile=collection",
+          "locations",
+          "./heatgrid_lst/{{feature}}/collection.json",
+          { endpoint: "STAC" },
+        ),
+      ],
+      { feature: "vienna" },
+    );
+
+    expect(loadSelectedSTAC).toHaveBeenCalledWith(
+      "./heatgrid_lst/vienna/collection.json",
+      true,
+    );
   });
 });

@@ -42,8 +42,9 @@ describe("zoomToCollection", () => {
 
     expect(map.zoomExtent).toBeDefined();
     const [minX, minY, maxX, maxY] = map.zoomExtent;
-    expect(minX).toBeCloseTo(-1113195, 0);
-    expect(maxX).toBeCloseTo(1113195, 0);
+    // Raw EPSG:3857 x-extent is [-1113195, 1113195], padded by 75% of width (2.5x total width)
+    expect(minX).toBeCloseTo(-2782987, 0);
+    expect(maxX).toBeCloseTo(2782987, 0);
     expect(minY).toBeLessThan(maxY);
   });
 
