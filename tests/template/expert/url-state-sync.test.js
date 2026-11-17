@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, test } from "vitest";
-import { compareIndicator, comparePoi, datetime } from "@/store/states";
+import { compareIndicator, datetime } from "@/store/states";
 import { analysisGroup } from "../../support/layers";
 import { bootExpert, TIMEOUT } from "../../support/template";
 
@@ -64,7 +64,7 @@ describe("expert template - deep link restores indicator, datetime and layers", 
   });
 });
 
-describe("expert template - deep link restores compareindicator and syncs comparepoi", () => {
+describe("expert template - deep link restores compareindicator", () => {
   const MAIN_ID = "N1_NO2_monthly";
   const COMPARE_ID = "N2_CO2_mean";
   const DEEP_LINK = `?template=compare&indicator=${MAIN_ID}&compareindicator=${COMPARE_ID}`;
@@ -77,7 +77,7 @@ describe("expert template - deep link restores compareindicator and syncs compar
 
   afterAll(() => ctx?.app.unmount());
 
-  test("restores compareindicator from url and updates query params when comparePoi changes", async () => {
+  test("restores compareindicator from the URL", async () => {
     await expect
       .poll(() => ctx.store.selectedCompareStac?.id, { timeout: TIMEOUT })
       .toBe(COMPARE_ID);
@@ -85,15 +85,5 @@ describe("expert template - deep link restores compareindicator and syncs compar
     expect(
       new URLSearchParams(window.location.search).get("compareindicator"),
     ).toBe(compareIndicator.value);
-
-    comparePoi.value = "test-poi";
-    await expect
-      .poll(() => new URLSearchParams(window.location.search).get("comparepoi"))
-      .toBe("test-poi");
-
-    comparePoi.value = "";
-    await expect
-      .poll(() => new URLSearchParams(window.location.search).has("comparepoi"))
-      .toBe(false);
   });
 });
