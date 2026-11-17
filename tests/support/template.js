@@ -189,6 +189,50 @@ export const targetFeatures = (root) =>
     ?.getFeatures?.() ?? [];
 
 /**
+ * Wait for the current form's drawtools to consume selections on its live layer.
+ * A populated source and a configured layerId precede Lit initialization.
+ * @param {Element} root
+ * @param {number} [timeout]
+ */
+export const waitForSelection = async (root, timeout = TIMEOUT) => {
+  await vi.waitFor(
+    async () => {
+      const form = /** @type {import("@eox/jsonform").EOxJSONForm | null} */ (
+        root.querySelector("eox-jsonform")
+      );
+      const drawtools =
+        /** @type {import("@eox/drawtools").EOxDrawTools | null} */ (
+          form?.shadowRoot?.querySelector("eox-drawtools")
+        );
+      const map = /** @type {import("@eox/map").EOxMap | null} */ (
+        root.querySelector("eox-map")
+      );
+      if (!form?.editor?.ready || !drawtools || !map) {
+        throw new Error("selection form not initialized");
+      }
+      await drawtools.updateComplete;
+      const interaction =
+        map.selectInteractions?.["SelectLayerClickInteraction"];
+      const layer = map.getLayerById(drawtools.layerId);
+      if (
+        root.querySelector("eox-jsonform") !== form ||
+        !drawtools.isConnected ||
+        !drawtools.currentlyDrawing ||
+        !interaction?.active ||
+        drawtools.draw !== interaction ||
+        !layer ||
+        interaction.selectLayer !== layer
+      ) {
+        throw new Error("selection listener not active on the current layer");
+      }
+      if (!targetFeatures(root).length)
+        throw new Error("selection features not loaded");
+    },
+    { timeout },
+  );
+};
+
+/**
  * Select a feature the way a map click does; drawtools consumes the event.
  * @param {Element} root
  * @param {number} index
