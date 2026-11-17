@@ -3,6 +3,8 @@
 
 import {
   activeTemplate,
+  compareIndicator,
+  comparePoi,
   currentCompareUrl,
   currentUrl,
   datetime,
@@ -204,6 +206,7 @@ export const useURLSearchParametersSync = () => {
                 const indicatorStac = await axios
                   .get(indicatorUrl)
                   .then((resp) => resp.data);
+                indicator.value = value;
                 poi.value = searchParams.get("poi") ?? "";
                 // find the process link
                 const poiMatch = indicatorStac?.links.find(
@@ -256,6 +259,63 @@ export const useURLSearchParametersSync = () => {
             }
             break;
           }
+          case "compareindicator": {
+            log.debug("Found compareindicator key in url");
+            const match = store.stac?.find(
+              (link) => useGetSubCodeId(link) == value,
+            );
+            if (match) {
+              log.debug(
+                "Found compare match, loading compare stac item",
+                match,
+              );
+              if (searchParams.has("comparepoi")) {
+                const indicatorUrl = toAbsolute(
+                  match.href,
+                  store.stacEndpoint ?? "",
+                );
+                /** @type {import("@eodash/stac").STACCollection} */
+                const indicatorStac = await axios
+                  .get(indicatorUrl)
+                  .then((resp) => resp.data);
+                compareIndicator.value = value;
+                comparePoi.value = searchParams.get("comparepoi") ?? "";
+                const poiMatch = indicatorStac?.links.find(
+                  (link) =>
+                    link.rel === "service" &&
+                    link.type === "application/json; profile=collection",
+                );
+                if (poiMatch) {
+                  log.debug(
+                    "Found comparepoi match, setting comparepoi",
+                    poiMatch,
+                  );
+                  /** @type {any} */
+                  let viewForMustache = comparePoi.value;
+                  const tokens = mustache.parse(poiMatch.href);
+                  const keyToken = tokens.find(
+                    (token) => token[0] === "name" && token[1] !== ".",
+                  );
+                  if (keyToken) {
+                    const keyName = keyToken[1];
+                    viewForMustache = { [keyName]: comparePoi.value };
+                  }
+                  /** @type {string} */
+                  const poiUrl = mustache.render(
+                    poiMatch.href,
+                    viewForMustache,
+                  );
+                  const poiAbsoluteUrl = toAbsolute(poiUrl, indicatorUrl);
+                  await store.loadSelectedCompareSTAC(poiAbsoluteUrl, true);
+                }
+              } else {
+                await store.loadSelectedCompareSTAC(
+                  /** @type {string} */ (store.isApi ? match.id : match.href),
+                );
+              }
+            }
+            break;
+          }
 
           default:
             break;
@@ -281,19 +341,38 @@ export const useURLSearchParametersSync = () => {
 
     const { selectedItem } = storeToRefs(useSTAcStore());
     watch(
-      [indicator, mapPosition, datetime, activeTemplate, poi, selectedItem],
+      [
+        indicator,
+        compareIndicator,
+        mapPosition,
+        datetime,
+        activeTemplate,
+        poi,
+        comparePoi,
+        selectedItem,
+      ],
       ([
         updatedIndicator,
+        updatedCompareIndicator,
         updatedMapPosition,
         updatedDatetime,
         updatedTemplate,
         updatedPoi,
+        updatedComparePoi,
         updatedItem,
       ]) => {
         if ("URLSearchParams" in window) {
           const searchParams = new URLSearchParams(window.location.search);
           if (updatedIndicator !== "") {
             searchParams.set("indicator", updatedIndicator);
+          }
+
+          if (!updatedCompareIndicator) {
+            if (searchParams.has("compareindicator")) {
+              searchParams.delete("compareindicator");
+            }
+          } else {
+            searchParams.set("compareindicator", updatedCompareIndicator);
           }
 
           if (updatedMapPosition && updatedMapPosition.length === 3) {
@@ -314,6 +393,14 @@ export const useURLSearchParametersSync = () => {
             }
           } else {
             searchParams.set("poi", updatedPoi);
+          }
+
+          if (!updatedComparePoi) {
+            if (searchParams.has("comparepoi")) {
+              searchParams.delete("comparepoi");
+            }
+          } else {
+            searchParams.set("comparepoi", updatedComparePoi);
           }
 
           const itemId = /** @type {any} */ (updatedItem)?.id;

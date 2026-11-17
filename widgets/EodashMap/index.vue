@@ -399,6 +399,16 @@ onMounted(async () => {
   // whatever is already selected
   const store = useSTAcStore();
 
+  if (props.enableCompare && compareMap.value && store.selectedCompareStac) {
+    /** @type {any} */ (compareMap.value).sync = eoxMap.value;
+    await updateIndicatorLayers(compareMap.value, {
+      readers: eodashCompareCollections,
+      stac: store.selectedCompareStac,
+      timeOrItem: store.selectedCompareItem ?? datetime.value,
+      event: "compareLayers:updated",
+    });
+  }
+
   if (!store.selectedStac) {
     assignGroupLayers(eoxMap.value, BASE_LAYERS_GROUP, props.baseLayers);
     return;
