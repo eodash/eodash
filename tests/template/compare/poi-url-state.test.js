@@ -84,7 +84,7 @@ describe("compare POI selection URL wiring", () => {
       .toBe(POI_ID);
     expect(ctx.store.selectedStac?.id).toBe(MAIN_ID);
 
-    await userEvent.click(mapButton("Compare mode"));
+    await userEvent.click(mapButton("Close comparison"));
     await expect.poll(() => ctx.store.selectedCompareStac).toBeNull();
     await expect
       .poll(() => new URLSearchParams(window.location.search).has("comparepoi"))
