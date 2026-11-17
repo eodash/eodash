@@ -73,7 +73,6 @@ const { animate, useMosaic, mosaicIndicators } = defineProps({
   },
 });
 
-/** @type {import("vue").ShallowRef<HTMLElement>} */
 const timesliderEl = useTemplateRef("eoxTimecontrol");
 
 const store = useSTAcStore();

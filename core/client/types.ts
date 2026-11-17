@@ -664,3 +664,25 @@ export type LayerTimeProperties = Required<
 export type DeepPartial<T> = {
   [K in keyof T]?: T[K] extends object ? DeepPartial<T[K]> : T[K];
 };
+
+declare module "vue" {
+  interface GlobalComponents {
+    "eox-chart": typeof import("@eox/chart").EOxChart;
+    "eox-feedback": typeof import("@eox/feedback").EOxFeedback;
+    "eox-geosearch": typeof import("@eox/geosearch").EOxGeoSearch;
+    "eox-itemfilter": typeof import("@eox/itemfilter").EOxItemFilter;
+    "eox-jsonform": typeof import("@eox/jsonform").EOxJSONForm;
+    "eox-layercontrol": typeof import("@eox/layercontrol").EOxLayerControl;
+    "eox-layout": typeof import("@eox/layout").EOxLayout;
+    "eox-layout-item": typeof import("@eox/layout").EOxLayoutItem;
+    "eox-map": typeof import("@eox/map").EOxMap;
+    "eox-map-compare": typeof import("@eox/map/types/components/compare").EOxMapCompare;
+    "eox-map-tooltip": typeof import("@eox/map/types/components/tooltip").EOxMapTooltip;
+    "eox-stacinfo": typeof import("@eox/stacinfo").EOxStacInfo;
+    "eox-timecontrol": typeof import("@eox/timecontrol").EOxTimeControl;
+    "eox-timecontrol-date": typeof import("@eox/timecontrol/types/components/timecontrol-date").EOxTimeControlDate;
+    "eox-timecontrol-picker": typeof import("@eox/timecontrol/types/components/timecontrol-picker").EOxTimeControlPicker;
+    "eox-timecontrol-timelapse": typeof import("@eox/timecontrol/types/components/timecontrol-timelapse").EOxTimeControlTimelapse;
+    "eox-timecontrol-timeline": typeof import("@eox/timecontrol/types/components/timecontrol-timeline").EOxTimeControlTimeline;
+  }
+}

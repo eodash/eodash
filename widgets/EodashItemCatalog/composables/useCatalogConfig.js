@@ -22,7 +22,7 @@ const clamp = (value, lo, hi) => Math.min(Math.max(value, lo), hi);
  * with range bounds and multiselect options resolved from the collections'
  * queryables/summaries (fetched lazily and cached).
  * @param {object} options hook options
- * @param {import("vue").Ref<import("@eox/itemfilter").EOxItemFilter>} options.itemfilterEl template ref to `<eox-itemfilter>`
+ * @param {import("vue").TemplateRef<import("@eox/itemfilter").EOxItemFilter>} options.itemfilterEl template ref to `<eox-itemfilter>`
  * @param {boolean} options.datetimeFilter show the datetime range filter
  * @param {import("../types").FiltersConfig} options.declaredFilters author-declared filters
  * @param {import("../types").SortOption[]} options.declaredSortBy author-declared sort options
