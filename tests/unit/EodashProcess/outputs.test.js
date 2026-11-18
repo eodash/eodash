@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, test, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import {
   processCharts,
   processImage,
@@ -326,6 +326,96 @@ describe("processCharts", () => {
 });
 
 describe("processSTAC", () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  test.each([false, true])(
+    "resolves a dotted feature identifier with compare mode: %s",
+    async (enableCompare) => {
+      const store = useSTAcStore();
+      const loadPOI = vi
+        .spyOn(
+          store,
+          enableCompare ? "loadSelectedCompareSTAC" : "loadSelectedSTAC",
+        )
+        .mockClear()
+        .mockResolvedValue();
+
+      await processSTAC(
+        [
+          serviceLink(
+            "application/json; profile=collection",
+            "locations",
+            "./heatgrid_lst/{{feature.id}}/collection.json",
+            { endpoint: "STAC" },
+          ),
+        ],
+        { feature: { id: "vienna" } },
+        enableCompare,
+      );
+
+      expect(loadPOI).toHaveBeenCalledExactlyOnceWith(
+        "./heatgrid_lst/vienna/collection.json",
+        true,
+      );
+    },
+  );
+
+  test.each([
+    {},
+    { feature: {} },
+    { feature: { id: undefined } },
+    { feature: { id: null } },
+    { feature: { id: "" } },
+  ])(
+    "skips loading POI for an unresolved or empty dotted parameter: %j",
+    async (jsonformValue) => {
+      const store = useSTAcStore();
+      const loadSelectedSTAC = vi
+        .spyOn(store, "loadSelectedSTAC")
+        .mockClear()
+        .mockResolvedValue();
+
+      await processSTAC(
+        [
+          serviceLink(
+            "application/json; profile=collection",
+            "locations",
+            "./heatgrid_lst/{{feature.id}}/collection.json",
+            { endpoint: "STAC" },
+          ),
+        ],
+        jsonformValue,
+      );
+
+      expect(loadSelectedSTAC).not.toHaveBeenCalled();
+    },
+  );
+
+  test("resolves a dotted array index whose value is zero", async () => {
+    const store = useSTAcStore();
+    const loadSelectedSTAC = vi
+      .spyOn(store, "loadSelectedSTAC")
+      .mockClear()
+      .mockResolvedValue();
+
+    await processSTAC(
+      [
+        serviceLink(
+          "application/json; profile=collection",
+          "locations",
+          "./locations/{{bbox.0}}/collection.json",
+          { endpoint: "STAC" },
+        ),
+      ],
+      { bbox: [0, 10, 20, 30] },
+    );
+
+    expect(loadSelectedSTAC).toHaveBeenCalledExactlyOnceWith(
+      "./locations/0/collection.json",
+      true,
+    );
+  });
+
   test("skips loading POI when required template parameter is empty", async () => {
     const store = useSTAcStore();
     const loadSelectedSTAC = vi

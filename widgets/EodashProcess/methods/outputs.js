@@ -547,10 +547,13 @@ export async function processSTAC(links, jsonformValue, enableCompare = false) {
 
   if (!stacLink) return;
   const tokens = mustache.parse(stacLink.href);
-  const missingRequiredParam = tokens.some(
-    (token) =>
-      token[0] === "name" && token[1] !== "." && !jsonformValue?.[token[1]],
-  );
+  const context = new mustache.Context(jsonformValue ?? {});
+  const missingRequiredParam = tokens.some((token) => {
+    if (token[0] !== "name" || token[1] === ".") return false;
+
+    const value = context.lookup(token[1]);
+    return value === undefined || value === null || value === "";
+  });
   if (missingRequiredParam) return;
 
   let poiUrl = mustache.render(stacLink.href, {
