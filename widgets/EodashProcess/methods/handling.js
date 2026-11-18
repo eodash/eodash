@@ -27,6 +27,11 @@ import { useGetSubCodeId } from "@/composables";
 import { getLayers, getCompareLayers, setDatetime } from "@/store/actions";
 import { prefillProcessDates } from "./date-defaults";
 
+/** @type {WeakMap<object, symbol>} */
+const initializationRequests = new WeakMap();
+/** @type {WeakMap<object, import("@eodash/stac").STACCollection | null>} */
+const initializedCollections = new WeakMap();
+
 /**
  * Fetch and set the jsonform schema to initialize the process
  *
@@ -51,13 +56,20 @@ export async function initProcess({
   enableCompare,
   mapElement,
 }) {
+  const targetStac = selectedStac.value;
+  const request = Symbol();
+  initializationRequests.set(jsonformSchema, request);
+  const isCurrent = () =>
+    initializationRequests.get(jsonformSchema) === request &&
+    selectedStac.value === targetStac;
   const isPoiAlive = enableCompare ? !!comparePoi.value : !!poi.value;
   let updatedJsonform = null;
-  if (selectedStac.value?.["eodash:jsonform"]) {
+  if (targetStac?.["eodash:jsonform"]) {
     updatedJsonform = await axios
-      .get(selectedStac.value["eodash:jsonform"])
+      .get(targetStac["eodash:jsonform"])
       .then((resp) => resp.data);
   }
+  if (!isCurrent()) return;
 
   if (!updatedJsonform && isPoiAlive) {
     jsonformSchema.value = null;
@@ -82,8 +94,39 @@ export async function initProcess({
     enableCompare,
     mapElement,
   });
-  if (!newJsonForm) return;
+  if (!newJsonForm || !isCurrent()) return;
 
+  const nextSchema = prefillProcessDates(
+    newJsonForm,
+    targetStac,
+    datetime.value,
+  );
+  const selectionStripped = getDrawToolsProperties(nextSchema).some(
+    (property) => {
+      const definition =
+        /** @type {{ options?: { drawtools?: { layerId?: string } } } | boolean | undefined} */ (
+          nextSchema.properties?.[property]
+        );
+      const layerId =
+        typeof definition === "object"
+          ? definition.options?.drawtools?.layerId
+          : undefined;
+      return (
+        layerId &&
+        mapElement?.selectInteractions?.["SelectLayerClickInteraction"]
+          ?.selectLayer !== mapElement?.getLayerById(layerId)
+      );
+    },
+  );
+  // A redundant render notification must not clear an active process or its input.
+  if (
+    initializedCollections.get(jsonformSchema) === targetStac &&
+    JSON.stringify(jsonformSchema.value) === JSON.stringify(nextSchema) &&
+    !selectionStripped
+  )
+    return;
+
+  const needsRemount = !!jsonformSchema.value && selectionStripped;
   resetProcess({
     loading,
     isProcessed,
@@ -92,12 +135,10 @@ export async function initProcess({
     processResults,
     enableCompare,
   });
-  await nextTick();
-  jsonformSchema.value = prefillProcessDates(
-    newJsonForm,
-    selectedStac.value,
-    datetime.value,
-  );
+  if (needsRemount) await nextTick();
+  if (!isCurrent()) return;
+  jsonformSchema.value = nextSchema;
+  initializedCollections.set(jsonformSchema, targetStac);
 }
 
 /**

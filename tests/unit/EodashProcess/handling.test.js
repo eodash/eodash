@@ -1,5 +1,8 @@
 import { beforeEach, describe, expect, test, vi } from "vitest";
-import { ref } from "vue";
+import { ref, watch } from "vue";
+import TileLayer from "ol/layer/Tile";
+import VectorLayer from "ol/layer/Vector";
+import VectorSource from "ol/source/Vector";
 import {
   handleProcesses,
   initProcess,
@@ -214,6 +217,128 @@ describe("initProcess", () => {
     expect(p.jsonformSchema.value).toBeNull();
     expect(p.loading.value).toBe(false);
     expect(p.isPolling.value).toBe(false);
+  });
+
+  test("ignores a schema response after the selected collection changes", async () => {
+    /** @type {() => void} */
+    let finishFetch = () => {};
+    vi.spyOn(axios, "get").mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finishFetch = () => resolve({ data: S_SCALAR });
+        }),
+    );
+    const p = withForm(S_SCALAR);
+    const pending = initProcess(p);
+    p.selectedStac.value = { id: "another-collection" };
+    finishFetch();
+    await pending;
+
+    expect(p.jsonformSchema.value).toBeNull();
+    expect(p.processResults.value).toEqual([1]);
+    expect(p.loading.value).toBe(true);
+  });
+
+  test("only the latest initialization for the same collection can assign a schema", async () => {
+    /** @type {() => void} */
+    let finishFirstFetch = () => {};
+    vi.spyOn(axios, "get")
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            finishFirstFetch = () =>
+              resolve({ data: { ...S_SCALAR, title: "old" } });
+          }),
+      )
+      .mockResolvedValueOnce({ data: { ...S_SCALAR, title: "current" } });
+    mapEl.value = /** @type {any} */ (mapStub(() => null));
+    const p = withForm(S_SCALAR, { mapElement: mapEl.value });
+    const first = initProcess(p);
+    await initProcess(p);
+    const currentSchema = p.jsonformSchema.value;
+    p.processResults.value = [2];
+    finishFirstFetch();
+    await first;
+
+    expect(p.jsonformSchema.value).toBe(currentSchema);
+    expect(p.jsonformSchema.value?.title).toBe("current");
+    expect(p.processResults.value).toEqual([2]);
+  });
+
+  test("ignores initialization when the collection changes while its layer loads", async () => {
+    const source = new VectorSource();
+    const layer = new VectorLayer({ source });
+    layer.setProperties({ id: "pending-layer", type: "Vector" });
+    const schema = S_DRAWTOOLS("pending-layer");
+    mockFetch(schema);
+    mapEl.value = /** @type {any} */ (mapStub(() => layer));
+    const p = withForm(schema, { mapElement: mapEl.value });
+    const pending = initProcess(p);
+    await vi.waitFor(() =>
+      expect(source.hasListener("featuresloadend")).toBe(true),
+    );
+    p.selectedStac.value = { id: "another-collection" };
+    source.dispatchEvent("featuresloadend");
+    await pending;
+
+    expect(p.jsonformSchema.value).toBeNull();
+    expect(p.processResults.value).toEqual([1]);
+  });
+
+  test("remounts an unchanged form only when its selection binding is missing", async () => {
+    const layer = new TileLayer();
+    layer.setProperties({ id: "selection-layer", type: "Tile" });
+    const schema = S_DRAWTOOLS("selection-layer");
+    mockFetch(schema);
+    const map = {
+      ...mapStub(() => layer),
+      selectInteractions: {
+        SelectLayerClickInteraction: { selectLayer: layer },
+      },
+    };
+    mapEl.value = /** @type {any} */ (map);
+    const p = withForm(schema, { mapElement: mapEl.value });
+    await initProcess(p);
+    const currentSchema = p.jsonformSchema.value;
+    p.processResults.value = [2];
+    await initProcess(p);
+    expect(p.jsonformSchema.value).toBe(currentSchema);
+    expect(p.processResults.value).toEqual([2]);
+
+    /** @type {(object | null)[]} */
+    const schemas = [];
+    const stop = watch(p.jsonformSchema, (value) => schemas.push(value), {
+      flush: "sync",
+    });
+    Reflect.deleteProperty(
+      map.selectInteractions,
+      "SelectLayerClickInteraction",
+    );
+    await initProcess(p);
+    stop();
+
+    expect(schemas[0]).toBeNull();
+    expect(p.jsonformSchema.value).toEqual(currentSchema);
+    expect(p.jsonformSchema.value).not.toBe(currentSchema);
+  });
+
+  test("preserves the form and process results on redundant initialization", async () => {
+    mockFetch(S_SCALAR);
+    mapEl.value = /** @type {any} */ (mapStub(() => null));
+    const p = withForm(S_SCALAR, { mapElement: mapEl.value });
+    await initProcess(p);
+    const currentSchema = p.jsonformSchema.value;
+    p.processResults.value = [2];
+    p.isProcessed.value = true;
+    chartSpec.value = { mark: "point" };
+    const currentChart = chartSpec.value;
+
+    await initProcess(p);
+
+    expect(p.jsonformSchema.value).toBe(currentSchema);
+    expect(p.processResults.value).toEqual([2]);
+    expect(p.isProcessed.value).toBe(true);
+    expect(chartSpec.value).toBe(currentChart);
   });
 
   test("does not mutate a large input schema (deep clone)", async () => {

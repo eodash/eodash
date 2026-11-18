@@ -10,6 +10,7 @@ import {
   selectFeature,
   selectIndicator,
   targetFeatures,
+  waitForSelection,
 } from "../../support/template";
 
 const STAC_ENDPOINT =
@@ -86,6 +87,7 @@ describe("expert template - POI selection (STAC output)", () => {
       },
       { timeout: TIMEOUT },
     );
+    await waitForSelection(ctx.container, TIMEOUT);
   });
 
   afterAll(() => ctx?.app.unmount());
@@ -194,11 +196,8 @@ describe("expert template - POI selection (STAC output)", () => {
       { timeout: TIMEOUT },
     );
 
-    // selectFeature dispatches the event the interaction would, so the binding
-    // a real click needs is asserted rather than exercised
-    expect(
-      ctx.query("eox-map").selectInteractions?.["SelectLayerClickInteraction"],
-    ).toBeTruthy();
+    // The layer can be ready before the replacement form attaches its listener.
+    await waitForSelection(ctx.container, TIMEOUT);
 
     const selectedId = targetFeatures(ctx.container)[1].get("id");
     selectFeature(ctx.container, 1);

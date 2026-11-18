@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, test } from "vitest";
-import { datetime } from "@/store/states";
+import { compareIndicator, datetime } from "@/store/states";
 import { analysisGroup } from "../../support/layers";
 import { bootExpert, TIMEOUT } from "../../support/template";
 
@@ -61,5 +61,29 @@ describe("expert template - deep link restores indicator, datetime and layers", 
         timeout: TIMEOUT,
       })
       .toBeGreaterThan(1);
+  });
+});
+
+describe("expert template - deep link restores compareindicator", () => {
+  const MAIN_ID = "N1_NO2_monthly";
+  const COMPARE_ID = "N2_CO2_mean";
+  const DEEP_LINK = `?template=compare&indicator=${MAIN_ID}&compareindicator=${COMPARE_ID}`;
+  /** @type {Awaited<ReturnType<typeof bootExpert>>} */
+  let ctx;
+
+  beforeAll(async () => {
+    ctx = await bootExpert({ endpoint: TEST_CATALOG, initialUrl: DEEP_LINK });
+  });
+
+  afterAll(() => ctx?.app.unmount());
+
+  test("restores compareindicator from the URL", async () => {
+    await expect
+      .poll(() => ctx.store.selectedCompareStac?.id, { timeout: TIMEOUT })
+      .toBe(COMPARE_ID);
+    expect(compareIndicator.value).toBeTruthy();
+    expect(
+      new URLSearchParams(window.location.search).get("compareindicator"),
+    ).toBe(compareIndicator.value);
   });
 });

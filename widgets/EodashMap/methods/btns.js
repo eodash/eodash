@@ -1,8 +1,12 @@
 import { assignLayers, getLayers, setActiveTemplate } from "@/store/actions";
 import { useSTAcStore } from "@/store/stac";
-import { activeTemplate, isGlobe, mapEl } from "@/store/states";
+import {
+  activeTemplate,
+  compareIndicator,
+  isGlobe,
+  mapEl,
+} from "@/store/states";
 import { easeOut } from "ol/easing.js";
-import { storeToRefs } from "pinia";
 import { ref } from "vue";
 
 export const switchGlobe = () => {
@@ -168,21 +172,33 @@ export const onSelectCompareIndicator = (compareIndicators) => {
  * }} compareIndicators
  */
 export const onCompareClick = (compareIndicators) => {
-  const { selectedCompareStac } = storeToRefs(useSTAcStore());
-  const { resetSelectedCompareSTAC } = useSTAcStore();
-  showCompareIndicators.value =
-    activeTemplate.value !==
-    ((typeof compareIndicators === "object" &&
-      compareIndicators.compareTemplate) ||
-      "compare");
-
-  const fallbackTemplate =
+  const store = useSTAcStore();
+  const compareTemplate =
     (typeof compareIndicators === "object" &&
-      compareIndicators.fallbackTemplate) ||
-    "expert";
-  selectedCompareStac.value = null;
-  resetSelectedCompareSTAC();
-  setActiveTemplate(fallbackTemplate);
+      compareIndicators.compareTemplate) ||
+    "compare";
+  const isCompareTemplate = activeTemplate.value === compareTemplate;
+
+  if (
+    store.selectedCompareStac ||
+    compareIndicator.value ||
+    isCompareTemplate
+  ) {
+    showCompareIndicators.value = false;
+    store.resetSelectedCompareSTAC();
+    if (isCompareTemplate) {
+      const fallbackTemplate =
+        (typeof compareIndicators === "object" &&
+          compareIndicators.fallbackTemplate) ||
+        "expert";
+      setActiveTemplate(fallbackTemplate);
+    }
+    return;
+  }
+
+  if (compareIndicators) {
+    showCompareIndicators.value = !showCompareIndicators.value;
+  }
 };
 
 export const onGeolocationClick = () => {

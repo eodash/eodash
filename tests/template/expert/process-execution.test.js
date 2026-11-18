@@ -6,7 +6,7 @@ import {
   bootExpert,
   selectFeature,
   selectIndicator,
-  targetFeatures,
+  waitForSelection,
 } from "../../support/template";
 
 const STAC_ENDPOINT =
@@ -33,15 +33,7 @@ describe("expert template - process execution (predictive maintenance)", () => {
   beforeAll(async () => {
     ctx = await bootExpert({ endpoint: STAC_ENDPOINT });
     await selectIndicator(ctx.store, INDICATOR_ID);
-    // Selectable once the drawtools re-synced and the layer's features loaded.
-    await vi.waitFor(
-      () => {
-        if (!targetFeatures(ctx.container).length) {
-          throw new Error("features not loaded");
-        }
-      },
-      { timeout: TIMEOUT },
-    );
+    await waitForSelection(ctx.container, TIMEOUT);
   });
 
   afterAll(() => ctx?.app.unmount());
@@ -66,17 +58,20 @@ describe("expert template - process execution (predictive maintenance)", () => {
   });
 
   test("clicking another feature re-executes the process", async () => {
+    await waitForSelection(ctx.container, TIMEOUT);
     const specBefore = chartSpec.value;
     selectFeature(ctx.container, 1);
     await vi.waitFor(
       () => {
-        if (chartSpec.value === specBefore) {
+        if (!chartSpec.value || chartSpec.value === specBefore) {
           throw new Error("chart not recreated");
         }
       },
       { timeout: TIMEOUT },
     );
-    expect(ctx.query("eox-chart")).toBeTruthy();
+    await expect
+      .poll(() => ctx.query("eox-chart"), { timeout: TIMEOUT })
+      .toBeTruthy();
     // The result layer reloads after the chart, so it settles on its own.
     await vi.waitFor(
       () => {
