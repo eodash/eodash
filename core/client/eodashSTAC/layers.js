@@ -127,11 +127,15 @@ export const zoomToCollection = (map, collection) => {
     return;
   }
 
-  map.zoomExtent = transformExtent(
+  const [minX, minY, maxX, maxY] = transformExtent(
     sanitizeBbox([...bbox]),
     "EPSG:4326",
     map.OLprojection,
   );
+  // Pad horizontal extent by 75% on each side so the collection fits within
+  // the central 30%–70% (40%) of the viewport width, avoiding side panel overlap.
+  const padX = (maxX - minX) * 0.75;
+  map.zoomExtent = [minX - padX, minY, maxX + padX, maxY];
 };
 
 /**

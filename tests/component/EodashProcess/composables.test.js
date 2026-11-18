@@ -1,5 +1,5 @@
-import { describe, expect, test, vi } from "vitest";
-import { h, ref } from "vue";
+import { afterEach, describe, expect, test, vi } from "vitest";
+import { h, nextTick, ref } from "vue";
 import { flushPromises } from "@vue/test-utils";
 import {
   useAutoExec,
@@ -13,7 +13,73 @@ vi.mock("^/EodashProcess/methods/handling", () => ({
   updateJsonformIdentifier: vi.fn(),
 }));
 
+/**
+ * Mount the real composable with a DOM event target and a minimal editor stub.
+ * Readiness is set before the schema enables the change listener.
+ * @param {boolean} ready
+ */
+async function mountAutoExecForm(ready) {
+  const autoExec = ref(false);
+  const jsonformSchema = ref(
+    /** @type {Record<string, unknown> | null} */ (null),
+  );
+  const formEl = ref(
+    /** @type {import("@eox/jsonform").EOxJSONForm | null} */ (null),
+  );
+  const startProcess = vi.fn().mockResolvedValue(undefined);
+  const change = vi.fn();
+  const Host = {
+    setup() {
+      useAutoExec(autoExec, formEl, jsonformSchema, startProcess);
+      return () => h("form", { ref: formEl, onChange: change });
+    },
+  };
+
+  await mountComponent(Host);
+  const form = formEl.value;
+  if (!form) throw new Error("form not mounted");
+  Object.defineProperty(form, "editor", { value: { ready } });
+  return { jsonformSchema, startProcess, change, form };
+}
+
 describe("useAutoExec", () => {
+  afterEach(() => vi.useRealTimers());
+
+  test("auto-runs for an already ready editor without a change event", async () => {
+    const { jsonformSchema, startProcess, change } =
+      await mountAutoExecForm(true);
+    vi.useFakeTimers();
+
+    jsonformSchema.value = { options: { execute: true } };
+    await nextTick();
+    await nextTick();
+    await vi.advanceTimersByTimeAsync(199);
+    expect(startProcess).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(1);
+
+    expect(startProcess).toHaveBeenCalledExactlyOnceWith();
+    expect(change).not.toHaveBeenCalled();
+  });
+
+  test("waits for a change event when the editor is not ready", async () => {
+    const { jsonformSchema, startProcess, change, form } =
+      await mountAutoExecForm(false);
+    vi.useFakeTimers();
+
+    jsonformSchema.value = { options: { execute: true } };
+    await nextTick();
+    await nextTick();
+    await vi.advanceTimersByTimeAsync(200);
+    expect(startProcess).not.toHaveBeenCalled();
+    expect(change).not.toHaveBeenCalled();
+
+    form.dispatchEvent(new Event("change"));
+    await vi.advanceTimersByTimeAsync(200);
+
+    expect(startProcess).toHaveBeenCalledExactlyOnceWith();
+    expect(change).toHaveBeenCalledOnce();
+  });
+
   test("runs startProcess on a form change once execute is enabled", async () => {
     const autoExec = ref(false);
     const jsonformSchema = ref(/** @type {any} */ (null));

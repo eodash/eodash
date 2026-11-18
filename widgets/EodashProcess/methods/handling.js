@@ -1,3 +1,4 @@
+import { nextTick } from "vue";
 import log from "loglevel";
 import {
   applyProcessLayersToMap,
@@ -91,6 +92,7 @@ export async function initProcess({
     processResults,
     enableCompare,
   });
+  await nextTick();
   jsonformSchema.value = prefillProcessDates(
     newJsonForm,
     selectedStac.value,

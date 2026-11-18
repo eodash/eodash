@@ -49,7 +49,33 @@ export const assignLayers = async (map, layers, event) => {
     return;
   }
   try {
+    // Clean up selectInteractions belonging to nested group layers that are being removed,
+    // as @eox/map's Group updateLayer only removes the OL layer without calling removeSelect,
+    // which otherwise leaves a stale changeLayerListener that detaches the shared tooltip overlay.
+    const nextLayerIds = new Set();
+    const collectIds = (/** @type {Record<string, any>[]} */ list) => {
+      for (const l of list) {
+        if (l.properties?.id) nextLayerIds.add(l.properties.id);
+        if (Array.isArray(l.layers)) collectIds(l.layers);
+      }
+    };
+    collectIds(layers);
+
+    for (const [selectId, interaction] of Object.entries(
+      map.selectInteractions ?? {},
+    )) {
+      const layerId = interaction?.selectLayer?.get?.("id");
+      if (layerId && !nextLayerIds.has(layerId)) {
+        map.removeSelect(selectId);
+      }
+    }
+
     map.layers = /** @type {import("@eox/map").EoxLayer[]} */ (layers);
+
+    const tooltipOverlay = map.map?.getOverlayById?.("eox-map-tooltip");
+    if (tooltipOverlay && !tooltipOverlay.getMap()) {
+      tooltipOverlay.setMap(map.map);
+    }
   } catch (error) {
     errorState.value = {
       message: "Some layers could not be rendered correctly",
