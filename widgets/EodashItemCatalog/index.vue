@@ -286,6 +286,7 @@ function selectSort(option) {
   updateSortByParam();
   sortMenu.value = false;
   if (itemfilterEl.value) {
+    // @ts-expect-error `search` is typed private upstream; it is the debounced search
     itemfilterEl.value.search();
   }
 }
@@ -473,6 +474,7 @@ const onFilter = createOnFilterHandler({
       selectedSort.value = sortByOptions.value[0] ?? null;
       sortOrder.value = "-";
       updateSortByParam();
+      // @ts-expect-error `search` is typed private upstream; it is the debounced search
       itemfilterEl.value?.search();
     }
   },
