@@ -374,6 +374,8 @@ export type Eodash = {
     renders?: Record<string, Record<string, Render>>;
     /** Clips item tile layers to the item's `bbox`. Only for catalogs with accurate bboxes. */
     layerExtent?: boolean;
+    /** Custom theme styles and SVG marker icons for observation points. */
+    observationPointThemes?: import("@eodash/stac/types").ObservationPointsThemes;
   };
   /** Root STAC catalog endpoint */
   stacEndpoint: StacEndpoint;

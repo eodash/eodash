@@ -122,17 +122,30 @@ export const useSTAcStore = defineStore("stac", () => {
   const tileMatrixSetRegistry = ref(null);
 
   /**
+   * Custom theme styles for observation points from the eodash configuration
+   * @type {import("vue").Ref<import("@eodash/stac/types").ObservationPointsThemes | null | undefined>}
+   */
+  const observationPointThemes = ref(null);
+
+  /**
    * Initializes the store by assigning the STAC endpoint.
    * @param {import("@/types").StacEndpoint} endpoint
    * @param {Record<string, Record<string, import("@eodash/stac").Render>>} [renders] - `options.renders` from the eodash configuration
    * @param {boolean} [withLayerExtent] - `options.layerExtent` from the eodash configuration
+   * @param {import("@eodash/stac/types").ObservationPointsThemes | null} [customThemes] - `options.observationPointThemes` from the eodash configuration
    */
-  function init(endpoint, renders, withLayerExtent = false) {
+  function init(
+    endpoint,
+    renders,
+    withLayerExtent = false,
+    customThemes = null,
+  ) {
     if (!endpoint) {
       throw new Error("STAC endpoint is not defined");
     }
     Object.assign(configRenders, renders);
     layerExtent.value = withLayerExtent;
+    observationPointThemes.value = customThemes;
 
     if (typeof endpoint === "string") {
       stacEndpoint.value = endpoint;
@@ -390,6 +403,7 @@ export const useSTAcStore = defineStore("stac", () => {
     loadColormapRegistry,
     tileMatrixSetRegistry,
     loadTileMatrixSetRegistry,
+    observationPointThemes,
   };
 });
 
