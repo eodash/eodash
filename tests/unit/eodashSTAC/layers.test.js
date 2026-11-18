@@ -98,20 +98,20 @@ describe("zoomToCollection", () => {
       expect(map.zoomExtent).toBeUndefined();
     });
   });
+});
 
-  describe("observationPointThemes", () => {
-    test("stores custom themes passed to stacStore.init", () => {
-      const store = useSTAcStore();
-      const customThemes = {
-        "Climate Change & Tourism": {
-          color: "#80510A",
-          icon: "M17.47,8.67H19V23H17.47V12.6Z",
-        },
-      };
+describe("observationPointThemes", () => {
+  test("stores custom themes passed to stacStore.init", () => {
+    const store = useSTAcStore();
+    const customThemes = {
+      "Climate Change & Tourism": {
+        color: "#80510A",
+        icon: "M17.47,8.67H19V23H17.47V12.6Z",
+      },
+    };
 
-      store.init("https://example.com/stac", undefined, false, customThemes);
+    store.init("https://example.com/stac", undefined, false, customThemes);
 
-      expect(store.observationPointThemes).toEqual(customThemes);
-    });
+    expect(store.observationPointThemes).toEqual(customThemes);
   });
 });
