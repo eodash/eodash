@@ -65,11 +65,9 @@ describe("expert template - feature selection in large geojsons", () => {
         if (!id || id.split(";:;")[0] !== INDICATOR_ID) {
           throw new Error("data layer not ready");
         }
-        if (drawtoolsLayerId(ctx.container) !== id) {
-          throw new Error("features are not selectable");
-        }
-        if (featureCount(id) !== FEATURES)
-          throw new Error("features not loaded");
+        // The layerId binding and source can settle before drawtools attaches
+        // the map's click/hover interactions. Wait for the whole contract.
+        expectSelectable(id);
       },
       { timeout: TIMEOUT },
     );
@@ -105,14 +103,11 @@ describe("expert template - feature selection in large geojsons", () => {
       () => {
         const id = layerId();
         if (!id || id === initialId) {
-          throw new Error("layer not rebuilt");
+          throw new Error(
+            `layer not rebuilt: initial=${initialId}, current=${id}, requested=${next}, previous=${currentStep}`,
+          );
         }
-        if (drawtoolsLayerId(ctx.container) !== id) {
-          throw new Error("drawtools not re-synced to the new layer");
-        }
-        if (featureCount(id) !== FEATURES) {
-          throw new Error("rebuilt features not loaded");
-        }
+        expectSelectable(id);
       },
       { timeout: TIMEOUT },
     );

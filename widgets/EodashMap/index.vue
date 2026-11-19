@@ -378,8 +378,15 @@ onMounted(async () => {
   defaultBaseLayers.value = structuredClone(toRaw(props.baseLayers));
   shouldZoomToExtent.value = props.zoomToExtent;
 
+  // the URL restore can resolve either side of this mount, so the map renders
+  // whatever is already selected
+  const store = useSTAcStore();
+
   if (props.enableCompare) {
     mapCompareEl.value = compareMap.value;
+    if (compareMap.value) {
+      compareMap.value.sync = "#main";
+    }
     // a compare collection is only ever chosen after this, so the compare map
     // opens on the configured background
     assignGroupLayers(compareMap.value, BASE_LAYERS_GROUP, props.baseLayers);
@@ -388,16 +395,21 @@ onMounted(async () => {
       compareTooltipProperties,
       true,
     );
+
+    if (store.selectedCompareStac) {
+      await updateIndicatorLayers(compareMap.value, {
+        readers: eodashCompareCollections,
+        stac: store.selectedCompareStac,
+        timeOrItem: store.selectedCompareItem ?? datetime.value,
+        event: "compareLayers:updated",
+      });
+    }
   }
 
   // After the initial mount and "jump", set the animation duration for subsequent flyTo calls
   nextTick(() => {
     animationOptions.value.duration = 1200;
   });
-
-  // the URL restore can resolve either side of this mount, so the map renders
-  // whatever is already selected
-  const store = useSTAcStore();
 
   if (!store.selectedStac) {
     assignGroupLayers(eoxMap.value, BASE_LAYERS_GROUP, props.baseLayers);
@@ -410,6 +422,11 @@ onMounted(async () => {
     timeOrItem: store.selectedItem ?? datetime.value,
     event: "layers:updated",
   });
+
+  // Re-sync compare map after main map has configured its projection and view
+  if (props.enableCompare && compareMap.value) {
+    compareMap.value.sync = "#main";
+  }
 });
 
 // sync map loading with the global loading state

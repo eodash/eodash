@@ -546,6 +546,18 @@ export async function processSTAC(links, jsonformValue, enableCompare = false) {
   );
 
   if (!stacLink) return;
+
+  // Verify that required mustache tokens in the link href are present and non-empty in jsonformValue
+  const tokens = mustache.parse(stacLink.href);
+  const requiredKeys = tokens
+    .filter((token) => token[0] === "name" && token[1] !== ".")
+    .map((token) => token[1]);
+  const hasEmptyRequired = requiredKeys.some((k) => {
+    const val = jsonformValue?.[k];
+    return val === undefined || val === null || val === "";
+  });
+  if (hasEmptyRequired) return;
+
   let poiUrl = mustache.render(stacLink.href, {
     ...(jsonformValue ?? {}),
   });
