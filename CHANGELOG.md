@@ -1,6 +1,34 @@
 # Changelog
 
 
+## [5.11.0](https://github.com/eodash/eodash/compare/eodash-v5.10.0...eodash-v5.11.0) (2026-11-25)
+
+
+### Features
+
+* add support for comparepoi compareindicator in url query params ([#526](https://github.com/eodash/eodash/issues/526)) ([3c22b69](https://github.com/eodash/eodash/commit/3c22b691b584e9a87bd3a0d055cc7f6cf3513566))
+* configure additional color/icon set kvps ([#523](https://github.com/eodash/eodash/issues/523)) ([1c3e238](https://github.com/eodash/eodash/commit/1c3e2387157a5fb001b03d6b2c1b6c84db62c69c))
+* Migrate mosaic layer creation to `@eodash/stac` and integrate Collection rasterform ([#518](https://github.com/eodash/eodash/issues/518)) ([2c245b9](https://github.com/eodash/eodash/commit/2c245b9bc376783753255bab7a170801c9bff320))
+* processing date(s) preset ([#516](https://github.com/eodash/eodash/issues/516)) ([6332af6](https://github.com/eodash/eodash/commit/6332af6cdcaca39644d2e0ae169f759a7e6031b8))
+
+
+### Bug Fixes
+
+* auto-create empty jsonform for legend-only styles and rasterforms ([#512](https://github.com/eodash/eodash/issues/512)) ([d753bb0](https://github.com/eodash/eodash/commit/d753bb097d99ba7bbc411bef23266af875f30782))
+* compact export spec for single GET charts and lazy encode ([#510](https://github.com/eodash/eodash/issues/510)) ([b18c38a](https://github.com/eodash/eodash/commit/b18c38ae8726433bedf5a233de762486e763ee5b))
+* deduplicate shared comparison collections in datepicker ([#514](https://github.com/eodash/eodash/issues/514)) ([b73d454](https://github.com/eodash/eodash/commit/b73d454a03610e298ffb2674cd7ed9268a725f0f)), closes [#473](https://github.com/eodash/eodash/issues/473)
+* EodashDatePicker pass new props to eox-timecontrol-picker ([#513](https://github.com/eodash/eodash/issues/513)) ([2bc53b9](https://github.com/eodash/eodash/commit/2bc53b9df3f8630eef3afddfaf10148092a9364c))
+* poi refresh and tooltip interaction, increase buffer for zoom to pois ([#524](https://github.com/eodash/eodash/issues/524)) ([bdda96e](https://github.com/eodash/eodash/commit/bdda96ef6c9c52594ab9297317b3e5ac77875402))
+* test races - expert and lite run in separate specs so they don’t share state ([#528](https://github.com/eodash/eodash/issues/528)) ([cb95596](https://github.com/eodash/eodash/commit/cb9559651b00e8ca43053a9c65d90d5ca844c935))
+* vector tile layers locations and tooltips ([#508](https://github.com/eodash/eodash/issues/508)) ([6ab2932](https://github.com/eodash/eodash/commit/6ab2932bccea1b366a05890051e1df31b2c3ffcb))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @eodash/stac bumped from ^0.2.0 to ^0.2.1
+
 ## [5.10.0](https://github.com/eodash/eodash/compare/eodash-v5.9.0...eodash-v5.10.0) (2026-10-28)
 
 
