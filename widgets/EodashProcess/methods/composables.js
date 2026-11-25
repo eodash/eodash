@@ -135,8 +135,15 @@ export function useAutoExec(
       if (exec && el) {
         // remove listener before adding to avoid duplicates in case of element change
         el.removeEventListener("change", onJsonFormChange);
-        await nextTick();
         el.addEventListener("change", onJsonFormChange);
+        if (el.editor?.ready) {
+          onJsonFormChange();
+        } else {
+          await nextTick();
+          if (el.editor?.ready) {
+            onJsonFormChange();
+          }
+        }
       }
     },
     { immediate: true },

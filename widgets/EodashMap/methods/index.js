@@ -96,16 +96,7 @@ export const useUpdateTooltipProperties = (
   tooltipProperties,
   enableCompare = false,
 ) => {
-  /**
-   * Listen to events related to the main or compare map based on the enableCompare flag
-   * @param {string} evt */
-  const listenTo = (evt) =>
-    enableCompare ? evt.includes("compare") : !evt.includes("compare");
-  useOnLayersUpdate(async (evt) => {
-    if (!listenTo(evt)) {
-      return;
-    }
-
+  const updateTooltips = async () => {
     const tooltips = [];
     for (const ec of eodashCols) {
       if (ec.stac && isObservationPoints(ec.stac)) {
@@ -121,5 +112,25 @@ export const useUpdateTooltipProperties = (
       ...new Map(tooltips.map((entry) => [entry.id, entry])).values(),
     ];
     log.debug("Updated tooltip properties", tooltipProperties.value);
+  };
+
+  watch(
+    () => eodashCols.map((ec) => ec.item?.id ?? ec.stac?.id),
+    () => {
+      updateTooltips();
+    },
+    { immediate: true },
+  );
+
+  /**
+   * Listen to events related to the main or compare map based on the enableCompare flag
+   * @param {string} evt */
+  const listenTo = (evt) =>
+    enableCompare ? evt.includes("compare") : !evt.includes("compare");
+  useOnLayersUpdate(async (evt) => {
+    if (!listenTo(evt)) {
+      return;
+    }
+    await updateTooltips();
   });
 };

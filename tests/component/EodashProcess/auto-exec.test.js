@@ -111,4 +111,28 @@ describe("EodashProcess auto-exec option", () => {
       { interval: 400, timeout: 5000 },
     );
   });
+
+  test("does not run startProcess when a string drawtools property is empty", async () => {
+    spies.state.schema = {
+      options: { execute: true },
+      type: "object",
+      properties: {
+        feature: {
+          type: "string",
+          format: "feature",
+          options: { drawtools: { layerId: "geodb-collection" } },
+        },
+      },
+    };
+    await mountComponent(EodashProcess);
+
+    await expect.poll(() => jsonformEl()).toBeTruthy();
+    const form = /** @type {any} */ (jsonformEl());
+    form.editor = { validate: () => [] };
+    form.value = { feature: "" };
+
+    form.dispatchEvent(new Event("change"));
+    await new Promise((r) => setTimeout(r, 300));
+    expect(spies.handleProcesses).not.toHaveBeenCalled();
+  });
 });
