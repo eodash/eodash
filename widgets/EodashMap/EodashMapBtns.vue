@@ -43,14 +43,16 @@
       <div class="tooltip left">Change map projection</div>
     </button>
     <button
-      v-if="compareIndicators && !isGlobe"
+      v-if="(compareIndicators || isInCompareMode) && !isGlobe"
       class="primary small circle small-elevate"
       @click="onCompareClick(compareIndicators)"
     >
       <i class="small">
         <svg viewBox="0 0 24 24"><path :d="compareIcon"></path></svg>
       </i>
-      <div class="tooltip left">Compare mode</div>
+      <div class="tooltip left">
+        {{ isInCompareMode ? "Close comparison" : "Compare mode" }}
+      </div>
     </button>
     <button
       v-if="enableGlobe && !isInCompareMode"
@@ -169,6 +171,7 @@ import { changeMapProjection } from "@/store/actions";
 import {
   activeTemplate,
   availableMapProjection,
+  compareIndicator,
   comparePoi,
   isGlobe,
   mapEl,
@@ -190,6 +193,8 @@ import {
 } from "@mdi/js";
 import ExportState from "^/ExportState.vue";
 import { computed, ref } from "vue";
+import { storeToRefs } from "pinia";
+import { useSTAcStore } from "@/store/stac";
 import PopUp from "^/PopUp.vue";
 import EodashItemFilter from "^/EodashItemFilter.vue";
 import { useDisplay } from "vuetify";
@@ -275,14 +280,17 @@ const { smAndDown } = useDisplay();
 const popupWidth = computed(() => (smAndDown.value ? "80%" : "70%"));
 const popupHeight = computed(() => (smAndDown.value ? "90%" : "70%"));
 
+const { selectedCompareStac } = storeToRefs(useSTAcStore());
 const showMapState = ref(false);
 const showFeedback = ref(false);
 const isInCompareMode = computed(
   () =>
+    !!selectedCompareStac.value ||
+    !!compareIndicator.value ||
     activeTemplate.value ===
-    ((typeof compareIndicators === "object" &&
-      compareIndicators?.compareTemplate) ||
-      "compare"),
+      ((typeof compareIndicators === "object" &&
+        compareIndicators?.compareTemplate) ||
+        "compare"),
 );
 const compareIcon = computed(() =>
   isInCompareMode.value ? mdiCompareRemove : mdiCompare,

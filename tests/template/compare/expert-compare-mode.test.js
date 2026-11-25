@@ -148,8 +148,8 @@ describe("expert template - compare mode", () => {
     mainMap.map.getView().setCenter(CENTER);
     await moved;
 
-    const btn = btnByTooltip("Compare mode");
-    if (!btn) throw new Error("compare button not shown");
+    const btn = btnByTooltip("Close comparison");
+    if (!btn) throw new Error("compare close button not shown");
     await userEvent.click(btn);
 
     await expect

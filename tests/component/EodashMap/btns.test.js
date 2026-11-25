@@ -4,6 +4,7 @@ import EodashMapBtns from "^/EodashMap/EodashMapBtns.vue";
 import {
   activeTemplate,
   availableMapProjection,
+  compareIndicator,
   comparePoi,
   isGlobe,
   mapEl,
@@ -92,6 +93,7 @@ describe("EodashMapBtns", () => {
     availableMapProjection.value = "EPSG:3857";
     poi.value = "";
     comparePoi.value = "";
+    compareIndicator.value = "";
     mapPosition.value = [0, 0, 10];
     mosaicState.latestLayer.value = null;
     mosaicState.isItemView.value = false;
@@ -273,10 +275,49 @@ describe("EodashMapBtns", () => {
     });
   });
 
+  describe("deep-linked comparison controls", () => {
+    test.each([true, false])(
+      "can close an expert comparison when the picker is enabled: %s",
+      async (compareIndicators) => {
+        activeTemplate.value = "expert";
+        compareIndicator.value = "comparison-indicator";
+        await mountBtns({ props: { compareIndicators } });
+
+        const button = btnByTooltip("Close comparison");
+        expect(button?.querySelector("svg path")?.getAttribute("d")).toBe(
+          mdiCompareRemove,
+        );
+        expect(btnByTooltip("switch to")).toBeFalsy();
+        button?.click();
+        expect(btns.onCompareClick).toHaveBeenCalledWith(compareIndicators);
+      },
+    );
+
+    test("shows the close control for a loaded comparison without an indicator parameter", async () => {
+      activeTemplate.value = "expert";
+      await mountBtns({
+        props: { compareIndicators: false },
+        initialState: {
+          stac: { selectedCompareStac: { id: "loaded-comparison" } },
+        },
+      });
+
+      expect(btnByTooltip("Close comparison")).toBeTruthy();
+    });
+
+    test("hides comparison controls when disabled and no comparison is active", async () => {
+      activeTemplate.value = "expert";
+      await mountBtns({ props: { compareIndicators: false } });
+
+      expect(btnByTooltip("Compare mode")).toBeFalsy();
+      expect(btnByTooltip("Close comparison")).toBeFalsy();
+    });
+  });
+
   describe("compare icon", () => {
     /** @returns {string | null | undefined} */
     const compareIconPath = () =>
-      btnByTooltip("Compare mode")
+      (btnByTooltip("Compare mode") ?? btnByTooltip("Close comparison"))
         ?.querySelector("svg path")
         ?.getAttribute("d");
 
