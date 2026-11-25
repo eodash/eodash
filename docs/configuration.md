@@ -79,11 +79,18 @@ Optional behavior overrides for STAC reading and layer rendering:
 
 - `renders` - TiTiler render presets keyed by collection ID and render name, following the STAC `renders` extension shape, used when a collection does not declare its own `renders`.
 - `layerExtent` - when `true`, clips item tile layers to the item's `bbox` so no tiles outside the footprint are requested. Enable only for catalogs with accurate item bounding boxes.
+- `observationPointThemes` - Custom theme definitions (color and SVG marker icon path) for styling observation point locations, keyed by theme name. Merged with default `OBSERVATION_POINT_THEMES`.
 
 ```js
 {
   options: {
     layerExtent: true,
+    observationPointThemes: {
+      "Climate Change": {
+        color: "#80510A",
+        icon: "M13 13V5A3 3 0 0 0 7 5V13A5 5 0 1 0 13 13M11 5V11H9V5A1 1 0 0 1 11 5M15 9H17V11H15V9M15 5H20V7H15V5M15 13H20V15H15V13Z",
+      },
+    },
     renders: {
       "sentinel-2-l2a": {
         true_color: {

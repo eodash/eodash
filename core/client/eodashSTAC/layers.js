@@ -229,7 +229,11 @@ export const assignDataLayers = async (
  * @param {import("@eodash/stac").BuildContext} [options.context] - Build context configuration
  */
 async function buildDataLayers(map, { readers, stac, timeOrItem, context }) {
-  const { layerExtent } = useSTAcStore();
+  const { layerExtent, observationPointThemes } = useSTAcStore();
+  const themes = {
+    ...OBSERVATION_POINT_THEMES,
+    ...(observationPointThemes ?? {}),
+  };
   return buildIndicatorDataLayers({
     readers,
     stac: stac ?? undefined,
@@ -242,7 +246,7 @@ async function buildDataLayers(map, { readers, stac, timeOrItem, context }) {
       ...layerTimeProperties,
       ...context,
     },
-    themes: OBSERVATION_POINT_THEMES,
+    themes,
     currentLayers: map?.layers ?? [],
   });
 }
