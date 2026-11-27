@@ -452,6 +452,36 @@ describe("layers from assets", () => {
     expect(projections).toContain("EPSG:3035");
   });
 
+  test("a geozarr asset's projection comes back for the app to register and is set on source", async () => {
+    serveUrls(client, {
+      [COLLECTION_URL]: stacCollection({
+        "eodash:proj4_def": {
+          name: "EPSG:6932",
+          def: "+proj=laea +lat_0=-90 +lon_0=0",
+        },
+      }),
+    });
+    const col = await createEodashCollection(COLLECTION_URL, { client });
+
+    const { layers, projections } = await col.buildLayers(
+      makeItem({
+        assets: {
+          cube: dataAsset({
+            type: "application/vnd.zarr; version=3",
+            href: "https://x.zarr",
+            bands: [{ name: "lead_dist" }],
+          }),
+        },
+      }),
+    );
+
+    expect(projections).toContainEqual({
+      name: "EPSG:6932",
+      def: "+proj=laea +lat_0=-90 +lon_0=0",
+    });
+    expect(layers[0].source.projection).toBe("EPSG:6932");
+  });
+
   test("a style with a tooltip adds a select interaction keyed to the layer", async () => {
     const [layer] = await build(
       makeItem({

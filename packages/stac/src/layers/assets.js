@@ -275,6 +275,16 @@ export async function createLayersFromAssets(
       }
 
       log.debug("Creating WebGLTile layer from GeoZarr", assetLayerId);
+      const assetProjection =
+        getProjection(assets[assetName]) ||
+        getProjection(stacObject) ||
+        getProjection(collection);
+      if (assetProjection) {
+        projections.push(assetProjection);
+      }
+      const projection = assetProjection
+        ? getProjectionCode(assetProjection)
+        : undefined;
 
       const geoZarrLayerDatetime = getGeoZarrLayerDatetime(
         assets[assetName],
@@ -299,6 +309,7 @@ export async function createLayersFromAssets(
           type: "GeoZarr",
           url: assets[assetName].href,
           bands: defaultBands,
+          ...(projection && { projection }),
         },
         ...(style ? { style } : {}),
       };
